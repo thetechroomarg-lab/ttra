@@ -21,5 +21,5 @@ def monto_por_banda(costo):
 
 
 def calcular_precio(costo):
-    total = costo + monto_por_banda(costo)
+    total = round(costo + monto_por_banda(costo), 2)
     return int(math.ceil(total / 5) * 5)

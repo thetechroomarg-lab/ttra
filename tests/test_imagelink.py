@@ -11,3 +11,9 @@ def test_colapsa_espacios_multiples_y_recorta():
     assert google_image_link("  Motorola  G54  ") == (
         "https://www.google.com/search?tbm=isch&q=Motorola+G54"
     )
+
+
+def test_encoda_caracteres_especiales():
+    assert google_image_link("AT&T Phone") == (
+        "https://www.google.com/search?tbm=isch&q=AT%26T+Phone"
+    )
