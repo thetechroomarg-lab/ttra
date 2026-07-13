@@ -18,3 +18,10 @@ def test_el_signo_mas_distingue_pro_de_pro_plus():
     # "PRO+" y "PRO" son productos distintos: no deben normalizar igual.
     assert normalizar("Redmi Note 15 Pro+") != normalizar("Redmi Note 15 Pro")
     assert "plus" in normalizar("Redmi Note 15 Pro+")
+
+
+def test_ordena_capacidades_sin_importar_orden_ni_formato():
+    # 64/2GB, 2GB 64GB y 64GB 2GB son el mismo equipo: deben normalizar igual.
+    base = normalizar("Moto E15 2GB 64GB")
+    assert normalizar("Moto E15 64/2GB") == base
+    assert normalizar("Moto E15 64GB 2GB") == base

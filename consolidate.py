@@ -1,6 +1,11 @@
 from normalize import normalizar
 
-_UMBRAL_SIMILITUD = 0.6
+# Palabras de relleno/marca que no distinguen un producto de otro. Al ignorarlas,
+# "AIRPODS MAX" y "Apple Airpods Max" quedan iguales (mismo producto, otro nombre).
+_RELLENO = {
+    "apple", "samsung", "xiaomi", "motorola", "moto", "celular", "smartphone",
+    "original", "nuevo", "dual",
+}
 
 
 def consolidar(items):
@@ -25,23 +30,22 @@ def consolidar(items):
             "proveedor": barato["proveedor"],
         })
 
-    # Posibles duplicados: solo entre proveedores DISTINTOS (que es cuando sirve para
-    # elegir el más barato). Pares del mismo proveedor no se reportan (ruido).
+    # Posibles duplicados: mismo producto escrito distinto entre proveedores DISTINTOS.
+    # Se reporta solo si, al ignorar palabras de relleno/marca, los tokens son idénticos
+    # (ej. "AIRPODS MAX" vs "Apple Airpods Max"). Modelos distintos que comparten
+    # palabras (16 vs 15 Pro Max) NO se reportan.
     duplicados_posibles = []
     for i in range(len(orden)):
         for j in range(i + 1, len(orden)):
             if prov_rep[orden[i]] == prov_rep[orden[j]]:
                 continue
-            ta = set(orden[i].split())
-            tb = set(orden[j].split())
-            if not ta or not tb:
-                continue
-            jaccard = len(ta & tb) / len(ta | tb)
-            if jaccard >= _UMBRAL_SIMILITUD:
+            ta = set(orden[i].split()) - _RELLENO
+            tb = set(orden[j].split()) - _RELLENO
+            if ta and ta == tb:
                 duplicados_posibles.append({
                     "nombre_a": grupos[orden[i]][0]["nombre"],
                     "nombre_b": grupos[orden[j]][0]["nombre"],
-                    "similitud": round(jaccard, 2),
+                    "similitud": 1.0,
                 })
 
     return {"lista": lista, "duplicados_posibles": duplicados_posibles}
