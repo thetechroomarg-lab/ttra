@@ -46,3 +46,13 @@ def test_productos_distintos_no_se_reportan():
     ]
     r = consolidar(items)
     assert r["duplicados_posibles"] == []
+
+
+def test_no_reporta_parecidos_del_mismo_proveedor():
+    # Dos nombres parecidos del MISMO proveedor no son duplicados a resolver: no se reportan.
+    items = [
+        {"nombre": "Samsung A54", "costo": 300, "proveedor": "az"},
+        {"nombre": "Samsung A54 5G", "costo": 320, "proveedor": "az"},
+    ]
+    r = consolidar(items)
+    assert r["duplicados_posibles"] == []

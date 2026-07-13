@@ -14,18 +14,24 @@ def consolidar(items):
         grupos[clave].append(it)
 
     lista = []
+    prov_rep = {}  # clave normalizada -> proveedor del ítem más barato (el que va a la lista)
     for clave in orden:
         grupo = grupos[clave]
         barato = min(grupo, key=lambda x: x["costo"])
+        prov_rep[clave] = barato["proveedor"]
         lista.append({
             "nombre": barato["nombre"],
             "costo": barato["costo"],
             "proveedor": barato["proveedor"],
         })
 
+    # Posibles duplicados: solo entre proveedores DISTINTOS (que es cuando sirve para
+    # elegir el más barato). Pares del mismo proveedor no se reportan (ruido).
     duplicados_posibles = []
     for i in range(len(orden)):
         for j in range(i + 1, len(orden)):
+            if prov_rep[orden[i]] == prov_rep[orden[j]]:
+                continue
             ta = set(orden[i].split())
             tb = set(orden[j].split())
             if not ta or not tb:
