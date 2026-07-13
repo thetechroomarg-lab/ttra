@@ -17,6 +17,7 @@ def test_procesar_arma_lista_con_precio_link_y_pais():
     fila = lista[0]
     assert fila["pais"] == "🇺🇸"
     assert fila["precio"] == 680        # 630 + 50 = 680 -> 680
+    assert fila["proveedor"] == "B"     # gana el más barato (630, proveedor B)
     assert fila["link"].startswith("https://www.google.com/search?tbm=isch&q=")
     assert reporte["filtrados"][0]["motivo"] == "caja abollada"
 
@@ -39,4 +40,5 @@ def test_main_escribe_archivo(tmp_path):
         "https://www.google.com/search?tbm=isch&q=Motorola+G54",
         "🇺🇸",
         230,  # 200 + 30 = 230
+        "A",
     ]

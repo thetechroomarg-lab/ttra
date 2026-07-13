@@ -20,6 +20,7 @@ def procesar(datos):
             "link": google_image_link(fila["nombre"]),
             "pais": PAIS_DEFECTO,
             "precio": calcular_precio(fila["costo"]),
+            "proveedor": fila["proveedor"],
         })
 
     reporte = {

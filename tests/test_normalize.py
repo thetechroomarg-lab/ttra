@@ -12,3 +12,9 @@ def test_quita_puntuacion():
 
 def test_nombres_equivalentes_normalizan_igual():
     assert normalizar("MOTOROLA g54") == normalizar("motorola   G54")
+
+
+def test_el_signo_mas_distingue_pro_de_pro_plus():
+    # "PRO+" y "PRO" son productos distintos: no deben normalizar igual.
+    assert normalizar("Redmi Note 15 Pro+") != normalizar("Redmi Note 15 Pro")
+    assert "plus" in normalizar("Redmi Note 15 Pro+")
