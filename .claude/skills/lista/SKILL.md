@@ -14,14 +14,14 @@ Convierte los precios de proveedores (archivos adjuntos y/o texto pegado) en un 
 1. **Limpieza:** quitar emojis, asteriscos de negrita, líneas de colores y textos de
    "Disponible".
 2. **Filtros — NO van a la lista, van a `filtrados`:** ítems con "caja abollada", "caja
-   manchada", o stock 0. Anotar el motivo.
+   manchada", "sin stock", o stock 0. Anotar el motivo.
 3. **Unificación:** si el mismo modelo exacto se repite (distintos colores) → una sola fila.
    En **iPhones usados**, agrupar los porcentajes de batería entre paréntesis en el nombre:
    `iPhone 13 128GB (84%) (87%)`.
 4. **Regla "slim":**
    - Celular (Motorola, Xiaomi, POCO, etc.) que dice "slim" → borrar "slim" y poner
      `(s/ cargador)`.
-   - Notebook (ej. Lenovo Slim) → dejar "slim" intacto.
+   - NO celular (notebook, consola como PS5 Slim, tablet, etc.) → dejar "slim" intacto.
 
 ## Reglas de precio
 
@@ -45,7 +45,9 @@ Convierte los precios de proveedores (archivos adjuntos y/o texto pegado) en un 
    ```
 
    - `costo` es el número USD (sin símbolos).
-   - `proveedor` es una etiqueta para identificar la fuente (nombre del archivo o del chat).
+   - `proveedor` es la **sigla del proveedor** = el nombre del archivo/fuente (az, em, fr,
+     ba, va, …). Sale como columna "Proveedor" en el Excel para saber quién tiene cada
+     producto. Con "una fila, el más barato", queda la sigla del proveedor más barato.
    - Cada ítem de `items` DEBE tener `costo` numérico. Si no lo tiene, va a `dudas_precio`.
 3. Guardá ese JSON en el scratchpad, p. ej. `entrada.json`.
 4. Ejecutá el script (usá el venv del proyecto):
