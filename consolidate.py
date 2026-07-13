@@ -1,6 +1,6 @@
 from normalize import normalizar
 
-_UMBRAL_SIMILITUD = 0.5
+_UMBRAL_SIMILITUD = 0.6
 
 
 def consolidar(items):
