@@ -7,7 +7,7 @@ def responder(mensaje, historial, productos, client):
     mensajes = list(historial) + [{"role": "user", "content": mensaje}]
     resp = client.messages.create(
         model=MODELO,
-        max_tokens=1024,
+        max_tokens=2048,
         system=system,
         messages=mensajes,
     )

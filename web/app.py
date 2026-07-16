@@ -1,14 +1,18 @@
 import json
+import logging
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from web.chat import responder
+from web.reglas import WHATSAPP
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("web")
 
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -38,13 +42,15 @@ class ChatIn(BaseModel):
 def chat(entrada: ChatIn):
     productos = _cargar_productos()
     if not productos:
+        logger.warning("productos.json vacío o ausente")
         return {"respuesta": "Estoy actualizando los precios, escribime al WhatsApp "
-                             "https://wa.me/543512145217 🙌"}
+                             f"{WHATSAPP} 🙌"}
     try:
         texto = responder(entrada.mensaje, entrada.historial, productos, _cliente())
     except Exception:
+        logger.exception("Error al responder")
         texto = ("Tengo un problema técnico en este momento 😅. Escribime directo al "
-                 "WhatsApp https://wa.me/543512145217 y te atiendo enseguida.")
+                 f"WhatsApp {WHATSAPP} y te atiendo enseguida.")
     return {"respuesta": texto}
 
 
