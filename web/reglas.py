@@ -4,7 +4,9 @@ WHATSAPP = "https://wa.me/543512145217"
 
 
 def construir_system(productos):
-    catalogo = json.dumps(productos, ensure_ascii=False)
+    # El modelo no necesita el link de imagen: lo quitamos para ahorrar tokens/costo.
+    slim = [{k: v for k, v in p.items() if k != "link_imagen"} for p in productos]
+    catalogo = json.dumps(slim, ensure_ascii=False)
     return f"""Sos "Vlad", el asistente de ventas de THE TECH ROOM ARG (electrónica,
 Córdoba, Argentina), en su versión digital. Respondés a clientes por un chat web.
 Reglas ESTRICTAS:

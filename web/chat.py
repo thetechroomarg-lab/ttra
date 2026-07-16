@@ -3,12 +3,16 @@ from urllib.parse import quote
 
 MODELO = "claude-sonnet-5"
 # Búsqueda web oficial de Claude: la usa solo cuando necesita specs/comparativas.
-TOOLS = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}]
+TOOLS = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 3}]
 
 
 def responder(mensaje, historial, productos, client):
     from web.reglas import construir_system
-    system = construir_system(productos)
+    system_text = construir_system(productos)
+    # Cache del prompt: el catálogo es fijo durante la charla, así los mensajes
+    # siguientes pagan ~10% de la entrada en vez del 100%.
+    system = [{"type": "text", "text": system_text,
+               "cache_control": {"type": "ephemeral"}}]
     mensajes = list(historial) + [{"role": "user", "content": mensaje}]
     resp = client.messages.create(
         model=MODELO,
