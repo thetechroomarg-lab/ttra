@@ -69,11 +69,13 @@ def chat(entrada: ChatIn):
                                    fecha=datetime.now().strftime("%Y-%m-%d %H:%M"))
             except Exception:
                 logger.exception("No se pudo guardar el lead")
+        genero = (datos or {}).get("genero", "")
     except Exception:
         logger.exception("Error al responder")
         texto = ("Tengo un problema técnico en este momento 😅. Escribime directo al "
                  f"WhatsApp {WHATSAPP} y te atiendo enseguida.")
-    return {"respuesta": texto}
+        genero = ""
+    return {"respuesta": texto, "genero": genero}
 
 
 app.mount("/", StaticFiles(directory=str(BASE / "static"), html=True), name="static")

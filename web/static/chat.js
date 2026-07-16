@@ -6,6 +6,17 @@ const mic = document.getElementById("mic");
 const historial = [];
 const sesion = (crypto.randomUUID && crypto.randomUUID()) ||
                (Date.now() + "-" + Math.random().toString(16).slice(2));
+let avatarCliente = "calamardobello.jpg";  // hombre por defecto; cambia a betty si es mujer
+
+function aplicarAvatarCliente(genero) {
+  if (genero === "mujer") avatarCliente = "bettyboop.jpg";
+  else if (genero === "hombre") avatarCliente = "calamardobello.jpg";
+  else return;
+  document.querySelectorAll(".row.user img.avatar").forEach((img) => {
+    img.src = avatarCliente;
+    img.style.display = "";
+  });
+}
 
 function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -28,7 +39,7 @@ function burbuja(texto, quien) {
   row.className = "row " + quien;
   const av = document.createElement("img");
   av.className = "avatar";
-  av.src = quien === "bot" ? "vlad.jpg" : "calamardobello.jpg";
+  av.src = quien === "bot" ? "vlad.jpg" : avatarCliente;
   av.alt = quien === "bot" ? "Vlad" : "Cliente";
   av.onerror = () => { av.style.display = "none"; };
   row.appendChild(av);
@@ -59,6 +70,7 @@ async function enviar(mensaje) {
     const data = await r.json();
     setTexto(cargando, data.respuesta);
     historial.push({ role: "assistant", content: data.respuesta });
+    aplicarAvatarCliente(data.genero);
   } catch (e) {
     setTexto(cargando, "Error de conexión. Probá de nuevo 🙏");
   }
