@@ -26,14 +26,12 @@ function conLinks(texto) {
 function burbuja(texto, quien) {
   const row = document.createElement("div");
   row.className = "row " + quien;
-  if (quien === "bot") {
-    const av = document.createElement("img");
-    av.className = "avatar";
-    av.src = "vlad.jpg";
-    av.alt = "Vlad";
-    av.onerror = () => { av.style.display = "none"; };
-    row.appendChild(av);
-  }
+  const av = document.createElement("img");
+  av.className = "avatar";
+  av.src = quien === "bot" ? "vlad.jpg" : "calamardobello.jpg";
+  av.alt = quien === "bot" ? "Vlad" : "Cliente";
+  av.onerror = () => { av.style.display = "none"; };
+  row.appendChild(av);
   const div = document.createElement("div");
   div.className = "msg " + quien;
   div.innerHTML = conLinks(texto);
