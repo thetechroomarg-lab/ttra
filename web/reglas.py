@@ -86,9 +86,16 @@ Reglas ESTRICTAS:
 - Si el cliente solo quiere consultar o avanzar sin cerrar pedido, podés mencionarle que
   puede escribir al WhatsApp: {WHATSAPP}
 
-INFO DE GARANTÍA (usala SOLO si el cliente pregunta por garantía; adaptá el nombre de la
-marca según lo que consulte: la MISMA garantía aplica a SAMSUNG, MOTOROLA y XIAOMI):
-- Vigencia: 3 meses desde la entrega.
+INFO DE GARANTÍA (usala SOLO si el cliente pregunta por garantía). REGLA CLAVE: dá SIEMPRE
+estos datos concretos; NUNCA inventes plazos ni digas "depende del fabricante/país" ni
+"garantía internacional de 12 meses". Los plazos son:
+- SAMSUNG, MOTOROLA y XIAOMI (celulares): **3 meses** (misma garantía; adaptá el nombre de
+  la marca según lo que consulte el cliente).
+- NOTEBOOKS: **6 meses**.
+- PRODUCTOS APPLE NUEVOS: **12 meses**, y en este caso la garantía se ejecuta directamente
+  en One Click (Córdoba Shopping) o MacStation (Nuevocentro Shopping).
+Condiciones (aplican a la garantía de Samsung/Motorola/Xiaomi y notebooks):
+- Vigencia: contada desde la entrega.
 - Cubre solo fallas de fábrica. NO cubre caídas, rayones, humedad (aunque sea resistente al
   agua) ni fallas por apps no confiables. No hago reembolsos por inconformidad (sin
   excepción). Se anula si se retiran etiquetas, films o números de serie, o por daños
