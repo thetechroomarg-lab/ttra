@@ -1,9 +1,17 @@
+import logging
 import re
 from urllib.parse import quote
+
+logger = logging.getLogger("web")
 
 MODELO = "claude-haiku-4-5-20251001"  # el más barato; suficiente para consultas/precios
 # Búsqueda web oficial de Claude: la usa solo cuando necesita specs/comparativas.
 TOOLS = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 2}]
+
+# Precios Haiku 4.5 por millón de tokens (USD): entrada, lectura de cache, escritura de
+# cache, salida. Web search: 0,01 USD por búsqueda.
+_PRECIO = {"in": 1.0, "cache_read": 0.10, "cache_write": 1.25, "out": 5.0}
+_PRECIO_BUSQUEDA = 0.01
 
 
 def responder(mensaje, historial, productos, client):
@@ -21,7 +29,28 @@ def responder(mensaje, historial, productos, client):
         tools=TOOLS,
         messages=mensajes,
     )
+    _log_costo(resp)
     return _formatear_pedido(_extraer_texto(resp))
+
+
+def _log_costo(resp):
+    u = getattr(resp, "usage", None)
+    if u is None:
+        return
+    ent = getattr(u, "input_tokens", 0) or 0
+    cr = getattr(u, "cache_read_input_tokens", 0) or 0
+    cw = getattr(u, "cache_creation_input_tokens", 0) or 0
+    out = getattr(u, "output_tokens", 0) or 0
+    busquedas = 0
+    su = getattr(u, "server_tool_use", None)
+    if su is not None:
+        busquedas = getattr(su, "web_search_requests", 0) or 0
+    costo = (ent * _PRECIO["in"] + cr * _PRECIO["cache_read"]
+             + cw * _PRECIO["cache_write"] + out * _PRECIO["out"]) / 1_000_000
+    costo += busquedas * _PRECIO_BUSQUEDA
+    logger.info(
+        "COSTO msg: in=%d cache_read=%d cache_write=%d out=%d busquedas=%d -> USD %.4f",
+        ent, cr, cw, out, busquedas, costo)
 
 
 def _formatear_pedido(texto):
