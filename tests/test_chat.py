@@ -1,6 +1,22 @@
 # tests/test_chat.py
 from web.reglas import construir_system
-from web.chat import responder
+from web.chat import responder, _extraer_texto
+
+
+class _Bloque:
+    def __init__(self, tipo, text=None):
+        self.type = tipo
+        if text is not None:
+            self.text = text
+
+
+class _RespThinking:
+    # simula Sonnet 5: primero un bloque de "thinking", luego el texto
+    content = [_Bloque("thinking"), _Bloque("text", "hola precios")]
+
+
+def test_extraer_texto_ignora_bloque_thinking():
+    assert _extraer_texto(_RespThinking()) == "hola precios"
 
 
 class _FakeContent:
