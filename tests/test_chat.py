@@ -19,6 +19,23 @@ def test_extraer_texto_ignora_bloque_thinking():
     assert _extraer_texto(_RespThinking()) == "hola precios"
 
 
+def test_formatear_pedido_convierte_bloque_en_link_whatsapp():
+    from web.chat import _formatear_pedido
+    texto = ("¡Gracias por tu compra! 🎉\n"
+             "[PEDIDO]\nHola! Quiero este pedido:\n- iPhone 13 128GB U$D 540\nTotal: U$D 540\n[/PEDIDO]")
+    out = _formatear_pedido(texto)
+    assert "[PEDIDO]" not in out and "[/PEDIDO]" not in out
+    assert "https://wa.me/543512145217?text=" in out
+    # el texto del pedido viaja url-encodeado (espacios como %20)
+    assert "Quiero%20este%20pedido" in out
+    assert "¡Gracias por tu compra!" in out
+
+
+def test_formatear_pedido_sin_bloque_no_cambia_nada():
+    from web.chat import _formatear_pedido
+    assert _formatear_pedido("hola, precios") == "hola, precios"
+
+
 class _FakeContent:
     def __init__(self, text): self.text = text
 

@@ -1,3 +1,6 @@
+import re
+from urllib.parse import quote
+
 MODELO = "claude-sonnet-5"
 
 
@@ -11,7 +14,22 @@ def responder(mensaje, historial, productos, client):
         system=system,
         messages=mensajes,
     )
-    return _extraer_texto(resp)
+    return _formatear_pedido(_extraer_texto(resp))
+
+
+def _formatear_pedido(texto):
+    # Si el modelo marcó el pedido final con [PEDIDO]...[/PEDIDO], lo convertimos en un
+    # link de WhatsApp con el mensaje ya cargado (así al cliente le llega preformado al
+    # dueño). El encoding lo hacemos acá para que nunca falle.
+    from web.reglas import WHATSAPP
+    m = re.search(r"\[PEDIDO\](.*?)\[/PEDIDO\]", texto, re.DOTALL)
+    if not m:
+        return texto
+    pedido = m.group(1).strip()
+    link = WHATSAPP + "?text=" + quote(pedido)
+    cta = ("👉 Tocá este enlace para enviarme tu pedido por WhatsApp y coordinar "
+           "pago y envío:\n" + link)
+    return (texto[:m.start()].rstrip() + "\n\n" + cta + texto[m.end():]).strip()
 
 
 def _extraer_texto(resp):
