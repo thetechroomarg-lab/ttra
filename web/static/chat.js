@@ -10,9 +10,15 @@ function escapeHtml(s) {
 }
 
 function conLinks(texto) {
-  // convierte URLs en enlaces clickeables (abren en pestaña nueva)
-  return escapeHtml(texto).replace(/(https?:\/\/[^\s]+)/g,
-    '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  // convierte URLs en enlaces clickeables (abren en pestaña nueva).
+  // Los links de WhatsApp (largos, con el pedido adentro) se muestran como botón corto.
+  return escapeHtml(texto).replace(/(https?:\/\/[^\s]+)/g, (url) => {
+    if (url.includes("wa.me")) {
+      return '<a href="' + url + '" target="_blank" rel="noopener" class="wa-btn">' +
+             '📲 Enviar mi pedido por WhatsApp</a>';
+    }
+    return '<a href="' + url + '" target="_blank" rel="noopener">' + url + '</a>';
+  });
 }
 
 function burbuja(texto, quien) {
