@@ -2,6 +2,8 @@ import re
 from urllib.parse import quote
 
 MODELO = "claude-sonnet-5"
+# Búsqueda web oficial de Claude: la usa solo cuando necesita specs/comparativas.
+TOOLS = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}]
 
 
 def responder(mensaje, historial, productos, client):
@@ -12,6 +14,7 @@ def responder(mensaje, historial, productos, client):
         model=MODELO,
         max_tokens=2048,
         system=system,
+        tools=TOOLS,
         messages=mensajes,
     )
     return _formatear_pedido(_extraer_texto(resp))
@@ -33,10 +36,11 @@ def _formatear_pedido(texto):
 
 
 def _extraer_texto(resp):
-    # El modelo puede devolver bloques de "thinking" antes del texto; tomamos el
-    # primer bloque de tipo texto (no asumimos que sea el primero de la lista).
-    for bloque in resp.content:
-        if getattr(bloque, "type", None) == "text":
-            return bloque.text
-    partes = [b.text for b in resp.content if hasattr(b, "text")]
-    return partes[0] if partes else ""
+    # El modelo puede devolver bloques de "thinking" y de búsqueda web además del texto.
+    # Unimos todos los bloques de tipo texto (la respuesta puede venir en varias partes).
+    partes = [b.text for b in resp.content
+              if getattr(b, "type", None) == "text" and hasattr(b, "text")]
+    if partes:
+        return "\n".join(p for p in partes if p).strip()
+    otras = [b.text for b in resp.content if hasattr(b, "text")]
+    return otras[0] if otras else ""

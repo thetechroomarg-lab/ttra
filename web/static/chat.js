@@ -68,4 +68,5 @@ if (SR) {
   mic.style.display = "none";  // navegador sin soporte de voz
 }
 
-burbuja("¡Hola! 😊 Soy el asistente de THE TECH ROOM ARG. ¿Qué estás buscando?", "bot");
+burbuja("Hola, soy Vlad, pero en versión digital. Llegaste a THE TECH ROOM ARG; " +
+        "ahora podés buscar todo a cualquier hora. 😊 ¿Qué estás buscando?", "bot");
