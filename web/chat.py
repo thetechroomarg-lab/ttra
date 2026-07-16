@@ -1,9 +1,9 @@
 import re
 from urllib.parse import quote
 
-MODELO = "claude-sonnet-5"
+MODELO = "claude-haiku-4-5-20251001"  # el más barato; suficiente para consultas/precios
 # Búsqueda web oficial de Claude: la usa solo cuando necesita specs/comparativas.
-TOOLS = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 3}]
+TOOLS = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 2}]
 
 
 def responder(mensaje, historial, productos, client):
@@ -16,7 +16,7 @@ def responder(mensaje, historial, productos, client):
     mensajes = list(historial) + [{"role": "user", "content": mensaje}]
     resp = client.messages.create(
         model=MODELO,
-        max_tokens=2048,
+        max_tokens=1200,
         system=system,
         tools=TOOLS,
         messages=mensajes,
