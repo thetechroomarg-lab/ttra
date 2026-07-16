@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 from urllib.parse import quote
@@ -30,7 +31,22 @@ def responder(mensaje, historial, productos, client):
         messages=mensajes,
     )
     costo = _costo(resp)
-    return _formatear_pedido(_extraer_texto(resp)), costo
+    texto, datos = _extraer_datos(_extraer_texto(resp))
+    return _formatear_pedido(texto), costo, datos
+
+
+def _extraer_datos(texto):
+    # El modelo agrega al final un bloque [DATOS]{json}[/DATOS] con nombre/celular/productos.
+    # Lo sacamos del texto que ve el cliente y devolvemos el dict (o None).
+    m = re.search(r"\[DATOS\](.*?)\[/DATOS\]", texto, re.DOTALL)
+    if not m:
+        return texto, None
+    limpio = (texto[:m.start()] + texto[m.end():]).strip()
+    try:
+        datos = json.loads(m.group(1).strip())
+    except Exception:
+        datos = None
+    return limpio, datos
 
 
 def _costo(resp):

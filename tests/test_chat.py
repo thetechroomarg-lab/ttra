@@ -36,6 +36,21 @@ def test_formatear_pedido_sin_bloque_no_cambia_nada():
     assert _formatear_pedido("hola, precios") == "hola, precios"
 
 
+def test_extraer_datos_saca_bloque_y_parsea():
+    from web.chat import _extraer_datos
+    texto = ('¡Hola Juan! Te muestro las opciones 📱\n'
+             '[DATOS]{"nombre":"Juan","celular":"351123","productos":["iPhone 13"]}[/DATOS]')
+    limpio, datos = _extraer_datos(texto)
+    assert "[DATOS]" not in limpio and "Juan" in limpio
+    assert datos == {"nombre": "Juan", "celular": "351123", "productos": ["iPhone 13"]}
+
+
+def test_extraer_datos_sin_bloque_devuelve_none():
+    from web.chat import _extraer_datos
+    limpio, datos = _extraer_datos("hola")
+    assert limpio == "hola" and datos is None
+
+
 class _FakeContent:
     def __init__(self, text): self.text = text
 
@@ -71,7 +86,7 @@ def test_responder_llama_al_cliente_y_devuelve_texto_y_costo():
                   "usd": 660, "pesos": 1016400, "transferencia": 1047835,
                   "link_imagen": "x"}]
     client = FakeClient()
-    out, costo = responder("tenes iphone 13?", [], productos, client)
+    out, costo, datos = responder("tenes iphone 13?", [], productos, client)
     assert "U$D 660" in out
     assert isinstance(costo, float) and costo >= 0.0
     # se le pasó el mensaje del usuario al modelo

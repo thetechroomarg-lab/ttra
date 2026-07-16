@@ -5,3 +5,6 @@ __pycache__/
 *.xlsx
 web/.env
 web/productos.json
+
+web/clientes.json
+web/clientes.csv

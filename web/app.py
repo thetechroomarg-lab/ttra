@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -8,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from web import leads
 from web.chat import responder
 from web.reglas import WHATSAPP
 
@@ -56,10 +58,17 @@ def chat(entrada: ChatIn):
         return {"respuesta": "¡Gracias por tu interés! 😊 Para seguir con tu consulta y "
                              f"cerrar la compra, escribime directo por WhatsApp 👉 {WHATSAPP}"}
     try:
-        texto, costo = responder(entrada.mensaje, entrada.historial, productos, _cliente())
+        texto, costo, datos = responder(entrada.mensaje, entrada.historial,
+                                        productos, _cliente())
         _gasto[entrada.sesion] = _gasto.get(entrada.sesion, 0.0) + costo
         logger.info("Sesión %s: acumulado USD %.4f / %.2f",
                     entrada.sesion, _gasto[entrada.sesion], LIMITE_USD)
+        if datos:
+            try:
+                leads.guardar_lead(entrada.sesion, datos,
+                                   fecha=datetime.now().strftime("%Y-%m-%d %H:%M"))
+            except Exception:
+                logger.exception("No se pudo guardar el lead")
     except Exception:
         logger.exception("Error al responder")
         texto = ("Tengo un problema técnico en este momento 😅. Escribime directo al "

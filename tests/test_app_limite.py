@@ -8,7 +8,7 @@ def _preparar(monkeypatch, costo):
     monkeypatch.setattr(appmod, "_cargar_productos",
                         lambda: [{"nombre": "x", "usd": 1, "pesos": 1, "transferencia": 1}])
     monkeypatch.setattr(appmod, "_cliente", lambda: None)
-    monkeypatch.setattr(appmod, "responder", lambda *a, **k: ("respuesta bot", costo))
+    monkeypatch.setattr(appmod, "responder", lambda *a, **k: ("respuesta bot", costo, None))
     return TestClient(appmod.app)
 
 
