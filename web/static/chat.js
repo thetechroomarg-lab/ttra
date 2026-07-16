@@ -86,4 +86,5 @@ if (SR) {
 }
 
 burbuja("Hola, soy Vlad, pero en versión digital. Llegaste a THE TECH ROOM ARG; " +
-        "ahora podés buscar a cualquier hora.\n\n¿Qué necesitás?", "bot");
+        "ahora podés buscar a cualquier hora.\n\nAntes de continuar, decime tu nombre " +
+        "por favor. 🙂", "bot");
