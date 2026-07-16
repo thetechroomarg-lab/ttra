@@ -4,6 +4,8 @@ const form = document.getElementById("form");
 const entrada = document.getElementById("entrada");
 const mic = document.getElementById("mic");
 const historial = [];
+const sesion = (crypto.randomUUID && crypto.randomUUID()) ||
+               (Date.now() + "-" + Math.random().toString(16).slice(2));
 
 function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -54,7 +56,7 @@ async function enviar(mensaje) {
     const r = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mensaje, historial: historial.slice(0, -1) }),
+      body: JSON.stringify({ mensaje, historial: historial.slice(0, -1), sesion }),
     });
     const data = await r.json();
     setTexto(cargando, data.respuesta);
@@ -86,4 +88,4 @@ if (SR) {
 }
 
 burbuja("Hola, soy Vlad, pero en versión digital. Llegaste a THE TECH ROOM ARG; " +
-        "ahora podés buscar todo a cualquier hora. 😊 ¿Qué estás buscando?", "bot");
+        "ahora podés buscar a cualquier hora.\n\n¿Qué necesitás?", "bot");

@@ -66,13 +66,14 @@ def test_system_incluye_reglas_y_catalogo_sin_proveedor():
     assert "wa.me/543512145217" in system
 
 
-def test_responder_llama_al_cliente_y_devuelve_texto():
+def test_responder_llama_al_cliente_y_devuelve_texto_y_costo():
     productos = [{"nombre": "iPhone 13 128GB", "categoria": "Apple - iPhone",
                   "usd": 660, "pesos": 1016400, "transferencia": 1047835,
                   "link_imagen": "x"}]
     client = FakeClient()
-    out = responder("tenes iphone 13?", [], productos, client)
+    out, costo = responder("tenes iphone 13?", [], productos, client)
     assert "U$D 660" in out
+    assert isinstance(costo, float) and costo >= 0.0
     # se le pasó el mensaje del usuario al modelo
     msgs = client.ultimo_kwargs["messages"]
     assert msgs[-1] == {"role": "user", "content": "tenes iphone 13?"}

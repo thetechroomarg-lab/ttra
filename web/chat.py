@@ -29,14 +29,15 @@ def responder(mensaje, historial, productos, client):
         tools=TOOLS,
         messages=mensajes,
     )
-    _log_costo(resp)
-    return _formatear_pedido(_extraer_texto(resp))
+    costo = _costo(resp)
+    return _formatear_pedido(_extraer_texto(resp)), costo
 
 
-def _log_costo(resp):
+def _costo(resp):
+    # Calcula el costo en USD del mensaje y lo loguea. Devuelve el número.
     u = getattr(resp, "usage", None)
     if u is None:
-        return
+        return 0.0
     ent = getattr(u, "input_tokens", 0) or 0
     cr = getattr(u, "cache_read_input_tokens", 0) or 0
     cw = getattr(u, "cache_creation_input_tokens", 0) or 0
@@ -51,6 +52,7 @@ def _log_costo(resp):
     logger.info(
         "COSTO msg: in=%d cache_read=%d cache_write=%d out=%d busquedas=%d -> USD %.4f",
         ent, cr, cw, out, busquedas, costo)
+    return costo
 
 
 def _formatear_pedido(texto):
