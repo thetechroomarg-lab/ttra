@@ -6,9 +6,9 @@ def escribir_xlsx(lista, reporte, ruta):
 
     hoja = wb.active
     hoja.title = "Lista"
-    hoja.append(["Nombre", "Link Google Imágenes", "País", "Precio", "Proveedor"])
+    hoja.append(["Nombre", "Link Google Imágenes", "País", "Precio"])
     for fila in lista:
-        hoja.append([fila["nombre"], fila["link"], fila["pais"], fila["precio"], fila["proveedor"]])
+        hoja.append([fila["nombre"], fila["link"], fila["pais"], fila["precio"]])
 
     rep = wb.create_sheet("Reporte")
 

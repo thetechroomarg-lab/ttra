@@ -17,10 +17,9 @@ def procesar(datos):
     for fila in cons["lista"]:
         lista.append({
             "nombre": fila["nombre"],
-            "link": google_image_link(fila["nombre"]),
+            "link": f"{google_image_link(fila['nombre'])} {fila['proveedor']}",
             "pais": PAIS_DEFECTO,
             "precio": calcular_precio(fila["costo"]),
-            "proveedor": fila["proveedor"],
         })
 
     reporte = {

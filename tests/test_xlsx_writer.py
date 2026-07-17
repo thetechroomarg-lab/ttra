@@ -5,7 +5,7 @@ from xlsx_writer import escribir_xlsx
 def test_escribe_hoja_lista_con_encabezados_y_datos(tmp_path):
     ruta = str(tmp_path / "salida.xlsx")
     lista = [
-        {"nombre": "iPhone 13 128GB", "link": "http://x", "pais": "🇺🇸", "precio": 665, "proveedor": "az"},
+        {"nombre": "iPhone 13 128GB", "link": "http://x az", "pais": "🇺🇸", "precio": 665},
     ]
     reporte = {"filtrados": [], "duplicados_posibles": [], "dudas_precio": []}
     escribir_xlsx(lista, reporte, ruta)
@@ -14,8 +14,8 @@ def test_escribe_hoja_lista_con_encabezados_y_datos(tmp_path):
     assert "Lista" in wb.sheetnames
     assert "Reporte" in wb.sheetnames
     hoja = wb["Lista"]
-    assert [c.value for c in hoja[1]] == ["Nombre", "Link Google Imágenes", "País", "Precio", "Proveedor"]
-    assert [c.value for c in hoja[2]] == ["iPhone 13 128GB", "http://x", "🇺🇸", 665, "az"]
+    assert [c.value for c in hoja[1]] == ["Nombre", "Link Google Imágenes", "País", "Precio"]
+    assert [c.value for c in hoja[2]] == ["iPhone 13 128GB", "http://x az", "🇺🇸", 665]
 
 
 def test_reporte_incluye_secciones(tmp_path):

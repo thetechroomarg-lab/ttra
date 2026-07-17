@@ -1,0 +1,132 @@
+{
+  "items": [
+    {
+      "nombre": "IPHONE 8 PLUS 256GB (Usado)",
+      "costo": 110,
+      "proveedor": "va",
+      "variantes": [
+        {"color": "Black", "bateria": 100},
+        {"color": "Black", "bateria": 100},
+        {"color": "Gold", "bateria": 100},
+        {"color": "Gold", "bateria": 100},
+        {"color": "Silver", "bateria": 100},
+        {"color": "Silver", "bateria": 100},
+        {"color": "Red", "bateria": 100},
+        {"color": "Red", "bateria": 100}
+      ]
+    },
+    {
+      "nombre": "IPHONE 13 PRO 128GB (Usado)",
+      "costo": 435,
+      "proveedor": "va",
+      "variantes": [
+        {"color": "Gold", "bateria": 94},
+        {"color": "Gold", "bateria": 97},
+        {"color": "Gold", "bateria": 94},
+        {"color": "Silver", "bateria": 90},
+        {"color": "Blue", "bateria": 94},
+        {"color": "Blue", "bateria": 94},
+        {"color": "Blue", "bateria": 91},
+        {"color": "Grafito", "bateria": 93},
+        {"color": "Grafito", "bateria": 96},
+        {"color": "Grafito", "bateria": 93},
+        {"color": "Grafito", "bateria": 93},
+        {"color": "Grafito", "bateria": 93},
+        {"color": "Grafito", "bateria": 93}
+      ]
+    },
+    {
+      "nombre": "IPHONE 13 PRO 256GB (Usado)",
+      "costo": 490,
+      "proveedor": "va",
+      "variantes": [
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Green", "bateria": 100},
+        {"color": "Green", "bateria": 100},
+        {"color": "Green", "bateria": 100},
+        {"color": "Green", "bateria": 100}
+      ]
+    },
+    {
+      "nombre": "IPHONE 13 PRO MAX 128GB (Usado)",
+      "costo": 500,
+      "proveedor": "va",
+      "variantes": [
+        {"color": "Green", "bateria": 100},
+        {"color": "Green", "bateria": 100},
+        {"color": "Grafito", "bateria": 100},
+        {"color": "Grafito", "bateria": 100}
+      ]
+    },
+    {
+      "nombre": "IPHONE 14 PRO MAX 128GB (Usado)",
+      "costo": 590,
+      "proveedor": "va",
+      "variantes": [
+        {"color": "Grafito", "bateria": 100},
+        {"color": "Gold", "bateria": 100},
+        {"color": "Silver", "bateria": 100},
+        {"color": "Silver", "bateria": 100},
+        {"color": "Purple", "bateria": 100},
+        {"color": "Purple", "bateria": 100},
+        {"color": "Purple", "bateria": 100},
+        {"color": "Purple", "bateria": 100}
+      ]
+    },
+    {
+      "nombre": "IPHONE 15 PRO 128GB (Usado)",
+      "costo": 590,
+      "proveedor": "va",
+      "variantes": [
+        {"color": "Natural", "bateria": 100},
+        {"color": "Natural", "bateria": 100},
+        {"color": "Natural", "bateria": 100},
+        {"color": "Natural", "bateria": 100},
+        {"color": "Natural", "bateria": 100},
+        {"color": "Natural", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100}
+      ]
+    },
+    {
+      "nombre": "IPHONE 15 PRO 256GB (Usado)",
+      "costo": 650,
+      "proveedor": "va",
+      "variantes": [
+        {"color": "Natural", "bateria": 100},
+        {"color": "Natural", "bateria": 100},
+        {"color": "Natural", "bateria": 100},
+        {"color": "Natural", "bateria": 100},
+        {"color": "Natural", "bateria": 100},
+        {"color": "Natural", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100},
+        {"color": "Blue", "bateria": 100}
+      ]
+    },
+    {
+      "nombre": "IPHONE 16 PRO MAX 512GB (Usado)",
+      "costo": 980,
+      "proveedor": "va",
+      "variantes": [
+        {"color": "Space Gray", "bateria": 89}
+      ]
+    }
+  ]
+}

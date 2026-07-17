@@ -9,39 +9,6 @@ Convierte los precios de proveedores (archivos adjuntos y/o texto pegado) en un 
 4 columnas + una hoja de reporte. La parte determinística (precio, redondeo, link, dedup,
 .xlsx) la hace el script `generar_lista.py`; vos hacés la limpieza y clasificación de texto.
 
-## REGLA OBLIGATORIA — proveedores completos
-
-Antes de generar CUALQUIER listado, verificá que estén los **5 proveedores**:
-**az, em, fr, va, ba**.
-
-- **az**: export Excel del portal (archivo).
-- **em**: archivo .xlsx del proveedor (o texto).
-- **fr**: texto de difusión pegado.
-- **va**: texto de difusión pegado.
-- **ba**: se baja solo por URL publicada (Google Sheets export CSV).
-
-Si falta alguno, **NO generes el listado**: avisale al usuario exactamente cuál/es
-falta(n) y esperá a que lo pase. También pedí la **cotización del día** si no la dio.
-Nunca armes una lista parcial salvo que el usuario diga explícitamente que quiere seguir
-sin ese proveedor.
-
-## Disponibilidad (qué NO incluir)
-
-- **em**: incluir SOLO los ítems con Estado = "Disponible". Ignorar "No Disponible" y
-  "En Tránsito".
-- **ba**: ignorar los ítems marcados "ENTRANTE" y los de cantidad 0.
-- General: fuera perfumes, vapers, repuestos y paletas de pádel (ya excluidos).
-
-## Respuestas a clientes (cuando Vladimir pega el chat de un cliente)
-
-- **Siempre en formato WhatsApp**, listo para copiar y pegar (tono cordial, emojis,
-  cerrando con una pregunta).
-- Mostrar SIEMPRE los **3 precios** por producto: 🇺🇸 U$D · 🇦🇷 $ pesos · 🏦 $ transferencia
-  (pesos ÷ 0,97).
-- **NUNCA** mostrar el proveedor (sigla az/em/fr/va/ba) en el texto que se copia al cliente:
-  es info solo de Vladimir. Si hace falta, dársela aparte, marcada "solo para vos".
-- Ceñirse a lo que pide el cliente; no ofrecer extras salvo que él lo pida.
-
 ## Reglas para armar cada ítem (columna "Nombre")
 
 1. **Limpieza:** quitar emojis, asteriscos de negrita, líneas de colores y textos de
@@ -51,14 +18,6 @@ sin ese proveedor.
 3. **Unificación:** si el mismo modelo exacto se repite (distintos colores) → una sola fila.
    En **iPhones usados**, agrupar los porcentajes de batería entre paréntesis en el nombre:
    `iPhone 13 128GB (84%) (87%)`.
-5. **Batería (iPhones usados):** mantener el % de batería que declara el proveedor al
-   lado del nombre. **Filtrar (mandar a `filtrados`) todo usado con batería < 80%.**
-6. **Colores (regla general, todos los productos):** si el proveedor especifica color(es),
-   declararlos al lado del nombre (ej. `Moto Edge 60 Pro 12GB 512GB (Gris / Uva)`). NO crear
-   una columna de color. Si no lo especifica, dejar sin color.
-7. **Sin marca en el nombre:** la sección ya indica la marca, así que quitá el prefijo de
-   marca del nombre y dejá nombres uniformes (`A07 128GB`, no `Samsung A07 128GB`).
-8. **Excluir "caja abierta"** además de caja abollada/manchada.
 4. **Regla "slim":**
    - Celular (Motorola, Xiaomi, POCO, etc.) que dice "slim" → borrar "slim" y poner
      `(s/ cargador)`.

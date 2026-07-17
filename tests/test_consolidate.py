@@ -39,6 +39,19 @@ def test_unifica_mismo_producto_con_relleno_de_marca():
     assert r["lista"][0]["proveedor"] == "az"
 
 
+def test_unifica_macbook_con_nucleos_y_ssd():
+    # Mismo MacBook Air 15 M5 16GB/512GB: em lo trae con "10CPU 10GPU" y fr con "SSD".
+    # Esos tokens son relleno -> deben unificarse y quedar el más barato (em).
+    items = [
+        {"nombre": "Macbook Air 15 M5 10CPU 10GPU 512GB 16GB", "costo": 1750, "proveedor": "em"},
+        {"nombre": "MacBook Air 15 M5 16GB / 512GB SSD", "costo": 1880, "proveedor": "fr"},
+    ]
+    r = consolidar(items)
+    assert len(r["lista"]) == 1
+    assert r["lista"][0]["costo"] == 1750
+    assert r["lista"][0]["proveedor"] == "em"
+
+
 def test_modelos_distintos_no_se_unifican():
     # 16 vs 15 Pro Max comparten palabras pero son modelos distintos: 2 filas.
     items = [

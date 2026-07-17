@@ -1,0 +1,161 @@
+{
+  "items": [
+    {
+      "nombre": "HP 15-EF0022 Ryzen 7 3700U 256GB SSD 8GB 15.6\" 1366x768 WIN11 Natural Silver",
+      "costo": 730,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "HP 15-FC0037 AMD Ryzen 5 7520U 256GB SSD 8GB 15.6\" 1920x1080 WIN11 Midnight Blue",
+      "costo": 600,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "HP 15-FC0146DX 15.6\" AMD Ryzen 5 7520U 512GB SSD 8GB RAM Plata",
+      "costo": 575,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "HP Victus 15-FA2082WM 15.6\" Intel Core i5-13420H 512GB SSD 16GB RAM NVIDIA GeForce RTX 4050 Negro",
+      "costo": 1010,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "HP Victus 15-FB3093DX 15.6\" AMD Ryzen 7-7445HS 512GB SSD 16GB RAM NVIDIA GeForce RTX 4050 6GB Negro",
+      "costo": 1110,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "HP OMEN MAX 16T-AH000 Core Ultra 9 275HX 16GB RAM 512GB SSD NVIDIA RTX 5090 16\" WQXGA 165Hz Windows 11 Home",
+      "costo": 3590,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "MSI Cyborg 15 A15 AI B2HWFKG-006US AMD Ryzen 9 270 1TB SSD 16GB 15.6\" 1920x1080 144Hz WIN11 NVIDIA RTX 5060 8GB Black RGB Backlit Keyboard",
+      "costo": 1790,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "MSI Thin 15 B13UC-1000 Intel Core i5-13420H 16GB RAM 512GB SSD RTX 3050 4GB 15.6\" FHD",
+      "costo": 1110,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "MSI Cyborg 15 CYBORG15B2071 Core 7-240H 512GB SSD 16GB 15.6\" 1920x1080 144Hz IPS WIN11 NVIDIA RTX 5060 Black Backlit Keyboard",
+      "costo": 1640,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Dell Inspiron 15 LDC15255-A391BLK-PUS Ryzen 5 7520U 8GB RAM 512GB SSD 15.6\" FHD",
+      "costo": 630,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Dell 15 DC15250 15.6\" Intel Core i5-1334U 512GB SSD 8GB RAM Touch Negro",
+      "costo": 620,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Asus Vivobook 14 X1404VA-I512256 Core i5-1334U 256GB SSD 12GB 14\" 1920x1080 WIN11 Quiet Blue",
+      "costo": 610,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Asus Vivobook Go 15 E1504FA-AB34 AMD Ryzen 3 7320U 8GB RAM 256GB SSD 15.6\"",
+      "costo": 500,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Asus VivoBook X1404VA-I38128 14\" Intel Core i3-1315U 128GB SSD 8GB RAM Azul",
+      "costo": 399,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Lenovo IdeaPad Slim 3 82XM00LMUS 15.6\" AMD Ryzen 7 5825 512GB SSD 16GB RAM Touch Gris",
+      "costo": 720,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Lenovo 13w Yoga Gen 2 2-in-1 82YR0009US AMD Ryzen 5 7530U 256GB SSD 8GB 13.3\" 1920x1200 Touchscreen WIN11 Pro Thunder Black Backlit Keyboard FP Reader Integrated Pen",
+      "costo": 770,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Lenovo 1 15AMN7 82VG00WXUS Ryzen 5 7520U 256GB SSD 8GB 15.6\" 1920x1080 WIN11 Abyss Blue",
+      "costo": 543,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Lenovo Yoga 7 2-in-1 83JR0002US Ryzen AI 5 340 512GB SSD 16GB 14\" WUXGA 1920x1200 Touchscreen WIN11 Seashell Backlit Keyboard FP Reader",
+      "costo": 1015,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Lenovo LOQ 15AHP10 Gaming 83JG000JUS Ryzen 5 220 16GB 512GB SSD NVIDIA RTX 5050 8GB 15.6\" 144Hz",
+      "costo": 1340,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Lenovo Legion 5 83LY0007US i9-14900HX 16GB 1TB SSD RTX 5070 8GB 15.1\" WQXGA W11",
+      "costo": 2055,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Acer Predator Triton 300 SE PT314-52S-747P 14\" Intel Core i7-12700H 512GB SSD 16GB RAM NVIDIA GeForce RTX 3060 6GB Windows 11 Home",
+      "costo": 1370,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Acer Nitro V 16 ANV16-61-R0YW Gaming AMD Ryzen AI 7 350 1TB SSD 16GB 16\" 1920x1200 180Hz WIN11 NVIDIA RTX 5060 8GB Shale Black Backlit Keyboard",
+      "costo": 1640,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Gigabyte Gaming A16 3VHK3US894SH AMD Ryzen 7 260 1TB SSD 16GB 16\" 1920x1200 165Hz WIN11 NVIDIA RTX 5060 8GB Black Steel Backlit Keyboard",
+      "costo": 1560,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Monitor UP Gamer G Series Essentials UPG27VA75 27\" Full HD 75Hz HDMI VGA Negro",
+      "costo": 88,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Sony Joystick PS5 DualSense Wireless",
+      "costo": 80,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Samsung Odyssey Ark 2 Monitor Gamer 55\" 4K Ultra HD Ultrawide Curvo 165Hz 1ms Negro",
+      "costo": 2055,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Amazfit Anillo Inteligente Helio Ring 12 A2321 Titanio",
+      "costo": 170,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Amazfit Anillo Inteligente Helio Ring 10 A2321 Titanium",
+      "costo": 170,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Amazfit Anillo Inteligente Helio Ring 8 A2321 Titanium",
+      "costo": 170,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Xiaomi Redmi Pad SE 4GB RAM 128GB 8.7\" Verde",
+      "costo": 155,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Xiaomi Monopatin Electrico 4 Pro 2Gen",
+      "costo": 550,
+      "proveedor": "ba"
+    }
+  ],
+  "filtrados": [],
+  "dudas_precio": []
+}
