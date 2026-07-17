@@ -9,9 +9,13 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from web import leads
+from web import buscador, leads
 from web.chat import responder
 from web.reglas import WHATSAPP
+
+# Interruptor: False = buscador gratis (sin IA). True = IA (Claude, tu API key).
+# Para volver a la IA, cambiá esto a True y reiniciá el servidor.
+USAR_IA = False
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("web")
@@ -52,6 +56,18 @@ def chat(entrada: ChatIn):
         logger.warning("productos.json vacío o ausente")
         return {"respuesta": "Estoy actualizando los precios, escribime al WhatsApp "
                              f"{WHATSAPP} 🙌"}
+
+    # Modo GRATIS (sin IA): buscador determinístico, costo cero.
+    if not USAR_IA:
+        texto, genero, datos = buscador.responder_sin_ia(entrada.mensaje, entrada.sesion, productos)
+        if datos:
+            try:
+                leads.guardar_lead(entrada.sesion, datos,
+                                   fecha=datetime.now().strftime("%Y-%m-%d %H:%M"))
+            except Exception:
+                logger.exception("No se pudo guardar el lead")
+        return {"respuesta": texto, "genero": genero}
+
     # Tope de gasto por sesión: si ya lo superó, no llamamos a la IA (costo 0).
     if _gasto.get(entrada.sesion, 0.0) >= LIMITE_USD:
         logger.info("Sesión %s alcanzó el tope de USD %.2f", entrada.sesion, LIMITE_USD)

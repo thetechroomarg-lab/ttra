@@ -5,6 +5,7 @@ import web.app as appmod
 
 def _preparar(monkeypatch, costo):
     appmod._gasto.clear()
+    monkeypatch.setattr(appmod, "USAR_IA", True)  # el tope aplica solo al modo IA
     monkeypatch.setattr(appmod, "_cargar_productos",
                         lambda: [{"nombre": "x", "usd": 1, "pesos": 1, "transferencia": 1}])
     monkeypatch.setattr(appmod, "_cliente", lambda: None)

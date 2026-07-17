@@ -30,21 +30,37 @@ def _categoria(nombre):
     return "Otros"
 
 
+_EXCLUIR_KW = ("modulo", "módulo", "bateria", "batería", "pantalla", "perfume", "edp",
+               "edt", "vaper", "vape", "paleta", "padel", "pádel")
+
+
+def _excluido(nombre):
+    l = nombre.lower()
+    return any(k in l for k in _EXCLUIR_KW)
+
+
 def generar_productos(items, cotizacion):
     consolidados = consolidar(items)["lista"]
     productos = []
     for fila in consolidados:
+        if _excluido(fila["nombre"]):
+            continue
         usd = calcular_precio(fila["costo"])
         pesos = round(usd * cotizacion)
         transferencia = round(pesos / 0.97)
-        productos.append({
+        producto = {
             "nombre": fila["nombre"],
             "categoria": _categoria(fila["nombre"]),
             "usd": usd,
             "pesos": pesos,
             "transferencia": transferencia,
             "link_imagen": google_image_link(fila["nombre"]),
-        })
+        }
+        if fila.get("colores"):
+            producto["colores"] = fila["colores"]
+        if fila.get("variantes"):
+            producto["variantes"] = fila["variantes"]
+        productos.append(producto)
     return productos
 
 
