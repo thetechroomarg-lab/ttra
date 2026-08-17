@@ -14,11 +14,25 @@ const CATEGORIAS_BOTONES = [
   { clave: "Accesorios Celulares", etiqueta: "Accesorios" },
 ];
 
+// Secciones que muestran un paso intermedio (marca o tipo) antes de la grilla.
+const SECCIONES_CON_SUBNAV = new Set([
+  "Celulares", "Tablets", "Accesorios Celulares", "Notebooks y Macbooks",
+]);
+
+// Orden preferido de marcas dentro del sub-nav; lo que no está acá se agrega
+// al final, ordenado alfabéticamente.
+const ORDEN_MARCAS = [
+  "Apple", "Samsung", "Xiaomi", "Motorola", "Realme",
+  "Oppo", "Honor", "Infinix", "Nokia", "Itel", "JBL", "Logitech", "Otras marcas",
+];
+
 const CLAVE_CARRITO = "ttra_carrito";
 const WHATSAPP_NUMERO = "543512145217";
 
 let SECCIONES_DATA = {};
-let seccionActiva = null; // null = pantalla principal (categorías o búsqueda global)
+let seccionActiva = null; // clave de sección elegida en la pantalla principal, o null
+let subFiltroActivo = null; // marca elegida, o "Notebooks"/"Macbooks", o null
+let modoVista = "cards"; // "cards" | "lista"
 
 function pintarCarrousel() {
   const el = document.getElementById("carrousel");
@@ -40,10 +54,49 @@ function pintarCategorias() {
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       seccionActiva = btn.dataset.seccion;
+      subFiltroActivo = null;
       document.getElementById("input-busqueda").value = "";
       actualizarVista();
     });
   });
+}
+
+// Devuelve las opciones del sub-nav para la sección dada: marcas presentes
+// en sus productos, o los 2 tipos fijos para Notebooks y Macbooks.
+function opcionesSubNav(seccion) {
+  if (seccion === "Notebooks y Macbooks") {
+    return ["Notebooks", "Macbooks"];
+  }
+  const productos = SECCIONES_DATA[seccion] || [];
+  const presentes = new Set(productos.map((p) => p.marca || "Otras marcas"));
+  const ordenadas = ORDEN_MARCAS.filter((m) => presentes.has(m));
+  const resto = [...presentes].filter((m) => !ORDEN_MARCAS.includes(m)).sort();
+  return [...ordenadas, ...resto];
+}
+
+function pintarSubNav(seccion) {
+  const el = document.getElementById("sub-nav");
+  const opciones = opcionesSubNav(seccion);
+  el.innerHTML = opciones.map(
+    (o) => `<button data-clave="${escapeHtml(o)}" class="btn-categoria" type="button">${escapeHtml(o)}</button>`
+  ).join("");
+  el.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      subFiltroActivo = btn.dataset.clave;
+      actualizarVista();
+    });
+  });
+}
+
+// Productos de una sección que corresponden al sub-filtro elegido (marca, o
+// tipo Notebook/Mac).
+function productosDeSubFiltro(seccion, subFiltro) {
+  const productos = SECCIONES_DATA[seccion] || [];
+  if (seccion === "Notebooks y Macbooks") {
+    const categoriaBuscada = subFiltro === "Notebooks" ? "Notebook" : "Mac";
+    return productos.filter((p) => p.categoria === categoriaBuscada);
+  }
+  return productos.filter((p) => (p.marca || "Otras marcas") === subFiltro);
 }
 
 function formatearPesos(valor) {
@@ -68,42 +121,71 @@ function tarjetaProducto(p) {
   `;
 }
 
+function controlVistaHtml() {
+  return `
+    <div class="control-vista">
+      <button type="button" class="btn-vista ${modoVista === "cards" ? "activo" : ""}" data-modo="cards">Cards</button>
+      <button type="button" class="btn-vista ${modoVista === "lista" ? "activo" : ""}" data-modo="lista">Lista</button>
+    </div>
+  `;
+}
+
 function pintarGrilla(el, productos, mensajeVacio) {
   if (!productos || productos.length === 0) {
     el.innerHTML = `<p class="mensaje-vacio">${mensajeVacio}</p>`;
     return;
   }
-  el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
+  const claseModo = modoVista === "lista" ? "lista" : "";
+  el.innerHTML = `${controlVistaHtml()}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div>`;
   el.querySelectorAll(".btn-agregar").forEach((btn) => {
     btn.addEventListener("click", () => {
       const producto = productos.find((p) => p.nombre === btn.dataset.nombre);
       if (producto) agregarAlCarrito(producto);
     });
   });
+  el.querySelectorAll(".btn-vista").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      modoVista = btn.dataset.modo;
+      actualizarVista();
+    });
+  });
 }
 
-// Decide qué mostrar según la sección elegida (si hay) y el término de búsqueda,
-// y pinta categorías/grilla/botón "volver" en consecuencia.
+// Decide qué mostrar según la sección elegida (si hay), el sub-filtro (marca
+// o tipo) y el término de búsqueda, y pinta categorías/sub-nav/grilla/volver.
 function actualizarVista() {
   const termino = document.getElementById("input-busqueda").value.trim().toLowerCase();
   const categoriasEl = document.getElementById("categorias");
+  const subNavEl = document.getElementById("sub-nav");
   const volverBtn = document.getElementById("btn-volver");
   const productosEl = document.getElementById("productos");
 
-  const enPantallaPrincipal = !seccionActiva && termino === "";
-  categoriasEl.classList.toggle("oculto", !enPantallaPrincipal);
-  volverBtn.classList.toggle("oculto", enPantallaPrincipal);
+  const enInicio = !seccionActiva && termino === "";
+  const enSubNav = !!seccionActiva && SECCIONES_CON_SUBNAV.has(seccionActiva) &&
+    !subFiltroActivo && termino === "";
 
-  if (enPantallaPrincipal) {
+  categoriasEl.classList.toggle("oculto", !enInicio);
+  subNavEl.classList.toggle("oculto", !enSubNav);
+  volverBtn.classList.toggle("oculto", enInicio);
+
+  if (enInicio) {
+    productosEl.innerHTML = "";
+    return;
+  }
+
+  if (enSubNav) {
+    pintarSubNav(seccionActiva);
     productosEl.innerHTML = "";
     return;
   }
 
   let base;
-  if (seccionActiva) {
-    base = SECCIONES_DATA[seccionActiva] || [];
+  if (!seccionActiva) {
+    base = Object.values(SECCIONES_DATA).flat(); // búsqueda global
+  } else if (subFiltroActivo) {
+    base = productosDeSubFiltro(seccionActiva, subFiltroActivo);
   } else {
-    base = Object.values(SECCIONES_DATA).flat();
+    base = SECCIONES_DATA[seccionActiva] || []; // sección sin sub-nav (Gaming), o buscando antes de elegir
   }
 
   const productos = termino
@@ -112,19 +194,35 @@ function actualizarVista() {
 
   const mensajeVacio = termino
     ? "Lo siento, pero no hay resultados :("
-    : `Todavía no hay productos cargados en ${seccionActiva}.`;
+    : "Todavía no hay productos cargados acá.";
 
   pintarGrilla(productosEl, productos, mensajeVacio);
 }
 
+// Retrocede un paso a la vez: primero limpia la búsqueda, después el
+// sub-filtro (marca/tipo), y por último vuelve a la pantalla principal.
+function volverUnPaso() {
+  const input = document.getElementById("input-busqueda");
+  if (input.value.trim() !== "") {
+    input.value = "";
+  } else if (subFiltroActivo) {
+    subFiltroActivo = null;
+  } else {
+    seccionActiva = null;
+  }
+  actualizarVista();
+}
+
 function volverAPantallaPrincipal() {
   seccionActiva = null;
+  subFiltroActivo = null;
   document.getElementById("input-busqueda").value = "";
   actualizarVista();
 }
 
 function ocultarNavegacionCatalogo() {
   document.getElementById("categorias").classList.add("oculto");
+  document.getElementById("sub-nav").classList.add("oculto");
   document.getElementById("btn-volver").classList.add("oculto");
 }
 
@@ -301,7 +399,7 @@ document.getElementById("btn-whatsapp").addEventListener("click", () => {
   const mensaje = armarMensajeWhatsapp(carrito);
   window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`, "_blank");
 });
-document.getElementById("btn-volver").addEventListener("click", volverAPantallaPrincipal);
+document.getElementById("btn-volver").addEventListener("click", volverUnPaso);
 document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);
 document.getElementById("input-busqueda").addEventListener("input", actualizarVista);
 

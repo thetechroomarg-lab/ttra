@@ -52,17 +52,42 @@ header h1 { margin: 0; font-size: clamp(14px, 4vw, 18px); letter-spacing: .06em;
 .btn-volver.oculto { display: none; }
 
 main { padding: 0 20px 40px; }
+
+.control-vista { display: flex; gap: 8px; margin-bottom: 14px; }
+.btn-vista { padding: 6px 14px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.btn-vista.activo {
+  background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
+  font-weight: 600;
+}
+
 .grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 16px; }
 .card {
   background: var(--rc-bg-panel); border: 1px solid var(--rc-green-faint); padding: 16px;
-  display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 260px;
 }
-.card h3 { margin: 0; font-size: 15px; color: var(--rc-green-bright); }
+.card h3 {
+  margin: 0; font-size: 15px; color: var(--rc-green-bright);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.3; min-height: calc(1.3em * 2);
+}
 .card .precios { font-size: 13px; color: var(--rc-green-dim); line-height: 1.6; margin: 0; }
 .card .precios strong { color: var(--rc-green-bright); }
-.card .colores { margin: 0; font-size: 12px; color: var(--rc-green-dim); font-style: italic; }
-.card .btn-agregar { margin-top: 8px; font-size: 13px; }
+.card .colores {
+  margin: 0; font-size: 12px; color: var(--rc-green-dim); font-style: italic;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card .btn-agregar { margin-top: auto; font-size: 13px; }
 .mensaje-vacio { color: var(--rc-green-dim); padding: 40px; text-align: center; }
+
+.grilla.lista { display: flex; flex-direction: column; gap: 10px; }
+.grilla.lista .card {
+  flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  padding: 10px 16px; gap: 8px 20px; height: auto; min-height: 0;
+}
+.grilla.lista .card h3 { flex: 1 1 200px; -webkit-line-clamp: 1; min-height: 0; }
+.grilla.lista .card .colores { margin: 0; flex: 0 0 auto; max-width: 160px; }
+.grilla.lista .card .precios { margin: 0; text-align: right; }
+.grilla.lista .card .btn-agregar { margin-top: 0; }
 
 #overlay-carrito {
   position: fixed; inset: 0; background: rgba(0, 0, 0, .6); z-index: 9990;
