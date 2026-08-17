@@ -45,29 +45,6 @@ header h1 { margin: 0; font-size: clamp(14px, 4vw, 18px); letter-spacing: .06em;
   padding: 18px 20px; font-size: 15px; text-transform: uppercase; letter-spacing: .04em;
   text-align: center;
 }
-.btn-categoria.con-corredor {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left;
-}
-
-.rc-corredor { width: 34px; height: 46px; flex: 0 0 34px; pointer-events: none; overflow: visible; }
-.rc-corredor .rc-c-cuerpo { animation: rc-correr-bob 0.24s ease-in-out infinite alternate; }
-.rc-corredor .rc-c-pierna-izq, .rc-corredor .rc-c-pierna-der,
-.rc-corredor .rc-c-brazo-izq, .rc-corredor .rc-c-brazo-der {
-  transform-box: fill-box;
-}
-.rc-corredor .rc-c-pierna-izq { transform-origin: 50% 0%; animation: rc-correr-pierna 0.48s ease-in-out infinite; }
-.rc-corredor .rc-c-pierna-der { transform-origin: 50% 0%; animation: rc-correr-pierna 0.48s ease-in-out infinite 0.24s; }
-.rc-corredor .rc-c-brazo-izq { transform-origin: 50% 0%; animation: rc-correr-pierna 0.48s ease-in-out infinite 0.24s; }
-.rc-corredor .rc-c-brazo-der { transform-origin: 50% 0%; animation: rc-correr-pierna 0.48s ease-in-out infinite; }
-
-@keyframes rc-correr-bob {
-  from { transform: translateY(0); }
-  to { transform: translateY(-2px); }
-}
-@keyframes rc-correr-pierna {
-  0%, 100% { transform: rotate(-28deg); }
-  50% { transform: rotate(28deg); }
-}
 
 .btn-volver {
   margin: 0 20px 16px; padding: 8px 14px; font-size: 13px;
