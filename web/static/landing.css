@@ -4,12 +4,12 @@ body {
   min-height: 100vh;
 }
 header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
   padding: 16px 20px; background: var(--rc-bg-panel); border-bottom: 1px solid var(--rc-green-faint);
 }
-header h1 { margin: 0; font-size: 18px; letter-spacing: .06em; text-transform: uppercase;
+header h1 { margin: 0; font-size: clamp(14px, 4vw, 18px); letter-spacing: .06em; text-transform: uppercase;
             color: var(--rc-green-bright); }
-#btn-carrito { padding: 8px 14px; font-size: 15px; }
+#btn-carrito { padding: 8px 14px; font-size: clamp(13px, 3.5vw, 15px); }
 
 .carrousel-wrap { overflow: hidden; background: var(--rc-bg-panel); border-bottom: 1px solid var(--rc-green-faint); }
 .carrousel {
@@ -32,7 +32,7 @@ header h1 { margin: 0; font-size: 18px; letter-spacing: .06em; text-transform: u
 }
 .rc-buscador-icono { width: 18px; height: 18px; color: var(--rc-green-dim); flex: 0 0 18px; }
 .rc-buscador input {
-  flex: 1; border: none; background: transparent; padding: 4px 0; font-size: 14px;
+  flex: 1; min-width: 0; border: none; background: transparent; padding: 4px 0; font-size: 14px;
 }
 .rc-buscador input:focus { outline: none; box-shadow: none; }
 
@@ -52,7 +52,7 @@ header h1 { margin: 0; font-size: 18px; letter-spacing: .06em; text-transform: u
 .btn-volver.oculto { display: none; }
 
 main { padding: 0 20px 40px; }
-.grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 16px; }
 .card {
   background: var(--rc-bg-panel); border: 1px solid var(--rc-green-faint); padding: 16px;
   display: flex; flex-direction: column; gap: 8px;
@@ -86,3 +86,12 @@ main { padding: 0 20px 40px; }
 .item-controles button { padding: 4px 10px; font-size: 13px; }
 .panel-carrito-footer { border-top: 1px solid var(--rc-green-faint); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
 #total-carrito { margin: 0; font-size: 14px; color: var(--rc-green-bright); }
+
+@media (max-width: 480px) {
+  header { padding: 12px 14px; }
+  .rc-buscador, .categorias-columna { margin-left: 14px; margin-right: 14px; }
+  .btn-volver { margin-left: 14px; margin-right: 14px; }
+  main { padding: 0 14px 32px; }
+  .card { padding: 12px; }
+  #panel-carrito { padding: 14px; }
+}
