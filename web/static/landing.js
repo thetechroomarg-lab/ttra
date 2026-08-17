@@ -403,6 +403,34 @@ document.getElementById("btn-volver").addEventListener("click", volverUnPaso);
 document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);
 document.getElementById("input-busqueda").addEventListener("input", actualizarVista);
 
+// --- Frase del pie, con referencia a personajes de videojuegos ---
+
+const FRASES_GAMING = [
+  { texto: "War. War never changes.", autor: "The Narrator" },
+  { texto: "It's dangerous to go alone! Take this.", autor: "Old Man" },
+  { texto: "Stay awhile and listen.", autor: "Deckard Cain" },
+  { texto: "The cake is a lie.", autor: "GLaDOS" },
+  { texto: "Finish him!", autor: "Shao Kahn" },
+  { texto: "Hey! Listen!", autor: "Navi" },
+  { texto: "A man chooses, a slave obeys.", autor: "Andrew Ryan" },
+  { texto: "Wake up, samurai. We have a city to burn.", autor: "Johnny Silverhand" },
+  { texto: "Do a barrel roll!", autor: "Peppy Ainsworth" },
+  { texto: "I used to be an adventurer like you, until I took an arrow in the knee.", autor: "Guardia de Whiterun" },
+  { texto: "Praise the sun!", autor: "Solaire de Astora" },
+  { texto: "Would you kindly?", autor: "Andrew Ryan" },
+];
+
+function pintarFrasePie() {
+  const el = document.getElementById("pie-frase");
+  if (!el) return;
+  const horaBucket = Math.floor(Date.now() / (60 * 60 * 1000));
+  const frase = FRASES_GAMING[horaBucket % FRASES_GAMING.length];
+  el.textContent = `"${frase.texto}" -- (${frase.autor})`;
+}
+
+pintarFrasePie();
+setInterval(pintarFrasePie, 60 * 60 * 1000);
+
 pintarCarrousel();
 renderCarrito();
 cargarCatalogo();
