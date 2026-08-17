@@ -1,0 +1,134 @@
+/* web/static/theme.css — tema visual RobCo/Fallout terminal, compartido por
+   chat, login y catálogo. Solo variables, tipografía y efectos CRT: cada
+   página conserva su propio layout. */
+
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+:root {
+  --rc-bg: #030a03;
+  --rc-bg-panel: #071607;
+  --rc-bg-panel-2: #0b1f0b;
+  --rc-green: #33ff66;
+  --rc-green-bright: #7bffa0;
+  --rc-green-dim: #1f8c3f;
+  --rc-green-faint: #0f5c26;
+  --rc-glow: rgba(51, 255, 102, 0.55);
+  --rc-font: 'Share Tech Mono', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  background: var(--rc-bg);
+  color: var(--rc-green);
+  font-family: var(--rc-font);
+}
+
+body {
+  text-shadow: 0 0 2px var(--rc-glow);
+}
+
+/* --- Overlay CRT: scanlines + viñeta + flicker sutil, no intercepta clicks --- */
+.rc-crt {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: normal;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0.12) 1px,
+      rgba(0, 0, 0, 0) 2px
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0) 55%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+  animation: rc-flicker 6.5s infinite;
+}
+
+@keyframes rc-flicker {
+  0%, 96%, 100% { opacity: 1; }
+  97% { opacity: 0.94; }
+  98% { opacity: 1; }
+  98.5% { opacity: 0.9; }
+  99% { opacity: 1; }
+}
+
+/* --- Terminal look para controles genéricos: bordes cuadrados, sin sombras
+   modernas, glow al enfocar/hacer hover --- */
+.rc-crt, .rc-crt * { pointer-events: none; }
+
+input, textarea, select {
+  font-family: var(--rc-font);
+  background: var(--rc-bg-panel);
+  color: var(--rc-green);
+  border: 1px solid var(--rc-green-dim);
+  border-radius: 0;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--rc-green);
+  box-shadow: 0 0 6px var(--rc-glow);
+}
+
+button {
+  font-family: var(--rc-font);
+  background: var(--rc-bg-panel-2);
+  color: var(--rc-green);
+  border: 1px solid var(--rc-green-dim);
+  border-radius: 0;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+button:hover, button:focus-visible {
+  color: var(--rc-green-bright);
+  border-color: var(--rc-green);
+  box-shadow: 0 0 8px var(--rc-glow);
+  outline: none;
+}
+
+button:active {
+  box-shadow: 0 0 2px var(--rc-glow);
+}
+
+a { color: var(--rc-green-bright); }
+
+::selection {
+  background: var(--rc-green-dim);
+  color: #000;
+}
+
+/* --- Boot sequence overlay --- */
+#rc-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #000;
+  color: var(--rc-green);
+  font-family: var(--rc-font);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 24px 28px;
+  white-space: pre-wrap;
+  overflow: hidden;
+}
+
+#rc-boot.rc-boot-oculto {
+  display: none;
+}
+
+#rc-boot .rc-cursor {
+  display: inline-block;
+  animation: rc-blink 1s steps(1) infinite;
+}
+
+@keyframes rc-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}

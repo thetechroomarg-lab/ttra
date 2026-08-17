@@ -6,11 +6,11 @@ const mic = document.getElementById("mic");
 const historial = [];
 const sesion = (crypto.randomUUID && crypto.randomUUID()) ||
                (Date.now() + "-" + Math.random().toString(16).slice(2));
-let avatarCliente = "calamardobello.jpg";  // hombre por defecto; cambia a betty si es mujer
+let avatarCliente = "avatar-hombre.svg";  // hombre por defecto; cambia a mujer si corresponde
 
 function aplicarAvatarCliente(genero) {
-  if (genero === "mujer") avatarCliente = "bettyboop.jpg";
-  else if (genero === "hombre") avatarCliente = "calamardobello.jpg";
+  if (genero === "mujer") avatarCliente = "avatar-mujer.svg";
+  else if (genero === "hombre") avatarCliente = "avatar-hombre.svg";
   else return;
   document.querySelectorAll(".row.user img.avatar").forEach((img) => {
     img.src = avatarCliente;
@@ -39,7 +39,7 @@ function burbuja(texto, quien) {
   row.className = "row " + quien;
   const av = document.createElement("img");
   av.className = "avatar";
-  av.src = quien === "bot" ? "vlad.jpg" : avatarCliente;
+  av.src = quien === "bot" ? "avatar-vlad.svg" : avatarCliente;
   av.alt = quien === "bot" ? "Vlad" : "Cliente";
   av.onerror = () => { av.style.display = "none"; };
   row.appendChild(av);
