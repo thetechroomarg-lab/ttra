@@ -30,19 +30,25 @@
       listo.innerHTML = '&gt; SYSTEM READY <span class="rc-cursor">█</span>';
       overlay.appendChild(listo);
 
-      const bloqueCara = document.createElement("div");
-      bloqueCara.className = "rc-boot-cara";
-      const cara = document.createElement("p");
-      cara.className = "rc-boot-cara-emoji";
-      cara.textContent = ":)";
-      bloqueCara.appendChild(cara);
-      const frase = document.createElement("p");
-      frase.className = "rc-boot-frase";
-      frase.textContent = "Estas conectad@ con The Tech Room Arg.";
-      bloqueCara.appendChild(frase);
-      overlay.appendChild(bloqueCara);
+      setTimeout(() => {
+        overlay.textContent = ""; // pantallazo negro breve
 
-      setTimeout(() => overlay.classList.add("rc-boot-oculto"), 3200);
+        setTimeout(() => {
+          const bloqueCara = document.createElement("div");
+          bloqueCara.className = "rc-boot-cara";
+          const cara = document.createElement("p");
+          cara.className = "rc-boot-cara-emoji";
+          cara.textContent = ":)";
+          bloqueCara.appendChild(cara);
+          const frase = document.createElement("p");
+          frase.className = "rc-boot-frase";
+          frase.textContent = "Estas conectad@ con The Tech Room Arg.";
+          bloqueCara.appendChild(frase);
+          overlay.appendChild(bloqueCara);
+
+          setTimeout(() => overlay.classList.add("rc-boot-oculto"), 3200);
+        }, 500);
+      }, 500);
       return;
     }
     const linea = document.createElement("div");

@@ -140,7 +140,7 @@ a { color: var(--rc-green-bright); }
 
 .rc-boot-cara-emoji {
   margin: 0;
-  font-size: 48px;
+  font-size: 180px;
   line-height: 1;
   color: var(--rc-green);
   text-shadow: 0 0 8px var(--rc-glow);
