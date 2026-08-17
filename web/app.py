@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
@@ -25,7 +25,10 @@ logger = logging.getLogger("web")
 load_dotenv(Path(__file__).parent / ".env")
 
 BASE = Path(__file__).parent
-PRODUCTOS_PATH = BASE / "productos.json"
+# En producción (Railway) apunta a un volumen persistente vía la variable de
+# entorno PRODUCTOS_PATH; en local, cae al archivo de siempre junto al código.
+PRODUCTOS_PATH = Path(os.environ.get("PRODUCTOS_PATH", str(BASE / "productos.json")))
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 
 # Tope de gasto por chat/cliente (USD). Al superarlo, se lo deriva al WhatsApp.
 LIMITE_USD = 0.25
@@ -175,6 +178,23 @@ def api_catalogo():
         return {"secciones": {s: [] for s in catalogo.SECCIONES},
                 "mensaje": "Estamos actualizando los precios"}
     return {"secciones": catalogo.secciones_catalogo(productos)}
+
+
+@app.post("/admin/productos")
+async def admin_subir_productos(request: Request, x_admin_token: str = Header(default="")):
+    if not ADMIN_TOKEN:
+        raise HTTPException(status_code=503, detail="ADMIN_TOKEN no configurado en el servidor")
+    if x_admin_token != ADMIN_TOKEN:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    try:
+        productos = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Body inválido: se espera JSON")
+    if not isinstance(productos, list):
+        raise HTTPException(status_code=400, detail="Se espera una lista de productos")
+    PRODUCTOS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    PRODUCTOS_PATH.write_text(json.dumps(productos, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"ok": True, "productos": len(productos)}
 
 
 app.mount("/", StaticFiles(directory=str(BASE / "static"), html=True), name="static")

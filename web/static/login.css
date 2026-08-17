@@ -14,7 +14,7 @@ h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: .06em; text-transform: up
         border: 1px solid var(--rc-green-faint); padding: 4px; }
 .tab {
   flex: 1; padding: 8px; border: none; background: transparent;
-  color: var(--rc-green-dim); font-size: 13px; cursor: pointer; font-family: var(--rc-font);
+  color: var(--rc-green-dim); font-size: 13px; cursor: var(--rc-cursor); font-family: var(--rc-font);
 }
 .tab.activa { background: var(--rc-green-faint); color: var(--rc-green-bright); font-weight: 600; }
 .form { display: flex; flex-direction: column; gap: 10px; }

@@ -9,10 +9,17 @@
 </head>
 <body>
   <div id="rc-boot"></div>
+  <canvas id="rc-transicion" class="oculto"></canvas>
   <div class="rc-crt"></div>
   <header>
-    <h1 id="titulo-inicio">THE TECH ROOM ARG</h1>
-    <button id="btn-carrito" type="button">Carrito <span id="carrito-contador">0</span></button>
+    <div class="rc-titulo-grupo">
+      <h1 id="titulo-inicio">THE TECH ROOM ARG</h1>
+      <span id="cara-animada" class="rc-cara-animada" aria-hidden="true">:)</span>
+    </div>
+    <div class="rc-header-derecha">
+      <span id="fecha-hora-temp" class="rc-fecha-hora" aria-hidden="true"></span>
+      <button id="btn-carrito" type="button">Carrito <span id="carrito-contador">0</span></button>
+    </div>
   </header>
 
   <div class="carrousel-wrap">
@@ -27,10 +34,14 @@
     <input id="input-busqueda" type="text" placeholder="Buscar productos..." autocomplete="off">
   </div>
 
-  <div id="categorias" class="categorias-columna"></div>
-  <div id="sub-nav" class="categorias-columna oculto"></div>
-  <button id="btn-volver" type="button" class="btn-volver oculto">← Volver</button>
-  <main id="productos"></main>
+  <div class="fila-principal">
+    <div class="columna-izquierda">
+      <div id="categorias" class="categorias-columna"></div>
+      <div id="sub-nav" class="categorias-columna oculto"></div>
+      <button id="btn-volver" type="button" class="btn-volver oculto">← Volver</button>
+    </div>
+    <main id="productos"></main>
+  </div>
 
   <aside id="panel-carrito" class="oculto">
     <div class="panel-carrito-header">
@@ -47,7 +58,23 @@
   </aside>
   <div id="overlay-carrito" class="oculto"></div>
 
-  <footer id="pie-frase" class="rc-pie"></footer>
+  <footer class="rc-pie">
+    <p id="pie-frase"></p>
+    <div class="rc-redes">
+      <a href="https://instagram.com/thetechroomarg" target="_blank" rel="noopener" aria-label="Instagram" class="rc-red-icono">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor"/>
+        </svg>
+      </a>
+      <a href="https://tiktok.com/@thetechroomarg" target="_blank" rel="noopener" aria-label="TikTok" class="rc-red-icono">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M16.5 3c.4 2.2 1.8 3.6 4 3.9v2.6c-1.4.1-2.8-.3-4-1.1v6.4c0 3.3-2.7 5.7-5.7 5.4-2.6-.2-4.7-2.4-4.8-5-.1-3 2.3-5.5 5.3-5.5.3 0 .6 0 .9.1v2.7a2.7 2.7 0 0 0-3.3 2.9c.1 1.3 1.2 2.4 2.5 2.5 1.6.1 2.9-1.1 2.9-2.7V3h2.2z"/>
+        </svg>
+      </a>
+    </div>
+  </footer>
 
   <script src="boot.js"></script>
   <script src="landing.js"></script>

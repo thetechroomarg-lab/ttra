@@ -10,7 +10,7 @@ header {
 header h1 { margin: 0; font-size: clamp(14px, 4vw, 18px); letter-spacing: .06em; text-transform: uppercase;
             color: var(--rc-green-bright); }
 #btn-logout {
-  padding: 8px 14px; cursor: pointer;
+  padding: 8px 14px; cursor: var(--rc-cursor);
 }
 
 .carrousel-wrap { overflow: hidden; background: var(--rc-bg-panel); border-bottom: 1px solid var(--rc-green-faint); }

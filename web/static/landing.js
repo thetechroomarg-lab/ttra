@@ -35,6 +35,104 @@ let subFiltroActivo = null; // marca elegida, o "Notebooks"/"Macbooks", o null
 let filtroMarcaGlobal = null; // marca elegida desde el carrousel, busca en TODO el catálogo
 let modoVista = "cards"; // "cards" | "lista"
 
+// Fotos decorativas de la ciudad, solo visibles en la pantalla principal.
+const IMAGENES_CIUDAD = [
+  "ciudad/catedral-cordoba.png",
+  "ciudad/plaza-san-martin.png",
+  "ciudad/manzana-jesuitica.png",
+  "ciudad/puente-del-bicentenario.png",
+  "ciudad/batalla-de-la-toma.png",
+  "ciudad/parque-sarmiento.png",
+  "ciudad/paseo-del-buen-pastor.png",
+];
+let indiceCiudad = 0;
+let intervaloCiudad = null;
+
+function detenerCarrouselCiudad() {
+  if (intervaloCiudad) {
+    clearInterval(intervaloCiudad);
+    intervaloCiudad = null;
+  }
+}
+
+function pintarCarrouselCiudad(el) {
+  if (IMAGENES_CIUDAD.length === 0) {
+    el.innerHTML = "";
+    return;
+  }
+  el.innerHTML = `<div class="carrousel-ciudad"><img class="visible" src="${IMAGENES_CIUDAD[indiceCiudad]}" alt="Córdoba"></div>`;
+  if (IMAGENES_CIUDAD.length <= 1) return;
+  intervaloCiudad = setInterval(() => {
+    const contenedor = el.querySelector(".carrousel-ciudad");
+    if (!contenedor) return;
+    indiceCiudad = (indiceCiudad + 1) % IMAGENES_CIUDAD.length;
+    const actual = contenedor.querySelector("img.visible");
+    const siguiente = document.createElement("img");
+    siguiente.alt = "Córdoba";
+    siguiente.src = IMAGENES_CIUDAD[indiceCiudad];
+    contenedor.appendChild(siguiente);
+    requestAnimationFrame(() => siguiente.classList.add("visible"));
+    if (actual) {
+      actual.classList.remove("visible");
+      setTimeout(() => actual.remove(), 1400);
+    }
+  }, 10000);
+}
+
+// --- Efecto de interferencia (transición estilo TV de tubo entre secciones) ---
+
+let canvasRuidoTV = null; // canvas chico interno, escalado hacia arriba para look pixelado
+
+function dibujarCuadroRuidoTV(canvas) {
+  const ctx = canvas.getContext("2d");
+  if (!canvasRuidoTV) {
+    canvasRuidoTV = document.createElement("canvas");
+    canvasRuidoTV.width = 160;
+    canvasRuidoTV.height = 90;
+  }
+  const ctxRuido = canvasRuidoTV.getContext("2d");
+  const imagen = ctxRuido.createImageData(canvasRuidoTV.width, canvasRuidoTV.height);
+  for (let i = 0; i < imagen.data.length; i += 4) {
+    const v = Math.random() * 255;
+    imagen.data[i] = 0;
+    imagen.data[i + 1] = v;
+    imagen.data[i + 2] = v * 0.3;
+    imagen.data[i + 3] = 255;
+  }
+  ctxRuido.putImageData(imagen, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(canvasRuidoTV, 0, 0, canvas.width, canvas.height);
+}
+
+// Muestra estática de interferencia, cambia el contenido a la mitad (tapado
+// por el ruido) y lo oculta al terminar. `cambiarContenido` corre una sola vez.
+function reproducirTransicionTV(cambiarContenido) {
+  const canvas = document.getElementById("rc-transicion");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.classList.remove("oculto");
+
+  const duracionMs = 380;
+  const inicio = performance.now();
+  let yaCambio = false;
+
+  function cuadro(ahora) {
+    const transcurrido = ahora - inicio;
+    dibujarCuadroRuidoTV(canvas);
+    if (!yaCambio && transcurrido >= duracionMs / 2) {
+      yaCambio = true;
+      cambiarContenido();
+    }
+    if (transcurrido < duracionMs) {
+      requestAnimationFrame(cuadro);
+    } else {
+      canvas.classList.add("oculto");
+    }
+  }
+  requestAnimationFrame(cuadro);
+}
+
 function pintarCarrousel() {
   const el = document.getElementById("carrousel");
   const marcas = [...MARCAS, ...MARCAS];
@@ -47,7 +145,7 @@ function pintarCarrousel() {
       seccionActiva = null;
       subFiltroActivo = null;
       document.getElementById("input-busqueda").value = "";
-      actualizarVista();
+      reproducirTransicionTV(actualizarVista);
     });
     span.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -74,7 +172,7 @@ function pintarCategorias() {
       seccionActiva = btn.dataset.seccion;
       subFiltroActivo = null;
       document.getElementById("input-busqueda").value = "";
-      actualizarVista();
+      reproducirTransicionTV(actualizarVista);
     });
   });
 }
@@ -101,7 +199,7 @@ function pintarSubNav(seccion) {
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       subFiltroActivo = btn.dataset.clave;
-      actualizarVista();
+      reproducirTransicionTV(actualizarVista);
     });
   });
 }
@@ -186,8 +284,10 @@ function actualizarVista() {
   subNavEl.classList.toggle("oculto", !enSubNav);
   volverBtn.classList.toggle("oculto", enInicio);
 
+  detenerCarrouselCiudad();
+
   if (enInicio) {
-    productosEl.innerHTML = "";
+    pintarCarrouselCiudad(productosEl);
     return;
   }
 
@@ -235,7 +335,7 @@ function volverUnPaso() {
   } else if (filtroMarcaGlobal) {
     filtroMarcaGlobal = null;
   }
-  actualizarVista();
+  reproducirTransicionTV(actualizarVista);
 }
 
 function volverAPantallaPrincipal() {
@@ -243,7 +343,7 @@ function volverAPantallaPrincipal() {
   subFiltroActivo = null;
   filtroMarcaGlobal = null;
   document.getElementById("input-busqueda").value = "";
-  actualizarVista();
+  reproducirTransicionTV(actualizarVista);
 }
 
 function ocultarNavegacionCatalogo() {
@@ -432,18 +532,18 @@ document.getElementById("input-busqueda").addEventListener("input", actualizarVi
 // --- Frase del pie, con referencia a personajes de videojuegos ---
 
 const FRASES_GAMING = [
-  { texto: "War. War never changes.", autor: "The Narrator" },
-  { texto: "It's dangerous to go alone! Take this.", autor: "Old Man" },
-  { texto: "Stay awhile and listen.", autor: "Deckard Cain" },
-  { texto: "The cake is a lie.", autor: "GLaDOS" },
-  { texto: "Finish him!", autor: "Shao Kahn" },
-  { texto: "Hey! Listen!", autor: "Navi" },
-  { texto: "A man chooses, a slave obeys.", autor: "Andrew Ryan" },
-  { texto: "Wake up, samurai. We have a city to burn.", autor: "Johnny Silverhand" },
-  { texto: "Do a barrel roll!", autor: "Peppy Ainsworth" },
-  { texto: "I used to be an adventurer like you, until I took an arrow in the knee.", autor: "Guardia de Whiterun" },
-  { texto: "Praise the sun!", autor: "Solaire de Astora" },
-  { texto: "Would you kindly?", autor: "Andrew Ryan" },
+  { texto: "La guerra. La guerra nunca cambia.", autor: "El Narrador", juego: "Fallout" },
+  { texto: "¡Es peligroso ir solo! Toma esto.", autor: "Anciano", juego: "The Legend of Zelda" },
+  { texto: "Quédate un rato y escucha.", autor: "Deckard Cain", juego: "Diablo II" },
+  { texto: "El pastel es mentira.", autor: "GLaDOS", juego: "Portal" },
+  { texto: "¡Termínalo!", autor: "Shao Kahn", juego: "Mortal Kombat" },
+  { texto: "¡Oye! ¡Escucha!", autor: "Navi", juego: "The Legend of Zelda: Ocarina of Time" },
+  { texto: "Un hombre elige, un esclavo obedece.", autor: "Andrew Ryan", juego: "BioShock" },
+  { texto: "Despierta, samurái. Tenemos una ciudad que quemar.", autor: "Johnny Silverhand", juego: "Cyberpunk 2077" },
+  { texto: "¡Haz un barrel roll!", autor: "Peppy Ainsworth", juego: "Star Fox 64" },
+  { texto: "Yo era un aventurero como tú, hasta que recibí una flecha en la rodilla.", autor: "Guardia de Whiterun", juego: "The Elder Scrolls V: Skyrim" },
+  { texto: "¡Alabado sea el sol!", autor: "Solaire de Astora", juego: "Dark Souls" },
+  { texto: "¿Serías tan amable?", autor: "Andrew Ryan", juego: "BioShock" },
 ];
 
 function pintarFrasePie() {
@@ -451,11 +551,91 @@ function pintarFrasePie() {
   if (!el) return;
   const horaBucket = Math.floor(Date.now() / (60 * 60 * 1000));
   const frase = FRASES_GAMING[horaBucket % FRASES_GAMING.length];
-  el.textContent = `"${frase.texto}" -- (${frase.autor})`;
+  el.textContent = `"${frase.texto}" -- ${frase.autor} (${frase.juego})`;
 }
 
 pintarFrasePie();
 setInterval(pintarFrasePie, 60 * 60 * 1000);
+
+// --- Carita animada de caracteres, junto al título ---
+
+const CARAS_ANIMADAS = [":)", ":D", ":P", ":O", ":B", ":]", ":3", "xD", ":|"];
+let indiceCara = 0;
+
+function animarCara() {
+  const el = document.getElementById("cara-animada");
+  if (!el) return;
+  el.classList.add("oculto-fade");
+  setTimeout(() => {
+    indiceCara = (indiceCara + 1) % CARAS_ANIMADAS.length;
+    el.textContent = CARAS_ANIMADAS[indiceCara];
+    el.classList.remove("oculto-fade");
+  }, 220);
+}
+
+setInterval(animarCara, 1600);
+
+// --- Fecha, hora, ciudad y temperatura del usuario, a la izquierda del carrito ---
+// La ciudad y la temperatura corresponden a la ubicación real del visitante
+// (pide permiso de geolocalización al navegador); si lo rechaza o no está
+// disponible, se usa Córdoba Capital como respaldo.
+
+const COORD_RESPALDO = { lat: -31.4201, lon: -64.1888 };
+let temperaturaActual = null;
+let ciudadActual = null;
+
+function formatearFechaHora() {
+  const ahora = new Date();
+  const fecha = ahora.toLocaleDateString("es-AR");
+  const hora = ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  return `${fecha} ${hora}`;
+}
+
+function pintarFechaHoraTemp() {
+  const el = document.getElementById("fecha-hora-temp");
+  if (!el) return;
+  const partes = [formatearFechaHora()];
+  if (ciudadActual) partes.push(ciudadActual);
+  if (temperaturaActual !== null) partes.push(`${temperaturaActual}°C`);
+  el.textContent = partes.join(" · ");
+}
+
+async function cargarClimaYCiudad(lat, lon) {
+  try {
+    const [climaR, ciudadR] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`),
+      fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`),
+    ]);
+    if (climaR.ok) {
+      const datosClima = await climaR.json();
+      temperaturaActual = Math.round(datosClima.current.temperature_2m);
+    }
+    if (ciudadR.ok) {
+      const datosCiudad = await ciudadR.json();
+      ciudadActual = datosCiudad.locality || datosCiudad.city || null;
+    }
+  } catch {
+    // se mantiene lo último cargado si algo falla
+  }
+  pintarFechaHoraTemp();
+}
+
+function iniciarUbicacionYClima() {
+  if (!("geolocation" in navigator)) {
+    cargarClimaYCiudad(COORD_RESPALDO.lat, COORD_RESPALDO.lon);
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (posicion) => cargarClimaYCiudad(posicion.coords.latitude, posicion.coords.longitude),
+    () => cargarClimaYCiudad(COORD_RESPALDO.lat, COORD_RESPALDO.lon),
+    { timeout: 8000 }
+  );
+}
+
+pintarFechaHoraTemp();
+setInterval(pintarFechaHoraTemp, 60 * 1000);
+iniciarUbicacionYClima();
+setInterval(iniciarUbicacionYClima, 15 * 60 * 1000);
 
 pintarCarrousel();
 renderCarrito();
