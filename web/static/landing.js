@@ -37,6 +37,10 @@ function pintarSeccionesNav(activa) {
   });
 }
 
+function formatearPesos(valor) {
+  return valor === undefined || valor === null ? "-" : Number(valor).toLocaleString("es-AR");
+}
+
 function tarjetaProducto(p) {
   const colores = Array.isArray(p.colores) && p.colores.length > 0
     ? `<p class="colores">${escapeHtml(p.colores.join(", "))}</p>`
@@ -47,8 +51,8 @@ function tarjetaProducto(p) {
       ${colores}
       <p class="precios">
         <strong>U$D ${p.usd ?? "-"}</strong><br>
-        $ ${p.pesos ?? "-"} contado<br>
-        $ ${p.transferencia ?? "-"} transferencia
+        $ ${formatearPesos(p.pesos)} contado<br>
+        $ ${formatearPesos(p.transferencia)} transferencia
       </p>
       <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" type="button">Agregar al carrito 🛒</button>
     </div>
@@ -72,9 +76,20 @@ function pintarProductos(seccion) {
 }
 
 async function cargarCatalogo() {
-  const r = await fetch("/api/catalogo");
-  const datos = await r.json();
+  let datos;
+  try {
+    const r = await fetch("/api/catalogo");
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    datos = await r.json();
+  } catch {
+    document.getElementById("productos").innerHTML =
+      '<p class="mensaje-vacio">No pudimos cargar el catálogo. Escribinos por WhatsApp: ' +
+      '<a href="https://wa.me/543512145217" target="_blank" rel="noopener">wa.me/543512145217</a></p>';
+    pintarSeccionesNav(null);
+    return;
+  }
   SECCIONES_DATA = datos.secciones || {};
+  refrescarPreciosCarrito();
   if (datos.mensaje) {
     document.getElementById("productos").innerHTML = `<p class="mensaje-vacio">${datos.mensaje}</p>`;
     pintarSeccionesNav(null);
@@ -82,6 +97,25 @@ async function cargarCatalogo() {
   }
   pintarSeccionesNav(SECCIONES[0]);
   pintarProductos(SECCIONES[0]);
+}
+
+function refrescarPreciosCarrito() {
+  const catalogoPlano = {};
+  Object.values(SECCIONES_DATA).forEach((productos) => {
+    (productos || []).forEach((p) => {
+      catalogoPlano[p.nombre] = p;
+    });
+  });
+
+  const carrito = cargarCarrito();
+  const carritoActualizado = carrito
+    .filter((it) => catalogoPlano[it.nombre])
+    .map((it) => {
+      const p = catalogoPlano[it.nombre];
+      return { ...it, usd: p.usd, pesos: p.pesos, transferencia: p.transferencia };
+    });
+
+  guardarCarrito(carritoActualizado);
 }
 
 // --- Carrito ---
@@ -182,7 +216,7 @@ function renderCarrito() {
   const t = totales(carrito);
   document.getElementById("total-carrito").textContent = carrito.length === 0
     ? ""
-    : `Total: U$D ${t.usd} · $ ${t.pesos} contado · $ ${t.transferencia} transferencia`;
+    : `Total: U$D ${t.usd} · $ ${formatearPesos(t.pesos)} contado · $ ${formatearPesos(t.transferencia)} transferencia`;
 }
 
 function abrirCarrito() {
@@ -200,7 +234,7 @@ function armarMensajeWhatsapp(carrito) {
     (it) => `- ${it.nombre} x${it.cantidad} — U$D ${(it.usd || 0) * it.cantidad}`
   );
   const t = totales(carrito);
-  const total = `Total: U$D ${t.usd} · $ ${t.pesos} contado · $ ${t.transferencia} transferencia`;
+  const total = `Total: U$D ${t.usd} · $ ${formatearPesos(t.pesos)} contado · $ ${formatearPesos(t.transferencia)} transferencia`;
   return `Hola! Quiero encargar:\n${lineas.join("\n")}\n\n${total}`;
 }
 
