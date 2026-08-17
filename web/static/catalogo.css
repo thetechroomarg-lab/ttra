@@ -1,0 +1,47 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: system-ui, sans-serif; background: #0c0c0e; color: #eae6df;
+  min-height: 100vh;
+}
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; background: #16161a; border-bottom: 1px solid #2a2a30;
+}
+header h1 { margin: 0; font-size: 18px; letter-spacing: .04em; color: #d4af6a; }
+#btn-logout {
+  padding: 8px 14px; border: 1px solid #2a2a30; border-radius: 8px; background: transparent;
+  color: #eae6df; cursor: pointer;
+}
+
+.carrousel-wrap { overflow: hidden; background: #16161a; border-bottom: 1px solid #2a2a30; }
+.carrousel {
+  display: flex; gap: 48px; white-space: nowrap; padding: 14px 0;
+  animation: desplazar 25s linear infinite;
+  width: max-content;
+}
+.carrousel span {
+  font-size: 15px; letter-spacing: .12em; text-transform: uppercase; color: #8a8a92;
+}
+@keyframes desplazar {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.tabs {
+  display: flex; gap: 8px; padding: 16px 20px 0; flex-wrap: wrap;
+}
+.tabs button {
+  padding: 10px 16px; border: 1px solid #2a2a30; border-radius: 999px; background: #16161a;
+  color: #8a8a92; font-size: 13px; cursor: pointer;
+}
+.tabs button.activa { background: #d4af6a; color: #0c0c0e; border-color: #d4af6a; font-weight: 600; }
+
+main { padding: 20px; }
+.grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.card {
+  background: #16161a; border: 1px solid #2a2a30; border-radius: 12px; padding: 16px;
+}
+.card h3 { margin: 0 0 8px; font-size: 15px; color: #eae6df; }
+.card .precios { font-size: 13px; color: #8a8a92; line-height: 1.6; }
+.card .precios strong { color: #d4af6a; }
+.mensaje-vacio { color: #8a8a92; padding: 40px; text-align: center; }
