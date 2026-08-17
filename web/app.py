@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web import auth, buscador, catalogo, leads
@@ -32,10 +32,11 @@ LIMITE_USD = 0.25
 _gasto = {}  # sesion -> USD acumulado
 
 app = FastAPI()
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=os.environ.get("SESSION_SECRET", "dev-secret-cambiar-en-produccion"),
-)
+_session_secret = os.environ.get("SESSION_SECRET")
+if not _session_secret:
+    logger.warning("SESSION_SECRET no configurado — usando clave de desarrollo, no apta para producción")
+    _session_secret = "dev-secret-cambiar-en-produccion"
+app.add_middleware(SessionMiddleware, secret_key=_session_secret)
 
 
 def _cargar_productos():
@@ -102,8 +103,8 @@ def chat(entrada: ChatIn):
 
 class RegistroIn(BaseModel):
     nombre: str
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(min_length=8)
 
 
 class LoginIn(BaseModel):
@@ -113,6 +114,16 @@ class LoginIn(BaseModel):
 
 def _sesion_activa(request: Request):
     return bool(request.session.get("usuario_email"))
+
+
+@app.get("/login")
+def pagina_login():
+    return FileResponse(str(BASE / "static" / "login.html"))
+
+
+@app.get("/registro")
+def pagina_registro():
+    return FileResponse(str(BASE / "static" / "login.html"))
 
 
 @app.post("/registro")

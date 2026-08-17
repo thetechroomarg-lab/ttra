@@ -45,3 +45,34 @@ def test_api_catalogo_con_sesion_y_productos(tmp_path, monkeypatch):
     secciones = r.json()["secciones"]
     assert secciones["Celulares"][0]["nombre"] == "iPhone 15"
     assert secciones["Gaming"] == []
+
+
+def test_flujo_completo_registro_logout_login_catalogo(tmp_path, monkeypatch):
+    monkeypatch.setattr(auth, "DB_PATH", tmp_path / "usuarios.db")
+    monkeypatch.setattr(
+        appmod, "_cargar_productos",
+        lambda: [{"nombre": "iPhone 15", "categoria": "Apple - iPhone"}],
+    )
+    c = TestClient(appmod.app)
+
+    r = c.post("/registro", json={"nombre": "Juan", "email": "juan@x.com", "password": "clave123"})
+    assert r.status_code == 200
+
+    r = c.post("/logout")
+    assert r.status_code == 200
+
+    r = c.post("/login", json={"email": "juan@x.com", "password": "clave123"})
+    assert r.status_code == 200
+
+    r = c.get("/catalogo")
+    assert r.status_code == 200
+
+    r = c.get("/api/catalogo")
+    assert r.status_code == 200
+    assert r.json()["secciones"]["Celulares"][0]["nombre"] == "iPhone 15"
+
+    r = c.post("/logout")
+    assert r.status_code == 200
+
+    r = c.get("/api/catalogo")
+    assert r.status_code == 401

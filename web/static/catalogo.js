@@ -36,10 +36,20 @@ function pintarSeccion(nombre) {
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
 }
 
+function escapeHtml(s) {
+  const div = document.createElement("div");
+  div.textContent = s ?? "";
+  return div.innerHTML;
+}
+
 function tarjetaProducto(p) {
+  const colores = Array.isArray(p.colores) && p.colores.length > 0
+    ? `<p class="colores">${escapeHtml(p.colores.join(", "))}</p>`
+    : "";
   return `
     <div class="card">
-      <h3>${p.nombre}</h3>
+      <h3>${escapeHtml(p.nombre)}</h3>
+      ${colores}
       <p class="precios">
         <strong>U$D ${p.usd ?? "-"}</strong><br>
         $ ${p.pesos ?? "-"} contado<br>
