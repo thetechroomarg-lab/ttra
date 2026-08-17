@@ -25,16 +25,31 @@ header h1 { margin: 0; font-size: 18px; letter-spacing: .06em; text-transform: u
   to { transform: translateX(-50%); }
 }
 
-.secciones-nav {
-  display: flex; gap: 10px; padding: 20px; flex-wrap: wrap;
+.rc-buscador {
+  display: flex; align-items: center; gap: 10px;
+  margin: 20px; padding: 10px 14px;
+  background: var(--rc-bg-panel); border: 1px solid var(--rc-green-dim);
 }
-.secciones-nav button {
-  padding: 14px 20px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em;
+.rc-buscador-icono { width: 18px; height: 18px; color: var(--rc-green-dim); flex: 0 0 18px; }
+.rc-buscador input {
+  flex: 1; border: none; background: transparent; padding: 4px 0; font-size: 14px;
 }
-.secciones-nav button.activa {
-  background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
-  font-weight: 600;
+.rc-buscador input:focus { outline: none; box-shadow: none; }
+
+.categorias-columna {
+  display: flex; flex-direction: column; gap: 10px;
+  max-width: 420px; margin: 0 20px 20px;
 }
+.categorias-columna.oculto { display: none; }
+.btn-categoria {
+  padding: 18px 20px; font-size: 15px; text-transform: uppercase; letter-spacing: .04em;
+  text-align: center;
+}
+
+.btn-volver {
+  margin: 0 20px 16px; padding: 8px 14px; font-size: 13px;
+}
+.btn-volver.oculto { display: none; }
 
 main { padding: 0 20px 40px; }
 .grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }

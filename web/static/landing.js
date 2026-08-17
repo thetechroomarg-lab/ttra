@@ -3,14 +3,22 @@ const MARCAS = [
   "Infinix", "Nokia", "PlayStation", "Nintendo", "JBL", "Logitech",
 ];
 
-const SECCIONES = [
-  "Celulares", "Accesorios Celulares", "Tablets", "Notebooks y Macbooks", "Gaming",
+// Orden y etiquetas de los botones de categoría en la pantalla principal.
+// "clave" es el nombre de sección tal cual lo devuelve /api/catalogo;
+// "etiqueta" es lo que se muestra en el botón (más corto en el caso de accesorios).
+const CATEGORIAS_BOTONES = [
+  { clave: "Celulares", etiqueta: "Celulares" },
+  { clave: "Tablets", etiqueta: "Tablets" },
+  { clave: "Notebooks y Macbooks", etiqueta: "Notebooks y Macbooks" },
+  { clave: "Gaming", etiqueta: "Gaming" },
+  { clave: "Accesorios Celulares", etiqueta: "Accesorios" },
 ];
 
 const CLAVE_CARRITO = "ttra_carrito";
 const WHATSAPP_NUMERO = "543512145217";
 
 let SECCIONES_DATA = {};
+let seccionActiva = null; // null = pantalla principal (categorías o búsqueda global)
 
 function pintarCarrousel() {
   const el = document.getElementById("carrousel");
@@ -24,15 +32,16 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
-function pintarSeccionesNav(activa) {
-  const el = document.getElementById("secciones-nav");
-  el.innerHTML = SECCIONES.map(
-    (s) => `<button data-seccion="${s}" class="${s === activa ? "activa" : ""}">${s}</button>`
+function pintarCategorias() {
+  const el = document.getElementById("categorias");
+  el.innerHTML = CATEGORIAS_BOTONES.map(
+    (c) => `<button data-seccion="${escapeHtml(c.clave)}" class="btn-categoria" type="button">${escapeHtml(c.etiqueta)}</button>`
   ).join("");
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
-      pintarSeccionesNav(btn.dataset.seccion);
-      pintarProductos(btn.dataset.seccion);
+      seccionActiva = btn.dataset.seccion;
+      document.getElementById("input-busqueda").value = "";
+      actualizarVista();
     });
   });
 }
@@ -59,11 +68,9 @@ function tarjetaProducto(p) {
   `;
 }
 
-function pintarProductos(seccion) {
-  const el = document.getElementById("productos");
-  const productos = SECCIONES_DATA[seccion] || [];
-  if (productos.length === 0) {
-    el.innerHTML = `<p class="mensaje-vacio">Todavía no hay productos cargados en ${seccion}.</p>`;
+function pintarGrilla(el, productos, mensajeVacio) {
+  if (!productos || productos.length === 0) {
+    el.innerHTML = `<p class="mensaje-vacio">${mensajeVacio}</p>`;
     return;
   }
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
@@ -75,6 +82,52 @@ function pintarProductos(seccion) {
   });
 }
 
+// Decide qué mostrar según la sección elegida (si hay) y el término de búsqueda,
+// y pinta categorías/grilla/botón "volver" en consecuencia.
+function actualizarVista() {
+  const termino = document.getElementById("input-busqueda").value.trim().toLowerCase();
+  const categoriasEl = document.getElementById("categorias");
+  const volverBtn = document.getElementById("btn-volver");
+  const productosEl = document.getElementById("productos");
+
+  const enPantallaPrincipal = !seccionActiva && termino === "";
+  categoriasEl.classList.toggle("oculto", !enPantallaPrincipal);
+  volverBtn.classList.toggle("oculto", enPantallaPrincipal);
+
+  if (enPantallaPrincipal) {
+    productosEl.innerHTML = "";
+    return;
+  }
+
+  let base;
+  if (seccionActiva) {
+    base = SECCIONES_DATA[seccionActiva] || [];
+  } else {
+    base = Object.values(SECCIONES_DATA).flat();
+  }
+
+  const productos = termino
+    ? base.filter((p) => (p.nombre || "").toLowerCase().includes(termino))
+    : base;
+
+  const mensajeVacio = termino
+    ? "Lo siento, pero no hay resultados :("
+    : `Todavía no hay productos cargados en ${seccionActiva}.`;
+
+  pintarGrilla(productosEl, productos, mensajeVacio);
+}
+
+function volverAPantallaPrincipal() {
+  seccionActiva = null;
+  document.getElementById("input-busqueda").value = "";
+  actualizarVista();
+}
+
+function ocultarNavegacionCatalogo() {
+  document.getElementById("categorias").classList.add("oculto");
+  document.getElementById("btn-volver").classList.add("oculto");
+}
+
 async function cargarCatalogo() {
   let datos;
   try {
@@ -82,21 +135,21 @@ async function cargarCatalogo() {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     datos = await r.json();
   } catch {
+    ocultarNavegacionCatalogo();
     document.getElementById("productos").innerHTML =
       '<p class="mensaje-vacio">No pudimos cargar el catálogo. Escribinos por WhatsApp: ' +
       '<a href="https://wa.me/543512145217" target="_blank" rel="noopener">wa.me/543512145217</a></p>';
-    pintarSeccionesNav(null);
     return;
   }
   SECCIONES_DATA = datos.secciones || {};
   refrescarPreciosCarrito();
   if (datos.mensaje) {
+    ocultarNavegacionCatalogo();
     document.getElementById("productos").innerHTML = `<p class="mensaje-vacio">${datos.mensaje}</p>`;
-    pintarSeccionesNav(null);
     return;
   }
-  pintarSeccionesNav(SECCIONES[0]);
-  pintarProductos(SECCIONES[0]);
+  pintarCategorias();
+  actualizarVista();
 }
 
 function refrescarPreciosCarrito() {
@@ -248,6 +301,8 @@ document.getElementById("btn-whatsapp").addEventListener("click", () => {
   const mensaje = armarMensajeWhatsapp(carrito);
   window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`, "_blank");
 });
+document.getElementById("btn-volver").addEventListener("click", volverAPantallaPrincipal);
+document.getElementById("input-busqueda").addEventListener("input", actualizarVista);
 
 pintarCarrousel();
 renderCarrito();

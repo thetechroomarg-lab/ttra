@@ -19,7 +19,16 @@
     <div class="carrousel" id="carrousel"></div>
   </div>
 
-  <nav class="secciones-nav" id="secciones-nav"></nav>
+  <div class="rc-buscador">
+    <svg class="rc-buscador-icono" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+      <line x1="15" y1="15" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <input id="input-busqueda" type="text" placeholder="Buscar productos..." autocomplete="off">
+  </div>
+
+  <div id="categorias" class="categorias-columna"></div>
+  <button id="btn-volver" type="button" class="btn-volver oculto">← Volver a categorías</button>
   <main id="productos"></main>
 
   <aside id="panel-carrito" class="oculto">
