@@ -46,10 +46,30 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
+// Muñeco corriendo, puramente decorativo (no interactuable, no es un juego),
+// para llenar el espacio vacío a la derecha de cada botón de sección.
+function corredorSvg() {
+  return `
+    <svg class="rc-corredor" viewBox="0 0 34 46" aria-hidden="true" focusable="false">
+      <g class="rc-c-cuerpo" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+        <circle cx="17" cy="8" r="5" fill="currentColor" stroke="none"/>
+        <line x1="17" y1="13" x2="17" y2="28"/>
+        <line class="rc-c-brazo-izq" x1="17" y1="16" x2="10" y2="24"/>
+        <line class="rc-c-brazo-der" x1="17" y1="16" x2="24" y2="24"/>
+        <line class="rc-c-pierna-izq" x1="17" y1="28" x2="10" y2="42"/>
+        <line class="rc-c-pierna-der" x1="17" y1="28" x2="24" y2="42"/>
+      </g>
+    </svg>
+  `;
+}
+
 function pintarCategorias() {
   const el = document.getElementById("categorias");
   el.innerHTML = CATEGORIAS_BOTONES.map(
-    (c) => `<button data-seccion="${escapeHtml(c.clave)}" class="btn-categoria" type="button">${escapeHtml(c.etiqueta)}</button>`
+    (c) => `<button data-seccion="${escapeHtml(c.clave)}" class="btn-categoria con-corredor" type="button">
+      <span>${escapeHtml(c.etiqueta)}</span>
+      ${corredorSvg()}
+    </button>`
   ).join("");
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
