@@ -1,0 +1,29 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  font-family: system-ui, sans-serif; background: #0c0c0e; color: #eae6df;
+}
+.tarjeta {
+  width: min(360px, 90vw); padding: 32px 28px; background: #16161a; border-radius: 16px;
+  border: 1px solid #2a2a30; box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+}
+h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: .04em; color: #d4af6a; }
+.subtitulo { margin: 0 0 20px; font-size: 13px; color: #8a8a92; }
+.tabs { display: flex; gap: 6px; margin-bottom: 18px; background: #0c0c0e; border-radius: 10px; padding: 4px; }
+.tab {
+  flex: 1; padding: 8px; border: none; border-radius: 8px; background: transparent;
+  color: #8a8a92; font-size: 13px; cursor: pointer;
+}
+.tab.activa { background: #d4af6a; color: #0c0c0e; font-weight: 600; }
+.form { display: flex; flex-direction: column; gap: 10px; }
+.form.oculto { display: none; }
+input {
+  padding: 12px 14px; border-radius: 8px; border: 1px solid #2a2a30; background: #0c0c0e;
+  color: #eae6df; font-size: 14px;
+}
+input:focus { outline: none; border-color: #d4af6a; }
+button[type="submit"] {
+  margin-top: 4px; padding: 12px; border: none; border-radius: 8px; background: #d4af6a;
+  color: #0c0c0e; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.error { min-height: 16px; margin: 0; font-size: 12px; color: #e06666; }
