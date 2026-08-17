@@ -5,4 +5,5 @@ uvicorn
 anthropic
 python-dotenv
 passlib[bcrypt]==1.7.4
+bcrypt<5.0
 itsdangerous==2.2.0
