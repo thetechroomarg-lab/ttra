@@ -132,3 +132,31 @@ a { color: var(--rc-green-bright); }
   0%, 49% { opacity: 1; }
   50%, 100% { opacity: 0; }
 }
+
+.rc-boot-cara {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.rc-cara-pixel {
+  display: inline-grid;
+  grid-template-columns: repeat(var(--rc-cara-cols), 10px);
+  gap: 1px;
+}
+
+.rc-cara-pixel span {
+  width: 10px;
+  height: 10px;
+}
+
+.rc-cara-pixel span.on {
+  background: var(--rc-green);
+  box-shadow: 0 0 4px var(--rc-glow);
+}
+
+.rc-boot-frase {
+  margin: 18px 0 0;
+  font-size: 15px;
+  color: var(--rc-green-bright);
+  text-shadow: 0 0 3px var(--rc-glow);
+}
