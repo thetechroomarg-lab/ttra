@@ -138,20 +138,12 @@ a { color: var(--rc-green-bright); }
   text-align: center;
 }
 
-.rc-cara-pixel {
-  display: inline-grid;
-  grid-template-columns: repeat(var(--rc-cara-cols), 10px);
-  gap: 1px;
-}
-
-.rc-cara-pixel span {
-  width: 10px;
-  height: 10px;
-}
-
-.rc-cara-pixel span.on {
-  background: var(--rc-green);
-  box-shadow: 0 0 4px var(--rc-glow);
+.rc-boot-cara-emoji {
+  margin: 0;
+  font-size: 48px;
+  line-height: 1;
+  color: var(--rc-green);
+  text-shadow: 0 0 8px var(--rc-glow);
 }
 
 .rc-boot-frase {
