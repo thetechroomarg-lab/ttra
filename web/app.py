@@ -169,9 +169,7 @@ def pagina_catalogo(request: Request):
 
 
 @app.get("/api/catalogo")
-def api_catalogo(request: Request):
-    if not _sesion_activa(request):
-        return JSONResponse({"error": "No autenticado"}, status_code=401)
+def api_catalogo():
     productos = _cargar_productos()
     if not productos:
         return {"secciones": {s: [] for s in catalogo.SECCIONES},

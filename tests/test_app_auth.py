@@ -45,4 +45,5 @@ def test_logout_limpia_sesion(tmp_path, monkeypatch):
     r = c.post("/logout")
     assert r.status_code == 200
     assert r.json() == {"ok": True}
-    assert c.get("/api/catalogo").status_code == 401
+    # /api/catalogo es pública (no requiere sesión): devuelve 200 incluso después de logout
+    assert c.get("/api/catalogo").status_code == 200

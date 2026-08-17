@@ -11,11 +11,12 @@ def _cliente_autenticado(tmp_path, monkeypatch):
     return c
 
 
-def test_api_catalogo_sin_sesion_devuelve_401(tmp_path, monkeypatch):
+def test_api_catalogo_es_publica_sin_sesion(tmp_path, monkeypatch):
     monkeypatch.setattr(auth, "DB_PATH", tmp_path / "usuarios.db")
+    monkeypatch.setattr(appmod, "_cargar_productos", lambda: [])
     c = TestClient(appmod.app)
     r = c.get("/api/catalogo")
-    assert r.status_code == 401
+    assert r.status_code == 200
 
 
 def test_pagina_catalogo_sin_sesion_redirige_a_login(tmp_path, monkeypatch):
@@ -26,7 +27,7 @@ def test_pagina_catalogo_sin_sesion_redirige_a_login(tmp_path, monkeypatch):
     assert "login" in r.headers["location"]
 
 
-def test_api_catalogo_con_sesion_y_sin_productos(tmp_path, monkeypatch):
+def test_api_catalogo_sin_productos(tmp_path, monkeypatch):
     c = _cliente_autenticado(tmp_path, monkeypatch)
     monkeypatch.setattr(appmod, "_cargar_productos", lambda: [])
     r = c.get("/api/catalogo")
@@ -34,7 +35,7 @@ def test_api_catalogo_con_sesion_y_sin_productos(tmp_path, monkeypatch):
     assert r.json()["mensaje"] == "Estamos actualizando los precios"
 
 
-def test_api_catalogo_con_sesion_y_productos(tmp_path, monkeypatch):
+def test_api_catalogo_con_productos(tmp_path, monkeypatch):
     c = _cliente_autenticado(tmp_path, monkeypatch)
     monkeypatch.setattr(
         appmod, "_cargar_productos",
@@ -74,5 +75,6 @@ def test_flujo_completo_registro_logout_login_catalogo(tmp_path, monkeypatch):
     r = c.post("/logout")
     assert r.status_code == 200
 
+    # /api/catalogo ahora es pública: sigue respondiendo 200 incluso sin sesión.
     r = c.get("/api/catalogo")
-    assert r.status_code == 401
+    assert r.status_code == 200
