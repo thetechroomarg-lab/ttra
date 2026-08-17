@@ -6,12 +6,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import auth, buscador, leads
+from web import auth, buscador, catalogo, leads
 from web.chat import responder
 from web.reglas import WHATSAPP
 
@@ -148,6 +148,24 @@ def login(entrada: LoginIn, request: Request):
 def logout(request: Request):
     request.session.clear()
     return {"ok": True}
+
+
+@app.get("/catalogo")
+def pagina_catalogo(request: Request):
+    if not _sesion_activa(request):
+        return RedirectResponse("/login.html")
+    return FileResponse(str(BASE / "static" / "catalogo.html"))
+
+
+@app.get("/api/catalogo")
+def api_catalogo(request: Request):
+    if not _sesion_activa(request):
+        return JSONResponse({"error": "No autenticado"}, status_code=401)
+    productos = _cargar_productos()
+    if not productos:
+        return {"secciones": {s: [] for s in catalogo.SECCIONES},
+                "mensaje": "Estamos actualizando los precios"}
+    return {"secciones": catalogo.secciones_catalogo(productos)}
 
 
 app.mount("/", StaticFiles(directory=str(BASE / "static"), html=True), name="static")
