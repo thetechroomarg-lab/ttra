@@ -47,6 +47,7 @@ header h1 { margin: 0; font-size: clamp(14px, 4vw, 18px); letter-spacing: .06em;
 }
 
 .btn-volver {
+  display: block; max-width: 420px;
   margin: 0 20px 16px; padding: 8px 14px; font-size: 13px;
 }
 .btn-volver.oculto { display: none; }

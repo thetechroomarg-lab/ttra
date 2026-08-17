@@ -71,6 +71,7 @@ def test_marca_de_categorias_conocidas():
     assert marca_de(_prod("iPad 9na", "Apple - iPad")) == "Apple"
     assert marca_de(_prod("Galaxy A17", "Samsung")) == "Samsung"
     assert marca_de(_prod("Redmi Note 14", "Xiaomi")) == "Xiaomi"
+    assert marca_de(_prod("MacBook Air M2 8GB 256GB", "Mac")) == "Apple"
 
 
 def test_marca_de_otros_por_nombre():
@@ -78,6 +79,9 @@ def test_marca_de_otros_por_nombre():
     assert marca_de(_prod("CARGADOR APPLE 35W", "Otros")) == "Apple"
     assert marca_de(_prod("AURICULAR JBL TUNE 110", "Otros")) == "JBL"
     assert marca_de(_prod("Repetidor Extensor de rango Wi-Fi TP-Link", "Otros")) == "Otras marcas"
+    assert marca_de(_prod("PlayStation 5 Slim 825GB Digital", "Otros")) == "PlayStation"
+    assert marca_de(_prod("Sony Joystick PS5 DualSense Wireless", "Otros")) == "PlayStation"
+    assert marca_de(_prod("NINTENDO SWITCH OLED 64GB", "Otros")) == "Nintendo"
 
 
 def test_secciones_catalogo_incluye_marca_en_cada_producto():

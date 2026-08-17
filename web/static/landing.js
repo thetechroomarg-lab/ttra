@@ -32,12 +32,30 @@ const WHATSAPP_NUMERO = "543512145217";
 let SECCIONES_DATA = {};
 let seccionActiva = null; // clave de sección elegida en la pantalla principal, o null
 let subFiltroActivo = null; // marca elegida, o "Notebooks"/"Macbooks", o null
+let filtroMarcaGlobal = null; // marca elegida desde el carrousel, busca en TODO el catálogo
 let modoVista = "cards"; // "cards" | "lista"
 
 function pintarCarrousel() {
   const el = document.getElementById("carrousel");
   const marcas = [...MARCAS, ...MARCAS];
-  el.innerHTML = marcas.map((m) => `<span>${m}</span>`).join("");
+  el.innerHTML = marcas.map(
+    (m) => `<span data-marca="${escapeHtml(m)}" tabindex="0" role="button">${escapeHtml(m)}</span>`
+  ).join("");
+  el.querySelectorAll("span").forEach((span) => {
+    span.addEventListener("click", () => {
+      filtroMarcaGlobal = span.dataset.marca;
+      seccionActiva = null;
+      subFiltroActivo = null;
+      document.getElementById("input-busqueda").value = "";
+      actualizarVista();
+    });
+    span.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        span.click();
+      }
+    });
+  });
 }
 
 function escapeHtml(s) {
@@ -160,7 +178,7 @@ function actualizarVista() {
   const volverBtn = document.getElementById("btn-volver");
   const productosEl = document.getElementById("productos");
 
-  const enInicio = !seccionActiva && termino === "";
+  const enInicio = !seccionActiva && !filtroMarcaGlobal && termino === "";
   const enSubNav = !!seccionActiva && SECCIONES_CON_SUBNAV.has(seccionActiva) &&
     !subFiltroActivo && termino === "";
 
@@ -180,21 +198,26 @@ function actualizarVista() {
   }
 
   let base;
-  if (!seccionActiva) {
-    base = Object.values(SECCIONES_DATA).flat(); // búsqueda global
-  } else if (subFiltroActivo) {
-    base = productosDeSubFiltro(seccionActiva, subFiltroActivo);
+  let mensajeVacioSinFiltro;
+  if (filtroMarcaGlobal) {
+    base = Object.values(SECCIONES_DATA).flat()
+      .filter((p) => (p.marca || "Otras marcas") === filtroMarcaGlobal);
+    mensajeVacioSinFiltro = `Todavía no hay productos de ${filtroMarcaGlobal} cargados.`;
+  } else if (seccionActiva) {
+    base = subFiltroActivo
+      ? productosDeSubFiltro(seccionActiva, subFiltroActivo)
+      : SECCIONES_DATA[seccionActiva] || []; // sección sin sub-nav (Gaming), o buscando antes de elegir
+    mensajeVacioSinFiltro = "Todavía no hay productos cargados acá.";
   } else {
-    base = SECCIONES_DATA[seccionActiva] || []; // sección sin sub-nav (Gaming), o buscando antes de elegir
+    base = Object.values(SECCIONES_DATA).flat(); // búsqueda global (sin marca ni sección)
+    mensajeVacioSinFiltro = "Todavía no hay productos cargados acá.";
   }
 
   const productos = termino
     ? base.filter((p) => (p.nombre || "").toLowerCase().includes(termino))
     : base;
 
-  const mensajeVacio = termino
-    ? "Lo siento, pero no hay resultados :("
-    : "Todavía no hay productos cargados acá.";
+  const mensajeVacio = termino ? "Lo siento, pero no hay resultados :(" : mensajeVacioSinFiltro;
 
   pintarGrilla(productosEl, productos, mensajeVacio);
 }
@@ -207,8 +230,10 @@ function volverUnPaso() {
     input.value = "";
   } else if (subFiltroActivo) {
     subFiltroActivo = null;
-  } else {
+  } else if (seccionActiva) {
     seccionActiva = null;
+  } else if (filtroMarcaGlobal) {
+    filtroMarcaGlobal = null;
   }
   actualizarVista();
 }
@@ -216,6 +241,7 @@ function volverUnPaso() {
 function volverAPantallaPrincipal() {
   seccionActiva = null;
   subFiltroActivo = null;
+  filtroMarcaGlobal = null;
   document.getElementById("input-busqueda").value = "";
   actualizarVista();
 }
