@@ -1,4 +1,4 @@
-from web.catalogo import SECCIONES, secciones_catalogo
+from web.catalogo import SECCIONES, marca_de, secciones_catalogo
 
 
 def _prod(nombre, categoria):
@@ -46,3 +46,40 @@ def test_otros_cargador_va_a_accesorios_por_defecto():
 def test_otros_drone_va_a_accesorios_por_defecto():
     resultado = secciones_catalogo([_prod("Drone DJI Flip Plegable Ultraliviano 4K 48MP", "Otros")])
     assert resultado["Accesorios Celulares"][0]["nombre"].startswith("Drone")
+
+
+def test_tablet_samsung_no_se_mezcla_con_celulares():
+    resultado = secciones_catalogo([
+        _prod("TABLET SAMSUNG X526 TAB S10 FE 8GB 128GB WIFI+5G 10.9¨ +PEN", "Samsung"),
+    ])
+    assert resultado["Celulares"] == []
+    assert len(resultado["Tablets"]) == 1
+    assert resultado["Tablets"][0]["nombre"].startswith("TABLET SAMSUNG")
+
+
+def test_tablet_xiaomi_no_se_mezcla_con_celulares():
+    resultado = secciones_catalogo([
+        _prod("TABLET XIAOMI MI PAD 7 8GB 128GB 11.2¨", "Xiaomi"),
+        _prod("Xiaomi Redmi Pad SE 4GB RAM 128GB 8.7\" Verde", "Xiaomi"),
+    ])
+    assert resultado["Celulares"] == []
+    assert len(resultado["Tablets"]) == 2
+
+
+def test_marca_de_categorias_conocidas():
+    assert marca_de(_prod("iPhone 15", "Apple - iPhone")) == "Apple"
+    assert marca_de(_prod("iPad 9na", "Apple - iPad")) == "Apple"
+    assert marca_de(_prod("Galaxy A17", "Samsung")) == "Samsung"
+    assert marca_de(_prod("Redmi Note 14", "Xiaomi")) == "Xiaomi"
+
+
+def test_marca_de_otros_por_nombre():
+    assert marca_de(_prod("Oppo Reno 14F", "Otros")) == "Oppo"
+    assert marca_de(_prod("CARGADOR APPLE 35W", "Otros")) == "Apple"
+    assert marca_de(_prod("AURICULAR JBL TUNE 110", "Otros")) == "JBL"
+    assert marca_de(_prod("Repetidor Extensor de rango Wi-Fi TP-Link", "Otros")) == "Otras marcas"
+
+
+def test_secciones_catalogo_incluye_marca_en_cada_producto():
+    resultado = secciones_catalogo([_prod("iPhone 15", "Apple - iPhone")])
+    assert resultado["Celulares"][0]["marca"] == "Apple"
