@@ -3,27 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>THE TECH ROOM ARG — Consultas</title>
+  <title>THE TECH ROOM ARG — Catálogo</title>
   <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="landing.css">
 </head>
 <body>
   <div id="rc-boot"></div>
   <div class="rc-crt"></div>
   <header>
-    <img id="hdr-avatar" src="avatar-vlad.svg" alt="Vlad" onerror="this.style.display='none'">
-    <div>
-      <h1>Vlad — THE TECH ROOM ARG</h1>
-      <p>en línea · consultá precios a cualquier hora 🎤</p>
-    </div>
+    <h1>THE TECH ROOM ARG</h1>
+    <button id="btn-carrito" type="button">🛒 <span id="carrito-contador">0</span></button>
   </header>
-  <main id="chat"></main>
-  <form id="form">
-    <button type="button" id="mic" title="Hablar">🎤</button>
-    <input id="entrada" autocomplete="off" placeholder="Escribí tu consulta…" />
-    <button type="submit">Enviar</button>
-  </form>
+
+  <div class="carrousel-wrap">
+    <div class="carrousel" id="carrousel"></div>
+  </div>
+
+  <nav class="secciones-nav" id="secciones-nav"></nav>
+  <main id="productos"></main>
+
+  <aside id="panel-carrito" class="oculto">
+    <div class="panel-carrito-header">
+      <h2>Tu pedido</h2>
+      <button id="btn-cerrar-carrito" type="button">✕</button>
+    </div>
+    <div id="items-carrito"></div>
+    <div class="panel-carrito-footer">
+      <p id="total-carrito"></p>
+      <button id="btn-vaciar-carrito" type="button">Vaciar carrito</button>
+      <button id="btn-whatsapp" type="button">Cerrar pedido por WhatsApp</button>
+    </div>
+  </aside>
+  <div id="overlay-carrito" class="oculto"></div>
+
   <script src="boot.js"></script>
-  <script src="chat.js"></script>
+  <script src="landing.js"></script>
 </body>
 </html>
