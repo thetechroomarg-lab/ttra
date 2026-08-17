@@ -5,11 +5,13 @@ from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, leads
+from web import auth, buscador, leads
 from web.chat import responder
 from web.reglas import WHATSAPP
 
@@ -30,6 +32,10 @@ LIMITE_USD = 0.25
 _gasto = {}  # sesion -> USD acumulado
 
 app = FastAPI()
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get("SESSION_SECRET", "dev-secret-cambiar-en-produccion"),
+)
 
 
 def _cargar_productos():
@@ -92,6 +98,56 @@ def chat(entrada: ChatIn):
                  f"WhatsApp {WHATSAPP} y te atiendo enseguida.")
         genero = ""
     return {"respuesta": texto, "genero": genero}
+
+
+class RegistroIn(BaseModel):
+    nombre: str
+    email: str
+    password: str
+
+
+class LoginIn(BaseModel):
+    email: str
+    password: str
+
+
+def _sesion_activa(request: Request):
+    return bool(request.session.get("usuario_email"))
+
+
+@app.post("/registro")
+def registro(entrada: RegistroIn, request: Request):
+    conn = auth.get_conn()
+    try:
+        auth.crear_usuario(
+            conn, entrada.nombre, entrada.email, entrada.password,
+            datetime.now().strftime("%Y-%m-%d %H:%M"),
+        )
+    except auth.EmailDuplicadoError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+    request.session["usuario_email"] = entrada.email.strip().lower()
+    request.session["usuario_nombre"] = entrada.nombre
+    return {"ok": True}
+
+
+@app.post("/login")
+def login(entrada: LoginIn, request: Request):
+    conn = auth.get_conn()
+    usuario = auth.verificar_usuario(conn, entrada.email, entrada.password)
+    conn.close()
+    if usuario is None:
+        return JSONResponse({"error": "Usuario o contraseña incorrectos"}, status_code=401)
+    request.session["usuario_email"] = usuario["email"]
+    request.session["usuario_nombre"] = usuario["nombre"]
+    return {"ok": True}
+
+
+@app.post("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return {"ok": True}
 
 
 app.mount("/", StaticFiles(directory=str(BASE / "static"), html=True), name="static")
