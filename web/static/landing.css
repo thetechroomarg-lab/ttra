@@ -8,7 +8,7 @@ header {
   padding: 16px 20px; background: var(--rc-bg-panel); border-bottom: 1px solid var(--rc-green-faint);
 }
 header h1 { margin: 0; font-size: clamp(14px, 4vw, 18px); letter-spacing: .06em; text-transform: uppercase;
-            color: var(--rc-green-bright); }
+            color: var(--rc-green-bright); cursor: pointer; }
 #btn-carrito { padding: 8px 14px; font-size: clamp(13px, 3.5vw, 15px); }
 
 .carrousel-wrap { overflow: hidden; background: var(--rc-bg-panel); border-bottom: 1px solid var(--rc-green-faint); }

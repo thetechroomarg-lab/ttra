@@ -302,6 +302,7 @@ document.getElementById("btn-whatsapp").addEventListener("click", () => {
   window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`, "_blank");
 });
 document.getElementById("btn-volver").addEventListener("click", volverAPantallaPrincipal);
+document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);
 document.getElementById("input-busqueda").addEventListener("input", actualizarVista);
 
 pintarCarrousel();
