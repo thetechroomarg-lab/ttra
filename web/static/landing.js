@@ -54,7 +54,7 @@ function tarjetaProducto(p) {
         $ ${formatearPesos(p.pesos)} contado<br>
         $ ${formatearPesos(p.transferencia)} transferencia
       </p>
-      <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" type="button">Agregar al carrito 🛒</button>
+      <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" type="button">Agregar al carrito</button>
     </div>
   `;
 }

@@ -7,7 +7,7 @@
   const LINEAS = [
     "THE TECH ROOM ARG",
     "UNIFIED TECHNOLOGY SYSTEM",
-    "COPYRIGHT 2009-2077",
+    "COPYRIGHT 2009-2026",
     "",
     "INITIALIZING TERMINAL...",
     "LOADING SYSTEM............. OK",
