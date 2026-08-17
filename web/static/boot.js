@@ -21,6 +21,28 @@
     "WELCOME, USER.",
   ];
 
+  // Beeps estilo computadora vieja (onda cuadrada sintetizada, sin archivos de
+  // audio). Los navegadores bloquean audio autoplay sin gesto del usuario: si
+  // el contexto queda suspendido, el beep simplemente no suena, sin romper nada.
+  let audioCtx;
+  function beep(frecuencia, duracionMs) {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.value = frecuencia;
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duracionMs / 1000);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duracionMs / 1000);
+    } catch {
+      // Web Audio no disponible: seguimos sin sonido, no es crítico.
+    }
+  }
+
   overlay.textContent = "";
   let i = 0;
 
@@ -29,6 +51,7 @@
       const listo = document.createElement("div");
       listo.innerHTML = '&gt; SYSTEM READY <span class="rc-cursor">█</span>';
       overlay.appendChild(listo);
+      beep(880, 90);
 
       setTimeout(() => {
         overlay.textContent = ""; // pantallazo negro breve
@@ -45,6 +68,7 @@
           frase.textContent = "Estas conectad@ con The Tech Room Arg.";
           bloqueCara.appendChild(frase);
           overlay.appendChild(bloqueCara);
+          beep(660, 130);
 
           setTimeout(() => overlay.classList.add("rc-boot-oculto"), 3200);
         }, 500);
@@ -54,6 +78,7 @@
     const linea = document.createElement("div");
     linea.textContent = LINEAS[i];
     overlay.appendChild(linea);
+    if (LINEAS[i] !== "") beep(620, 70);
     i++;
     setTimeout(siguienteLinea, LINEAS[i - 1] === "" ? 260 : 420);
   }
