@@ -233,28 +233,31 @@ function pintarCategorias() {
   });
 }
 
-// Devuelve las opciones del sub-nav para la sección dada: marcas presentes
-// en sus productos, o los 2 tipos fijos para Notebooks y Macbooks.
+// Devuelve las opciones del sub-nav para la sección dada: "Todos" primero,
+// después las marcas presentes en sus productos (o los 2 tipos fijos para
+// Notebooks y Macbooks). Estos botones filtran la grilla, que ya muestra
+// todo el catálogo de la sección apenas se entra.
 function opcionesSubNav(seccion) {
   if (seccion === "Notebooks y Macbooks") {
-    return ["Notebooks", "Macbooks"];
+    return ["Todos", "Notebooks", "Macbooks"];
   }
   const productos = SECCIONES_DATA[seccion] || [];
   const presentes = new Set(productos.map((p) => p.marca || "Otras marcas"));
   const ordenadas = ORDEN_MARCAS.filter((m) => presentes.has(m));
   const resto = [...presentes].filter((m) => !ORDEN_MARCAS.includes(m)).sort();
-  return [...ordenadas, ...resto];
+  return ["Todos", ...ordenadas, ...resto];
 }
 
 function pintarSubNav(seccion) {
   const el = document.getElementById("sub-nav");
   const opciones = opcionesSubNav(seccion);
-  el.innerHTML = opciones.map(
-    (o) => `<button data-clave="${escapeHtml(o)}" class="btn-categoria" type="button">${escapeHtml(o)}</button>`
-  ).join("");
+  el.innerHTML = opciones.map((o) => {
+    const activo = o === "Todos" ? !subFiltroActivo : subFiltroActivo === o;
+    return `<button data-clave="${escapeHtml(o)}" class="btn-categoria ${activo ? "activo" : ""}" type="button">${escapeHtml(o)}</button>`;
+  }).join("");
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
-      subFiltroActivo = btn.dataset.clave;
+      subFiltroActivo = btn.dataset.clave === "Todos" ? null : btn.dataset.clave;
       pushEstadoNav();
       reproducirTransicionTV(actualizarVista);
     });
@@ -350,11 +353,11 @@ function actualizarVista() {
   const productosEl = document.getElementById("productos");
 
   const enInicio = !seccionActiva && !filtroMarcaGlobal && termino === "";
-  const enSubNav = !!seccionActiva && SECCIONES_CON_SUBNAV.has(seccionActiva) &&
-    !subFiltroActivo && termino === "";
+  const mostrarSubNav = !!seccionActiva && SECCIONES_CON_SUBNAV.has(seccionActiva) &&
+    termino === "";
 
   categoriasEl.classList.toggle("oculto", !enInicio);
-  subNavEl.classList.toggle("oculto", !enSubNav);
+  subNavEl.classList.toggle("oculto", !mostrarSubNav);
   volverBtn.classList.toggle("oculto", enInicio);
 
   detenerCarrouselCiudad();
@@ -364,10 +367,8 @@ function actualizarVista() {
     return;
   }
 
-  if (enSubNav) {
+  if (mostrarSubNav) {
     pintarSubNav(seccionActiva);
-    productosEl.innerHTML = "";
-    return;
   }
 
   let base;

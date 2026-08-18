@@ -114,6 +114,10 @@ header h1:hover { cursor: var(--rc-cursor-mira); }
   padding: 18px 20px; font-size: 15px; text-transform: uppercase; letter-spacing: .04em;
   text-align: center;
 }
+.btn-categoria.activo {
+  background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
+  font-weight: 600;
+}
 
 .btn-volver {
   display: block; width: 100%;
