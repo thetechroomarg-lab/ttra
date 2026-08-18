@@ -512,21 +512,28 @@ function formatearPesos(valor) {
   return valor === undefined || valor === null ? "-" : Number(valor).toLocaleString("es-AR");
 }
 
+// Cierra cualquier dropdown de color que haya quedado abierto (se llama al
+// abrir otro, o al hacer click en cualquier otro lado de la página).
+function cerrarDropdownsColor() {
+  document.querySelectorAll(".dropdown-color-lista").forEach((l) => l.classList.add("oculto"));
+}
+document.addEventListener("click", cerrarDropdownsColor);
+
 function tarjetaProducto(p) {
   const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
   const listaColores = tieneColores ? p.colores : ["Color único"];
   const colorInicial = tieneColores ? "" : "Color único";
   const colores = `
     <div class="selector-colores">
-      <label>
-        <strong>Color:</strong>
-        <select class="select-color">
-          ${tieneColores ? '<option value="" selected disabled>Elegir color</option>' : ""}
-          ${listaColores.map((c) =>
-            `<option value="${escapeHtml(c)}" ${!tieneColores ? "selected" : ""}>${escapeHtml(c)}</option>`
-          ).join("")}
-        </select>
-      </label>
+      <strong>Color:</strong>
+      <div class="dropdown-color">
+        <button type="button" class="dropdown-color-boton" data-valor="${escapeHtml(colorInicial)}">
+          ${escapeHtml(tieneColores ? "Elegir color" : colorInicial)}
+        </button>
+        <ul class="dropdown-color-lista oculto" role="listbox">
+          ${listaColores.map((c) => `<li role="option" data-valor="${escapeHtml(c)}">${escapeHtml(c)}</li>`).join("")}
+        </ul>
+      </div>
     </div>
   `;
   return `
@@ -583,11 +590,23 @@ function pintarGrilla(el, productos, mensajeVacio) {
   el.innerHTML = `${controlVistaHtml()}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div>`;
   el.querySelectorAll(".card").forEach((card) => {
     const btnAgregar = card.querySelector(".btn-agregar");
-    const selectColor = card.querySelector(".select-color");
-    if (selectColor) {
-      selectColor.addEventListener("change", () => {
-        btnAgregar.dataset.color = selectColor.value;
-        btnAgregar.disabled = !selectColor.value;
+    const botonColor = card.querySelector(".dropdown-color-boton");
+    const listaColor = card.querySelector(".dropdown-color-lista");
+    if (botonColor && listaColor) {
+      botonColor.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const yaAbierto = !listaColor.classList.contains("oculto");
+        cerrarDropdownsColor();
+        if (!yaAbierto) listaColor.classList.remove("oculto");
+      });
+      listaColor.querySelectorAll("li").forEach((li) => {
+        li.addEventListener("click", () => {
+          botonColor.textContent = li.dataset.valor;
+          botonColor.dataset.valor = li.dataset.valor;
+          listaColor.classList.add("oculto");
+          btnAgregar.dataset.color = li.dataset.valor;
+          btnAgregar.disabled = false;
+        });
       });
     }
     btnAgregar.addEventListener("click", () => {

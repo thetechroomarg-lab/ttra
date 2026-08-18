@@ -326,7 +326,7 @@ main#productos { flex: 1; min-width: 0; margin-top: 20px; }
   background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
   font-weight: 600;
 }
-.flecha-orden { font-size: 1.6em; line-height: 0; vertical-align: middle; display: inline-block; }
+.flecha-orden { font-size: 1em; vertical-align: middle; margin-left: 2px; }
 
 .grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 16px; }
 .card {
@@ -343,13 +343,30 @@ main#productos { flex: 1; min-width: 0; margin-top: 20px; }
 .card .precios strong { color: var(--rc-green-bright); }
 .selector-colores {
   margin: 0; font-size: 12px; color: var(--rc-green-dim);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
 }
-.selector-colores label { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.select-color {
-  flex: 1; min-width: 0; padding: 4px 8px; font-size: 12px;
-  background: var(--rc-bg); border: 1px solid var(--rc-green-dim); color: var(--rc-green);
+.dropdown-color { position: relative; flex: 1; min-width: 100px; }
+.dropdown-color-boton {
+  width: 100%; padding: 4px 8px; font-size: 12px; text-transform: none;
+  background: var(--rc-bg-panel-2); border: 1px solid var(--rc-green-dim); color: var(--rc-green);
+  text-align: left;
 }
-.select-color:focus { outline: none; border-color: var(--rc-green); box-shadow: 0 0 4px var(--rc-glow); }
+.dropdown-color-lista {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 20;
+  margin: 2px 0 0; padding: 0; list-style: none;
+  background: var(--rc-bg-panel); border: 1px solid var(--rc-green);
+  box-shadow: 0 0 8px -1px var(--rc-glow);
+  max-height: 160px; overflow-y: auto;
+}
+.dropdown-color-lista.oculto { display: none; }
+.dropdown-color-lista li {
+  padding: 6px 8px; font-size: 12px; color: var(--rc-green);
+  cursor: var(--rc-cursor);
+}
+.dropdown-color-lista li:hover {
+  background: var(--rc-green-faint); color: var(--rc-green-bright);
+  cursor: var(--rc-cursor-mira);
+}
 .card .btn-agregar { margin-top: auto; font-size: 13px; }
 .card .btn-agregar:disabled {
   opacity: 0.4; cursor: not-allowed;
