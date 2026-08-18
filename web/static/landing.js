@@ -186,6 +186,7 @@ function pintarCarrousel() {
       seccionActiva = null;
       subFiltroActivo = null;
       document.getElementById("input-busqueda").value = "";
+      pushEstadoNav();
       reproducirTransicionTV(actualizarVista);
     });
     span.addEventListener("keydown", (e) => {
@@ -213,6 +214,7 @@ function pintarCategorias() {
       seccionActiva = btn.dataset.seccion;
       subFiltroActivo = null;
       document.getElementById("input-busqueda").value = "";
+      pushEstadoNav();
       reproducirTransicionTV(actualizarVista);
     });
   });
@@ -240,6 +242,7 @@ function pintarSubNav(seccion) {
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       subFiltroActivo = btn.dataset.clave;
+      pushEstadoNav();
       reproducirTransicionTV(actualizarVista);
     });
   });
@@ -261,8 +264,14 @@ function formatearPesos(valor) {
 }
 
 function tarjetaProducto(p) {
-  const colores = Array.isArray(p.colores) && p.colores.length > 0
-    ? `<p class="colores"><strong>Colores:</strong> ${escapeHtml(p.colores.join(", "))}</p>`
+  const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
+  const colores = tieneColores
+    ? `<div class="selector-colores">
+        <strong>Colores:</strong>
+        <div class="botones-color">
+          ${p.colores.map((c) => `<button type="button" class="btn-color" data-color="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join("")}
+        </div>
+      </div>`
     : "";
   return `
     <div class="card">
@@ -273,7 +282,7 @@ function tarjetaProducto(p) {
         $ ${formatearPesos(p.pesos)} contado<br>
         $ ${formatearPesos(p.transferencia)} transferencia
       </p>
-      <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" type="button">Agregar al carrito</button>
+      <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" type="button" ${tieneColores ? "disabled" : ""}>Agregar al carrito</button>
     </div>
   `;
 }
@@ -294,10 +303,20 @@ function pintarGrilla(el, productos, mensajeVacio) {
   }
   const claseModo = modoVista === "lista" ? "lista" : "";
   el.innerHTML = `${controlVistaHtml()}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div>`;
-  el.querySelectorAll(".btn-agregar").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const producto = productos.find((p) => p.nombre === btn.dataset.nombre);
-      if (producto) agregarAlCarrito(producto);
+  el.querySelectorAll(".card").forEach((card) => {
+    const btnAgregar = card.querySelector(".btn-agregar");
+    const botonesColor = card.querySelectorAll(".btn-color");
+    botonesColor.forEach((btnColor) => {
+      btnColor.addEventListener("click", () => {
+        botonesColor.forEach((b) => b.classList.remove("seleccionado"));
+        btnColor.classList.add("seleccionado");
+        btnAgregar.dataset.color = btnColor.dataset.color;
+        btnAgregar.disabled = false;
+      });
+    });
+    btnAgregar.addEventListener("click", () => {
+      const producto = productos.find((p) => p.nombre === btnAgregar.dataset.nombre);
+      if (producto) agregarAlCarrito(producto, btnAgregar.dataset.color || null);
     });
   });
   el.querySelectorAll(".btn-vista").forEach((btn) => {
@@ -363,9 +382,20 @@ function actualizarVista() {
   pintarGrilla(productosEl, productos, mensajeVacio);
 }
 
+// --- Integración con el botón/gesto de back nativo (Android e historial del navegador) ---
+// Cada vez que el usuario entra un nivel más adentro (sección, sub-nav, marca
+// del carrousel) se apila una entrada de historial. El botón "Volver" y el
+// back nativo terminan en el mismo lugar: retrocederPasoDesdeHistorial().
+let profundidadHistorial = 0;
+
+function pushEstadoNav() {
+  profundidadHistorial++;
+  history.pushState({ ttraProfundidad: profundidadHistorial }, "", "");
+}
+
 // Retrocede un paso a la vez: primero limpia la búsqueda, después el
 // sub-filtro (marca/tipo), y por último vuelve a la pantalla principal.
-function volverUnPaso() {
+function retrocederPasoDesdeHistorial() {
   const input = document.getElementById("input-busqueda");
   if (input.value.trim() !== "") {
     input.value = "";
@@ -379,10 +409,26 @@ function volverUnPaso() {
   reproducirTransicionTV(actualizarVista);
 }
 
+// El botón "Volver" dispara el back del navegador (para mantener el
+// historial sincronizado); popstate es quien realmente aplica el cambio.
+function volverUnPaso() {
+  if (profundidadHistorial > 0) {
+    history.back();
+  } else {
+    retrocederPasoDesdeHistorial();
+  }
+}
+
+window.addEventListener("popstate", () => {
+  if (profundidadHistorial > 0) profundidadHistorial--;
+  retrocederPasoDesdeHistorial();
+});
+
 function volverAPantallaPrincipal() {
   seccionActiva = null;
   subFiltroActivo = null;
   filtroMarcaGlobal = null;
+  profundidadHistorial = 0;
   document.getElementById("input-busqueda").value = "";
   reproducirTransicionTV(actualizarVista);
 }
@@ -451,14 +497,19 @@ function guardarCarrito(carrito) {
   renderCarrito();
 }
 
-function agregarAlCarrito(producto) {
+function mismoItemCarrito(it, nombre, color) {
+  return it.nombre === nombre && (it.color || null) === (color || null);
+}
+
+function agregarAlCarrito(producto, color) {
   const carrito = cargarCarrito();
-  const existente = carrito.find((it) => it.nombre === producto.nombre);
+  const existente = carrito.find((it) => mismoItemCarrito(it, producto.nombre, color));
   if (existente) {
     existente.cantidad += 1;
   } else {
     carrito.push({
       nombre: producto.nombre,
+      color: color || null,
       usd: producto.usd,
       pesos: producto.pesos,
       transferencia: producto.transferencia,
@@ -469,17 +520,17 @@ function agregarAlCarrito(producto) {
   abrirCarrito();
 }
 
-function cambiarCantidad(nombre, delta) {
+function cambiarCantidad(nombre, color, delta) {
   const carrito = cargarCarrito();
-  const item = carrito.find((it) => it.nombre === nombre);
+  const item = carrito.find((it) => mismoItemCarrito(it, nombre, color));
   if (!item) return;
   item.cantidad += delta;
-  const nuevo = item.cantidad > 0 ? carrito : carrito.filter((it) => it.nombre !== nombre);
+  const nuevo = item.cantidad > 0 ? carrito : carrito.filter((it) => !mismoItemCarrito(it, nombre, color));
   guardarCarrito(nuevo);
 }
 
-function quitarDelCarrito(nombre) {
-  guardarCarrito(cargarCarrito().filter((it) => it.nombre !== nombre));
+function quitarDelCarrito(nombre, color) {
+  guardarCarrito(cargarCarrito().filter((it) => !mismoItemCarrito(it, nombre, color)));
 }
 
 function vaciarCarrito() {
@@ -498,14 +549,16 @@ function totales(carrito) {
 }
 
 function itemCarritoHtml(it) {
+  const colorTexto = it.color ? ` (${escapeHtml(it.color)})` : "";
+  const colorAttr = escapeHtml(it.color || "");
   return `
     <div class="item-carrito">
-      <p class="item-nombre">${escapeHtml(it.nombre)}</p>
+      <p class="item-nombre">${escapeHtml(it.nombre)}${colorTexto}</p>
       <div class="item-controles">
-        <button class="btn-menos" data-nombre="${escapeHtml(it.nombre)}" type="button">-</button>
+        <button class="btn-menos" data-nombre="${escapeHtml(it.nombre)}" data-color="${colorAttr}" type="button">-</button>
         <span>${it.cantidad}</span>
-        <button class="btn-mas" data-nombre="${escapeHtml(it.nombre)}" type="button">+</button>
-        <button class="btn-quitar" data-nombre="${escapeHtml(it.nombre)}" type="button">Quitar</button>
+        <button class="btn-mas" data-nombre="${escapeHtml(it.nombre)}" data-color="${colorAttr}" type="button">+</button>
+        <button class="btn-quitar" data-nombre="${escapeHtml(it.nombre)}" data-color="${colorAttr}" type="button">Quitar</button>
       </div>
     </div>
   `;
@@ -522,13 +575,13 @@ function renderCarrito() {
     : carrito.map(itemCarritoHtml).join("");
 
   el.querySelectorAll(".btn-menos").forEach((btn) => {
-    btn.addEventListener("click", () => cambiarCantidad(btn.dataset.nombre, -1));
+    btn.addEventListener("click", () => cambiarCantidad(btn.dataset.nombre, btn.dataset.color || null, -1));
   });
   el.querySelectorAll(".btn-mas").forEach((btn) => {
-    btn.addEventListener("click", () => cambiarCantidad(btn.dataset.nombre, 1));
+    btn.addEventListener("click", () => cambiarCantidad(btn.dataset.nombre, btn.dataset.color || null, 1));
   });
   el.querySelectorAll(".btn-quitar").forEach((btn) => {
-    btn.addEventListener("click", () => quitarDelCarrito(btn.dataset.nombre));
+    btn.addEventListener("click", () => quitarDelCarrito(btn.dataset.nombre, btn.dataset.color || null));
   });
 
   const t = totales(carrito);
@@ -548,9 +601,10 @@ function cerrarCarrito() {
 }
 
 function armarMensajeWhatsapp(carrito) {
-  const lineas = carrito.map(
-    (it) => `- ${it.nombre} x${it.cantidad} — U$D ${(it.usd || 0) * it.cantidad}`
-  );
+  const lineas = carrito.map((it) => {
+    const color = it.color ? ` (${it.color})` : "";
+    return `- ${it.nombre}${color} x${it.cantidad} — U$D ${(it.usd || 0) * it.cantidad}`;
+  });
   const t = totales(carrito);
   const total = `Total: U$D ${t.usd} · $ ${formatearPesos(t.pesos)} contado · $ ${formatearPesos(t.transferencia)} transferencia`;
   return `Hola! Quiero encargar:\n${lineas.join("\n")}\n\n${total}`;
@@ -565,6 +619,8 @@ document.getElementById("btn-whatsapp").addEventListener("click", () => {
   if (carrito.length === 0) return;
   const mensaje = armarMensajeWhatsapp(carrito);
   window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`, "_blank");
+  vaciarCarrito();
+  cerrarCarrito();
 });
 document.getElementById("btn-volver").addEventListener("click", volverUnPaso);
 document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);

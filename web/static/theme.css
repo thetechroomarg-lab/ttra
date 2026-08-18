@@ -94,18 +94,20 @@ input:focus, textarea:focus, select:focus {
 
 button {
   font-family: var(--rc-font);
+  font-weight: 600;
   background: var(--rc-bg-panel-2);
   color: var(--rc-green);
-  border: 1px solid var(--rc-green-dim);
+  border: 3px solid var(--rc-green-dim);
   border-radius: 0;
   cursor: var(--rc-cursor);
+  box-shadow: 0 0 6px -1px var(--rc-glow), inset 0 0 6px -2px var(--rc-glow);
   transition: box-shadow 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 button:hover, button:focus-visible {
   color: var(--rc-green-bright);
   border-color: var(--rc-green);
-  box-shadow: 0 0 8px var(--rc-glow);
+  box-shadow: 0 0 12px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
   outline: none;
   cursor: var(--rc-cursor-mira);
 }
@@ -151,7 +153,11 @@ a { color: var(--rc-green-bright); }
 }
 
 .rc-boot-cara {
-  margin-top: 28px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
   text-align: center;
 }
 
