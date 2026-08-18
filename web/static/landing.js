@@ -858,26 +858,56 @@ function siguienteFraseEspecial() {
 
 function escribirTexto(el, texto, velocidadMs, alTerminar) {
   el.textContent = "";
+  el.style.transform = "translateX(0)";
+  el.classList.remove("marquesina");
   let i = 0;
   const intervalo = setInterval(() => {
     i++;
     el.textContent = texto.slice(0, i);
     if (i >= texto.length) {
       clearInterval(intervalo);
-      if (alTerminar) setTimeout(alTerminar, 3500);
+      if (alTerminar) pausarYSeguir(el, alTerminar);
     }
   }, velocidadMs);
+}
+
+// Si el titular no entra en el ancho disponible, lo desliza como marquesina
+// (en vez de dejarlo cortado con "..."), sin nunca forzar el ancho del header.
+function pausarYSeguir(el, alTerminar) {
+  setTimeout(() => {
+    const desborde = el.scrollWidth - el.clientWidth;
+    if (desborde <= 0) {
+      setTimeout(alTerminar, 2000);
+      return;
+    }
+    el.classList.add("marquesina");
+    const duracionSeg = Math.max(2, desborde / 60);
+    el.style.transition = `transform ${duracionSeg}s linear`;
+    requestAnimationFrame(() => {
+      el.style.transform = `translateX(-${desborde}px)`;
+    });
+    setTimeout(() => {
+      el.style.transition = "none";
+      el.style.transform = "translateX(0)";
+      el.classList.remove("marquesina");
+      setTimeout(alTerminar, 900);
+    }, duracionSeg * 1000 + 900);
+  }, 300);
 }
 
 function narrarSiguienteNoticia() {
   const el = document.getElementById("noticiero-texto");
   if (!el) return;
   cicloNoticiero++;
-  let texto = cicloNoticiero % 4 === 0 ? siguienteFraseEspecial() : null;
-  if (!texto) {
+  const fraseEspecial = cicloNoticiero % 4 === 0 ? siguienteFraseEspecial() : null;
+  let texto;
+  if (fraseEspecial) {
+    texto = `- ${fraseEspecial}`;
+  } else {
     if (titularesNoticias.length === 0) return;
-    texto = titularesNoticias[indiceNoticia % titularesNoticias.length];
+    const noticia = titularesNoticias[indiceNoticia % titularesNoticias.length];
     indiceNoticia++;
+    texto = noticia.fuente ? `- ${noticia.titulo} (${noticia.fuente})` : `- ${noticia.titulo}`;
   }
   escribirTexto(el, texto, 35, narrarSiguienteNoticia);
 }

@@ -202,9 +202,12 @@ NOTICIAS_TTL_SEG = 600  # 10 minutos: evita golpear Google News en cada visita
 _noticias_cache = {"titulares": [], "actualizado": 0.0}
 
 
-def _limpiar_titular(titulo):
+def _separar_titulo_y_fuente(titulo_crudo):
     # Google News agrega " - Nombre del medio" al final de cada título.
-    return re.sub(r"\s+-\s+[^-]+$", "", titulo).strip()
+    m = re.match(r"^(.*)\s+-\s+([^-]+)$", titulo_crudo.strip())
+    if not m:
+        return {"titulo": titulo_crudo.strip(), "fuente": ""}
+    return {"titulo": m.group(1).strip(), "fuente": m.group(2).strip()}
 
 
 @app.get("/api/noticias")
@@ -217,10 +220,10 @@ def api_noticias():
         r.raise_for_status()
         raiz = ET.fromstring(r.text)
         titulares = [
-            _limpiar_titular(item.findtext("title", ""))
+            _separar_titulo_y_fuente(item.findtext("title", ""))
             for item in raiz.findall(".//item")
         ]
-        titulares = [t for t in titulares if t][:12]
+        titulares = [t for t in titulares if t["titulo"]][:12]
         if titulares:
             _noticias_cache["titulares"] = titulares
             _noticias_cache["actualizado"] = ahora

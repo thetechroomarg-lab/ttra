@@ -33,10 +33,12 @@ header h1:hover { cursor: var(--rc-cursor-mira); }
   user-select: none; pointer-events: none;
 }
 .rc-noticiero-texto {
+  display: block; min-width: 0; max-width: 100%; flex: 1 1 auto;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   border-right: 2px solid var(--rc-green-bright);
   padding-right: 3px;
 }
+.rc-noticiero-texto.marquesina { text-overflow: clip; will-change: transform; }
 
 .rc-header-derecha { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .rc-fecha-hora {
