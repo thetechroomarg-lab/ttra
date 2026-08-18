@@ -68,19 +68,168 @@ let filtroMarcaGlobal = null; // marca elegida desde el carrousel o "Búsqueda p
 let modoVista = "cards"; // "cards" | "lista"
 
 // Fotos decorativas de la ciudad, solo visibles en la pantalla principal.
+// Cada archivo se muestra dentro de una "tarjeta" tipo terminal (ver
+// tarjetaLugarHtml): el nombre del punto de interés sale del nombre de
+// archivo, y los datos descriptivos salen de DATOS_LUGARES (misma clave,
+// sin extensión). Agregar una foto nueva = agregar el archivo acá y su
+// entrada en DATOS_LUGARES.
 const IMAGENES_CIUDAD = [
-  "ciudad/catedral-cordoba.png",
-  "ciudad/plaza-san-martin.png",
-  "ciudad/manzana-jesuitica.png",
-  "ciudad/puente-del-bicentenario.png",
-  "ciudad/batalla-de-la-toma.png",
-  "ciudad/parque-sarmiento.png",
-  "ciudad/paseo-del-buen-pastor.png",
-  "ciudad/dique.png",
-  "ciudad/lago-san-roque.png",
-  "ciudad/puente-14-de-agosto.png",
-  "ciudad/reserva-san-martin.png",
+  "ciudad/catedral.jpg",
+  "ciudad/plaza-san-martin.jpg",
+  "ciudad/plaza-colon.jpg",
+  "ciudad/arco.jpeg",
+  "ciudad/dique-san-roque.jpg",
+  "ciudad/paseo-del-buen-pastor.jpeg",
+  "ciudad/patio-olmos.jpeg",
+  "ciudad/puente-cosquin.jpg",
+  "ciudad/teatro-san-martin.jpg",
 ];
+
+// Datos históricos/descriptivos por punto de interés, con tono de terminal
+// retro. La clave es el nombre de archivo sin extensión, en minúsculas.
+const DATOS_LUGARES = {
+  catedral: {
+    ubicacion: "CÓRDOBA CAPITAL",
+    construccion: "1582 — 1758",
+    estilo: "RENACENTISTA / BARROCO",
+    coordenadas: "31°25'18\"S 64°11'42\"O",
+    estado: "ACTIVA",
+    importancia: "PATRIMONIO UNESCO (2000)",
+    log: "LOG DE ARCHIVO RECUPERADO: obra iniciada en 1582, con más de siglo y medio de demoras y reconstrucciones antes de su finalización en 1758. Integra la Manzana Jesuítica, Patrimonio de la Humanidad. Estructura verificada: estable pese a más de 400 años de exposición.",
+  },
+  "plaza-san-martin": {
+    ubicacion: "CENTRO HISTÓRICO",
+    construccion: "1573 — FUNDACIONAL",
+    estilo: "PLAZA FUNDACIONAL COLONIAL",
+    coordenadas: "31°25'S 64°11'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "NÚCLEO FUNDACIONAL DE LA CIUDAD",
+    log: "LOG DE ARCHIVO: plaza mayor trazada junto con la fundación de la ciudad en 1573. Rodeada por el Cabildo y la Catedral, sigue siendo el centro simbólico del casco histórico, 450 años después.",
+  },
+  "plaza-colon": {
+    ubicacion: "NUEVA CÓRDOBA",
+    construccion: "SIGLO XIX (FUENTE)",
+    estilo: "PLAZA URBANA / FUENTE ORNAMENTAL",
+    coordenadas: "31°25'S 64°11'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "PATRIMONIO URBANO",
+    log: "LOG DE ARCHIVO: uno de los pulmones verdes históricos de Nueva Córdoba, organizado en torno a una fuente ornamental de estilo francés. Punto de encuentro tradicional del barrio universitario desde hace más de un siglo.",
+  },
+  arco: {
+    ubicacion: "AV. SABATTINI",
+    construccion: "1973",
+    estilo: "CONMEMORATIVO / MAMPOSTERÍA DE PIEDRA",
+    coordenadas: "31°22'S 64°11'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "MONUMENTO CONMEMORATIVO",
+    log: "LOG DE ARCHIVO: erigido para el cuarto centenario de la fundación de la ciudad (1573-1973). Sus dos torres gemelas flanquean el ingreso norte, a modo de puerta simbólica hacia el casco urbano.",
+  },
+  "dique-san-roque": {
+    ubicacion: "VILLA CARLOS PAZ / VALLE DE PUNILLA",
+    construccion: "FINES S. XIX — RECONSTRUIDO S. XX",
+    estilo: "OBRA HIDRÁULICA",
+    coordenadas: "31°22'S 64°28'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "PRIMER GRAN EMBALSE DE ARGENTINA",
+    log: "LOG DE ARCHIVO: uno de los primeros grandes diques de contención de Sudamérica. Su lago artificial abastece de agua a la ciudad y es hoy uno de los espejos de agua más visitados de las sierras cordobesas.",
+  },
+  "paseo-del-buen-pastor": {
+    ubicacion: "NUEVA CÓRDOBA",
+    construccion: "EX CONVENTO/CÁRCEL S. XIX — RECICLADO 2007",
+    estilo: "ECLÉCTICO / RECICLAJE URBANO",
+    coordenadas: "31°25'S 64°11'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "CENTRO CULTURAL",
+    log: "LOG DE ARCHIVO: funcionó como convento y luego como cárcel de mujeres durante buena parte del siglo XX. Reconvertido en centro cultural y paseo comercial, conserva su torre-reloj como seña de identidad.",
+  },
+  "patio-olmos": {
+    ubicacion: "NUEVA CÓRDOBA",
+    construccion: "ANTIGUA RESIDENCIA S. XX — SHOPPING DESDE 1997",
+    estilo: "ECLÉCTICO / RECICLAJE URBANO",
+    coordenadas: "31°24'S 64°11'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "CENTRO COMERCIAL HISTÓRICO",
+    log: "LOG DE ARCHIVO: antigua residencia reconvertida en una de las primeras grandes galerías comerciales de la ciudad. Su fachada original se mantiene integrada a la estructura moderna del shopping.",
+  },
+  "puente-cosquin": {
+    ubicacion: "VALLE DE PUNILLA",
+    construccion: "SIGLO XX",
+    estilo: "PUENTE DE HORMIGÓN EN ARCO",
+    coordenadas: "31°15'S 64°28'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "CONEXIÓN VIAL REGIONAL",
+    log: "LOG DE ARCHIVO: cruce elevado sobre el espejo de agua del Valle de Punilla, en la ruta hacia Cosquín. Punto panorámico frecuente para quienes recorren las sierras.",
+  },
+  "teatro-san-martin": {
+    ubicacion: "CENTRO HISTÓRICO",
+    construccion: "1891",
+    estilo: "NEOCLÁSICO / ITALIANIZANTE",
+    coordenadas: "31°25'S 64°11'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "TEATRO HISTÓRICO PROVINCIAL",
+    log: "LOG DE ARCHIVO: inaugurado en 1891, es uno de los teatros más antiguos en actividad de la provincia. Sede habitual de la programación oficial de artes escénicas de Córdoba.",
+  },
+};
+
+// Se usa si se agrega una foto nueva antes de cargar sus datos reales.
+const DATOS_LUGAR_DEFAULT = {
+  ubicacion: "CÓRDOBA CAPITAL",
+  construccion: "EN RELEVAMIENTO",
+  estilo: "EN RELEVAMIENTO",
+  coordenadas: "PENDIENTE DE TRIANGULACIÓN",
+  estado: "ARCHIVO INCOMPLETO",
+  importancia: "SIN CLASIFICAR",
+  log: "LOG DE ARCHIVO PARCIAL: los datos de este punto de interés todavía no fueron cargados al sistema. Reintentando sincronización...",
+};
+
+function claveDesdeArchivo(src) {
+  return src.split("/").pop().replace(/\.[a-z0-9]+$/i, "").toLowerCase();
+}
+
+function nombreDesdeArchivo(src) {
+  return claveDesdeArchivo(src).replace(/[-_]/g, " ").toUpperCase();
+}
+
+function tarjetaLugarHtml(src) {
+  const datos = DATOS_LUGARES[claveDesdeArchivo(src)] || DATOS_LUGAR_DEFAULT;
+  const nombre = nombreDesdeArchivo(src);
+  return `
+    <div class="pipboy">
+      <div class="pipboy-datos">
+        <div class="pipboy-marca">THE TECH ROOM ARG</div>
+        <div class="pipboy-sub">SISTEMA DE EXPLORACIÓN // TTRA-01</div>
+        <div class="pipboy-ubicacion">&gt; UBICACIÓN: ${escapeHtml(datos.ubicacion)}</div>
+        <div class="pipboy-etiqueta">PUNTO DE INTERÉS</div>
+        <div class="pipboy-nombre">${escapeHtml(nombre)}</div>
+        <hr class="pipboy-linea">
+        <div class="pipboy-campos">
+          <div><b>CONSTRUCCIÓN:</b> ${escapeHtml(datos.construccion)}</div>
+          <div><b>ESTILO:</b> ${escapeHtml(datos.estilo)}</div>
+          <div><b>COORDENADAS:</b> ${escapeHtml(datos.coordenadas)}</div>
+          <div><b>ESTADO:</b> ${escapeHtml(datos.estado)}</div>
+          <div><b>IMPORTANCIA:</b> ${escapeHtml(datos.importancia)}</div>
+        </div>
+        <hr class="pipboy-linea">
+        <div class="pipboy-log">${escapeHtml(datos.log)}</div>
+        <div class="pipboy-globo-wrap">
+          <div class="pipboy-globo"></div>
+          <div class="pipboy-globo-texto">TRIANGULANDO<br>COORDENADAS...</div>
+        </div>
+        <div class="pipboy-pie">
+          <span class="pipboy-frase">TRANSMISIÓN ESTABLE // SEÑAL 98% // ARCHIVO TTRA-01<span class="rc-cursor">_</span></span>
+        </div>
+      </div>
+      <div class="pipboy-imagen-wrap">
+        <img src="${src}" alt="${escapeHtml(nombre)}">
+        <span class="pipboy-esquina tl"></span>
+        <span class="pipboy-esquina tr"></span>
+        <span class="pipboy-esquina bl"></span>
+        <span class="pipboy-esquina br"></span>
+      </div>
+    </div>
+  `;
+}
+
 let indiceCiudad = Math.floor(Math.random() * IMAGENES_CIUDAD.length);
 
 // Elige un índice al azar distinto del actual, para que nunca se repita la
@@ -102,28 +251,66 @@ function detenerCarrouselCiudad() {
   }
 }
 
+function pintarPuntosCiudad(el) {
+  const wrap = el.querySelector(".carrousel-ciudad-puntos");
+  if (!wrap) return;
+  wrap.innerHTML = IMAGENES_CIUDAD.map((_, i) =>
+    `<button type="button" class="punto-ciudad ${i === indiceCiudad ? "activo" : ""}" data-indice="${i}" aria-label="Foto ${i + 1}"></button>`
+  ).join("");
+  wrap.querySelectorAll(".punto-ciudad").forEach((btn) => {
+    btn.addEventListener("click", () => irAFotoCiudad(el, Number(btn.dataset.indice)));
+  });
+}
+
+// Cambia a una foto puntual (por click en los puntos) y reinicia el
+// temporizador de 20s, para no cortar la navegación manual del usuario.
+function irAFotoCiudad(el, indice) {
+  if (indice === indiceCiudad) return;
+  indiceCiudad = indice;
+  mostrarFotoCiudad(el);
+  detenerCarrouselCiudad();
+  intervaloCiudad = setInterval(() => avanzarFotoCiudadAlAzar(el), 20000);
+}
+
+function avanzarFotoCiudadAlAzar(el) {
+  indiceCiudad = siguienteIndiceCiudadAlAzar();
+  mostrarFotoCiudad(el);
+}
+
+// Crossfade a la foto en `indiceCiudad`, con un glitch de interferencia
+// sutil en la tarjeta nueva (solo ella, no la pantalla completa).
+function mostrarFotoCiudad(el) {
+  const contenedor = el.querySelector(".carrousel-ciudad");
+  if (!contenedor) return;
+  const actual = contenedor.querySelector(".carrousel-ciudad-tarjeta.visible");
+  const siguiente = document.createElement("div");
+  siguiente.className = "carrousel-ciudad-tarjeta pipboy-interferencia";
+  siguiente.innerHTML = tarjetaLugarHtml(IMAGENES_CIUDAD[indiceCiudad]);
+  contenedor.appendChild(siguiente);
+  requestAnimationFrame(() => siguiente.classList.add("visible"));
+  if (actual) {
+    actual.classList.remove("visible");
+    setTimeout(() => actual.remove(), 1400);
+  }
+  pintarPuntosCiudad(el);
+}
+
 function pintarCarrouselCiudad(el) {
   if (IMAGENES_CIUDAD.length === 0) {
     el.innerHTML = "";
     return;
   }
-  el.innerHTML = `<div class="carrousel-ciudad"><img class="visible" src="${IMAGENES_CIUDAD[indiceCiudad]}" alt="Córdoba"></div>`;
+  el.innerHTML = `
+    <div class="carrousel-ciudad-wrap">
+      <div class="carrousel-ciudad">
+        <div class="carrousel-ciudad-tarjeta visible">${tarjetaLugarHtml(IMAGENES_CIUDAD[indiceCiudad])}</div>
+      </div>
+      <div class="carrousel-ciudad-puntos"></div>
+    </div>
+  `;
+  pintarPuntosCiudad(el);
   if (IMAGENES_CIUDAD.length <= 1) return;
-  intervaloCiudad = setInterval(() => {
-    const contenedor = el.querySelector(".carrousel-ciudad");
-    if (!contenedor) return;
-    indiceCiudad = siguienteIndiceCiudadAlAzar();
-    const actual = contenedor.querySelector("img.visible");
-    const siguiente = document.createElement("img");
-    siguiente.alt = "Córdoba";
-    siguiente.src = IMAGENES_CIUDAD[indiceCiudad];
-    contenedor.appendChild(siguiente);
-    requestAnimationFrame(() => siguiente.classList.add("visible"));
-    if (actual) {
-      actual.classList.remove("visible");
-      setTimeout(() => actual.remove(), 1400);
-    }
-  }, 20000);
+  intervaloCiudad = setInterval(() => avanzarFotoCiudadAlAzar(el), 20000);
 }
 
 // --- Transición entre pantallas: deformación rápida tipo CRT, sin ruido ---

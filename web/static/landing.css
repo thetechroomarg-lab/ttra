@@ -167,34 +167,140 @@ header {
 
 main#productos { flex: 1; min-width: 0; }
 
+.carrousel-ciudad-wrap {
+  display: flex; flex-direction: column; gap: 10px; height: 100%;
+}
 .carrousel-ciudad {
   position: relative;
   background: var(--rc-bg);
   overflow: hidden;
-  height: 100%;
+  flex: 1;
   min-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.carrousel-ciudad img {
+.carrousel-ciudad-puntos {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.punto-ciudad {
+  width: 10px; height: 10px; padding: 0; border-radius: 50%;
+  background: transparent; border: 1px solid var(--rc-green-dim);
+  cursor: var(--rc-cursor);
+}
+.punto-ciudad:hover {
+  cursor: var(--rc-cursor-mira); border-color: var(--rc-green);
+  box-shadow: 0 0 4px var(--rc-glow);
+}
+.punto-ciudad.activo {
+  background: var(--rc-green-bright); border-color: var(--rc-green);
+  box-shadow: 0 0 6px var(--rc-glow);
+}
+
+/* Interferencia sutil solo en la tarjeta Pip-Boy, en cada cambio de foto. */
+@keyframes pipboy-interferencia {
+  0%   { filter: none; transform: none; }
+  30%  { filter: brightness(1.15) contrast(1.1); transform: translateX(-2px); }
+  50%  { filter: brightness(0.85); transform: translateX(2px); }
+  70%  { filter: brightness(1.08); transform: translateX(-1px); }
+  100% { filter: none; transform: none; }
+}
+.pipboy-interferencia .pipboy { animation: pipboy-interferencia 0.3s steps(3, end); }
+.carrousel-ciudad-tarjeta {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* el padding superior es igual al que separa el buscador del carrousel de
+     marcas (20px), así el borde de la tarjeta coincide con el del buscador */
+  padding: 20px 12px 12px;
+  box-sizing: border-box;
   opacity: 0;
   transition: opacity 1.4s ease;
 }
-.carrousel-ciudad img.visible { opacity: 1; }
+.carrousel-ciudad-tarjeta.visible { opacity: 1; }
 
-/* Viñeta: funde los bordes de la foto con el fondo de la web, en vez de que
-   se note el corte de tono contra el negro/verde del sitio. */
-.carrousel-ciudad::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 70%, var(--rc-bg) 100%);
+/* --- Tarjeta "Pip-Boy": misma interfaz para todas las fotos, solo cambian
+   los datos descriptivos (ver DATOS_LUGARES en landing.js). --- */
+.pipboy {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  border: 2px solid var(--rc-green-dim);
+  background: #010601;
+  overflow: hidden;
+  box-shadow: 0 0 10px -2px var(--rc-glow), inset 0 0 14px -4px var(--rc-glow);
+}
+.pipboy-datos {
+  flex: 0 0 38%;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.pipboy-datos, .pipboy-datos * {
+  font-size: 17px;
+  text-shadow: 0 0 6px var(--rc-glow), 0 0 12px var(--rc-glow);
+}
+.pipboy-marca { font-weight: 700; letter-spacing: .04em; color: var(--rc-green-bright); }
+.pipboy-sub { color: var(--rc-green-dim); letter-spacing: .05em; margin: 2px 0 10px; }
+.pipboy-linea { border: none; border-top: 1px dashed var(--rc-green-faint); margin: 8px 0; }
+.pipboy-ubicacion {
+  display: inline-block; padding: 3px 8px; margin-bottom: 10px; align-self: flex-start;
+  background: var(--rc-green-faint); color: var(--rc-green-bright);
+}
+.pipboy-etiqueta { color: var(--rc-green-dim); letter-spacing: .05em; }
+.pipboy-nombre { font-weight: 700; color: var(--rc-green-bright); margin: 2px 0 0; }
+.pipboy-campos { line-height: 1.6; color: var(--rc-green); }
+.pipboy-campos b { color: var(--rc-green-dim); }
+.pipboy-log {
+  line-height: 1.45; color: var(--rc-green-bright); flex: 1;
+  overflow-y: auto; overflow-x: hidden;
+}
+.pipboy-globo-wrap { display: flex; align-items: center; gap: 8px; justify-content: flex-start; margin: 6px 0; }
+.pipboy-globo {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 32%, rgba(160, 255, 190, 0.55), rgba(51, 255, 102, 0.18) 55%, rgba(0, 0, 0, 0.7) 100%),
+    repeating-linear-gradient(90deg, transparent 0 5px, rgba(51, 255, 102, 0.4) 5px 6px);
+  background-size: 100% 100%, 220% 100%;
+  border: 1px solid var(--rc-green);
+  box-shadow: 0 0 8px var(--rc-glow), inset 0 0 10px rgba(0, 0, 0, 0.65);
+  animation: pipboy-girar 6s linear infinite;
+}
+@keyframes pipboy-girar {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 0 0, -220% 0; }
+}
+.pipboy-globo-texto { color: var(--rc-green-dim); letter-spacing: .03em; line-height: 1.4; }
+.pipboy-pie {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--rc-green-faint); padding: 5px 8px; margin-top: auto;
+}
+.pipboy-frase { color: var(--rc-green-bright); line-height: 1.3; }
+.pipboy-frase .rc-cursor { display: inline-block; animation: rc-blink 1s steps(1) infinite; }
+.pipboy-imagen-wrap {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  border-left: 1px solid var(--rc-green-dim);
+}
+.pipboy-imagen-wrap img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  filter: grayscale(1) sepia(1) hue-rotate(65deg) saturate(4) brightness(0.75) contrast(1.5);
+}
+.pipboy-esquina { position: absolute; width: 18px; height: 18px; border-color: var(--rc-green-bright); }
+.pipboy-esquina.tl { top: 6px; left: 6px; border-top: 2px solid; border-left: 2px solid; }
+.pipboy-esquina.tr { top: 6px; right: 6px; border-top: 2px solid; border-right: 2px solid; }
+.pipboy-esquina.bl { bottom: 6px; left: 6px; border-bottom: 2px solid; border-left: 2px solid; }
+.pipboy-esquina.br { bottom: 6px; right: 6px; border-bottom: 2px solid; border-right: 2px solid; }
+
+@media (max-width: 700px) {
+  .pipboy { flex-direction: column; aspect-ratio: auto; max-height: none; }
+  .pipboy-datos { flex: none; }
+  .pipboy-imagen-wrap { border-left: none; border-top: 1px solid var(--rc-green-dim); min-height: 160px; }
 }
 
 @media (max-width: 700px) {
