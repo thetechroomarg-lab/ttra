@@ -66,6 +66,7 @@ let seccionActiva = null; // clave de sección elegida en la pantalla principal,
 let subFiltrosActivos = new Set(); // marcas (o "Notebooks"/"Macbooks") elegidas, acumulables
 let filtroMarcaGlobal = null; // marca elegida desde el carrousel o "Búsqueda por Marca", busca en TODO el catálogo
 let modoVista = "cards"; // "cards" | "lista"
+let ordenPrecio = null; // null (sin orden) | "asc" | "desc"
 
 // Fotos decorativas de la ciudad, solo visibles en la pantalla principal.
 // Cada archivo se muestra dentro de una "tarjeta" tipo terminal (ver
@@ -535,13 +536,34 @@ function tarjetaProducto(p) {
   `;
 }
 
+// Etiqueta y flecha del botón de orden, según el estado actual.
+function etiquetaOrdenPrecio() {
+  if (ordenPrecio === "asc") return "Precio ↑";
+  if (ordenPrecio === "desc") return "Precio ↓";
+  return "Ordenar precio";
+}
+
 function controlVistaHtml() {
   return `
     <div class="control-vista">
       <button type="button" class="btn-vista ${modoVista === "cards" ? "activo" : ""}" data-modo="cards">Cards</button>
       <button type="button" class="btn-vista ${modoVista === "lista" ? "activo" : ""}" data-modo="lista">Lista</button>
+      <button type="button" class="btn-vista btn-orden-precio ${ordenPrecio ? "activo" : ""}" id="btn-orden-precio">${etiquetaOrdenPrecio()}</button>
     </div>
   `;
+}
+
+// Ciclo: sin orden -> ascendente -> descendente -> sin orden.
+function siguienteOrdenPrecio() {
+  if (ordenPrecio === null) return "asc";
+  if (ordenPrecio === "asc") return "desc";
+  return null;
+}
+
+function ordenarPorPrecio(productos) {
+  if (!ordenPrecio) return productos;
+  const signo = ordenPrecio === "asc" ? 1 : -1;
+  return [...productos].sort((a, b) => signo * ((a.usd ?? 0) - (b.usd ?? 0)));
 }
 
 function pintarGrilla(el, productos, mensajeVacio) {
@@ -549,6 +571,7 @@ function pintarGrilla(el, productos, mensajeVacio) {
     el.innerHTML = `<p class="mensaje-vacio">${mensajeVacio}</p>`;
     return;
   }
+  productos = ordenarPorPrecio(productos);
   const claseModo = modoVista === "lista" ? "lista" : "";
   el.innerHTML = `${controlVistaHtml()}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div>`;
   el.querySelectorAll(".card").forEach((card) => {
@@ -567,12 +590,19 @@ function pintarGrilla(el, productos, mensajeVacio) {
       if (producto) agregarAlCarrito(producto, btnAgregar.dataset.color || null);
     });
   });
-  el.querySelectorAll(".btn-vista").forEach((btn) => {
+  el.querySelectorAll(".btn-vista[data-modo]").forEach((btn) => {
     btn.addEventListener("click", () => {
       modoVista = btn.dataset.modo;
       actualizarVista();
     });
   });
+  const btnOrden = el.querySelector("#btn-orden-precio");
+  if (btnOrden) {
+    btnOrden.addEventListener("click", () => {
+      ordenPrecio = siguienteOrdenPrecio();
+      actualizarVista();
+    });
+  }
 }
 
 // Decide qué mostrar según la sección elegida (si hay), el sub-filtro (marca

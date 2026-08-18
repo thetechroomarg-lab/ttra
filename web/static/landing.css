@@ -112,6 +112,7 @@ header {
 
 .rc-buscador {
   display: flex; align-items: center; gap: 10px;
+  height: 44px; box-sizing: border-box;
   margin: 20px 0 0; padding: 10px 14px;
   background: var(--rc-bg-panel); border: 3px solid var(--rc-green-dim);
   box-shadow: 0 0 6px -1px var(--rc-glow), inset 0 0 6px -2px var(--rc-glow);
@@ -165,7 +166,7 @@ header {
 }
 .btn-volver.oculto { display: none; }
 
-main#productos { flex: 1; min-width: 0; }
+main#productos { flex: 1; min-width: 0; margin-top: 20px; }
 
 .carrousel-ciudad-wrap {
   display: flex; flex-direction: column; gap: 10px; height: 100%;
@@ -212,9 +213,10 @@ main#productos { flex: 1; min-width: 0; }
   display: flex;
   align-items: center;
   justify-content: center;
-  /* el padding superior es igual al que separa el buscador del carrousel de
-     marcas (20px), así el borde de la tarjeta coincide con el del buscador */
-  padding: 20px 12px 12px;
+  /* sin padding arriba: main#productos ya tiene margin-top:20px (igual al
+     buscador), así el borde superior de la tarjeta queda exactamente
+     alineado con el del buscador. */
+  padding: 0 12px 12px;
   box-sizing: border-box;
   opacity: 0;
   transition: opacity 1.4s ease;
@@ -308,8 +310,11 @@ main#productos { flex: 1; min-width: 0; }
   .columna-izquierda { flex: 1 1 auto; max-width: none; }
 }
 
-.control-vista { display: flex; gap: 8px; margin-bottom: 14px; }
-.btn-vista { padding: 6px 14px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.control-vista { display: flex; gap: 8px; margin-bottom: 10px; }
+.btn-vista {
+  height: 44px; box-sizing: border-box; display: inline-flex; align-items: center;
+  padding: 6px 14px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
+}
 .btn-vista.activo {
   background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
   font-weight: 600;
