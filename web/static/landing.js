@@ -1,3 +1,29 @@
+// --- Beep sutil estilo computadora vieja, en cada interacción con la web ---
+
+let audioCtxInteraccion;
+function beepInteraccion() {
+  try {
+    audioCtxInteraccion = audioCtxInteraccion
+      || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtxInteraccion.state === "suspended") audioCtxInteraccion.resume();
+    const osc = audioCtxInteraccion.createOscillator();
+    const gain = audioCtxInteraccion.createGain();
+    osc.type = "square";
+    osc.frequency.value = 740;
+    gain.gain.setValueAtTime(0.025, audioCtxInteraccion.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtxInteraccion.currentTime + 0.05);
+    osc.connect(gain).connect(audioCtxInteraccion.destination);
+    osc.start();
+    osc.stop(audioCtxInteraccion.currentTime + 0.05);
+  } catch {
+    // Web Audio no disponible: seguimos sin sonido, no es crítico.
+  }
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest("button, a, [role='button']")) beepInteraccion();
+});
+
 const MARCAS = [
   "Apple", "Samsung", "Xiaomi", "Motorola", "Realme", "Oppo", "Honor",
   "Infinix", "Nokia", "PlayStation", "Nintendo", "JBL", "Logitech",
