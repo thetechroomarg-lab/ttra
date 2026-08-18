@@ -205,28 +205,41 @@ function pintarCarrousel() {
 // Desplaza el carrousel de marcas a los saltos, en píxeles reales, en vez de
 // una animación CSS por porcentaje: evita el corte/glitch al llegar al final
 // de la primera tanda, porque el ancho de wrap se mide en píxeles exactos.
+// El ancho se vuelve a medir en cada vuelta (no se cachea una sola vez), así
+// un reflow tardío (p. ej. la fuente Share Tech Mono terminando de cargar)
+// nunca deja desincronizado el punto de reinicio del loop.
 function iniciarDesplazamientoCarrousel(el) {
   const primeraTanda = el.querySelector(".carrousel-tanda");
   let posicion = 0;
+  let anchoTanda = 0;
   let intervalo = null;
 
-  function calcularAncho() {
+  function medirAncho() {
     const estilo = getComputedStyle(el);
-    return primeraTanda.getBoundingClientRect().width + parseFloat(estilo.gap || "48");
+    anchoTanda = primeraTanda.getBoundingClientRect().width + parseFloat(estilo.gap || "48");
+  }
+
+  function paso() {
+    posicion += 3;
+    if (posicion >= anchoTanda) {
+      posicion -= anchoTanda;
+      medirAncho();
+    }
+    el.style.transform = `translateX(-${posicion}px)`;
   }
 
   function iniciar() {
-    if (intervalo) clearInterval(intervalo);
-    const anchoTanda = calcularAncho();
+    medirAncho();
     if (anchoTanda <= 0) return;
-    intervalo = setInterval(() => {
-      posicion += 3;
-      if (posicion >= anchoTanda) posicion -= anchoTanda;
-      el.style.transform = `translateX(-${posicion}px)`;
-    }, 60);
+    if (intervalo) clearInterval(intervalo);
+    intervalo = setInterval(paso, 60);
   }
 
-  iniciar();
+  const listoParaMedir = document.fonts && document.fonts.ready
+    ? document.fonts.ready
+    : Promise.resolve();
+  listoParaMedir.then(iniciar);
+
   window.addEventListener("resize", () => {
     posicion = 0;
     el.style.transform = "translateX(0)";
@@ -735,11 +748,25 @@ function pintarFechaHoraTemp() {
   el.textContent = partes.join(" · ");
 }
 
+// Traduce el código de clima de Open-Meteo a una descripción corta en castellano.
+function descripcionClima(codigo) {
+  if (codigo === 0) return "cielo despejado";
+  if ([1, 2].includes(codigo)) return "parcialmente nublado";
+  if (codigo === 3) return "nublado";
+  if ([45, 48].includes(codigo)) return "con niebla";
+  if ([51, 53, 55, 56, 57].includes(codigo)) return "con llovizna";
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(codigo)) return "con lluvia";
+  if ([71, 73, 75, 77, 85, 86].includes(codigo)) return "con nieve";
+  if ([95, 96, 99].includes(codigo)) return "con tormenta";
+  return "variable";
+}
+
 async function cargarClimaYCiudad(lat, lon) {
   try {
-    const [climaR, ciudadR] = await Promise.all([
+    const [climaR, ciudadR, pronosticoR] = await Promise.all([
       fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`),
       fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`),
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`),
     ]);
     if (climaR.ok) {
       const datosClima = await climaR.json();
@@ -748,6 +775,13 @@ async function cargarClimaYCiudad(lat, lon) {
     if (ciudadR.ok) {
       const datosCiudad = await ciudadR.json();
       ciudadActual = datosCiudad.locality || datosCiudad.city || null;
+    }
+    if (pronosticoR.ok) {
+      const datosPronostico = await pronosticoR.json();
+      const max = Math.round(datosPronostico.daily.temperature_2m_max[1]);
+      const min = Math.round(datosPronostico.daily.temperature_2m_min[1]);
+      const desc = descripcionClima(datosPronostico.daily.weathercode[1]);
+      pronosticoManana = `Mañana en ${ciudadActual || "Córdoba"}: máxima de ${max}°, mínima de ${min}°, ${desc}`;
     }
   } catch {
     // se mantiene lo último cargado si algo falla
@@ -774,6 +808,8 @@ setInterval(pintarFechaHoraTemp, 1000);
 
 let titularesNoticias = [];
 let indiceNoticia = 0;
+let cotizacionActual = null;
+let cicloNoticiero = 0; // cuenta narraciones para intercalar cotización/clima cada tanto
 
 async function cargarNoticias() {
   try {
@@ -786,6 +822,28 @@ async function cargarNoticias() {
   } catch {
     // si falla, se sigue narrando con lo último cargado
   }
+}
+
+async function cargarCotizacion() {
+  try {
+    const r = await fetch("/api/cotizacion");
+    if (!r.ok) return;
+    const datos = await r.json();
+    if (typeof datos.valor === "number") cotizacionActual = datos.valor;
+  } catch {
+    // se mantiene lo último cargado si algo falla
+  }
+}
+
+// Cada 4ta narración se reemplaza por una frase especial (cotización o
+// clima), alternando entre las dos, en vez de un titular de noticias real.
+function siguienteFraseEspecial() {
+  const usarClima = cicloNoticiero % 8 === 7;
+  if (usarClima && pronosticoManana) return pronosticoManana;
+  if (cotizacionActual !== null) {
+    return `La cotización actual del dólar en Córdoba es de $${cotizacionActual}`;
+  }
+  return null;
 }
 
 function escribirTexto(el, texto, velocidadMs, alTerminar) {
@@ -803,16 +861,22 @@ function escribirTexto(el, texto, velocidadMs, alTerminar) {
 
 function narrarSiguienteNoticia() {
   const el = document.getElementById("noticiero-texto");
-  if (!el || titularesNoticias.length === 0) return;
-  const titular = titularesNoticias[indiceNoticia % titularesNoticias.length];
-  indiceNoticia++;
-  escribirTexto(el, titular, 35, narrarSiguienteNoticia);
+  if (!el) return;
+  cicloNoticiero++;
+  let texto = cicloNoticiero % 4 === 0 ? siguienteFraseEspecial() : null;
+  if (!texto) {
+    if (titularesNoticias.length === 0) return;
+    texto = titularesNoticias[indiceNoticia % titularesNoticias.length];
+    indiceNoticia++;
+  }
+  escribirTexto(el, texto, 35, narrarSiguienteNoticia);
 }
 
 async function iniciarNoticiero() {
-  await cargarNoticias();
+  await Promise.all([cargarNoticias(), cargarCotizacion()]);
   narrarSiguienteNoticia();
   setInterval(cargarNoticias, 10 * 60 * 1000);
+  setInterval(cargarCotizacion, 10 * 60 * 1000);
 }
 
 iniciarNoticiero();

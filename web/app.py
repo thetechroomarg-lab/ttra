@@ -184,6 +184,16 @@ def api_catalogo():
     return {"secciones": catalogo.secciones_catalogo(productos)}
 
 
+# Cotización del dólar en Córdoba usada como referencia en el sitio (a mano,
+# actualizar acá cuando cambie — es la misma fuente única que usa el catálogo).
+COTIZACION_DOLAR = 1550
+
+
+@app.get("/api/cotizacion")
+def api_cotizacion():
+    return {"valor": COTIZACION_DOLAR}
+
+
 NOTICIAS_RSS_URL = (
     "https://news.google.com/rss/search?q=politica%20OR%20economia%20OR%20finanzas"
     "&hl=es-419&gl=AR&ceid=AR:es-419"
