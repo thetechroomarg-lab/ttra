@@ -262,7 +262,7 @@ function formatearPesos(valor) {
 
 function tarjetaProducto(p) {
   const colores = Array.isArray(p.colores) && p.colores.length > 0
-    ? `<p class="colores">${escapeHtml(p.colores.join(", "))}</p>`
+    ? `<p class="colores"><strong>Colores:</strong> ${escapeHtml(p.colores.join(", "))}</p>`
     : "";
   return `
     <div class="card">
