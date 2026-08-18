@@ -87,7 +87,7 @@ header h1:hover { cursor: var(--rc-cursor-mira); }
 
 .rc-buscador {
   display: flex; align-items: center; gap: 10px;
-  margin: 20px; padding: 10px 14px;
+  margin: 20px 0 0; padding: 10px 14px;
   background: var(--rc-bg-panel); border: 1px solid var(--rc-green-dim);
 }
 .rc-buscador-icono { width: 18px; height: 18px; color: var(--rc-green-dim); flex: 0 0 18px; }
@@ -118,6 +118,11 @@ header h1:hover { cursor: var(--rc-cursor-mira); }
   background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
   font-weight: 600;
 }
+
+.selector-marcas {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px;
+}
+.selector-marcas .btn-categoria { padding: 22px 16px; }
 
 .btn-volver {
   display: block; width: 100%;
@@ -249,7 +254,6 @@ main#productos { flex: 1; min-width: 0; }
 
 @media (max-width: 480px) {
   header { padding: 12px 14px; }
-  .rc-buscador { margin-left: 14px; margin-right: 14px; }
   .fila-principal { padding: 0 14px 32px; }
   .card { padding: 12px; }
   #panel-carrito { padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }

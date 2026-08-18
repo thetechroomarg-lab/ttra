@@ -32,12 +32,15 @@ const MARCAS = [
 // Orden y etiquetas de los botones de categoría en la pantalla principal.
 // "clave" es el nombre de sección tal cual lo devuelve /api/catalogo;
 // "etiqueta" es lo que se muestra en el botón (más corto en el caso de accesorios).
+const BUSQUEDA_MARCA_CLAVE = "BusquedaMarca";
+
 const CATEGORIAS_BOTONES = [
   { clave: "Celulares", etiqueta: "Celulares" },
   { clave: "Tablets", etiqueta: "Tablets" },
   { clave: "Notebooks y Macbooks", etiqueta: "Notebooks y Macbooks" },
   { clave: "Gaming", etiqueta: "Gaming" },
   { clave: "Accesorios Celulares", etiqueta: "Accesorios" },
+  { clave: BUSQUEDA_MARCA_CLAVE, etiqueta: "Búsqueda por Marca" },
 ];
 
 // Secciones que muestran un paso intermedio (marca o tipo) antes de la grilla.
@@ -57,8 +60,8 @@ const WHATSAPP_NUMERO = "543512145217";
 
 let SECCIONES_DATA = {};
 let seccionActiva = null; // clave de sección elegida en la pantalla principal, o null
-let subFiltroActivo = null; // marca elegida, o "Notebooks"/"Macbooks", o null
-let filtroMarcaGlobal = null; // marca elegida desde el carrousel, busca en TODO el catálogo
+let subFiltrosActivos = new Set(); // marcas (o "Notebooks"/"Macbooks") elegidas, acumulables
+let filtroMarcaGlobal = null; // marca elegida desde el carrousel o "Búsqueda por Marca", busca en TODO el catálogo
 let modoVista = "cards"; // "cards" | "lista"
 
 // Fotos decorativas de la ciudad, solo visibles en la pantalla principal.
@@ -151,7 +154,7 @@ function pintarCarrousel() {
     span.addEventListener("click", () => {
       filtroMarcaGlobal = span.dataset.marca;
       seccionActiva = null;
-      subFiltroActivo = null;
+      subFiltrosActivos = new Set();
       document.getElementById("input-busqueda").value = "";
       pushEstadoNav();
       reproducirTransicionTV(actualizarVista);
@@ -225,8 +228,35 @@ function pintarCategorias() {
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       seccionActiva = btn.dataset.seccion;
-      subFiltroActivo = null;
+      subFiltrosActivos = new Set();
       document.getElementById("input-busqueda").value = "";
+      pushEstadoNav();
+      reproducirTransicionTV(actualizarVista);
+    });
+  });
+}
+
+// Pantalla de "Búsqueda por Marca": lista todas las marcas presentes en
+// TODO el catálogo (cualquier categoría); elegir una filtra el catálogo
+// entero por esa marca, sin importar la sección.
+function todasLasMarcasDelCatalogo() {
+  const productos = Object.values(SECCIONES_DATA).flat();
+  const presentes = new Set(productos.map((p) => p.marca || "Otras marcas"));
+  const ordenadas = ORDEN_MARCAS.filter((m) => presentes.has(m));
+  const resto = [...presentes].filter((m) => !ORDEN_MARCAS.includes(m)).sort();
+  return [...ordenadas, ...resto];
+}
+
+function pintarSelectorMarcas(el) {
+  const marcas = todasLasMarcasDelCatalogo();
+  el.innerHTML = `<div class="selector-marcas">${marcas.map(
+    (m) => `<button class="btn-categoria" data-marca="${escapeHtml(m)}" type="button">${escapeHtml(m)}</button>`
+  ).join("")}</div>`;
+  el.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      filtroMarcaGlobal = btn.dataset.marca;
+      seccionActiva = null;
+      subFiltrosActivos = new Set();
       pushEstadoNav();
       reproducirTransicionTV(actualizarVista);
     });
@@ -248,31 +278,43 @@ function opcionesSubNav(seccion) {
   return ["Todos", ...ordenadas, ...resto];
 }
 
+// Los botones de marca/tipo son acumulables: tocar "Todos" limpia la
+// selección; tocar una marca la suma o la saca sin afectar a las demás.
 function pintarSubNav(seccion) {
   const el = document.getElementById("sub-nav");
   const opciones = opcionesSubNav(seccion);
   el.innerHTML = opciones.map((o) => {
-    const activo = o === "Todos" ? !subFiltroActivo : subFiltroActivo === o;
+    const activo = o === "Todos" ? subFiltrosActivos.size === 0 : subFiltrosActivos.has(o);
     return `<button data-clave="${escapeHtml(o)}" class="btn-categoria ${activo ? "activo" : ""}" type="button">${escapeHtml(o)}</button>`;
   }).join("");
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
-      subFiltroActivo = btn.dataset.clave === "Todos" ? null : btn.dataset.clave;
+      const clave = btn.dataset.clave;
+      if (clave === "Todos") {
+        subFiltrosActivos = new Set();
+      } else if (subFiltrosActivos.has(clave)) {
+        subFiltrosActivos.delete(clave);
+      } else {
+        subFiltrosActivos.add(clave);
+      }
       pushEstadoNav();
       reproducirTransicionTV(actualizarVista);
     });
   });
 }
 
-// Productos de una sección que corresponden al sub-filtro elegido (marca, o
-// tipo Notebook/Mac).
-function productosDeSubFiltro(seccion, subFiltro) {
+// Productos de una sección que corresponden a los sub-filtros elegidos
+// (una o varias marcas, o tipo Notebook/Mac). Sin selección, no filtra nada.
+function productosDeSubFiltro(seccion, subFiltros) {
   const productos = SECCIONES_DATA[seccion] || [];
+  if (subFiltros.size === 0) return productos;
   if (seccion === "Notebooks y Macbooks") {
-    const categoriaBuscada = subFiltro === "Notebooks" ? "Notebook" : "Mac";
-    return productos.filter((p) => p.categoria === categoriaBuscada);
+    const categoriasBuscadas = new Set(
+      [...subFiltros].map((f) => (f === "Notebooks" ? "Notebook" : "Mac"))
+    );
+    return productos.filter((p) => categoriasBuscadas.has(p.categoria));
   }
-  return productos.filter((p) => (p.marca || "Otras marcas") === subFiltro);
+  return productos.filter((p) => subFiltros.has(p.marca || "Otras marcas"));
 }
 
 function formatearPesos(valor) {
@@ -371,19 +413,22 @@ function actualizarVista() {
     pintarSubNav(seccionActiva);
   }
 
+  if (seccionActiva === BUSQUEDA_MARCA_CLAVE && termino === "") {
+    pintarSelectorMarcas(productosEl);
+    return;
+  }
+
   let base;
   let mensajeVacioSinFiltro;
   if (filtroMarcaGlobal) {
     base = Object.values(SECCIONES_DATA).flat()
       .filter((p) => (p.marca || "Otras marcas") === filtroMarcaGlobal);
     mensajeVacioSinFiltro = `Todavía no hay productos de ${filtroMarcaGlobal} cargados.`;
-  } else if (seccionActiva) {
-    base = subFiltroActivo
-      ? productosDeSubFiltro(seccionActiva, subFiltroActivo)
-      : SECCIONES_DATA[seccionActiva] || []; // sección sin sub-nav (Gaming), o buscando antes de elegir
+  } else if (seccionActiva && seccionActiva !== BUSQUEDA_MARCA_CLAVE) {
+    base = productosDeSubFiltro(seccionActiva, subFiltrosActivos); // sección sin sub-nav (Gaming) devuelve todo igual
     mensajeVacioSinFiltro = "Todavía no hay productos cargados acá.";
   } else {
-    base = Object.values(SECCIONES_DATA).flat(); // búsqueda global (sin marca ni sección)
+    base = Object.values(SECCIONES_DATA).flat(); // búsqueda global, o buscando dentro de "Búsqueda por Marca"
     mensajeVacioSinFiltro = "Todavía no hay productos cargados acá.";
   }
 
@@ -413,8 +458,8 @@ function retrocederPasoDesdeHistorial() {
   const input = document.getElementById("input-busqueda");
   if (input.value.trim() !== "") {
     input.value = "";
-  } else if (subFiltroActivo) {
-    subFiltroActivo = null;
+  } else if (subFiltrosActivos.size > 0) {
+    subFiltrosActivos = new Set();
   } else if (seccionActiva) {
     seccionActiva = null;
   } else if (filtroMarcaGlobal) {
@@ -440,7 +485,7 @@ window.addEventListener("popstate", () => {
 
 function volverAPantallaPrincipal() {
   seccionActiva = null;
-  subFiltroActivo = null;
+  subFiltrosActivos = new Set();
   filtroMarcaGlobal = null;
   profundidadHistorial = 0;
   document.getElementById("input-busqueda").value = "";
