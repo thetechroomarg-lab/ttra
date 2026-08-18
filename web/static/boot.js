@@ -70,7 +70,9 @@
           overlay.appendChild(bloqueCara);
           beep(660, 130);
 
-          setTimeout(() => overlay.classList.add("rc-boot-oculto"), 3200);
+          setTimeout(() => {
+            reproducirEstaticaTV(() => overlay.classList.add("rc-boot-oculto"));
+          }, 3200);
         }, 500);
       }, 500);
       return;
@@ -81,6 +83,49 @@
     if (LINEAS[i] !== "") beep(620, 70);
     i++;
     setTimeout(siguienteLinea, LINEAS[i - 1] === "" ? 260 : 420);
+  }
+
+  // Estática breve estilo TV de tubo, solo en esta transición puntual
+  // (boot -> landing), en ningún otro lado del sitio.
+  function reproducirEstaticaTV(alTerminar) {
+    const canvas = document.createElement("canvas");
+    canvas.style.position = "fixed";
+    canvas.style.inset = "0";
+    canvas.style.zIndex = "10001";
+    canvas.style.pointerEvents = "none";
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+
+    const chico = document.createElement("canvas");
+    chico.width = 160;
+    chico.height = 90;
+    const ctxChico = chico.getContext("2d");
+
+    const duracionMs = 260;
+    const inicio = performance.now();
+
+    function cuadro(ahora) {
+      const imagen = ctxChico.createImageData(chico.width, chico.height);
+      for (let i2 = 0; i2 < imagen.data.length; i2 += 4) {
+        const v = Math.random() * 255;
+        imagen.data[i2] = 0;
+        imagen.data[i2 + 1] = v;
+        imagen.data[i2 + 2] = v * 0.3;
+        imagen.data[i2 + 3] = 255;
+      }
+      ctxChico.putImageData(imagen, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(chico, 0, 0, canvas.width, canvas.height);
+      if (ahora - inicio < duracionMs) {
+        requestAnimationFrame(cuadro);
+      } else {
+        canvas.remove();
+        alTerminar();
+      }
+    }
+    requestAnimationFrame(cuadro);
   }
 
   siguienteLinea();

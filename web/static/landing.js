@@ -514,14 +514,21 @@ function formatearPesos(valor) {
 
 function tarjetaProducto(p) {
   const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
-  const colores = tieneColores
-    ? `<div class="selector-colores">
-        <strong>Colores:</strong>
-        <div class="botones-color">
-          ${p.colores.map((c) => `<button type="button" class="btn-color" data-color="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join("")}
-        </div>
-      </div>`
-    : "";
+  const listaColores = tieneColores ? p.colores : ["Color único"];
+  const colorInicial = tieneColores ? "" : "Color único";
+  const colores = `
+    <div class="selector-colores">
+      <label>
+        <strong>Color:</strong>
+        <select class="select-color">
+          ${tieneColores ? '<option value="" selected disabled>Elegir color</option>' : ""}
+          ${listaColores.map((c) =>
+            `<option value="${escapeHtml(c)}" ${!tieneColores ? "selected" : ""}>${escapeHtml(c)}</option>`
+          ).join("")}
+        </select>
+      </label>
+    </div>
+  `;
   return `
     <div class="card">
       <h3>${escapeHtml(p.nombre)}</h3>
@@ -531,15 +538,15 @@ function tarjetaProducto(p) {
         $ ${formatearPesos(p.pesos)} contado<br>
         $ ${formatearPesos(p.transferencia)} transferencia
       </p>
-      <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" type="button" ${tieneColores ? "disabled" : ""}>Agregar al carrito</button>
+      <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="${escapeHtml(colorInicial)}" type="button" ${tieneColores ? "disabled" : ""}>Agregar al carrito</button>
     </div>
   `;
 }
 
 // Etiqueta y flecha del botón de orden, según el estado actual.
 function etiquetaOrdenPrecio() {
-  if (ordenPrecio === "asc") return "Precio ↑";
-  if (ordenPrecio === "desc") return "Precio ↓";
+  if (ordenPrecio === "asc") return 'Precio <span class="flecha-orden">↑</span>';
+  if (ordenPrecio === "desc") return 'Precio <span class="flecha-orden">↓</span>';
   return "Ordenar precio";
 }
 
@@ -576,15 +583,13 @@ function pintarGrilla(el, productos, mensajeVacio) {
   el.innerHTML = `${controlVistaHtml()}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div>`;
   el.querySelectorAll(".card").forEach((card) => {
     const btnAgregar = card.querySelector(".btn-agregar");
-    const botonesColor = card.querySelectorAll(".btn-color");
-    botonesColor.forEach((btnColor) => {
-      btnColor.addEventListener("click", () => {
-        botonesColor.forEach((b) => b.classList.remove("seleccionado"));
-        btnColor.classList.add("seleccionado");
-        btnAgregar.dataset.color = btnColor.dataset.color;
-        btnAgregar.disabled = false;
+    const selectColor = card.querySelector(".select-color");
+    if (selectColor) {
+      selectColor.addEventListener("change", () => {
+        btnAgregar.dataset.color = selectColor.value;
+        btnAgregar.disabled = !selectColor.value;
       });
-    });
+    }
     btnAgregar.addEventListener("click", () => {
       const producto = productos.find((p) => p.nombre === btnAgregar.dataset.nombre);
       if (producto) agregarAlCarrito(producto, btnAgregar.dataset.color || null);
@@ -1168,13 +1173,17 @@ function mostrarConCrawl(el, titulo, descripcion, link, alTerminar) {
   const totalPasos = Math.max(pasosMinimos, Math.ceil(distanciaTotal / pxPorTickBase));
   const pxPorTick = distanciaTotal / totalPasos;
 
-  let posicion = contenedor.clientHeight;
+  // El texto está anclado con bottom:0, así que para que entre totalmente
+  // oculto abajo hay que arrancar en +scrollHeight (no +clientHeight), y para
+  // que salga totalmente oculto arriba hay que llegar a -clientHeight (no
+  // -scrollHeight) — si no, se queda a mitad de camino, todavía visible.
+  let posicion = el.scrollHeight;
+  const destino = -contenedor.clientHeight;
   el.style.transform = `translateY(${posicion}px)`;
 
   requestAnimationFrame(() => {
     const intervalo = setInterval(() => {
       posicion -= pxPorTick;
-      const destino = -el.scrollHeight;
       if (posicion <= destino) {
         posicion = destino;
         el.style.transform = `translateY(${posicion}px)`;

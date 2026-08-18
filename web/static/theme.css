@@ -63,7 +63,7 @@ body {
 
 /* --- Distorsión sutil tipo TV de tubo (vertical-hold), transiciones de sección --- */
 .rc-deformando {
-  animation: rc-deformar 0.3s steps(3, end);
+  animation: rc-deformar 0.45s ease-in-out;
   transform-origin: center;
 }
 
