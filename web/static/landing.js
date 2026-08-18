@@ -59,6 +59,7 @@ const CLAVE_CARRITO = "ttra_carrito";
 const WHATSAPP_NUMERO = "543512145217";
 
 let SECCIONES_DATA = {};
+let cotizacionActual = null; // U$D actual, usado en el reloj del header y en el narrador de noticias
 let seccionActiva = null; // clave de sección elegida en la pantalla principal, o null
 let subFiltrosActivos = new Set(); // marcas (o "Notebooks"/"Macbooks") elegidas, acumulables
 let filtroMarcaGlobal = null; // marca elegida desde el carrousel o "Búsqueda por Marca", busca en TODO el catálogo
@@ -799,12 +800,14 @@ function formatearFechaHora() {
 function pintarFechaHoraTemp() {
   const elFechaHora = document.getElementById("fecha-hora");
   const elCiudadTemp = document.getElementById("ciudad-temp");
-  if (!elFechaHora || !elCiudadTemp) return;
+  const elDolar = document.getElementById("dolar-linea");
+  if (!elFechaHora || !elCiudadTemp || !elDolar) return;
   elFechaHora.textContent = formatearFechaHora();
   const partesCiudadTemp = [];
   if (ciudadActual) partesCiudadTemp.push(ciudadActual);
   if (temperaturaActual !== null) partesCiudadTemp.push(`${temperaturaActual}°C`);
   elCiudadTemp.textContent = partesCiudadTemp.join(" · ");
+  elDolar.textContent = cotizacionActual !== null ? `Dólar: $${cotizacionActual}` : "";
 }
 
 // Traduce el código de clima de Open-Meteo a una descripción corta en castellano.
@@ -867,7 +870,6 @@ setInterval(pintarFechaHoraTemp, 1000);
 
 let titularesNoticias = [];
 let indiceNoticia = 0;
-let cotizacionActual = null;
 let cicloNoticiero = 0; // cuenta narraciones para intercalar cotización/clima cada tanto
 
 async function cargarNoticias() {
