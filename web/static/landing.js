@@ -44,8 +44,23 @@ const IMAGENES_CIUDAD = [
   "ciudad/batalla-de-la-toma.png",
   "ciudad/parque-sarmiento.png",
   "ciudad/paseo-del-buen-pastor.png",
+  "ciudad/dique.png",
+  "ciudad/lago-san-roque.png",
+  "ciudad/puente-14-de-agosto.png",
+  "ciudad/reserva-san-martin.png",
 ];
-let indiceCiudad = 0;
+let indiceCiudad = Math.floor(Math.random() * IMAGENES_CIUDAD.length);
+
+// Elige un índice al azar distinto del actual, para que nunca se repita la
+// misma foto dos veces seguidas.
+function siguienteIndiceCiudadAlAzar() {
+  if (IMAGENES_CIUDAD.length <= 1) return 0;
+  let candidato;
+  do {
+    candidato = Math.floor(Math.random() * IMAGENES_CIUDAD.length);
+  } while (candidato === indiceCiudad);
+  return candidato;
+}
 let intervaloCiudad = null;
 
 function detenerCarrouselCiudad() {
@@ -65,7 +80,7 @@ function pintarCarrouselCiudad(el) {
   intervaloCiudad = setInterval(() => {
     const contenedor = el.querySelector(".carrousel-ciudad");
     if (!contenedor) return;
-    indiceCiudad = (indiceCiudad + 1) % IMAGENES_CIUDAD.length;
+    indiceCiudad = siguienteIndiceCiudadAlAzar();
     const actual = contenedor.querySelector("img.visible");
     const siguiente = document.createElement("img");
     siguiente.alt = "Córdoba";
