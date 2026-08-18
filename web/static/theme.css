@@ -28,7 +28,7 @@ html, body {
 }
 
 body {
-  text-shadow: 0 0 2px var(--rc-glow);
+  text-shadow: 0 0 1px var(--rc-glow), 0 0 4px var(--rc-glow);
 }
 
 /* --- Overlay CRT: scanlines + viñeta + flicker sutil, no intercepta clicks --- */

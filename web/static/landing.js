@@ -176,10 +176,13 @@ function reproducirTransicionTV(cambiarContenido) {
 
 function pintarCarrousel() {
   const el = document.getElementById("carrousel");
-  const marcas = [...MARCAS, ...MARCAS];
-  el.innerHTML = marcas.map(
+  const tanda = MARCAS.map(
     (m) => `<span data-marca="${escapeHtml(m)}" tabindex="0" role="button">${escapeHtml(m)}</span>`
   ).join("");
+  el.innerHTML = `
+    <div class="carrousel-tanda">${tanda}</div>
+    <div class="carrousel-tanda">${tanda}</div>
+  `;
   el.querySelectorAll("span").forEach((span) => {
     span.addEventListener("click", () => {
       filtroMarcaGlobal = span.dataset.marca;
@@ -195,6 +198,39 @@ function pintarCarrousel() {
         span.click();
       }
     });
+  });
+  iniciarDesplazamientoCarrousel(el);
+}
+
+// Desplaza el carrousel de marcas a los saltos, en píxeles reales, en vez de
+// una animación CSS por porcentaje: evita el corte/glitch al llegar al final
+// de la primera tanda, porque el ancho de wrap se mide en píxeles exactos.
+function iniciarDesplazamientoCarrousel(el) {
+  const primeraTanda = el.querySelector(".carrousel-tanda");
+  let posicion = 0;
+  let intervalo = null;
+
+  function calcularAncho() {
+    const estilo = getComputedStyle(el);
+    return primeraTanda.getBoundingClientRect().width + parseFloat(estilo.gap || "48");
+  }
+
+  function iniciar() {
+    if (intervalo) clearInterval(intervalo);
+    const anchoTanda = calcularAncho();
+    if (anchoTanda <= 0) return;
+    intervalo = setInterval(() => {
+      posicion += 3;
+      if (posicion >= anchoTanda) posicion -= anchoTanda;
+      el.style.transform = `translateX(-${posicion}px)`;
+    }, 60);
+  }
+
+  iniciar();
+  window.addEventListener("resize", () => {
+    posicion = 0;
+    el.style.transform = "translateX(0)";
+    iniciar();
   });
 }
 
@@ -656,21 +692,23 @@ setInterval(pintarFrasePie, 60 * 60 * 1000);
 
 // --- Carita animada de caracteres, junto al título ---
 
-const CARAS_ANIMADAS = [":)", ":D", ":P", ":O", ":B", ":]", ":3", "xD", ":|"];
+const CARAS_ANIMADAS = [":D", ":O", ":I"];
 let indiceCara = 0;
+let capaCaraVisible = "a"; // alterna entre las dos capas superpuestas para el crossfade
 
 function animarCara() {
-  const el = document.getElementById("cara-animada");
-  if (!el) return;
-  el.classList.add("oculto-fade");
-  setTimeout(() => {
-    indiceCara = (indiceCara + 1) % CARAS_ANIMADAS.length;
-    el.textContent = CARAS_ANIMADAS[indiceCara];
-    el.classList.remove("oculto-fade");
-  }, 220);
+  const capaActual = document.getElementById(`cara-animada-${capaCaraVisible}`);
+  const siguienteLetra = capaCaraVisible === "a" ? "b" : "a";
+  const capaSiguiente = document.getElementById(`cara-animada-${siguienteLetra}`);
+  if (!capaActual || !capaSiguiente) return;
+  indiceCara = (indiceCara + 1) % CARAS_ANIMADAS.length;
+  capaSiguiente.textContent = CARAS_ANIMADAS[indiceCara];
+  capaSiguiente.classList.add("visible");
+  capaActual.classList.remove("visible");
+  capaCaraVisible = siguienteLetra;
 }
 
-setInterval(animarCara, 1600);
+setInterval(animarCara, 380);
 
 // --- Fecha, hora, ciudad y temperatura del usuario, a la izquierda del carrito ---
 // La ciudad y la temperatura corresponden a la ubicación real del visitante
@@ -684,7 +722,7 @@ let ciudadActual = null;
 function formatearFechaHora() {
   const ahora = new Date();
   const fecha = ahora.toLocaleDateString("es-AR");
-  const hora = ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  const hora = ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   return `${fecha} ${hora}`;
 }
 
@@ -730,7 +768,54 @@ function iniciarUbicacionYClima() {
 }
 
 pintarFechaHoraTemp();
-setInterval(pintarFechaHoraTemp, 60 * 1000);
+setInterval(pintarFechaHoraTemp, 1000);
+
+// --- Personaje narrador de noticias (política/finanzas), tipo noticiero ---
+
+let titularesNoticias = [];
+let indiceNoticia = 0;
+
+async function cargarNoticias() {
+  try {
+    const r = await fetch("/api/noticias");
+    if (!r.ok) return;
+    const datos = await r.json();
+    if (Array.isArray(datos.titulares) && datos.titulares.length > 0) {
+      titularesNoticias = datos.titulares;
+    }
+  } catch {
+    // si falla, se sigue narrando con lo último cargado
+  }
+}
+
+function escribirTexto(el, texto, velocidadMs, alTerminar) {
+  el.textContent = "";
+  let i = 0;
+  const intervalo = setInterval(() => {
+    i++;
+    el.textContent = texto.slice(0, i);
+    if (i >= texto.length) {
+      clearInterval(intervalo);
+      if (alTerminar) setTimeout(alTerminar, 3500);
+    }
+  }, velocidadMs);
+}
+
+function narrarSiguienteNoticia() {
+  const el = document.getElementById("noticiero-texto");
+  if (!el || titularesNoticias.length === 0) return;
+  const titular = titularesNoticias[indiceNoticia % titularesNoticias.length];
+  indiceNoticia++;
+  escribirTexto(el, titular, 35, narrarSiguienteNoticia);
+}
+
+async function iniciarNoticiero() {
+  await cargarNoticias();
+  narrarSiguienteNoticia();
+  setInterval(cargarNoticias, 10 * 60 * 1000);
+}
+
+iniciarNoticiero();
 iniciarUbicacionYClima();
 setInterval(iniciarUbicacionYClima, 15 * 60 * 1000);
 

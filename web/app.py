@@ -1,9 +1,13 @@
 import json
 import logging
 import os
+import re
+import time
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 
+import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
@@ -178,6 +182,41 @@ def api_catalogo():
         return {"secciones": {s: [] for s in catalogo.SECCIONES},
                 "mensaje": "Estamos actualizando los precios"}
     return {"secciones": catalogo.secciones_catalogo(productos)}
+
+
+NOTICIAS_RSS_URL = (
+    "https://news.google.com/rss/search?q=politica%20OR%20economia%20OR%20finanzas"
+    "&hl=es-419&gl=AR&ceid=AR:es-419"
+)
+NOTICIAS_TTL_SEG = 600  # 10 minutos: evita golpear Google News en cada visita
+_noticias_cache = {"titulares": [], "actualizado": 0.0}
+
+
+def _limpiar_titular(titulo):
+    # Google News agrega " - Nombre del medio" al final de cada título.
+    return re.sub(r"\s+-\s+[^-]+$", "", titulo).strip()
+
+
+@app.get("/api/noticias")
+def api_noticias():
+    ahora = time.time()
+    if ahora - _noticias_cache["actualizado"] < NOTICIAS_TTL_SEG and _noticias_cache["titulares"]:
+        return {"titulares": _noticias_cache["titulares"]}
+    try:
+        r = httpx.get(NOTICIAS_RSS_URL, timeout=6, headers={"User-Agent": "Mozilla/5.0"})
+        r.raise_for_status()
+        raiz = ET.fromstring(r.text)
+        titulares = [
+            _limpiar_titular(item.findtext("title", ""))
+            for item in raiz.findall(".//item")
+        ]
+        titulares = [t for t in titulares if t][:12]
+        if titulares:
+            _noticias_cache["titulares"] = titulares
+            _noticias_cache["actualizado"] = ahora
+    except Exception:
+        logger.exception("No se pudieron obtener las noticias")
+    return {"titulares": _noticias_cache["titulares"]}
 
 
 @app.post("/admin/productos")

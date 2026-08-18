@@ -3,6 +3,7 @@ pytest==8.3.2
 fastapi
 uvicorn
 anthropic
+httpx
 python-dotenv
 passlib[bcrypt]==1.7.4
 bcrypt<5.0
