@@ -60,6 +60,8 @@ const WHATSAPP_NUMERO = "543512145217";
 
 let SECCIONES_DATA = {};
 let cotizacionActual = null; // U$D actual, usado en el reloj del header y en el narrador de noticias
+let pronosticoManana = null; // texto del pronóstico del día siguiente, para el narrador
+let pronosticoConsejo = null; // consejo práctico según ese pronóstico (paraguas, abrigo, etc.)
 let seccionActiva = null; // clave de sección elegida en la pantalla principal, o null
 let subFiltrosActivos = new Set(); // marcas (o "Notebooks"/"Macbooks") elegidas, acumulables
 let filtroMarcaGlobal = null; // marca elegida desde el carrousel o "Búsqueda por Marca", busca en TODO el catálogo
@@ -823,6 +825,17 @@ function descripcionClima(codigo) {
   return "variable";
 }
 
+// Consejo práctico según el pronóstico del día siguiente.
+function consejoClima(codigo, min, max) {
+  if ([71, 73, 75, 77, 85, 86].includes(codigo)) return "🥶 Abrigate bien, puede nevar";
+  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].includes(codigo)) {
+    return "🌂 Llevá paraguas, puede llover";
+  }
+  if (min <= 8) return "🧥 Abrigate, va a hacer frío";
+  if (max >= 30) return "🥵 Usá ropa liviana, va a hacer calor";
+  return "🙂 Buen día para salir";
+}
+
 async function cargarClimaYCiudad(lat, lon) {
   try {
     const [climaR, ciudadR, pronosticoR] = await Promise.all([
@@ -842,8 +855,10 @@ async function cargarClimaYCiudad(lat, lon) {
       const datosPronostico = await pronosticoR.json();
       const max = Math.round(datosPronostico.daily.temperature_2m_max[1]);
       const min = Math.round(datosPronostico.daily.temperature_2m_min[1]);
-      const desc = descripcionClima(datosPronostico.daily.weathercode[1]);
+      const codigo = datosPronostico.daily.weathercode[1];
+      const desc = descripcionClima(codigo);
       pronosticoManana = `Mañana en ${ciudadActual || "Córdoba"}: máxima de ${max}°, mínima de ${min}°, ${desc}`;
+      pronosticoConsejo = consejoClima(codigo, min, max);
     }
   } catch {
     // se mantiene lo último cargado si algo falla
@@ -897,53 +912,62 @@ async function cargarCotizacion() {
 }
 
 // Cada 4ta narración se reemplaza por una frase especial (cotización o
-// clima), alternando entre las dos, en vez de un titular de noticias real.
+// clima con su consejo), alternando entre las dos, en vez de una noticia real.
 function siguienteFraseEspecial() {
   const usarClima = cicloNoticiero % 8 === 7;
-  if (usarClima && pronosticoManana) return pronosticoManana;
+  if (usarClima && pronosticoManana) {
+    return { titulo: pronosticoManana, descripcion: pronosticoConsejo };
+  }
   if (cotizacionActual !== null) {
-    return `La cotización actual del dólar en Córdoba es de $${cotizacionActual}`;
+    return { titulo: `La cotización actual del dólar en Córdoba es de $${cotizacionActual}`, descripcion: null };
   }
   return null;
 }
 
-function escribirTexto(el, texto, velocidadMs, alTerminar) {
-  el.textContent = "";
-  el.style.transform = "translateX(0)";
-  el.classList.remove("marquesina");
-  let i = 0;
-  const intervalo = setInterval(() => {
-    i++;
-    el.textContent = texto.slice(0, i);
-    if (i >= texto.length) {
-      clearInterval(intervalo);
-      if (alTerminar) pausarYSeguir(el, alTerminar);
-    }
-  }, velocidadMs);
-}
+// Título (línea 1, en negrita) + descripción opcional (línea 2). Entra desde
+// abajo del recuadro y sube en crawl continuo, estilo Star Wars, hasta salir
+// por completo arriba — siempre, tanto para noticias reales como para las
+// frases especiales (cotización/clima).
+function mostrarConCrawl(el, titulo, descripcion, link, alTerminar) {
+  if (link) {
+    el.href = link;
+    el.classList.add("clickeable");
+  } else {
+    el.removeAttribute("href");
+    el.classList.remove("clickeable");
+  }
+  el.innerHTML = `<strong>${escapeHtml(titulo)}</strong>${descripcion ? `<br>${escapeHtml(descripcion)}` : ""}`;
+  el.style.transition = "none";
 
-// Si el titular no entra en el ancho disponible, lo desliza como marquesina
-// (en vez de dejarlo cortado con "..."), sin nunca forzar el ancho del header.
-function pausarYSeguir(el, alTerminar) {
-  setTimeout(() => {
-    const desborde = el.scrollWidth - el.clientWidth;
-    if (desborde <= 0) {
-      setTimeout(alTerminar, 2000);
-      return;
-    }
-    el.classList.add("marquesina");
-    const duracionSeg = Math.max(2, desborde / 60);
-    el.style.transition = `transform ${duracionSeg}s linear`;
-    requestAnimationFrame(() => {
-      el.style.transform = `translateX(-${desborde}px)`;
-    });
-    setTimeout(() => {
-      el.style.transition = "none";
-      el.style.transform = "translateX(0)";
-      el.classList.remove("marquesina");
-      setTimeout(alTerminar, 900);
-    }, duracionSeg * 1000 + 900);
-  }, 300);
+  const contenedor = el.parentElement;
+  const distanciaTotal = contenedor.clientHeight + el.scrollHeight;
+
+  // Movimiento a saltos de píxeles (no transición suave de CSS), igual estética
+  // retro que el carrousel de marcas; ~25px/seg, con un piso de 6s de duración
+  // para que las noticias cortas también se puedan leer con calma.
+  const intervaloMs = 60;
+  const pxPorTickBase = 1.5;
+  const pasosMinimos = 100;
+  const totalPasos = Math.max(pasosMinimos, Math.ceil(distanciaTotal / pxPorTickBase));
+  const pxPorTick = distanciaTotal / totalPasos;
+
+  let posicion = contenedor.clientHeight;
+  el.style.transform = `translateY(${posicion}px)`;
+
+  requestAnimationFrame(() => {
+    const intervalo = setInterval(() => {
+      posicion -= pxPorTick;
+      const destino = -el.scrollHeight;
+      if (posicion <= destino) {
+        posicion = destino;
+        el.style.transform = `translateY(${posicion}px)`;
+        clearInterval(intervalo);
+        setTimeout(alTerminar, 400);
+        return;
+      }
+      el.style.transform = `translateY(${posicion}px)`;
+    }, intervaloMs);
+  });
 }
 
 function narrarSiguienteNoticia() {
@@ -951,25 +975,15 @@ function narrarSiguienteNoticia() {
   if (!el) return;
   cicloNoticiero++;
   const fraseEspecial = cicloNoticiero % 4 === 0 ? siguienteFraseEspecial() : null;
-  let texto;
   if (fraseEspecial) {
-    texto = `- ${fraseEspecial}`;
-    el.removeAttribute("href");
-    el.classList.remove("clickeable");
-  } else {
-    if (titularesNoticias.length === 0) return;
-    const noticia = titularesNoticias[indiceNoticia % titularesNoticias.length];
-    indiceNoticia++;
-    texto = noticia.fuente ? `- ${noticia.titulo} (${noticia.fuente})` : `- ${noticia.titulo}`;
-    if (noticia.link) {
-      el.href = noticia.link;
-      el.classList.add("clickeable");
-    } else {
-      el.removeAttribute("href");
-      el.classList.remove("clickeable");
-    }
+    mostrarConCrawl(el, fraseEspecial.titulo, fraseEspecial.descripcion, null, narrarSiguienteNoticia);
+    return;
   }
-  escribirTexto(el, texto, 35, narrarSiguienteNoticia);
+  if (titularesNoticias.length === 0) return;
+  const noticia = titularesNoticias[indiceNoticia % titularesNoticias.length];
+  indiceNoticia++;
+  const descripcion = noticia.fuente ? `Fuente: ${noticia.fuente}` : null;
+  mostrarConCrawl(el, noticia.titulo, descripcion, noticia.link, narrarSiguienteNoticia);
 }
 
 async function iniciarNoticiero() {
@@ -982,6 +996,22 @@ async function iniciarNoticiero() {
 iniciarNoticiero();
 iniciarUbicacionYClima();
 setInterval(iniciarUbicacionYClima, 15 * 60 * 1000);
+
+// El recuadro de noticias nace y termina exactamente a la altura del logo:
+// misma altura, mismo tope y mismo pie. Se re-sincroniza si cambia la fuente
+// (Archivo Black, que carga async) o el viewport (el logo usa clamp con vw).
+function sincronizarAlturaNoticiero() {
+  const logo = document.querySelector(".rc-logo");
+  const noticiero = document.querySelector(".rc-noticiero");
+  if (!logo || !noticiero) return;
+  const altura = logo.getBoundingClientRect().height;
+  if (altura > 0) noticiero.style.height = `${altura}px`;
+}
+
+sincronizarAlturaNoticiero();
+(document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+  .then(sincronizarAlturaNoticiero);
+window.addEventListener("resize", sincronizarAlturaNoticiero);
 
 pintarCarrousel();
 renderCarrito();
