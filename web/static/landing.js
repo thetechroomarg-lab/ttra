@@ -120,58 +120,22 @@ function pintarCarrouselCiudad(el) {
   }, 10000);
 }
 
-// --- Efecto de interferencia (transición estilo TV de tubo entre secciones) ---
-
-let canvasRuidoTV = null; // canvas chico interno, escalado hacia arriba para look pixelado
-
-function dibujarCuadroRuidoTV(canvas) {
-  const ctx = canvas.getContext("2d");
-  if (!canvasRuidoTV) {
-    canvasRuidoTV = document.createElement("canvas");
-    canvasRuidoTV.width = 160;
-    canvasRuidoTV.height = 90;
-  }
-  const ctxRuido = canvasRuidoTV.getContext("2d");
-  const imagen = ctxRuido.createImageData(canvasRuidoTV.width, canvasRuidoTV.height);
-  for (let i = 0; i < imagen.data.length; i += 4) {
-    const v = Math.random() * 255;
-    imagen.data[i] = 0;
-    imagen.data[i + 1] = v;
-    imagen.data[i + 2] = v * 0.3;
-    imagen.data[i + 3] = 255;
-  }
-  ctxRuido.putImageData(imagen, 0, 0);
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(canvasRuidoTV, 0, 0, canvas.width, canvas.height);
-}
-
-// Muestra estática de interferencia, cambia el contenido a la mitad (tapado
-// por el ruido) y lo oculta al terminar. `cambiarContenido` corre una sola vez.
+// --- Transición entre pantallas: deformación rápida tipo CRT, sin ruido ---
+// Aplica un glitch corto (skew/escala/flicker de brillo) al contenido en vez
+// de tapar toda la pantalla con estática; `cambiarContenido` corre una sola
+// vez, a mitad del glitch, mientras la UI está distorsionada.
 function reproducirTransicionTV(cambiarContenido) {
-  const canvas = document.getElementById("rc-transicion");
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  canvas.classList.remove("oculto");
-
-  const duracionMs = 380;
-  const inicio = performance.now();
-  let yaCambio = false;
-
-  function cuadro(ahora) {
-    const transcurrido = ahora - inicio;
-    dibujarCuadroRuidoTV(canvas);
-    if (!yaCambio && transcurrido >= duracionMs / 2) {
-      yaCambio = true;
-      cambiarContenido();
-    }
-    if (transcurrido < duracionMs) {
-      requestAnimationFrame(cuadro);
-    } else {
-      canvas.classList.add("oculto");
-    }
+  const contenedor = document.querySelector(".fila-principal");
+  if (!contenedor) {
+    cambiarContenido();
+    return;
   }
-  requestAnimationFrame(cuadro);
+  contenedor.classList.remove("rc-deformando");
+  // Forzar reflow para poder re-disparar la animación si ya estaba corriendo.
+  void contenedor.offsetWidth;
+  contenedor.classList.add("rc-deformando");
+  setTimeout(cambiarContenido, 150);
+  setTimeout(() => contenedor.classList.remove("rc-deformando"), 320);
 }
 
 function pintarCarrousel() {
