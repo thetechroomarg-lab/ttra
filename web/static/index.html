@@ -12,17 +12,25 @@
   <div class="rc-crt"></div>
   <header>
     <div class="rc-titulo-grupo">
-      <h1 id="titulo-inicio">THE TECH ROOM ARG</h1>
+      <h1 id="titulo-inicio" class="rc-logo">
+        <span class="rc-logo-linea">THE</span>
+        <span class="rc-logo-linea">TECH</span>
+        <span class="rc-logo-linea">ROOM</span>
+        <span class="rc-logo-linea">ARG</span>
+      </h1>
       <span class="rc-cara-wrap" aria-hidden="true">
         <span id="cara-animada-a" class="rc-cara-animada visible">:)</span>
         <span id="cara-animada-b" class="rc-cara-animada">:)</span>
       </span>
     </div>
-    <div class="rc-noticiero" aria-hidden="true">
-      <span id="noticiero-texto" class="rc-noticiero-texto"></span>
+    <div class="rc-noticiero">
+      <a id="noticiero-texto" class="rc-noticiero-texto" target="_blank" rel="noopener"></a>
     </div>
     <div class="rc-header-derecha">
-      <span id="fecha-hora-temp" class="rc-fecha-hora" aria-hidden="true"></span>
+      <span class="rc-fecha-hora" aria-hidden="true">
+        <span id="fecha-hora" class="rc-fecha-hora-linea"></span>
+        <span id="ciudad-temp" class="rc-fecha-hora-linea"></span>
+      </span>
       <button id="btn-carrito" type="button">Carrito <span id="carrito-contador">0</span></button>
     </div>
   </header>

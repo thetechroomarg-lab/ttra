@@ -2,7 +2,7 @@
    chat, login y catálogo. Solo variables, tipografía y efectos CRT: cada
    página conserva su propio layout. */
 
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Archivo+Black&display=swap');
 
 :root {
   --rc-bg: #030a03;
@@ -47,8 +47,8 @@ body {
     ),
     radial-gradient(
       ellipse at center,
-      rgba(0, 0, 0, 0) 55%,
-      rgba(0, 0, 0, 0.55) 100%
+      rgba(0, 0, 0, 0) 72%,
+      rgba(0, 0, 0, 0.22) 100%
     );
   animation: rc-flicker 6.5s infinite;
 }

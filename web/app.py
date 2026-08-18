@@ -186,7 +186,7 @@ def api_catalogo():
 
 # Cotización del dólar en Córdoba usada como referencia en el sitio (a mano,
 # actualizar acá cuando cambie — es la misma fuente única que usa el catálogo).
-COTIZACION_DOLAR = 1550
+COTIZACION_DOLAR = 1560
 
 
 @app.get("/api/cotizacion")
@@ -202,12 +202,12 @@ NOTICIAS_TTL_SEG = 600  # 10 minutos: evita golpear Google News en cada visita
 _noticias_cache = {"titulares": [], "actualizado": 0.0}
 
 
-def _separar_titulo_y_fuente(titulo_crudo):
+def _separar_titulo_y_fuente(titulo_crudo, link):
     # Google News agrega " - Nombre del medio" al final de cada título.
     m = re.match(r"^(.*)\s+-\s+([^-]+)$", titulo_crudo.strip())
     if not m:
-        return {"titulo": titulo_crudo.strip(), "fuente": ""}
-    return {"titulo": m.group(1).strip(), "fuente": m.group(2).strip()}
+        return {"titulo": titulo_crudo.strip(), "fuente": "", "link": link}
+    return {"titulo": m.group(1).strip(), "fuente": m.group(2).strip(), "link": link}
 
 
 @app.get("/api/noticias")
@@ -220,7 +220,7 @@ def api_noticias():
         r.raise_for_status()
         raiz = ET.fromstring(r.text)
         titulares = [
-            _separar_titulo_y_fuente(item.findtext("title", ""))
+            _separar_titulo_y_fuente(item.findtext("title", ""), item.findtext("link", ""))
             for item in raiz.findall(".//item")
         ]
         titulares = [t for t in titulares if t["titulo"]][:12]

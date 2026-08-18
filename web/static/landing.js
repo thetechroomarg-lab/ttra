@@ -120,7 +120,7 @@ function pintarCarrouselCiudad(el) {
       actual.classList.remove("visible");
       setTimeout(() => actual.remove(), 1400);
     }
-  }, 10000);
+  }, 20000);
 }
 
 // --- Transición entre pantallas: deformación rápida tipo CRT, sin ruido ---
@@ -607,6 +607,27 @@ function totales(carrito) {
   );
 }
 
+// Descuento por cantidad, calculado como un ítem aparte (no se resta del
+// precio de cada producto): más de 5 unidades en total, U$D 7.5 por unidad;
+// más de 1 unidad, U$D 5 por unidad; 1 sola unidad, sin descuento.
+function descuentoPorUnidad(cantidadTotal) {
+  if (cantidadTotal > 5) return 7.5;
+  if (cantidadTotal > 1) return 5;
+  return 0;
+}
+
+function calcularDescuento(carrito) {
+  const cantidadTotal = carrito.reduce((n, it) => n + it.cantidad, 0);
+  const porUnidad = descuentoPorUnidad(cantidadTotal);
+  if (porUnidad === 0) return null;
+  const subtotal = totales(carrito);
+  if (subtotal.usd <= 0) return null;
+  const usd = porUnidad * cantidadTotal;
+  const pesos = Math.round(usd * (subtotal.pesos / subtotal.usd));
+  const transferencia = Math.round(usd * (subtotal.transferencia / subtotal.usd));
+  return { cantidadTotal, porUnidad, usd, pesos, transferencia };
+}
+
 function itemCarritoHtml(it) {
   const colorTexto = it.color ? ` (${escapeHtml(it.color)})` : "";
   const colorAttr = escapeHtml(it.color || "");
@@ -623,15 +644,27 @@ function itemCarritoHtml(it) {
   `;
 }
 
+function itemDescuentoHtml(descuento) {
+  return `
+    <div class="item-carrito item-descuento">
+      <p class="item-nombre">🎉 Descuento por ${descuento.cantidadTotal} unidades (U$D ${descuento.porUnidad} c/u)</p>
+      <p class="item-descuento-valor">
+        -U$D ${descuento.usd} · -$ ${formatearPesos(descuento.pesos)} contado · -$ ${formatearPesos(descuento.transferencia)} transferencia
+      </p>
+    </div>
+  `;
+}
+
 function renderCarrito() {
   const carrito = cargarCarrito();
   const cantidadTotal = carrito.reduce((n, it) => n + it.cantidad, 0);
   document.getElementById("carrito-contador").textContent = cantidadTotal;
 
+  const descuento = calcularDescuento(carrito);
   const el = document.getElementById("items-carrito");
   el.innerHTML = carrito.length === 0
     ? '<p class="mensaje-vacio">Tu carrito está vacío.</p>'
-    : carrito.map(itemCarritoHtml).join("");
+    : carrito.map(itemCarritoHtml).join("") + (descuento ? itemDescuentoHtml(descuento) : "");
 
   el.querySelectorAll(".btn-menos").forEach((btn) => {
     btn.addEventListener("click", () => cambiarCantidad(btn.dataset.nombre, btn.dataset.color || null, -1));
@@ -644,9 +677,16 @@ function renderCarrito() {
   });
 
   const t = totales(carrito);
-  document.getElementById("total-carrito").textContent = carrito.length === 0
-    ? ""
-    : `Total: U$D ${t.usd} · $ ${formatearPesos(t.pesos)} contado · $ ${formatearPesos(t.transferencia)} transferencia`;
+  const totalEl = document.getElementById("total-carrito");
+  if (carrito.length === 0) {
+    totalEl.textContent = "";
+  } else if (descuento) {
+    totalEl.textContent =
+      `Total: U$D ${t.usd - descuento.usd} · $ ${formatearPesos(t.pesos - descuento.pesos)} contado · ` +
+      `$ ${formatearPesos(t.transferencia - descuento.transferencia)} transferencia`;
+  } else {
+    totalEl.textContent = `Total: U$D ${t.usd} · $ ${formatearPesos(t.pesos)} contado · $ ${formatearPesos(t.transferencia)} transferencia`;
+  }
 }
 
 function abrirCarrito() {
@@ -664,8 +704,15 @@ function armarMensajeWhatsapp(carrito) {
     const color = it.color ? ` (${it.color})` : "";
     return `- ${it.nombre}${color} x${it.cantidad} — U$D ${(it.usd || 0) * it.cantidad}`;
   });
+  const descuento = calcularDescuento(carrito);
+  if (descuento) {
+    lineas.push(`- 🎉 Descuento por ${descuento.cantidadTotal} unidades — -U$D ${descuento.usd}`);
+  }
   const t = totales(carrito);
-  const total = `Total: U$D ${t.usd} · $ ${formatearPesos(t.pesos)} contado · $ ${formatearPesos(t.transferencia)} transferencia`;
+  const totalUsd = descuento ? t.usd - descuento.usd : t.usd;
+  const totalPesos = descuento ? t.pesos - descuento.pesos : t.pesos;
+  const totalTransferencia = descuento ? t.transferencia - descuento.transferencia : t.transferencia;
+  const total = `Total: U$D ${totalUsd} · $ ${formatearPesos(totalPesos)} contado · $ ${formatearPesos(totalTransferencia)} transferencia`;
   return `Hola! Quiero encargar:\n${lineas.join("\n")}\n\n${total}`;
 }
 
@@ -750,12 +797,14 @@ function formatearFechaHora() {
 }
 
 function pintarFechaHoraTemp() {
-  const el = document.getElementById("fecha-hora-temp");
-  if (!el) return;
-  const partes = [formatearFechaHora()];
-  if (ciudadActual) partes.push(ciudadActual);
-  if (temperaturaActual !== null) partes.push(`${temperaturaActual}°C`);
-  el.textContent = partes.join(" · ");
+  const elFechaHora = document.getElementById("fecha-hora");
+  const elCiudadTemp = document.getElementById("ciudad-temp");
+  if (!elFechaHora || !elCiudadTemp) return;
+  elFechaHora.textContent = formatearFechaHora();
+  const partesCiudadTemp = [];
+  if (ciudadActual) partesCiudadTemp.push(ciudadActual);
+  if (temperaturaActual !== null) partesCiudadTemp.push(`${temperaturaActual}°C`);
+  elCiudadTemp.textContent = partesCiudadTemp.join(" · ");
 }
 
 // Traduce el código de clima de Open-Meteo a una descripción corta en castellano.
@@ -903,11 +952,20 @@ function narrarSiguienteNoticia() {
   let texto;
   if (fraseEspecial) {
     texto = `- ${fraseEspecial}`;
+    el.removeAttribute("href");
+    el.classList.remove("clickeable");
   } else {
     if (titularesNoticias.length === 0) return;
     const noticia = titularesNoticias[indiceNoticia % titularesNoticias.length];
     indiceNoticia++;
     texto = noticia.fuente ? `- ${noticia.titulo} (${noticia.fuente})` : `- ${noticia.titulo}`;
+    if (noticia.link) {
+      el.href = noticia.link;
+      el.classList.add("clickeable");
+    } else {
+      el.removeAttribute("href");
+      el.classList.remove("clickeable");
+    }
   }
   escribirTexto(el, texto, 35, narrarSiguienteNoticia);
 }
