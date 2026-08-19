@@ -87,6 +87,11 @@ header {
   box-shadow: 0 0 14px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
 }
 
+/* Solo se muestra el botón del OTRO modo (al que se puede cambiar); no
+   tiene sentido ver "Modo Classic" estando ya en Classic, ni viceversa. */
+html[data-modo="classic"] #btn-modo-classic { display: none; }
+html[data-modo="fallout"] #btn-modo-fallout { display: none; }
+
 @media (max-width: 900px) {
   .rc-noticiero { display: none; }
 }
@@ -280,6 +285,22 @@ main#productos { flex: 1; min-width: 0; margin-top: 20px; }
 .pipboy-log {
   line-height: 1.45; color: var(--rc-green-bright); flex: 1;
   overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rc-green-dim) var(--rc-bg-panel);
+}
+.pipboy-log::-webkit-scrollbar { width: 8px; }
+.pipboy-log::-webkit-scrollbar-track {
+  background: var(--rc-bg-panel);
+  border-left: 1px solid var(--rc-green-faint);
+}
+.pipboy-log::-webkit-scrollbar-thumb {
+  background: var(--rc-green-dim);
+  border: 1px solid var(--rc-green-faint);
+  box-shadow: 0 0 6px -1px var(--rc-glow);
+}
+.pipboy-log::-webkit-scrollbar-thumb:hover {
+  background: var(--rc-green);
+  box-shadow: 0 0 8px var(--rc-glow);
 }
 .pipboy-globo-wrap { display: flex; align-items: center; gap: 8px; justify-content: flex-start; margin: 6px 0; }
 .pipboy-globo {

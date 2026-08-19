@@ -1371,6 +1371,49 @@ if (btnModoFallout && audioModoFallout) {
   });
 }
 
+// Estando en Fallout, pasar el mouse sobre "Modo Classic" (el único botón
+// de modo visible ahí) suena un abucheo sintetizado, en tono de broma.
+function reproducirAbucheo() {
+  try {
+    audioCtxInteraccion = audioCtxInteraccion
+      || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = audioCtxInteraccion;
+    if (ctx.state === "suspended") ctx.resume();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(300, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(85, ctx.currentTime + 0.8);
+
+    lfo.frequency.value = 7; // tremolo, para que suene a "abucheo" y no a sirena
+    lfoGain.gain.value = 0.05;
+    lfo.connect(lfoGain);
+
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.09, ctx.currentTime + 0.08);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.85);
+    lfoGain.connect(gain.gain);
+
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    lfo.start();
+    osc.stop(ctx.currentTime + 0.9);
+    lfo.stop(ctx.currentTime + 0.9);
+  } catch {
+    // Web Audio no disponible: seguimos sin sonido, no es crítico.
+  }
+}
+const btnModoClassic = document.getElementById("btn-modo-classic");
+if (btnModoClassic) {
+  btnModoClassic.addEventListener("mouseenter", () => {
+    if (modoVisual === "fallout") reproducirAbucheo();
+  });
+}
+
 // --- Transición entre pantallas: deformación rápida tipo CRT, sin ruido ---
 // Aplica un glitch corto (skew/escala/flicker de brillo) al contenido en vez
 // de tapar toda la pantalla con estática; `cambiarContenido` corre una sola
