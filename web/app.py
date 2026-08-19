@@ -1,3 +1,4 @@
+import html
 import json
 import logging
 import os
@@ -10,7 +11,7 @@ from pathlib import Path
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
+from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
@@ -33,6 +34,10 @@ BASE = Path(__file__).parent
 # entorno PRODUCTOS_PATH; en local, cae al archivo de siempre junto al código.
 PRODUCTOS_PATH = Path(os.environ.get("PRODUCTOS_PATH", str(BASE / "productos.json")))
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
+ADMIN_CLIENTES_PASSWORD = os.environ.get("ADMIN_CLIENTES_PASSWORD")
+if not ADMIN_CLIENTES_PASSWORD:
+    logger.warning("ADMIN_CLIENTES_PASSWORD no configurado — usando clave de desarrollo, no apta para producción")
+    ADMIN_CLIENTES_PASSWORD = "dev-cambiar-en-produccion"
 
 # Tope de gasto por chat/cliente (USD). Al superarlo, se lo deriva al WhatsApp.
 LIMITE_USD = 0.25
@@ -133,6 +138,116 @@ def registro_cliente(entrada: ClienteIn):
     leads.guardar_lead(celular, {"nombre": nombre, "celular": celular},
                         fecha=datetime.now().strftime("%Y-%m-%d %H:%M"))
     return {"ok": True}
+
+
+# --- Panel simple para ver el registro de clientes (ver web/leads.py) ---
+
+class ClientesLoginIn(BaseModel):
+    password: str
+
+
+def _clientes_admin_activo(request: Request):
+    return bool(request.session.get("clientes_admin_ok"))
+
+
+@app.post("/admin/clientes/login")
+def admin_clientes_login(entrada: ClientesLoginIn, request: Request):
+    if entrada.password != ADMIN_CLIENTES_PASSWORD:
+        return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
+    request.session["clientes_admin_ok"] = True
+    return {"ok": True}
+
+
+@app.post("/admin/clientes/logout")
+def admin_clientes_logout(request: Request):
+    request.session.pop("clientes_admin_ok", None)
+    return {"ok": True}
+
+
+_ADMIN_CLIENTES_ESTILO = """
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background:#4fb3e8; margin:0;
+         min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
+  .tarjeta { background:#fff; border-radius:14px; padding:28px 24px; width:100%; max-width:340px;
+             box-shadow:0 10px 30px rgba(16,33,79,0.25); box-sizing:border-box; }
+  .tarjeta h1 { margin:0 0 16px; color:#10214f; font-size:20px; }
+  .tarjeta input { width:100%; height:42px; padding:0 12px; font-size:15px; box-sizing:border-box;
+                   border:2px solid #cfe9f7; border-radius:10px; margin-bottom:10px; }
+  .tarjeta button { width:100%; height:44px; border:none; border-radius:10px; background:#c8102e;
+                    color:#fff; font-size:15px; font-weight:800; cursor:pointer; }
+  .error { color:#c8102e; font-size:13px; margin:0 0 10px; }
+  .panel { background:#fff; border-radius:14px; padding:20px; max-width:1000px; width:100%;
+           margin:20px auto; box-shadow:0 10px 30px rgba(16,33,79,0.2); box-sizing:border-box; }
+  .panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .panel-header h1 { color:#10214f; font-size:20px; margin:0; }
+  .panel-header button { border:none; background:#10214f; color:#fff; border-radius:8px;
+                          padding:8px 14px; cursor:pointer; font-weight:700; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #eaf5fb; }
+  th { color:#10214f; }
+  .vacio { color:#10214f; text-align:center; padding:30px; }
+</style>
+"""
+
+
+@app.get("/admin/clientes", response_class=HTMLResponse)
+def admin_clientes(request: Request):
+    if not _clientes_admin_activo(request):
+        return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Clientes — Ingresar</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
+<div class="tarjeta">
+  <h1>Panel de clientes</h1>
+  <p id="err" class="error" style="display:none"></p>
+  <input id="pass" type="password" placeholder="Contraseña" autofocus>
+  <button id="btn">Ingresar</button>
+</div>
+<script>
+document.getElementById("btn").addEventListener("click", async () => {{
+  const r = await fetch("/admin/clientes/login", {{
+    method: "POST", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{password: document.getElementById("pass").value}})
+  }});
+  if (r.ok) {{ location.reload(); return; }}
+  const err = document.getElementById("err");
+  err.textContent = "Contraseña incorrecta";
+  err.style.display = "block";
+}});
+document.getElementById("pass").addEventListener("keydown", (e) => {{
+  if (e.key === "Enter") document.getElementById("btn").click();
+}});
+</script>
+</body></html>"""
+
+    clientes = leads.listar_clientes()
+    if not clientes:
+        filas_html = '<tr><td colspan="4" class="vacio">Todavía no hay clientes registrados.</td></tr>'
+    else:
+        filas_html = "".join(
+            f"<tr><td>{html.escape(c.get('nombre', ''))}</td>"
+            f"<td>{html.escape(c.get('celular', ''))}</td>"
+            f"<td>{html.escape(' | '.join(c.get('productos', [])))}</td>"
+            f"<td>{html.escape(c.get('fecha', ''))}</td></tr>"
+            for c in clientes
+        )
+    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Clientes</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
+<div class="panel">
+  <div class="panel-header">
+    <h1>Clientes ({len(clientes)})</h1>
+    <button id="salir">Cerrar sesión</button>
+  </div>
+  <table>
+    <thead><tr><th>Nombre</th><th>Celular</th><th>Productos consultados</th><th>Fecha</th></tr></thead>
+    <tbody>{filas_html}</tbody>
+  </table>
+</div>
+<script>
+document.getElementById("salir").addEventListener("click", async () => {{
+  await fetch("/admin/clientes/logout", {{ method: "POST" }});
+  location.reload();
+}});
+</script>
+</body></html>"""
 
 
 class RegistroIn(BaseModel):

@@ -1,10 +1,17 @@
 import csv
 import json
+import os
 from pathlib import Path
 
 BASE = Path(__file__).parent
-JSON_PATH = BASE / "clientes.json"
-CSV_PATH = BASE / "clientes.csv"
+# En producción (Railway) el filesystem del contenedor se pisa en cada
+# deploy: si no se aparta esto, clientes.json queda pisado. Por default cae
+# en el mismo volumen persistente que PRODUCTOS_PATH (ver web/app.py); se
+# puede apuntar a otro lado con la variable de entorno CLIENTES_PATH.
+_productos_path = os.environ.get("PRODUCTOS_PATH")
+CLIENTES_DIR = Path(os.environ.get("CLIENTES_PATH") or (Path(_productos_path).parent if _productos_path else BASE))
+JSON_PATH = CLIENTES_DIR / "clientes.json"
+CSV_PATH = CLIENTES_DIR / "clientes.csv"
 
 
 def _cargar():
@@ -13,9 +20,18 @@ def _cargar():
     return {}
 
 
+def listar_clientes(json_path=JSON_PATH):
+    """Clientes guardados, más recientes primero (por fecha)."""
+    db = json.loads(Path(json_path).read_text(encoding="utf-8")) if Path(json_path).exists() else {}
+    filas = [{"sesion": sesion, **reg} for sesion, reg in db.items()]
+    filas.sort(key=lambda r: r.get("fecha", ""), reverse=True)
+    return filas
+
+
 def guardar_lead(sesion, datos, fecha="", json_path=JSON_PATH, csv_path=CSV_PATH):
     """Upsert de un cliente por sesión. Acumula los productos consultados.
     `datos` es un dict con claves opcionales: nombre, celular, productos (lista)."""
+    Path(json_path).parent.mkdir(parents=True, exist_ok=True)
     db = json.loads(Path(json_path).read_text(encoding="utf-8")) if Path(json_path).exists() else {}
     reg = db.get(sesion, {"nombre": "", "celular": "", "productos": []})
     if datos.get("nombre"):
