@@ -67,6 +67,7 @@ let subFiltrosActivos = new Set(); // marcas (o "Notebooks"/"Macbooks") elegidas
 let filtroMarcaGlobal = null; // marca elegida desde el carrousel o "Búsqueda por Marca", busca en TODO el catálogo
 let modoVista = "cards"; // "cards" | "lista"
 let ordenPrecio = null; // null (sin orden) | "asc" | "desc"
+let modoVisual = localStorage.getItem("ttra_modo_visual") === "fallout" ? "fallout" : "classic";
 
 // Fotos decorativas de la ciudad, solo visibles en la pantalla principal.
 // Cada archivo se muestra dentro de una "tarjeta" tipo terminal (ver
@@ -1165,6 +1166,111 @@ function pintarCarrouselCiudad(el) {
   intervaloCiudad = setInterval(() => avanzarFotoCiudadAlAzar(el), 20000);
 }
 
+// --- Carrousel de productos recomendados (Modo Classic, reemplaza al Pip-Boy) ---
+
+// Elige `n` productos distintos al azar (sin repetidos) de todo el catálogo.
+function productosAlAzar(n) {
+  const todos = Object.values(SECCIONES_DATA).flat();
+  const copia = todos.slice();
+  const elegidos = [];
+  while (elegidos.length < n && copia.length > 0) {
+    const indice = Math.floor(Math.random() * copia.length);
+    elegidos.push(copia.splice(indice, 1)[0]);
+  }
+  return elegidos;
+}
+
+function tarjetaRecomendadoHtml(p) {
+  const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
+  return `
+    <div class="tarjeta-recomendado">
+      <div class="tarjeta-recomendado-etiqueta">✨ Recomendado para vos</div>
+      <h3>${escapeHtml(p.nombre)}</h3>
+      ${tieneColores ? `<p class="tarjeta-recomendado-colores">${p.colores.map(escapeHtml).join(" · ")}</p>` : ""}
+      <p class="tarjeta-recomendado-precio">
+        <strong>U$D ${p.usd ?? "-"}</strong><br>
+        $ ${formatearPesos(p.pesos)} contado · $ ${formatearPesos(p.transferencia)} transferencia
+      </p>
+    </div>
+  `;
+}
+
+function tarjetasRecomendadosHtml() {
+  const productos = productosAlAzar(3);
+  if (!productos.length) {
+    return `<div class="tarjeta-recomendado"><p>Cargando recomendaciones...</p></div>`;
+  }
+  return productos.map(tarjetaRecomendadoHtml).join("");
+}
+
+function pintarCarrouselRecomendados(el) {
+  el.innerHTML = `
+    <div class="carrousel-recomendados-wrap">
+      <div class="carrousel-recomendados-grid visible">${tarjetasRecomendadosHtml()}</div>
+    </div>
+  `;
+  intervaloCiudad = setInterval(() => {
+    const grilla = el.querySelector(".carrousel-recomendados-grid");
+    if (!grilla) return;
+    grilla.classList.remove("visible");
+    setTimeout(() => {
+      grilla.innerHTML = tarjetasRecomendadosHtml();
+      grilla.classList.add("visible");
+    }, 250);
+  }, 12000);
+}
+
+// --- Modo visual: Fallout (default) / Classic ---
+
+function pintarCarrouselSegunModo(el) {
+  if (modoVisual === "classic") pintarCarrouselRecomendados(el);
+  else pintarCarrouselCiudad(el);
+}
+
+function aplicarModoVisual(modo, opciones) {
+  const opts = opciones || {};
+  modoVisual = modo;
+  document.documentElement.setAttribute("data-modo", modo);
+  localStorage.setItem("ttra_modo_visual", modo);
+  document.querySelectorAll(".btn-modo").forEach((b) => {
+    b.classList.toggle("activo", b.dataset.modo === modo);
+  });
+  if (opts.sinRepintar) return;
+  if (!seccionActiva && !filtroMarcaGlobal) {
+    const productosEl = document.getElementById("productos");
+    if (productosEl) {
+      detenerCarrouselCiudad();
+      pintarCarrouselSegunModo(productosEl);
+    }
+  }
+}
+
+document.getElementById("btn-modo-fallout").addEventListener("click", () => {
+  aplicarModoVisual("fallout");
+  if (typeof window.reproducirBootSequenceTTRA === "function") {
+    window.reproducirBootSequenceTTRA();
+  }
+});
+document.getElementById("btn-modo-classic").addEventListener("click", () => aplicarModoVisual("classic"));
+aplicarModoVisual(modoVisual, { sinRepintar: true });
+
+// Al pasar el mouse sobre "Modo Fallout" suena el tema de radio de Fallout;
+// se corta apenas el cursor se va del botón.
+const btnModoFallout = document.getElementById("btn-modo-fallout");
+const audioModoFallout = document.getElementById("audio-modo-fallout");
+if (btnModoFallout && audioModoFallout) {
+  btnModoFallout.addEventListener("mouseenter", () => {
+    audioModoFallout.currentTime = 0;
+    audioModoFallout.play().catch(() => {
+      // Autoplay bloqueado hasta el primer gesto del usuario: no es crítico.
+    });
+  });
+  btnModoFallout.addEventListener("mouseleave", () => {
+    audioModoFallout.pause();
+    audioModoFallout.currentTime = 0;
+  });
+}
+
 // --- Transición entre pantallas: deformación rápida tipo CRT, sin ruido ---
 // Aplica un glitch corto (skew/escala/flicker de brillo) al contenido en vez
 // de tapar toda la pantalla con estática; `cambiarContenido` corre una sola
@@ -1500,7 +1606,7 @@ function actualizarVista() {
   detenerCarrouselCiudad();
 
   if (enInicio) {
-    pintarCarrouselCiudad(productosEl);
+    pintarCarrouselSegunModo(productosEl);
     return;
   }
 
@@ -1960,9 +2066,10 @@ function actualizarImagenesSegunProvincia(codigoIso) {
   }
   indiceCiudad = 0;
 
-  // Si el visitante ya está viendo el carrousel en la pantalla principal,
-  // lo repintamos con las fotos recién resueltas.
-  if (!seccionActiva && !filtroMarcaGlobal) {
+  // Si el visitante ya está viendo el carrousel en la pantalla principal
+  // (y está en Modo Fallout, el único que usa estas fotos), lo repintamos
+  // con las fotos recién resueltas.
+  if (!seccionActiva && !filtroMarcaGlobal && modoVisual === "fallout") {
     const productosEl = document.getElementById("productos");
     if (productosEl) {
       detenerCarrouselCiudad();

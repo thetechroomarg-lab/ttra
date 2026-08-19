@@ -6,10 +6,12 @@
   <title>THE TECH ROOM ARG — Catálogo</title>
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="landing.css">
+  <link rel="stylesheet" href="classic.css">
 </head>
 <body>
   <div id="rc-boot"></div>
   <div class="rc-crt"></div>
+  <audio id="audio-modo-fallout" src="audio/modo-fallout-hover.mp3" preload="none" loop></audio>
   <header>
     <div class="rc-titulo-grupo">
       <h1 id="titulo-inicio" class="rc-logo">
@@ -32,7 +34,11 @@
         <span id="ciudad-temp" class="rc-fecha-hora-linea"></span>
         <span id="dolar-linea" class="rc-fecha-hora-linea"></span>
       </span>
-      <button id="btn-carrito" type="button">Carrito <span id="carrito-contador">0</span></button>
+      <div class="rc-modo-y-carrito">
+        <button id="btn-modo-fallout" type="button" class="btn-modo" data-modo="fallout">Modo Fallout</button>
+        <button id="btn-modo-classic" type="button" class="btn-modo" data-modo="classic">Modo Classic</button>
+        <button id="btn-carrito" type="button">Carrito <span id="carrito-contador">0</span></button>
+      </div>
     </div>
   </header>
 

@@ -1,9 +1,76 @@
 // web/static/boot.js — secuencia de arranque estilo terminal RobCo.
-// Se muestra en cada carga de página (F5 incluido).
-(function () {
-  const overlay = document.getElementById("rc-boot");
-  if (!overlay) return;
+// Se muestra en cada carga de página (F5 incluido) si el modo guardado es
+// Fallout, y también cada vez que el usuario cambia a Modo Fallout en vivo
+// (ver window.reproducirBootSequenceTTRA, usado desde landing.js).
 
+// Beeps estilo computadora vieja (onda cuadrada sintetizada, sin archivos de
+// audio). Los navegadores bloquean audio autoplay sin gesto del usuario: si
+// el contexto queda suspendido, el beep simplemente no suena, sin romper nada.
+let audioCtxBoot;
+function beepBoot(frecuencia, duracionMs) {
+  try {
+    audioCtxBoot = audioCtxBoot || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtxBoot.state === "suspended") audioCtxBoot.resume();
+    const osc = audioCtxBoot.createOscillator();
+    const gain = audioCtxBoot.createGain();
+    osc.type = "square";
+    osc.frequency.value = frecuencia;
+    gain.gain.setValueAtTime(0.05, audioCtxBoot.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtxBoot.currentTime + duracionMs / 1000);
+    osc.connect(gain).connect(audioCtxBoot.destination);
+    osc.start();
+    osc.stop(audioCtxBoot.currentTime + duracionMs / 1000);
+  } catch {
+    // Web Audio no disponible: seguimos sin sonido, no es crítico.
+  }
+}
+
+// Estática breve estilo TV de tubo, solo en la transición boot -> landing.
+function reproducirEstaticaTV(alTerminar) {
+  const canvas = document.createElement("canvas");
+  canvas.style.position = "fixed";
+  canvas.style.inset = "0";
+  canvas.style.zIndex = "10001";
+  canvas.style.pointerEvents = "none";
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+
+  const chico = document.createElement("canvas");
+  chico.width = 160;
+  chico.height = 90;
+  const ctxChico = chico.getContext("2d");
+
+  const duracionMs = 260;
+  const inicio = performance.now();
+
+  function cuadro(ahora) {
+    const imagen = ctxChico.createImageData(chico.width, chico.height);
+    for (let i2 = 0; i2 < imagen.data.length; i2 += 4) {
+      const v = Math.random() * 255;
+      imagen.data[i2] = 0;
+      imagen.data[i2 + 1] = v;
+      imagen.data[i2 + 2] = v * 0.3;
+      imagen.data[i2 + 3] = 255;
+    }
+    ctxChico.putImageData(imagen, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(chico, 0, 0, canvas.width, canvas.height);
+    if (ahora - inicio < duracionMs) {
+      requestAnimationFrame(cuadro);
+    } else {
+      canvas.remove();
+      alTerminar();
+    }
+  }
+  requestAnimationFrame(cuadro);
+}
+
+// Reproduce la secuencia de arranque completa sobre `overlay` y llama a
+// `alTerminar` cuando termina (estática de TV incluida). Reutilizable tanto
+// en la carga inicial de página como al cambiar a Modo Fallout en vivo.
+function reproducirBootCompleto(overlay, alTerminar) {
   const LINEAS = [
     "THE TECH ROOM ARG",
     "UNIFIED TECHNOLOGY SYSTEM",
@@ -21,28 +88,7 @@
     "WELCOME, USER.",
   ];
 
-  // Beeps estilo computadora vieja (onda cuadrada sintetizada, sin archivos de
-  // audio). Los navegadores bloquean audio autoplay sin gesto del usuario: si
-  // el contexto queda suspendido, el beep simplemente no suena, sin romper nada.
-  let audioCtx;
-  function beep(frecuencia, duracionMs) {
-    try {
-      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === "suspended") audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = "square";
-      osc.frequency.value = frecuencia;
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duracionMs / 1000);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + duracionMs / 1000);
-    } catch {
-      // Web Audio no disponible: seguimos sin sonido, no es crítico.
-    }
-  }
-
+  overlay.classList.remove("rc-boot-oculto");
   overlay.textContent = "";
   let i = 0;
 
@@ -51,7 +97,7 @@
       const listo = document.createElement("div");
       listo.innerHTML = '&gt; SYSTEM READY <span class="rc-cursor">█</span>';
       overlay.appendChild(listo);
-      beep(880, 90);
+      beepBoot(880, 90);
 
       setTimeout(() => {
         overlay.textContent = ""; // pantallazo negro breve
@@ -68,10 +114,13 @@
           frase.textContent = "Estas conectad@ con The Tech Room Arg.";
           bloqueCara.appendChild(frase);
           overlay.appendChild(bloqueCara);
-          beep(660, 130);
+          beepBoot(660, 130);
 
           setTimeout(() => {
-            reproducirEstaticaTV(() => overlay.classList.add("rc-boot-oculto"));
+            reproducirEstaticaTV(() => {
+              overlay.classList.add("rc-boot-oculto");
+              alTerminar();
+            });
           }, 3200);
         }, 500);
       }, 500);
@@ -80,53 +129,39 @@
     const linea = document.createElement("div");
     linea.textContent = LINEAS[i];
     overlay.appendChild(linea);
-    if (LINEAS[i] !== "") beep(620, 70);
+    if (LINEAS[i] !== "") beepBoot(620, 70);
     i++;
     setTimeout(siguienteLinea, LINEAS[i - 1] === "" ? 260 : 420);
   }
 
-  // Estática breve estilo TV de tubo, solo en esta transición puntual
-  // (boot -> landing), en ningún otro lado del sitio.
-  function reproducirEstaticaTV(alTerminar) {
-    const canvas = document.createElement("canvas");
-    canvas.style.position = "fixed";
-    canvas.style.inset = "0";
-    canvas.style.zIndex = "10001";
-    canvas.style.pointerEvents = "none";
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    document.body.appendChild(canvas);
-    const ctx = canvas.getContext("2d");
+  siguienteLinea();
+}
 
-    const chico = document.createElement("canvas");
-    chico.width = 160;
-    chico.height = 90;
-    const ctxChico = chico.getContext("2d");
+// Punto de entrada usado por landing.js al cambiar a Modo Fallout en vivo.
+window.reproducirBootSequenceTTRA = function (alTerminar) {
+  const overlay = document.getElementById("rc-boot");
+  const terminar = alTerminar || function () {};
+  if (!overlay) {
+    terminar();
+    return;
+  }
+  reproducirBootCompleto(overlay, terminar);
+};
 
-    const duracionMs = 260;
-    const inicio = performance.now();
+(function () {
+  const overlay = document.getElementById("rc-boot");
+  if (!overlay) return;
 
-    function cuadro(ahora) {
-      const imagen = ctxChico.createImageData(chico.width, chico.height);
-      for (let i2 = 0; i2 < imagen.data.length; i2 += 4) {
-        const v = Math.random() * 255;
-        imagen.data[i2] = 0;
-        imagen.data[i2 + 1] = v;
-        imagen.data[i2 + 2] = v * 0.3;
-        imagen.data[i2 + 3] = 255;
-      }
-      ctxChico.putImageData(imagen, 0, 0);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(chico, 0, 0, canvas.width, canvas.height);
-      if (ahora - inicio < duracionMs) {
-        requestAnimationFrame(cuadro);
-      } else {
-        canvas.remove();
-        alTerminar();
-      }
-    }
-    requestAnimationFrame(cuadro);
+  // El modo visual (Fallout/Classic) se decide antes que nada: en Classic no
+  // hay boot sequence de terminal, se pasa directo a la landing. Classic es
+  // el modo por defecto (el usuario siempre entra ahí salvo que haya elegido
+  // Fallout explícitamente antes).
+  const modoGuardado = localStorage.getItem("ttra_modo_visual") === "fallout" ? "fallout" : "classic";
+  document.documentElement.setAttribute("data-modo", modoGuardado);
+  if (modoGuardado === "classic") {
+    overlay.classList.add("rc-boot-oculto");
+    return;
   }
 
-  siguienteLinea();
+  reproducirBootCompleto(overlay, () => {});
 })();

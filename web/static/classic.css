@@ -1,0 +1,126 @@
+/* web/static/classic.css — Modo Classic: paleta inspirada en Martini Racing
+   (crema, celeste, azul marino, rojo), tipografía redondeada, sin efectos
+   retro (CRT, glow fosforescente, boot terminal). Todo scopeado bajo
+   html[data-modo="classic"] para convivir con theme.css y landing.css sin
+   tocarlos. */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+html[data-modo="classic"] {
+  --rc-bg: #faf7f0;
+  --rc-bg-panel: #ffffff;
+  --rc-bg-panel-2: #eaf5fb;
+  --rc-green: #10214f;
+  --rc-green-bright: #10214f;
+  --rc-green-dim: #4fb3e8;
+  --rc-green-faint: #cfe9f7;
+  --rc-glow: rgba(16, 33, 79, 0.16);
+  --cl-rojo: #c8102e;
+  --cl-crema: #faf7f0;
+  --rc-font: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --rc-cursor: auto;
+  --rc-cursor-mira: pointer;
+}
+
+/* Franja "Martini stripes" (celeste/marino/rojo) en el borde superior del
+   header y de las cards, como guiño sutil a la librea. */
+html[data-modo="classic"] header {
+  border-top: 5px solid transparent;
+  border-image: linear-gradient(90deg, var(--rc-green-dim) 0 30%, var(--rc-green) 30% 60%, var(--cl-rojo) 60% 100%) 1;
+}
+
+/* Sin scanlines ni flicker CRT */
+html[data-modo="classic"] .rc-crt { display: none; }
+
+/* Sin glow fosforescente en ningún texto */
+html[data-modo="classic"] body,
+html[data-modo="classic"] * {
+  text-shadow: none !important;
+}
+
+/* Botones y controles: esquinas redondeadas, sombra suave en vez de glow */
+html[data-modo="classic"] button,
+html[data-modo="classic"] input,
+html[data-modo="classic"] textarea,
+html[data-modo="classic"] select {
+  border-radius: 10px;
+  border-width: 2px;
+}
+html[data-modo="classic"] button {
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(10, 47, 63, 0.12);
+}
+html[data-modo="classic"] button:hover,
+html[data-modo="classic"] button:focus-visible {
+  box-shadow: 0 4px 14px rgba(10, 47, 63, 0.18);
+}
+html[data-modo="classic"] button:active {
+  box-shadow: 0 1px 4px rgba(10, 47, 63, 0.15);
+}
+html[data-modo="classic"] input:focus,
+html[data-modo="classic"] textarea:focus,
+html[data-modo="classic"] select:focus {
+  box-shadow: 0 0 0 3px rgba(0, 170, 240, 0.25);
+}
+
+/* Logo: tipografía redondeada, negra, sin la carita animada al lado */
+html[data-modo="classic"] .rc-logo-linea {
+  font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 800;
+  color: #000;
+  -webkit-text-stroke: 1px #000;
+}
+html[data-modo="classic"] .rc-cara-wrap { display: none; }
+
+/* Cards de producto: bordes redondeados, look más suave */
+html[data-modo="classic"] .card,
+html[data-modo="classic"] .pipboy,
+html[data-modo="classic"] .tarjeta-recomendado {
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(10, 47, 63, 0.10);
+}
+
+/* --- Carrousel de recomendados (reemplaza al Pip-Boy en Modo Classic):
+   3 cards de productos al azar, refrescadas cada 12s --- */
+html[data-modo="classic"] .carrousel-recomendados-wrap {
+  display: flex; flex-direction: column; height: 100%;
+}
+.carrousel-recomendados-grid {
+  flex: 1; min-height: 260px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.carrousel-recomendados-grid.visible { opacity: 1; }
+.tarjeta-recomendado {
+  height: 100%;
+  display: flex; flex-direction: column; justify-content: center; gap: 8px;
+  padding: 16px 14px;
+  background: linear-gradient(160deg, var(--rc-bg-panel-2), var(--rc-bg-panel));
+  border: 2px solid var(--rc-green-dim);
+  border-radius: 14px;
+}
+.tarjeta-recomendado-etiqueta {
+  font-size: 11px; font-weight: 700; letter-spacing: .03em;
+  color: var(--cl-rojo);
+  text-transform: uppercase;
+}
+
+/* Botón de modo activo: rojo Martini en vez del acento marino */
+html[data-modo="classic"] .btn-modo.activo {
+  color: var(--cl-crema);
+  background: var(--cl-rojo);
+  border-color: var(--cl-rojo);
+}
+.tarjeta-recomendado h3 {
+  margin: 0; font-size: clamp(15px, 1.6vw, 18px); color: var(--rc-green-bright);
+}
+.tarjeta-recomendado-colores { margin: 0; font-size: 13px; color: var(--rc-green-bright); opacity: .75; }
+.tarjeta-recomendado-precio {
+  margin: 0; font-size: 13px; line-height: 1.5; color: var(--rc-green-bright);
+}
+.tarjeta-recomendado-precio strong { font-size: 16px; color: var(--cl-rojo); }
+
+@media (max-width: 700px) {
+  .carrousel-recomendados-grid { grid-template-columns: 1fr; }
+}

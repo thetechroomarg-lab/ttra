@@ -68,10 +68,23 @@ header {
     15px 0 0 rgba(51, 255, 102, 0.06),
     20px 0 0 rgba(51, 255, 102, 0.03);
 }
-#btn-carrito {
+.rc-modo-y-carrito { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 150px; }
+.rc-modo-y-carrito button {
+  width: 100%; text-align: center;
   padding: 8px 14px; font-size: clamp(13px, 3.5vw, 15px);
+}
+#btn-carrito {
   color: var(--rc-green-bright); border-color: var(--rc-green);
   box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
+}
+.btn-modo {
+  color: var(--rc-green-bright); border-color: var(--rc-green);
+  box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
+}
+.btn-modo.activo {
+  color: var(--rc-bg);
+  background: var(--rc-green);
+  box-shadow: 0 0 14px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
 }
 
 @media (max-width: 900px) {
