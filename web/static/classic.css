@@ -24,12 +24,8 @@ html[data-modo="classic"] {
   --rc-cursor-mira: pointer;
 }
 
-/* Franja "Martini stripes" (celeste/marino/rojo) en el borde superior del
-   header y de las cards, como guiño sutil a la librea. */
 html[data-modo="classic"] header {
   background: var(--cl-azul-francia);
-  border-top: 5px solid transparent;
-  border-image: linear-gradient(90deg, var(--rc-green-dim) 0 30%, var(--rc-green) 30% 60%, var(--cl-rojo) 60% 100%) 1;
 }
 
 /* Logo en blanco sobre el header azul Francia */
