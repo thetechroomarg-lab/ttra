@@ -47,6 +47,13 @@ html[data-modo="classic"] .rc-noticiero-texto.clickeable:hover {
   color: #fff;
 }
 
+/* Marcas del carrousel: fijas (sin desplazamiento, ver landing.js), hover
+   negro y en negrita en vez del verde de Fallout */
+html[data-modo="classic"] .carrousel span:hover {
+  color: #000;
+  font-weight: 800;
+}
+
 /* Sin scanlines ni flicker CRT */
 html[data-modo="classic"] .rc-crt { display: none; }
 
@@ -111,7 +118,7 @@ html[data-modo="classic"] .carrousel-recomendados-wrap {
 .tarjeta-recomendado {
   position: relative;
   height: 100%;
-  display: flex; flex-direction: column; justify-content: center; gap: 10px;
+  display: flex; flex-direction: column; justify-content: flex-start; gap: 10px;
   padding: 22px 20px;
   background: var(--rc-bg-panel);
   border: none;
@@ -120,7 +127,7 @@ html[data-modo="classic"] .carrousel-recomendados-wrap {
   box-shadow: 0 6px 18px rgba(16, 33, 79, 0.18);
 }
 .tarjeta-recomendado-etiqueta {
-  font-size: 11px; font-weight: 800; letter-spacing: .06em;
+  font-size: 15px; font-weight: 800; letter-spacing: .06em;
   color: var(--cl-rojo);
   text-transform: uppercase;
 }
@@ -142,7 +149,7 @@ html[data-modo="classic"] .btn-modo.activo {
   margin: 0; display: flex; flex-direction: column; gap: 3px;
 }
 .tarjeta-recomendado-precio strong { font-size: 26px; font-weight: 800; color: var(--cl-rojo); }
-.tarjeta-recomendado-precio span { font-size: 12px; color: var(--rc-green-bright); opacity: .65; }
+.tarjeta-recomendado-precio span { font-size: 16px; font-weight: 600; color: var(--rc-green-bright); opacity: .8; }
 
 /* Elegir color + Agregar al carrito: ocultos hasta hacer hover sobre la card */
 .tarjeta-recomendado-acciones {

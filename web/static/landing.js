@@ -1310,6 +1310,8 @@ function aplicarModoVisual(modo, opciones) {
   // arriba), sino recién ante un click del usuario, bien después de que todo
   // el archivo terminó de ejecutarse.
   pintarFrasePie();
+  const carrouselMarcasEl = document.getElementById("carrousel");
+  if (carrouselMarcasEl) iniciarDesplazamientoCarrousel(carrouselMarcasEl);
   if (!seccionActiva && !filtroMarcaGlobal) {
     const productosEl = document.getElementById("productos");
     if (productosEl) {
@@ -1397,11 +1399,31 @@ function pintarCarrousel() {
 // El ancho se vuelve a medir en cada vuelta (no se cachea una sola vez), así
 // un reflow tardío (p. ej. la fuente Share Tech Mono terminando de cargar)
 // nunca deja desincronizado el punto de reinicio del loop.
+let intervaloMarcas = null;
+let resizeHandlerMarcas = null;
+
+// Reutilizable: se vuelve a llamar al cambiar de Modo en vivo (Fallout <->
+// Classic), así que primero limpia cualquier intervalo/listener de una
+// llamada anterior antes de arrancar (o de quedarse fijo en Classic).
 function iniciarDesplazamientoCarrousel(el) {
+  if (intervaloMarcas) {
+    clearInterval(intervaloMarcas);
+    intervaloMarcas = null;
+  }
+  if (resizeHandlerMarcas) {
+    window.removeEventListener("resize", resizeHandlerMarcas);
+    resizeHandlerMarcas = null;
+  }
+
+  // En Modo Classic el carrousel de marcas queda fijo, sin desplazamiento.
+  if (modoVisual === "classic") {
+    el.style.transform = "translateX(0)";
+    return;
+  }
+
   const primeraTanda = el.querySelector(".carrousel-tanda");
   let posicion = 0;
   let anchoTanda = 0;
-  let intervalo = null;
 
   function medirAncho() {
     const estilo = getComputedStyle(el);
@@ -1420,8 +1442,8 @@ function iniciarDesplazamientoCarrousel(el) {
   function iniciar() {
     medirAncho();
     if (anchoTanda <= 0) return;
-    if (intervalo) clearInterval(intervalo);
-    intervalo = setInterval(paso, 60);
+    if (intervaloMarcas) clearInterval(intervaloMarcas);
+    intervaloMarcas = setInterval(paso, 60);
   }
 
   const listoParaMedir = document.fonts && document.fonts.ready
@@ -1429,11 +1451,12 @@ function iniciarDesplazamientoCarrousel(el) {
     : Promise.resolve();
   listoParaMedir.then(iniciar);
 
-  window.addEventListener("resize", () => {
+  resizeHandlerMarcas = () => {
     posicion = 0;
     el.style.transform = "translateX(0)";
     iniciar();
-  });
+  };
+  window.addEventListener("resize", resizeHandlerMarcas);
 }
 
 function escapeHtml(s) {
