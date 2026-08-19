@@ -246,6 +246,20 @@ html[data-modo="classic"] #btn-logout-classic { display: block; }
   font-weight: 600;
 }
 
+/* Filtros de marca/tipo dentro de una sección: al aplicarse, un pop sutil
+   hacia adelante (sin cambiar de tamaño) con la misma luz de fondo que las
+   cards (amarilla en Classic, verde fósforo en Fallout). Un click más lo
+   vuelve a su lugar (se saca la clase "activo"). */
+#sub-nav .btn-categoria {
+  position: relative;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+#sub-nav .btn-categoria.activo {
+  z-index: 3;
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px 4px var(--rc-halo-seleccion-glow), 0 6px 14px -6px rgba(0, 0, 0, 0.35);
+}
+
 /* Interruptor tipo avión, debajo de "Búsqueda por Marca": es el log out del
    Modo Fallout. Centrado en el espacio libre entre el menú y el pie de
    página (margin auto arriba y abajo). Solo existe en Fallout: en Classic
@@ -331,6 +345,67 @@ html[data-modo="fallout"] .rc-switch-fallout-wrap.oculto { display: none; }
 .btn-volver.oculto { display: none; }
 
 main#productos { flex: 1; min-width: 0; margin-top: 20px; }
+
+/* Scroll temático (nunca la barra gris nativa) en los contenedores con
+   scroll interno propio: listado de productos, dropdown de color, carrito. */
+main#productos,
+.dropdown-color-lista,
+#panel-carrito {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rc-green-dim) var(--rc-bg-panel);
+}
+main#productos::-webkit-scrollbar,
+.dropdown-color-lista::-webkit-scrollbar,
+#panel-carrito::-webkit-scrollbar {
+  width: 8px;
+}
+main#productos::-webkit-scrollbar-track,
+.dropdown-color-lista::-webkit-scrollbar-track,
+#panel-carrito::-webkit-scrollbar-track {
+  background: var(--rc-bg-panel);
+}
+main#productos::-webkit-scrollbar-thumb,
+.dropdown-color-lista::-webkit-scrollbar-thumb,
+#panel-carrito::-webkit-scrollbar-thumb {
+  background: var(--rc-green-dim);
+  border: 1px solid var(--rc-green-faint);
+  box-shadow: 0 0 6px -1px var(--rc-glow);
+}
+main#productos::-webkit-scrollbar-thumb:hover,
+.dropdown-color-lista::-webkit-scrollbar-thumb:hover,
+#panel-carrito::-webkit-scrollbar-thumb:hover {
+  background: var(--rc-green);
+  box-shadow: 0 0 8px var(--rc-glow);
+}
+
+/* Al navegar dentro de una sección (no en el home): el menú de la
+   izquierda queda fijo/estático, y el listado de productos de la derecha
+   scrollea de forma independiente si no entra en la pantalla. Solo en
+   pantallas grandes: en mobile el scroll de toda la página sigue siendo
+   más usable. */
+@media (min-width: 701px) {
+  body.rc-vista-seccion {
+    height: 100vh;
+    overflow: hidden;
+  }
+  body.rc-vista-seccion .fila-principal {
+    min-height: 0;
+    overflow: hidden;
+  }
+  /* Un contenedor con overflow-y:auto recorta también en horizontal (el
+     navegador fuerza overflow-x a "auto" apenas overflow-y deja de ser
+     "visible": no hay forma de evitarlo con overflow-x:visible). En vez de
+     pelear con esa regla, le damos aire de sobra ADENTRO del contenedor
+     (padding, sin compensar con margen negativo: eso hacía que el propio
+     panel de productos invadiera el menú) para que el "pop" de una card
+     más su glow nunca lleguen a tocar ese borde — arriba, abajo, o contra
+     el menú de la izquierda — y queden recortados. */
+  body.rc-vista-seccion main#productos {
+    height: 100%;
+    overflow-y: auto;
+    padding: 0 95px 95px 95px;
+  }
+}
 
 .carrousel-ciudad-wrap {
   display: flex; flex-direction: column; gap: 10px; height: 100%;
@@ -525,10 +600,8 @@ main#productos { flex: 1; min-width: 0; margin-top: 20px; }
 .card.expandida {
   position: relative;
   transform: scale(1.3);
-  z-index: 5;
-  box-shadow:
-    0 0 70px 18px var(--rc-halo-seleccion-glow),
-    0 16px 34px -6px rgba(0, 0, 0, 0.45);
+  z-index: 50;
+  box-shadow: 0 16px 34px -6px rgba(0, 0, 0, 0.45);
 }
 /* Vista Lista: las cards ocupan casi todo el ancho disponible, así que un
    pop centrado empuja el borde derecho fuera del contenedor y se cropea.

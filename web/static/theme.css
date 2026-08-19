@@ -30,6 +30,28 @@ html, body {
   cursor: var(--rc-cursor);
 }
 
+/* Ninguna barra de scroll de la web usa el gris nativo del navegador: siempre
+   el color del tema activo (verde fósforo en Fallout, navy en Classic, ver
+   variables redefinidas en classic.css). Se aplica a la página entera; los
+   contenedores con su propio scroll interno (carrito, dropdown de color,
+   listado de productos) heredan el mismo criterio explícitamente donde hace
+   falta, ver landing.css. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rc-green-dim) var(--rc-bg-panel);
+}
+html::-webkit-scrollbar { width: 10px; }
+html::-webkit-scrollbar-track { background: var(--rc-bg-panel); }
+html::-webkit-scrollbar-thumb {
+  background: var(--rc-green-dim);
+  border: 1px solid var(--rc-green-faint);
+  box-shadow: 0 0 6px -1px var(--rc-glow);
+}
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--rc-green);
+  box-shadow: 0 0 8px var(--rc-glow);
+}
+
 body {
   text-shadow: 0 0 1px var(--rc-glow), 0 0 4px var(--rc-glow);
 }

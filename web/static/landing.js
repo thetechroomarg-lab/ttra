@@ -1372,13 +1372,17 @@ function aplicarModoVisual(modo, opciones) {
   pintarFrasePie();
   const carrouselMarcasEl = document.getElementById("carrousel");
   if (carrouselMarcasEl) iniciarDesplazamientoCarrousel(carrouselMarcasEl);
-  if (!seccionActiva && !filtroMarcaGlobal) {
-    const productosEl = document.getElementById("productos");
-    if (productosEl) {
-      detenerCarrouselCiudad();
-      pintarCarrouselSegunModo(productosEl);
-    }
-  }
+  // Cambiar de modo siempre vuelve al home: lo único que persiste entre
+  // Classic y Fallout es el carrito (localStorage aparte, ajeno a esto).
+  // Cualquier sección, filtro de marca, sub-filtro o búsqueda en curso se
+  // descarta.
+  seccionActiva = null;
+  subFiltrosActivos = new Set();
+  filtroMarcaGlobal = null;
+  profundidadHistorial = 0;
+  const inputBusqueda = document.getElementById("input-busqueda");
+  if (inputBusqueda) inputBusqueda.value = "";
+  actualizarVista();
 }
 
 document.getElementById("btn-modo-fallout").addEventListener("click", () => {
@@ -1795,9 +1799,29 @@ function pintarGrilla(el, productos, mensajeVacio) {
     const btnAgregar = card.querySelector(".btn-agregar");
     const botonColor = card.querySelector(".dropdown-color-boton");
     const listaColor = card.querySelector(".dropdown-color-lista");
+
+    // El título se trunca por lo largo del nombre; seleccionar la card lo
+    // expande para ver el nombre completo. No es acumulativo: solo una
+    // card seleccionada a la vez, para que el user vea un ítem por vez en
+    // su extensión completa. Elegir color y agregar al carrito solo tiene
+    // sentido si la card ya está seleccionada; si no, el primer click la
+    // selecciona nomás (no abre el dropdown ni agrega todavía).
+    function seleccionarCard() {
+      const yaExpandida = card.classList.contains("expandida");
+      el.querySelectorAll(".card.expandida").forEach((c) => c.classList.remove("expandida"));
+      if (!yaExpandida) card.classList.add("expandida");
+      // La card no es un <button>, así que el beep global de Fallout (que
+      // solo escucha button/a/[role=button]) no la alcanza: la disparamos acá.
+      if (modoVisual === "fallout") beepInteraccion();
+    }
+
     if (botonColor && listaColor) {
       botonColor.addEventListener("click", (e) => {
         e.stopPropagation();
+        if (!card.classList.contains("expandida")) {
+          seleccionarCard();
+          return;
+        }
         const yaAbierto = !listaColor.classList.contains("oculto");
         cerrarDropdownsColor();
         if (!yaAbierto) listaColor.classList.remove("oculto");
@@ -1812,22 +1836,18 @@ function pintarGrilla(el, productos, mensajeVacio) {
         });
       });
     }
-    btnAgregar.addEventListener("click", () => {
+    btnAgregar.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!card.classList.contains("expandida")) {
+        seleccionarCard();
+        return;
+      }
       const producto = productos.find((p) => p.nombre === btnAgregar.dataset.nombre);
       if (producto) agregarAlCarrito(producto, btnAgregar.dataset.color || null);
     });
-    // El título se trunca por lo largo del nombre; un click en la card
-    // (fuera de los controles) lo expande para ver el nombre completo. No
-    // es acumulativo: solo una card expandida a la vez, para que el user
-    // vea un ítem por vez en su extensión completa.
     card.addEventListener("click", (e) => {
       if (e.target.closest("button, .dropdown-color, li")) return;
-      const yaExpandida = card.classList.contains("expandida");
-      el.querySelectorAll(".card.expandida").forEach((c) => c.classList.remove("expandida"));
-      if (!yaExpandida) card.classList.add("expandida");
-      // La card no es un <button>, así que el beep global de Fallout (que
-      // solo escucha button/a/[role=button]) no la alcanza: la disparamos acá.
-      if (modoVisual === "fallout") beepInteraccion();
+      seleccionarCard();
     });
   });
   el.querySelectorAll(".btn-vista[data-modo]").forEach((btn) => {
@@ -1866,6 +1886,10 @@ function actualizarVista() {
   // como el único control visible en la barra lateral.
   const switchWrap = document.getElementById("rc-switch-fallout-wrap");
   if (switchWrap) switchWrap.classList.toggle("oculto", !enInicio);
+  // Al entrar a una sección (no en el home): el menú de la izquierda queda
+  // fijo y el listado de productos de la derecha scrollea solo si no entra
+  // en la pantalla. En el home la página entera sigue scrolleando normal.
+  document.body.classList.toggle("rc-vista-seccion", !enInicio);
 
   detenerCarrouselCiudad();
 
