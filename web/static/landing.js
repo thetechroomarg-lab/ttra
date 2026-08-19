@@ -74,7 +74,7 @@ let ordenPrecio = null; // null (sin orden) | "asc" | "desc"
 // archivo, y los datos descriptivos salen de DATOS_LUGARES (misma clave,
 // sin extensión). Agregar una foto nueva = agregar el archivo acá y su
 // entrada en DATOS_LUGARES.
-const IMAGENES_CIUDAD = [
+const IMAGENES_CORDOBA_CAPITAL = [
   "ciudad/catedral.jpg",
   "ciudad/plaza-san-martin.jpg",
   "ciudad/plaza-colon.jpg",
@@ -84,7 +84,172 @@ const IMAGENES_CIUDAD = [
   "ciudad/patio-olmos.jpeg",
   "ciudad/puente-cosquin.jpg",
   "ciudad/teatro-san-martin.jpg",
+  "ciudad/capuchinos.jpg",
+  "ciudad/manzana-jesuitica.jpg",
+  "ciudad/canada.jpg",
+  "ciudad/cabildo.jpg",
 ];
+
+// Fotos por provincia argentina (3 por provincia, Wikimedia Commons), usadas
+// para mostrarle al visitante el paisaje de SU provincia según geolocalización.
+// La entrada "cordoba" incluye también las fotos de la capital (arriba).
+const IMAGENES_POR_PROVINCIA = {
+  "buenos-aires": [
+    "ciudad/provincias/buenos-aires/catedral-de-la-plata.jpg",
+    "ciudad/provincias/buenos-aires/piedra-movediza-tandil.jpg",
+    "ciudad/provincias/buenos-aires/delta-del-tigre.jpg",
+  ],
+  caba: [
+    "ciudad/provincias/caba/obelisco.jpg",
+    "ciudad/provincias/caba/teatro-colon.jpg",
+    "ciudad/provincias/caba/puente-de-la-mujer.jpg",
+  ],
+  catamarca: [
+    "ciudad/provincias/catamarca/ruinas-del-shincal.jpg",
+    "ciudad/provincias/catamarca/campo-de-piedra-pomez.jpg",
+    "ciudad/provincias/catamarca/termas-de-fiambala.jpg",
+  ],
+  chaco: [
+    "ciudad/provincias/chaco/parque-nacional-chaco.jpg",
+    "ciudad/provincias/chaco/ciudad-de-las-esculturas-resistencia.jpg",
+    "ciudad/provincias/chaco/isla-del-cerrito.jpg",
+  ],
+  chubut: [
+    "ciudad/provincias/chubut/peninsula-valdes.jpg",
+    "ciudad/provincias/chubut/la-trochita.jpg",
+    "ciudad/provincias/chubut/punta-tombo.jpg",
+  ],
+  cordoba: [
+    ...IMAGENES_CORDOBA_CAPITAL,
+    "ciudad/provincias/cordoba-provincia/la-cumbrecita.jpg",
+    "ciudad/provincias/cordoba-provincia/reloj-cucu-la-falda.jpg",
+    "ciudad/provincias/cordoba-provincia/cerro-uritorco.jpg",
+  ],
+  corrientes: [
+    "ciudad/provincias/corrientes/esteros-del-ibera.jpg",
+    "ciudad/provincias/corrientes/puente-general-belgrano.jpg",
+    "ciudad/provincias/corrientes/costanera-correntina.jpg",
+  ],
+  "entre-rios": [
+    "ciudad/provincias/entre-rios/palacio-san-jose.jpg",
+    "ciudad/provincias/entre-rios/parque-nacional-el-palmar.jpg",
+    "ciudad/provincias/entre-rios/costanera-de-concordia.jpg",
+  ],
+  formosa: [
+    "ciudad/provincias/formosa/plaza-san-martin-formosa.jpg",
+    "ciudad/provincias/formosa/banado-la-estrella.jpg",
+    "ciudad/provincias/formosa/parque-nacional-rio-pilcomayo.jpg",
+  ],
+  jujuy: [
+    "ciudad/provincias/jujuy/cerro-de-los-siete-colores-purmamarca.jpg",
+    "ciudad/provincias/jujuy/quebrada-de-humahuaca.jpg",
+    "ciudad/provincias/jujuy/salinas-grandes.jpg",
+  ],
+  "la-pampa": [
+    "ciudad/provincias/la-pampa/parque-nacional-lihue-calel.jpg",
+    "ciudad/provincias/la-pampa/santa-rosa-capital.jpg",
+    "ciudad/provincias/la-pampa/parque-luro.jpg",
+  ],
+  "la-rioja": [
+    "ciudad/provincias/la-rioja/parque-nacional-talampaya.jpg",
+    "ciudad/provincias/la-rioja/cable-carril-la-mejicana-chilecito.jpg",
+    "ciudad/provincias/la-rioja/casa-de-gobierno-la-rioja.jpg",
+  ],
+  mendoza: [
+    "ciudad/provincias/mendoza/cerro-aconcagua.jpg",
+    "ciudad/provincias/mendoza/puente-del-inca.jpg",
+    "ciudad/provincias/mendoza/vinedo-valle-de-uco.jpg",
+  ],
+  misiones: [
+    "ciudad/provincias/misiones/cataratas-del-iguazu.jpg",
+    "ciudad/provincias/misiones/ruinas-san-ignacio-mini.jpg",
+    "ciudad/provincias/misiones/salto-encantado.jpg",
+  ],
+  neuquen: [
+    "ciudad/provincias/neuquen/volcan-lanin.jpg",
+    "ciudad/provincias/neuquen/lago-lacar.jpg",
+    "ciudad/provincias/neuquen/lago-correntoso.jpg",
+  ],
+  "rio-negro": [
+    "ciudad/provincias/rio-negro/centro-civico-bariloche.jpg",
+    "ciudad/provincias/rio-negro/cerro-catedral.jpg",
+    "ciudad/provincias/rio-negro/lago-nahuel-huapi.jpg",
+  ],
+  salta: [
+    "ciudad/provincias/salta/viaducto-la-polvorilla.jpg",
+    "ciudad/provincias/salta/quebrada-de-las-conchas.jpg",
+    "ciudad/provincias/salta/catedral-de-salta.jpg",
+  ],
+  "san-juan": [
+    "ciudad/provincias/san-juan/valle-de-la-luna.jpg",
+    "ciudad/provincias/san-juan/dique-ullum.jpg",
+    "ciudad/provincias/san-juan/santuario-difunta-correa.jpg",
+  ],
+  "san-luis": [
+    "ciudad/provincias/san-luis/sierra-de-las-quijadas.jpg",
+    "ciudad/provincias/san-luis/antigua-casa-potrero-de-los-funes.jpg",
+    "ciudad/provincias/san-luis/mirador-del-sol-merlo.jpg",
+  ],
+  "santa-cruz": [
+    "ciudad/provincias/santa-cruz/glaciar-perito-moreno.jpg",
+    "ciudad/provincias/santa-cruz/cueva-de-las-manos.jpg",
+    "ciudad/provincias/santa-cruz/monte-fitz-roy-el-chalten.jpg",
+  ],
+  "santa-fe": [
+    "ciudad/provincias/santa-fe/monumento-a-la-bandera-rosario.jpg",
+    "ciudad/provincias/santa-fe/catedral-de-santa-fe.jpg",
+    "ciudad/provincias/santa-fe/laguna-setubal.jpg",
+  ],
+  "santiago-del-estero": [
+    "ciudad/provincias/santiago-del-estero/catedral-basilica.jpg",
+    "ciudad/provincias/santiago-del-estero/termas-de-rio-hondo.jpg",
+    "ciudad/provincias/santiago-del-estero/convento-santo-domingo.jpg",
+  ],
+  "tierra-del-fuego": [
+    "ciudad/provincias/tierra-del-fuego/panoramica-ushuaia.jpg",
+    "ciudad/provincias/tierra-del-fuego/bahia-lapataia-parque-nacional.jpg",
+    "ciudad/provincias/tierra-del-fuego/faro-les-eclaireurs.jpg",
+  ],
+  tucuman: [
+    "ciudad/provincias/tucuman/casa-historica-independencia.jpg",
+    "ciudad/provincias/tucuman/ruinas-de-quilmes.jpg",
+    "ciudad/provincias/tucuman/cerro-san-javier.jpg",
+  ],
+};
+
+// Mapeo de código ISO 3166-2:AR (que devuelve la reverse-geocode de
+// BigDataCloud como "principalSubdivisionCode") a la clave usada en
+// IMAGENES_POR_PROVINCIA.
+const PROVINCIA_POR_CODIGO_ISO = {
+  "AR-B": "buenos-aires",
+  "AR-C": "caba",
+  "AR-K": "catamarca",
+  "AR-H": "chaco",
+  "AR-U": "chubut",
+  "AR-X": "cordoba",
+  "AR-W": "corrientes",
+  "AR-E": "entre-rios",
+  "AR-P": "formosa",
+  "AR-Y": "jujuy",
+  "AR-L": "la-pampa",
+  "AR-F": "la-rioja",
+  "AR-M": "mendoza",
+  "AR-N": "misiones",
+  "AR-Q": "neuquen",
+  "AR-R": "rio-negro",
+  "AR-A": "salta",
+  "AR-J": "san-juan",
+  "AR-D": "san-luis",
+  "AR-Z": "santa-cruz",
+  "AR-S": "santa-fe",
+  "AR-G": "santiago-del-estero",
+  "AR-V": "tierra-del-fuego",
+  "AR-T": "tucuman",
+};
+
+// Fotos que se muestran mientras se resuelve la geolocalización, y como base
+// de la provincia de Córdoba (capital + interior).
+let IMAGENES_CIUDAD = IMAGENES_CORDOBA_CAPITAL;
 
 // Datos históricos/descriptivos por punto de interés, con tono de terminal
 // retro. La clave es el nombre de archivo sin extensión, en minúsculas.
@@ -169,6 +334,692 @@ const DATOS_LUGARES = {
     estado: "ACTIVA",
     importancia: "TEATRO HISTÓRICO PROVINCIAL",
     log: "LOG DE ARCHIVO: inaugurado en 1891, es uno de los teatros más antiguos en actividad de la provincia. Sede habitual de la programación oficial de artes escénicas de Córdoba.",
+  },
+  capuchinos: {
+    ubicacion: "NUEVA CÓRDOBA",
+    construccion: "1926 — INCONCLUSA",
+    estilo: "NEOGÓTICO / HORMIGÓN ARMADO",
+    coordenadas: "31°25'S 64°11'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "PRIMERA IGLESIA DE HORMIGÓN ARMADO DEL PAÍS",
+    log: "LOG DE ARCHIVO: iniciada en 1926, fue la primera iglesia de Argentina construida en hormigón armado. Sus dos torres quedaron deliberadamente sin terminar, como recordatorio de que solo la obra divina puede considerarse completa. Foto: Lcsrns, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "manzana-jesuitica": {
+    ubicacion: "CENTRO HISTÓRICO",
+    construccion: "1613",
+    estilo: "COLONIAL JESUÍTICO",
+    coordenadas: "31°25'S 64°11'O (APROX.)",
+    estado: "ACTIVA — MUSEO HISTÓRICO",
+    importancia: "PATRIMONIO UNESCO (2000)",
+    log: "LOG DE ARCHIVO: núcleo original de lo que hoy es la Universidad Nacional de Córdoba, fundada en 1613 como Colegio Máximo — la más antigua del país. Integra la Manzana Jesuítica, Patrimonio de la Humanidad. Foto: Lcsrns, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  canada: {
+    ubicacion: "CENTRO / NUEVA CÓRDOBA",
+    construccion: "CANALIZADA EN 1944",
+    estilo: "OBRA HIDRÁULICA URBANA",
+    coordenadas: "31°25'S 64°11'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "ÍCONO PAISAJÍSTICO DE LA CIUDAD",
+    log: "LOG DE ARCHIVO: canalización del arroyo La Cañada, habilitada en 1944 para controlar las inundaciones que afectaban a la ciudad. Sus puentes de piedra y tipas centenarias son hoy una de las postales más reconocibles de Córdoba. Foto: Lcsrns, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  cabildo: {
+    ubicacion: "PLAZA SAN MARTÍN",
+    construccion: "1783 — 1786",
+    estilo: "COLONIAL / ARCADA DE 15 ARCOS",
+    coordenadas: "31°25'S 64°11'O (APROX.)",
+    estado: "ACTIVA — MUSEO DE LA CIUDAD",
+    importancia: "MONUMENTO HISTÓRICO NACIONAL",
+    log: "LOG DE ARCHIVO: sede del gobierno colonial hasta el siglo XIX, remodelado entre 1783 y 1786 con su característica galería de 15 arcos. Hoy funciona como Museo de la Ciudad, frente a la Catedral. Foto: Pablo D. Flores, CC BY-SA 2.5 (Wikimedia Commons).",
+  },
+
+  // --- Puntos de interés por provincia argentina (geolocalización) ---
+  "catedral-de-la-plata": {
+    ubicacion: "LA PLATA, BUENOS AIRES",
+    construccion: "1884 — 1932",
+    estilo: "NEOGÓTICO",
+    coordenadas: "34°55'S 57°57'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "MAYOR BASÍLICA NEOGÓTICA DEL HEMISFERIO SUR",
+    log: "LOG DE ARCHIVO: construida como parte del trazado fundacional de La Plata, con torres de casi 120 metros y ascensor panorámico. Foto: MartinPutz (Martinp1), CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "piedra-movediza-tandil": {
+    ubicacion: "TANDIL, BUENOS AIRES",
+    construccion: "RÉPLICA INSTALADA EN 2007",
+    estilo: "FORMACIÓN GRANÍTICA / RÉPLICA",
+    coordenadas: "37°19'S 59°08'O (APROX.)",
+    estado: "ACTIVA — PARQUE LÍTICO",
+    importancia: "ÍCONO GEOLÓGICO DE TANDIL",
+    log: "LOG DE ARCHIVO: la piedra original, de unas 300 toneladas, se mecía en equilibrio hasta caer y romperse en 1912. La réplica actual recrea ese ícono en el Parque Lítico La Movediza. Foto: Leopogonza, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "delta-del-tigre": {
+    ubicacion: "TIGRE, BUENOS AIRES",
+    construccion: "FORMACIÓN NATURAL",
+    estilo: "DELTA FLUVIAL / HUMEDAL",
+    coordenadas: "34°25'S 58°34'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "DESTINO NATURAL MÁS VISITADO CERCA DE BUENOS AIRES",
+    log: "LOG DE ARCHIVO: red de arroyos e islas del Delta del Paraná, recorrida tradicionalmente en lancha colectiva. Ecosistema de humedales con identidad cultural propia de 'isleños'. Foto: Vlasta x, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  obelisco: {
+    ubicacion: "PLAZA DE LA REPÚBLICA, CABA",
+    construccion: "1936",
+    estilo: "MONUMENTO CONMEMORATIVO",
+    coordenadas: "34°36'S 58°22'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "MONUMENTO MÁS RECONOCIBLE DE ARGENTINA",
+    log: "LOG DE ARCHIVO: erigido en 1936 para el cuarto centenario de la primera fundación de la ciudad. Con 67 metros de altura, escenario tradicional de festejos populares y deportivos. Foto: Jorge Láscar, CC BY 2.0 (Wikimedia Commons).",
+  },
+  "teatro-colon": {
+    ubicacion: "CABA",
+    construccion: "1908",
+    estilo: "ACADEMICISTA / BEAUX-ARTS",
+    coordenadas: "34°36'S 58°23'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "UNO DE LOS TEATROS DE ÓPERA MÁS IMPORTANTES DEL MUNDO",
+    log: "LOG DE ARCHIVO: inaugurado en 1908, reconocido por su acústica excepcional. Escenario de las mayores figuras de la música clásica y la ópera internacional. Foto: EEJCC, dominio público CC0 1.0 (Wikimedia Commons).",
+  },
+  "puente-de-la-mujer": {
+    ubicacion: "PUERTO MADERO, CABA",
+    construccion: "2001",
+    estilo: "CONTEMPORÁNEO / PASARELA ROTATORIA",
+    coordenadas: "34°36'S 58°21'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "SÍMBOLO DE LA RENOVACIÓN DE PUERTO MADERO",
+    log: "LOG DE ARCHIVO: diseñado por Santiago Calatrava, inaugurado en 2001. Sus calles llevan nombres de mujeres, de ahí su denominación. Foto: Jorge Lascar, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "ruinas-del-shincal": {
+    ubicacion: "LONDRES, DEPTO. BELÉN, CATAMARCA",
+    construccion: "SIGLO XV",
+    estilo: "ARQUITECTURA INCAICA",
+    coordenadas: "27°38'S 67°06'O (APROX.)",
+    estado: "SITIO ARQUEOLÓGICO — EN VALOR",
+    importancia: "UNO DE LOS SITIOS INCAICOS MEJOR CONSERVADOS DE ARGENTINA",
+    log: "LOG DE ARCHIVO: ciudad administrativa y ceremonial del Imperio Inca, centro de control del extremo austral del Qhapaq Ñan. Terrazas, ushnu y edificios de piedra puestos en valor entre 2013 y 2015. Foto: Reinaldo A. Moralejo, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "campo-de-piedra-pomez": {
+    ubicacion: "ANTOFAGASTA DE LA SIERRA, CATAMARCA",
+    construccion: "FORMACIÓN VOLCÁNICA",
+    estilo: "PAISAJE LUNAR DE YARDANGS",
+    coordenadas: "26°30'S 67°30'O (APROX.)",
+    estado: "ÁREA NATURAL PROTEGIDA",
+    importancia: "CURIOSIDAD GEOLÓGICA ÚNICA A +3.300 MSNM",
+    log: "LOG DE ARCHIVO: depósitos volcánicos que crearon formaciones de piedra pómez de varios metros de altura en plena Puna catamarqueña. Foto: Rodolfo Pace, CC BY 2.0 (Wikimedia Commons).",
+  },
+  "termas-de-fiambala": {
+    ubicacion: "FIAMBALÁ, DEPTO. TINOGASTA, CATAMARCA",
+    construccion: "FUENTES TERMALES NATURALES",
+    estilo: "PILETAS ESCALONADAS DE MONTAÑA",
+    coordenadas: "27°41'S 67°37'O (APROX.)",
+    estado: "ACTIVA — DESTINO TURÍSTICO",
+    importancia: "TERMAS TRADICIONALES DEL OESTE CATAMARQUEÑO",
+    log: "LOG DE ARCHIVO: aguas termales naturales en la precordillera, con piletas de distintas temperaturas rodeadas de paisaje serrano. Foto: CarlosA.Barrio, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "parque-nacional-chaco": {
+    ubicacion: "CAPITÁN SOLARI, CHACO",
+    construccion: "PARQUE NACIONAL DESDE 1954",
+    estilo: "BOSQUE CHAQUEÑO ORIENTAL",
+    coordenadas: "26°48'S 59°37'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "RESERVA DE FLORA Y FAUNA CHAQUEÑA",
+    log: "LOG DE ARCHIVO: protege quebrachales, algarrobos y numerosas lagunas como la del Carpincho. Refugio de yacarés, carpinchos y aves autóctonas. Foto: Pertile, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "ciudad-de-las-esculturas-resistencia": {
+    ubicacion: "PLAZA SAN MARTÍN, RESISTENCIA, CHACO",
+    construccion: "TRADICIÓN INICIADA EN 1961",
+    estilo: "ESCULTURA AL AIRE LIBRE",
+    coordenadas: "27°27'S 58°59'O (APROX.)",
+    estado: "ACTIVA — BIENAL DE ESCULTURAS",
+    importancia: "RESISTENCIA, 'CIUDAD DE LAS ESCULTURAS'",
+    log: "LOG DE ARCHIVO: tradición impulsada por el Fogón de los Arrieros, origen de la Bienal Internacional de Esculturas. Cientos de obras al aire libre en plazas y calles. Foto: Pertile, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "isla-del-cerrito": {
+    ubicacion: "ISLA DEL CERRITO, CHACO",
+    construccion: "PUEBLO RIBEREÑO HISTÓRICO",
+    estilo: "PAISAJE FLUVIAL",
+    coordenadas: "27°08'S 58°49'O (APROX.)",
+    estado: "ACTIVO — CENTRO TURÍSTICO",
+    importancia: "PRINCIPAL DESTINO DE PESCA DEL CHACO",
+    log: "LOG DE ARCHIVO: ubicada en la confluencia de los ríos Paraná y Paraguay. Playas de agua dulce y antiguo casco urbano. Foto: Pertile, CC BY 3.0 (Wikimedia Commons).",
+  },
+  "peninsula-valdes": {
+    ubicacion: "PENÍNSULA VALDÉS, CHUBUT",
+    construccion: "FORMACIÓN NATURAL",
+    estilo: "RESERVA DE FAUNA MARINA",
+    coordenadas: "42°30'S 64°00'O (APROX.)",
+    estado: "PATRIMONIO UNESCO (1999)",
+    importancia: "SANTUARIO DE BALLENAS FRANCAS AUSTRALES",
+    log: "LOG DE ARCHIVO: hogar de ballenas francas australes, elefantes marinos, lobos marinos y orcas. Caleta Valdés es una de sus bahías más emblemáticas. Foto: .vxctoria, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "la-trochita": {
+    ubicacion: "EL MAITÉN / ESQUEL, CHUBUT",
+    construccion: "1922",
+    estilo: "FERROCARRIL DE TROCHA ANGOSTA",
+    coordenadas: "42°56'S 71°10'O (APROX.)",
+    estado: "ACTIVA — ATRACTIVO TURÍSTICO",
+    importancia: "'THE OLD PATAGONIAN EXPRESS'",
+    log: "LOG DE ARCHIVO: histórico ferrocarril patagónico popularizado por el libro de Paul Theroux. Sus locomotoras a vapor siguen operando entre Esquel y El Maitén. Foto: Pablo Bruno D'Amico, CC BY-SA 2.0 (Wikimedia Commons).",
+  },
+  "punta-tombo": {
+    ubicacion: "PUNTA TOMBO, CHUBUT",
+    construccion: "RESERVA PROTEGIDA DESDE 1979",
+    estilo: "ESTEPA COSTERA",
+    coordenadas: "44°02'S 65°11'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "MAYOR COLONIA DE PINGÜINOS MAGALLÁNICOS DE ARGENTINA",
+    log: "LOG DE ARCHIVO: cientos de miles de pingüinos magallánicos nidifican cada primavera en la estepa costera. Uno de los destinos de avistaje de fauna más visitados de la Patagonia. Foto: littletroll, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "la-cumbrecita": {
+    ubicacion: "VALLE DE CALAMUCHITA, CÓRDOBA",
+    construccion: "1934",
+    estilo: "PUEBLO PEATONAL ALPINO",
+    coordenadas: "31°54'S 64°48'O (APROX.)",
+    estado: "ACTIVA — DESTINO TURÍSTICO",
+    importancia: "PUEBLO ALPINO A 1450 MSNM",
+    log: "LOG DE ARCHIVO: fundado por inmigrantes centroeuropeos en las Altas Sierras cordobesas. Calles de piedra, arroyos y bosques de pinos. Foto: Banfield, CC BY-SA 2.5 AR (Wikimedia Commons).",
+  },
+  "reloj-cucu-la-falda": {
+    ubicacion: "LA FALDA, VALLE DE PUNILLA, CÓRDOBA",
+    construccion: "SIGLO XX",
+    estilo: "INSPIRADO EN LA SELVA NEGRA",
+    coordenadas: "31°05'S 64°29'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "MONUMENTO EMBLEMÁTICO DE ENTRADA A LA FALDA",
+    log: "LOG DE ARCHIVO: símbolo identitario de La Falda, ciudad serrana que alojó al mítico Hotel Edén. Estructura inspirada en los relojes de cuco de la Selva Negra. Foto: Lanacabu, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "cerro-uritorco": {
+    ubicacion: "CAPILLA DEL MONTE, VALLE DE PUNILLA, CÓRDOBA",
+    construccion: "1979 METROS DE ALTURA",
+    estilo: "ELEVACIÓN SERRANA",
+    coordenadas: "30°58'S 64°49'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "ELEVACIÓN MÁS ALTA DEL VALLE DE PUNILLA",
+    log: "LOG DE ARCHIVO: famoso por relatos de avistamientos OVNI y fenómenos paranormales que atraen turismo esotérico desde los años 80. Foto: Pablo D. Flores, CC BY-SA 2.5 (Wikimedia Commons).",
+  },
+  "esteros-del-ibera": {
+    ubicacion: "CORRIENTES",
+    construccion: "HUMEDAL NATURAL",
+    estilo: "ESTEROS Y LAGUNAS",
+    coordenadas: "28°30'S 57°30'O (APROX.)",
+    estado: "ACTIVO — RESERVA NATURAL",
+    importancia: "UNO DE LOS HUMEDALES MÁS GRANDES DEL MUNDO",
+    log: "LOG DE ARCHIVO: paisaje de esteros y lagunas con gran biodiversidad de fauna autóctona, incluyendo yacarés y ciervos de los pantanos. Foto: Delfor Hernán Castro (Entrerrianitox), CC BY 4.0 (Wikimedia Commons).",
+  },
+  "puente-general-belgrano": {
+    ubicacion: "CORRIENTES / CHACO",
+    construccion: "OBRA VIAL SOBRE EL RÍO PARANÁ",
+    estilo: "PUENTE COLGANTE",
+    coordenadas: "27°28'S 58°50'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "CONEXIÓN VIAL CORRIENTES-CHACO",
+    log: "LOG DE ARCHIVO: conecta las ciudades de Corrientes y Resistencia sobre el río Paraná, vista desde la costanera correntina. Foto: Pertile, CC BY 3.0 (Wikimedia Commons).",
+  },
+  "costanera-correntina": {
+    ubicacion: "CIUDAD DE CORRIENTES",
+    construccion: "PASEO COSTERO",
+    estilo: "COSTANERA URBANA",
+    coordenadas: "27°28'S 58°50'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "PASEO EMBLEMÁTICO A ORILLAS DEL PARANÁ",
+    log: "LOG DE ARCHIVO: recorrido costero tradicional de la capital correntina, con vista al río Paraná y al puente que la conecta con el Chaco. Foto: Carlos Bagliani, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "palacio-san-jose": {
+    ubicacion: "CERCA DE CONCEPCIÓN DEL URUGUAY, ENTRE RÍOS",
+    construccion: "1848 — 1858",
+    estilo: "RESIDENCIAL HISTÓRICO",
+    coordenadas: "32°16'S 58°28'O (APROX.)",
+    estado: "ACTIVA — MUSEO Y MONUMENTO HISTÓRICO",
+    importancia: "EX RESIDENCIA DE JUSTO JOSÉ DE URQUIZA",
+    log: "LOG DE ARCHIVO: residencia personal del general Justo José de Urquiza, diseñada por el arquitecto Pedro Fossati. Foto: Puchita, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "parque-nacional-el-palmar": {
+    ubicacion: "COLÓN, ENTRE RÍOS",
+    construccion: "PARQUE NACIONAL DESDE 1966",
+    estilo: "PALMAR DE YATAY",
+    coordenadas: "31°52'S 58°15'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "ÚLTIMOS GRANDES PALMARES DE YATAY DEL LITORAL",
+    log: "LOG DE ARCHIVO: creado en 1966 para preservar los bosques de palmera yatay (Syagrus/Butia yatay), característicos del litoral entrerriano. Foto: Piazzanto, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "costanera-de-concordia": {
+    ubicacion: "CONCORDIA, ENTRE RÍOS",
+    construccion: "PASEO COSTERO SOBRE EL RÍO URUGUAY",
+    estilo: "COSTANERA URBANA",
+    coordenadas: "31°24'S 58°00'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "MIRADOR SOBRE EL RÍO URUGUAY",
+    log: "LOG DE ARCHIVO: paseo costero de la segunda ciudad de Entre Ríos, con miradores sobre el río Uruguay. Foto: Agencia Oka, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "plaza-san-martin-formosa": {
+    ubicacion: "CIUDAD DE FORMOSA",
+    construccion: "PLAZA CENTRAL",
+    estilo: "PLAZA URBANA",
+    coordenadas: "26°11'S 58°10'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "PLAZA PRINCIPAL DE LA CAPITAL FORMOSEÑA",
+    log: "LOG DE ARCHIVO: plaza General San Martín, ubicada en la ciudad de Formosa, capital de la provincia. Foto: Iro Bosero, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "banado-la-estrella": {
+    ubicacion: "LAS LOMITAS, FORMOSA",
+    construccion: "HUMEDAL NATURAL",
+    estilo: "BAÑADO / HUMEDAL",
+    coordenadas: "24°43'S 60°35'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "SEGUNDO HUMEDAL MÁS GRANDE DE ARGENTINA",
+    log: "LOG DE ARCHIVO: paisaje natural de unas 400 mil hectáreas, hogar de más de 300 especies de aves. Foto: Iro Bosero, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "parque-nacional-rio-pilcomayo": {
+    ubicacion: "FORMOSA",
+    construccion: "PARQUE NACIONAL DESDE 1951",
+    estilo: "HUMEDAL CHAQUEÑO",
+    coordenadas: "25°05'S 58°15'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "51.889 HECTÁREAS DE HUMEDALES PROTEGIDOS",
+    log: "LOG DE ARCHIVO: protege el curso del río Pilcomayo y sus esteros, con gran diversidad de fauna chaqueña. Foto: Tencho, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "cerro-de-los-siete-colores-purmamarca": {
+    ubicacion: "PURMAMARCA, JUJUY",
+    construccion: "FORMACIÓN GEOLÓGICA",
+    estilo: "SEDIMENTACIÓN MARINA Y VOLCÁNICA",
+    coordenadas: "23°45'S 65°30'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "PATRIMONIO UNESCO — QUEBRADA DE HUMAHUACA",
+    log: "LOG DE ARCHIVO: ícono visual de Purmamarca, con franjas de rojo, ocre, violeta y verde formadas por sedimentación a lo largo de millones de años. Foto: JuliSarki, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "quebrada-de-humahuaca": {
+    ubicacion: "JUJUY",
+    construccion: "VALLE ANDINO DE +150 KM",
+    estilo: "PAISAJE ANDINO",
+    coordenadas: "23°12'S 65°21'O (APROX.)",
+    estado: "PATRIMONIO UNESCO (2003)",
+    importancia: "ANTIGUA VÍA DEL CAMINO INCA",
+    log: "LOG DE ARCHIVO: valle atravesado históricamente por el Camino Inca y hoy por la Ruta Nacional 9, vía de tránsito comercial y cultural desde tiempos prehispánicos. Foto: Diego Salgado, CC BY 2.0 (Wikimedia Commons).",
+  },
+  "salinas-grandes": {
+    ubicacion: "FRONTERA JUJUY-SALTA",
+    construccion: "ANTIGUO LAGO SECO",
+    estilo: "DESIERTO DE SAL",
+    coordenadas: "23°30'S 66°53'O (APROX.)",
+    estado: "ACTIVO — EXPLOTACIÓN ARTESANAL",
+    importancia: "UNO DE LOS MAYORES DESIERTOS DE SAL DE SUDAMÉRICA",
+    log: "LOG DE ARCHIVO: superficie blanca y agrietada a más de 3.300 msnm, explotada artesanalmente para extracción de sal y litio. Foto: diametrik (Lian Chang), CC BY 2.0 (Wikimedia Commons).",
+  },
+  "parque-nacional-lihue-calel": {
+    ubicacion: "DEPTO. LIHUEL CALEL, LA PAMPA",
+    construccion: "SIERRA GRANÍTICA AISLADA",
+    estilo: "MONTE PAMPEANO",
+    coordenadas: "38°01'S 65°35'O (APROX.)",
+    estado: "ACTIVO — PARQUE NACIONAL",
+    importancia: "'SIERRA DE LA VIDA' (LENGUA RANQUEL)",
+    log: "LOG DE ARCHIVO: sistema serrano aislado en la llanura pampeana, con pinturas rupestres ranqueles. Último refugio del cacique Baigorrita en la Conquista del Desierto. Foto: Claudio Elias, dominio público (Wikimedia Commons).",
+  },
+  "santa-rosa-capital": {
+    ubicacion: "SANTA ROSA, LA PAMPA (CAPITAL)",
+    construccion: "FUNDADA EN 1892",
+    estilo: "TRAZA URBANA PLANIFICADA",
+    coordenadas: "36°37'S 64°17'O (APROX.)",
+    estado: "ACTIVA — CAPITAL PROVINCIAL",
+    importancia: "CAPITAL DE LA PAMPA DESDE 1952",
+    log: "LOG DE ARCHIVO: centro administrativo y comercial surgido en torno a la actividad agropecuaria y ferroviaria de la región pampeana. Foto: Claudio Elias, dominio público (Wikimedia Commons).",
+  },
+  "parque-luro": {
+    ubicacion: "DEPTO. TOAY, CERCA DE SANTA ROSA, LA PAMPA",
+    construccion: "SIGLO XIX",
+    estilo: "RESERVA NATURAL / CASCO HISTÓRICO",
+    coordenadas: "36°49'S 64°15'O (APROX.)",
+    estado: "ACTIVA — RESERVA PROVINCIAL",
+    importancia: "PRIMER COTO DE CAZA MAYOR DE SUDAMÉRICA",
+    log: "LOG DE ARCHIVO: fundado por Pedro Luro sobre territorio ranquel. Bosques de caldén nativo y ciervos colorados introducidos en el siglo XIX. Foto: Juanedc (Juan Eduardo De Cristofaro), CC BY 2.0 (Wikimedia Commons).",
+  },
+  "parque-nacional-talampaya": {
+    ubicacion: "DEPTO. INDEPENDENCIA, LA RIOJA",
+    construccion: "CAÑÓN NATURAL",
+    estilo: "PAREDONES ROJIZOS EROSIONADOS",
+    coordenadas: "29°59'S 67°55'O (APROX.)",
+    estado: "PATRIMONIO UNESCO (JUNTO A ISCHIGUALASTO)",
+    importancia: "FORMACIONES 'LA CATEDRAL' Y 'EL MONJE'",
+    log: "LOG DE ARCHIVO: cañón de paredones de hasta 150 metros tallados por el viento y el agua, con petroglifos de más de 10.000 años. Foto: Gino Lucas T., CC BY-SA 2.5 (Wikimedia Commons).",
+  },
+  "cable-carril-la-mejicana-chilecito": {
+    ubicacion: "CHILECITO, LA RIOJA",
+    construccion: "PRINCIPIOS DEL SIGLO XX",
+    estilo: "INGENIERÍA MINERA (SISTEMA BLEICHERT)",
+    coordenadas: "29°10'S 67°30'O (APROX.)",
+    estado: "MONUMENTO HISTÓRICO NACIONAL",
+    importancia: "SÍMBOLO DEL PASADO MINERO RIOJANO",
+    log: "LOG DE ARCHIVO: sistema de transporte minero que salvaba más de 35 km y 3.000 metros de desnivel desde la mina La Mejicana. Foto: Abubea, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "casa-de-gobierno-la-rioja": {
+    ubicacion: "CIUDAD DE LA RIOJA (CAPITAL)",
+    construccion: "FUNDADA EN 1591",
+    estilo: "FACHADA COLONIAL",
+    coordenadas: "29°25'S 66°51'O (APROX.)",
+    estado: "ACTIVA — SEDE DEL PODER EJECUTIVO",
+    importancia: "CENTRO HISTÓRICO DE LA CAPITAL RIOJANA",
+    log: "LOG DE ARCHIVO: sede del gobierno provincial en la ciudad fundada en 1591 por Juan Ramírez de Velasco. Foto: Federico Gomez Aghetta, dominio público (Wikimedia Commons).",
+  },
+  "cerro-aconcagua": {
+    ubicacion: "PARQUE PROVINCIAL ACONCAGUA, MENDOZA",
+    construccion: "6.961 METROS DE ALTURA",
+    estilo: "MACIZO ANDINO",
+    coordenadas: "32°39'S 70°00'O (APROX.)",
+    estado: "ACTIVO — DESTINO DE MONTAÑISMO",
+    importancia: "PUNTO MÁS ALTO DE AMÉRICA",
+    log: "LOG DE ARCHIVO: cumbre más alta del continente americano y del hemisferio occidental. Destino clásico del andinismo internacional. Foto: Roland Baumschlager, dominio público (Wikimedia Commons).",
+  },
+  "puente-del-inca": {
+    ubicacion: "PUENTE DEL INCA, MENDOZA",
+    construccion: "FORMACIÓN NATURAL",
+    estilo: "PUENTE NATURAL DE ROCA",
+    coordenadas: "32°49'S 69°55'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "PUENTE NATURAL SOBRE EL RÍO LAS CUEVAS",
+    log: "LOG DE ARCHIVO: villa andina a 2700 msnm, con un puente natural de roca formado sobre el río Las Cuevas. Foto: Havardtl, CC BY 4.0 (Wikimedia Commons).",
+  },
+  "vinedo-valle-de-uco": {
+    ubicacion: "VALLE DE UCO, MENDOZA",
+    construccion: "REGIÓN VITIVINÍCOLA",
+    estilo: "VIÑEDOS DE ALTURA",
+    coordenadas: "33°29'S 69°15'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "UNA DE LAS REGIONES VITIVINÍCOLAS MÁS RECONOCIDAS DE ARGENTINA",
+    log: "LOG DE ARCHIVO: viñedo frente a la cordillera de los Andes, en una de las zonas vitivinícolas de mayor prestigio del país. Foto: David, CC BY 2.0 (Wikimedia Commons).",
+  },
+  "cataratas-del-iguazu": {
+    ubicacion: "PUERTO IGUAZÚ, MISIONES",
+    construccion: "FORMACIÓN NATURAL",
+    estilo: "CATARATAS / SELVA SUBTROPICAL",
+    coordenadas: "25°41'S 54°26'O (APROX.)",
+    estado: "PATRIMONIO UNESCO (1984)",
+    importancia: "MARAVILLA NATURAL DEL MUNDO",
+    log: "LOG DE ARCHIVO: conjunto de saltos de agua en la frontera con Brasil, una de las mayores atracciones naturales del planeta. Foto: Martin Gardeazabal, dominio público (Wikimedia Commons).",
+  },
+  "ruinas-san-ignacio-mini": {
+    ubicacion: "SAN IGNACIO, MISIONES",
+    construccion: "SIGLO XVII",
+    estilo: "COLONIAL JESUÍTICO-GUARANÍ",
+    coordenadas: "27°15'S 55°32'O (APROX.)",
+    estado: "PATRIMONIO UNESCO",
+    importancia: "MONUMENTO HISTÓRICO NACIONAL",
+    log: "LOG DE ARCHIVO: ruinas de una de las reducciones jesuíticas mejor conservadas de Sudamérica, ejemplo del arte jesuítico-guaraní. Foto: Miguel Vieira, CC BY 2.0 (Wikimedia Commons).",
+  },
+  "salto-encantado": {
+    ubicacion: "ARISTÓBULO DEL VALLE, MISIONES",
+    construccion: "FORMACIÓN NATURAL",
+    estilo: "CASCADA DE SELVA MISIONERA",
+    coordenadas: "27°04'S 54°50'O (APROX.)",
+    estado: "ACTIVO — PARQUE PROVINCIAL",
+    importancia: "ÍCONO DEL VALLE DEL CUÑÁ PIRÚ",
+    log: "LOG DE ARCHIVO: cascada dentro del Parque Provincial Salto Encantado del Valle de Cuñá Pirú, rodeada de selva misionera. Foto: Leandro Kibisz (Loco085), CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "volcan-lanin": {
+    ubicacion: "PARQUE NACIONAL LANÍN, NEUQUÉN",
+    construccion: "3.747 METROS DE ALTURA",
+    estilo: "ESTRATOVOLCÁN NEVADO",
+    coordenadas: "39°38'S 71°30'O (APROX.)",
+    estado: "DORMIDO",
+    importancia: "SÍMBOLO DE LA PROVINCIA DE NEUQUÉN",
+    log: "LOG DE ARCHIVO: cono nevado en la frontera con Chile, visto desde el Lago Huechulafquen. Forma parte del escudo y la bandera de Neuquén. Foto: Viajando por la mía, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "lago-lacar": {
+    ubicacion: "SAN MARTÍN DE LOS ANDES, NEUQUÉN",
+    construccion: "LAGO GLACIAR",
+    estilo: "LAGO ANDINO-PATAGÓNICO",
+    coordenadas: "40°10'S 71°25'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "CENTRO DEL DEPARTAMENTO LÁCAR",
+    log: "LOG DE ARCHIVO: lago glaciar enclavado en la cordillera, junto a la ciudad de San Martín de los Andes. Foto: Marco Antonio Correa Flores, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "lago-correntoso": {
+    ubicacion: "VILLA LA ANGOSTURA, NEUQUÉN",
+    construccion: "LAGO ANDINO",
+    estilo: "PAISAJE PATAGÓNICO",
+    coordenadas: "40°46'S 71°38'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "'JARDÍN DE LA PATAGONIA'",
+    log: "LOG DE ARCHIVO: lago junto a Villa La Angostura, en el norte del Parque Nacional Nahuel Huapi. Foto: Luna929e9, CC BY 4.0 (Wikimedia Commons).",
+  },
+  "centro-civico-bariloche": {
+    ubicacion: "SAN CARLOS DE BARILOCHE, RÍO NEGRO",
+    construccion: "DÉCADA DE 1930-1940",
+    estilo: "ARQUITECTURA ALPINA (PIEDRA Y MADERA)",
+    coordenadas: "41°08'S 71°18'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "SEDE MUNICIPAL E ÍCONO ARQUITECTÓNICO DE BARILOCHE",
+    log: "LOG DE ARCHIVO: conjunto edilicio diseñado por el arquitecto Ezequiel Bustillo, frente al Lago Nahuel Huapi, sede de la administración local. Foto: Rodriguez Rosela, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "cerro-catedral": {
+    ubicacion: "SAN CARLOS DE BARILOCHE, RÍO NEGRO",
+    construccion: "2.100 METROS DE ALTURA",
+    estilo: "CENTRO DE ESQUÍ ANDINO",
+    coordenadas: "41°10'S 71°26'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "UNO DE LOS CENTROS DE ESQUÍ MÁS IMPORTANTES DE ARGENTINA",
+    log: "LOG DE ARCHIVO: base del cerro que da nombre a uno de los complejos de esquí más grandes de Sudamérica, a 19 km de Bariloche. Foto: Diego Gabriel, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "lago-nahuel-huapi": {
+    ubicacion: "SAN CARLOS DE BARILOCHE, RÍO NEGRO",
+    construccion: "LAGO GLACIAR",
+    estilo: "LAGO ANDINO-PATAGÓNICO",
+    coordenadas: "41°08'S 71°18'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "PARQUE NACIONAL MÁS ANTIGUO DE ARGENTINA (1922)",
+    log: "LOG DE ARCHIVO: lago de 530 km² dentro del Parque Nacional Nahuel Huapi, junto a la ciudad de Bariloche. Foto: Pepe Robles, dominio público (Wikimedia Commons).",
+  },
+  "viaducto-la-polvorilla": {
+    ubicacion: "PUNA SALTEÑA, SALTA",
+    construccion: "1932",
+    estilo: "VIADUCTO FERROVIARIO",
+    coordenadas: "24°09'S 66°29'O (APROX.)",
+    estado: "ACTIVO — ATRACTIVO TURÍSTICO",
+    importancia: "PUNTO FINAL DEL 'TREN A LAS NUBES'",
+    log: "LOG DE ARCHIVO: viaducto a 4.220 metros de altura, destino final del histórico Tren a las Nubes que conecta con la ciudad de Salta. Foto: Nestor Galina, CC BY 2.0 (Wikimedia Commons).",
+  },
+  "quebrada-de-las-conchas": {
+    ubicacion: "CAFAYATE, SALTA",
+    construccion: "FORMACIÓN GEOLÓGICA",
+    estilo: "VALLES CALCHAQUÍES",
+    coordenadas: "26°05'S 65°58'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "FORMACIONES ROJIZAS DE LOS VALLES CALCHAQUÍES",
+    log: "LOG DE ARCHIVO: también llamada Quebrada de Cafayate, con formaciones rocosas rojizas como la Garganta del Diablo. Foto: Bachelot Pierre J-P, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "catedral-de-salta": {
+    ubicacion: "CIUDAD DE SALTA",
+    construccion: "SIGLO XIX",
+    estilo: "NEOBARROCO COLONIAL",
+    coordenadas: "24°47'S 65°25'O (APROX.)",
+    estado: "MONUMENTO HISTÓRICO NACIONAL",
+    importancia: "SANTUARIO DEL SEÑOR Y LA VIRGEN DEL MILAGRO",
+    log: "LOG DE ARCHIVO: catedral basílica en el centro histórico de Salta, edificio colonial declarado monumento histórico nacional. Foto: Marianocecowski, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "valle-de-la-luna": {
+    ubicacion: "PARQUE PROVINCIAL ISCHIGUALASTO, SAN JUAN",
+    construccion: "FORMACIÓN GEOLÓGICA (TRIÁSICO)",
+    estilo: "PAISAJE LUNAR EROSIONADO",
+    coordenadas: "30°10'S 67°55'O (APROX.)",
+    estado: "PATRIMONIO UNESCO",
+    importancia: "SITIO PALEONTOLÓGICO CLAVE PARA EL ORIGEN DE LOS DINOSAURIOS",
+    log: "LOG DE ARCHIVO: paisaje formado hace más de 200 millones de años, con formaciones como 'El Hongo'. Área protegida desde 1971. Foto: Littletroll, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "dique-ullum": {
+    ubicacion: "ULLUM, SAN JUAN",
+    construccion: "OBRA HIDRÁULICA",
+    estilo: "EMBALSE ARTIFICIAL",
+    coordenadas: "31°26'S 68°37'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "PRINCIPAL ESPEJO DE AGUA CERCANO A LA CAPITAL SANJUANINA",
+    log: "LOG DE ARCHIVO: embalse sobre el río San Juan, destino de deportes náuticos y esparcimiento cercano a la ciudad capital. Foto: Enrique Guardia, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "santuario-difunta-correa": {
+    ubicacion: "VALLECITO, SAN JUAN",
+    construccion: "DESDE 1840",
+    estilo: "SANTUARIO POPULAR",
+    coordenadas: "31°38'S 68°09'O (APROX.)",
+    estado: "ACTIVO — SITIO DE PEREGRINACIÓN",
+    importancia: "FIGURA DE DEVOCIÓN POPULAR MÁS VISITADA DE CUYO",
+    log: "LOG DE ARCHIVO: santuario dedicado a la Difunta Correa, figura de la religiosidad popular argentina, visitado por miles de promesantes cada año. Foto: EagLau, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "sierra-de-las-quijadas": {
+    ubicacion: "DEPTO. AYACUCHO, SAN LUIS",
+    construccion: "PARQUE NACIONAL",
+    estilo: "CAÑONES Y ARENISCAS ROJIZAS",
+    coordenadas: "32°30'S 67°00'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "HUELLAS DE DINOSAURIOS FOSILIZADAS",
+    log: "LOG DE ARCHIVO: cañones erosionados por viento y agua, con el Potrero de la Aguada como cuenca natural rodeada de paredones. Foto: Piero Teardo, CC BY-SA 2.0 (Wikimedia Commons).",
+  },
+  "antigua-casa-potrero-de-los-funes": {
+    ubicacion: "POTRERO DE LOS FUNES, SAN LUIS",
+    construccion: "ORIGEN RURAL HISTÓRICO",
+    estilo: "CONSTRUCCIÓN TRADICIONAL PUNTANA",
+    coordenadas: "33°09'S 66°14'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "TESTIMONIO DEL ORIGEN RURAL DE LA VILLA",
+    log: "LOG DE ARCHIVO: villa turística junto a un dique y lago artificial rodeado de sierras, hoy polo de turismo y deportes acuáticos. Foto: Dhmastan, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "mirador-del-sol-merlo": {
+    ubicacion: "VILLA DE MERLO, SAN LUIS",
+    construccion: "MIRADOR PANORÁMICO",
+    estilo: "LADERA SERRANA",
+    coordenadas: "32°20'S 65°10'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "VISTA PANORÁMICA DEL VALLE DE CONLARA",
+    log: "LOG DE ARCHIVO: Villa de Merlo es famosa por su microclima con alta concentración de iones negativos en el aire, sobre las Sierras de los Comechingones. Foto: Merlo San Luis, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "glaciar-perito-moreno": {
+    ubicacion: "PARQUE NACIONAL LOS GLACIARES, SANTA CRUZ",
+    construccion: "GLACIAR EN EQUILIBRIO",
+    estilo: "HIELO CONTINENTAL PATAGÓNICO",
+    coordenadas: "50°28'S 73°03'O (APROX.)",
+    estado: "PATRIMONIO UNESCO",
+    importancia: "UNO DE LOS POCOS GLACIARES DEL MUNDO EN EQUILIBRIO",
+    log: "LOG DE ARCHIVO: avanza sobre el Lago Argentino generando espectaculares rupturas de hielo. Ícono turístico de la Patagonia argentina. Foto: quimpg, CC BY 2.0 (Wikimedia Commons).",
+  },
+  "cueva-de-las-manos": {
+    ubicacion: "CAÑÓN DEL RÍO PINTURAS, SANTA CRUZ",
+    construccion: "MÁS DE 9.000 AÑOS DE ANTIGÜEDAD",
+    estilo: "ARTE RUPESTRE",
+    coordenadas: "47°09'S 70°33'O (APROX.)",
+    estado: "PATRIMONIO UNESCO (1999)",
+    importancia: "UNO DE LOS CONJUNTOS DE ARTE RUPESTRE MÁS IMPORTANTES DE SUDAMÉRICA",
+    log: "LOG DE ARCHIVO: cientos de estarcidos de manos realizados por pueblos cazadores-recolectores hace miles de años. Foto: Mariano (Marianocecowski), CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "monte-fitz-roy-el-chalten": {
+    ubicacion: "EL CHALTÉN, SANTA CRUZ",
+    construccion: "3.405 METROS DE ALTURA",
+    estilo: "MACIZO GRANÍTICO",
+    coordenadas: "49°16'S 73°02'O (APROX.)",
+    estado: "ACTIVO — DESTINO DE TREKKING",
+    importancia: "SÍMBOLO DE LA PATAGONIA ARGENTINA",
+    log: "LOG DE ARCHIVO: también llamado Cerro Chaltén, domina el paisaje cerca de El Chaltén, capital nacional del trekking. Foto: Alejandro Dau (Avd74), CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "monumento-a-la-bandera-rosario": {
+    ubicacion: "ROSARIO, SANTA FE",
+    construccion: "INAUGURADO EN 1957",
+    estilo: "MONUMENTALISTA",
+    coordenadas: "32°57'S 60°38'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "LUGAR DONDE BELGRANO IZÓ POR PRIMERA VEZ LA BANDERA (1812)",
+    log: "LOG DE ARCHIVO: mástil de 70 metros a orillas del Paraná, combina arquitectura monumentalista con una gran plaza cívica. Foto: AmethystK, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "catedral-de-santa-fe": {
+    ubicacion: "CIUDAD DE SANTA FE",
+    construccion: "ESTILO NEOCLÁSICO",
+    estilo: "NEOCLÁSICO ITALIANIZANTE",
+    coordenadas: "31°38'S 60°42'O (APROX.)",
+    estado: "MONUMENTO HISTÓRICO NACIONAL",
+    importancia: "SEDE DEL ARZOBISPADO DE SANTA FE",
+    log: "LOG DE ARCHIVO: catedral metropolitana frente a la Plaza 25 de Mayo, uno de los edificios históricos más representativos de la capital provincial. Foto: Biruma, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "laguna-setubal": {
+    ubicacion: "CIUDAD DE SANTA FE",
+    construccion: "ESPEJO DE AGUA NATURAL",
+    estilo: "LAGUNA URBANA",
+    coordenadas: "31°36'S 60°41'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "PUNTO CENTRAL DE ESPARCIMIENTO DE LA CAPITAL SANTAFESINA",
+    log: "LOG DE ARCHIVO: espejo de agua de unos 32 km² conectado al sistema del río Paraná, bordea la costanera este de la ciudad. Foto: Maria Celeste Rios, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "catedral-basilica": {
+    ubicacion: "SANTIAGO DEL ESTERO (CAPITAL)",
+    construccion: "TERMINADA EN 1877",
+    estilo: "COLONIAL / BASÍLICA",
+    coordenadas: "27°47'S 64°16'O (APROX.)",
+    estado: "MONUMENTO HISTÓRICO NACIONAL",
+    importancia: "QUINTA CONSTRUCCIÓN EN EL MISMO SOLAR DESDE 1553",
+    log: "LOG DE ARCHIVO: catedral basílica de la ciudad más antigua de Argentina aún existente, erigida en basílica menor en 1937. Foto: Diazmerce, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "termas-de-rio-hondo": {
+    ubicacion: "TERMAS DE RÍO HONDO, SANTIAGO DEL ESTERO",
+    construccion: "CIUDAD BALNEARIA",
+    estilo: "AGUAS TERMALES MEDICINALES",
+    coordenadas: "27°29'S 64°51'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "SEDE DEL AUTÓDROMO INTERNACIONAL (MOTOGP)",
+    log: "LOG DE ARCHIVO: ciudad balnearia a orillas del río Dulce, reconocida por sus aguas termales medicinales desde principios del siglo XX. Foto: Antonellamainero, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "convento-santo-domingo": {
+    ubicacion: "SANTIAGO DEL ESTERO (CAPITAL)",
+    construccion: "ORÍGENES EN EL SIGLO XVI — RECONSTRUIDO EN 1881",
+    estilo: "COLONIAL RELIGIOSO",
+    coordenadas: "27°47'S 64°16'O (APROX.)",
+    estado: "ACTIVA",
+    importancia: "UNA DE LAS EDIFICACIONES RELIGIOSAS MÁS ANTIGUAS DEL NOA",
+    log: "LOG DE ARCHIVO: convento dominico con imaginería colonial, escenario de hechos históricos ligados a la autonomía provincial santiagueña. Foto: Gergas, CC BY 4.0 (Wikimedia Commons).",
+  },
+  "panoramica-ushuaia": {
+    ubicacion: "USHUAIA, TIERRA DEL FUEGO",
+    construccion: "FUNDADA EN 1884",
+    estilo: "CIUDAD PORTUARIA AUSTRAL",
+    coordenadas: "54°48'S 68°18'O (APROX.)",
+    estado: "ACTIVA — CAPITAL PROVINCIAL",
+    importancia: "CIUDAD MÁS AUSTRAL DEL MUNDO",
+    log: "LOG DE ARCHIVO: enclavada entre el Canal de Beagle y los Andes fueguinos, punto de partida de expediciones antárticas. 'Fin del mundo, principio de todo'. Foto: Balou46, CC BY-SA 4.0 (Wikimedia Commons).",
+  },
+  "bahia-lapataia-parque-nacional": {
+    ubicacion: "PARQUE NACIONAL TIERRA DEL FUEGO",
+    construccion: "PARQUE NACIONAL DESDE 1960",
+    estilo: "BOSQUE SUBANTÁRTICO Y COSTA",
+    coordenadas: "54°51'S 68°33'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "FIN DE LA RUTA NACIONAL 3 (KM 3079)",
+    log: "LOG DE ARCHIVO: punto donde termina la Panamericana en el extremo sur del continente, dentro del Parque Nacional Tierra del Fuego. Foto: Anabela plos, CC BY 4.0 (Wikimedia Commons).",
+  },
+  "faro-les-eclaireurs": {
+    ubicacion: "CANAL DE BEAGLE, TIERRA DEL FUEGO",
+    construccion: "1920",
+    estilo: "FARO MARÍTIMO",
+    coordenadas: "54°52'S 68°00'O (APROX.)",
+    estado: "ACTIVO",
+    importancia: "CONOCIDO COMO EL 'FARO DEL FIN DEL MUNDO'",
+    log: "LOG DE ARCHIVO: faro sobre un islote rocoso a 9 km de Ushuaia, infaltable en las excursiones náuticas por el Canal de Beagle. Foto: Leandro Neumann Ciuffo, CC BY 2.0 (Wikimedia Commons).",
+  },
+  "casa-historica-independencia": {
+    ubicacion: "SAN MIGUEL DE TUCUMÁN",
+    construccion: "CASONA COLONIAL",
+    estilo: "COLONIAL",
+    coordenadas: "26°49'S 65°12'O (APROX.)",
+    estado: "MONUMENTO HISTÓRICO NACIONAL — MUSEO",
+    importancia: "DECLARACIÓN DE LA INDEPENDENCIA (9 DE JULIO DE 1816)",
+    log: "LOG DE ARCHIVO: en esta casona se reunió el Congreso de Tucumán que declaró la independencia de las Provincias Unidas del Río de la Plata. Foto: Marcelo Ois Lagarde (ChelOis), CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "ruinas-de-quilmes": {
+    ubicacion: "VALLES CALCHAQUÍES, TUCUMÁN",
+    construccion: "PREHISPÁNICA — DEPORTACIÓN EN 1667",
+    estilo: "ARQUITECTURA DIAGUITA",
+    coordenadas: "26°30'S 66°01'O (APROX.)",
+    estado: "SITIO ARQUEOLÓGICO",
+    importancia: "MAYOR ASENTAMIENTO PREHISPÁNICO CONSERVADO DE ARGENTINA",
+    log: "LOG DE ARCHIVO: hogar del pueblo diaguita quilmes hasta su deportación forzada por los españoles. Terrazas de cultivo y sistema defensivo en ladera. Foto: Ruarte, CC BY-SA 3.0 (Wikimedia Commons).",
+  },
+  "cerro-san-javier": {
+    ubicacion: "YERBA BUENA / SAN MIGUEL DE TUCUMÁN, TUCUMÁN",
+    construccion: "1.361 METROS DE ALTURA",
+    estilo: "SIERRA SUBANDINA CON SELVA DE YUNGAS",
+    coordenadas: "26°45'S 65°22'O (APROX.)",
+    estado: "ACTIVO — DESTINO DE TREKKING",
+    importancia: "CRISTO REDENTOR VISIBLE DESDE EL VALLE",
+    log: "LOG DE ARCHIVO: cordón serrano cubierto de selva de yungas al oeste de la capital tucumana, destino clásico de trekking y turismo religioso. Foto: Aibdescalzo, dominio público (Wikimedia Commons).",
   },
 };
 
@@ -1077,7 +1928,51 @@ function consejoClima(codigo, min, max) {
   return "🙂 Buen día para salir";
 }
 
-async function cargarClimaYCiudad(lat, lon) {
+// Baraja Fisher-Yates, sin mutar el array original.
+function barajar(lista) {
+  const copia = lista.slice();
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+// Se resuelve una sola vez por carga de página (no se vuelve a barajar en
+// los refrescos de clima cada 15 min, para no reiniciar el carrousel si el
+// visitante lo está mirando).
+let provinciaImagenesResueltas = false;
+
+function actualizarImagenesSegunProvincia(codigoIso) {
+  if (provinciaImagenesResueltas) return;
+  provinciaImagenesResueltas = true;
+
+  const slug = codigoIso && PROVINCIA_POR_CODIGO_ISO[codigoIso];
+  const fotosProvincia = slug && IMAGENES_POR_PROVINCIA[slug];
+
+  if (fotosProvincia && fotosProvincia.length) {
+    IMAGENES_CIUDAD = barajar(fotosProvincia);
+  } else {
+    // Geolocalización rechazada, fallida, o provincia sin fotos cargadas:
+    // mostramos fotos al azar de todo el país.
+    const todasLasFotos = Object.values(IMAGENES_POR_PROVINCIA).flat();
+    IMAGENES_CIUDAD = barajar(todasLasFotos);
+  }
+  indiceCiudad = 0;
+
+  // Si el visitante ya está viendo el carrousel en la pantalla principal,
+  // lo repintamos con las fotos recién resueltas.
+  if (!seccionActiva && !filtroMarcaGlobal) {
+    const productosEl = document.getElementById("productos");
+    if (productosEl) {
+      detenerCarrouselCiudad();
+      pintarCarrouselCiudad(productosEl);
+    }
+  }
+}
+
+async function cargarClimaYCiudad(lat, lon, ubicacionReal) {
+  let codigoIso = null;
   try {
     const [climaR, ciudadR, pronosticoR] = await Promise.all([
       fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`),
@@ -1091,6 +1986,7 @@ async function cargarClimaYCiudad(lat, lon) {
     if (ciudadR.ok) {
       const datosCiudad = await ciudadR.json();
       ciudadActual = datosCiudad.locality || datosCiudad.city || null;
+      codigoIso = datosCiudad.principalSubdivisionCode || null;
     }
     if (pronosticoR.ok) {
       const datosPronostico = await pronosticoR.json();
@@ -1104,17 +2000,20 @@ async function cargarClimaYCiudad(lat, lon) {
   } catch {
     // se mantiene lo último cargado si algo falla
   }
+  // Solo confiamos en la provincia si la ubicación vino de geolocalización
+  // real aceptada por el visitante; si no, mostramos fotos al azar del país.
+  actualizarImagenesSegunProvincia(ubicacionReal ? codigoIso : null);
   pintarFechaHoraTemp();
 }
 
 function iniciarUbicacionYClima() {
   if (!("geolocation" in navigator)) {
-    cargarClimaYCiudad(COORD_RESPALDO.lat, COORD_RESPALDO.lon);
+    cargarClimaYCiudad(COORD_RESPALDO.lat, COORD_RESPALDO.lon, false);
     return;
   }
   navigator.geolocation.getCurrentPosition(
-    (posicion) => cargarClimaYCiudad(posicion.coords.latitude, posicion.coords.longitude),
-    () => cargarClimaYCiudad(COORD_RESPALDO.lat, COORD_RESPALDO.lon),
+    (posicion) => cargarClimaYCiudad(posicion.coords.latitude, posicion.coords.longitude, true),
+    () => cargarClimaYCiudad(COORD_RESPALDO.lat, COORD_RESPALDO.lon, false),
     { timeout: 8000 }
   );
 }
