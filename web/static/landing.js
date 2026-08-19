@@ -21,6 +21,7 @@ function beepInteraccion() {
 }
 
 document.addEventListener("click", (e) => {
+  if (modoVisual === "classic") return; // Modo Classic: sin beeps en ninguna interacción
   if (e.target.closest("button, a, [role='button']")) beepInteraccion();
 });
 
@@ -1182,15 +1183,27 @@ function productosAlAzar(n) {
 
 function tarjetaRecomendadoHtml(p) {
   const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
+  const listaColores = tieneColores ? p.colores : ["Color único"];
+  const colorInicial = tieneColores ? "" : "Color único";
   return `
-    <div class="tarjeta-recomendado">
+    <div class="tarjeta-recomendado" data-nombre="${escapeHtml(p.nombre)}">
       <div class="tarjeta-recomendado-etiqueta">✨ Recomendado para vos</div>
       <h3>${escapeHtml(p.nombre)}</h3>
-      ${tieneColores ? `<p class="tarjeta-recomendado-colores">${p.colores.map(escapeHtml).join(" · ")}</p>` : ""}
       <p class="tarjeta-recomendado-precio">
-        <strong>U$D ${p.usd ?? "-"}</strong><br>
-        $ ${formatearPesos(p.pesos)} contado · $ ${formatearPesos(p.transferencia)} transferencia
+        <strong>U$D ${p.usd ?? "-"}</strong>
+        <span>$ ${formatearPesos(p.pesos)} contado · $ ${formatearPesos(p.transferencia)} transferencia</span>
       </p>
+      <div class="tarjeta-recomendado-acciones">
+        <div class="dropdown-color">
+          <button type="button" class="dropdown-color-boton" data-valor="${escapeHtml(colorInicial)}">
+            ${escapeHtml(tieneColores ? "Elegir color" : colorInicial)}
+          </button>
+          <ul class="dropdown-color-lista oculto" role="listbox">
+            ${listaColores.map((c) => `<li role="option" data-valor="${escapeHtml(c)}">${escapeHtml(c)}</li>`).join("")}
+          </ul>
+        </div>
+        <button class="btn-agregar" type="button" data-color="${escapeHtml(colorInicial)}" ${tieneColores ? "disabled" : ""}>Agregar</button>
+      </div>
     </div>
   `;
 }
@@ -1198,9 +1211,60 @@ function tarjetaRecomendadoHtml(p) {
 function tarjetasRecomendadosHtml() {
   const productos = productosAlAzar(3);
   if (!productos.length) {
-    return `<div class="tarjeta-recomendado"><p>Cargando recomendaciones...</p></div>`;
+    return `<div class="tarjeta-recomendado tarjeta-recomendado-vacia"><p>Cargando recomendaciones...</p></div>`;
   }
   return productos.map(tarjetaRecomendadoHtml).join("");
+}
+
+// Engancha el dropdown de color y "Agregar al carrito" de cada card
+// recomendada (mismo patrón que las cards del catálogo normal).
+function wireTarjetasRecomendadas(el) {
+  const grilla = el.querySelector(".carrousel-recomendados-grid");
+  if (!grilla) return;
+  const catalogoPlano = Object.values(SECCIONES_DATA).flat();
+  grilla.querySelectorAll(".tarjeta-recomendado[data-nombre]").forEach((card) => {
+    const producto = catalogoPlano.find((p) => p.nombre === card.dataset.nombre);
+    if (!producto) return;
+    const btnAgregar = card.querySelector(".btn-agregar");
+    const botonColor = card.querySelector(".dropdown-color-boton");
+    const listaColor = card.querySelector(".dropdown-color-lista");
+    if (botonColor && listaColor) {
+      botonColor.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const yaAbierto = !listaColor.classList.contains("oculto");
+        cerrarDropdownsColor();
+        if (!yaAbierto) listaColor.classList.remove("oculto");
+      });
+      listaColor.querySelectorAll("li").forEach((li) => {
+        li.addEventListener("click", () => {
+          botonColor.textContent = li.dataset.valor;
+          botonColor.dataset.valor = li.dataset.valor;
+          listaColor.classList.add("oculto");
+          btnAgregar.dataset.color = li.dataset.valor;
+          btnAgregar.disabled = false;
+        });
+      });
+    }
+    if (btnAgregar) {
+      btnAgregar.addEventListener("click", () => {
+        agregarAlCarrito(producto, btnAgregar.dataset.color || null);
+      });
+    }
+  });
+}
+
+function iniciarCicloRecomendados(el) {
+  clearInterval(intervaloCiudad);
+  intervaloCiudad = setInterval(() => {
+    const grilla = el.querySelector(".carrousel-recomendados-grid");
+    if (!grilla) return;
+    grilla.classList.remove("visible");
+    setTimeout(() => {
+      grilla.innerHTML = tarjetasRecomendadosHtml();
+      wireTarjetasRecomendadas(el);
+      grilla.classList.add("visible");
+    }, 250);
+  }, 12000);
 }
 
 function pintarCarrouselRecomendados(el) {
@@ -1209,15 +1273,18 @@ function pintarCarrouselRecomendados(el) {
       <div class="carrousel-recomendados-grid visible">${tarjetasRecomendadosHtml()}</div>
     </div>
   `;
-  intervaloCiudad = setInterval(() => {
-    const grilla = el.querySelector(".carrousel-recomendados-grid");
-    if (!grilla) return;
-    grilla.classList.remove("visible");
-    setTimeout(() => {
-      grilla.innerHTML = tarjetasRecomendadosHtml();
-      grilla.classList.add("visible");
-    }, 250);
-  }, 12000);
+  wireTarjetasRecomendadas(el);
+  // Pausa el refresco automático mientras el mouse esté sobre alguna de las
+  // 3 cards (dropdown de color, botón agregar), así no cambian de golpe;
+  // al salir, retoma el ciclo de 12s. Se engancha una sola vez por pintura
+  // completa del carrousel (el nodo .carrousel-recomendados-grid persiste
+  // entre refrescos, solo cambia su innerHTML).
+  const grilla = el.querySelector(".carrousel-recomendados-grid");
+  if (grilla) {
+    grilla.addEventListener("mouseenter", () => clearInterval(intervaloCiudad));
+    grilla.addEventListener("mouseleave", () => iniciarCicloRecomendados(el));
+  }
+  iniciarCicloRecomendados(el);
 }
 
 // --- Modo visual: Fallout (default) / Classic ---
@@ -1236,6 +1303,13 @@ function aplicarModoVisual(modo, opciones) {
     b.classList.toggle("activo", b.dataset.modo === modo);
   });
   if (opts.sinRepintar) return;
+  // pintarFrasePie está definida más abajo en el archivo (function declaration,
+  // hoisted) pero usa FRASES_FALLOUT/FRASES_LATINOAMERICANAS (const, con TDZ):
+  // solo es seguro llamarla acá porque este tramo nunca corre durante la
+  // ejecución inicial del script (esa pasa por sinRepintar:true y ya retornó
+  // arriba), sino recién ante un click del usuario, bien después de que todo
+  // el archivo terminó de ejecutarse.
+  pintarFrasePie();
   if (!seccionActiva && !filtroMarcaGlobal) {
     const productosEl = document.getElementById("productos");
     if (productosEl) {
@@ -1933,29 +2007,36 @@ document.getElementById("btn-volver").addEventListener("click", volverUnPaso);
 document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);
 document.getElementById("input-busqueda").addEventListener("input", actualizarVista);
 
-// --- Frase del pie, con referencia a personajes de videojuegos ---
+// --- Frase del pie: Fallout en Modo Fallout, figuras históricas
+// latinoamericanas en Modo Classic ---
 
-const FRASES_GAMING = [
-  { texto: "La guerra. La guerra nunca cambia.", autor: "El Narrador", juego: "Fallout" },
-  { texto: "¡Es peligroso ir solo! Toma esto.", autor: "Anciano", juego: "The Legend of Zelda" },
-  { texto: "Quédate un rato y escucha.", autor: "Deckard Cain", juego: "Diablo II" },
-  { texto: "El pastel es mentira.", autor: "GLaDOS", juego: "Portal" },
-  { texto: "¡Termínalo!", autor: "Shao Kahn", juego: "Mortal Kombat" },
-  { texto: "¡Oye! ¡Escucha!", autor: "Navi", juego: "The Legend of Zelda: Ocarina of Time" },
-  { texto: "Un hombre elige, un esclavo obedece.", autor: "Andrew Ryan", juego: "BioShock" },
-  { texto: "Despierta, samurái. Tenemos una ciudad que quemar.", autor: "Johnny Silverhand", juego: "Cyberpunk 2077" },
-  { texto: "¡Haz un barrel roll!", autor: "Peppy Ainsworth", juego: "Star Fox 64" },
-  { texto: "Yo era un aventurero como tú, hasta que recibí una flecha en la rodilla.", autor: "Guardia de Whiterun", juego: "The Elder Scrolls V: Skyrim" },
-  { texto: "¡Alabado sea el sol!", autor: "Solaire de Astora", juego: "Dark Souls" },
-  { texto: "¿Serías tan amable?", autor: "Andrew Ryan", juego: "BioShock" },
+const FRASES_FALLOUT = [
+  { texto: "La guerra. La guerra nunca cambia.", autor: "El Narrador", fuente: "Fallout" },
+  { texto: "¡La libertad prevalecerá!", autor: "Liberty Prime", fuente: "Fallout 3" },
+  { texto: "Ad Victoriam.", autor: "Hermandad del Acero", fuente: "Fallout 4" },
+  { texto: "Prepárate para el futuro... ¡hoy!", autor: "Vault-Tec", fuente: "Fallout" },
+  { texto: "¡Habla Three Dog, estás escuchando Radio Galaxia!", autor: "Three Dog", fuente: "Fallout 3" },
+  { texto: "¡Por la República!", autor: "Soldado de la NCR", fuente: "Fallout: New Vegas" },
+];
+
+const FRASES_LATINOAMERICANAS = [
+  { texto: "Un pueblo ignorante es un instrumento ciego de su propia destrucción.", autor: "Simón Bolívar", fuente: "Venezuela" },
+  { texto: "Patria es humanidad.", autor: "José Martí", fuente: "Cuba" },
+  { texto: "Hasta la victoria siempre.", autor: "Ernesto Che Guevara", fuente: "Argentina" },
+  { texto: "Seamos libres, lo demás no importa nada.", autor: "José de San Martín", fuente: "Argentina" },
+  { texto: "¡Tierra y Libertad!", autor: "Emiliano Zapata", fuente: "México" },
+  { texto: "La libertad no se mendiga, se conquista con el filo de la espada.", autor: "Simón Bolívar", fuente: "Venezuela" },
+  { texto: "No hay libertad pequeña ni tirano grande.", autor: "Simón Bolívar", fuente: "Venezuela" },
+  { texto: "Yo no vine a la Revolución a hacerme rico, vine a luchar por mis ideales.", autor: "Francisco Villa", fuente: "México" },
 ];
 
 function pintarFrasePie() {
   const el = document.getElementById("pie-frase");
   if (!el) return;
+  const lista = modoVisual === "classic" ? FRASES_LATINOAMERICANAS : FRASES_FALLOUT;
   const horaBucket = Math.floor(Date.now() / (60 * 60 * 1000));
-  const frase = FRASES_GAMING[horaBucket % FRASES_GAMING.length];
-  el.textContent = `"${frase.texto}" -- ${frase.autor} (${frase.juego})`;
+  const frase = lista[horaBucket % lista.length];
+  el.textContent = `"${frase.texto}" -- ${frase.autor} (${frase.fuente})`;
 }
 
 pintarFrasePie();

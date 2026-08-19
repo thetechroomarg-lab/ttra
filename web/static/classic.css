@@ -7,12 +7,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
 html[data-modo="classic"] {
-  --rc-bg: #faf7f0;
+  --rc-bg: #4fb3e8;
   --rc-bg-panel: #ffffff;
   --rc-bg-panel-2: #eaf5fb;
   --rc-green: #10214f;
   --rc-green-bright: #10214f;
-  --rc-green-dim: #4fb3e8;
+  --rc-green-dim: #10214f;
   --rc-green-faint: #cfe9f7;
   --rc-glow: rgba(16, 33, 79, 0.16);
   --cl-rojo: #c8102e;
@@ -93,15 +93,18 @@ html[data-modo="classic"] .carrousel-recomendados-wrap {
 }
 .carrousel-recomendados-grid.visible { opacity: 1; }
 .tarjeta-recomendado {
+  position: relative;
   height: 100%;
-  display: flex; flex-direction: column; justify-content: center; gap: 8px;
-  padding: 16px 14px;
-  background: linear-gradient(160deg, var(--rc-bg-panel-2), var(--rc-bg-panel));
-  border: 2px solid var(--rc-green-dim);
+  display: flex; flex-direction: column; justify-content: center; gap: 10px;
+  padding: 22px 20px;
+  background: var(--rc-bg-panel);
+  border: none;
+  border-top: 6px solid var(--cl-rojo);
   border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(16, 33, 79, 0.18);
 }
 .tarjeta-recomendado-etiqueta {
-  font-size: 11px; font-weight: 700; letter-spacing: .03em;
+  font-size: 11px; font-weight: 800; letter-spacing: .06em;
   color: var(--cl-rojo);
   text-transform: uppercase;
 }
@@ -113,13 +116,31 @@ html[data-modo="classic"] .btn-modo.activo {
   border-color: var(--cl-rojo);
 }
 .tarjeta-recomendado h3 {
-  margin: 0; font-size: clamp(15px, 1.6vw, 18px); color: var(--rc-green-bright);
+  margin: 0;
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.1;
+  font-weight: 800;
+  color: var(--rc-green-bright);
 }
-.tarjeta-recomendado-colores { margin: 0; font-size: 13px; color: var(--rc-green-bright); opacity: .75; }
 .tarjeta-recomendado-precio {
-  margin: 0; font-size: 13px; line-height: 1.5; color: var(--rc-green-bright);
+  margin: 0; display: flex; flex-direction: column; gap: 3px;
 }
-.tarjeta-recomendado-precio strong { font-size: 16px; color: var(--cl-rojo); }
+.tarjeta-recomendado-precio strong { font-size: 26px; font-weight: 800; color: var(--cl-rojo); }
+.tarjeta-recomendado-precio span { font-size: 12px; color: var(--rc-green-bright); opacity: .65; }
+
+/* Elegir color + Agregar al carrito: ocultos hasta hacer hover sobre la card */
+.tarjeta-recomendado-acciones {
+  display: flex; gap: 8px; align-items: center; margin-top: 4px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .18s ease;
+}
+.tarjeta-recomendado:hover .tarjeta-recomendado-acciones {
+  opacity: 1; pointer-events: auto;
+}
+.tarjeta-recomendado-acciones .dropdown-color { flex: 1; min-width: 0; }
+.tarjeta-recomendado-acciones .dropdown-color-boton { width: 100%; font-size: 12px; padding: 8px 10px; }
+.tarjeta-recomendado-acciones .btn-agregar { flex-shrink: 0; font-size: 12px; padding: 8px 12px; }
+.tarjeta-recomendado-vacia { justify-content: center; align-items: center; text-align: center; }
 
 @media (max-width: 700px) {
   .carrousel-recomendados-grid { grid-template-columns: 1fr; }
