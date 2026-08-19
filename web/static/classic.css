@@ -48,7 +48,17 @@ html[data-modo="classic"] .rc-noticiero-texto.clickeable:hover {
 }
 
 /* Marcas del carrousel: fijas (sin desplazamiento, ver landing.js), hover
-   negro y en negrita en vez del verde de Fallout */
+   negro y en negrita en vez del verde de Fallout. Se oculta la segunda
+   tanda duplicada (solo existe para el scroll infinito de Fallout) y se
+   centra la única tanda visible, así queda equidistante de ambos bordes
+   de la pantalla sin tocar el gap entre marcas. */
+html[data-modo="classic"] .carrousel {
+  width: 100%;
+  justify-content: center;
+}
+html[data-modo="classic"] .carrousel-tanda:nth-of-type(2) {
+  display: none;
+}
 html[data-modo="classic"] .carrousel span:hover {
   color: #000;
   font-weight: 800;
