@@ -99,6 +99,21 @@ html[data-modo="classic"] button:focus-visible {
 html[data-modo="classic"] button:active {
   box-shadow: 0 1px 4px rgba(10, 47, 63, 0.15);
 }
+
+/* El botón "Modo Fallout" se va transformando lentamente al pasar el mouse:
+   mismo ícono, pero con la paleta verde fosforescente de Fallout, como
+   anticipo visual (además de la música que arranca en landing.js). */
+html[data-modo="classic"] #btn-modo-fallout {
+  transition: color .6s ease, background-color .6s ease, border-color .6s ease,
+    box-shadow .6s ease, text-shadow .6s ease;
+}
+html[data-modo="classic"] #btn-modo-fallout:hover {
+  color: #7bffa0 !important;
+  background: #0b1f0b !important;
+  border-color: #33ff66 !important;
+  box-shadow: 0 0 12px rgba(51, 255, 102, 0.55), inset 0 0 8px -2px rgba(51, 255, 102, 0.55) !important;
+  text-shadow: 0 0 3px rgba(51, 255, 102, 0.55), 0 0 8px rgba(51, 255, 102, 0.55) !important;
+}
 html[data-modo="classic"] input:focus,
 html[data-modo="classic"] textarea:focus,
 html[data-modo="classic"] select:focus {

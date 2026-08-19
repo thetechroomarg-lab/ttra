@@ -1169,9 +1169,17 @@ function pintarCarrouselCiudad(el) {
 
 // --- Carrousel de productos recomendados (Modo Classic, reemplaza al Pip-Boy) ---
 
-// Elige `n` productos distintos al azar (sin repetidos) de todo el catálogo.
+// Un producto es "usado" si su nombre o categoría lo indica (CPO también
+// cuenta: son celulares con batería usada, ver disclaimer de usados).
+function esProductoUsado(p) {
+  const texto = `${p.nombre || ""} ${p.categoria || ""}`.toLowerCase();
+  return texto.includes("usado") || texto.includes("cpo");
+}
+
+// Elige `n` productos distintos al azar (sin repetidos) de todo el catálogo,
+// excluyendo siempre celulares usados/CPO.
 function productosAlAzar(n) {
-  const todos = Object.values(SECCIONES_DATA).flat();
+  const todos = Object.values(SECCIONES_DATA).flat().filter((p) => !esProductoUsado(p));
   const copia = todos.slice();
   const elegidos = [];
   while (elegidos.length < n && copia.length > 0) {
