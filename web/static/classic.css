@@ -17,6 +17,8 @@ html[data-modo="classic"] {
   --rc-glow: rgba(16, 33, 79, 0.16);
   --cl-rojo: #c8102e;
   --cl-crema: #faf7f0;
+  --cl-azul-francia: #002654;
+  --cl-amarillo-huevo: #f4c430;
   --rc-font: 'Nunito', 'Segoe UI', system-ui, sans-serif;
   --rc-cursor: auto;
   --rc-cursor-mira: pointer;
@@ -25,8 +27,28 @@ html[data-modo="classic"] {
 /* Franja "Martini stripes" (celeste/marino/rojo) en el borde superior del
    header y de las cards, como guiño sutil a la librea. */
 html[data-modo="classic"] header {
+  background: var(--cl-azul-francia);
   border-top: 5px solid transparent;
   border-image: linear-gradient(90deg, var(--rc-green-dim) 0 30%, var(--rc-green) 30% 60%, var(--cl-rojo) 60% 100%) 1;
+}
+
+/* Logo en blanco sobre el header azul Francia */
+html[data-modo="classic"] .rc-logo-linea {
+  color: #fff;
+  -webkit-text-stroke: 1px #fff;
+}
+
+/* Fecha/hora/ciudad/dólar en blanco, legibles sobre el header oscuro */
+html[data-modo="classic"] .rc-fecha-hora {
+  color: #fff;
+}
+
+/* Texto del noticiero (crawl) en amarillo huevo */
+html[data-modo="classic"] .rc-noticiero-texto {
+  color: var(--cl-amarillo-huevo);
+}
+html[data-modo="classic"] .rc-noticiero-texto.clickeable:hover {
+  color: #fff;
 }
 
 /* Sin scanlines ni flicker CRT */
@@ -63,12 +85,10 @@ html[data-modo="classic"] select:focus {
   box-shadow: 0 0 0 3px rgba(0, 170, 240, 0.25);
 }
 
-/* Logo: tipografía redondeada, negra, sin la carita animada al lado */
+/* Logo: tipografía redondeada, blanca y en negrita, sin la carita animada */
 html[data-modo="classic"] .rc-logo-linea {
   font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
   font-weight: 800;
-  color: #000;
-  -webkit-text-stroke: 1px #000;
 }
 html[data-modo="classic"] .rc-cara-wrap { display: none; }
 
