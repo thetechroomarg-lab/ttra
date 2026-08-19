@@ -1191,7 +1191,8 @@ function tarjetaRecomendadoHtml(p) {
       <h3>${escapeHtml(p.nombre)}</h3>
       <p class="tarjeta-recomendado-precio">
         <strong>U$D ${p.usd ?? "-"}</strong>
-        <span>$ ${formatearPesos(p.pesos)} contado · $ ${formatearPesos(p.transferencia)} transferencia</span>
+        <span>$ ${formatearPesos(p.pesos)} contado</span>
+        <span>$ ${formatearPesos(p.transferencia)} transferencia</span>
       </p>
       <div class="tarjeta-recomendado-acciones">
         <div class="dropdown-color">
