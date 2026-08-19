@@ -121,21 +121,32 @@ html[data-modo="classic"] .tarjeta-recomendado {
 }
 
 /* --- Carrousel de recomendados (reemplaza al Pip-Boy en Modo Classic):
-   3 cards de productos al azar, refrescadas cada 12s --- */
+   3 cards de productos al azar, refrescadas cada 12s ---
+   Cada card tiene 4 sub-secciones (etiqueta / título / precios / acciones).
+   El grid padre define esas 4 filas una sola vez, y cada card las hereda
+   con "subgrid": así la fila de precios (y la de acciones) arranca siempre
+   a la misma altura en las 3 cards, sin importar si el título de una
+   ocupa 1 línea y el de otra ocupa 3. */
 html[data-modo="classic"] .carrousel-recomendados-wrap {
   display: flex; flex-direction: column; height: 100%;
 }
 .carrousel-recomendados-grid {
   flex: 1; min-height: 260px;
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto auto auto auto;
+  gap: 12px;
   opacity: 0;
   transition: opacity .25s ease;
 }
 .carrousel-recomendados-grid.visible { opacity: 1; }
 .tarjeta-recomendado {
   position: relative;
-  height: 100%;
-  display: flex; flex-direction: column; justify-content: flex-start; gap: 10px;
+  grid-row: span 4;
+  display: grid;
+  grid-template-rows: subgrid;
+  row-gap: 10px;
+  align-items: start;
   padding: 22px 20px;
   background: var(--rc-bg-panel);
   border: none;
@@ -144,6 +155,7 @@ html[data-modo="classic"] .carrousel-recomendados-wrap {
   box-shadow: 0 6px 18px rgba(16, 33, 79, 0.18);
 }
 .tarjeta-recomendado-etiqueta {
+  grid-row: 1;
   font-size: 15px; font-weight: 800; letter-spacing: .06em;
   color: var(--cl-rojo);
   text-transform: uppercase;
@@ -156,20 +168,26 @@ html[data-modo="classic"] .btn-modo.activo {
   border-color: var(--cl-rojo);
 }
 .tarjeta-recomendado h3 {
+  grid-row: 2;
   margin: 0;
   font-size: clamp(24px, 3vw, 32px);
   line-height: 1.1;
   font-weight: 800;
   color: var(--rc-green-bright);
+  align-self: start;
 }
 .tarjeta-recomendado-precio {
+  grid-row: 3;
   margin: 0; display: flex; flex-direction: column; gap: 3px;
+  align-self: start;
 }
 .tarjeta-recomendado-precio strong { font-size: 26px; font-weight: 800; color: var(--cl-rojo); }
 .tarjeta-recomendado-precio span { font-size: 16px; font-weight: 600; color: var(--rc-green-bright); opacity: .8; }
 
 /* Elegir color + Agregar al carrito: ocultos hasta hacer hover sobre la card */
 .tarjeta-recomendado-acciones {
+  grid-row: 4;
+  align-self: start;
   display: flex; gap: 8px; align-items: center; margin-top: 4px;
   opacity: 0; pointer-events: none;
   transition: opacity .18s ease;
