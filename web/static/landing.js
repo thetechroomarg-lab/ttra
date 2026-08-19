@@ -1816,6 +1816,19 @@ function pintarGrilla(el, productos, mensajeVacio) {
       const producto = productos.find((p) => p.nombre === btnAgregar.dataset.nombre);
       if (producto) agregarAlCarrito(producto, btnAgregar.dataset.color || null);
     });
+    // El título se trunca por lo largo del nombre; un click en la card
+    // (fuera de los controles) lo expande para ver el nombre completo. No
+    // es acumulativo: solo una card expandida a la vez, para que el user
+    // vea un ítem por vez en su extensión completa.
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("button, .dropdown-color, li")) return;
+      const yaExpandida = card.classList.contains("expandida");
+      el.querySelectorAll(".card.expandida").forEach((c) => c.classList.remove("expandida"));
+      if (!yaExpandida) card.classList.add("expandida");
+      // La card no es un <button>, así que el beep global de Fallout (que
+      // solo escucha button/a/[role=button]) no la alcanza: la disparamos acá.
+      if (modoVisual === "fallout") beepInteraccion();
+    });
   });
   el.querySelectorAll(".btn-vista[data-modo]").forEach((btn) => {
     btn.addEventListener("click", () => {

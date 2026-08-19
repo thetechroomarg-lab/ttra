@@ -19,6 +19,9 @@ html[data-modo="classic"] {
   --cl-crema: #faf7f0;
   --cl-azul-francia: #002654;
   --cl-amarillo-huevo: #f4c430;
+  --rc-halo-seleccion: #ffc93c;
+  --rc-halo-seleccion-glow: rgba(255, 201, 60, 0.55);
+  --rc-halo-seleccion-glow-suave: rgba(255, 201, 60, 0.4);
   --rc-font: 'Nunito', 'Segoe UI', system-ui, sans-serif;
   --rc-cursor: auto;
   --rc-cursor-mira: pointer;
@@ -170,6 +173,17 @@ html[data-modo="classic"] .pipboy,
 html[data-modo="classic"] .tarjeta-recomendado {
   border-radius: 14px;
   box-shadow: 0 2px 10px rgba(10, 47, 63, 0.10);
+}
+
+/* Card seleccionada (título expandido): en Classic el contorno pasa a
+   negro, con la luz amarilla detrás. El box-shadow se repite acá (con más
+   especificidad que la regla genérica de .card de arriba) para que la luz
+   amarilla no quede pisada por la sombra suave por default. */
+html[data-modo="classic"] .card.expandida {
+  border-color: #000;
+  box-shadow:
+    0 0 70px 18px var(--rc-halo-seleccion-glow),
+    0 16px 34px -6px rgba(0, 0, 0, 0.45);
 }
 
 /* --- Carrousel de recomendados (reemplaza al Pip-Boy en Modo Classic):
