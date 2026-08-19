@@ -1386,9 +1386,17 @@ function aplicarModoVisual(modo, opciones) {
 }
 
 document.getElementById("btn-modo-fallout").addEventListener("click", () => {
+  transicionandoAFallout = true;
   aplicarModoVisual("fallout");
   if (typeof window.reproducirBootSequenceTTRA === "function") {
-    window.reproducirBootSequenceTTRA();
+    window.reproducirBootSequenceTTRA(() => {
+      // Recién cuando el user llega al home de Fallout (boot terminado) se
+      // corta la música, con un fade out suave en vez de un corte seco.
+      desvanecerAudioModoFallout();
+      transicionandoAFallout = false;
+    });
+  } else {
+    transicionandoAFallout = false;
   }
 });
 document.getElementById("btn-modo-classic").addEventListener("click", () => {
@@ -1441,17 +1449,41 @@ if (btnLogoutCerrar) {
 }
 
 // Al pasar el mouse sobre "Modo Fallout" suena el tema de radio de Fallout;
-// se corta apenas el cursor se va del botón.
+// se corta apenas el cursor se va del botón. Excepción: si el user ya hizo
+// click para pasar a Fallout, la música sigue sonando durante todo el boot
+// (el mouse se va del botón apenas aparece el overlay, pero no hay que
+// cortarla ahí) y recién se desvanece cuando termina, en el home de Fallout.
+let transicionandoAFallout = false;
 const btnModoFallout = document.getElementById("btn-modo-fallout");
 const audioModoFallout = document.getElementById("audio-modo-fallout");
+
+function desvanecerAudioModoFallout() {
+  if (!audioModoFallout || audioModoFallout.paused) return;
+  const pasoMs = 40;
+  const duracionMs = 900;
+  const decremento = 1 / (duracionMs / pasoMs);
+  const intervalo = setInterval(() => {
+    audioModoFallout.volume = Math.max(0, audioModoFallout.volume - decremento);
+    if (audioModoFallout.volume <= 0) {
+      clearInterval(intervalo);
+      audioModoFallout.pause();
+      audioModoFallout.currentTime = 0;
+      audioModoFallout.volume = 1;
+    }
+  }, pasoMs);
+}
+
 if (btnModoFallout && audioModoFallout) {
   btnModoFallout.addEventListener("mouseenter", () => {
+    if (transicionandoAFallout) return;
     audioModoFallout.currentTime = 0;
+    audioModoFallout.volume = 1;
     audioModoFallout.play().catch(() => {
       // Autoplay bloqueado hasta el primer gesto del usuario: no es crítico.
     });
   });
   btnModoFallout.addEventListener("mouseleave", () => {
+    if (transicionandoAFallout) return;
     audioModoFallout.pause();
     audioModoFallout.currentTime = 0;
   });
@@ -2209,10 +2241,33 @@ document.getElementById("btn-carrito").addEventListener("click", abrirCarrito);
 document.getElementById("btn-cerrar-carrito").addEventListener("click", cerrarCarrito);
 document.getElementById("overlay-carrito").addEventListener("click", cerrarCarrito);
 document.getElementById("btn-vaciar-carrito").addEventListener("click", vaciarCarrito);
+// Al cerrar un pedido, suma los productos encargados al registro del
+// cliente (mismo clientes.json/csv que ya alimentan el gate inicial y el
+// buscador por chat) — así el panel /admin/clientes también refleja los
+// pedidos hechos desde la web, no solo el alta inicial.
+function registrarPedidoEnClientes(carrito) {
+  let cliente;
+  try {
+    cliente = JSON.parse(localStorage.getItem("ttra_cliente") || "null");
+  } catch {
+    cliente = null;
+  }
+  if (!cliente || !cliente.nombre || !cliente.celular) return;
+  const productos = [...new Set(carrito.map((it) =>
+    it.color && it.color !== "Color único" ? `${it.nombre} (${it.color})` : it.nombre
+  ))];
+  fetch("/api/registro-cliente", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre: cliente.nombre, celular: cliente.celular, productos }),
+  }).catch(() => {});
+}
+
 document.getElementById("btn-whatsapp").addEventListener("click", () => {
   const carrito = cargarCarrito();
   if (carrito.length === 0) return;
   const mensaje = armarMensajeWhatsapp(carrito);
+  registrarPedidoEnClientes(carrito);
   window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`, "_blank");
   vaciarCarrito();
   cerrarCarrito();
