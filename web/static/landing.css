@@ -137,6 +137,34 @@ header {
 html[data-modo="classic"] #btn-modo-classic { display: none; }
 html[data-modo="fallout"] #btn-modo-fallout { display: none; }
 
+/* Botón "Cerrar sesión" del header: solo existe en Modo Classic (en
+   Fallout el log out vive en el interruptor de la barra lateral). */
+#btn-logout-classic { display: none; }
+html[data-modo="classic"] #btn-logout-classic { display: block; }
+
+/* Mensaje de confirmación de log out (look terminal Pip-Boy por default;
+   Modo Classic lo reestiliza en classic.css). Sirve para ambos modos. */
+#rc-logout-msg {
+  position: fixed; inset: 0; z-index: 10020;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+#rc-logout-msg.visible { display: flex; }
+.rc-logout-tarjeta {
+  width: 100%; max-width: 360px; text-align: center;
+  background: #010601; border: 3px solid var(--rc-green-dim);
+  box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
+  padding: 24px 20px;
+}
+.rc-logout-texto {
+  margin: 0 0 18px; font-size: 15px; line-height: 1.5; color: var(--rc-green-bright);
+  text-shadow: 0 0 6px var(--rc-glow);
+}
+.rc-logout-tarjeta button {
+  width: 100%; height: 42px;
+  color: var(--rc-green-bright); border-color: var(--rc-green);
+  box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
+}
+
 @media (max-width: 900px) {
   .rc-noticiero { display: none; }
 }
@@ -216,6 +244,68 @@ html[data-modo="fallout"] #btn-modo-fallout { display: none; }
 .btn-categoria.activo {
   background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
   font-weight: 600;
+}
+
+/* Interruptor tipo avión, debajo de "Búsqueda por Marca": es el log out del
+   Modo Fallout. Centrado en el espacio libre entre el menú y el pie de
+   página (margin auto arriba y abajo). Solo existe en Fallout: en Classic
+   el log out es el botón del header (ver #btn-logout-classic). */
+.rc-switch-fallout-wrap { display: none; }
+html[data-modo="fallout"] .rc-switch-fallout-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.rc-switch-fallout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 50%;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #2b2b2b, #141414);
+  border: 2px solid var(--rc-green-dim);
+  border-radius: 6px;
+  box-shadow: 0 0 8px -1px var(--rc-glow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: var(--rc-cursor-mira);
+}
+.rc-switch-fallout .rc-switch-etiqueta {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  color: var(--rc-green-dim);
+}
+.rc-switch-fallout .rc-switch-riel {
+  position: relative; flex: 1; height: 24px;
+  background: #050505; border-radius: 12px;
+  border: 1px solid #000;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.7);
+}
+.rc-switch-fallout .rc-switch-perilla {
+  position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #7bffa0, #1a7a33);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 6px var(--rc-glow);
+  transition: left .25s ease, background .25s ease;
+}
+.rc-switch-fallout.apagado .rc-switch-perilla {
+  left: calc(100% - 22px);
+  background: radial-gradient(circle at 35% 30%, #ff8a8a, #7a1a1a);
+}
+
+/* Placa retroiluminada estilo tablero de avión viejo, debajo del switch. */
+.rc-switch-placa {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--rc-green-bright);
+  background: #0a0a0a;
+  border: 1px solid #000;
+  border-radius: 3px;
+  padding: 3px 10px;
+  text-shadow: 0 0 4px var(--rc-glow), 0 0 8px var(--rc-glow);
+  box-shadow: inset 0 0 6px -1px var(--rc-glow), 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .selector-marcas {

@@ -219,6 +219,34 @@ html[data-modo="classic"] .btn-modo.activo {
   background: var(--cl-rojo);
   border-color: var(--cl-rojo);
 }
+
+/* Botón "Cerrar sesión" del header: mismo diseño solido navy/blanco que el
+   del panel de admin de clientes. */
+html[data-modo="classic"] #btn-logout-classic {
+  background: var(--cl-azul-francia);
+  color: #fff;
+  border-color: var(--cl-azul-francia);
+}
+html[data-modo="classic"] #btn-logout-classic:hover {
+  background: #001835;
+}
+
+/* Mensaje de confirmación de log out: tarjeta blanca redondeada, igual
+   estética que el gate inicial y el panel de clientes. */
+html[data-modo="classic"] .rc-logout-tarjeta {
+  background: #fff;
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(16, 33, 79, 0.25);
+}
+html[data-modo="classic"] .rc-logout-tarjeta button {
+  background: var(--cl-azul-francia);
+  color: #fff;
+  border-color: var(--cl-azul-francia);
+}
+html[data-modo="classic"] .rc-logout-tarjeta button:hover {
+  background: #001835;
+}
 .tarjeta-recomendado h3 {
   grid-row: 2;
   margin: 0;

@@ -1405,6 +1405,37 @@ document.getElementById("btn-modo-classic").addEventListener("click", () => {
 });
 aplicarModoVisual(modoVisual, { sinRepintar: true });
 
+// --- Log out: borra el registro del cliente (nombre/celular guardados por
+// el gate inicial) y muestra un mensaje de confirmación con el estilo del
+// modo activo. Al cerrar el mensaje se recarga la página, así vuelve a
+// aparecer el gate para volver a identificarse. ---
+function cerrarSesionCliente() {
+  try {
+    localStorage.removeItem("ttra_cliente");
+  } catch {
+    // Sin localStorage no había nada que borrar: no es crítico.
+  }
+  const msg = document.getElementById("rc-logout-msg");
+  if (msg) msg.classList.add("visible");
+}
+
+const btnLogoutClassic = document.getElementById("btn-logout-classic");
+if (btnLogoutClassic) btnLogoutClassic.addEventListener("click", cerrarSesionCliente);
+
+const btnLogoutFallout = document.getElementById("btn-logout-fallout");
+if (btnLogoutFallout) {
+  btnLogoutFallout.addEventListener("click", () => {
+    btnLogoutFallout.classList.add("apagado");
+    btnLogoutFallout.setAttribute("aria-pressed", "false");
+    cerrarSesionCliente();
+  });
+}
+
+const btnLogoutCerrar = document.getElementById("btn-logout-cerrar");
+if (btnLogoutCerrar) {
+  btnLogoutCerrar.addEventListener("click", () => location.reload());
+}
+
 // Al pasar el mouse sobre "Modo Fallout" suena el tema de radio de Fallout;
 // se corta apenas el cursor se va del botón.
 const btnModoFallout = document.getElementById("btn-modo-fallout");
@@ -2330,8 +2361,9 @@ async function cargarClimaYCiudad(lat, lon, ubicacionReal) {
     // se mantiene lo último cargado si algo falla
   }
   // Solo confiamos en la provincia si la ubicación vino de geolocalización
-  // real aceptada por el visitante; si no, mostramos fotos al azar del país.
-  actualizarImagenesSegunProvincia(ubicacionReal ? codigoIso : null);
+  // real aceptada por el visitante; si no (permiso denegado, no soportado,
+  // etc.), el default es Córdoba ("AR-X"), no fotos de todo el país.
+  actualizarImagenesSegunProvincia(ubicacionReal ? codigoIso : "AR-X");
   pintarFechaHoraTemp();
 }
 

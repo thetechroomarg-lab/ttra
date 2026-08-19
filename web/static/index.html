@@ -48,6 +48,7 @@
         <span id="dolar-linea" class="rc-fecha-hora-linea"></span>
       </span>
       <div class="rc-modo-y-carrito">
+        <button id="btn-logout-classic" type="button" class="btn-logout-classic">Cerrar sesión</button>
         <button id="btn-modo-fallout" type="button" class="btn-modo" data-modo="fallout">Modo Fallout</button>
         <button id="btn-modo-classic" type="button" class="btn-modo" data-modo="classic">Modo Classic</button>
         <button id="btn-carrito" type="button">Carrito <span id="carrito-contador">0</span></button>
@@ -69,6 +70,14 @@
         <input id="input-busqueda" type="text" placeholder="Buscar productos..." autocomplete="off">
       </div>
       <div id="categorias" class="categorias-columna"></div>
+      <div class="rc-switch-fallout-wrap">
+        <button id="btn-logout-fallout" type="button" class="rc-switch-fallout" aria-label="Cerrar sesión" aria-pressed="true">
+          <span class="rc-switch-etiqueta">ON</span>
+          <span class="rc-switch-riel"><span class="rc-switch-perilla"></span></span>
+          <span class="rc-switch-etiqueta">OFF</span>
+        </button>
+        <span class="rc-switch-placa">POWER SWITCH</span>
+      </div>
       <div id="sub-nav" class="categorias-columna oculto"></div>
       <button id="btn-volver" type="button" class="btn-volver oculto">← Volver</button>
     </div>
@@ -89,6 +98,13 @@
     </div>
   </aside>
   <div id="overlay-carrito" class="oculto"></div>
+
+  <div id="rc-logout-msg">
+    <div class="rc-logout-tarjeta">
+      <p class="rc-logout-texto">Sesión cerrada. ¡Te esperamos pronto!</p>
+      <button id="btn-logout-cerrar" type="button">Aceptar</button>
+    </div>
+  </div>
 
   <footer class="rc-pie">
     <p id="pie-frase"></p>
