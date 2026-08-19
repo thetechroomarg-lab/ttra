@@ -119,6 +119,22 @@ def chat(entrada: ChatIn):
     return {"respuesta": texto, "genero": genero}
 
 
+class ClienteIn(BaseModel):
+    nombre: str
+    celular: str
+
+
+@app.post("/api/registro-cliente")
+def registro_cliente(entrada: ClienteIn):
+    nombre = entrada.nombre.strip()
+    celular = entrada.celular.strip()
+    if not nombre or not celular:
+        raise HTTPException(status_code=400, detail="Nombre y celular son obligatorios")
+    leads.guardar_lead(celular, {"nombre": nombre, "celular": celular},
+                        fecha=datetime.now().strftime("%Y-%m-%d %H:%M"))
+    return {"ok": True}
+
+
 class RegistroIn(BaseModel):
     nombre: str
     email: EmailStr
