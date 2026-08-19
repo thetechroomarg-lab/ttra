@@ -52,12 +52,23 @@ html[data-modo="classic"] .rc-noticiero-texto.clickeable:hover {
    tanda duplicada (solo existe para el scroll infinito de Fallout) y se
    centra la única tanda visible, así queda equidistante de ambos bordes
    de la pantalla sin tocar el gap entre marcas. */
+html[data-modo="classic"] .carrousel-wrap {
+  overflow: visible;
+}
 html[data-modo="classic"] .carrousel {
   width: 100%;
   justify-content: center;
 }
 html[data-modo="classic"] .carrousel-tanda:nth-of-type(2) {
   display: none;
+}
+/* En pantallas chicas, cada marca pasa a bloque propio y se acomodan en
+   varias filas centradas, en vez de desbordar el ancho de la pantalla. */
+html[data-modo="classic"] .carrousel-tanda {
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 10px;
 }
 html[data-modo="classic"] .carrousel span:hover {
   color: #000;
@@ -98,6 +109,32 @@ html[data-modo="classic"] button:focus-visible {
 }
 html[data-modo="classic"] button:active {
   box-shadow: 0 1px 4px rgba(10, 47, 63, 0.15);
+}
+
+/* Ítems del menú principal (Celulares, Tablets, Notebooks, Gaming,
+   Accesorios, Búsqueda por Marca): un realce sutil al pasar el mouse,
+   acento rojo Martini que se desliza desde abajo. */
+html[data-modo="classic"] .btn-categoria {
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s ease, box-shadow .2s ease, color .2s ease;
+}
+html[data-modo="classic"] .btn-categoria::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: var(--cl-rojo);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform .25s ease;
+}
+html[data-modo="classic"] .btn-categoria:hover {
+  transform: translateY(-2px);
+  color: var(--cl-azul-francia);
+}
+html[data-modo="classic"] .btn-categoria:hover::after {
+  transform: scaleX(1);
 }
 
 /* El botón "Modo Fallout" se va transformando lentamente al pasar el mouse:

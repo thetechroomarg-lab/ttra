@@ -340,10 +340,10 @@ main#productos { flex: 1; min-width: 0; margin-top: 20px; }
 .pipboy-esquina.bl { bottom: 6px; left: 6px; border-bottom: 2px solid; border-left: 2px solid; }
 .pipboy-esquina.br { bottom: 6px; right: 6px; border-bottom: 2px solid; border-right: 2px solid; }
 
+/* El Pip-Boy no tiene una resolución chica que lo haga legible: en vez de
+   forzarlo a adaptarse, en pantallas chicas directamente no se muestra. */
 @media (max-width: 700px) {
-  .pipboy { flex-direction: column; aspect-ratio: auto; max-height: none; }
-  .pipboy-datos { flex: none; }
-  .pipboy-imagen-wrap { border-left: none; border-top: 1px solid var(--rc-green-dim); min-height: 160px; }
+  html[data-modo="fallout"] main#productos { display: none; }
 }
 
 @media (max-width: 700px) {
