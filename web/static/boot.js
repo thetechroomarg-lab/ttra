@@ -1,7 +1,8 @@
 // web/static/boot.js — secuencia de arranque estilo terminal RobCo.
-// Se muestra en cada carga de página (F5 incluido) si el modo guardado es
-// Fallout, y también cada vez que el usuario cambia a Modo Fallout en vivo
-// (ver window.reproducirBootSequenceTTRA, usado desde landing.js).
+// Cada carga/recarga de página entra siempre en Modo Classic (sin boot
+// sequence); la animación solo se reproduce cuando el usuario cambia a
+// Modo Fallout en vivo con el botón (ver window.reproducirBootSequenceTTRA,
+// usado desde landing.js).
 
 // Beeps estilo computadora vieja (onda cuadrada sintetizada, sin archivos de
 // audio). Los navegadores bloquean audio autoplay sin gesto del usuario: si
@@ -152,16 +153,13 @@ window.reproducirBootSequenceTTRA = function (alTerminar) {
   const overlay = document.getElementById("rc-boot");
   if (!overlay) return;
 
-  // El modo visual (Fallout/Classic) se decide antes que nada: en Classic no
-  // hay boot sequence de terminal, se pasa directo a la landing. Classic es
-  // el modo por defecto (el usuario siempre entra ahí salvo que haya elegido
-  // Fallout explícitamente antes).
-  const modoGuardado = localStorage.getItem("ttra_modo_visual") === "fallout" ? "fallout" : "classic";
-  document.documentElement.setAttribute("data-modo", modoGuardado);
-  if (modoGuardado === "classic") {
-    overlay.classList.add("rc-boot-oculto");
-    return;
-  }
+  // Classic es siempre el modo de arranque: cada carga/recarga de página
+  // entra ahí, sin boot sequence, sin importar qué modo se haya elegido
+  // antes. Fallout solo se activa en vivo con el botón, y dura hasta el
+  // próximo refresh.
+  document.documentElement.setAttribute("data-modo", "classic");
+  overlay.classList.add("rc-boot-oculto");
+  return;
 
   reproducirBootCompleto(overlay, () => {});
 })();

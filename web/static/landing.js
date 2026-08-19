@@ -68,7 +68,9 @@ let subFiltrosActivos = new Set(); // marcas (o "Notebooks"/"Macbooks") elegidas
 let filtroMarcaGlobal = null; // marca elegida desde el carrousel o "Búsqueda por Marca", busca en TODO el catálogo
 let modoVista = "cards"; // "cards" | "lista"
 let ordenPrecio = null; // null (sin orden) | "asc" | "desc"
-let modoVisual = localStorage.getItem("ttra_modo_visual") === "fallout" ? "fallout" : "classic";
+// Classic es siempre el modo de arranque (ver boot.js); Fallout solo dura
+// mientras no se recarga la página, no se persiste entre refrescos.
+let modoVisual = "classic";
 
 // Fotos decorativas de la ciudad, solo visibles en la pantalla principal.
 // Cada archivo se muestra dentro de una "tarjeta" tipo terminal (ver
@@ -1307,7 +1309,6 @@ function aplicarModoVisual(modo, opciones) {
   const opts = opciones || {};
   modoVisual = modo;
   document.documentElement.setAttribute("data-modo", modo);
-  localStorage.setItem("ttra_modo_visual", modo);
   document.querySelectorAll(".btn-modo").forEach((b) => {
     b.classList.toggle("activo", b.dataset.modo === modo);
   });
