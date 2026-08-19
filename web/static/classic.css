@@ -57,6 +57,13 @@ html[data-modo="classic"] .carrousel span:hover {
 /* Sin scanlines ni flicker CRT */
 html[data-modo="classic"] .rc-crt { display: none; }
 
+/* Sin glitch de transición al cambiar de pantalla (categorías, secciones) */
+html[data-modo="classic"] .rc-deformando {
+  animation: none;
+  transform: none;
+  filter: none;
+}
+
 /* Sin glow fosforescente en ningún texto */
 html[data-modo="classic"] body,
 html[data-modo="classic"] * {
