@@ -1305,6 +1305,14 @@ function pintarCarrouselSegunModo(el) {
   else pintarCarrouselCiudad(el);
 }
 
+// El favicon cambia junto con el modo: monograma navy/rojo en Classic,
+// verde fósforo estilo Pip-Boy en Fallout.
+function actualizarFavicon(modo) {
+  const link = document.querySelector('link[rel="icon"]');
+  if (!link) return;
+  link.href = modo === "fallout" ? "favicon-fallout.svg" : "favicon.svg";
+}
+
 function aplicarModoVisual(modo, opciones) {
   const opts = opciones || {};
   modoVisual = modo;
@@ -1312,6 +1320,7 @@ function aplicarModoVisual(modo, opciones) {
   document.querySelectorAll(".btn-modo").forEach((b) => {
     b.classList.toggle("activo", b.dataset.modo === modo);
   });
+  actualizarFavicon(modo);
   if (opts.sinRepintar) return;
   // pintarFrasePie está definida más abajo en el archivo (function declaration,
   // hoisted) pero usa FRASES_FALLOUT/FRASES_LATINOAMERICANAS (const, con TDZ):
