@@ -1848,6 +1848,11 @@ function actualizarVista() {
   categoriasEl.classList.toggle("oculto", !enInicio);
   subNavEl.classList.toggle("oculto", !mostrarSubNav);
   volverBtn.classList.toggle("oculto", enInicio);
+  // El switch de log out (Modo Fallout) solo tiene sentido en el home: al
+  // entrar a una sección los botones de categoría desaparecen y quedaba
+  // como el único control visible en la barra lateral.
+  const switchWrap = document.getElementById("rc-switch-fallout-wrap");
+  if (switchWrap) switchWrap.classList.toggle("oculto", !enInicio);
 
   detenerCarrouselCiudad();
 

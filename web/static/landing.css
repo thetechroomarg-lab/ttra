@@ -260,6 +260,10 @@ html[data-modo="fallout"] .rc-switch-fallout-wrap {
   margin-top: auto;
   margin-bottom: auto;
 }
+/* Solo tiene sentido en el home (ver #categorias): al entrar a una sección
+   los botones de categoría se ocultan y este quedaba como único control.
+   (Necesita la misma especificidad que la regla de arriba para ganarle.) */
+html[data-modo="fallout"] .rc-switch-fallout-wrap.oculto { display: none; }
 .rc-switch-fallout {
   display: flex;
   align-items: center;
