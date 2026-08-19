@@ -46,6 +46,17 @@ if not _session_secret:
 app.add_middleware(SessionMiddleware, secret_key=_session_secret)
 
 
+@app.middleware("http")
+async def sin_cache_estaticos(request: Request, call_next):
+    """Evita que el navegador se quede con una versión vieja de JS/CSS
+    cacheada tras un simple F5 (cada refresh revalida contra el archivo
+    real en disco)."""
+    response = await call_next(request)
+    if request.url.path.endswith((".js", ".css")):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 def _cargar_productos():
     if not PRODUCTOS_PATH.exists():
         return []
