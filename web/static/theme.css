@@ -68,12 +68,32 @@ body {
 }
 
 @keyframes rc-deformar {
-  0%   { transform: none;                                      filter: none; }
-  20%  { transform: translateY(-2px) scaleY(1.006);             filter: brightness(1.1); }
-  40%  { transform: translateY(2px) scaleY(0.994) skewX(0.5deg); filter: brightness(0.94); }
-  60%  { transform: translateY(-1px) skewX(-0.3deg);             filter: brightness(1.05); }
-  80%  { transform: none;                                      filter: brightness(0.97); }
-  100% { transform: none;                                      filter: none; }
+  0%   { transform: none;                                        filter: none; }
+  20%  { transform: translateY(-0.5px) scaleY(1.0015);            filter: brightness(1.03); }
+  40%  { transform: translateY(0.5px) scaleY(0.9985) skewX(0.12deg); filter: brightness(0.98); }
+  60%  { transform: translateY(-0.25px) skewX(-0.08deg);          filter: brightness(1.015); }
+  80%  { transform: none;                                        filter: brightness(0.99); }
+  100% { transform: none;                                        filter: none; }
+}
+
+/* --- Apagado/encendido tipo TV vieja: se usa al pasar de Fallout a Classic
+   (ver landing.js). La pantalla se colapsa a una línea horizontal y luego
+   a un punto en el centro, cubriéndose de negro; al entrar a Classic se
+   reproduce la misma animación al revés (crece desde el punto). --- */
+html { background: #000; }
+@keyframes rc-tv-power {
+  0%   { transform: scale(1, 1);        opacity: 1; }
+  55%  { transform: scale(1, 0.004);     opacity: 1; }
+  80%  { transform: scale(0.35, 0.004);  opacity: 1; }
+  100% { transform: scale(0.02, 0.004);  opacity: 0; }
+}
+body.rc-tv-apagando {
+  animation: rc-tv-power 0.5s cubic-bezier(0.4, 0, 1, 1) forwards;
+  transform-origin: 50% 50%;
+}
+body.rc-tv-prendiendo {
+  animation: rc-tv-power 0.4s cubic-bezier(0, 0, 0.2, 1) reverse forwards;
+  transform-origin: 50% 50%;
 }
 
 /* --- Terminal look para controles genéricos: bordes cuadrados, sin sombras

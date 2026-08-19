@@ -1336,7 +1336,22 @@ document.getElementById("btn-modo-fallout").addEventListener("click", () => {
     window.reproducirBootSequenceTTRA();
   }
 });
-document.getElementById("btn-modo-classic").addEventListener("click", () => aplicarModoVisual("classic"));
+document.getElementById("btn-modo-classic").addEventListener("click", () => {
+  if (modoVisual !== "fallout") {
+    aplicarModoVisual("classic");
+    return;
+  }
+  // Viniendo de Fallout: efecto "apagado de TV vieja" (colapsa a una línea
+  // y luego a un punto, todo a negro) antes de mostrar Classic, y un
+  // "encendido" simétrico (crece desde el punto) al entrar.
+  document.body.classList.add("rc-tv-apagando");
+  setTimeout(() => {
+    document.body.classList.remove("rc-tv-apagando");
+    aplicarModoVisual("classic");
+    document.body.classList.add("rc-tv-prendiendo");
+    setTimeout(() => document.body.classList.remove("rc-tv-prendiendo"), 450);
+  }, 520);
+});
 aplicarModoVisual(modoVisual, { sinRepintar: true });
 
 // Al pasar el mouse sobre "Modo Fallout" suena el tema de radio de Fallout;
