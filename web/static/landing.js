@@ -66,10 +66,58 @@ document.addEventListener("click", (e) => {
   if (e.target.closest("button, a, [role='button']")) beepInteraccion();
 });
 
+// Sonido de "click" mecánico (más seco y grave que el beep genérico de
+// arriba): para el power switch del Pip-Boy, como un interruptor real.
+function sonidoClickSwitch() {
+  try {
+    audioCtxInteraccion = audioCtxInteraccion
+      || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtxInteraccion.state === "suspended") audioCtxInteraccion.resume();
+    const osc = audioCtxInteraccion.createOscillator();
+    const gain = audioCtxInteraccion.createGain();
+    osc.type = "square";
+    osc.frequency.value = 140;
+    gain.gain.setValueAtTime(0.12, audioCtxInteraccion.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtxInteraccion.currentTime + 0.03);
+    osc.connect(gain).connect(audioCtxInteraccion.destination);
+    osc.start();
+    osc.stop(audioCtxInteraccion.currentTime + 0.03);
+  } catch {
+    // Web Audio no disponible: seguimos sin sonido, no es crítico.
+  }
+}
+
 const MARCAS = [
   "Apple", "Samsung", "Xiaomi", "Motorola", "Realme", "Oppo", "Honor",
   "Infinix", "Nokia", "PlayStation", "Nintendo", "JBL", "Logitech",
 ];
+
+// Logo real de cada marca (solo se muestra en Modo Classic, ver classic.css).
+// "Otras marcas" e Itel no tienen logo oficial disponible: usan una
+// insignia genérica con la inicial, mismo tamaño que el resto.
+const MARCA_LOGO = {
+  "Apple": "apple", "Samsung": "samsung", "Xiaomi": "xiaomi",
+  "Motorola": "motorola", "Realme": "realme", "Oppo": "oppo",
+  "Honor": "honor", "Infinix": "infinix", "Nokia": "nokia",
+  "PlayStation": "sony", "Nintendo": "nintendo", "JBL": "jbl",
+  "Logitech": "logitech", "Itel": "itel", "Otras marcas": "otras-marcas",
+};
+
+// El catálogo clasifica las consolas bajo la marca "PlayStation" (viene así
+// del pipeline de datos), pero la marca real del fabricante es Sony: en
+// toda la app (Classic y Fallout) se MUESTRA "Sony", aunque el filtrado y
+// el dataset internamente sigan usando "PlayStation" para no romper el
+// matching contra los productos del catálogo.
+const MARCA_ETIQUETA = { "PlayStation": "Sony" };
+function etiquetaMarca(marca) {
+  return MARCA_ETIQUETA[marca] || marca;
+}
+
+function marcaLogoHtml(marca, clase) {
+  const slug = MARCA_LOGO[marca];
+  if (!slug) return "";
+  return `<img class="${clase}" src="/logos/${slug}.svg" alt="" />`;
+}
 
 // Orden y etiquetas de los botones de categoría en la pantalla principal.
 // "clave" es el nombre de sección tal cual lo devuelve /api/catalogo;
@@ -1087,6 +1135,27 @@ function nombreDesdeArchivo(src) {
   return claveDesdeArchivo(src).replace(/[-_]/g, " ").toUpperCase();
 }
 
+// Excusas de por qué el Pip-Boy no logra triangular bien: siempre la culpa
+// es de un espía ruso que hackeó los satélites de la NASA. Rotan al azar en
+// cada pintura del Pip-Boy (misma cadencia que el cambio de foto). Cortas
+// a propósito: nunca más de 2 líneas, para no romper la UI.
+const FRASES_TRIANGULANDO = [
+  "SEÑAL PERDIDA...<br>RUSIA HACKEÓ SATÉLITE NASA",
+  "RUTA DESVIADA...<br>ESPÍA DEL KREMLIN EN EL GPS",
+  "COORDENADAS CORRUPTAS...<br>AGENTE RUSO VULNERÓ LA NASA",
+  "TRIANGULANDO...<br>SABOTAJE RUSO EN ÓRBITA",
+  "SEÑAL INESTABLE...<br>TOPO RUSO EN CONTROL NASA",
+  "GPS DESVIADO...<br>CIBERESPÍA RUSO EN RED NASA",
+  "ERROR DE ENLACE...<br>MOSCÚ HACKEÓ EL SATÉLITE",
+  "COORDENADAS FALSAS...<br>INFILTRADO RUSO EN LA NASA",
+  "CIFRADO ROTO...<br>ESPIONAJE RUSO DETECTADO",
+  "REINTENTANDO ENLACE...<br>AGENCIA RUSA HACKEÓ NASA",
+];
+
+function fraseTriangulandoAlAzar() {
+  return FRASES_TRIANGULANDO[Math.floor(Math.random() * FRASES_TRIANGULANDO.length)];
+}
+
 function tarjetaLugarHtml(src) {
   const datos = DATOS_LUGARES[claveDesdeArchivo(src)] || DATOS_LUGAR_DEFAULT;
   const nombre = nombreDesdeArchivo(src);
@@ -1110,7 +1179,7 @@ function tarjetaLugarHtml(src) {
         <div class="pipboy-log">${escapeHtml(datos.log)}</div>
         <div class="pipboy-globo-wrap">
           <div class="pipboy-globo"></div>
-          <div class="pipboy-globo-texto">TRIANGULANDO<br>COORDENADAS...</div>
+          <div class="pipboy-globo-texto">${fraseTriangulandoAlAzar()}</div>
         </div>
         <div class="pipboy-pie">
           <span class="pipboy-frase">TRANSMISIÓN ESTABLE // SEÑAL 98% // ARCHIVO TTRA-01<span class="rc-cursor">_</span></span>
@@ -1219,8 +1288,8 @@ function esProductoUsado(p) {
   return texto.includes("usado") || texto.includes("cpo");
 }
 
-// Elige `n` productos distintos al azar (sin repetidos) de todo el catálogo,
-// excluyendo siempre celulares usados/CPO.
+// REGLA ABSOLUTA: el carrousel de recomendados de Modo Classic JAMAS
+// muestra iPhones usados/CPO (ni ningún otro producto usado).
 function productosAlAzar(n) {
   const todos = Object.values(SECCIONES_DATA).flat().filter((p) => !esProductoUsado(p));
   const copia = todos.slice();
@@ -1235,33 +1304,35 @@ function productosAlAzar(n) {
 function tarjetaRecomendadoHtml(p) {
   const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
   const listaColores = tieneColores ? p.colores : ["Color único"];
-  const colorInicial = tieneColores ? "" : "Color único";
+  // Mismo criterio que tarjetaProducto: siempre "Elegir color" sin nada
+  // preseleccionado, Agregar inactivo hasta elegir explícitamente.
   return `
     <div class="tarjeta-recomendado" data-nombre="${escapeHtml(p.nombre)}">
       <div class="tarjeta-recomendado-etiqueta">✨ Recomendado para vos</div>
-      <h3>${escapeHtml(p.nombre)}</h3>
+      <h3>${marcaLogoHtml(p.marca, "marca-logo-card")}${escapeHtml(p.nombre)}</h3>
       <p class="tarjeta-recomendado-precio">
         <strong>U$D ${p.usd ?? "-"}</strong>
         <span>$ ${formatearPesos(p.pesos)} contado</span>
         <span>$ ${formatearPesos(p.transferencia)} transferencia</span>
+        ${botonFotoHtml(p)}
       </p>
       <div class="tarjeta-recomendado-acciones">
         <div class="dropdown-color">
-          <button type="button" class="dropdown-color-boton" data-valor="${escapeHtml(colorInicial)}">
-            ${escapeHtml(tieneColores ? "Elegir color" : colorInicial)}
+          <button type="button" class="dropdown-color-boton" data-valor="">
+            Elegir color
           </button>
           <ul class="dropdown-color-lista oculto" role="listbox">
             ${listaColores.map((c) => `<li role="option" data-valor="${escapeHtml(c)}">${escapeHtml(c)}</li>`).join("")}
           </ul>
         </div>
-        <button class="btn-agregar" type="button" data-color="${escapeHtml(colorInicial)}" ${tieneColores ? "disabled" : ""}>Agregar</button>
+        <button class="btn-agregar" type="button" data-color="" disabled>Agregar</button>
       </div>
     </div>
   `;
 }
 
 function tarjetasRecomendadosHtml() {
-  const productos = productosAlAzar(3);
+  const productos = productosAlAzar(6);
   if (!productos.length) {
     return `<div class="tarjeta-recomendado tarjeta-recomendado-vacia"><p>Cargando recomendaciones...</p></div>`;
   }
@@ -1342,8 +1413,51 @@ function pintarCarrouselRecomendados(el) {
 // --- Modo visual: Fallout (default) / Classic ---
 
 function pintarCarrouselSegunModo(el) {
-  if (modoVisual === "classic") pintarCarrouselRecomendados(el);
+  if (modoVisual === "classic" || pipboyApagado) pintarCarrouselRecomendados(el);
   else pintarCarrouselCiudad(el);
+}
+
+// Main Switch (barra lateral, arriba del Power Switch): apaga/enciende el
+// Pip-Boy. Apagado, la foto se reemplaza por el mismo carrousel de
+// recomendados que Modo Classic, con la temática Fallout. Al apagar, el
+// Pip-Boy (no toda la pantalla) hace la animación de TV vieja apagándose,
+// con un click de interruptor real; al encender, la animación inversa.
+let pipboyEnTransicion = false;
+const btnPipboySwitch = document.getElementById("btn-pipboy-switch");
+if (btnPipboySwitch) {
+  btnPipboySwitch.addEventListener("click", () => {
+    const productosEl = document.getElementById("productos");
+    if (!productosEl || pipboyEnTransicion) return;
+    sonidoClickSwitch();
+    if (!pipboyApagado) {
+      const pipboyEl = productosEl.querySelector(".pipboy");
+      btnPipboySwitch.classList.add("apagado");
+      btnPipboySwitch.setAttribute("aria-pressed", "false");
+      detenerCarrouselCiudad();
+      if (!pipboyEl) {
+        pipboyApagado = true;
+        pintarCarrouselRecomendados(productosEl);
+        return;
+      }
+      pipboyEnTransicion = true;
+      pipboyEl.classList.add("rc-tv-apagando");
+      setTimeout(() => {
+        pipboyApagado = true;
+        pintarCarrouselRecomendados(productosEl);
+        pipboyEnTransicion = false;
+      }, 520);
+    } else {
+      btnPipboySwitch.classList.remove("apagado");
+      btnPipboySwitch.setAttribute("aria-pressed", "true");
+      pipboyApagado = false;
+      pintarCarrouselCiudad(productosEl);
+      const nuevoPipboy = productosEl.querySelector(".pipboy");
+      if (nuevoPipboy) {
+        nuevoPipboy.classList.add("rc-tv-prendiendo");
+        setTimeout(() => nuevoPipboy.classList.remove("rc-tv-prendiendo"), 450);
+      }
+    }
+  });
 }
 
 // El favicon cambia junto con el modo: monograma navy/rojo en Classic,
@@ -1380,6 +1494,12 @@ function aplicarModoVisual(modo, opciones) {
   subFiltrosActivos = new Set();
   filtroMarcaGlobal = null;
   profundidadHistorial = 0;
+  pipboyApagado = false;
+  const btnPipboySwitchReset = document.getElementById("btn-pipboy-switch");
+  if (btnPipboySwitchReset) {
+    btnPipboySwitchReset.classList.remove("apagado");
+    btnPipboySwitchReset.setAttribute("aria-pressed", "true");
+  }
   const inputBusqueda = document.getElementById("input-busqueda");
   if (inputBusqueda) inputBusqueda.value = "";
   actualizarVista();
@@ -1417,10 +1537,22 @@ document.getElementById("btn-modo-classic").addEventListener("click", () => {
 });
 aplicarModoVisual(modoVisual, { sinRepintar: true });
 
-// --- Log out: borra el registro del cliente (nombre/celular guardados por
-// el gate inicial) y muestra un mensaje de confirmación con el estilo del
-// modo activo. Al cerrar el mensaje se recarga la página, así vuelve a
-// aparecer el gate para volver a identificarse. ---
+// --- Log out: pedir "Cerrar sesión" (botón en Classic, switch "LOG OUT" en
+// Fallout) SOLO abre un diálogo de confirmación — no cierra la sesión
+// automáticamente. Recién si el usuario confirma se borra el registro del
+// cliente (nombre/celular del gate inicial) y se muestra el mensaje final;
+// si cancela, no cambia nada. Al cerrar el mensaje final se recarga la
+// página, así vuelve a aparecer el gate para volver a identificarse. ---
+function mostrarConfirmacionLogout() {
+  const confirmar = document.getElementById("rc-logout-confirmar");
+  if (confirmar) confirmar.classList.add("visible");
+}
+
+function ocultarConfirmacionLogout() {
+  const confirmar = document.getElementById("rc-logout-confirmar");
+  if (confirmar) confirmar.classList.remove("visible");
+}
+
 function cerrarSesionCliente() {
   try {
     localStorage.removeItem("ttra_cliente");
@@ -1432,15 +1564,28 @@ function cerrarSesionCliente() {
 }
 
 const btnLogoutClassic = document.getElementById("btn-logout-classic");
-if (btnLogoutClassic) btnLogoutClassic.addEventListener("click", cerrarSesionCliente);
+if (btnLogoutClassic) btnLogoutClassic.addEventListener("click", mostrarConfirmacionLogout);
 
 const btnLogoutFallout = document.getElementById("btn-logout-fallout");
 if (btnLogoutFallout) {
-  btnLogoutFallout.addEventListener("click", () => {
-    btnLogoutFallout.classList.add("apagado");
-    btnLogoutFallout.setAttribute("aria-pressed", "false");
+  btnLogoutFallout.addEventListener("click", mostrarConfirmacionLogout);
+}
+
+const btnLogoutConfirmarSi = document.getElementById("btn-logout-confirmar-si");
+if (btnLogoutConfirmarSi) {
+  btnLogoutConfirmarSi.addEventListener("click", () => {
+    ocultarConfirmacionLogout();
+    if (btnLogoutFallout) {
+      btnLogoutFallout.classList.add("apagado");
+      btnLogoutFallout.setAttribute("aria-pressed", "false");
+    }
     cerrarSesionCliente();
   });
+}
+
+const btnLogoutConfirmarNo = document.getElementById("btn-logout-confirmar-no");
+if (btnLogoutConfirmarNo) {
+  btnLogoutConfirmarNo.addEventListener("click", ocultarConfirmacionLogout);
 }
 
 const btnLogoutCerrar = document.getElementById("btn-logout-cerrar");
@@ -1553,7 +1698,7 @@ function reproducirTransicionTV(cambiarContenido) {
 function pintarCarrousel() {
   const el = document.getElementById("carrousel");
   const tanda = MARCAS.map(
-    (m) => `<span data-marca="${escapeHtml(m)}" tabindex="0" role="button">${escapeHtml(m)}</span>`
+    (m) => `<span data-marca="${escapeHtml(m)}" tabindex="0" role="button">${marcaLogoHtml(m, "marca-logo-carrousel")}${escapeHtml(etiquetaMarca(m))}</span>`
   ).join("");
   el.innerHTML = `
     <div class="carrousel-tanda">${tanda}</div>
@@ -1650,6 +1795,24 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
+// Ícono de cámara (SVG, no emoji): lleva a una búsqueda de Google Imágenes
+// del producto en una pestaña nueva, mismo link_imagen que ya arma el
+// catálogo por cada ítem.
+const ICONO_CAMARA_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M4 8.5C4 7.67157 4.67157 7 5.5 7H7.5L8.5 5.5H15.5L16.5 7H18.5C19.3284 7 20 7.67157 20 8.5V17.5C20 18.3284 19.3284 19 18.5 19H5.5C4.67157 19 4 18.3284 4 17.5V8.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+  <circle cx="12" cy="13" r="3.4" stroke="currentColor" stroke-width="1.6"/>
+</svg>`;
+
+function botonFotoHtml(p) {
+  if (!p.link_imagen) return "";
+  return `<a class="btn-foto" href="${escapeHtml(p.link_imagen)}" target="_blank" rel="noopener" title="Ver fotos en Google Imágenes" aria-label="Ver fotos en Google Imágenes">${ICONO_CAMARA_SVG}</a>`;
+}
+
+// true mientras el usuario apagó el Pip-Boy manualmente (ver Main Switch,
+// #btn-pipboy-switch). Se reinicia a false cada vez que se entra a Fallout
+// (ver aplicarModoVisual), así siempre arranca encendido.
+let pipboyApagado = false;
+
 function pintarCategorias() {
   const el = document.getElementById("categorias");
   el.innerHTML = CATEGORIAS_BOTONES.map(
@@ -1680,7 +1843,7 @@ function todasLasMarcasDelCatalogo() {
 function pintarSelectorMarcas(el) {
   const marcas = todasLasMarcasDelCatalogo();
   el.innerHTML = `<div class="selector-marcas">${marcas.map(
-    (m) => `<button class="btn-categoria" data-marca="${escapeHtml(m)}" type="button">${escapeHtml(m)}</button>`
+    (m) => `<button class="btn-categoria" data-marca="${escapeHtml(m)}" type="button">${escapeHtml(etiquetaMarca(m))}</button>`
   ).join("")}</div>`;
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1715,7 +1878,7 @@ function pintarSubNav(seccion) {
   const opciones = opcionesSubNav(seccion);
   el.innerHTML = opciones.map((o) => {
     const activo = o === "Todos" ? subFiltrosActivos.size === 0 : subFiltrosActivos.has(o);
-    return `<button data-clave="${escapeHtml(o)}" class="btn-categoria ${activo ? "activo" : ""}" type="button">${escapeHtml(o)}</button>`;
+    return `<button data-clave="${escapeHtml(o)}" class="btn-categoria ${activo ? "activo" : ""}" type="button">${escapeHtml(etiquetaMarca(o))}</button>`;
   }).join("");
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1761,13 +1924,15 @@ document.addEventListener("click", cerrarDropdownsColor);
 function tarjetaProducto(p) {
   const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
   const listaColores = tieneColores ? p.colores : ["Color único"];
-  const colorInicial = tieneColores ? "" : "Color único";
+  // Siempre arranca en "Elegir color" sin nada preseleccionado, tenga el
+  // producto uno o varios colores: Agregar al carrito queda inactivo hasta
+  // que el usuario elija explícitamente una opción de la lista.
   const colores = `
     <div class="selector-colores">
       <strong>Color:</strong>
       <div class="dropdown-color">
-        <button type="button" class="dropdown-color-boton" data-valor="${escapeHtml(colorInicial)}">
-          ${escapeHtml(tieneColores ? "Elegir color" : colorInicial)}
+        <button type="button" class="dropdown-color-boton" data-valor="">
+          Elegir color
         </button>
         <ul class="dropdown-color-lista oculto" role="listbox">
           ${listaColores.map((c) => `<li role="option" data-valor="${escapeHtml(c)}">${escapeHtml(c)}</li>`).join("")}
@@ -1777,14 +1942,15 @@ function tarjetaProducto(p) {
   `;
   return `
     <div class="card">
-      <h3>${escapeHtml(p.nombre)}</h3>
+      <h3>${marcaLogoHtml(p.marca, "marca-logo-card")}${escapeHtml(p.nombre)}</h3>
       ${colores}
       <p class="precios">
         <strong>U$D ${p.usd ?? "-"}</strong><br>
         $ ${formatearPesos(p.pesos)} contado<br>
-        $ ${formatearPesos(p.transferencia)} transferencia
+        $ ${formatearPesos(p.transferencia)} transferencia<br>
+        ${botonFotoHtml(p)}
       </p>
-      <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="${escapeHtml(colorInicial)}" type="button" ${tieneColores ? "disabled" : ""}>Agregar al carrito</button>
+      <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="" type="button" disabled>Agregar al carrito</button>
     </div>
   `;
 }
@@ -1878,7 +2044,7 @@ function pintarGrilla(el, productos, mensajeVacio) {
       if (producto) agregarAlCarrito(producto, btnAgregar.dataset.color || null);
     });
     card.addEventListener("click", (e) => {
-      if (e.target.closest("button, .dropdown-color, li")) return;
+      if (e.target.closest("button, a, .dropdown-color, li")) return;
       seleccionarCard();
     });
   });
@@ -1913,11 +2079,11 @@ function actualizarVista() {
   categoriasEl.classList.toggle("oculto", !enInicio);
   subNavEl.classList.toggle("oculto", !mostrarSubNav);
   volverBtn.classList.toggle("oculto", enInicio);
-  // El switch de log out (Modo Fallout) solo tiene sentido en el home: al
-  // entrar a una sección los botones de categoría desaparecen y quedaba
-  // como el único control visible en la barra lateral.
-  const switchWrap = document.getElementById("rc-switch-fallout-wrap");
-  if (switchWrap) switchWrap.classList.toggle("oculto", !enInicio);
+  // Los switches (Main Switch / Power Switch, Modo Fallout) solo tienen
+  // sentido en el home: al entrar a una sección los botones de categoría
+  // desaparecen y quedaban como único control visible en la barra lateral.
+  const switchesWrap = document.getElementById("rc-switches-fallout-wrap");
+  if (switchesWrap) switchesWrap.classList.toggle("oculto", !enInicio);
   // Al entrar a una sección (no en el home): el menú de la izquierda queda
   // fijo y el listado de productos de la derecha scrollea solo si no entra
   // en la pantalla. En el home la página entera sigue scrolleando normal.
@@ -1944,7 +2110,7 @@ function actualizarVista() {
   if (filtroMarcaGlobal) {
     base = Object.values(SECCIONES_DATA).flat()
       .filter((p) => (p.marca || "Otras marcas") === filtroMarcaGlobal);
-    mensajeVacioSinFiltro = `Todavía no hay productos de ${filtroMarcaGlobal} cargados.`;
+    mensajeVacioSinFiltro = `Todavía no hay productos de ${etiquetaMarca(filtroMarcaGlobal)} cargados.`;
   } else if (seccionActiva && seccionActiva !== BUSQUEDA_MARCA_CLAVE) {
     base = productosDeSubFiltro(seccionActiva, subFiltrosActivos); // sección sin sub-nav (Gaming) devuelve todo igual
     mensajeVacioSinFiltro = "Todavía no hay productos cargados acá.";

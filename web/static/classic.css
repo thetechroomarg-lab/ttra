@@ -78,6 +78,23 @@ html[data-modo="classic"] .carrousel span:hover {
   font-weight: 800;
 }
 
+/* Logo real de cada marca: mismo alto que el texto que acompaña, así el
+   carrousel y el título de cada card no cambian de tamaño ni se desalinean. */
+html[data-modo="classic"] .marca-logo-carrousel {
+  display: inline-block;
+  height: 16px;
+  width: auto;
+  vertical-align: -3px;
+  margin-right: 7px;
+}
+html[data-modo="classic"] .marca-logo-card {
+  display: inline-block;
+  height: 15px;
+  width: auto;
+  vertical-align: -2px;
+  margin-right: 5px;
+}
+
 /* Sin scanlines ni flicker CRT */
 html[data-modo="classic"] .rc-crt { display: none; }
 
@@ -184,22 +201,25 @@ html[data-modo="classic"] .card.expandida {
   box-shadow: 0 16px 34px -6px rgba(0, 0, 0, 0.45);
 }
 
-/* --- Carrousel de recomendados (reemplaza al Pip-Boy en Modo Classic):
-   3 cards de productos al azar, refrescadas cada 12s ---
+/* --- Carrousel de recomendados (reemplaza al Pip-Boy en Modo Classic, y al
+   Pip-Boy apagado en Modo Fallout, ver landing.css/landing.js):
+   6 cards de productos al azar (2 filas x 3), refrescadas cada 12s ---
    Cada card tiene 4 sub-secciones (etiqueta / título / precios / acciones).
-   El grid padre define esas 4 filas una sola vez, y cada card las hereda
-   con "subgrid": así la fila de precios (y la de acciones) arranca siempre
-   a la misma altura en las 3 cards, sin importar si el título de una
-   ocupa 1 línea y el de otra ocupa 3. */
-html[data-modo="classic"] .carrousel-recomendados-wrap {
-  display: flex; flex-direction: column; height: 100%;
-}
+   El grid padre define esas 4 filas explícitas y cada card las hereda con
+   "subgrid" vía grid-row: span 4; con 6 cards y solo 3 columnas, el grid
+   ubica automáticamente la segunda tanda de 3 en las siguientes 4 filas
+   implícitas, alineando título/precio/acciones dentro de cada fila de 3
+   sin importar el largo del nombre. Mismo gap que la separación entre los
+   botones del menú principal (10px, ver .categorias-columna). Layout
+   compartido por los dos modos (ver .carrousel-recomendados-wrap en
+   landing.css, con height:100% para llegar hasta el borde inferior de la
+   barra lateral). Acá solo quedan los colores propios de Classic. */
 .carrousel-recomendados-grid {
   flex: 1; min-height: 260px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: auto auto auto auto;
-  gap: 12px;
+  gap: 10px;
   opacity: 0;
   transition: opacity .25s ease;
 }
@@ -267,6 +287,13 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
   font-weight: 800;
   color: var(--rc-green-bright);
   align-self: start;
+  /* Sin esto, la card mide distinto en Classic (Nunito) y Fallout (Share
+     Tech Mono): dos fuentes con ancho de letra distinto envuelven el mismo
+     texto en distinta cantidad de líneas. Con tope fijo de 2 líneas, la
+     card mide exactamente igual en ambos modos. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1.1em * 2);
 }
 .tarjeta-recomendado-precio {
   grid-row: 3;

@@ -121,6 +121,17 @@ body.rc-tv-prendiendo {
   transform-origin: 50% 50%;
 }
 
+/* Mismo efecto, pero acotado solo al Pip-Boy (no toda la pantalla): se usa
+   al apagarlo/encenderlo con el power switch, ver landing.js. */
+.pipboy.rc-tv-apagando {
+  animation: rc-tv-power 0.5s cubic-bezier(0.4, 0, 1, 1) forwards;
+  transform-origin: 50% 50%;
+}
+.pipboy.rc-tv-prendiendo {
+  animation: rc-tv-power 0.4s cubic-bezier(0, 0, 0.2, 1) reverse forwards;
+  transform-origin: 50% 50%;
+}
+
 /* --- Terminal look para controles genéricos: bordes cuadrados, sin sombras
    modernas, glow al enfocar/hacer hover --- */
 .rc-crt, .rc-crt * { pointer-events: none; }

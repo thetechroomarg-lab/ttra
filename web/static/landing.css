@@ -142,13 +142,14 @@ html[data-modo="fallout"] #btn-modo-fallout { display: none; }
 #btn-logout-classic { display: none; }
 html[data-modo="classic"] #btn-logout-classic { display: block; }
 
-/* Mensaje de confirmación de log out (look terminal Pip-Boy por default;
-   Modo Classic lo reestiliza en classic.css). Sirve para ambos modos. */
-#rc-logout-msg {
+/* Mensaje de confirmación de log out y diálogo de "¿estás seguro?" previo
+   (look terminal Pip-Boy por default; Modo Classic lo reestiliza en
+   classic.css). Misma clase para los dos overlays, sirve para ambos modos. */
+.rc-logout-overlay {
   position: fixed; inset: 0; z-index: 10020;
   display: none; align-items: center; justify-content: center; padding: 20px;
 }
-#rc-logout-msg.visible { display: flex; }
+.rc-logout-overlay.visible { display: flex; }
 .rc-logout-tarjeta {
   width: 100%; max-width: 360px; text-align: center;
   background: #010601; border: 3px solid var(--rc-green-dim);
@@ -164,6 +165,9 @@ html[data-modo="classic"] #btn-logout-classic { display: block; }
   color: var(--rc-green-bright); border-color: var(--rc-green);
   box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
 }
+/* Diálogo de confirmación: 2 botones lado a lado en vez de 1 solo. */
+.rc-logout-acciones { display: flex; gap: 10px; }
+.rc-logout-acciones button { width: auto; flex: 1; }
 
 @media (max-width: 900px) {
   .rc-noticiero { display: none; }
@@ -180,6 +184,13 @@ html[data-modo="classic"] #btn-logout-classic { display: block; }
   will-change: transform;
 }
 .carrousel-tanda { display: flex; gap: 48px; white-space: nowrap; }
+
+/* Logo real de marca: solo se muestra en Modo Classic (ver classic.css).
+   En Fallout el carrousel y las cards siguen siendo texto, sin cambios. */
+.marca-logo-carrousel, .marca-logo-card {
+  display: none;
+}
+
 .carrousel span {
   font-size: 15px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
   color: var(--rc-green-bright);
@@ -269,7 +280,7 @@ html[data-modo="fallout"] .rc-switch-fallout-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 16px;
   width: 100%;
   margin-top: auto;
   margin-bottom: auto;
@@ -278,6 +289,14 @@ html[data-modo="fallout"] .rc-switch-fallout-wrap {
    los botones de categoría se ocultan y este quedaba como único control.
    (Necesita la misma especificidad que la regla de arriba para ganarle.) */
 html[data-modo="fallout"] .rc-switch-fallout-wrap.oculto { display: none; }
+/* Cada switch (Main Switch arriba, Power Switch abajo) + su placa. */
+.rc-switch-fallout-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
 .rc-switch-fallout {
   display: flex;
   align-items: center;
@@ -347,24 +366,29 @@ html[data-modo="fallout"] .rc-switch-fallout-wrap.oculto { display: none; }
 main#productos { flex: 1; min-width: 0; margin-top: 20px; }
 
 /* Scroll temático (nunca la barra gris nativa) en los contenedores con
-   scroll interno propio: listado de productos, dropdown de color, carrito. */
+   scroll interno propio: listado de productos, dropdown de color, carrito,
+   barra lateral (menú de marcas largo, ver más abajo). */
 main#productos,
+.columna-izquierda,
 .dropdown-color-lista,
 #panel-carrito {
   scrollbar-width: thin;
   scrollbar-color: var(--rc-green-dim) var(--rc-bg-panel);
 }
 main#productos::-webkit-scrollbar,
+.columna-izquierda::-webkit-scrollbar,
 .dropdown-color-lista::-webkit-scrollbar,
 #panel-carrito::-webkit-scrollbar {
   width: 8px;
 }
 main#productos::-webkit-scrollbar-track,
+.columna-izquierda::-webkit-scrollbar-track,
 .dropdown-color-lista::-webkit-scrollbar-track,
 #panel-carrito::-webkit-scrollbar-track {
   background: var(--rc-bg-panel);
 }
 main#productos::-webkit-scrollbar-thumb,
+.columna-izquierda::-webkit-scrollbar-thumb,
 .dropdown-color-lista::-webkit-scrollbar-thumb,
 #panel-carrito::-webkit-scrollbar-thumb {
   background: var(--rc-green-dim);
@@ -372,6 +396,7 @@ main#productos::-webkit-scrollbar-thumb,
   box-shadow: 0 0 6px -1px var(--rc-glow);
 }
 main#productos::-webkit-scrollbar-thumb:hover,
+.columna-izquierda::-webkit-scrollbar-thumb:hover,
 .dropdown-color-lista::-webkit-scrollbar-thumb:hover,
 #panel-carrito::-webkit-scrollbar-thumb:hover {
   background: var(--rc-green);
@@ -391,6 +416,15 @@ main#productos::-webkit-scrollbar-thumb:hover,
   body.rc-vista-seccion .fila-principal {
     min-height: 0;
     overflow: hidden;
+  }
+  /* El menú de la izquierda queda fijo en su lugar (no se mueve con la
+     página), pero si la lista de marcas es larga (ej. Celulares) y no
+     entra en la pantalla, scrollea internamente — si no, el botón "Volver"
+     y las últimas marcas quedaban recortados e inalcanzables. */
+  body.rc-vista-seccion .columna-izquierda {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   /* Un contenedor con overflow-y:auto recorta también en horizontal (el
      navegador fuerza overflow-x a "auto" apenas overflow-y deja de ser
@@ -554,15 +588,62 @@ main#productos::-webkit-scrollbar-thumb:hover,
 .pipboy-esquina.bl { bottom: 6px; left: 6px; border-bottom: 2px solid; border-left: 2px solid; }
 .pipboy-esquina.br { bottom: 6px; right: 6px; border-bottom: 2px solid; border-right: 2px solid; }
 
+/* Layout del carrousel de recomendados, compartido por Classic y por
+   Fallout (cuando el Pip-Boy está apagado). height:100% para llegar hasta
+   el borde inferior real de la barra lateral en cada modo (arriba: borde
+   superior del buscador; abajo: último control de la barra — el switch
+   "LOG OUT" en Fallout, el último botón de categoría en Classic). Con 6
+   cards (2 filas x 3, ver classic.css) en vez de 3, ocupan ese espacio en
+   vez de quedar cortas. */
+.carrousel-recomendados-wrap {
+  position: relative;
+  display: flex; flex-direction: column;
+  height: 100%;
+}
+/* Carrousel de recomendados con temática Fallout: en Classic el acento es
+   rojo Martini (--cl-rojo, ver classic.css); acá, verde fosforescente con el
+   mismo glow de texto que usa el resto de la terminal. Reemplaza al Pip-Boy
+   solo cuando el usuario lo apaga (ver Main Switch en la barra lateral). */
+html[data-modo="fallout"] .tarjeta-recomendado {
+  border-top: 6px solid var(--rc-green);
+  box-shadow: 0 0 10px -2px var(--rc-glow), inset 0 0 10px -4px var(--rc-glow);
+}
+html[data-modo="fallout"] .tarjeta-recomendado-etiqueta {
+  color: var(--rc-green);
+  text-shadow: 0 0 4px var(--rc-glow);
+}
+html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
+  color: var(--rc-green-bright);
+  text-shadow: 0 0 4px var(--rc-glow);
+}
+
 /* El Pip-Boy no tiene una resolución chica que lo haga legible: en vez de
-   forzarlo a adaptarse, en pantallas chicas directamente no se muestra. */
+   forzarlo a adaptarse, en pantallas chicas directamente no se muestra.
+   Ojo: main#productos es el mismo contenedor que las cards de producto al
+   entrar a una categoría (body.rc-vista-seccion), así que el ocultamiento
+   se limita al home — si no, tapaba también el listado de productos. */
 @media (max-width: 700px) {
-  html[data-modo="fallout"] main#productos { display: none; }
+  html[data-modo="fallout"] body:not(.rc-vista-seccion) main#productos { display: none; }
 }
 
 @media (max-width: 700px) {
   .fila-principal { flex-direction: column; }
   .columna-izquierda { flex: 1 1 auto; max-width: none; }
+}
+
+/* En mobile las cards ocupan casi todo el ancho de la pantalla, así que el
+   pop (crecimiento por transform: scale) al seleccionarlas no tiene margen
+   y se corta contra el borde de la pantalla. Se angostan un poco (padding
+   lateral en el contenedor) para dejarle aire al pop, y el pop de Cards se
+   hace más leve (igual que ya era en vista Lista) para no necesitar un
+   padding excesivo. */
+@media (max-width: 700px) {
+  body.rc-vista-seccion main#productos {
+    padding: 0 46px 24px 46px;
+  }
+  .card.expandida {
+    transform: scale(1.1);
+  }
 }
 
 .control-vista { display: flex; gap: 8px; margin-bottom: 10px; }
@@ -588,6 +669,24 @@ main#productos::-webkit-scrollbar-thumb:hover,
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; line-height: 1.3; min-height: calc(1.3em * 2);
   cursor: var(--rc-cursor-mira);
+}
+
+/* Botón de foto (ícono de cámara): abre una búsqueda de Google Imágenes del
+   producto en una pestaña nueva. Va dentro del párrafo de precios, en su
+   propia línea justo debajo de "transferencia" (un <br> antes en el HTML
+   lo empuja a esa línea), así nunca se superpone a ningún otro texto. */
+.btn-foto {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 6px;
+  width: 26px; height: 26px; flex-shrink: 0; padding: 0;
+  background: none; border: none; color: var(--rc-green-dim);
+  cursor: var(--rc-cursor-mira);
+  transition: color .15s ease, filter .15s ease;
+}
+.btn-foto svg { width: 26px; height: 26px; }
+.btn-foto:hover {
+  color: var(--rc-green-bright);
+  filter: drop-shadow(0 0 4px var(--rc-glow));
 }
 /* Título truncado por lo largo del nombre: un click en la card lo muestra
    completo, agrandando la card (crece de verdad, el grid/lista reacomoda
