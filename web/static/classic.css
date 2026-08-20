@@ -53,9 +53,14 @@ html[data-modo="classic"][data-tema="oscuro"] {
   --rc-halo-seleccion-glow-suave: rgba(217, 217, 217, 0.22);
 }
 /* Colores que no pasan por ninguna variable de arriba (hover states y
-   fondos puntuales escritos a mano en las reglas de más abajo). */
-html[data-modo="classic"][data-tema="oscuro"] .carrousel span:hover {
-  color: var(--rc-green-bright);
+   fondos puntuales escritos a mano en las reglas de más abajo). En oscuro,
+   ninguno de estos dos hover cambia el color del texto (a pedido: con el
+   fondo ya oscuro, "negro" o cualquier color fijo quedaba invisible o
+   raro) — el propio movimiento/subrayado/negrita del botón ya avisa que
+   hay interacción, no hace falta tocar el texto. */
+html[data-modo="classic"][data-tema="oscuro"] .carrousel span:hover,
+html[data-modo="classic"][data-tema="oscuro"] .btn-categoria:hover {
+  color: inherit;
 }
 html[data-modo="classic"][data-tema="oscuro"] .card.expandida {
   border-color: var(--rc-green-dim);
@@ -235,6 +240,12 @@ html[data-modo="classic"] input:focus,
 html[data-modo="classic"] textarea:focus,
 html[data-modo="classic"] select:focus {
   box-shadow: 0 0 0 3px rgba(0, 170, 240, 0.25);
+}
+/* El buscador ya tiene su propio marco (border+box-shadow del contenedor
+   .rc-buscador) — el input de adentro no necesita este anillo de foco
+   genérico encima (se veía como un rectángulo de más al escribir). */
+html[data-modo="classic"] .rc-buscador input:focus {
+  box-shadow: none !important;
 }
 
 /* Logo: tipografía redondeada, blanca y en negrita, sin la carita animada */
