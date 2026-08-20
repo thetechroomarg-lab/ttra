@@ -39,6 +39,34 @@
   });
 })();
 
+// --- Toggle claro/oscuro de Modo Classic (sol/luna, ver btn-tema-classic
+// en el header). Independiente de modoVisual: el atributo se guarda igual
+// en Fallout (no se ve, la regla de dark mode está scopeada a
+// html[data-modo="classic"]), así que si el usuario ya eligió oscuro,
+// vuelve a verlo al volver a Classic sin tener que tocarlo de nuevo. ---
+(function () {
+  const btn = document.getElementById("btn-tema-classic");
+  let tema = "claro";
+  try {
+    tema = localStorage.getItem("rc-tema-classic") === "oscuro" ? "oscuro" : "claro";
+  } catch {
+    // Sin localStorage, siempre arranca en claro: no es crítico.
+  }
+  function aplicarTema(nuevoTema) {
+    tema = nuevoTema;
+    document.documentElement.setAttribute("data-tema", tema);
+    if (btn) {
+      btn.setAttribute("aria-label", tema === "oscuro" ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
+      btn.setAttribute("title", tema === "oscuro" ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
+    }
+    try { localStorage.setItem("rc-tema-classic", tema); } catch {
+      // No persiste entre visitas sin localStorage: no es crítico.
+    }
+  }
+  aplicarTema(tema);
+  if (btn) btn.addEventListener("click", () => aplicarTema(tema === "oscuro" ? "claro" : "oscuro"));
+})();
+
 // --- Beep sutil estilo computadora vieja, en cada interacción con la web ---
 
 let audioCtxInteraccion;
@@ -159,7 +187,11 @@ let modoVista = "cards"; // "cards" | "lista"
 let ordenPrecio = null; // null (sin orden) | "asc" | "desc"
 // Classic es siempre el modo de arranque (ver boot.js); Fallout solo dura
 // mientras no se recarga la página, no se persiste entre refrescos.
-let modoVisual = "classic";
+// Atajo de desarrollo: ?modo=fallout en la URL arranca directo en Fallout
+// SIN el boot sequence (aplicarModoVisual no lo dispara por sí solo, solo
+// el click en el botón lo envuelve con la animación), para poder iterar
+// sobre cambios de Fallout sin pasar por Classic cada vez.
+let modoVisual = new URLSearchParams(location.search).get("modo") === "fallout" ? "fallout" : "classic";
 
 // Fotos decorativas de la ciudad, solo visibles en la pantalla principal.
 // Cada archivo se muestra dentro de una "tarjeta" tipo terminal (ver
@@ -1156,6 +1188,31 @@ function fraseTriangulandoAlAzar() {
   return FRASES_TRIANGULANDO[Math.floor(Math.random() * FRASES_TRIANGULANDO.length)];
 }
 
+// Convierte "31°25'18\"S 64°11'42\"O" (grados/minutos/segundos, con o sin
+// segundos, y el "(APROX.)" que algunas entradas tienen al final) a
+// {lat, lng} decimal. Devuelve null si el texto no matchea el formato (ej.
+// "PENDIENTE DE TRIANGULACIÓN" del default), para no ofrecer un link roto.
+function parseCoordenadasDMS(texto) {
+  const regex = /(\d+)\s*°\s*(\d+)'(?:\s*(\d+(?:\.\d+)?)")?\s*([NSEOnseo])/g;
+  const matches = [...texto.matchAll(regex)];
+  if (matches.length < 2) return null;
+  const aDecimal = ([, gStr, mStr, sStr, hemisferio]) => {
+    const decimal = Number(gStr) + Number(mStr) / 60 + (sStr ? Number(sStr) / 3600 : 0);
+    return /[SOso]/.test(hemisferio) ? -decimal : decimal;
+  };
+  return { lat: aDecimal(matches[0]), lng: aDecimal(matches[1]) };
+}
+
+// Coordenadas interactivas: un click en el texto lleva a ese punto exacto
+// en Google Maps. Vale para cualquier imagen de cualquier lugar del país,
+// no hace falta tocar nada por ciudad: sale de parsear datos.coordenadas.
+function coordenadasHtml(coordenadasTexto) {
+  const coords = parseCoordenadasDMS(coordenadasTexto);
+  if (!coords) return escapeHtml(coordenadasTexto);
+  const url = `https://www.google.com/maps?q=${coords.lat.toFixed(6)},${coords.lng.toFixed(6)}`;
+  return `<a class="pipboy-coordenadas-link" href="${escapeHtml(url)}" target="_blank" rel="noopener" title="Ver ubicación en el mapa">${escapeHtml(coordenadasTexto)}</a>`;
+}
+
 function tarjetaLugarHtml(src) {
   const datos = DATOS_LUGARES[claveDesdeArchivo(src)] || DATOS_LUGAR_DEFAULT;
   const nombre = nombreDesdeArchivo(src);
@@ -1171,7 +1228,7 @@ function tarjetaLugarHtml(src) {
         <div class="pipboy-campos">
           <div><b>CONSTRUCCIÓN:</b> ${escapeHtml(datos.construccion)}</div>
           <div><b>ESTILO:</b> ${escapeHtml(datos.estilo)}</div>
-          <div><b>COORDENADAS:</b> ${escapeHtml(datos.coordenadas)}</div>
+          <div><b>COORDENADAS:</b> ${coordenadasHtml(datos.coordenadas)}</div>
           <div><b>ESTADO:</b> ${escapeHtml(datos.estado)}</div>
           <div><b>IMPORTANCIA:</b> ${escapeHtml(datos.importancia)}</div>
         </div>
@@ -1266,6 +1323,12 @@ function pintarCarrouselCiudad(el) {
     el.innerHTML = "";
     return;
   }
+  // "auto" explícito (no "", vacío) porque #productos ahora también tiene
+  // una regla CSS de height:100% (ver el media query "no scroll" en
+  // landing.css): con "" la cascada caía en esa regla en vez de en el alto
+  // natural, y la medición de acá abajo quedaba corta — cortando los puntos
+  // del selector de fotos por debajo del borde del Pip-Boy.
+  el.style.height = "auto";
   el.innerHTML = `
     <div class="carrousel-ciudad-wrap">
       <div class="carrousel-ciudad">
@@ -1275,6 +1338,10 @@ function pintarCarrouselCiudad(el) {
     </div>
   `;
   pintarPuntosCiudad(el);
+  requestAnimationFrame(() => {
+    alturaPipboyHomePx = el.getBoundingClientRect().height;
+    el.style.height = `${alturaPipboyHomePx}px`;
+  });
   if (IMAGENES_CIUDAD.length <= 1) return;
   intervaloCiudad = setInterval(() => avanzarFotoCiudadAlAzar(el), 20000);
 }
@@ -1314,7 +1381,7 @@ function tarjetaRecomendadoHtml(p) {
         <strong>U$D ${p.usd ?? "-"}</strong>
         <span>$ ${formatearPesos(p.pesos)} contado</span>
         <span>$ ${formatearPesos(p.transferencia)} transferencia</span>
-        ${botonFotoHtml(p)}
+        <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}</span>
       </p>
       <div class="tarjeta-recomendado-acciones">
         <div class="dropdown-color">
@@ -1391,6 +1458,28 @@ function iniciarCicloRecomendados(el) {
 }
 
 function pintarCarrouselRecomendados(el) {
+  if (modoVisual === "fallout" && alturaPipboyHomePx) {
+    // Fallout con el Pip-Boy apagado: mismo alto que tenía prendido (ver
+    // alturaPipboyHomePx), así apagarlo no mueve nada de la columna
+    // izquierda (switches/reproductor).
+    el.style.height = `${alturaPipboyHomePx}px`;
+  } else {
+    // Classic (o Fallout antes de medir el Pip-Boy alguna vez): el borde
+    // inferior de la columna izquierda ES el límite — el diseño manda que
+    // el carrousel llegue exactamente hasta el borde inferior real de la
+    // barra lateral (último botón de categoría/Búsqueda por Marca), ni un
+    // pixel más. Ojo: NO alcanza con igualar alturas (columnaIzquierda.height
+    // == el.height) porque main#productos tiene margin-top:20px y
+    // columna-izquierda no — con la misma altura pero arrancando 20px más
+    // abajo, el carrousel terminaba 20px más abajo también, pisando el
+    // footer. Restando el "top" real de acá (que ya incluye ese margin) se
+    // obtiene el alto exacto para que ambos bordes inferiores coincidan.
+    const columnaIzquierda = document.querySelector(".columna-izquierda");
+    const altura = columnaIzquierda
+      ? columnaIzquierda.getBoundingClientRect().bottom - el.getBoundingClientRect().top
+      : 0;
+    el.style.height = altura > 0 ? `${altura}px` : "";
+  }
   el.innerHTML = `
     <div class="carrousel-recomendados-wrap">
       <div class="carrousel-recomendados-grid visible">${tarjetasRecomendadosHtml()}</div>
@@ -1460,6 +1549,139 @@ if (btnPipboySwitch) {
   });
 }
 
+// Botón "Play Music": sin panel visible, controlado por la IFrame API
+// oficial de Spotify (developer.spotify.com/documentation/embeds), que sí
+// soporta .play()/.pause() por código ante un click real — a mano, armando
+// la URL con "?autoplay=1", Spotify simplemente lo ignora y no suena.
+//
+// Ojo con el gesto del usuario: el navegador solo deja sonar audio si
+// .play() se llama DENTRO del propio click (mismo tick). Si el usuario
+// clickeaba antes de que el script async de Spotify terminara de cargar,
+// quedaba pendiente y el .play() se disparaba después, ya sin el gesto
+// activo — el navegador lo bloqueaba en silencio. Por eso el botón arranca
+// deshabilitado y solo se habilita con el evento "ready" del controller
+// (no alcanza con que exista el controller: el player interno todavía
+// puede no estar listo), garantizando que el click siempre dispare
+// .play() de una, con el gesto todavía válido.
+// La API oficial de Spotify no tiene salto de pista (solo
+// play/pause/resume/togglePlay/restart/seek(segundos)/loadUri — confirmado
+// contra developer.spotify.com/documentation/embeds/references/iframe-api).
+// FF/RW simulan "siguiente/anterior" cargando a mano el track puntual (con
+// loadUri) de esta lista fija, en el mismo orden de la playlist de Spotify.
+const SPOTIFY_PLAYLIST_URI = "spotify:playlist:5RI1Q9tVzZkQInxpYmrARl";
+const TRACKS_PLAYLIST = [
+  "spotify:track:777zXDJpBufzttU4AJ2dGO",
+  "spotify:track:5RLzsVW6UNiV2YrOlKwzNN",
+  "spotify:track:6njnfScNr2pZuIdl0NcpEr",
+  "spotify:track:5DTOOkooKFUvWj1XQTFa09",
+  "spotify:track:1VttkRYAvi1036Fz0aOhWL",
+  "spotify:track:0AQquaENerGps8BQmbPw14",
+  "spotify:track:7coH7f2P7SiLxmo95b5QHX",
+  "spotify:track:0wAtFj61WZQpKX3g79eyT2",
+  "spotify:track:2xYlyywNgefLCRDG8hlxZq",
+  "spotify:track:39tCr7Wn7yhgM15JUJmXWl",
+  "spotify:track:0lWeRB7pSOZ6wIpqY1W4Uw",
+];
+const DOBLE_TOQUE_RW_MS = 500;
+const btnPlayMusic = document.getElementById("btn-play-music");
+const btnMusicaRw = document.getElementById("btn-musica-rw");
+const btnMusicaFf = document.getElementById("btn-musica-ff");
+let spotifyController = null;
+let musicaSonando = false;
+let posicionActualMs = 0;
+let duracionActualMs = 0;
+let indiceTrackActual = 0;
+let ultimoToqueRwMs = 0;
+
+[btnPlayMusic, btnMusicaRw, btnMusicaFf].forEach((b) => { if (b) b.disabled = true; });
+
+window.onSpotifyIframeApiReady = (IFrameAPI) => {
+  const elemento = document.getElementById("rc-musica-embed");
+  if (!elemento) return;
+  IFrameAPI.createController(elemento, { uri: SPOTIFY_PLAYLIST_URI }, (EmbedController) => {
+    spotifyController = EmbedController;
+    EmbedController.addListener("ready", () => {
+      [btnPlayMusic, btnMusicaRw, btnMusicaFf].forEach((b) => { if (b) b.disabled = false; });
+    });
+    // Refleja el estado real de reproducción (en vez de asumirlo nosotros),
+    // por si el usuario para/sigue la música desde otro lado, y guarda la
+    // posición actual para que RW/FF puedan calcular el segundo destino.
+    // playingURI, además, es lo único que nos deja mantener sincronizado
+    // indiceTrackActual con el tema real (por si la playlist no arranca
+    // por el primero de TRACKS_PLAYLIST).
+    EmbedController.addListener("playback_update", (e) => {
+      musicaSonando = !e.data.isPaused;
+      posicionActualMs = e.data.position;
+      duracionActualMs = e.data.duration;
+      const idx = TRACKS_PLAYLIST.indexOf(e.data.playingURI);
+      if (idx !== -1) indiceTrackActual = idx;
+      if (btnPlayMusic) btnPlayMusic.classList.toggle("sonando", musicaSonando);
+      const ecualizadorEl = document.querySelector(".rc-ecualizador");
+      if (ecualizadorEl) ecualizadorEl.classList.toggle("sonando", musicaSonando);
+    });
+  });
+};
+
+if (btnPlayMusic) {
+  btnPlayMusic.addEventListener("click", () => {
+    if (!spotifyController) return;
+    if (musicaSonando) spotifyController.pause();
+    else spotifyController.play();
+  });
+}
+
+function cargarTrack(indice) {
+  indiceTrackActual = ((indice % TRACKS_PLAYLIST.length) + TRACKS_PLAYLIST.length) % TRACKS_PLAYLIST.length;
+  spotifyController.loadUri(TRACKS_PLAYLIST[indiceTrackActual]);
+  spotifyController.play();
+}
+
+// RW: un toque reinicia el tema actual (como el back de cualquier
+// reproductor); un segundo toque rápido (antes de DOBLE_TOQUE_RW_MS) pasa
+// al tema anterior en vez de reiniciar de nuevo.
+if (btnMusicaRw) {
+  btnMusicaRw.addEventListener("click", () => {
+    if (!spotifyController) return;
+    const ahora = Date.now();
+    if (ahora - ultimoToqueRwMs < DOBLE_TOQUE_RW_MS) {
+      cargarTrack(indiceTrackActual - 1);
+    } else {
+      spotifyController.restart();
+    }
+    ultimoToqueRwMs = ahora;
+  });
+}
+if (btnMusicaFf) {
+  btnMusicaFf.addEventListener("click", () => {
+    if (!spotifyController) return;
+    cargarTrack(indiceTrackActual + 1);
+  });
+}
+
+// Visor del botón de música: no leemos el track real de Spotify (haría
+// falta autenticar contra su API, fuera de alcance acá), así que es un
+// detalle ambiente como el ecualizador — clásicos instrumentales de jazz,
+// rotando cada tanto, en crawl continuo (2 copias del texto + loop -50%).
+const CLASICOS_JAZZ_INSTRUMENTAL = [
+  "Miles Davis — Blue in Green",
+  "Bill Evans Trio — Waltz for Debby",
+  "John Coltrane — Naima",
+  "Dave Brubeck — Take Five",
+  "Chet Baker — My Funny Valentine",
+  "Thelonious Monk — Round Midnight",
+  "Duke Ellington — In a Sentimental Mood",
+  "Stan Getz & João Gilberto — Corcovado",
+];
+
+function pintarVisorMusica() {
+  const visor = document.getElementById("rc-visor-texto");
+  if (!visor) return;
+  const texto = CLASICOS_JAZZ_INSTRUMENTAL[Math.floor(Math.random() * CLASICOS_JAZZ_INSTRUMENTAL.length)];
+  visor.innerHTML = `<span>${escapeHtml(texto)}</span><span>${escapeHtml(texto)}</span>`;
+}
+pintarVisorMusica();
+setInterval(pintarVisorMusica, 25000);
+
 // El favicon cambia junto con el modo: monograma navy/rojo en Classic,
 // verde fósforo estilo Pip-Boy en Fallout.
 function actualizarFavicon(modo) {
@@ -1476,14 +1698,12 @@ function aplicarModoVisual(modo, opciones) {
     b.classList.toggle("activo", b.dataset.modo === modo);
   });
   actualizarFavicon(modo);
+  // La música (si estaba sonando) sigue de fondo al navegar por secciones
+  // dentro de Fallout — el iframe de Spotify vive fuera de #productos, así
+  // que no se toca al repintar la vista. Solo se corta acá, al pasar a
+  // Classic (ese modo no tiene reproductor ni forma de controlarla).
+  if (modo === "classic" && spotifyController && musicaSonando) spotifyController.pause();
   if (opts.sinRepintar) return;
-  // pintarFrasePie está definida más abajo en el archivo (function declaration,
-  // hoisted) pero usa FRASES_FALLOUT/FRASES_LATINOAMERICANAS (const, con TDZ):
-  // solo es seguro llamarla acá porque este tramo nunca corre durante la
-  // ejecución inicial del script (esa pasa por sinRepintar:true y ya retornó
-  // arriba), sino recién ante un click del usuario, bien después de que todo
-  // el archivo terminó de ejecutarse.
-  pintarFrasePie();
   const carrouselMarcasEl = document.getElementById("carrousel");
   if (carrouselMarcasEl) iniciarDesplazamientoCarrousel(carrouselMarcasEl);
   // Cambiar de modo siempre vuelve al home: lo único que persiste entre
@@ -1751,13 +1971,21 @@ function iniciarDesplazamientoCarrousel(el) {
     return;
   }
 
-  const primeraTanda = el.querySelector(".carrousel-tanda");
+  const tandas = el.querySelectorAll(".carrousel-tanda");
+  const primeraTanda = tandas[0];
   let posicion = 0;
   let anchoTanda = 0;
 
+  // Ground truth: la distancia real entre el inicio de la 2da tanda y el de
+  // la 1ra (offsetLeft, no depende de parsear "gap" por getComputedStyle,
+  // que en algunos navegadores lo devuelve vacío para flex y desincroniza
+  // el punto de reinicio — eso era el glitch/blanco después de la última
+  // marca de cada tanda). Como las dos tandas son un copy-paste exacto del
+  // mismo HTML, esa distancia es exactamente el período del loop.
   function medirAncho() {
-    const estilo = getComputedStyle(el);
-    anchoTanda = primeraTanda.getBoundingClientRect().width + parseFloat(estilo.gap || "48");
+    anchoTanda = tandas.length > 1
+      ? tandas[1].offsetLeft - tandas[0].offsetLeft
+      : primeraTanda.getBoundingClientRect().width;
   }
 
   function paso() {
@@ -1776,9 +2004,18 @@ function iniciarDesplazamientoCarrousel(el) {
     intervaloMarcas = setInterval(paso, 60);
   }
 
-  const listoParaMedir = document.fonts && document.fonts.ready
-    ? document.fonts.ready
-    : Promise.resolve();
+  // Espera tipografía Y logos (Modo Classic) antes de la primera medición:
+  // un <img> de marca sin decodificar todavía puede rendir con otro ancho
+  // y desalinear igual el punto de reinicio.
+  const imagenesListas = Promise.all(
+    Array.from(el.querySelectorAll("img")).map((img) =>
+      img.decode ? img.decode().catch(() => {}) : Promise.resolve()
+    )
+  );
+  const listoParaMedir = Promise.all([
+    document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve(),
+    imagenesListas,
+  ]);
   listoParaMedir.then(iniciar);
 
   resizeHandlerMarcas = () => {
@@ -1808,10 +2045,36 @@ function botonFotoHtml(p) {
   return `<a class="btn-foto" href="${escapeHtml(p.link_imagen)}" target="_blank" rel="noopener" title="Ver fotos en Google Imágenes" aria-label="Ver fotos en Google Imágenes">${ICONO_CAMARA_SVG}</a>`;
 }
 
+// Ícono de especificaciones (SVG, no emoji): a la derecha del de cámara,
+// misma fila. Busca el producto en Google agregando siempre la palabra
+// "especificaciones", para ir directo a fichas técnicas en vez de una
+// búsqueda genérica del nombre.
+const ICONO_ESPECIFICACIONES_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect x="5" y="4" width="14" height="16" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+  <line x1="8" y1="8.5" x2="16" y2="8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="8" y1="15.5" x2="13" y2="15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</svg>`;
+
+function botonEspecificacionesHtml(p) {
+  const url = `https://www.google.com/search?q=${encodeURIComponent(`${p.nombre} especificaciones`)}`;
+  return `<a class="btn-foto" href="${escapeHtml(url)}" target="_blank" rel="noopener" title="Ver especificaciones en Google" aria-label="Ver especificaciones en Google">${ICONO_ESPECIFICACIONES_SVG}</a>`;
+}
+
 // true mientras el usuario apagó el Pip-Boy manualmente (ver Main Switch,
 // #btn-pipboy-switch). Se reinicia a false cada vez que se entra a Fallout
 // (ver aplicarModoVisual), así siempre arranca encendido.
 let pipboyApagado = false;
+
+// Alto (px) que ocupa #productos con el Pip-Boy encendido, medido apenas se
+// pinta. El carrousel de recomendados (6 cards, 2 filas) es naturalmente más
+// alto que el Pip-Boy: si se lo deja crecer libremente, la fila entera crece
+// con align-items:stretch y arrastra hacia abajo los switches/reproductor de
+// la columna izquierda (que se centran en el espacio libre de esa columna).
+// Fijando este alto en #productos en los dos estados, la fila nunca cambia
+// de tamaño al apagar/prender, así los controles quedan siempre donde están
+// con el Pip-Boy encendido.
+let alturaPipboyHomePx = null;
 
 function pintarCategorias() {
   const el = document.getElementById("categorias");
@@ -1948,7 +2211,7 @@ function tarjetaProducto(p) {
         <strong>U$D ${p.usd ?? "-"}</strong><br>
         $ ${formatearPesos(p.pesos)} contado<br>
         $ ${formatearPesos(p.transferencia)} transferencia<br>
-        ${botonFotoHtml(p)}
+        ${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}
       </p>
       <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="" type="button" disabled>Agregar al carrito</button>
     </div>
@@ -2095,6 +2358,9 @@ function actualizarVista() {
     pintarCarrouselSegunModo(productosEl);
     return;
   }
+  // Fuera del home el alto fijo del Pip-Boy no aplica (acá va el listado de
+  // productos, con su propio alto real).
+  productosEl.style.height = "";
 
   if (mostrarSubNav) {
     pintarSubNav(seccionActiva);
@@ -2441,41 +2707,6 @@ document.getElementById("btn-whatsapp").addEventListener("click", () => {
 document.getElementById("btn-volver").addEventListener("click", volverUnPaso);
 document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);
 document.getElementById("input-busqueda").addEventListener("input", actualizarVista);
-
-// --- Frase del pie: Fallout en Modo Fallout, figuras históricas
-// latinoamericanas en Modo Classic ---
-
-const FRASES_FALLOUT = [
-  { texto: "La guerra. La guerra nunca cambia.", autor: "El Narrador", fuente: "Fallout" },
-  { texto: "¡La libertad prevalecerá!", autor: "Liberty Prime", fuente: "Fallout 3" },
-  { texto: "Ad Victoriam.", autor: "Hermandad del Acero", fuente: "Fallout 4" },
-  { texto: "Prepárate para el futuro... ¡hoy!", autor: "Vault-Tec", fuente: "Fallout" },
-  { texto: "¡Habla Three Dog, estás escuchando Radio Galaxia!", autor: "Three Dog", fuente: "Fallout 3" },
-  { texto: "¡Por la República!", autor: "Soldado de la NCR", fuente: "Fallout: New Vegas" },
-];
-
-const FRASES_LATINOAMERICANAS = [
-  { texto: "Un pueblo ignorante es un instrumento ciego de su propia destrucción.", autor: "Simón Bolívar", fuente: "Venezuela" },
-  { texto: "Patria es humanidad.", autor: "José Martí", fuente: "Cuba" },
-  { texto: "Hasta la victoria siempre.", autor: "Ernesto Che Guevara", fuente: "Argentina" },
-  { texto: "Seamos libres, lo demás no importa nada.", autor: "José de San Martín", fuente: "Argentina" },
-  { texto: "¡Tierra y Libertad!", autor: "Emiliano Zapata", fuente: "México" },
-  { texto: "La libertad no se mendiga, se conquista con el filo de la espada.", autor: "Simón Bolívar", fuente: "Venezuela" },
-  { texto: "No hay libertad pequeña ni tirano grande.", autor: "Simón Bolívar", fuente: "Venezuela" },
-  { texto: "Yo no vine a la Revolución a hacerme rico, vine a luchar por mis ideales.", autor: "Francisco Villa", fuente: "México" },
-];
-
-function pintarFrasePie() {
-  const el = document.getElementById("pie-frase");
-  if (!el) return;
-  const lista = modoVisual === "classic" ? FRASES_LATINOAMERICANAS : FRASES_FALLOUT;
-  const horaBucket = Math.floor(Date.now() / (60 * 60 * 1000));
-  const frase = lista[horaBucket % lista.length];
-  el.textContent = `"${frase.texto}" -- ${frase.autor} (${frase.fuente})`;
-}
-
-pintarFrasePie();
-setInterval(pintarFrasePie, 60 * 60 * 1000);
 
 // --- Carita animada de caracteres, junto al título ---
 

@@ -27,6 +27,62 @@ html[data-modo="classic"] {
   --rc-cursor-mira: pointer;
 }
 
+/* Modo oscuro de Classic (toggle sol/luna en el header, ver
+   btn-tema-classic en landing.js): mismas variables de acá arriba,
+   redefinidas a tonos de gris puro (sin rojo/navy/amarillo) para más fácil
+   lectura. Como casi todo Classic ya se apoya en estas variables en vez de
+   colores sueltos, esto solo alcanza para repintar todo el modo sin tocar
+   ningún tamaño/layout — lo que queda abajo son los pocos colores que
+   estaban escritos a mano (no vía variable) y necesitan su propio
+   override puntual. */
+html[data-modo="classic"][data-tema="oscuro"] {
+  --rc-bg: #1a1a1a;
+  --rc-bg-panel: #262626;
+  --rc-bg-panel-2: #313131;
+  --rc-green: #e6e6e6;
+  --rc-green-bright: #ffffff;
+  --rc-green-dim: #a8a8a8;
+  --rc-green-faint: #3a3a3a;
+  --rc-glow: rgba(255, 255, 255, 0.12);
+  --cl-rojo: #9e9e9e;
+  --cl-crema: #f2f2f2;
+  --cl-azul-francia: #101010;
+  --cl-amarillo-huevo: #cfcfcf;
+  --rc-halo-seleccion: #d9d9d9;
+  --rc-halo-seleccion-glow: rgba(217, 217, 217, 0.35);
+  --rc-halo-seleccion-glow-suave: rgba(217, 217, 217, 0.22);
+}
+/* Colores que no pasan por ninguna variable de arriba (hover states y
+   fondos puntuales escritos a mano en las reglas de más abajo). */
+html[data-modo="classic"][data-tema="oscuro"] .carrousel span:hover {
+  color: var(--rc-green-bright);
+}
+html[data-modo="classic"][data-tema="oscuro"] .card.expandida {
+  border-color: var(--rc-green-dim);
+  box-shadow: 0 16px 34px -6px rgba(0, 0, 0, 0.6);
+}
+html[data-modo="classic"][data-tema="oscuro"] input:focus,
+html[data-modo="classic"][data-tema="oscuro"] textarea:focus,
+html[data-modo="classic"][data-tema="oscuro"] select:focus {
+  box-shadow: 0 0 0 3px rgba(230, 230, 230, 0.3);
+}
+html[data-modo="classic"][data-tema="oscuro"] #btn-logout-classic:hover,
+html[data-modo="classic"][data-tema="oscuro"] .rc-logout-tarjeta button:hover {
+  background: #000000;
+}
+/* Los logos de marca son archivos SVG con su propio color fijo (negro por
+   default, ver /logos/*.svg) — no toman color por CSS al ir en <img>. En
+   oscuro, sobre fondos ahora grises/negros, quedaban invisibles: este
+   filtro los vuelve blancos sea cual sea su color original (brightness:0
+   los deja negro sólido, invert:1 lo pasa a blanco sólido). */
+html[data-modo="classic"][data-tema="oscuro"] .marca-logo-carrousel,
+html[data-modo="classic"][data-tema="oscuro"] .marca-logo-card {
+  filter: brightness(0) invert(1);
+}
+html[data-modo="classic"][data-tema="oscuro"] .rc-logout-tarjeta {
+  background: var(--rc-bg-panel);
+}
+
 html[data-modo="classic"] header {
   background: var(--cl-azul-francia);
 }
@@ -89,9 +145,13 @@ html[data-modo="classic"] .marca-logo-carrousel {
 }
 html[data-modo="classic"] .marca-logo-card {
   display: inline-block;
-  height: 15px;
+  /* 1em (no un px fijo): hereda el font-size real del título que acompaña
+     en cada contexto (.card h3 son 15px, .tarjeta-recomendado h3 varía por
+     clamp) y siempre queda del mismo alto que esa fuente, sin importar
+     cuál título sea ni si su tamaño cambia más adelante. */
+  height: 1em;
   width: auto;
-  vertical-align: -2px;
+  vertical-align: -0.15em;
   margin-right: 5px;
 }
 
@@ -215,7 +275,15 @@ html[data-modo="classic"] .card.expandida {
    landing.css, con height:100% para llegar hasta el borde inferior de la
    barra lateral). Acá solo quedan los colores propios de Classic. */
 .carrousel-recomendados-grid {
-  flex: 1; min-height: 260px;
+  /* min-height:0 (no un piso fijo): sin esto, un flex item con
+     grid-template-rows:auto no puede achicarse por debajo del alto natural
+     de sus 2 filas de cards — así, si esa altura no entraba en el espacio
+     libre arriba del footer, la grilla lo desbordaba igual (las cards se
+     veían "gigantes" y tapaban el borde del footer). overflow-y:auto acá
+     abajo es la red de seguridad si de verdad no entra: scrollea adentro
+     de la caja, nunca se mete debajo del footer. */
+  flex: 1; min-height: 0;
+  overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: auto auto auto auto;
@@ -224,14 +292,19 @@ html[data-modo="classic"] .card.expandida {
   transition: opacity .25s ease;
 }
 .carrousel-recomendados-grid.visible { opacity: 1; }
+/* Padding/gap/fuentes recortados a propósito (ver comentario de
+   .carrousel-recomendados-grid más arriba): esta card entra 2 veces (2
+   filas x 3) en el mismo alto que ocupa la barra lateral, así que no puede
+   usar el tamaño "normal" de una card de catálogo — si no, no entraba y
+   quedaba con scroll interno (lo que se pidió evitar del todo). */
 .tarjeta-recomendado {
   position: relative;
   grid-row: span 4;
   display: grid;
   grid-template-rows: subgrid;
-  row-gap: 10px;
+  row-gap: 4px;
   align-items: start;
-  padding: 22px 20px;
+  padding: 12px 14px;
   background: var(--rc-bg-panel);
   border: none;
   border-top: 6px solid var(--cl-rojo);
@@ -240,7 +313,7 @@ html[data-modo="classic"] .card.expandida {
 }
 .tarjeta-recomendado-etiqueta {
   grid-row: 1;
-  font-size: 15px; font-weight: 800; letter-spacing: .06em;
+  font-size: 12px; font-weight: 800; letter-spacing: .06em;
   color: var(--cl-rojo);
   text-transform: uppercase;
 }
@@ -282,8 +355,8 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
 .tarjeta-recomendado h3 {
   grid-row: 2;
   margin: 0;
-  font-size: clamp(24px, 3vw, 32px);
-  line-height: 1.1;
+  font-size: clamp(14px, 1.3vw, 17px);
+  line-height: 1.15;
   font-weight: 800;
   color: var(--rc-green-bright);
   align-self: start;
@@ -293,21 +366,21 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
      card mide exactamente igual en ambos modos. */
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: calc(1.1em * 2);
+  min-height: calc(1.15em * 2);
 }
 .tarjeta-recomendado-precio {
   grid-row: 3;
-  margin: 0; display: flex; flex-direction: column; gap: 3px;
+  margin: 0; display: flex; flex-direction: column; gap: 1px;
   align-self: start;
 }
-.tarjeta-recomendado-precio strong { font-size: 26px; font-weight: 800; color: var(--cl-rojo); }
-.tarjeta-recomendado-precio span { font-size: 16px; font-weight: 600; color: var(--rc-green-bright); opacity: .8; }
+.tarjeta-recomendado-precio strong { font-size: 18px; font-weight: 800; color: var(--cl-rojo); }
+.tarjeta-recomendado-precio span { font-size: 12px; font-weight: 600; color: var(--rc-green-bright); opacity: .8; }
 
 /* Elegir color + Agregar al carrito: ocultos hasta hacer hover sobre la card */
 .tarjeta-recomendado-acciones {
   grid-row: 4;
   align-self: start;
-  display: flex; gap: 8px; align-items: center; margin-top: 4px;
+  display: flex; gap: 8px; align-items: center; margin-top: 2px;
   opacity: 0; pointer-events: none;
   transition: opacity .18s ease;
 }
@@ -315,8 +388,8 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
   opacity: 1; pointer-events: auto;
 }
 .tarjeta-recomendado-acciones .dropdown-color { flex: 1; min-width: 0; }
-.tarjeta-recomendado-acciones .dropdown-color-boton { width: 100%; font-size: 12px; padding: 8px 10px; }
-.tarjeta-recomendado-acciones .btn-agregar { flex-shrink: 0; font-size: 12px; padding: 8px 12px; }
+.tarjeta-recomendado-acciones .dropdown-color-boton { width: 100%; font-size: 11px; padding: 5px 8px; }
+.tarjeta-recomendado-acciones .btn-agregar { flex-shrink: 0; font-size: 11px; padding: 5px 10px; }
 .tarjeta-recomendado-vacia { justify-content: center; align-items: center; text-align: center; }
 
 @media (max-width: 700px) {

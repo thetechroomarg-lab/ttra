@@ -118,6 +118,11 @@ header {
   width: 100%; text-align: center;
   padding: 8px 14px; font-size: clamp(13px, 3.5vw, 15px);
 }
+/* Fila del carrito + toggle sol/luna (ver .rc-tema-toggle): comparten fila
+   para que el toggle quede exactamente de la misma altura que el botón de
+   carrito (align-self:stretch) y alineado con él (misma fila). */
+.rc-carrito-fila { display: flex; align-items: stretch; gap: 8px; }
+.rc-carrito-fila #btn-carrito { flex: 1; width: auto; }
 #btn-carrito {
   color: var(--rc-green-bright); border-color: var(--rc-green);
   box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
@@ -141,6 +146,37 @@ html[data-modo="fallout"] #btn-modo-fallout { display: none; }
    Fallout el log out vive en el interruptor de la barra lateral). */
 #btn-logout-classic { display: none; }
 html[data-modo="classic"] #btn-logout-classic { display: block; }
+
+/* Toggle claro/oscuro (sol/luna), junto al botón de carrito (ver
+   .rc-carrito-fila): solo tiene sentido en Modo Classic (Fallout ya es
+   oscuro por diseño). Un solo ícono visible a la vez — el que representa a
+   QUÉ modo pasás al tocarlo, no en cuál estás: claro por default muestra
+   la luna (tocarla pasa a oscuro), oscuro muestra el sol (tocarlo vuelve a
+   claro). El estado real vive en html[data-tema], guardado en landing.js.
+   align-self:stretch (en .rc-carrito-fila) lo estira a la altura exacta de
+   #btn-carrito, sea cual sea (ancho fijo, no aspect-ratio: un aspect-ratio
+   con width:auto en un flex item sin alto propio todavía resuelto cae al
+   tamaño de reemplazo por default del navegador — 300x300 — e inflaba
+   todo el header). */
+.rc-tema-toggle {
+  display: none;
+}
+html[data-modo="classic"] .rc-tema-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  width: 40px;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+.rc-tema-icono { width: 24px; height: 24px; display: none; }
+html[data-modo="classic"]:not([data-tema="oscuro"]) .rc-tema-luna { display: block; }
+html[data-modo="classic"][data-tema="oscuro"] .rc-tema-sol { display: block; }
 
 /* Mensaje de confirmación de log out y diálogo de "¿estás seguro?" previo
    (look terminal Pip-Boy por default; Modo Classic lo reestiliza en
@@ -168,6 +204,26 @@ html[data-modo="classic"] #btn-logout-classic { display: block; }
 /* Diálogo de confirmación: 2 botones lado a lado en vez de 1 solo. */
 .rc-logout-acciones { display: flex; gap: 10px; }
 .rc-logout-acciones button { width: auto; flex: 1; }
+
+/* Reproductor de Spotify embebido (botón "Play Music" del Pip-Boy): sin
+   panel visible. Controlado por la IFrame API de Spotify (.play()/.pause()
+   reales). Importante: sacarlo de pantalla con coordenadas negativas (ej.
+   left:-9999px) hace que la propia API de Spotify nunca dispare "ready" —
+   parece tratar el iframe como no-visible y no completa su inicialización
+   (probado: en pantalla sí dispara "ready" enseguida). Por eso queda dentro
+   del viewport, en la esquina, pero en 1x1px y opacity:0 — "visible" para
+   la API, invisible para el usuario y sin tapar nada. */
+.rc-musica-iframe-oculto {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
 
 @media (max-width: 900px) {
   .rc-noticiero { display: none; }
@@ -230,7 +286,8 @@ html[data-modo="classic"] #btn-logout-classic { display: block; }
 
 .fila-principal {
   display: flex; align-items: stretch; gap: 20px;
-  padding: 0 20px 40px; flex: 1;
+  padding: 0 20px 16px; flex: 1;
+  min-height: 0;
 }
 
 .columna-izquierda {
@@ -252,6 +309,26 @@ html[data-modo="classic"] #btn-logout-classic { display: block; }
     15px 0 0 rgba(51, 255, 102, 0.06),
     20px 0 0 rgba(51, 255, 102, 0.03);
 }
+/* Las 6 cards del menú principal (home) reparten entre todas el alto libre
+   de la columna izquierda, en vez de tener un padding fijo: eso es lo que
+   antes las hacía "muy altas" y disparaba el scroll interno de la columna
+   apenas la pantalla no era lo bastante alta. Alcanzado el mínimo legible
+   (min-height acá abajo), si de verdad no entran, ahí sí scrollea (ver
+   overflow-y:auto en .columna-izquierda) — no se rompe nada, es el mismo
+   fallback que ya existía. Solo #categorias: el sub-nav de marcas (más
+   itemes, lista potencialmente larga) sigue con su alto natural. */
+#categorias.categorias-columna {
+  flex: 1;
+  min-height: 0;
+}
+#categorias .btn-categoria {
+  flex: 1;
+  min-height: 40px;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .btn-categoria.activo {
   background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
   font-weight: 600;
@@ -271,16 +348,20 @@ html[data-modo="classic"] #btn-logout-classic { display: block; }
   box-shadow: 0 0 20px 4px var(--rc-halo-seleccion-glow), 0 6px 14px -6px rgba(0, 0, 0, 0.35);
 }
 
-/* Interruptor tipo avión, debajo de "Búsqueda por Marca": es el log out del
-   Modo Fallout. Centrado en el espacio libre entre el menú y el pie de
+/* Interruptores tipo avión (Pip-Boy ON/OFF y Log Out), debajo de "Búsqueda
+   por Marca". Centrado en el espacio libre entre el menú y el pie de
    página (margin auto arriba y abajo). Solo existe en Fallout: en Classic
-   el log out es el botón del header (ver #btn-logout-classic). */
+   el log out es el botón del header (ver #btn-logout-classic). Fila con
+   la columna de switches (casi la mitad del ancho de "Búsqueda por Marca")
+   y el reproductor de música a la derecha (llena el resto), separados por
+   el gap de acá abajo — ocupando juntos el mismo ancho total que ese
+   buscador y que los botones de categoría. */
 .rc-switch-fallout-wrap { display: none; }
 html[data-modo="fallout"] .rc-switch-fallout-wrap {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 12px;
   width: 100%;
   margin-top: auto;
   margin-bottom: auto;
@@ -289,23 +370,67 @@ html[data-modo="fallout"] .rc-switch-fallout-wrap {
    los botones de categoría se ocultan y este quedaba como único control.
    (Necesita la misma especificidad que la regla de arriba para ganarle.) */
 html[data-modo="fallout"] .rc-switch-fallout-wrap.oculto { display: none; }
-/* Cada switch (Main Switch arriba, Power Switch abajo) + su placa. */
+.rc-switches-columna {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  flex: 0 0 46%;
+  min-width: 0;
+}
+/* Cada switch (Pip-Boy ON/OFF arriba, Log Out abajo) + su placa. El switch
+   ocupa todo el ancho de la columna, con el borde izquierdo pegado al de
+   los botones de categoría (align-items:flex-start acá, en
+   .rc-switch-fallout-item); su placa va centrada debajo (align-items:center
+   en el grupo de adentro). */
 .rc-switch-fallout-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+.rc-switch-fallout-grupo {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   width: 100%;
 }
+/* Tornillos de las 4 esquinas (Pip-Boy ON/OFF y Log Out comparten esta
+   clase): círculo metálico + ranura, todo con background-image (capas
+   comma-separated, sin agregar ningún elemento al HTML). Cada ranura usa un
+   ángulo distinto en el propio linear-gradient (no transform, así no hace
+   falta un elemento por tornillo) para que parezca que cada uno se apretó
+   con una inclinación distinta. Van dentro del padding del switch, nunca
+   pisan el riel ni la etiqueta. */
 .rc-switch-fallout {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 50%;
+  width: 100%;
   padding: 10px 12px;
-  background: linear-gradient(180deg, #2b2b2b, #141414);
+  background-repeat: no-repeat;
+  background-position:
+    left 4px top 4px, right 4px top 4px, left 4px bottom 4px, right 4px bottom 4px,
+    left 4px top 4px, right 4px top 4px, left 4px bottom 4px, right 4px bottom 4px,
+    0 0;
+  background-size:
+    7px 7px, 7px 7px, 7px 7px, 7px 7px,
+    7px 7px, 7px 7px, 7px 7px, 7px 7px,
+    auto;
+  background-image:
+    linear-gradient(22deg, transparent 46%, #0a0a0a 46% 54%, transparent 54%),
+    linear-gradient(-30deg, transparent 46%, #0a0a0a 46% 54%, transparent 54%),
+    linear-gradient(48deg, transparent 46%, #0a0a0a 46% 54%, transparent 54%),
+    linear-gradient(-12deg, transparent 46%, #0a0a0a 46% 54%, transparent 54%),
+    radial-gradient(circle at 50% 50%, #6a6a6a 0%, #2a2a2a 55%, transparent 62%),
+    radial-gradient(circle at 50% 50%, #6a6a6a 0%, #2a2a2a 55%, transparent 62%),
+    radial-gradient(circle at 50% 50%, #6a6a6a 0%, #2a2a2a 55%, transparent 62%),
+    radial-gradient(circle at 50% 50%, #6a6a6a 0%, #2a2a2a 55%, transparent 62%),
+    linear-gradient(180deg, #2b2b2b, #141414);
   border: 2px solid var(--rc-green-dim);
-  border-radius: 6px;
+  border-radius: 0;
   box-shadow: 0 0 8px -1px var(--rc-glow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   cursor: var(--rc-cursor-mira);
 }
@@ -315,13 +440,13 @@ html[data-modo="fallout"] .rc-switch-fallout-wrap.oculto { display: none; }
 }
 .rc-switch-fallout .rc-switch-riel {
   position: relative; flex: 1; height: 24px;
-  background: #050505; border-radius: 12px;
+  background: #050505; border-radius: 0;
   border: 1px solid #000;
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.7);
 }
 .rc-switch-fallout .rc-switch-perilla {
   position: absolute; top: 2px; left: 2px;
-  width: 20px; height: 20px; border-radius: 50%;
+  width: 20px; height: 20px; border-radius: 0;
   background: radial-gradient(circle at 35% 30%, #7bffa0, #1a7a33);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 6px var(--rc-glow);
   transition: left .25s ease, background .25s ease;
@@ -339,10 +464,216 @@ html[data-modo="fallout"] .rc-switch-fallout-wrap.oculto { display: none; }
   color: var(--rc-green-bright);
   background: #0a0a0a;
   border: 1px solid #000;
-  border-radius: 3px;
+  border-radius: 0;
   padding: 3px 10px;
   text-shadow: 0 0 4px var(--rc-glow), 0 0 8px var(--rc-glow);
   box-shadow: inset 0 0 6px -1px var(--rc-glow), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Botón de música: estilo botón físico viejo (bisel metálico + disco
+   circular + ecualizador animado), misma familia visual que los switches
+   de arriba. Ocupa todo el ancho que le queda libre después de la columna
+   de switches (ver flex:0 0 46% ahí arriba) y el gap entre ambos. Con
+   align-items:stretch en el wrap, este item mide lo mismo de alto que la
+   columna de switches, y el botón (flex:1 adentro) ocupa todo ese alto
+   menos su propia placa — así el borde inferior del botón coincide
+   exactamente con el borde inferior del switch "LOG OUT" (antes de SU
+   placa), igual que el derecho ya coincidía con los botones de categoría.
+   En el espacio agregado (izquierda + abajo) va el visor negro con el
+   crawl. */
+.rc-boton-musica-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+/* Ahora es un div (no un botón): adentro hay 3 botones propios (RW, play
+   disco, FF), no puede haber <button> anidados. Mismos tornillos de esquina
+   que .rc-switch-fallout (ver ahí arriba el detalle), pero más grandes —
+   este panel es bastante más ancho/alto que un switch. */
+.rc-boton-musica {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px;
+  gap: 8px;
+  background-repeat: no-repeat;
+  background-position:
+    left 1px top 1px, right 1px top 1px, left 1px bottom 1px, right 1px bottom 1px,
+    left 1px top 1px, right 1px top 1px, left 1px bottom 1px, right 1px bottom 1px,
+    0 0;
+  background-size:
+    9px 9px, 9px 9px, 9px 9px, 9px 9px,
+    9px 9px, 9px 9px, 9px 9px, 9px 9px,
+    auto;
+  background-image:
+    linear-gradient(15deg, transparent 46%, #0a0a0a 46% 54%, transparent 54%),
+    linear-gradient(-42deg, transparent 46%, #0a0a0a 46% 54%, transparent 54%),
+    linear-gradient(60deg, transparent 46%, #0a0a0a 46% 54%, transparent 54%),
+    linear-gradient(-20deg, transparent 46%, #0a0a0a 46% 54%, transparent 54%),
+    radial-gradient(circle at 50% 50%, #6a6a6a 0%, #2a2a2a 55%, transparent 62%),
+    radial-gradient(circle at 50% 50%, #6a6a6a 0%, #2a2a2a 55%, transparent 62%),
+    radial-gradient(circle at 50% 50%, #6a6a6a 0%, #2a2a2a 55%, transparent 62%),
+    radial-gradient(circle at 50% 50%, #6a6a6a 0%, #2a2a2a 55%, transparent 62%),
+    linear-gradient(180deg, #2b2b2b, #141414);
+  border: 2px solid var(--rc-green-dim);
+  border-radius: 0;
+  box-shadow: 0 0 8px -1px var(--rc-glow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.rc-boton-musica-controles {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+/* Único botón redondo del panel a propósito (excepción al resto de bordes
+   rectos de Fallout): es el disco de play, no un ícono más — pedido
+   explícito. */
+.rc-boton-musica-disco {
+  width: 54px; height: 54px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #7bffa0, #1a7a33);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 6px var(--rc-glow);
+  border: none;
+  cursor: var(--rc-cursor-mira);
+  transition: box-shadow .15s ease;
+}
+.rc-boton-musica-disco:hover {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 10px var(--rc-glow);
+}
+.rc-boton-musica-disco:active {
+  transform: translateY(1px);
+}
+.rc-boton-musica-disco:disabled {
+  opacity: .5;
+  cursor: var(--rc-cursor);
+}
+.rc-boton-musica-icono {
+  width: 21px; height: 21px;
+  color: #06210e;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
+  transition: color .15s ease;
+}
+/* El triángulo de play, del doble de tamaño que el resto de los íconos del
+   panel (los demás quedan en 21px). */
+.rc-boton-musica-icono.rc-icono-play { width: 42px; height: 42px; }
+/* Transición play/pausa: .sonando la pone playback_update (ver landing.js),
+   con el estado real de Spotify, no una suposición nuestra. Mientras suena,
+   el ícono (el de pausa, que es el visible en ese momento) se ilumina de
+   blanco en vez del verde oscuro por default. */
+.rc-boton-musica-icono.rc-icono-pause { display: none; }
+#btn-play-music.sonando .rc-icono-play { display: none; }
+#btn-play-music.sonando .rc-boton-musica-icono {
+  color: #fff;
+  filter: drop-shadow(0 0 4px #fff);
+}
+#btn-play-music.sonando .rc-icono-pause { display: block; }
+/* Botones chicos: reiniciar/anterior (RW) y siguiente (FF) — la API oficial
+   de Spotify no tiene salto de pista, así que cargan a mano un track puntual
+   de una lista fija (ver TRACKS_PLAYLIST en landing.js). Mismo formato de
+   color que el disco de play (gradiente verde + ícono oscuro), pero sin
+   cambiar su tamaño/forma actual. */
+.rc-boton-musica-mini {
+  width: 26px; height: 34px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 35% 30%, #7bffa0, #1a7a33);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 6px var(--rc-glow);
+  border: none;
+  border-radius: 0;
+  color: #06210e;
+  cursor: var(--rc-cursor-mira);
+  transition: box-shadow .15s ease;
+}
+.rc-boton-musica-mini svg { width: 18px; height: 18px; filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4)); }
+.rc-boton-musica-mini:hover {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 10px var(--rc-glow);
+}
+.rc-boton-musica-mini:active {
+  transform: translateY(1px);
+}
+.rc-boton-musica-mini:disabled {
+  opacity: .35;
+  cursor: var(--rc-cursor);
+}
+/* Ecualizador: puro detalle ambiente (no refleja audio real, esto solo
+   enlaza a Spotify), 4 barras que rebotan a destiempo entre sí. Solo se
+   anima mientras suena la música (.sonando en #btn-play-music, ver
+   landing.js): en reposo queda quieto, a la altura mínima. */
+.rc-ecualizador {
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: 3px; height: 30px;
+}
+/* Longhand a propósito (nunca el shorthand "animation"): el shorthand
+   resetea animation-delay a 0s en cualquier regla que lo use, y con más
+   especificidad que ".rc-eq-barra:nth-child(n)" pisaba el desfasaje de
+   cada barra — todas rebotaban juntas en vez de a destiempo. Achicando el
+   toggle a animation-name (none/rc-eq-rebote) el delay de cada nth-child
+   nunca se toca, y al pausar (animation-name:none) la barra vuelve sola,
+   con la transition, a los 5px de reposo — no se congela a mitad de salto. */
+.rc-eq-barra {
+  width: 4px;
+  height: 5px;
+  background: var(--rc-green-bright);
+  box-shadow: 0 0 4px var(--rc-glow);
+  border-radius: 0;
+  transition: height .2s ease;
+  animation-name: none;
+  animation-duration: 0.9s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+.rc-ecualizador.sonando .rc-eq-barra {
+  animation-name: rc-eq-rebote;
+}
+.rc-eq-barra:nth-child(1) { animation-delay: 0s; }
+.rc-eq-barra:nth-child(2) { animation-delay: .18s; }
+.rc-eq-barra:nth-child(3) { animation-delay: .36s; }
+.rc-eq-barra:nth-child(4) { animation-delay: .12s; }
+@keyframes rc-eq-rebote {
+  0%, 100% { height: 5px; }
+  50% { height: 30px; }
+}
+/* Visor negro tipo cartel viejo de LED/vacuum-fluorescent, con el texto
+   corriendo de derecha a izquierda sin cortes (2 copias seguidas del
+   mismo texto, animadas -50%). Chico y fijo (no flex:1): con el alto que
+   tenía antes llegaba a pisar visualmente los tornillos de la esquina
+   inferior del panel. margin-top:auto lo manda igual al fondo del botón,
+   dejando el aire que sobra arriba (entre el ecualizador y acá) en vez de
+   estirar el propio visor. */
+.rc-boton-musica-visor {
+  flex: 0 0 auto;
+  width: 100%;
+  height: 14px;
+  margin-top: auto;
+  background: #000;
+  border: 1px solid #000;
+  border-radius: 0;
+  box-shadow: inset 0 0 6px -1px var(--rc-glow);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  /* ~1mm de aire antes de que el texto toque el borde, tanto al aparecer
+     (derecha) como al desaparecer (izquierda). */
+  padding: 0 4px;
+}
+.rc-visor-texto {
+  display: inline-flex;
+  white-space: nowrap;
+  font-size: 10px;
+  letter-spacing: .04em;
+  color: var(--rc-green-bright);
+  text-shadow: 0 0 4px var(--rc-glow), 0 0 8px var(--rc-glow);
+  animation: rc-visor-crawl 12s linear infinite;
+  padding-left: 100%;
+}
+.rc-visor-texto span { padding-right: 40px; }
+@keyframes rc-visor-crawl {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 .selector-marcas {
@@ -441,6 +772,34 @@ main#productos::-webkit-scrollbar-thumb:hover,
   }
 }
 
+/* El home (portada, sin sección elegida) tampoco debe scrollear la página
+   entera: mismo criterio que rc-vista-seccion de acá arriba, pero en el
+   sentido inverso (:not en vez de la clase). Si el contenido no entra
+   igual (pantallas bajas), scrollea de forma interna, no la ventana.
+   De paso, main#productos con overflow-y:auto es también lo que evita que
+   el carrousel de recomendados (más alto que el Pip-Boy, ver
+   alturaPipboyHomePx en landing.js) desborde la caja al apagar el Pip-Boy:
+   scrollea ahí adentro en vez de estirar la fila. */
+@media (min-width: 701px) {
+  body:not(.rc-vista-seccion) {
+    height: 100vh;
+    overflow: hidden;
+  }
+  body:not(.rc-vista-seccion) .fila-principal {
+    min-height: 0;
+    overflow: hidden;
+  }
+  body:not(.rc-vista-seccion) .columna-izquierda {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  body:not(.rc-vista-seccion) main#productos {
+    height: 100%;
+    overflow-y: auto;
+  }
+}
+
 .carrousel-ciudad-wrap {
   display: flex; flex-direction: column; gap: 10px; height: 100%;
 }
@@ -458,7 +817,7 @@ main#productos::-webkit-scrollbar-thumb:hover,
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 .punto-ciudad {
-  width: 10px; height: 10px; padding: 0; border-radius: 50%;
+  width: 10px; height: 10px; padding: 0; border-radius: 0;
   background: transparent; border: 1px solid var(--rc-green-dim);
   cursor: var(--rc-cursor);
 }
@@ -530,6 +889,20 @@ main#productos::-webkit-scrollbar-thumb:hover,
 .pipboy-nombre { font-weight: 700; color: var(--rc-green-bright); margin: 2px 0 0; }
 .pipboy-campos { line-height: 1.6; color: var(--rc-green); }
 .pipboy-campos b { color: var(--rc-green-dim); }
+/* Coordenadas clickeables: abren la ubicación en Google Maps (ver
+   coordenadasHtml en landing.js). Mismo verde que el resto del texto, solo
+   con el subrayado punteado para marcar que es interactivo. */
+.pipboy-coordenadas-link {
+  color: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: var(--rc-cursor-mira);
+}
+.pipboy-coordenadas-link:hover,
+.pipboy-coordenadas-link:focus-visible {
+  color: var(--rc-green-bright);
+  text-shadow: 0 0 6px var(--rc-glow);
+}
 .pipboy-log {
   line-height: 1.45; color: var(--rc-green-bright); flex: 1;
   overflow-y: auto; overflow-x: hidden;
@@ -606,6 +979,7 @@ main#productos::-webkit-scrollbar-thumb:hover,
    solo cuando el usuario lo apaga (ver Main Switch en la barra lateral). */
 html[data-modo="fallout"] .tarjeta-recomendado {
   border-top: 6px solid var(--rc-green);
+  border-radius: 0;
   box-shadow: 0 0 10px -2px var(--rc-glow), inset 0 0 10px -4px var(--rc-glow);
 }
 html[data-modo="fallout"] .tarjeta-recomendado-etiqueta {
@@ -671,10 +1045,19 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   cursor: var(--rc-cursor-mira);
 }
 
-/* Botón de foto (ícono de cámara): abre una búsqueda de Google Imágenes del
-   producto en una pestaña nueva. Va dentro del párrafo de precios, en su
-   propia línea justo debajo de "transferencia" (un <br> antes en el HTML
-   lo empuja a esa línea), así nunca se superpone a ningún otro texto. */
+/* En .tarjeta-recomendado-precio (flex-column: cada <strong>/<span> es su
+   propia fila) los dos íconos necesitan ir juntos en UNA fila, no cada uno
+   en la suya — por eso van envueltos en este span (ver
+   tarjetaRecomendadoHtml en landing.js). En .card .precios (párrafo simple,
+   sin flex) ya quedan lado a lado de por sí, sin necesitar este wrapper. */
+.tarjeta-recomendado-iconos { display: flex; flex-direction: row; }
+
+/* Botón de foto (ícono de cámara) y de especificaciones (ícono de ficha):
+   abren una búsqueda de Google (Imágenes, y Google normal + "especificaciones")
+   del producto en una pestaña nueva. Van dentro del párrafo de precios, en
+   su propia línea justo debajo de "transferencia" (un <br> antes en el
+   HTML los empuja a esa línea), uno al lado del otro, así nunca se
+   superponen a ningún otro texto. */
 .btn-foto {
   display: inline-flex; align-items: center; justify-content: center;
   margin-top: 6px;
@@ -683,6 +1066,7 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   cursor: var(--rc-cursor-mira);
   transition: color .15s ease, filter .15s ease;
 }
+.btn-foto + .btn-foto { margin-left: 6px; }
 .btn-foto svg { width: 26px; height: 26px; }
 .btn-foto:hover {
   color: var(--rc-green-bright);
@@ -787,12 +1171,10 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 
 .rc-pie {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  text-align: center; padding: 16px 20px; margin-top: auto;
+  text-align: center; padding: 12px 20px; margin-top: auto;
   border-top: 1px solid var(--rc-green-faint); background: var(--rc-bg-panel);
   color: var(--rc-green-dim); font-size: 13px;
 }
-#pie-frase { margin: 0; font-style: italic; }
-
 .rc-redes { display: flex; gap: 16px; }
 .rc-red-icono {
   display: flex; color: var(--rc-green-dim);

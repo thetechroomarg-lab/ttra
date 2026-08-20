@@ -51,7 +51,27 @@
         <button id="btn-logout-classic" type="button" class="btn-logout-classic">Cerrar sesión</button>
         <button id="btn-modo-fallout" type="button" class="btn-modo" data-modo="fallout">Modo Fallout</button>
         <button id="btn-modo-classic" type="button" class="btn-modo" data-modo="classic">Modo Classic</button>
-        <button id="btn-carrito" type="button">Carrito <span id="carrito-contador">0</span></button>
+        <div class="rc-carrito-fila">
+          <button id="btn-tema-classic" type="button" class="rc-tema-toggle" aria-label="Cambiar a modo oscuro" title="Cambiar a modo oscuro">
+            <svg class="rc-tema-icono rc-tema-sol" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+              <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <line x1="12" y1="1.5" x2="12" y2="4"/>
+                <line x1="12" y1="20" x2="12" y2="22.5"/>
+                <line x1="1.5" y1="12" x2="4" y2="12"/>
+                <line x1="20" y1="12" x2="22.5" y2="12"/>
+                <line x1="4.4" y1="4.4" x2="6.1" y2="6.1"/>
+                <line x1="17.9" y1="17.9" x2="19.6" y2="19.6"/>
+                <line x1="4.4" y1="19.6" x2="6.1" y2="17.9"/>
+                <line x1="17.9" y1="6.1" x2="19.6" y2="4.4"/>
+              </g>
+            </svg>
+            <svg class="rc-tema-icono rc-tema-luna" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M20.5 14.4A8.5 8.5 0 1 1 9.6 3.5a7 7 0 0 0 10.9 10.9Z"/>
+            </svg>
+          </button>
+          <button id="btn-carrito" type="button">Carrito <span id="carrito-contador">0</span></button>
+        </div>
       </div>
     </div>
   </header>
@@ -71,21 +91,64 @@
       </div>
       <div id="categorias" class="categorias-columna"></div>
       <div id="rc-switches-fallout-wrap" class="rc-switch-fallout-wrap">
-        <div class="rc-switch-fallout-item">
-          <button id="btn-pipboy-switch" type="button" class="rc-switch-fallout" aria-label="Apagar Pip-Boy" aria-pressed="true">
-            <span class="rc-switch-etiqueta">ON</span>
-            <span class="rc-switch-riel"><span class="rc-switch-perilla"></span></span>
-            <span class="rc-switch-etiqueta">OFF</span>
-          </button>
-          <span class="rc-switch-placa">PIP-BOY ON/OFF</span>
+        <div class="rc-switches-columna">
+          <div class="rc-switch-fallout-item">
+            <div class="rc-switch-fallout-grupo">
+              <button id="btn-pipboy-switch" type="button" class="rc-switch-fallout" aria-label="Apagar Pip-Boy" aria-pressed="true">
+                <span class="rc-switch-etiqueta">ON</span>
+                <span class="rc-switch-riel"><span class="rc-switch-perilla"></span></span>
+                <span class="rc-switch-etiqueta">OFF</span>
+              </button>
+              <span class="rc-switch-placa">PIP-BOY ON/OFF</span>
+            </div>
+          </div>
+          <div class="rc-switch-fallout-item">
+            <div class="rc-switch-fallout-grupo">
+              <button id="btn-logout-fallout" type="button" class="rc-switch-fallout" aria-label="Cerrar sesión" aria-pressed="true">
+                <span class="rc-switch-etiqueta">ON</span>
+                <span class="rc-switch-riel"><span class="rc-switch-perilla"></span></span>
+                <span class="rc-switch-etiqueta">OFF</span>
+              </button>
+              <span class="rc-switch-placa">LOG OUT</span>
+            </div>
+          </div>
         </div>
-        <div class="rc-switch-fallout-item">
-          <button id="btn-logout-fallout" type="button" class="rc-switch-fallout" aria-label="Cerrar sesión" aria-pressed="true">
-            <span class="rc-switch-etiqueta">ON</span>
-            <span class="rc-switch-riel"><span class="rc-switch-perilla"></span></span>
-            <span class="rc-switch-etiqueta">OFF</span>
-          </button>
-          <span class="rc-switch-placa">LOG OUT</span>
+        <div class="rc-boton-musica-item">
+          <div class="rc-boton-musica" aria-label="Reproductor de jazz instrumental en Spotify">
+            <span class="rc-boton-musica-controles">
+              <button type="button" id="btn-musica-rw" class="rc-boton-musica-mini" aria-label="Reiniciar canción (dos toques: canción anterior)" title="Reiniciar canción (2 toques: anterior)">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M11.5 12 L18.5 6.5 V17.5 Z" fill="currentColor"/>
+                  <path d="M4.5 12 L11.5 6.5 V17.5 Z" fill="currentColor"/>
+                </svg>
+              </button>
+              <button type="button" id="btn-play-music" class="rc-boton-musica-disco" aria-label="Reproducir/pausar" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="rc-boton-musica-icono rc-icono-play">
+                  <path d="M8 5.5 L18 12 L8 18.5 Z" fill="currentColor"/>
+                </svg>
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="rc-boton-musica-icono rc-icono-pause">
+                  <rect x="7" y="5.5" width="4" height="13" fill="currentColor"/>
+                  <rect x="13" y="5.5" width="4" height="13" fill="currentColor"/>
+                </svg>
+              </button>
+              <button type="button" id="btn-musica-ff" class="rc-boton-musica-mini" aria-label="Siguiente canción" title="Siguiente canción">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12.5 12 L5.5 6.5 V17.5 Z" fill="currentColor"/>
+                  <path d="M19.5 12 L12.5 6.5 V17.5 Z" fill="currentColor"/>
+                </svg>
+              </button>
+            </span>
+            <span class="rc-ecualizador" aria-hidden="true">
+              <span class="rc-eq-barra"></span>
+              <span class="rc-eq-barra"></span>
+              <span class="rc-eq-barra"></span>
+              <span class="rc-eq-barra"></span>
+            </span>
+            <span class="rc-boton-musica-visor">
+              <span class="rc-visor-texto" id="rc-visor-texto"></span>
+            </span>
+          </div>
+          <span class="rc-switch-placa">PLAY MUSIC</span>
         </div>
       </div>
       <div id="sub-nav" class="categorias-columna oculto"></div>
@@ -126,8 +189,20 @@
     </div>
   </div>
 
+  <!-- Reproductor de Spotify sin panel visible: usa la IFrame API oficial
+       de Spotify (createController + .play()/.pause()), que sí soporta
+       reproducir por código ante un click real, a diferencia de armar la
+       URL a mano con "autoplay=1" (que Spotify ignora). La API reemplaza
+       #rc-musica-embed por su propio iframe (grande, visible, sin
+       heredar ninguna clase nuestra) — por eso va envuelto en un
+       contenedor aparte que sí controlamos nosotros y se queda fuera de
+       pantalla pase lo que pase adentro. Ver landing.js. -->
+  <div class="rc-musica-iframe-oculto">
+    <div id="rc-musica-embed"></div>
+  </div>
+  <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
+
   <footer class="rc-pie">
-    <p id="pie-frase"></p>
     <div class="rc-redes">
       <a href="https://instagram.com/thetechroomarg" target="_blank" rel="noopener" aria-label="Instagram" class="rc-red-icono">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -139,6 +214,17 @@
       <a href="https://tiktok.com/@thetechroomarg" target="_blank" rel="noopener" aria-label="TikTok" class="rc-red-icono">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path fill="currentColor" d="M16.5 3c.4 2.2 1.8 3.6 4 3.9v2.6c-1.4.1-2.8-.3-4-1.1v6.4c0 3.3-2.7 5.7-5.7 5.4-2.6-.2-4.7-2.4-4.8-5-.1-3 2.3-5.5 5.3-5.5.3 0 .6 0 .9.1v2.7a2.7 2.7 0 0 0-3.3 2.9c.1 1.3 1.2 2.4 2.5 2.5 1.6.1 2.9-1.1 2.9-2.7V3h2.2z"/>
+        </svg>
+      </a>
+      <a href="https://wa.me/543512145217" target="_blank" rel="noopener" aria-label="WhatsApp" class="rc-red-icono">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M12 2.5c-5.24 0-9.5 4.26-9.5 9.5 0 1.68.44 3.28 1.28 4.7L2.5 21.5l4.94-1.25a9.46 9.46 0 0 0 4.56 1.16c5.24 0 9.5-4.26 9.5-9.5s-4.26-9.41-9.5-9.41zm0 17.15c-1.46 0-2.86-.4-4.08-1.14l-.29-.17-3 .76.79-2.9-.19-.3a7.8 7.8 0 0 1-1.23-4.2c0-4.32 3.53-7.85 7.85-7.85S19.85 7.68 19.85 12 15.85 19.65 12 19.65zm4.3-5.85c-.24-.12-1.4-.69-1.62-.77-.22-.08-.38-.12-.54.12-.16.24-.62.77-.76.93-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.92-1.18-.71-.63-1.19-1.41-1.33-1.65-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.46-.39-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.4-.57 1.6-1.12.2-.55.2-1.02.14-1.12-.06-.1-.22-.16-.46-.28z"/>
+        </svg>
+      </a>
+      <a href="mailto:thetechroomarg@gmail.com" aria-label="Email" class="rc-red-icono">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M4 6.5 12 13 20 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </a>
     </div>
