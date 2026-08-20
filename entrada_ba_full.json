@@ -1,0 +1,184 @@
+{
+  "items": [
+    {
+      "nombre": "HP VICTUS 15-FA2013 GAMING Core i5-13420H 512GB SSD 8GB 15.6\" 144Hz WIN11 NVIDIA RTX 3050 6144MB MICA SILVER",
+      "costo": 1040.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "HP 15-FC0037 AMD Ryzen 5 7520U 256GB SSD 8GB 15.6\" WIN11 MIDNIGHT BLUE",
+      "costo": 600.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "HP 15-FC0146DX AMD Ryzen 5-7520U 512GB SSD 8GB Plata",
+      "costo": 575.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Microsoft Surface Laptop 4 Core i7-1185G7 256GB SSD 16GB 15\" TOUCHSCREEN WIN10 Pro PLATINUM SILVER",
+      "costo": 805.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "MSI CYBORG 15 GAMING AMD Ryzen 9 270 1TB SSD 16GB 15.6\" 144Hz WIN11 NVIDIA RTX 5060 8192MB BLACK",
+      "costo": 1790.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "MSI CYBORG 15 GAMING INTEL ULTRA 7 240H 16GB RAM 1TB SSD NVIDIA RTX 5070 8GB 15.6\" 144Hz",
+      "costo": 1850.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "MSI VECTOR 16 HX AI GAMING INTEL CORE ULTRA 7 255HX 16GB 1TB SSD NVIDIA RTX 5070 TI 12GB 16\" 144Hz",
+      "costo": 2215.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "MSI VECTOR 16 HX AI 400 GAMING INTEL CORE ULTRA 9 275HX 16GB RAM 1TB SSD NVIDIA RTX 5080 16GB 16\" QHD+ 240Hz",
+      "costo": 2950.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "MSI Cyborg 15 GAMING Core 7-240H 512GB SSD 16GB 15.6\" 144Hz IPS WIN11 NVIDIA RTX 5060 BLACK",
+      "costo": 1640.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "NOTEBOOK DELL INSPIRON 15 RYZEN 5-7520U 8GB RAM 512GB SSD 15.6\" FHD",
+      "costo": 630.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Asus Vivobook 14 X1404VA Core i5-1334U 256GB SSD 12GB 14\" WIN11 QUIET BLUE",
+      "costo": 610.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Asus VivoBook X1404VA Core i3-1315U 128GB SSD 8GB azul",
+      "costo": 399.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Asus VivoBook Go E1504FA-AS54 AMD Ryzen 5 7520U 512GB SSD 8GB 15.6\" WIN11 COOL SILVER",
+      "costo": 600.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "ASUS VIVOBOOK V16 GAMING INTEL CORE ULTRA 7 240H 32GB RAM 1TB SSD NVIDIA RTX 5070 8GB 16\" WUXGA 144Hz",
+      "costo": 2240.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "NOTEBOOK ASUS VIVOBOOK V16 GAMING INTEL CORE ULTRA 7 240H 16GB RAM 1TB SSD NVIDIA RTX 5070 8GB 16\" WUXGA 144Hz",
+      "costo": 1980.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Asus VivoBook F1605VA Core i9-13900H 1TB SSD 16GB 16\" WIN11 COOL SILVER",
+      "costo": 1180.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Lenovo 13w Yoga Gen 2 2-IN-1 AMD Ryzen 5 7530U 256GB SSD 8GB 13.3\" TOUCHSCREEN WIN11 Pro THUNDER BLACK",
+      "costo": 770.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "LENOVO LOQ 15AHP10 GAMING RYZEN 5 220 16GB 512GB SSD NVIDIA RTX 5050 8GB 15.6\" 144Hz",
+      "costo": 1340.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "NOTEBOOK LENOVO IDEAPAD 5 14AGP11 2-EN-1 AMD AI 5 430 16GB RAM 512GB SSD 14\" WUXGA TACTIL",
+      "costo": 1015.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "NOTEBOOK LENOVO IDEAPAD 5 16AHP9 2-EN-1 AMD 7 8845HS 16GB 1TB SSD 16\" WUXGA TACTIL",
+      "costo": 1060.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Lenovo Legion 5 i9-14900HX 16GB 1TB SSD RTX5070 8GB 15,1\" WQXGA W11",
+      "costo": 2055.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Acer Predator Triton 300 SE PT314-52S-747P Intel Core i7-12700H 512GB SSD 16GB RAM NVIDIA RTX 3060 6GB Windows 11",
+      "costo": 1370.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Acer Aspire Go 15 AG15-42P-R917 Ryzen 7 7730U 512GB SSD 16GB 15.6\" WIN11 PURE SILVER",
+      "costo": 770.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Gigabyte GAMING A16 AMD Ryzen 7 260 1TB SSD 16GB 16\" 165Hz WIN11 NVIDIA RTX 5060 8192MB BLACK STEEL",
+      "costo": 1560.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "APPLE MACBOOK NEO 2026 CHIP A18 PRO 8GB RAM 256 SSD 13\" FHD BLUE",
+      "costo": 720.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "GMKtec Mini PC M8 AMD Ryzen 5 PRO 6650H 16GB LPDDR5 RAM + 512GB SSD",
+      "costo": 560.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "Monitor UP Gamer G Series Essentials UPG27VA75 27\" Full HD 75Hz HDMI VGA Negro",
+      "costo": 88.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "SONY JOYSTICK PS5 DUALSENSE WIRELESS",
+      "costo": 80.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "SAMSUNG ODYSSEY ARK 2 MONITOR GAMER 55\" 4K ULTRA HD ULTRAWIDE CURVO 165Hz 1MS NEGRO",
+      "costo": 2055.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "AMAZFIT ANILLO INTELIGENTE HELIO RING TITANIO",
+      "costo": 170.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "XIAOMI REDMI PAD SE 4GB RAM 128GB 8.7\" VERDE",
+      "costo": 155.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "XIAOMI MONOPATIN ELECTRICO 4 PRO 2GEN",
+      "costo": 550.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "DOOGEE TABLET A9+ PRO WIFI 6GB RAM 128GB 10.1\" GRIS TECLADO + LAPIZ",
+      "costo": 140.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "TABLET XIAOMI REDMI PAD SE 11\" 128GB SSD 8GB RAM PURPURA",
+      "costo": 205.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "TABLET DOOGEE U13 PRO 6GB RAM 256GB SSD 13.4\" GRIS",
+      "costo": 230.0,
+      "proveedor": "ba"
+    },
+    {
+      "nombre": "TABLET DOOGEE U13 PRO 6GB RAM 256GB SSD 13.4\" AZUL",
+      "costo": 230.0,
+      "proveedor": "ba"
+    }
+  ]
+}

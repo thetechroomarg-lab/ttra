@@ -18,4 +18,4 @@ def test_genera_productos_json_desde_entrada(tmp_path):
     data = json.loads(salida.read_text(encoding="utf-8"))
     assert data[0]["nombre"] == "iPhone 13 128GB"
     assert "proveedor" not in data[0]
-    assert data[0]["usd"] == 660
+    assert data[0]["usd"] == 670  # 610 + margen iPhone 60 (601-900), redondeo a 5

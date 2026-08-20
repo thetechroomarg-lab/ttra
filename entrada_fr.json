@@ -1,0 +1,1444 @@
+{
+  "items": [
+    {
+      "nombre": "iPhone 13 128GB",
+      "costo": 520.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "iPhone 15 Pro Max 256GB",
+      "costo": 1100.0,
+      "proveedor": "fr",
+      "colores": [
+        "Natural",
+        "Black"
+      ]
+    },
+    {
+      "nombre": "iPhone 16e 128GB",
+      "costo": 610.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "iPhone 16 128GB stock consultar colores",
+      "costo": 790.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 16 Pro Max 256GB",
+      "costo": 1120.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "iPhone 17 Air 256GB",
+      "costo": 970.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "White"
+      ]
+    },
+    {
+      "nombre": "iPhone 17 256GB",
+      "costo": 920.0,
+      "proveedor": "fr",
+      "colores": [
+        "Sage",
+        "Lavander",
+        "Blue",
+        "White",
+        "Black"
+      ]
+    },
+    {
+      "nombre": "iPhone 17 Pro 256GB",
+      "costo": 1190.0,
+      "proveedor": "fr",
+      "colores": [
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "iPhone 17 Pro 512GB",
+      "costo": 1380.0,
+      "proveedor": "fr",
+      "colores": [
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "iPhone 17 Pro Max 256GB",
+      "costo": 1300.0,
+      "proveedor": "fr",
+      "colores": [
+        "Silver",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "iPhone 17 Pro Max 512GB",
+      "costo": 1490.0,
+      "proveedor": "fr",
+      "colores": [
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "iPhone 11 Pro 64GB CPO",
+      "costo": 370.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "iPhone 13 128GB CPO",
+      "costo": 500.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "iPhone 13 256GB CPO",
+      "costo": 570.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Pink",
+        "Starlight"
+      ]
+    },
+    {
+      "nombre": "iPhone 13 Pro 128GB CPO",
+      "costo": 620.0,
+      "proveedor": "fr",
+      "colores": [
+        "Grafito"
+      ]
+    },
+    {
+      "nombre": "iPhone 13 Pro Max 128GB CPO",
+      "costo": 700.0,
+      "proveedor": "fr",
+      "colores": [
+        "Grafito",
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "iPhone 14 Pro 128GB CPO",
+      "costo": 740.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "iPhone 14 Pro 256GB CPO",
+      "costo": 825.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "iPhone 14 Pro Max 128GB CPO",
+      "costo": 820.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Purple",
+        "Gold",
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "iPhone 14 Pro Max 256GB CPO",
+      "costo": 900.0,
+      "proveedor": "fr",
+      "colores": [
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "iPhone 15 Pro 256GB CPO",
+      "costo": 900.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Apple AirPods Max",
+      "costo": 530.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Orange"
+      ]
+    },
+    {
+      "nombre": "Apple AirPods 4",
+      "costo": 145.0,
+      "proveedor": "fr",
+      "colores": [
+        "White"
+      ]
+    },
+    {
+      "nombre": "Apple AirPods Pro 3 (White) Estuche MagSafe",
+      "costo": 280.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Apple Watch Ultra 3 CEL + GPS 49 mm",
+      "costo": 840.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Apple Watch Series 11 42 mm GPS Aluminum Case",
+      "costo": 395.0,
+      "proveedor": "fr",
+      "colores": [
+        "Jet Black S",
+        "M"
+      ]
+    },
+    {
+      "nombre": "Apple Watch Series 11 46 mm GPS Aluminum Case",
+      "costo": 430.0,
+      "proveedor": "fr",
+      "colores": [
+        "Jet Black M",
+        "L"
+      ]
+    },
+    {
+      "nombre": "iPad Air M3 11 pulgadas Wi-Fi 128GB",
+      "costo": 680.0,
+      "proveedor": "fr",
+      "colores": [
+        "Purple"
+      ]
+    },
+    {
+      "nombre": "iPad 10a Generacion A14 64GB Wi-Fi",
+      "costo": 400.0,
+      "proveedor": "fr",
+      "colores": [
+        "Silver",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "MacBook Neo 13 A18 Pro 8GB RAM / 512GB SSD",
+      "costo": 920.0,
+      "proveedor": "fr",
+      "colores": [
+        "Indigo",
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "Apple AirTag Pack por 4 unidades",
+      "costo": 92.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Cable USB-C a USB-C Original",
+      "costo": 20.0,
+      "proveedor": "fr",
+      "colores": [
+        "Orange"
+      ]
+    },
+    {
+      "nombre": "Cable USB-C a Lightning Original",
+      "costo": 20.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Cable USB-A a Lightning Original",
+      "costo": 18.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Cargador Apple 40W / 60W USB-C MacBook / iPhone",
+      "costo": 50.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Cargador Apple 20W USB-C iPhone",
+      "costo": 21.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Google Pixel 10 5G 12GB 256GB",
+      "costo": 850.0,
+      "proveedor": "fr",
+      "colores": [
+        "Grafito"
+      ]
+    },
+    {
+      "nombre": "Cargador Original Samsung 25W USB-C",
+      "costo": 22.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Samsung S26 Ultra 5G 12GB 512GB",
+      "costo": 1130.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Samsung S26 Ultra 5G 12GB 256GB",
+      "costo": 1000.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Samsung S26 Plus 5G 12GB 512GB",
+      "costo": 1150.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung S26 Plus 5G 12GB 256GB",
+      "costo": 1050.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Samsung S26 5G 12GB 512GB",
+      "costo": 920.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung S26 5G 12GB 256GB",
+      "costo": 770.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Samsung S25 Ultra 5G 12GB 512GB",
+      "costo": 970.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "SilverBlue"
+      ]
+    },
+    {
+      "nombre": "Samsung S25 Ultra 5G 12GB 256GB",
+      "costo": 870.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "SilverBlue"
+      ]
+    },
+    {
+      "nombre": "Samsung A57 5G 12GB 512GB",
+      "costo": 630.0,
+      "proveedor": "fr",
+      "colores": [
+        "Navy"
+      ]
+    },
+    {
+      "nombre": "Samsung A57 5G 8GB 256GB",
+      "costo": 480.0,
+      "proveedor": "fr",
+      "colores": [
+        "Navy"
+      ]
+    },
+    {
+      "nombre": "Samsung A37 5G 8GB 256GB",
+      "costo": 430.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung A27 5G 8GB 256GB",
+      "costo": 380.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung A56 5G 8GB 256GB",
+      "costo": 390.0,
+      "proveedor": "fr",
+      "colores": [
+        "Grafito"
+      ]
+    },
+    {
+      "nombre": "Samsung A36 5G 8GB 256GB",
+      "costo": 313.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "White",
+        "Lima",
+        "Lavander"
+      ]
+    },
+    {
+      "nombre": "Samsung A26 5G 8GB 256GB",
+      "costo": 275.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "White"
+      ]
+    },
+    {
+      "nombre": "Samsung A17 5G 8GB 256GB",
+      "costo": 250.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung A17 8GB 256GB",
+      "costo": 235.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Samsung A17 5G 4GB 128GB",
+      "costo": 185.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung A17 6GB 128GB",
+      "costo": 190.0,
+      "proveedor": "fr",
+      "colores": [
+        "Gray"
+      ]
+    },
+    {
+      "nombre": "Samsung A17 4GB 128GB",
+      "costo": 173.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung A07 4GB 128GB",
+      "costo": 126.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "Samsung A07 4GB 64GB",
+      "costo": 120.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung A16 4GB 128GB",
+      "costo": 145.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung A06 4GB 128GB",
+      "costo": 132.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Huawei Pura80 Pro 12GB 512GB",
+      "costo": 900.0,
+      "proveedor": "fr",
+      "colores": [
+        "White"
+      ]
+    },
+    {
+      "nombre": "Alcatel 1 Ultra 32GB",
+      "costo": 40.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Cat B30 4G",
+      "costo": 45.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Realme GT3 5G 240W 16GB 1TB",
+      "costo": 450.0,
+      "proveedor": "fr",
+      "colores": [
+        "Purple"
+      ]
+    },
+    {
+      "nombre": "Infinix Note 40 Pro+ 5G 12GB 256GB + MagCharge Wireless",
+      "costo": 280.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Grey"
+      ]
+    },
+    {
+      "nombre": "Infinix Note 40 Pro 5G 8GB 256GB + MagCharge Wireless",
+      "costo": 260.0,
+      "proveedor": "fr",
+      "colores": [
+        "Grey",
+        "Gold"
+      ]
+    },
+    {
+      "nombre": "Moto Edge 70 Pro 5G 12GB 512GB",
+      "costo": 830.0,
+      "proveedor": "fr",
+      "colores": [
+        "White"
+      ]
+    },
+    {
+      "nombre": "Moto Edge 70 5G 12GB 512GB (White) Edicion Swarovski Collection",
+      "costo": 620.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Moto Edge 70 5G 12GB 512GB (Grey) slim",
+      "costo": 540.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Moto Edge 70 Fusion 5G 12GB 256GB",
+      "costo": 430.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Moto Edge 60 Pro 5G 12GB 512GB",
+      "costo": 480.0,
+      "proveedor": "fr",
+      "colores": [
+        "Gris",
+        "Uva"
+      ]
+    },
+    {
+      "nombre": "Moto Edge 60 Fusion 5G 8GB 256GB",
+      "costo": 280.0,
+      "proveedor": "fr",
+      "colores": [
+        "Pink",
+        "Grey"
+      ]
+    },
+    {
+      "nombre": "Moto Edge 50 Ultra 5G 12GB 512GB + Moto Buds",
+      "costo": 600.0,
+      "proveedor": "fr",
+      "colores": [
+        "Nordic Wood Beige"
+      ]
+    },
+    {
+      "nombre": "Moto Edge 50 5G 12GB 512GB",
+      "costo": 330.0,
+      "proveedor": "fr",
+      "colores": [
+        "Grey",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "Moto G77 5G 256GB 8GB",
+      "costo": 315.0,
+      "proveedor": "fr",
+      "colores": [
+        "Cafe",
+        "Esmeralda"
+      ]
+    },
+    {
+      "nombre": "Moto G67 5G 256GB 4GB",
+      "costo": 285.0,
+      "proveedor": "fr",
+      "colores": [
+        "Gris",
+        "Lima"
+      ]
+    },
+    {
+      "nombre": "Moto G17 Power 256GB 8GB",
+      "costo": 255.0,
+      "proveedor": "fr",
+      "colores": [
+        "Arandano",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Moto G17 256GB 4GB",
+      "costo": 210.0,
+      "proveedor": "fr",
+      "colores": [
+        "Rosa",
+        "Celeste",
+        "Arandano"
+      ]
+    },
+    {
+      "nombre": "Moto G96 5G 128GB 8GB",
+      "costo": 240.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Moto G86 Power 5G 256GB 8GB",
+      "costo": 260.0,
+      "proveedor": "fr",
+      "colores": [
+        "Cereza"
+      ]
+    },
+    {
+      "nombre": "Moto G86 5G 8GB 512GB",
+      "costo": 285.0,
+      "proveedor": "fr",
+      "colores": [
+        "Cereza"
+      ]
+    },
+    {
+      "nombre": "Moto G86 5G 8GB 256GB (Blue) slim",
+      "costo": 270.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Moto G56 5G 8GB 256GB",
+      "costo": 255.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Moto G06 Power 64GB 4GB Slim",
+      "costo": 115.0,
+      "proveedor": "fr",
+      "colores": [
+        "Laurel Khaki"
+      ]
+    },
+    {
+      "nombre": "Moto G35 5G 256GB 4GB",
+      "costo": 190.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Moto G15 Power 256GB 8GB (Grey) slim",
+      "costo": 175.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Moto G15 4GB 512GB",
+      "costo": 185.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Moto G15 4GB 256GB",
+      "costo": 160.0,
+      "proveedor": "fr",
+      "colores": [
+        "Green",
+        "Orange"
+      ]
+    },
+    {
+      "nombre": "Moto G06 4GB 256GB",
+      "costo": 146.0,
+      "proveedor": "fr",
+      "colores": [
+        "Verde",
+        "Azul",
+        "Naranja"
+      ]
+    },
+    {
+      "nombre": "Moto G06 4GB 128GB",
+      "costo": 140.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Moto G05 4GB 128GB",
+      "costo": 130.0,
+      "proveedor": "fr",
+      "colores": [
+        "Green"
+      ]
+    },
+    {
+      "nombre": "Moto G04S 256GB 4GB",
+      "costo": 140.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Moto E15 2GB 64GB (Blue) con Cargador",
+      "costo": 116.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Oppo A40 4GB 256GB Grado militar",
+      "costo": 140.0,
+      "proveedor": "fr",
+      "colores": [
+        "Cafe",
+        "Purple"
+      ]
+    },
+    {
+      "nombre": "Xiaomi Mi 17 Ultra 5G 16GB 512GB",
+      "costo": 1320.0,
+      "proveedor": "fr",
+      "colores": [
+        "Green"
+      ]
+    },
+    {
+      "nombre": "Xiaomi Mi 17 5G 12GB 512GB (Black / Blue) slim",
+      "costo": 880.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Xiaomi Mi 17T 5G 12GB 512GB",
+      "costo": 660.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Xiaomi Mi 17T Pro 5G 12GB 512GB",
+      "costo": 840.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Xiaomi Mi 17T Pro 5G 12GB 1TB",
+      "costo": 950.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Xiaomi Mi 15T Pro 5G 12GB 512GB",
+      "costo": 750.0,
+      "proveedor": "fr",
+      "colores": [
+        "Gold"
+      ]
+    },
+    {
+      "nombre": "Xiaomi Mi 15T 5G 12GB 512GB",
+      "costo": 630.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Xiaomi Mi 15T 5G 12GB 256GB",
+      "costo": 500.0,
+      "proveedor": "fr",
+      "colores": [
+        "Gray"
+      ]
+    },
+    {
+      "nombre": "Poco F8 Ultra 5G 16GB 512GB",
+      "costo": 900.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Poco F8 Ultra 5G 12GB 256GB",
+      "costo": 780.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Poco F8 Pro 5G 12GB 512GB",
+      "costo": 680.0,
+      "proveedor": "fr",
+      "colores": [
+        "Plata titanio"
+      ]
+    },
+    {
+      "nombre": "Poco F8 Pro 5G 12GB 256GB",
+      "costo": 545.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Poco X8 Pro Max 5G 12GB 512GB",
+      "costo": 570.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Poco X8 Pro Max 5G 12GB 256GB",
+      "costo": 510.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue",
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Poco X8 Pro 5G 12GB 512GB",
+      "costo": 435.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "Poco X8 Pro 5G 8GB 512GB",
+      "costo": 425.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Poco X8 Pro 5G 8GB 256GB",
+      "costo": 370.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Poco X7 Pro 5G 12GB 512GB",
+      "costo": 385.0,
+      "proveedor": "fr",
+      "colores": [
+        "Green"
+      ]
+    },
+    {
+      "nombre": "Poco X7 Pro 5G 8GB 256GB",
+      "costo": 335.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Poco C71 4GB 128GB",
+      "costo": 135.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Poco C81 Pro 4GB 256GB",
+      "costo": 170.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Poco C85 8GB 256GB",
+      "costo": 180.0,
+      "proveedor": "fr",
+      "colores": [
+        "Green",
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Poco M8 5G 8GB 256GB",
+      "costo": 252.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Poco M8 5G 8GB 512GB",
+      "costo": 280.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 15 6GB 128GB",
+      "costo": 205.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 15 8GB 256GB",
+      "costo": 230.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 15 Pro 12GB 512GB",
+      "costo": 330.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 15 Pro 8GB 256GB",
+      "costo": 290.0,
+      "proveedor": "fr",
+      "colores": [
+        "Titanium",
+        "Black",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 15 5G 8GB 256GB",
+      "costo": 262.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 15 Pro 5G 8GB 256GB",
+      "costo": 325.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Gris Titanio"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 15 Pro 5G 8GB 512GB",
+      "costo": 345.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 15 Pro+ 5G 8GB 256GB",
+      "costo": 380.0,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 15 Pro+ 5G 12GB 512GB",
+      "costo": 440.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 14 8GB 256GB (Purple) slim",
+      "costo": 200.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Redmi Note 14 5G 8GB 256GB (Purple) slim",
+      "costo": 215.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Redmi Note 14S 8GB 256GB",
+      "costo": 230.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 14S 12GB 512GB",
+      "costo": 270.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 14 Pro 5G 8GB 256GB",
+      "costo": 275.0,
+      "proveedor": "fr",
+      "colores": [
+        "Green"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 14 Pro 5G 12GB 256GB",
+      "costo": 290.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 14 Pro 5G 12GB 512GB",
+      "costo": 330.0,
+      "proveedor": "fr",
+      "colores": [
+        "White",
+        "Black",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 14 Pro+ 5G 12GB 256GB",
+      "costo": 320.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Blue",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 14 Pro+ 5G 12GB 512GB",
+      "costo": 390.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi Note 14 Pro+ 5G 16GB 512GB",
+      "costo": 415.0,
+      "proveedor": "fr",
+      "colores": [
+        "White"
+      ]
+    },
+    {
+      "nombre": "Redmi 15 8GB 256GB",
+      "costo": 200.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi 15C 8GB 256GB (8GB+8GB)",
+      "costo": 177.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi 15C 4GB 256GB (4GB+4GB)",
+      "costo": 165.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi 15C 4GB 128GB (4GB+4GB)",
+      "costo": 145.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi 13C 4GB 256GB",
+      "costo": 120.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Blue",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "Redmi A7 Pro 4GB 128GB (4GB+4GB)",
+      "costo": 145.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi A5 4GB 128GB",
+      "costo": 140.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Redmi A5 3GB 64GB (3GB+3GB)",
+      "costo": 115.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Redmi Buds 6 Play",
+      "costo": 14.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "JBL Tune 730BT",
+      "costo": 57.0,
+      "proveedor": "fr",
+      "colores": [
+        "White"
+      ]
+    },
+    {
+      "nombre": "JBL PartyBox 710",
+      "costo": 820.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "JBL Boombox 4",
+      "costo": 460.0,
+      "proveedor": "fr",
+      "colores": [
+        "Camuflado"
+      ]
+    },
+    {
+      "nombre": "JBL Charge 5",
+      "costo": 140.0,
+      "proveedor": "fr",
+      "colores": [
+        "Red"
+      ]
+    },
+    {
+      "nombre": "JBL Flip 7",
+      "costo": 105.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "JBL Grip",
+      "costo": 80.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black",
+        "White"
+      ]
+    },
+    {
+      "nombre": "Amazon Fire TV Stick 4K Select 8GB Wi-Fi 5",
+      "costo": 47.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Amazon Kindle Gen 11 16GB",
+      "costo": 165.0,
+      "proveedor": "fr",
+      "colores": [
+        "Matcha"
+      ]
+    },
+    {
+      "nombre": "Xiaomi 33W Magnetic Power Bank 10000mAh",
+      "costo": 40.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Xiaomi Sports Fanny Pack",
+      "costo": 30.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "GO LINK GL-V3 PRO Terminal POS Android con impresora + NFC",
+      "costo": 150.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "EA Sports FC 26 PS5",
+      "costo": 50.0,
+      "proveedor": "fr",
+      "colores": [
+        "Fisico"
+      ]
+    },
+    {
+      "nombre": "Xbox 360 Stingray 4GB Nueva, fuente 220V, sin juegos",
+      "costo": 200.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "PlayStation 5 Pro 2TB Digital",
+      "costo": 1400.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "PlayStation 5 Slim 825GB Digital",
+      "costo": 730.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Nintendo Switch 2 256GB + Mario Kart World",
+      "costo": 730.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Xiaomi Electric Shaver S700",
+      "costo": 90.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Xiaomi Electric Shaver S200",
+      "costo": 35.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Xiaomi Mi 5-Blade Electric Shaver",
+      "costo": 90.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Nokia 106",
+      "costo": 18.0,
+      "proveedor": "fr",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Cerradura inteligente Xiaomi Self-Install Smart Lock con keypad incluido",
+      "costo": 150.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Camara de seguridad Xiaomi Smart C700 8MP 4K Wi-Fi",
+      "costo": 75.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Memoria MicroSD SanDisk 128GB Clase 10 apta para camara Xiaomi C700",
+      "costo": 28.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Compresor de aire portatil Xiaomi 2 Pro Inflador digital recargable",
+      "costo": 65.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Compresor de aire portatil Xiaomi 2 Inflador digital recargable",
+      "costo": 45.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Xiaomi Mi Vacuum Cleaner Mini",
+      "costo": 60.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Aspiradora Xiaomi Robot Vacuum S40",
+      "costo": 250.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Aspiradora Xiaomi Robot Vacuum S40 Pro",
+      "costo": 400.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Aspiradora Xiaomi Robot Vacuum X20 Pro",
+      "costo": 700.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "Robot limpiavidrios ECOVACS WINBOT MINI",
+      "costo": 295.0,
+      "proveedor": "fr",
+      "colores": [
+        "White"
+      ]
+    },
+    {
+      "nombre": "Anthbot Genie 600 Robot cortacesped inteligente",
+      "costo": 1200.0,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 13 128GB (Usado) (100%)",
+      "costo": 330,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 13 Pro 128GB (Usado) (100%) (90%) (96%)",
+      "costo": 420,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 13 Pro 256GB (Usado) (100%)",
+      "costo": 475,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 13 Pro Max 128GB (Usado) (100%) (93%) (95%)",
+      "costo": 500,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 14 Pro 128GB (Usado) (100%) (94%)",
+      "costo": 480,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 14 Pro 256GB (Usado) (92%) (93%) (95%) (96%)",
+      "costo": 550,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 15 128GB (Usado) (100%)",
+      "costo": 465,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 15 Pro 128GB (Usado) (100%)",
+      "costo": 590,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 15 Pro 256GB (Usado) (100%)",
+      "costo": 650,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 15 Pro Max 256GB (Usado) (100%)",
+      "costo": 730,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 16 Pro Max 256GB (Usado) (90%) (91%)",
+      "costo": 900,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "iPhone 16 Pro Max 512GB (Usado) (90%)",
+      "costo": 960,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "MacBook Air M2 A2681 8GB RAM 256GB SSD (Usada) S/Cargador",
+      "costo": 755,
+      "proveedor": "fr"
+    },
+    {
+      "nombre": "MacBook Air M2 A2681 8GB RAM 256GB SSD (Usada) C/Cargador Original",
+      "costo": 795,
+      "proveedor": "fr"
+    }
+  ]
+}

@@ -1,0 +1,337 @@
+{
+  "items": [
+    {
+      "nombre": "iPhone 17 256GB",
+      "costo": 915.0,
+      "proveedor": "em",
+      "colores": [
+        "Black",
+        "Mist Blue"
+      ]
+    },
+    {
+      "nombre": "iPhone 17 Pro Max 256GB",
+      "costo": 1237.5,
+      "proveedor": "em",
+      "colores": [
+        "Silver",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "MacMini M1 8CPU 8GPU 512GB 8GB",
+      "costo": 650.0,
+      "proveedor": "em",
+      "colores": [
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "MacMini M4 10GPU 10CPU 256GB 16GB",
+      "costo": 980.0,
+      "proveedor": "em",
+      "colores": [
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "MacBook Neo A18 Pro 6 Core CPU 256GB 8GB",
+      "costo": 850.0,
+      "proveedor": "em",
+      "colores": [
+        "Silver",
+        "Indigo",
+        "Blush",
+        "Citrus"
+      ]
+    },
+    {
+      "nombre": "MacBook Neo A18 Pro 6 Core CPU 512GB 8GB",
+      "costo": 950.0,
+      "proveedor": "em",
+      "colores": [
+        "Indigo",
+        "Blush",
+        "Citrus"
+      ]
+    },
+    {
+      "nombre": "Macbook Air 13 M5 10CPU 8GPU 512GB 16GB",
+      "costo": 1400.0,
+      "proveedor": "em",
+      "colores": [
+        "Silver",
+        "Midnight",
+        "Starlight",
+        "Sky Blue"
+      ]
+    },
+    {
+      "nombre": "Macbook Air 15 M5 10CPU 10GPU 512GB 16GB",
+      "costo": 1610.0,
+      "proveedor": "em",
+      "colores": [
+        "Sky Blue"
+      ]
+    },
+    {
+      "nombre": "Macbook Air 15 M5 10CPU 10GPU 1TB 16GB",
+      "costo": 1950.0,
+      "proveedor": "em",
+      "colores": [
+        "Midnight"
+      ]
+    },
+    {
+      "nombre": "MacBook Pro 14 M5 10CPU 10GPU 512GB 16GB",
+      "costo": 2000.0,
+      "proveedor": "em",
+      "colores": [
+        "Space Black"
+      ]
+    },
+    {
+      "nombre": "MacBook Pro 14 M5 10CPU 10GPU 1TB 16GB",
+      "costo": 2090.0,
+      "proveedor": "em",
+      "colores": [
+        "Space Black"
+      ]
+    },
+    {
+      "nombre": "MacBook Pro 14 M5 PRO 15CPU 16GPU 1TB 24GB",
+      "costo": 2850.0,
+      "proveedor": "em",
+      "colores": [
+        "Space Black",
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "MacBook Pro 16 M5 PRO 18CPU 20GPU 1TB 24GB",
+      "costo": 2950.0,
+      "proveedor": "em",
+      "colores": [
+        "Space Black"
+      ]
+    },
+    {
+      "nombre": "iPad Mini 7ma gen 128GB",
+      "costo": 630.0,
+      "proveedor": "em",
+      "colores": [
+        "Purple",
+        "Space Gray"
+      ]
+    },
+    {
+      "nombre": "iPad A16 11\" 2025 128GB",
+      "costo": 503.33,
+      "proveedor": "em",
+      "colores": [
+        "Blue",
+        "Pink",
+        "Yellow"
+      ]
+    },
+    {
+      "nombre": "iPad A16 11\" 2025 256GB",
+      "costo": 610.0,
+      "proveedor": "em",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "iPad Air M4 11\" 128GB",
+      "costo": 750.0,
+      "proveedor": "em",
+      "colores": [
+        "Purple",
+        "Blue",
+        "Starlight"
+      ]
+    },
+    {
+      "nombre": "iPad Air M3 13\" 128GB",
+      "costo": 870.0,
+      "proveedor": "em",
+      "colores": [
+        "Purple",
+        "Starlight",
+        "Space gray"
+      ]
+    },
+    {
+      "nombre": "iPad Air M4 13\" 128GB",
+      "costo": 990.0,
+      "proveedor": "em",
+      "colores": [
+        "Purple"
+      ]
+    },
+    {
+      "nombre": "iPad Air M3 13\" 256GB",
+      "costo": 950.0,
+      "proveedor": "em",
+      "colores": [
+        "Space Gray",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Watch Xiaomi Band 7",
+      "costo": 23.0,
+      "proveedor": "em",
+      "colores": [
+        "Negro"
+      ]
+    },
+    {
+      "nombre": "Apple Watch SE 3ra Gen 40mm",
+      "costo": 300.0,
+      "proveedor": "em",
+      "colores": [
+        "Starlight Sport Band",
+        "Midnight Sport Band"
+      ]
+    },
+    {
+      "nombre": "Apple Watch SE 3ra Gen 44mm",
+      "costo": 330.0,
+      "proveedor": "em",
+      "colores": [
+        "Starlight Sport Band",
+        "Midnight Sport Band"
+      ]
+    },
+    {
+      "nombre": "Apple Watch Serie 10 + CELL 42mm Titanium Milanese Loop",
+      "costo": 790.0,
+      "proveedor": "em",
+      "colores": [
+        "Gold"
+      ]
+    },
+    {
+      "nombre": "Apple Watch Serie 10 + CELL 46mm Titanium Milanese Loop",
+      "costo": 820.0,
+      "proveedor": "em",
+      "colores": [
+        "Natural"
+      ]
+    },
+    {
+      "nombre": "Apple Watch Serie 11 42mm",
+      "costo": 420.0,
+      "proveedor": "em",
+      "colores": [
+        "Jet Black Sport Band",
+        "Rose Gold Sport Band",
+        "Space Gray Sport Band"
+      ]
+    },
+    {
+      "nombre": "Apple Watch Serie 11 46mm",
+      "costo": 450.0,
+      "proveedor": "em",
+      "colores": [
+        "Silver Purple Fog Sport Band",
+        "Space Gray Sport Band"
+      ]
+    },
+    {
+      "nombre": "Apple Watch Ultra 3 GPS + CELL 49mm",
+      "costo": 820.0,
+      "proveedor": "em",
+      "colores": [
+        "Black Alpine Loop",
+        "Anchor Blue Ocean Band"
+      ]
+    },
+    {
+      "nombre": "AirPods Max 2 USB-C",
+      "costo": 620.0,
+      "proveedor": "em",
+      "colores": [
+        "Purple",
+        "Midnight",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "AirPods 4 Noise Cancellation",
+      "costo": 200.0,
+      "proveedor": "em",
+      "colores": [
+        "Blanco"
+      ]
+    },
+    {
+      "nombre": "Beats Studio 3",
+      "costo": 200.0,
+      "proveedor": "em",
+      "colores": [
+        "Rojo",
+        "Azul"
+      ]
+    },
+    {
+      "nombre": "Apple Magic Keyboard iPad A16",
+      "costo": 350.0,
+      "proveedor": "em",
+      "colores": [
+        "White"
+      ]
+    },
+    {
+      "nombre": "Magic Keyboard 12.9\" Pro M4 / Pro M5",
+      "costo": 450.0,
+      "proveedor": "em",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Cargador Original en caja MacBook 67W USB C",
+      "costo": 60.0,
+      "proveedor": "em"
+    },
+    {
+      "nombre": "Cargador 20W Original Carga Rapida",
+      "costo": 25.0,
+      "proveedor": "em"
+    },
+    {
+      "nombre": "Cable USB-C a USB-C Original Thunderbolt 3",
+      "costo": 25.0,
+      "proveedor": "em"
+    },
+    {
+      "nombre": "Belkin Magsafe 3-in-1 Arbolito",
+      "costo": 200.0,
+      "proveedor": "em",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Pencil PRO",
+      "costo": 155.0,
+      "proveedor": "em",
+      "colores": [
+        "con iPad",
+        "sin iPad"
+      ]
+    },
+    {
+      "nombre": "Pencil USB C",
+      "costo": 145.0,
+      "proveedor": "em",
+      "colores": [
+        "con iPad",
+        "sin iPad"
+      ]
+    }
+  ]
+}

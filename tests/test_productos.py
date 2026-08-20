@@ -11,8 +11,8 @@ def test_genera_productos_sin_proveedor_y_con_3_precios():
     assert len(prods) == 1                      # se consolida al más barato
     p = prods[0]
     assert "proveedor" not in p                 # NUNCA el proveedor
-    assert p["usd"] == 660                      # 610 + banda 50, redondeo a 5
-    assert p["pesos"] == 660 * 1540
+    assert p["usd"] == 670                      # 610 + margen iPhone 60 (601-900), redondeo a 5
+    assert p["pesos"] == 670 * 1540
     assert p["transferencia"] == round(p["pesos"] / 0.97)
     assert p["link_imagen"].startswith("https://www.google.com/search?tbm=isch")
     assert p["categoria"]                       # tiene alguna categoría no vacía

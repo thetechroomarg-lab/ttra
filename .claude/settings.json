@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"/Users/toraba/Precios Claude/\" 2>&1; echo \"---\"; grep -l \"FRASE\" -r \"/private/tmp/claude-501/-Users-toraba-TTRA-Project/33a3f0ed-cf01-4a72-8a9f-a4317c9bc850/scratchpad/\" 2>&1)",
+      "Read(//Users/toraba/Precios Claude/**)"
+    ]
+  }
+}
