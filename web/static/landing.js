@@ -2029,7 +2029,15 @@ function iniciarDesplazamientoCarrousel(el) {
 function escapeHtml(s) {
   const div = document.createElement("div");
   div.textContent = s ?? "";
-  return div.innerHTML;
+  // innerHTML escapa &/</> pero NO las comillas (no hace falta para texto
+  // suelto) — acá SÍ hace falta, porque el resultado se usa también dentro
+  // de atributos HTML entre comillas dobles (data-nombre="...", href="...").
+  // Un nombre de producto con " literal (ej. notebooks/iPads con pulgadas,
+  // "15.6""), sin este reemplazo, cerraba el atributo antes de tiempo y
+  // rompía el HTML — el botón "Agregar al carrito" quedaba con un
+  // data-nombre truncado que nunca matcheaba ningún producto real, así que
+  // el click no hacía nada, en silencio.
+  return div.innerHTML.replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
 // Ícono de cámara (SVG, no emoji): lleva a una búsqueda de Google Imágenes
