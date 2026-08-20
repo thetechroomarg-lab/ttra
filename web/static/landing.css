@@ -329,6 +329,20 @@ html[data-modo="classic"][data-tema="oscuro"] .rc-tema-sol { display: block; }
   align-items: center;
   justify-content: center;
 }
+/* En Classic no hay switches/reproductor debajo (eso es solo de Fallout)
+   que expliquen ese alto extra: llenarlo con las cards estiradas se veía
+   demasiado grande. Vuelven al tamaño fijo de siempre (a pedido explícito,
+   aunque quede aire libre debajo, dentro de la columna — la columna sigue
+   midiendo lo mismo por fuera, así que el carrousel de recomendados de la
+   derecha no se mueve). */
+html[data-modo="classic"] #categorias.categorias-columna {
+  flex: 0 0 auto;
+}
+html[data-modo="classic"] #categorias .btn-categoria {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 18px 20px;
+}
 .btn-categoria.activo {
   background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
   font-weight: 600;
