@@ -312,15 +312,24 @@ html[data-modo="classic"] .btn-modo.activo {
   border-color: var(--cl-rojo);
 }
 
-/* Botón "Cerrar sesión" del header: mismo diseño solido navy/blanco que el
-   del panel de admin de clientes. */
-html[data-modo="classic"] #btn-logout-classic {
+/* Menú de perfil del header: "Ir a perfil" y "Cerrar sesión" comparten el
+   mismo diseño sólido navy (mismo look que el panel de admin de clientes)
+   vía .rc-perfil-opcion en landing.css — acá solo se pisa el color de
+   texto de "Cerrar sesión" a amarillo huevo, para diferenciarlo un poco
+   sin romper la tipografía compartida. */
+html[data-modo="classic"] .rc-perfil-opcion {
   background: var(--cl-azul-francia);
   color: #fff;
-  border-color: var(--cl-azul-francia);
+}
+html[data-modo="classic"] .rc-perfil-opcion:hover {
+  background: #001835;
+  color: #fff;
+}
+html[data-modo="classic"] #btn-logout-classic {
+  color: var(--cl-amarillo-huevo);
 }
 html[data-modo="classic"] #btn-logout-classic:hover {
-  background: #001835;
+  color: var(--cl-amarillo-huevo);
 }
 
 /* Mensaje de confirmación de log out: tarjeta blanca redondeada, igual

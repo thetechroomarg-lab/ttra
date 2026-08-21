@@ -1299,6 +1299,21 @@ function productosAlAzar(n) {
   return elegidos;
 }
 
+// Marcado compartido por tarjetaRecomendadoHtml y tarjetaProducto: ambos
+// contenedores (.tarjeta-recomendado-precio y .card .precios) son
+// flex-column, así que cada <strong>/<span> ya cae en su propia fila sin
+// necesitar <br>.
+function bloquePreciosHtml(p) {
+  const pr = preciosDe(p);
+  return `
+    <strong>Dólares: $${formatearPesos(pr.dolares)}</strong>
+    <span>Dólar banco USA: $${formatearPesos(pr.bancoUsa)}</span>
+    <span>USDT: $${formatearPesos(pr.usdt)}</span>
+    <span>Pesos: $${formatearPesos(pr.pesos)}</span>
+    <span>Pesos transf: $${formatearPesos(pr.pesosTransf)}</span>
+  `;
+}
+
 function tarjetaRecomendadoHtml(p) {
   const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
   const listaColores = tieneColores ? p.colores : ["Color único"];
@@ -1309,9 +1324,7 @@ function tarjetaRecomendadoHtml(p) {
       <div class="tarjeta-recomendado-etiqueta">✨ Recomendado para vos</div>
       <h3>${marcaLogoHtml(p.marca, "marca-logo-card")}${escapeHtml(p.nombre)}</h3>
       <p class="tarjeta-recomendado-precio">
-        <strong>U$D ${p.usd ?? "-"}</strong>
-        <span>$ ${formatearPesos(p.pesos)} contado</span>
-        <span>$ ${formatearPesos(p.transferencia)} transferencia</span>
+        ${bloquePreciosHtml(p)}
         <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}</span>
       </p>
       <div class="tarjeta-recomendado-acciones">
@@ -2066,6 +2079,57 @@ function botonEspecificacionesHtml(p) {
   return `<a class="btn-foto" href="${escapeHtml(url)}" target="_blank" rel="noopener" title="Ver especificaciones en Google" aria-label="Ver especificaciones en Google">${ICONO_ESPECIFICACIONES_SVG}</a>`;
 }
 
+// Ícono de compartir (SVG, no emoji): a la derecha del de especificaciones,
+// misma fila. No es un link — dispara compartirProducto (copia el link al
+// portapapeles), por eso es <button> y no <a> como los otros dos.
+const ICONO_COMPARTIR_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <circle cx="6" cy="12" r="2.6" stroke="currentColor" stroke-width="1.6"/>
+  <circle cx="18" cy="6" r="2.6" stroke="currentColor" stroke-width="1.6"/>
+  <circle cx="18" cy="18" r="2.6" stroke="currentColor" stroke-width="1.6"/>
+  <line x1="8.3" y1="10.8" x2="15.7" y2="7.2" stroke="currentColor" stroke-width="1.6"/>
+  <line x1="8.3" y1="13.2" x2="15.7" y2="16.8" stroke="currentColor" stroke-width="1.6"/>
+</svg>`;
+
+function botonCompartirHtml() {
+  return `<button type="button" class="btn-foto btn-compartir" title="Compartir" aria-label="Compartir">${ICONO_COMPARTIR_SVG}</button>`;
+}
+
+// Aviso flotante genérico, abajo al centro, se oculta solo. Reutilizado por
+// compartirProducto (ver más abajo).
+let avisoFlotanteTimeout;
+function mostrarAvisoFlotante(mensaje) {
+  let aviso = document.getElementById("rc-aviso-flotante");
+  if (!aviso) {
+    aviso = document.createElement("div");
+    aviso.id = "rc-aviso-flotante";
+    document.body.appendChild(aviso);
+  }
+  aviso.textContent = mensaje;
+  aviso.classList.add("visible");
+  clearTimeout(avisoFlotanteTimeout);
+  avisoFlotanteTimeout = setTimeout(() => aviso.classList.remove("visible"), 2600);
+}
+
+// Arma el link directo al producto (?producto=<nombre>, preserva el modo
+// Fallout si corresponde) y lo copia al portapapeles. Quien lo abra: si
+// está logueado, landing.js lo lleva directo a la sección y abre la card
+// (ver abrirProductoCompartido); si no tiene cuenta, cae en login.html que
+// lo manda al registro y, ya creada la cuenta, lo redirige acá mismo (ver
+// login.js).
+async function compartirProducto(nombre) {
+  const params = new URLSearchParams();
+  params.set("producto", nombre);
+  if (modoVisual === "fallout") params.set("modo", "fallout");
+  const url = `${location.origin}/?${params.toString()}`;
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    // Sin permiso/soporte de portapapeles no hay forma de copiarlo solo,
+    // pero el aviso es el mismo: no es crítico bloquear por esto.
+  }
+  mostrarAvisoFlotante("¡Link copiado! Enviáselo a tus amigos así pueden verlo!");
+}
+
 // true mientras el usuario apagó el Pip-Boy manualmente (ver Main Switch,
 // #btn-pipboy-switch). Se reinicia a false cada vez que se entra a Fallout
 // (ver aplicarModoVisual), así siempre arranca encendido.
@@ -2182,6 +2246,21 @@ function formatearPesos(valor) {
   return valor === undefined || valor === null ? "-" : Number(valor).toLocaleString("es-AR");
 }
 
+// Las 5 formas de precio que se muestran en cada card/list view (Classic y
+// Fallout comparten esta misma función — cada modo solo cambia el CSS).
+// Todo redondeado hacia arriba, nunca hacia abajo (a pedido).
+function preciosDe(p) {
+  const dolares = p.usd ?? null;
+  const pesos = p.pesos ?? null;
+  return {
+    dolares,
+    bancoUsa: dolares == null ? null : Math.ceil(dolares / 0.975),
+    usdt: dolares == null ? null : Math.ceil(dolares / 0.99),
+    pesos,
+    pesosTransf: pesos == null ? null : Math.ceil(pesos / 0.97),
+  };
+}
+
 // Cierra cualquier dropdown de color que haya quedado abierto (se llama al
 // abrir otro, o al hacer click en cualquier otro lado de la página).
 function cerrarDropdownsColor() {
@@ -2209,16 +2288,16 @@ function tarjetaProducto(p) {
     </div>
   `;
   return `
-    <div class="card">
+    <div class="card" data-nombre="${escapeHtml(p.nombre)}">
       <h3>${marcaLogoHtml(p.marca, "marca-logo-card")}${escapeHtml(p.nombre)}</h3>
       ${colores}
       <p class="precios">
-        <strong>U$D ${p.usd ?? "-"}</strong><br>
-        $ ${formatearPesos(p.pesos)} contado<br>
-        $ ${formatearPesos(p.transferencia)} transferencia<br>
-        ${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}
+        ${bloquePreciosHtml(p)}
       </p>
-      <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="" type="button" disabled>Agregar al carrito</button>
+      <div class="card-acciones">
+        <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}</span>
+        <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="" type="button" disabled>Agregar al carrito</button>
+      </div>
     </div>
   `;
 }
@@ -2311,6 +2390,13 @@ function pintarGrilla(el, productos, mensajeVacio) {
       const producto = productos.find((p) => p.nombre === btnAgregar.dataset.nombre);
       if (producto) agregarAlCarrito(producto, btnAgregar.dataset.color || null);
     });
+    const btnCompartir = card.querySelector(".btn-compartir");
+    if (btnCompartir) {
+      btnCompartir.addEventListener("click", (e) => {
+        e.stopPropagation();
+        compartirProducto(card.dataset.nombre);
+      });
+    }
     card.addEventListener("click", (e) => {
       if (e.target.closest("button, a, .dropdown-color, li")) return;
       seleccionarCard();
@@ -3027,4 +3113,37 @@ window.addEventListener("resize", sincronizarAlturaNoticiero);
 
 pintarCarrousel();
 renderCarrito();
-cargarCatalogo();
+
+// Link compartido (ver compartirProducto): busca el producto en cualquier
+// sección, navega ahí y lo deja "en modo pop" (misma clase .expandida que
+// usa el click normal en la card). Corre después de que cargarCatalogo
+// termina su propio pintado inicial (home/carrousel), así que pisa esa
+// vista con la sección del producto compartido.
+function buscarProductoYSeccion(nombre) {
+  for (const [clave, productos] of Object.entries(SECCIONES_DATA)) {
+    const encontrado = productos.find((p) => p.nombre === nombre);
+    if (encontrado) return clave;
+  }
+  return null;
+}
+
+function abrirProductoCompartido() {
+  const nombreObjetivo = new URLSearchParams(location.search).get("producto");
+  if (!nombreObjetivo) return;
+  const clave = buscarProductoYSeccion(nombreObjetivo);
+  if (!clave) return;
+  seccionActiva = clave;
+  subFiltrosActivos = new Set();
+  filtroMarcaGlobal = null;
+  pushEstadoNav();
+  actualizarVista();
+  requestAnimationFrame(() => {
+    const card = [...document.querySelectorAll("#productos .card")]
+      .find((c) => c.dataset.nombre === nombreObjetivo);
+    if (!card) return;
+    card.classList.add("expandida");
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+}
+
+cargarCatalogo().then(abrirProductoCompartido);
