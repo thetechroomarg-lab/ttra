@@ -1080,11 +1080,10 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   cursor: var(--rc-cursor-mira);
 }
 
-/* En .tarjeta-recomendado-precio (flex-column: cada <strong>/<span> es su
-   propia fila) los dos íconos necesitan ir juntos en UNA fila, no cada uno
-   en la suya — por eso van envueltos en este span (ver
-   tarjetaRecomendadoHtml en landing.js). En .card .precios (párrafo simple,
-   sin flex) ya quedan lado a lado de por sí, sin necesitar este wrapper. */
+/* Tanto .tarjeta-recomendado-precio como .card .precios son flex-column
+   (cada <strong>/<span> de bloquePreciosHtml es su propia fila, ver
+   landing.js) — los dos íconos de acá abajo necesitan ir juntos en UNA
+   fila en vez de cada uno en la suya, por eso van envueltos en este span. */
 .tarjeta-recomendado-iconos { display: flex; flex-direction: row; }
 
 /* Botón de foto (ícono de cámara) y de especificaciones (ícono de ficha):
@@ -1097,10 +1096,11 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   display: inline-flex; align-items: center; justify-content: center;
   margin-top: 6px;
   width: 26px; height: 26px; flex-shrink: 0; padding: 0;
-  background: none; border: none; color: var(--rc-green-dim);
+  background: none; border: none; box-shadow: none; color: var(--rc-green-dim);
   cursor: var(--rc-cursor-mira);
   transition: color .15s ease, filter .15s ease;
 }
+.btn-foto:hover, .btn-foto:focus-visible { background: none; border: none; box-shadow: none; }
 .btn-foto + .btn-foto { margin-left: 6px; }
 .btn-foto svg { width: 26px; height: 26px; }
 .btn-foto:hover {
@@ -1129,8 +1129,11 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   transform: scale(1.05);
   transform-origin: right center;
 }
-.card .precios { font-size: 13px; color: var(--rc-green-dim); line-height: 1.6; margin: 0; }
-.card .precios strong { color: var(--rc-green-bright); }
+.card .precios {
+  font-size: 13px; color: var(--rc-green-dim); line-height: 1.6; margin: 0;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.card .precios strong { color: var(--rc-green-bright); font-size: 14px; }
 .selector-colores {
   margin: 0; font-size: 12px; color: var(--rc-green-dim);
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -1157,7 +1160,14 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   background: var(--rc-green-faint); color: var(--rc-green-bright);
   cursor: var(--rc-cursor-mira);
 }
-.card .btn-agregar { margin-top: auto; font-size: 13px; }
+/* Envuelve los íconos de foto/especificaciones + "Agregar al carrito",
+   apilados (íconos arriba, botón abajo) — separado del párrafo de precios
+   para que nunca quede pegado al nombre del producto (con nombres largos,
+   en modo Lista, quedaba superpuesto/feo). margin-top:auto va acá en vez
+   de en el botón directamente, para seguir empujando todo el bloque al
+   fondo de la card en modo Cards. */
+.card-acciones { margin-top: auto; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.card .btn-agregar { font-size: 13px; }
 .card .btn-agregar:disabled {
   opacity: 0.4; cursor: not-allowed;
 }
@@ -1171,7 +1181,7 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 .grilla.lista .card h3 { flex: 1 1 200px; -webkit-line-clamp: 1; min-height: 0; }
 .grilla.lista .card .selector-colores { margin: 0; flex: 0 1 220px; }
 .grilla.lista .card .precios { margin: 0; text-align: right; }
-.grilla.lista .card .btn-agregar { margin-top: 0; }
+.grilla.lista .card .card-acciones { margin-top: 0; align-items: center; }
 
 #overlay-carrito {
   position: fixed; inset: 0; background: rgba(0, 0, 0, .6); z-index: 9990;
@@ -1228,3 +1238,18 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   #panel-carrito { padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
   .rc-pie { padding: 12px 14px; font-size: 12px; }
 }
+
+/* Aviso flotante genérico (ver mostrarAvisoFlotante en landing.js) —
+   usado hoy por "Compartir" en cada card/list item. */
+#rc-aviso-flotante {
+  position: fixed; left: 50%; bottom: 24px; z-index: 9998;
+  transform: translate(-50%, 12px);
+  max-width: min(90vw, 360px); text-align: center;
+  background: var(--rc-bg-panel); border: 1px solid var(--rc-green-dim);
+  color: var(--rc-green-bright); font-family: var(--rc-font); font-size: 14px; font-weight: 600;
+  padding: 12px 18px; border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .4), 0 0 10px -2px var(--rc-glow);
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+}
+#rc-aviso-flotante.visible { opacity: 1; transform: translate(-50%, 0); }

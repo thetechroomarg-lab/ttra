@@ -9,6 +9,14 @@ const TITULO_LOGIN = "Bienvenid@ a The Tech Room Arg";
 const TITULO_REGISTRO = "Creación de cuenta";
 const TITULO_CAMBIAR_OBLIGATORIO = "Elegí tu contraseña nueva";
 
+// Link compartido de un producto (ver compartirProducto en landing.js): si
+// alguien sin cuenta lo abre, cae acá con "?producto=..." en la URL. Hay
+// que conservar ese query string al mandarlo de vuelta a "/" después de
+// loguearse o registrarse, así landing.js puede abrir el producto
+// directamente en vez de perderlo en el camino.
+const productoCompartido = new URLSearchParams(location.search).get("producto");
+const destinoTrasIngresar = productoCompartido ? `/${location.search}` : "/";
+
 const btnVerLoginPassword = document.getElementById("btn-ver-login-password");
 const loginPasswordInput = document.getElementById("login-password");
 if (btnVerLoginPassword && loginPasswordInput) {
@@ -50,6 +58,11 @@ function mostrarLogin() {
   tituloLogin.textContent = TITULO_LOGIN;
 }
 
+// Quien abre un link compartido probablemente no tenga cuenta todavía —
+// arranca directo en el form de registro (puede pasarse a login con el
+// link de siempre si ya tiene una).
+if (productoCompartido) mostrarRegistro();
+
 linkIrARegistro.addEventListener("click", (e) => {
   e.preventDefault();
   mostrarRegistro();
@@ -90,7 +103,7 @@ formLogin.addEventListener("submit", async (e) => {
     mostrarCambioObligatorio();
     return;
   }
-  window.location.href = "/";
+  window.location.href = destinoTrasIngresar;
 });
 
 formCambiarObligatorio.addEventListener("submit", async (e) => {
@@ -104,7 +117,7 @@ formCambiarObligatorio.addEventListener("submit", async (e) => {
   }
   const datos = await enviar("/cambiar-password-obligatorio", { password }, errorEl);
   if (!datos) return;
-  window.location.href = "/";
+  window.location.href = destinoTrasIngresar;
 });
 
 formRegistro.addEventListener("submit", async (e) => {
@@ -129,5 +142,5 @@ formRegistro.addEventListener("submit", async (e) => {
     errorEl,
   );
   if (!datos) return;
-  window.location.href = "/";
+  window.location.href = destinoTrasIngresar;
 });
