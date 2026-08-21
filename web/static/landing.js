@@ -46,11 +46,13 @@
 // vuelve a verlo al volver a Classic sin tener que tocarlo de nuevo. ---
 (function () {
   const btn = document.getElementById("btn-tema-classic");
-  let tema = "claro";
+  // Default: oscuro. Si el usuario ya eligió explícitamente "claro" antes,
+  // se respeta esa elección (solo "claro" guardado gana al default).
+  let tema = "oscuro";
   try {
-    tema = localStorage.getItem("rc-tema-classic") === "oscuro" ? "oscuro" : "claro";
+    tema = localStorage.getItem("rc-tema-classic") === "claro" ? "claro" : "oscuro";
   } catch {
-    // Sin localStorage, siempre arranca en claro: no es crítico.
+    // Sin localStorage, siempre arranca en oscuro: no es crítico.
   }
   function aplicarTema(nuevoTema) {
     tema = nuevoTema;
