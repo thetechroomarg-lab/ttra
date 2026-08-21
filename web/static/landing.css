@@ -168,6 +168,10 @@ html[data-modo="fallout"] #btn-modo-fallout { display: none; }
 .rc-perfil-icono-fallout { display: none; }
 html[data-modo="fallout"] .rc-perfil-icono-classic { display: none; }
 html[data-modo="fallout"] .rc-perfil-icono-fallout { display: block; }
+html[data-modo="fallout"] .rc-perfil-nombre {
+  font-size: 22px;
+  line-height: 22px;
+}
 
 .rc-perfil-dropdown {
   position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 20;
