@@ -149,6 +149,17 @@ window.reproducirBootSequenceTTRA = function (alTerminar) {
   reproducirBootCompleto(overlay, terminar);
 };
 
+// Registro del service worker (ver sw.js): habilita el cartel de "instalar
+// como app" del navegador. Sin caché propia adentro, así nunca sirve
+// precios/catálogo/JS viejos — solo existe para cumplir el requisito de
+// instalación de una PWA.
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {
+    // Si falla el registro, el sitio sigue funcionando igual sin ser
+    // instalable: no es crítico.
+  });
+}
+
 (function () {
   const overlay = document.getElementById("rc-boot");
   if (!overlay) return;
