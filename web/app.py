@@ -2,6 +2,7 @@ import html
 import json
 import logging
 import os
+import posixpath
 import re
 import time
 import xml.etree.ElementTree as ET
@@ -61,27 +62,41 @@ async def sin_cache_estaticos(request: Request, call_next):
 _RUTAS_HTML_PUBLICAS = {"/login.html"}
 
 
+def _normalizar_ruta(path):
+    """Normaliza un path de request al MISMO criterio que usa StaticFiles
+    para resolver qué archivo termina sirviendo: colapsa barras repetidas
+    (incluida la excepción POSIX de "//" inicial, que posixpath.normpath por
+    sí solo NO colapsa) y después resuelve segmentos "." y ".." con
+    posixpath.normpath — esto último es imprescindible porque uvicorn ya
+    decodifica %2e/%2f antes de que la app vea el path, así que
+    "/foo/%2e%2e/" llega literalmente como "/foo/../" y hay que resolverlo
+    como "/", no compararlo tal cual contra un sufijo .html."""
+    ruta = re.sub(r"/+", "/", path)
+    ruta = posixpath.normpath(ruta)
+    if not ruta.startswith("/"):
+        ruta = "/" + ruta
+    return ruta.lower()
+
+
 @app.middleware("http")
 async def gate_paginas_html(request: Request, call_next):
     """El StaticFiles mount de más abajo serviría cualquier .html (incluido
     index.html o catalogo.html) sin pasar por el chequeo de sesión que sí
     tiene GET "/". Esto cierra ese agujero: cualquier .html estático, salvo
     login.html (la página de login/registro, que tiene que ser pública),
-    requiere sesión activa.
-
-    El chequeo se hace sobre el path NORMALIZADO (barras repetidas
-    colapsadas, sin barra final, en minúsculas) — StaticFiles resuelve
-    "//", "///" o "/index.html/" igual que "/index.html", así que comparar
-    contra el path crudo deja pasar esas variantes sin pasar por sesión."""
+    requiere sesión activa — usando la MISMA normalización de path que
+    aplica StaticFiles, no una comparación contra el path crudo (ver
+    _normalizar_ruta). El mount además se registra con html=False (más
+    abajo) para que ninguna variante que resuelva a un directorio sirva
+    index.html automáticamente sin pasar por esta gate."""
     ruta_cruda = request.url.path
-    ruta = re.sub(r"/+", "/", ruta_cruda)
-    ruta = ruta.rstrip("/") or "/"
-    ruta = ruta.lower()
+    ruta = _normalizar_ruta(ruta_cruda)
 
     if ruta == "/" and ruta_cruda != "/":
-        # "//", "///", etc.: StaticFiles las resolvería igual que "/", que
-        # ya está gateada por la ruta explícita @app.get("/") — canonicalizamos
-        # ahí en vez de dejar que el mount decida.
+        # "//", "///", "/./", "/foo/../", etc.: StaticFiles las resolvería
+        # igual que "/", que ya está gateada por la ruta explícita
+        # @app.get("/") — canonicalizamos ahí en vez de dejar que el mount
+        # decida.
         return RedirectResponse("/")
 
     if ruta.endswith(".html") and ruta not in _RUTAS_HTML_PUBLICAS and not _sesion_activa(request):
@@ -447,4 +462,11 @@ def pagina_inicio(request: Request):
     return FileResponse(str(BASE / "static" / "index.html"))
 
 
-app.mount("/", StaticFiles(directory=str(BASE / "static"), html=True), name="static")
+# html=False a propósito: con html=True, StaticFiles resuelve cualquier
+# path que apunte a un directorio (incluida la raíz) sirviendo su
+# index.html automáticamente, sin pasar por gate_paginas_html ni por la
+# ruta explícita GET "/" — es la causa raíz del bypass que encontramos.
+# GET "/" ya tiene su propia ruta explícita arriba; los .html reales
+# (index.html, catalogo.html, login.html) se siguen sirviendo igual porque
+# StaticFiles los sirve por nombre de archivo exacto, con o sin html=True.
+app.mount("/", StaticFiles(directory=str(BASE / "static"), html=False), name="static")

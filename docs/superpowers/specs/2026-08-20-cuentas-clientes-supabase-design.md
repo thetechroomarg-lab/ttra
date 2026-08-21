@@ -177,3 +177,28 @@ se migran como filas "invitadas" esperando que se registren para vincularse: el 
 de migración les crea una cuenta real de Supabase Auth desde el primer momento
 (`auth.admin.create_user` + `auth.reset_password_for_email`, ver sección de Migración
 arriba), así que nunca quedan en un estado que otra persona pueda reclamar.
+
+### Riesgos residuales aceptados (menores, no bloquean el deploy, pero quedan anotados)
+
+- **Los leads (no mayoristas) siguen siendo reclamables por celular**, con el mismo
+  argumento de fondo ("cualquiera puede escribirlo en el formulario") que ya se usó para
+  descartar el email como llave. Se acepta este riesgo porque el celular es la clave de
+  identidad que usa todo el resto del sistema (WhatsApp, buscador, panel admin) desde
+  antes de este proyecto, y el impacto está acotado: ningún endpoint de cara al cliente
+  expone el historial de pedidos de otra persona (solo `/admin/clientes`, protegido por
+  contraseña), así que como máximo alguien podría pisar nombre/apellido de un lead
+  ajeno, no ver datos confidenciales de otro cliente.
+- **`POST /registro` otorga sesión inmediatamente al llamar `sign_up` con éxito**, sin
+  chequear si Supabase todavía requiere confirmación de email. Como la vinculación por
+  email ya no existe, esto no permite apropiarse de una cuenta ajena — como mucho, alguien
+  podría registrarse con un email que no le pertenece y quedarse con esa fila (nueva,
+  vacía) ocupando ese email de forma permanente en el `UNIQUE` de `clientes.email`,
+  impidiéndole a la persona real registrarse después. Es el mismo riesgo que tiene
+  cualquier formulario de alta que no verifica el email antes de crear la cuenta — no es
+  específico de este proyecto. Si se quiere cerrar del todo, la solución es no otorgar
+  sesión hasta confirmar el email (chequeando `auth_resp.user.confirmed_at` o el estado
+  de sesión que devuelve `sign_up`), pero no se implementa en esta v1 porque no hay forma
+  de validar el comportamiento exacto de la API de Supabase (`sign_up` sobre un email ya
+  registrado con confirmación activada puede devolver una respuesta "ofuscada" en vez de
+  un error, para evitar enumeración de emails) sin un proyecto de Supabase real contra el
+  cual probarlo — el doble de prueba (`tests/fakes_supabase.py`) no modela ese matiz.

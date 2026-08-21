@@ -75,12 +75,16 @@ def login_cliente(client, email, password):
         auth_resp = client.auth.sign_in_with_password({"email": email, "password": password})
     except Exception as e:
         mensaje = str(e).lower()
-        if "invalid" in mensaje or "credentials" in mensaje:
-            return None
+        # "confirm" se chequea primero: un mensaje futuro más específico
+        # (ej. "invalid credentials: email not confirmed") no debe caer en
+        # la rama de "contraseña incorrecta" solo porque también contenga
+        # esas palabras.
         if "confirm" in mensaje:
             raise EmailNoConfirmadoError(
                 "Confirmá tu email antes de ingresar — revisá tu bandeja de entrada"
             ) from e
+        if "invalid" in mensaje or "credentials" in mensaje:
+            return None
         # No parece una credencial inválida (ej. Supabase caído): no lo
         # disfracemos de "usuario no encontrado", que lo relance el llamador.
         raise

@@ -94,6 +94,31 @@ def test_catalogo_html_mayusculas_sin_sesion_no_sirve_la_landing(monkeypatch):
     assert r.headers["location"] == "/"
 
 
+def test_segmentos_punto_percent_encoded_sin_sesion_no_sirven_la_landing(monkeypatch):
+    """uvicorn decodifica %2e/%2f antes de que la app vea el path, así que
+    "/%2e/", "/foo/%2e%2e/" etc. llegan como "/./" y "/foo/../" — que
+    posixpath.normpath resuelve a "/". Sin resolver esos segmentos, StaticFiles
+    los serviría igual que "/" (index.html) sin pasar por ninguna gate."""
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    for ruta in ["/%2e/", "/%2E/", "/%2e%2f", "/%2e/%2e/", "/static/%2e%2e/", "/foo/%2e%2e/", "/x/%2e%2e/%2e/"]:
+        r = c.get(ruta)
+        assert r.status_code in (302, 307), f"{ruta} devolvió {r.status_code}"
+        assert r.headers["location"] == "/"
+
+
+def test_index_html_via_segmentos_punto_sin_sesion_no_sirve_la_landing(monkeypatch):
+    """"/foo/../index.html" normaliza a "/index.html" — tiene que gatear
+    igual que pedir "/index.html" directo."""
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    r = c.get("/foo/%2e%2e/index.html")
+    assert r.status_code in (302, 307)
+    assert r.headers["location"] == "/"
+
+
 def test_login_html_con_barra_final_sigue_siendo_publico(monkeypatch):
     """La normalización no debe convertir /login.html/ en algo distinto de
     /login.html y bloquearlo por error."""
