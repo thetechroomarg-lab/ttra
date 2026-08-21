@@ -7,4 +7,4 @@ httpx
 python-dotenv
 itsdangerous==2.2.0
 email-validator
-supabase
+supabase>=2.31,<3

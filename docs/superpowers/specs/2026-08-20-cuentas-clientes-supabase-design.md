@@ -146,3 +146,15 @@ allá de lo que ya existe en `/admin/clientes`.
 - Script de migración: correr contra una copia de `clientes.json`/`usuarios.db` de
   prueba y verificar conteo de filas migradas y que no haya duplicados por celular/email
   antes de correrlo contra los datos reales.
+
+## Después de este plan
+
+- Desactivar la confirmación de email en Authentication → Settings del proyecto de
+  Supabase (Email Auth → "Confirm email"), o el login va a fallar para cuentas recién
+  registradas hasta que confirmen — no hay flujo de confirmación implementado en esta v1.
+- Configurar `SESSION_SECRET` (clave de firma de las cookies de sesión) como variable de
+  entorno en Railway — sin esto, cualquiera que lea el código puede forjar una sesión de
+  cualquier cliente.
+- Configurar `ADMIN_CLIENTES_PASSWORD` como variable de entorno en Railway — sin esto, el
+  panel `/admin/clientes` (que expone nombre/celular/pedidos de todos los clientes) usa
+  una contraseña de desarrollo conocida.
