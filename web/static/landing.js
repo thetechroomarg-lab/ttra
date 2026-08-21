@@ -1325,7 +1325,7 @@ function tarjetaRecomendadoHtml(p) {
       <h3>${marcaLogoHtml(p.marca, "marca-logo-card")}${escapeHtml(p.nombre)}</h3>
       <p class="tarjeta-recomendado-precio">
         ${bloquePreciosHtml(p)}
-        <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}</span>
+        <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}</span>
       </p>
       <div class="tarjeta-recomendado-acciones">
         <div class="dropdown-color">
@@ -1382,6 +1382,13 @@ function wireTarjetasRecomendadas(el) {
     if (btnAgregar) {
       btnAgregar.addEventListener("click", () => {
         agregarAlCarrito(producto, btnAgregar.dataset.color || null);
+      });
+    }
+    const btnCompartir = card.querySelector(".btn-compartir");
+    if (btnCompartir) {
+      btnCompartir.addEventListener("click", (e) => {
+        e.stopPropagation();
+        compartirProducto(card.dataset.nombre);
       });
     }
   });
