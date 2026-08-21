@@ -118,15 +118,15 @@ header {
   width: 100%; text-align: center;
   padding: 8px 14px; font-size: clamp(13px, 3.5vw, 15px);
 }
-/* Fila del carrito + toggle sol/luna (ver .rc-tema-toggle): comparten fila
-   para que el toggle quede exactamente de la misma altura que el botón de
-   carrito (align-self:stretch) y alineado con él (misma fila). */
-.rc-carrito-fila { display: flex; align-items: stretch; gap: 8px; }
-.rc-carrito-fila #btn-carrito { flex: 1; width: auto; }
 #btn-carrito {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
   color: var(--rc-green-bright); border-color: var(--rc-green);
   box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
 }
+/* El ícono mide lo mismo que el alto del texto (1em) y es cuadrado, así
+   ocupa exactamente el mismo ancho que alto — sea cual sea el tamaño de
+   fuente del botón (clamp en .rc-modo-y-carrito button). */
+.rc-carrito-icono { width: 1em; height: 1em; flex-shrink: 0; }
 .btn-modo {
   color: var(--rc-green-bright); border-color: var(--rc-green);
   box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
@@ -190,36 +190,6 @@ a.rc-perfil-opcion { border-bottom: 1px solid var(--rc-green-faint); }
 #btn-logout-classic { display: block; }
 html[data-modo="fallout"] #btn-logout-classic { display: none; }
 
-/* Toggle claro/oscuro (sol/luna), junto al botón de carrito (ver
-   .rc-carrito-fila): solo tiene sentido en Modo Classic (Fallout ya es
-   oscuro por diseño). Un solo ícono visible a la vez — el que representa a
-   QUÉ modo pasás al tocarlo, no en cuál estás: claro por default muestra
-   la luna (tocarla pasa a oscuro), oscuro muestra el sol (tocarlo vuelve a
-   claro). El estado real vive en html[data-tema], guardado en landing.js.
-   align-self:stretch (en .rc-carrito-fila) lo estira a la altura exacta de
-   #btn-carrito, sea cual sea (ancho fijo, no aspect-ratio: un aspect-ratio
-   con width:auto en un flex item sin alto propio todavía resuelto cae al
-   tamaño de reemplazo por default del navegador — 300x300 — e inflaba
-   todo el header). */
-.rc-tema-toggle {
-  display: none;
-}
-html[data-modo="classic"] .rc-tema-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  align-self: stretch;
-  width: 40px;
-  flex-shrink: 0;
-  padding: 0;
-  background: none;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-}
-.rc-tema-icono { width: 24px; height: 24px; display: none; }
-html[data-modo="classic"]:not([data-tema="oscuro"]) .rc-tema-luna { display: block; }
-html[data-modo="classic"][data-tema="oscuro"] .rc-tema-sol { display: block; }
 
 /* Mensaje de confirmación de log out y diálogo de "¿estás seguro?" previo
    (look terminal Pip-Boy por default; Modo Classic lo reestiliza en

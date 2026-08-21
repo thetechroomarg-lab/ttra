@@ -6,36 +6,9 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
+/* Modo Classic: único look, oscuro (el modo claro se sacó del todo, junto
+   con el toggle sol/luna que alternaba entre los dos). */
 html[data-modo="classic"] {
-  --rc-bg: #4fb3e8;
-  --rc-bg-panel: #ffffff;
-  --rc-bg-panel-2: #eaf5fb;
-  --rc-green: #10214f;
-  --rc-green-bright: #10214f;
-  --rc-green-dim: #10214f;
-  --rc-green-faint: #cfe9f7;
-  --rc-glow: rgba(16, 33, 79, 0.16);
-  --cl-rojo: #c8102e;
-  --cl-crema: #faf7f0;
-  --cl-azul-francia: #002654;
-  --cl-amarillo-huevo: #f4c430;
-  --rc-halo-seleccion: #ffc93c;
-  --rc-halo-seleccion-glow: rgba(255, 201, 60, 0.55);
-  --rc-halo-seleccion-glow-suave: rgba(255, 201, 60, 0.4);
-  --rc-font: 'Nunito', 'Segoe UI', system-ui, sans-serif;
-  --rc-cursor: auto;
-  --rc-cursor-mira: pointer;
-}
-
-/* Modo oscuro de Classic (toggle sol/luna en el header, ver
-   btn-tema-classic en landing.js): mismas variables de acá arriba,
-   redefinidas a tonos de gris puro (sin rojo/navy/amarillo) para más fácil
-   lectura. Como casi todo Classic ya se apoya en estas variables en vez de
-   colores sueltos, esto solo alcanza para repintar todo el modo sin tocar
-   ningún tamaño/layout — lo que queda abajo son los pocos colores que
-   estaban escritos a mano (no vía variable) y necesitan su propio
-   override puntual. */
-html[data-modo="classic"][data-tema="oscuro"] {
   --rc-bg: #1a1a1a;
   --rc-bg-panel: #262626;
   --rc-bg-panel-2: #313131;
@@ -51,40 +24,43 @@ html[data-modo="classic"][data-tema="oscuro"] {
   --rc-halo-seleccion: #d9d9d9;
   --rc-halo-seleccion-glow: rgba(217, 217, 217, 0.35);
   --rc-halo-seleccion-glow-suave: rgba(217, 217, 217, 0.22);
+  --rc-font: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --rc-cursor: auto;
+  --rc-cursor-mira: pointer;
 }
 /* Colores que no pasan por ninguna variable de arriba (hover states y
-   fondos puntuales escritos a mano en las reglas de más abajo). En oscuro,
-   ninguno de estos dos hover cambia el color del texto (a pedido: con el
-   fondo ya oscuro, "negro" o cualquier color fijo quedaba invisible o
-   raro) — el propio movimiento/subrayado/negrita del botón ya avisa que
-   hay interacción, no hace falta tocar el texto. */
-html[data-modo="classic"][data-tema="oscuro"] .carrousel span:hover,
-html[data-modo="classic"][data-tema="oscuro"] .btn-categoria:hover {
+   fondos puntuales escritos a mano en las reglas de más abajo). Ninguno de
+   estos dos hover cambia el color del texto (a pedido: con el fondo
+   oscuro, "negro" o cualquier color fijo quedaba invisible o raro) — el
+   propio movimiento/subrayado/negrita del botón ya avisa que hay
+   interacción, no hace falta tocar el texto. */
+html[data-modo="classic"] .carrousel span:hover,
+html[data-modo="classic"] .btn-categoria:hover {
   color: inherit;
 }
-html[data-modo="classic"][data-tema="oscuro"] .card.expandida {
+html[data-modo="classic"] .card.expandida {
   border-color: var(--rc-green-dim);
   box-shadow: 0 16px 34px -6px rgba(0, 0, 0, 0.6);
 }
-html[data-modo="classic"][data-tema="oscuro"] input:focus,
-html[data-modo="classic"][data-tema="oscuro"] textarea:focus,
-html[data-modo="classic"][data-tema="oscuro"] select:focus {
+html[data-modo="classic"] input:focus,
+html[data-modo="classic"] textarea:focus,
+html[data-modo="classic"] select:focus {
   box-shadow: 0 0 0 3px rgba(230, 230, 230, 0.3);
 }
-html[data-modo="classic"][data-tema="oscuro"] #btn-logout-classic:hover,
-html[data-modo="classic"][data-tema="oscuro"] .rc-logout-tarjeta button:hover {
+html[data-modo="classic"] #btn-logout-classic:hover,
+html[data-modo="classic"] .rc-logout-tarjeta button:hover {
   background: #000000;
 }
 /* Los logos de marca son archivos SVG con su propio color fijo (negro por
-   default, ver /logos/*.svg) — no toman color por CSS al ir en <img>. En
-   oscuro, sobre fondos ahora grises/negros, quedaban invisibles: este
-   filtro los vuelve blancos sea cual sea su color original (brightness:0
-   los deja negro sólido, invert:1 lo pasa a blanco sólido). */
-html[data-modo="classic"][data-tema="oscuro"] .marca-logo-carrousel,
-html[data-modo="classic"][data-tema="oscuro"] .marca-logo-card {
+   default, ver /logos/*.svg) — no toman color por CSS al ir en <img>. Sobre
+   fondos grises/negros quedaban invisibles: este filtro los vuelve blancos
+   sea cual sea su color original (brightness:0 los deja negro sólido,
+   invert:1 lo pasa a blanco sólido). */
+html[data-modo="classic"] .marca-logo-carrousel,
+html[data-modo="classic"] .marca-logo-card {
   filter: brightness(0) invert(1);
 }
-html[data-modo="classic"][data-tema="oscuro"] .rc-logout-tarjeta {
+html[data-modo="classic"] .rc-logout-tarjeta {
   background: var(--rc-bg-panel);
 }
 

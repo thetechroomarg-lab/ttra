@@ -1,33 +1,3 @@
-// --- Toggle claro/oscuro de Modo Classic (sol/luna, ver btn-tema-classic
-// en el header). Independiente de modoVisual: el atributo se guarda igual
-// en Fallout (no se ve, la regla de dark mode está scopeada a
-// html[data-modo="classic"]), así que si el usuario ya eligió oscuro,
-// vuelve a verlo al volver a Classic sin tener que tocarlo de nuevo. ---
-(function () {
-  const btn = document.getElementById("btn-tema-classic");
-  // Default: oscuro. Si el usuario ya eligió explícitamente "claro" antes,
-  // se respeta esa elección (solo "claro" guardado gana al default).
-  let tema = "oscuro";
-  try {
-    tema = localStorage.getItem("rc-tema-classic") === "claro" ? "claro" : "oscuro";
-  } catch {
-    // Sin localStorage, siempre arranca en oscuro: no es crítico.
-  }
-  function aplicarTema(nuevoTema) {
-    tema = nuevoTema;
-    document.documentElement.setAttribute("data-tema", tema);
-    if (btn) {
-      btn.setAttribute("aria-label", tema === "oscuro" ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
-      btn.setAttribute("title", tema === "oscuro" ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
-    }
-    try { localStorage.setItem("rc-tema-classic", tema); } catch {
-      // No persiste entre visitas sin localStorage: no es crítico.
-    }
-  }
-  aplicarTema(tema);
-  if (btn) btn.addEventListener("click", () => aplicarTema(tema === "oscuro" ? "claro" : "oscuro"));
-})();
-
 // --- Beep sutil estilo computadora vieja, en cada interacción con la web ---
 
 let audioCtxInteraccion;

@@ -6,15 +6,6 @@
       "data-modo",
       new URLSearchParams(location.search).get("modo") === "fallout" ? "fallout" : "classic"
     );
-    // Mismo criterio que el toggle sol/luna del header (ver landing.js):
-    // oscuro por default, "claro" solo si el usuario lo eligió antes acá.
-    let temaGuardado = "oscuro";
-    try {
-      temaGuardado = localStorage.getItem("rc-tema-classic") === "claro" ? "claro" : "oscuro";
-    } catch {
-      // Sin localStorage, siempre arranca en oscuro: no es crítico.
-    }
-    document.documentElement.setAttribute("data-tema", temaGuardado);
   </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
