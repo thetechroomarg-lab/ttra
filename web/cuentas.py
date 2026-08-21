@@ -65,7 +65,14 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, userna
     lead_invitado = next((f for f in existentes_celular if not f.get("auth_id")), None)
 
     try:
-        auth_resp = client.auth.sign_up({"email": email, "password": password})
+        auth_resp = client.auth.sign_up({
+            "email": email, "password": password,
+            # Sin esto, el link del mail de confirmación usa el "Site URL"
+            # configurado en el dashboard de Supabase — que quedó en
+            # localhost desde que se armó el proyecto en desarrollo — y
+            # redirige mal aunque la confirmación en sí sí se procese.
+            "options": {"email_redirect_to": "https://thetechroomarg.com/login.html"},
+        })
     except Exception as e:
         # Solo es EmailDuplicadoError si el mensaje indica email duplicado
         if "already registered" in str(e).lower() or "already exists" in str(e).lower():
