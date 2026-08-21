@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 import web.app as appmod
+from tests.fakes_supabase import FakeSupabaseClient
 
 
 def _preparar(monkeypatch, costo):
@@ -10,7 +11,14 @@ def _preparar(monkeypatch, costo):
                         lambda: [{"nombre": "x", "usd": 1, "pesos": 1, "transferencia": 1}])
     monkeypatch.setattr(appmod, "_cliente", lambda: None)
     monkeypatch.setattr(appmod, "responder", lambda *a, **k: ("respuesta bot", costo, None))
-    return TestClient(appmod.app)
+    monkeypatch.setattr(appmod, "get_client", lambda: FakeSupabaseClient())
+    c = TestClient(appmod.app, base_url="https://testserver")
+    # /chat ahora requiere sesión activa: nos registramos para tener una.
+    c.post("/registro", json={
+        "nombre": "Test", "apellido": "Usuario", "celular": "3511234567",
+        "email": "test@x.com", "password": "clave1234",
+    })
+    return c
 
 
 def test_tope_por_sesion_corta_al_superar_limite(monkeypatch):

@@ -7,7 +7,7 @@ from tests.fakes_supabase import FakeSupabaseClient
 def _cliente_autenticado(tmp_path, monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
-    c = TestClient(appmod.app)
+    c = TestClient(appmod.app, base_url="https://testserver")
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave123",
@@ -17,13 +17,13 @@ def _cliente_autenticado(tmp_path, monkeypatch):
 
 def test_api_catalogo_es_publica_sin_sesion(tmp_path, monkeypatch):
     monkeypatch.setattr(appmod, "_cargar_productos", lambda: [])
-    c = TestClient(appmod.app)
+    c = TestClient(appmod.app, base_url="https://testserver")
     r = c.get("/api/catalogo")
     assert r.status_code == 200
 
 
 def test_pagina_catalogo_sin_sesion_redirige_a_login(tmp_path, monkeypatch):
-    c = TestClient(appmod.app, follow_redirects=False)
+    c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
     r = c.get("/catalogo")
     assert r.status_code in (302, 307)
     assert "login" in r.headers["location"]
@@ -57,7 +57,7 @@ def test_flujo_completo_registro_logout_login_catalogo(tmp_path, monkeypatch):
         appmod, "_cargar_productos",
         lambda: [{"nombre": "iPhone 15", "categoria": "Apple - iPhone"}],
     )
-    c = TestClient(appmod.app)
+    c = TestClient(appmod.app, base_url="https://testserver")
 
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",

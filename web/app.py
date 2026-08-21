@@ -45,11 +45,6 @@ LIMITE_USD = 0.25
 _gasto = {}  # sesion -> USD acumulado
 
 app = FastAPI()
-_session_secret = os.environ.get("SESSION_SECRET")
-if not _session_secret:
-    logger.warning("SESSION_SECRET no configurado — usando clave de desarrollo, no apta para producción")
-    _session_secret = "dev-secret-cambiar-en-produccion"
-app.add_middleware(SessionMiddleware, secret_key=_session_secret)
 
 
 @app.middleware("http")
@@ -61,6 +56,30 @@ async def sin_cache_estaticos(request: Request, call_next):
     if request.url.path.endswith((".js", ".css")):
         response.headers["Cache-Control"] = "no-cache"
     return response
+
+
+@app.middleware("http")
+async def gate_paginas_html(request: Request, call_next):
+    """El StaticFiles mount de más abajo serviría cualquier .html (incluido
+    index.html o catalogo.html) sin pasar por el chequeo de sesión que sí
+    tiene GET "/". Esto cierra ese agujero: cualquier .html estático, salvo
+    login.html (la página de login/registro, que tiene que ser pública),
+    requiere sesión activa."""
+    path = request.url.path
+    if path.endswith(".html") and path != "/login.html" and not _sesion_activa(request):
+        return RedirectResponse("/")
+    return await call_next(request)
+
+
+# SessionMiddleware se registra DESPUÉS de los middlewares de arriba a propósito:
+# FastAPI hace add_middleware(insert al frente de la pila), así que lo último
+# que se registra queda más "afuera" y corre primero en cada request — acá
+# necesitamos que request.session ya exista cuando gate_paginas_html se ejecuta.
+_session_secret = os.environ.get("SESSION_SECRET")
+if not _session_secret:
+    logger.warning("SESSION_SECRET no configurado — usando clave de desarrollo, no apta para producción")
+    _session_secret = "dev-secret-cambiar-en-produccion"
+app.add_middleware(SessionMiddleware, secret_key=_session_secret, https_only=True)
 
 
 def _cargar_productos():
@@ -81,7 +100,9 @@ class ChatIn(BaseModel):
 
 
 @app.post("/chat")
-def chat(entrada: ChatIn):
+def chat(entrada: ChatIn, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     productos = _cargar_productos()
     if not productos:
         logger.warning("productos.json vacío o ausente")

@@ -8,7 +8,7 @@ def _cliente_logueado(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
     monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
-    c = TestClient(appmod.app)
+    c = TestClient(appmod.app, base_url="https://testserver")
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
