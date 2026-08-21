@@ -177,10 +177,13 @@ html[data-modo="fallout"] .rc-perfil-icono-fallout { display: block; }
 .rc-perfil-dropdown.oculto { display: none; }
 .rc-perfil-opcion {
   display: block; width: 100%; padding: 9px 12px; font-size: 13px; text-align: left;
+  font-family: var(--rc-font); font-weight: 600;
   background: transparent; border: none; box-shadow: none;
   color: var(--rc-green); text-decoration: none; cursor: var(--rc-cursor);
 }
-.rc-perfil-opcion:hover { color: var(--rc-green-bright); background: var(--rc-bg-panel-2); }
+.rc-perfil-opcion:hover, .rc-perfil-opcion:focus-visible {
+  color: var(--rc-green-bright); background: var(--rc-bg-panel-2); cursor: var(--rc-cursor-mira);
+}
 a.rc-perfil-opcion { border-bottom: 1px solid var(--rc-green-faint); }
 
 /* "Cerrar sesión" del menú de perfil solo existe en Modo Classic. */
