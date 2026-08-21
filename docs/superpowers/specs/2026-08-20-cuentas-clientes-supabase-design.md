@@ -114,12 +114,12 @@ allá de lo que ya existe en `/admin/clientes`.
    contraseña" (flujo nativo de Supabase) antes de poder loguearse por primera vez.
 2. **`clientes.json`/`.csv` (leads)**: se importan como filas de `clientes` **sin**
    fila en `auth.users` todavía (quedan como "invitados", sin poder loguearse). Si en el
-   futuro alguien se registra con el mismo celular o email, el registro debe detectar
-   la fila invitada existente y completarla (agregarle el `auth.users.id`) en vez de
-   fallar por el `UNIQUE` de celular — esto es la única excepción al "UNIQUE bloquea
-   todo" de arriba, y hay que implementarla explícitamente en el flujo de registro.
-   Los pedidos ya asociados a ese lead se migran a la tabla `pedidos` con ese
-   `cliente_id`.
+   futuro alguien se registra con el mismo **celular** (nunca por email — ver "Nota de
+   seguridad" más abajo), el registro debe detectar la fila invitada existente y
+   completarla (agregarle el `auth.users.id`) en vez de fallar por el `UNIQUE` de
+   celular — esto es la única excepción al "UNIQUE bloquea todo" de arriba, y hay que
+   implementarla explícitamente en el flujo de registro. Los pedidos ya asociados a ese
+   lead se migran a la tabla `pedidos` con ese `cliente_id`.
 3. La migración corre una sola vez, como script (`scripts/migrar_a_supabase.py`, fuera
    del código de producción), antes de deployar el nuevo flujo de auth.
 
@@ -149,12 +149,31 @@ allá de lo que ya existe en `/admin/clientes`.
 
 ## Después de este plan
 
-- Desactivar la confirmación de email en Authentication → Settings del proyecto de
-  Supabase (Email Auth → "Confirm email"), o el login va a fallar para cuentas recién
-  registradas hasta que confirmen — no hay flujo de confirmación implementado en esta v1.
+- **Dejar activada** la confirmación de email en Authentication → Settings del proyecto
+  de Supabase (Email Auth → "Confirm email" — es el default de un proyecto nuevo, no
+  hay que tocarlo). Es la única prueba real de que quien se registra es dueño del email
+  que puso: si se desactiva, cualquiera podría registrarse con el email de un cliente
+  existente. `web/cuentas.py` distingue este caso ("Confirmá tu email antes de
+  ingresar") de una contraseña incorrecta, así que la UX no queda rota por dejarla
+  activada — solo hay que avisarle al usuario que revise su bandeja de entrada.
 - Configurar `SESSION_SECRET` (clave de firma de las cookies de sesión) como variable de
   entorno en Railway — sin esto, cualquiera que lea el código puede forjar una sesión de
   cualquier cliente.
 - Configurar `ADMIN_CLIENTES_PASSWORD` como variable de entorno en Railway — sin esto, el
   panel `/admin/clientes` (que expone nombre/celular/pedidos de todos los clientes) usa
   una contraseña de desarrollo conocida.
+
+## Nota de seguridad: por qué la vinculación de cuenta es solo por celular
+
+La vinculación de una fila "invitada" (lead o mayorista migrado sin cuenta todavía) con
+la cuenta real que se crea en `/registro` es **solo por celular, nunca por email**. El
+email no prueba que quien se registra sea el dueño real de esa fila — cualquiera puede
+escribir el email de otra persona en el formulario — así que usarlo como llave de
+vinculación abriría una forma de apropiarse de la fila (nombre, celular, historial de
+pedidos) de un cliente existente sin ninguna verificación real.
+
+Por esto los mayoristas migrados (que no tenían un celular real en `usuarios.db`) **no**
+se migran como filas "invitadas" esperando que se registren para vincularse: el script
+de migración les crea una cuenta real de Supabase Auth desde el primer momento
+(`auth.admin.create_user` + `auth.reset_password_for_email`, ver sección de Migración
+arriba), así que nunca quedan en un estado que otra persona pueda reclamar.

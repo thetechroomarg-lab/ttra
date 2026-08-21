@@ -7,6 +7,7 @@ Requiere SUPABASE_URL / SUPABASE_SERVICE_KEY en el entorno (ver web/supabase_cli
 """
 import json
 import os
+import secrets
 import sqlite3
 import uuid
 from pathlib import Path
@@ -42,6 +43,14 @@ def _email_existe(client, email):
 
 
 def _migrar_mayoristas(client, db_path):
+    """Cada mayorista recibe una cuenta REAL de Supabase Auth desde el
+    momento de la migración (auth.admin.create_user), no una fila "invitada"
+    sin auth_id — así su fila nunca puede ser reclamada por otra persona
+    registrándose con ese email (ver web/cuentas.py: la vinculación de una
+    fila invitada es solo por celular, nunca por email, justamente para
+    evitar esa apropiación). El mayorista entra con el flujo nativo de
+    "restablecer contraseña" de Supabase (dispara el mail acá mismo), nunca
+    con el formulario público de /registro."""
     if not Path(db_path).exists():
         return 0
     conn = sqlite3.connect(str(db_path))
@@ -52,9 +61,15 @@ def _migrar_mayoristas(client, db_path):
         email = email.strip().lower()
         if _email_existe(client, email):
             continue
+        password_temporal = secrets.token_urlsafe(24)
+        auth_resp = client.auth.admin.create_user({
+            "email": email,
+            "password": password_temporal,
+            "email_confirm": True,
+        })
         client.table("clientes").insert({
             "id": str(uuid.uuid4()),
-            "auth_id": None,  # se linkea cuando el mayorista resetea password y entra por /registro o /login
+            "auth_id": auth_resp.user.id,
             "nombre": nombre,
             "apellido": "",
             "celular": f"pendiente-{uuid.uuid4()}",  # placeholder: no había celular en usuarios.db
@@ -62,6 +77,7 @@ def _migrar_mayoristas(client, db_path):
             "tipo_cliente": "mayorista",
             "creado_en": creado,
         }).execute()
+        client.auth.reset_password_for_email(email)
         migrados += 1
     return migrados
 

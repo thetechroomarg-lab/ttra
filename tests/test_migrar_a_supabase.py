@@ -3,6 +3,7 @@ import sqlite3
 
 from tests.fakes_supabase import FakeSupabaseClient
 from scripts.migrar_a_supabase import migrar, resolver_clientes_json_path
+from web import cuentas
 
 
 def _usuarios_db(tmp_path):
@@ -29,7 +30,7 @@ def _clientes_json(tmp_path):
     return json_path
 
 
-def test_migrar_crea_mayoristas_invitados_y_leads(tmp_path):
+def test_migrar_crea_mayoristas_con_cuenta_real_y_leads_invitados(tmp_path):
     client = FakeSupabaseClient()
     db_path = _usuarios_db(tmp_path)
     json_path = _clientes_json(tmp_path)
@@ -41,8 +42,14 @@ def test_migrar_crea_mayoristas_invitados_y_leads(tmp_path):
     assert len(filas) == 2
     mayorista = next(f for f in filas if f["email"] == "mayorista@x.com")
     assert mayorista["tipo_cliente"] == "mayorista"
+    # El mayorista NO queda "invitado": tiene una cuenta real de Supabase
+    # Auth desde el día uno, así que nadie puede reclamar su fila
+    # registrándose con su email (ver web/cuentas.py).
+    assert mayorista["auth_id"] is not None
+    assert mayorista["auth_id"] == client.auth._usuarios_por_email["mayorista@x.com"].id
+    assert "mayorista@x.com" in client.auth.emails_con_reset_pedido
     lead = next(f for f in filas if f["celular"] == "3511234567")
-    assert lead["auth_id"] is None  # invitado: sin cuenta todavía
+    assert lead["auth_id"] is None  # el lead sí queda invitado: se vincula por celular
     assert lead["nombre"] == "Ana"
 
     # El historial de productos consultados del lead debe migrar a "pedidos",
@@ -51,6 +58,29 @@ def test_migrar_crea_mayoristas_invitados_y_leads(tmp_path):
     assert len(filas_pedidos) == 1
     assert filas_pedidos[0]["cliente_id"] == lead["id"]
     assert filas_pedidos[0]["productos"] == ["iPhone 13"]
+
+
+def test_migrar_cierra_el_robo_de_cuenta_por_email(tmp_path):
+    """Regresión del hallazgo de seguridad: antes de este fix, un mayorista
+    migrado quedaba "invitado" (auth_id=None) y cualquiera que supiera su
+    email podía registrarse con ese email y apropiarse de su fila. Tras la
+    migración, la fila del mayorista ya tiene una cuenta real — un impostor
+    que intente registrarse con ese mismo email tiene que chocar contra
+    EmailDuplicadoError, no apropiarse de nada."""
+    client = FakeSupabaseClient()
+    db_path = _usuarios_db(tmp_path)
+    json_path = _clientes_json(tmp_path)
+    migrar(client, db_path, json_path)
+
+    import pytest
+    with pytest.raises(cuentas.EmailDuplicadoError):
+        cuentas.registrar_cliente(
+            client, "Impostor", "Impostor", "3510000001", "mayorista@x.com", "clave-robada",
+        )
+
+    filas = client.table("clientes").select("*").eq("email", "mayorista@x.com").execute().data
+    assert len(filas) == 1
+    assert filas[0]["nombre"] == "Mayorista Uno"  # la fila real no fue tocada
 
 
 def test_migrar_no_duplica_si_se_corre_dos_veces(tmp_path):

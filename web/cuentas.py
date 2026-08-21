@@ -10,6 +10,10 @@ class EmailDuplicadoError(Exception):
     pass
 
 
+class EmailNoConfirmadoError(Exception):
+    pass
+
+
 def normalizar_celular(celular):
     return re.sub(r"\D", "", celular or "")
 
@@ -22,20 +26,15 @@ def registrar_cliente(client, nombre, apellido, celular, email, password):
     if not celular_norm:
         raise ValueError("El celular ingresado no es válido")
 
+    # La vinculación de fila "invitada" es SOLO por celular, nunca por email:
+    # el email no prueba que quien se registra sea el dueño real de la
+    # cuenta (cualquiera puede escribir el email de otra persona en el
+    # formulario), así que usarlo como llave de vinculación abriría una
+    # forma de apropiarse de la fila de otro cliente sin verificación real.
     existentes_celular = client.table("clientes").select("*").eq("celular", celular_norm).execute().data
     if any(f.get("auth_id") for f in existentes_celular):
         raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}")
-    lead_por_celular = next((f for f in existentes_celular if not f.get("auth_id")), None)
-
-    # Además del celular, buscamos una fila invitada por email: los mayoristas
-    # migrados quedan con un celular placeholder (no tenían celular real en
-    # usuarios.db), así que su única forma de vincular la cuenta es por email.
-    existentes_email = client.table("clientes").select("*").eq("email", email).execute().data
-    lead_por_email = next((f for f in existentes_email if not f.get("auth_id")), None)
-
-    # Si hay invitados distintos por celular y por email (no debería pasar en la
-    # práctica), priorizamos el de celular.
-    lead_invitado = lead_por_celular or lead_por_email
+    lead_invitado = next((f for f in existentes_celular if not f.get("auth_id")), None)
 
     try:
         auth_resp = client.auth.sign_up({"email": email, "password": password})
@@ -78,6 +77,10 @@ def login_cliente(client, email, password):
         mensaje = str(e).lower()
         if "invalid" in mensaje or "credentials" in mensaje:
             return None
+        if "confirm" in mensaje:
+            raise EmailNoConfirmadoError(
+                "Confirmá tu email antes de ingresar — revisá tu bandeja de entrada"
+            ) from e
         # No parece una credencial inválida (ej. Supabase caído): no lo
         # disfracemos de "usuario no encontrado", que lo relance el llamador.
         raise

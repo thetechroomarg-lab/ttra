@@ -16,20 +16,34 @@ class _FakeAuthResponse:
 
 
 class _FakeAdminAuth:
-    def __init__(self, usuarios_por_email):
+    def __init__(self, usuarios_por_email, passwords):
         self._usuarios_por_email = usuarios_por_email
+        self._passwords = passwords
 
     def delete_user(self, user_id):
         for email, user in list(self._usuarios_por_email.items()):
             if user.id == user_id:
                 del self._usuarios_por_email[email]
 
+    def create_user(self, credenciales):
+        email = credenciales["email"].strip().lower()
+        if email in self._usuarios_por_email:
+            raise Exception("User already registered")
+        user = _FakeAuthUser(id_=str(uuid.uuid4()), email=email)
+        self._usuarios_por_email[email] = user
+        self._passwords[email] = credenciales.get("password")
+        return _FakeAuthResponse(user)
+
 
 class FakeAuth:
     def __init__(self):
         self._usuarios_por_email = {}
         self._passwords = {}
-        self.admin = _FakeAdminAuth(self._usuarios_por_email)
+        self.admin = _FakeAdminAuth(self._usuarios_por_email, self._passwords)
+        self.emails_con_reset_pedido = []
+
+    def reset_password_for_email(self, email):
+        self.emails_con_reset_pedido.append(email.strip().lower())
 
     def sign_up(self, credenciales):
         email = credenciales["email"].strip().lower()

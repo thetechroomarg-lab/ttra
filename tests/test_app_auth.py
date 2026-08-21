@@ -94,3 +94,19 @@ def test_login_con_supabase_caido_da_503_no_500(monkeypatch):
     r = c.post("/login", json={"email": "juan@x.com", "password": "clave1234"})
     assert r.status_code == 503
     assert "error" in r.json()
+
+
+def test_login_email_no_confirmado_devuelve_403_con_mensaje_claro(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+
+    def _login_no_confirmado(_client, _email, _password):
+        raise appmod.cuentas.EmailNoConfirmadoError(
+            "Confirmá tu email antes de ingresar — revisá tu bandeja de entrada"
+        )
+
+    monkeypatch.setattr(appmod.cuentas, "login_cliente", _login_no_confirmado)
+    c = TestClient(appmod.app, base_url="https://testserver")
+    r = c.post("/login", json={"email": "juan@x.com", "password": "clave1234"})
+    assert r.status_code == 403
+    assert "confirmá tu email" in r.json()["error"].lower()
