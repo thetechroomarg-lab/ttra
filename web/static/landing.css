@@ -52,7 +52,7 @@ header {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
   padding: 16px 20px; background: var(--rc-bg-panel); border-bottom: 1px solid var(--rc-green-faint);
 }
-.rc-titulo-grupo { display: flex; align-items: flex-end; gap: 12px; min-width: 0; flex-shrink: 0; }
+.rc-titulo-grupo { position: relative; display: flex; align-items: flex-end; gap: 12px; min-width: 0; flex-shrink: 0; }
 .rc-logo {
   margin: 0; display: flex; flex-direction: column; line-height: 0.78;
   font-family: 'Archivo Black', 'Arial Black', sans-serif;
@@ -77,6 +77,43 @@ header {
   transition: opacity .12s ease;
 }
 .rc-cara-animada.visible { opacity: 1; }
+
+/* Debajo de 900px el noticiero (.rc-noticiero, ver más abajo) se oculta
+   por falta de espacio junto al logo, pero la noticia sigue existiendo y
+   rotando en el DOM (#noticiero-texto) — un tap en la carita la muestra en
+   esta burbuja tipo globo de historieta, como si la carita la estuviera
+   diciendo. No toca el ticker ni su animación; solo lee su contenido
+   actual al abrir. En desktop nunca se muestra (noticiero ya visible ahí). */
+.rc-cara-noticia {
+  display: none;
+}
+@media (max-width: 900px) {
+  .rc-cara-wrap { cursor: var(--rc-cursor-mira); }
+  .rc-cara-noticia {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 10px;
+    z-index: 20;
+    max-width: min(280px, calc(100vw - 40px));
+    background: var(--rc-bg-panel);
+    border: 1px solid var(--rc-green-faint);
+    box-shadow: 0 0 8px -1px var(--rc-glow);
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--rc-green-bright);
+  }
+  .rc-cara-noticia.visible { display: block; }
+  .rc-cara-noticia::before {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 14px;
+    border: 6px solid transparent;
+    border-bottom-color: var(--rc-green-faint);
+  }
+}
 
 .rc-noticiero {
   position: relative;
@@ -1012,6 +1049,10 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
    se limita al home — si no, tapaba también el listado de productos. */
 @media (max-width: 700px) {
   html[data-modo="fallout"] body:not(.rc-vista-seccion) main#productos { display: none; }
+  /* El switch Pip-Boy ON/OFF no tiene sentido acá: el Pip-Boy que prende/
+     apaga ya está oculto en esta resolución (regla de arriba). Log Out y
+     el reproductor siguen mostrándose normal. */
+  html[data-modo="fallout"] .rc-switch-fallout-item-pipboy { display: none; }
 }
 
 @media (max-width: 700px) {
