@@ -6,16 +6,34 @@ Supabase. Correr una sola vez, antes de deployar el nuevo flujo de auth:
 Requiere SUPABASE_URL / SUPABASE_SERVICE_KEY en el entorno (ver web/supabase_client.py).
 """
 import json
+import os
 import sqlite3
 import uuid
 from pathlib import Path
 
 from web.cuentas import normalizar_celular
+from web.pedidos import guardar_pedido
 from web.supabase_client import get_client
 
 BASE = Path(__file__).parent.parent / "web"
 USUARIOS_DB_PATH = BASE / "usuarios.db"
-CLIENTES_JSON_PATH = BASE / "clientes.json"
+
+
+def resolver_clientes_json_path():
+    """clientes.json vive en un volumen persistente en producción (Railway
+    pisa el filesystem del contenedor en cada deploy), apuntado por
+    CLIENTES_PATH o, si no está seteada, por el directorio de PRODUCTOS_PATH
+    — misma resolución que usaba web/leads.py (ya eliminado) antes de esta
+    migración. Se resuelve en cada llamado (no una sola vez al importar) para
+    que sea testeable con monkeypatch de variables de entorno."""
+    productos_path = os.environ.get("PRODUCTOS_PATH")
+    clientes_dir = Path(
+        os.environ.get("CLIENTES_PATH") or (Path(productos_path).parent if productos_path else BASE)
+    )
+    return clientes_dir / "clientes.json"
+
+
+CLIENTES_JSON_PATH = resolver_clientes_json_path()
 
 
 def _email_existe(client, email):
@@ -60,8 +78,9 @@ def _migrar_leads(client, json_path):
         existentes = client.table("clientes").select("*").eq("celular", celular).execute().data
         if existentes:
             continue
+        cliente_id = str(uuid.uuid4())
         client.table("clientes").insert({
-            "id": str(uuid.uuid4()),
+            "id": cliente_id,
             "auth_id": None,
             "nombre": reg.get("nombre", ""),
             "apellido": "",
@@ -70,11 +89,16 @@ def _migrar_leads(client, json_path):
             "tipo_cliente": "minorista",
             "creado_en": reg.get("fecha", ""),
         }).execute()
+        productos = reg.get("productos") or []
+        if productos:
+            guardar_pedido(client, cliente_id, productos, origen="whatsapp")
         migrados += 1
     return migrados
 
 
-def migrar(client, usuarios_db_path=USUARIOS_DB_PATH, clientes_json_path=CLIENTES_JSON_PATH):
+def migrar(client, usuarios_db_path=USUARIOS_DB_PATH, clientes_json_path=None):
+    if clientes_json_path is None:
+        clientes_json_path = resolver_clientes_json_path()
     return {
         "mayoristas": _migrar_mayoristas(client, usuarios_db_path),
         "leads": _migrar_leads(client, clientes_json_path),
