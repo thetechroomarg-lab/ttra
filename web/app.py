@@ -58,16 +58,35 @@ async def sin_cache_estaticos(request: Request, call_next):
     return response
 
 
+_RUTAS_HTML_PUBLICAS = {"/login.html"}
+
+
 @app.middleware("http")
 async def gate_paginas_html(request: Request, call_next):
     """El StaticFiles mount de más abajo serviría cualquier .html (incluido
     index.html o catalogo.html) sin pasar por el chequeo de sesión que sí
     tiene GET "/". Esto cierra ese agujero: cualquier .html estático, salvo
     login.html (la página de login/registro, que tiene que ser pública),
-    requiere sesión activa."""
-    path = request.url.path
-    if path.endswith(".html") and path != "/login.html" and not _sesion_activa(request):
+    requiere sesión activa.
+
+    El chequeo se hace sobre el path NORMALIZADO (barras repetidas
+    colapsadas, sin barra final, en minúsculas) — StaticFiles resuelve
+    "//", "///" o "/index.html/" igual que "/index.html", así que comparar
+    contra el path crudo deja pasar esas variantes sin pasar por sesión."""
+    ruta_cruda = request.url.path
+    ruta = re.sub(r"/+", "/", ruta_cruda)
+    ruta = ruta.rstrip("/") or "/"
+    ruta = ruta.lower()
+
+    if ruta == "/" and ruta_cruda != "/":
+        # "//", "///", etc.: StaticFiles las resolvería igual que "/", que
+        # ya está gateada por la ruta explícita @app.get("/") — canonicalizamos
+        # ahí en vez de dejar que el mount decida.
         return RedirectResponse("/")
+
+    if ruta.endswith(".html") and ruta not in _RUTAS_HTML_PUBLICAS and not _sesion_activa(request):
+        return RedirectResponse("/")
+
     return await call_next(request)
 
 
@@ -309,6 +328,8 @@ def login(entrada: LoginIn, request: Request):
     try:
         client = get_client()
         cliente = cuentas.login_cliente(client, entrada.email, entrada.password)
+    except cuentas.EmailNoConfirmadoError as e:
+        return JSONResponse({"error": str(e)}, status_code=403)
     except Exception:
         logger.exception("No se pudo completar el login (¿Supabase no disponible?)")
         return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)

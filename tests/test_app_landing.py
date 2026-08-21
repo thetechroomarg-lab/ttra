@@ -50,6 +50,61 @@ def test_index_html_directo_con_sesion_sigue_funcionando(monkeypatch):
     assert "THE TECH ROOM ARG — Catálogo" in r.text
 
 
+def test_doble_barra_sin_sesion_no_sirve_la_landing(monkeypatch):
+    """StaticFiles resuelve "//" igual que "/" y serviría index.html directo,
+    evitando la ruta explícita GET "/" que sí chequea sesión."""
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    # httpx colapsa "//" si se pasa como path relativo — hay que mandar la
+    # URL absoluta para que el "//" llegue tal cual al servidor.
+    r = c.get("https://testserver//")
+    assert r.status_code in (302, 307)
+    assert r.headers["location"] == "/"
+
+
+def test_triple_barra_sin_sesion_no_sirve_la_landing(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    r = c.get("https://testserver///")
+    assert r.status_code in (302, 307)
+    assert r.headers["location"] == "/"
+
+
+def test_index_html_con_barra_final_sin_sesion_no_sirve_la_landing(monkeypatch):
+    """"/index.html/" normaliza a "/index.html" tras sacar la barra final —
+    StaticFiles también lo serviría como el archivo real."""
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    r = c.get("/index.html/")
+    assert r.status_code in (302, 307)
+    assert r.headers["location"] == "/"
+
+
+def test_catalogo_html_mayusculas_sin_sesion_no_sirve_la_landing(monkeypatch):
+    """En un filesystem case-insensitive (macOS/Windows) StaticFiles serviría
+    igual /CATALOGO.HTML — el chequeo tiene que ser case-insensitive."""
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    r = c.get("/CATALOGO.HTML")
+    assert r.status_code in (302, 307)
+    assert r.headers["location"] == "/"
+
+
+def test_login_html_con_barra_final_sigue_siendo_publico(monkeypatch):
+    """La normalización no debe convertir /login.html/ en algo distinto de
+    /login.html y bloquearlo por error."""
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver")
+    r = c.get("/login.html/")
+    assert r.status_code == 200
+    assert "THE TECH ROOM ARG — Ingresar" in r.text
+
+
 def test_login_html_es_publico_sin_sesion(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
