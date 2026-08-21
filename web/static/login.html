@@ -20,7 +20,20 @@
 
     <form id="form-login" class="form">
       <input type="email" id="login-email" placeholder="Email" autocomplete="email" required>
-      <input type="password" id="login-password" placeholder="Contraseña" autocomplete="current-password" required>
+      <div class="rc-password-wrap">
+        <input type="password" id="login-password" placeholder="Contraseña" autocomplete="current-password" required>
+        <button type="button" id="btn-ver-login-password" class="rc-password-toggle" aria-label="Mostrar contraseña" tabindex="-1">
+          <svg class="rc-password-icono rc-password-icono-mostrar" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          </svg>
+          <svg class="rc-password-icono rc-password-icono-ocultar" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <line x1="3" y1="21" x2="21" y2="3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
       <button type="submit">Ingresar</button>
       <p class="error" id="login-error"></p>
       <p class="rc-switch-form">¿No tenés cuenta? <a href="#" id="link-ir-a-registro">Creá una acá</a></p>

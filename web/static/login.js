@@ -9,6 +9,17 @@ const TITULO_LOGIN = "Bienvenid@ a The Tech Room Arg";
 const TITULO_REGISTRO = "Creación de cuenta";
 const TITULO_CAMBIAR_OBLIGATORIO = "Elegí tu contraseña nueva";
 
+const btnVerLoginPassword = document.getElementById("btn-ver-login-password");
+const loginPasswordInput = document.getElementById("login-password");
+if (btnVerLoginPassword && loginPasswordInput) {
+  btnVerLoginPassword.addEventListener("click", () => {
+    const visible = loginPasswordInput.type === "text";
+    loginPasswordInput.type = visible ? "password" : "text";
+    btnVerLoginPassword.setAttribute("aria-pressed", String(!visible));
+    btnVerLoginPassword.setAttribute("aria-label", visible ? "Mostrar contraseña" : "Ocultar contraseña");
+  });
+}
+
 function mostrarCambioObligatorio() {
   formLogin.classList.add("oculto");
   formRegistro.classList.add("oculto");

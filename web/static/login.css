@@ -16,6 +16,21 @@ h1 { margin: 0 0 20px; font-size: 20px; letter-spacing: .06em; text-transform: u
 input {
   padding: 12px 14px; font-size: 14px;
 }
+.rc-password-wrap { position: relative; display: flex; }
+.rc-password-wrap input { width: 100%; padding-right: 42px; }
+.rc-password-toggle {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 40px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; box-shadow: none; padding: 0;
+  color: var(--rc-green-dim);
+}
+.rc-password-toggle:hover, .rc-password-toggle:focus-visible {
+  background: transparent; border: none; box-shadow: none; color: var(--rc-green-bright);
+}
+.rc-password-icono { width: 20px; height: 20px; }
+.rc-password-icono-ocultar { display: none; }
+.rc-password-toggle[aria-pressed="true"] .rc-password-icono-mostrar { display: none; }
+.rc-password-toggle[aria-pressed="true"] .rc-password-icono-ocultar { display: block; }
 button[type="submit"] {
   margin-top: 4px; padding: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase;
   letter-spacing: .04em;
