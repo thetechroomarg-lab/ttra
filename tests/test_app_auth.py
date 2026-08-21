@@ -7,7 +7,7 @@ from tests.fakes_supabase import FakeSupabaseClient
 def _cliente(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
-    return TestClient(appmod.app)
+    return TestClient(appmod.app, base_url="https://testserver")
 
 
 def test_registro_exitoso_crea_sesion(monkeypatch):
@@ -69,10 +69,28 @@ def test_registro_con_supabase_caido_da_mensaje_claro(monkeypatch):
         raise Exception("connection refused")
 
     monkeypatch.setattr(appmod, "get_client", _client_roto)
-    c = TestClient(appmod.app)
+    c = TestClient(appmod.app, base_url="https://testserver")
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
     })
+    assert r.status_code == 503
+    assert "error" in r.json()
+
+
+def test_login_con_supabase_caido_da_503_no_500(monkeypatch):
+    """get_client() no puede fallar por una caída real de Supabase (no hace
+    llamadas de red), así que la falla real ocurre dentro de
+    cuentas.login_cliente. Ese error debe convertirse en un 503 claro, no en
+    un 500 crudo ni en el 401 genérico de credenciales incorrectas."""
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+
+    def _login_roto(_client, _email, _password):
+        raise Exception("connection timed out")
+
+    monkeypatch.setattr(appmod.cuentas, "login_cliente", _login_roto)
+    c = TestClient(appmod.app, base_url="https://testserver")
+    r = c.post("/login", json={"email": "juan@x.com", "password": "clave1234"})
     assert r.status_code == 503
     assert "error" in r.json()

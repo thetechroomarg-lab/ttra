@@ -290,16 +290,15 @@ def pagina_registro():
 def registro(entrada: RegistroIn, request: Request):
     try:
         client = get_client()
-    except Exception:
-        logger.exception("No se pudo conectar a Supabase")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
-    try:
         cliente = cuentas.registrar_cliente(
             client, entrada.nombre, entrada.apellido, entrada.celular,
             entrada.email, entrada.password,
         )
     except (cuentas.CelularDuplicadoError, cuentas.EmailDuplicadoError, ValueError) as e:
         return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo completar el registro (¿Supabase no disponible?)")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
     request.session["cliente_id"] = cliente["id"]
     request.session["cliente_nombre"] = cliente["nombre"]
     return {"ok": True}
@@ -309,10 +308,10 @@ def registro(entrada: RegistroIn, request: Request):
 def login(entrada: LoginIn, request: Request):
     try:
         client = get_client()
+        cliente = cuentas.login_cliente(client, entrada.email, entrada.password)
     except Exception:
-        logger.exception("No se pudo conectar a Supabase")
+        logger.exception("No se pudo completar el login (¿Supabase no disponible?)")
         return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
-    cliente = cuentas.login_cliente(client, entrada.email, entrada.password)
     if cliente is None:
         return JSONResponse({"error": "Usuario o contraseña incorrectos"}, status_code=401)
     request.session["cliente_id"] = cliente["id"]
