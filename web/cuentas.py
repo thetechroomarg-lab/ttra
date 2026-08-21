@@ -1,6 +1,7 @@
 import re
 import secrets
 import string
+import time
 import uuid
 
 
@@ -74,23 +75,46 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, userna
     auth_id = auth_resp.user.id
 
     datos = {"auth_id": auth_id, "nombre": nombre, "apellido": apellido, "email": email, "username": username}
-    try:
-        if lead_invitado:
-            propio_id = lead_invitado["id"]
-            datos["celular"] = celular_norm
-            client.table("clientes").update(datos).eq("id", propio_id).execute()
-        else:
-            propio_id = str(uuid.uuid4())
-            datos.update({"id": propio_id, "celular": celular_norm})
-            client.table("clientes").insert(datos).execute()
-    except Exception as e:
-        client.auth.admin.delete_user(auth_id)
-        # Inspecciona el mensaje para determinar qué tipo de duplicado es
-        error_msg = str(e).lower()
+    if lead_invitado:
+        propio_id = lead_invitado["id"]
+        datos["celular"] = celular_norm
+        guardar_datos = lambda: client.table("clientes").update(datos).eq("id", propio_id).execute()
+    else:
+        propio_id = str(uuid.uuid4())
+        datos.update({"id": propio_id, "celular": celular_norm})
+        guardar_datos = lambda: client.table("clientes").insert(datos).execute()
+
+    # Justo después del sign_up, el usuario nuevo puede tardar una fracción
+    # de segundo en quedar visible para el chequeo de foreign key de
+    # clientes_auth_id_fkey (ventana de propagación de Supabase Auth) — sin
+    # este reintento, esa carrera hace fallar registros legítimos con un
+    # falso "ya existe" o "no pudimos conectar". Los duplicados reales
+    # (email/celular ya usados) no dependen del timing y fallan igual en el
+    # primer intento.
+    error_final = None
+    for intento in range(4):
+        try:
+            guardar_datos()
+            error_final = None
+            break
+        except Exception as e:
+            error_final = e
+            if "clientes_auth_id_fkey" in str(e) and intento < 3:
+                time.sleep(0.4 * (intento + 1))
+                continue
+            break
+
+    if error_final is not None:
+        try:
+            client.auth.admin.delete_user(auth_id)
+        except Exception:
+            # Si Supabase tampoco ve todavía al usuario para borrarlo, no hay
+            # nada que limpiar — no tapemos el error real de arriba con este.
+            pass
+        error_msg = str(error_final).lower()
         if "email" in error_msg or "clientes_email_key" in error_msg:
-            raise EmailDuplicadoError(f"Ya existe una cuenta con el email {email}") from e
-        # Si no se puede determinar con certeza, asume que es de celular
-        raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}") from e
+            raise EmailDuplicadoError(f"Ya existe una cuenta con el email {email}") from error_final
+        raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}") from error_final
 
     return {"id": propio_id, "auth_id": auth_id, "nombre": nombre,
             "apellido": apellido, "celular": celular_norm, "email": email, "username": username}
