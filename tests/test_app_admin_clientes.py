@@ -19,12 +19,36 @@ def _cliente_logueado(monkeypatch):
     return c
 
 
-def test_admin_clientes_lista_nombre_y_pedidos(monkeypatch):
+def test_admin_clientes_lista_nombre_y_link_a_historial(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     r = c.get("/admin/clientes")
     assert r.status_code == 200
     assert "Juan" in r.text
+    assert "/historial" in r.text
+    assert "Productos consultados" not in r.text
+
+
+def test_admin_clientes_historial_muestra_pedidos_del_cliente(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente_id = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]["id"]
+
+    r = c.get(f"/admin/clientes/{cliente_id}/historial")
+    assert r.status_code == 200
+    assert "Juan" in r.text
     assert "iPhone 13" in r.text
+
+
+def test_admin_clientes_historial_requiere_sesion_admin():
+    c = TestClient(appmod.app, base_url="https://testserver")
+    r = c.get("/admin/clientes/algun-id/historial", follow_redirects=False)
+    assert r.status_code in (302, 307)
+
+
+def test_admin_clientes_historial_cliente_inexistente(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    r = c.get("/admin/clientes/id-que-no-existe/historial")
+    assert r.status_code == 404
 
 
 def test_admin_resetea_password_y_manda_mail(monkeypatch):

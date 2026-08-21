@@ -6,7 +6,7 @@ import posixpath
 import re
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -229,6 +229,29 @@ def admin_clientes_resetear_password(cliente_id: str, request: Request):
     return {"ok": True}
 
 
+_DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+
+
+def _formatear_fecha_ar(fecha_iso):
+    """Las fechas se guardan en UTC (ver pedidos.py) — acá se muestran en
+    hora de Argentina (UTC-3 fijo, sin horario de verano) para que
+    coincidan con lo que el cliente realmente vivió al hacer el pedido."""
+    if not fecha_iso:
+        return "—", "—", "—"
+    try:
+        momento = datetime.fromisoformat(fecha_iso.replace("Z", "+00:00")) - timedelta(hours=3)
+    except ValueError:
+        return fecha_iso, "—", "—"
+    return momento.strftime("%d/%m/%Y"), _DIAS_SEMANA[momento.weekday()], momento.strftime("%H:%M")
+
+
+_ICONO_OJO = (
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg>'
+)
+
+
 _ADMIN_CLIENTES_ESTILO = """
 <style>
   body { font-family: 'Segoe UI', system-ui, sans-serif; background:#111318; margin:0;
@@ -253,6 +276,10 @@ _ADMIN_CLIENTES_ESTILO = """
   th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #2a2e37; }
   th { color:#f2f4f8; }
   .vacio { color:#9aa0ab; text-align:center; padding:30px; }
+  .btn-historial { display:inline-flex; color:#dfe2e8; }
+  .btn-historial:hover { color:#fff; }
+  .panel-header a.volver { color:#dfe2e8; text-decoration:none; font-weight:700; font-size:14px; }
+  .panel-header a.volver:hover { color:#fff; }
 </style>
 """
 
@@ -287,16 +314,11 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 
     client = get_client()
     filas_clientes = client.table("clientes").select("*").execute().data
-    filas_pedidos = client.table("pedidos").select("*").execute().data
-    pedidos_por_cliente = {}
-    for p in filas_pedidos:
-        pedidos_por_cliente.setdefault(p["cliente_id"], []).extend(p.get("productos", []))
     clientes = [
         {
             "id": c.get("id", ""),
             "nombre": f"{c.get('nombre', '')} {c.get('apellido', '')}".strip(),
             "celular": c.get("celular", ""),
-            "productos": pedidos_por_cliente.get(c.get("id"), []),
             "fecha": c.get("creado_en", ""),
             "tiene_cuenta": bool(c.get("auth_id")),
         }
@@ -315,8 +337,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         filas_html = "".join(
             f"<tr><td>{html.escape(c.get('nombre', ''))}</td>"
             f"<td>{html.escape(c.get('celular', ''))}</td>"
-            f"<td>{html.escape(' | '.join(c.get('productos', [])))}</td>"
             f"<td>{html.escape(c.get('fecha', ''))}</td>"
+            f'<td><a class="btn-historial" href="/admin/clientes/{html.escape(c.get("id", ""))}/historial" '
+            f'title="Ver historial de pedidos" aria-label="Ver historial de pedidos">{_ICONO_OJO}</a></td>'
             f"<td>{_celda_cuenta(c)}</td></tr>"
             for c in clientes
         )
@@ -328,7 +351,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <button id="salir">Cerrar sesión</button>
   </div>
   <table>
-    <thead><tr><th>Nombre</th><th>Celular</th><th>Productos consultados</th><th>Fecha</th><th>Cuenta</th></tr></thead>
+    <thead><tr><th>Nombre</th><th>Celular</th><th>Fecha</th><th>Historial</th><th>Cuenta</th></tr></thead>
     <tbody>{filas_html}</tbody>
   </table>
 </div>
@@ -355,6 +378,46 @@ document.querySelectorAll(".btn-reset").forEach((btn) => {{
   }});
 }});
 </script>
+</body></html>"""
+
+
+@app.get("/admin/clientes/{cliente_id}/historial", response_class=HTMLResponse)
+def admin_clientes_historial(cliente_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        return RedirectResponse("/admin/clientes")
+
+    client = get_client()
+    filas_cliente = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas_cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    cliente = filas_cliente[0]
+    nombre_cliente = f"{cliente.get('nombre', '')} {cliente.get('apellido', '')}".strip()
+
+    filas_pedidos = client.table("pedidos").select("*").eq("cliente_id", cliente_id).execute().data
+    filas_pedidos.sort(key=lambda p: p.get("fecha", ""), reverse=True)
+
+    if not filas_pedidos:
+        filas_html = '<tr><td colspan="4" class="vacio">Este cliente todavía no tiene pedidos confirmados.</td></tr>'
+    else:
+        def _fila(p):
+            fecha, dia, hora = _formatear_fecha_ar(p.get("fecha", ""))
+            productos = html.escape(" | ".join(p.get("productos", [])))
+            return f"<tr><td>{fecha}</td><td>{dia}</td><td>{hora}</td><td>{productos}</td></tr>"
+
+        filas_html = "".join(_fila(p) for p in filas_pedidos)
+
+    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Historial — {html.escape(nombre_cliente)}</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
+<div class="panel">
+  <div class="panel-header">
+    <h1>Historial de {html.escape(nombre_cliente) or "cliente"} ({len(filas_pedidos)})</h1>
+    <a class="volver" href="/admin/clientes">← Volver</a>
+  </div>
+  <table>
+    <thead><tr><th>Fecha</th><th>Día</th><th>Hora</th><th>Productos</th></tr></thead>
+    <tbody>{filas_html}</tbody>
+  </table>
+</div>
 </body></html>"""
 
 
