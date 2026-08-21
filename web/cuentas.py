@@ -137,7 +137,14 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, userna
             "apellido": apellido, "celular": celular_norm, "email": email, "username": username}
 
 
-def login_cliente(client, email, password):
+def login_cliente(client, client_datos, email, password):
+    # `client` hace el sign_in y queda con el contexto de ESE usuario (ya no
+    # service_role) — el supabase-py sincroniza el token de auth con el
+    # cliente de postgrest del mismo objeto. Consultar clientes con ese
+    # mismo objeto después del sign_in corre como "authenticated" y RLS lo
+    # bloquea (devuelve 0 filas siempre, no es un problema de timing). Por
+    # eso la lectura posterior usa `client_datos`, un cliente aparte que
+    # nunca se loguea y se mantiene como service_role.
     email = (email or "").strip().lower()
     try:
         auth_resp = client.auth.sign_in_with_password({"email": email, "password": password})
@@ -157,7 +164,7 @@ def login_cliente(client, email, password):
         # disfracemos de "usuario no encontrado", que lo relance el llamador.
         raise
     auth_id = auth_resp.user.id
-    filas = client.table("clientes").select("*").eq("auth_id", auth_id).execute().data
+    filas = client_datos.table("clientes").select("*").eq("auth_id", auth_id).execute().data
     if not filas:
         return None
     perfil = filas[0]

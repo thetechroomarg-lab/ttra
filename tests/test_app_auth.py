@@ -131,7 +131,7 @@ def test_login_email_no_confirmado_devuelve_403_con_mensaje_claro(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
 
-    def _login_no_confirmado(_client, _email, _password):
+    def _login_no_confirmado(_client, _client_datos, _email, _password):
         raise appmod.cuentas.EmailNoConfirmadoError(
             "Confirmá tu email antes de ingresar — revisá tu bandeja de entrada"
         )

@@ -84,7 +84,7 @@ def test_registrar_cliente_hace_rollback_si_falla_el_perfil():
 def test_login_cliente_correcto():
     client = FakeSupabaseClient()
     cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234", "ana5")
-    cliente = cuentas.login_cliente(client, "ana@x.com", "clave1234")
+    cliente = cuentas.login_cliente(client, client, "ana@x.com", "clave1234")
     assert cliente is not None
     assert cliente["nombre"] == "Ana"
     assert cliente["username"] == "ana5"
@@ -93,12 +93,12 @@ def test_login_cliente_correcto():
 def test_login_cliente_password_incorrecta():
     client = FakeSupabaseClient()
     cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234", "ana6")
-    assert cuentas.login_cliente(client, "ana@x.com", "otraclave") is None
+    assert cuentas.login_cliente(client, client, "ana@x.com", "otraclave") is None
 
 
 def test_login_cliente_sin_cuenta():
     client = FakeSupabaseClient()
-    assert cuentas.login_cliente(client, "nadie@x.com", "loquesea") is None
+    assert cuentas.login_cliente(client, client, "nadie@x.com", "loquesea") is None
 
 
 def test_login_cliente_propaga_error_que_no_es_de_credencial():
@@ -112,7 +112,7 @@ def test_login_cliente_propaga_error_que_no_es_de_credencial():
 
     client.auth.sign_in_with_password = _sign_in_roto
     with pytest.raises(Exception, match="connection timed out"):
-        cuentas.login_cliente(client, "ana@x.com", "clave1234")
+        cuentas.login_cliente(client, client, "ana@x.com", "clave1234")
 
 
 def test_login_cliente_email_no_confirmado_levanta_error_especifico():
@@ -127,7 +127,7 @@ def test_login_cliente_email_no_confirmado_levanta_error_especifico():
 
     client.auth.sign_in_with_password = _sign_in_no_confirmado
     with pytest.raises(cuentas.EmailNoConfirmadoError):
-        cuentas.login_cliente(client, "ana@x.com", "clave1234")
+        cuentas.login_cliente(client, client, "ana@x.com", "clave1234")
 
 
 def test_registrar_cliente_insert_falla_por_email_duplicado():
@@ -202,8 +202,8 @@ def test_resetear_password_cliente_genera_una_password_nueva():
     assert resultado["password"] != "claveVieja1"
     assert len(resultado["password"]) == 12
     # La password vieja ya no sirve, la nueva sí.
-    assert cuentas.login_cliente(client, "ana@x.com", "claveVieja1") is None
-    assert cuentas.login_cliente(client, "ana@x.com", resultado["password"]) is not None
+    assert cuentas.login_cliente(client, client, "ana@x.com", "claveVieja1") is None
+    assert cuentas.login_cliente(client, client, "ana@x.com", resultado["password"]) is not None
 
 
 def test_resetear_password_cliente_inexistente():
@@ -233,7 +233,7 @@ def test_resetear_password_marca_debe_cambiar_password():
 
     temporal = cuentas.resetear_password_cliente(client, cliente["id"])["password"]
 
-    perfil = cuentas.login_cliente(client, "ana@x.com", temporal)
+    perfil = cuentas.login_cliente(client, client, "ana@x.com", temporal)
     assert perfil["debe_cambiar_password"] is True
 
 
@@ -247,8 +247,8 @@ def test_cambiar_password_obligatorio_limpia_la_flag_y_actualiza_la_password():
     cuentas.cambiar_password_obligatorio(client, cliente["id"], "claveNuevaElegida1")
 
     # La temporal ya no sirve, la elegida por el usuario sí, y la flag se limpió.
-    assert cuentas.login_cliente(client, "ana@x.com", temporal) is None
-    perfil = cuentas.login_cliente(client, "ana@x.com", "claveNuevaElegida1")
+    assert cuentas.login_cliente(client, client, "ana@x.com", temporal) is None
+    perfil = cuentas.login_cliente(client, client, "ana@x.com", "claveNuevaElegida1")
     assert perfil is not None
     assert perfil["debe_cambiar_password"] is False
 

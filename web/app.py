@@ -412,8 +412,7 @@ def registro(entrada: RegistroIn, request: Request):
 @app.post("/login")
 def login(entrada: LoginIn, request: Request):
     try:
-        client = get_client()
-        cliente = cuentas.login_cliente(client, entrada.email, entrada.password)
+        cliente = cuentas.login_cliente(get_client(), get_client(), entrada.email, entrada.password)
     except cuentas.EmailNoConfirmadoError as e:
         return JSONResponse({"error": str(e)}, status_code=403)
     except Exception:
