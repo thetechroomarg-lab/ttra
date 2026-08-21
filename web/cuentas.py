@@ -84,23 +84,23 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, userna
         datos.update({"id": propio_id, "celular": celular_norm})
         guardar_datos = lambda: client.table("clientes").insert(datos).execute()
 
-    # Justo después del sign_up, el usuario nuevo puede tardar una fracción
-    # de segundo en quedar visible para el chequeo de foreign key de
-    # clientes_auth_id_fkey (ventana de propagación de Supabase Auth) — sin
-    # este reintento, esa carrera hace fallar registros legítimos con un
-    # falso "ya existe" o "no pudimos conectar". Los duplicados reales
-    # (email/celular ya usados) no dependen del timing y fallan igual en el
-    # primer intento.
+    # Justo después del sign_up, el usuario nuevo puede tardar unos segundos
+    # en quedar visible para el chequeo de foreign key de
+    # clientes_auth_id_fkey (ventana de propagación de Supabase Auth, más
+    # marcada todavía en producción que en local) — sin este reintento, esa
+    # carrera hace fallar registros legítimos. Los duplicados reales
+    # (email/celular/usuario ya usados) no dependen del timing y fallan
+    # igual en el primer intento, así que no hace falta reintentarlos.
     error_final = None
-    for intento in range(4):
+    for intento in range(8):
         try:
             guardar_datos()
             error_final = None
             break
         except Exception as e:
             error_final = e
-            if "clientes_auth_id_fkey" in str(e) and intento < 3:
-                time.sleep(0.4 * (intento + 1))
+            if "clientes_auth_id_fkey" in str(e) and intento < 7:
+                time.sleep(min(0.3 * (intento + 1), 1.5))
                 continue
             break
 
@@ -112,8 +112,18 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, userna
             # nada que limpiar — no tapemos el error real de arriba con este.
             pass
         error_msg = str(error_final).lower()
-        if "email" in error_msg or "clientes_email_key" in error_msg:
+        if "clientes_email_key" in error_msg:
             raise EmailDuplicadoError(f"Ya existe una cuenta con el email {email}") from error_final
+        if "clientes_username_key" in error_msg:
+            raise UsernameDuplicadoError(f"Ya existe una cuenta con el usuario {username}") from error_final
+        if "clientes_auth_id_fkey" in error_msg:
+            # Se agotaron los reintentos y la ventana de propagación del
+            # auth_id nunca cerró: no es un duplicado de ningún campo, así
+            # que no le mintamos al usuario — que se relance tal cual y lo
+            # maneje el 503 genérico del caller.
+            raise error_final
+        # Cualquier otra falla no identificada (incluida clientes_celular_key)
+        # se trata como duplicado de celular, que es el caso más común.
         raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}") from error_final
 
     return {"id": propio_id, "auth_id": auth_id, "nombre": nombre,
