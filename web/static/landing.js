@@ -69,41 +69,6 @@
   if (btn) btn.addEventListener("click", () => aplicarTema(tema === "oscuro" ? "claro" : "oscuro"));
 })();
 
-// --- En mobile (<900px, ver landing.css) el noticiero de arriba se oculta
-// por falta de espacio: la carita hace de acceso alternativo, mostrando la
-// noticia actual (lo que ya está narrando #noticiero-texto, sin duplicar
-// esa lógica) en una burbuja al tocarla. No afecta nada en desktop. ---
-(function () {
-  const cara = document.getElementById("cara-noticiero-boton");
-  const noticiaTexto = document.getElementById("noticiero-texto");
-  const burbuja = document.getElementById("rc-cara-noticia");
-  if (!cara || !noticiaTexto || !burbuja) return;
-  function alternar() {
-    const abrir = !burbuja.classList.contains("visible");
-    if (abrir) {
-      burbuja.innerHTML = noticiaTexto.innerHTML || "Sin noticias por ahora.";
-      burbuja.setAttribute("aria-hidden", "false");
-    } else {
-      burbuja.setAttribute("aria-hidden", "true");
-    }
-    burbuja.classList.toggle("visible", abrir);
-  }
-  cara.addEventListener("click", (e) => {
-    e.stopPropagation();
-    alternar();
-  });
-  cara.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      alternar();
-    }
-  });
-  document.addEventListener("click", () => {
-    burbuja.classList.remove("visible");
-    burbuja.setAttribute("aria-hidden", "true");
-  });
-})();
-
 // --- Beep sutil estilo computadora vieja, en cada interacción con la web ---
 
 let audioCtxInteraccion;
