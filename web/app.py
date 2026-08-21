@@ -16,7 +16,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import auth, buscador, catalogo, leads
+from web import buscador, catalogo, cuentas, leads
+from web.supabase_client import get_client
 from web.chat import responder
 from web.reglas import WHATSAPP
 
@@ -253,6 +254,8 @@ document.getElementById("salir").addEventListener("click", async () => {{
 
 class RegistroIn(BaseModel):
     nombre: str
+    apellido: str
+    celular: str
     email: EmailStr
     password: str = Field(min_length=8)
 
@@ -263,7 +266,7 @@ class LoginIn(BaseModel):
 
 
 def _sesion_activa(request: Request):
-    return bool(request.session.get("usuario_email"))
+    return bool(request.session.get("cliente_id"))
 
 
 @app.get("/login")
@@ -278,30 +281,35 @@ def pagina_registro():
 
 @app.post("/registro")
 def registro(entrada: RegistroIn, request: Request):
-    conn = auth.get_conn()
     try:
-        auth.crear_usuario(
-            conn, entrada.nombre, entrada.email, entrada.password,
-            datetime.now().strftime("%Y-%m-%d %H:%M"),
+        client = get_client()
+    except Exception:
+        logger.exception("No se pudo conectar a Supabase")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    try:
+        cliente = cuentas.registrar_cliente(
+            client, entrada.nombre, entrada.apellido, entrada.celular,
+            entrada.email, entrada.password,
         )
-    except auth.EmailDuplicadoError as e:
+    except (cuentas.CelularDuplicadoError, cuentas.EmailDuplicadoError, ValueError) as e:
         return JSONResponse({"error": str(e)}, status_code=400)
-    finally:
-        conn.close()
-    request.session["usuario_email"] = entrada.email.strip().lower()
-    request.session["usuario_nombre"] = entrada.nombre
+    request.session["cliente_id"] = cliente["id"]
+    request.session["cliente_nombre"] = cliente["nombre"]
     return {"ok": True}
 
 
 @app.post("/login")
 def login(entrada: LoginIn, request: Request):
-    conn = auth.get_conn()
-    usuario = auth.verificar_usuario(conn, entrada.email, entrada.password)
-    conn.close()
-    if usuario is None:
+    try:
+        client = get_client()
+    except Exception:
+        logger.exception("No se pudo conectar a Supabase")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    cliente = cuentas.login_cliente(client, entrada.email, entrada.password)
+    if cliente is None:
         return JSONResponse({"error": "Usuario o contraseña incorrectos"}, status_code=401)
-    request.session["usuario_email"] = usuario["email"]
-    request.session["usuario_nombre"] = usuario["nombre"]
+    request.session["cliente_id"] = cliente["id"]
+    request.session["cliente_nombre"] = cliente["nombre"]
     return {"ok": True}
 
 

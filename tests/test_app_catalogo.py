@@ -1,18 +1,21 @@
 from fastapi.testclient import TestClient
 
 import web.app as appmod
-from web import auth
+from tests.fakes_supabase import FakeSupabaseClient
 
 
 def _cliente_autenticado(tmp_path, monkeypatch):
-    monkeypatch.setattr(auth, "DB_PATH", tmp_path / "usuarios.db")
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
     c = TestClient(appmod.app)
-    c.post("/registro", json={"nombre": "Juan", "email": "juan@x.com", "password": "clave123"})
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave123",
+    })
     return c
 
 
 def test_api_catalogo_es_publica_sin_sesion(tmp_path, monkeypatch):
-    monkeypatch.setattr(auth, "DB_PATH", tmp_path / "usuarios.db")
     monkeypatch.setattr(appmod, "_cargar_productos", lambda: [])
     c = TestClient(appmod.app)
     r = c.get("/api/catalogo")
@@ -20,7 +23,6 @@ def test_api_catalogo_es_publica_sin_sesion(tmp_path, monkeypatch):
 
 
 def test_pagina_catalogo_sin_sesion_redirige_a_login(tmp_path, monkeypatch):
-    monkeypatch.setattr(auth, "DB_PATH", tmp_path / "usuarios.db")
     c = TestClient(appmod.app, follow_redirects=False)
     r = c.get("/catalogo")
     assert r.status_code in (302, 307)
@@ -49,14 +51,18 @@ def test_api_catalogo_con_productos(tmp_path, monkeypatch):
 
 
 def test_flujo_completo_registro_logout_login_catalogo(tmp_path, monkeypatch):
-    monkeypatch.setattr(auth, "DB_PATH", tmp_path / "usuarios.db")
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
     monkeypatch.setattr(
         appmod, "_cargar_productos",
         lambda: [{"nombre": "iPhone 15", "categoria": "Apple - iPhone"}],
     )
     c = TestClient(appmod.app)
 
-    r = c.post("/registro", json={"nombre": "Juan", "email": "juan@x.com", "password": "clave123"})
+    r = c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave123",
+    })
     assert r.status_code == 200
 
     r = c.post("/logout")
