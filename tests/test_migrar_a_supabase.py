@@ -99,7 +99,7 @@ def test_migrar_cierra_el_robo_de_cuenta_por_email(tmp_path):
     import pytest
     with pytest.raises(cuentas.EmailDuplicadoError):
         cuentas.registrar_cliente(
-            client, "Impostor", "Impostor", "3510000001", "mayorista@x.com", "clave-robada",
+            client, "Impostor", "Impostor", "3510000001", "mayorista@x.com", "clave-robada", "impostor",
         )
 
     filas = client.table("clientes").select("*").eq("email", "mayorista@x.com").execute().data

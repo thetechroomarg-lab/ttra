@@ -19,27 +19,35 @@ def test_normalizar_celular_no_toca_numeros_que_no_empiezan_con_54():
 def test_registrar_cliente_exitoso():
     client = FakeSupabaseClient()
     cliente = cuentas.registrar_cliente(
-        client, "Ana", "Gómez", "351 123-4567", "ana@x.com", "clave1234"
+        client, "Ana", "Gómez", "351 123-4567", "ana@x.com", "clave1234", "ana_gomez"
     )
     assert cliente["nombre"] == "Ana"
     assert cliente["apellido"] == "Gómez"
     assert cliente["celular"] == "3511234567"  # normalizado, sin espacios ni guiones
     assert cliente["email"] == "ana@x.com"
+    assert cliente["username"] == "ana_gomez"
     assert cliente["id"]  # uuid propio asignado
 
 
 def test_registrar_cliente_celular_duplicado_de_cuenta_ya_activa():
     client = FakeSupabaseClient()
-    cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234")
+    cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234", "ana1")
     with pytest.raises(cuentas.CelularDuplicadoError):
-        cuentas.registrar_cliente(client, "Otra", "Persona", "3511234567", "otra@x.com", "clave1234")
+        cuentas.registrar_cliente(client, "Otra", "Persona", "3511234567", "otra@x.com", "clave1234", "otra1")
 
 
 def test_registrar_cliente_email_duplicado():
     client = FakeSupabaseClient()
-    cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234")
+    cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234", "ana2")
     with pytest.raises(cuentas.EmailDuplicadoError):
-        cuentas.registrar_cliente(client, "Otra", "Persona", "3519999999", "ana@x.com", "clave1234")
+        cuentas.registrar_cliente(client, "Otra", "Persona", "3519999999", "ana@x.com", "clave1234", "otra2")
+
+
+def test_registrar_cliente_username_duplicado():
+    client = FakeSupabaseClient()
+    cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234", "repetido")
+    with pytest.raises(cuentas.UsernameDuplicadoError):
+        cuentas.registrar_cliente(client, "Otra", "Persona", "3519999999", "otra@x.com", "clave1234", "repetido")
 
 
 def test_registrar_cliente_vincula_lead_invitado_por_celular():
@@ -51,7 +59,7 @@ def test_registrar_cliente_vincula_lead_invitado_por_celular():
     }).execute()
 
     cliente = cuentas.registrar_cliente(
-        client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234"
+        client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234", "ana3"
     )
     assert cliente["id"] == "id-lead-1"  # se completó la fila existente, no se creó otra
     filas = client.table("clientes").select("*").eq("celular", "3511234567").execute().data
@@ -68,22 +76,23 @@ def test_registrar_cliente_hace_rollback_si_falla_el_perfil():
 
     client.table("clientes").insert = _insert_que_falla
     with pytest.raises(cuentas.CelularDuplicadoError):
-        cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234")
+        cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234", "ana4")
     # El usuario de auth no debe quedar húmedo tras el rollback.
     assert "ana@x.com" not in client.auth._usuarios_por_email
 
 
 def test_login_cliente_correcto():
     client = FakeSupabaseClient()
-    cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234")
+    cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234", "ana5")
     cliente = cuentas.login_cliente(client, "ana@x.com", "clave1234")
     assert cliente is not None
     assert cliente["nombre"] == "Ana"
+    assert cliente["username"] == "ana5"
 
 
 def test_login_cliente_password_incorrecta():
     client = FakeSupabaseClient()
-    cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234")
+    cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234", "ana6")
     assert cuentas.login_cliente(client, "ana@x.com", "otraclave") is None
 
 
@@ -143,7 +152,7 @@ def test_registrar_cliente_insert_falla_por_email_duplicado():
 
     with pytest.raises(cuentas.EmailDuplicadoError):
         cuentas.registrar_cliente(
-            client, "Otra", "Persona", "3519999999", "x@example.com", "clave1234"
+            client, "Otra", "Persona", "3519999999", "x@example.com", "clave1234", "otra3"
         )
     # El usuario de auth debe haber hecho rollback
     assert "x@example.com" not in client.auth._usuarios_por_email
@@ -162,7 +171,7 @@ def test_registrar_cliente_no_vincula_fila_invitada_solo_por_email():
     }).execute()
 
     cliente = cuentas.registrar_cliente(
-        client, "Impostor", "Impostor", "3512223344", "mayorista@x.com", "clave1234"
+        client, "Impostor", "Impostor", "3512223344", "mayorista@x.com", "clave1234", "impostor1"
     )
 
     # Se crea una fila NUEVA, distinta de la del mayorista — no se tocó su fila.

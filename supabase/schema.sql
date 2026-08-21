@@ -10,6 +10,7 @@ create table if not exists clientes (
   apellido text not null,
   celular text not null unique,
   email text not null unique,
+  username text unique,
   tipo_cliente text not null default 'minorista',
   creado_en timestamptz not null default now(),
   actualizado_en timestamptz not null default now()

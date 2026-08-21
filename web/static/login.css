@@ -4,20 +4,14 @@ body {
   font-family: var(--rc-font); background: var(--rc-bg); color: var(--rc-green);
 }
 .tarjeta {
-  width: min(360px, 90vw); padding: 32px 28px; background: var(--rc-bg-panel); border-radius: 0;
+  width: min(360px, 90vw); padding: 32px 28px; background: var(--rc-bg-panel); border-radius: 16px;
   border: 1px solid var(--rc-green-dim);
 }
-h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: .06em; text-transform: uppercase;
+h1 { margin: 0 0 20px; font-size: 20px; letter-spacing: .06em; text-transform: uppercase;
      color: var(--rc-green-bright); }
-.subtitulo { margin: 0 0 20px; font-size: 13px; color: var(--rc-green-dim); }
-.tabs { display: flex; gap: 6px; margin-bottom: 18px; background: var(--rc-bg); border-radius: 0;
-        border: 1px solid var(--rc-green-faint); padding: 4px; }
-.tab {
-  flex: 1; padding: 8px; border: none; background: transparent;
-  color: var(--rc-green-dim); font-size: 13px; cursor: var(--rc-cursor); font-family: var(--rc-font);
-}
-.tab.activa { background: var(--rc-green-faint); color: var(--rc-green-bright); font-weight: 600; }
 .form { display: flex; flex-direction: column; gap: 10px; }
+.rc-switch-form { margin: 6px 0 0; font-size: 14.4px; color: var(--rc-green-dim); text-align: center; }
+.rc-switch-form a { color: var(--rc-green-bright); cursor: pointer; text-decoration: underline; }
 .form.oculto { display: none; }
 input {
   padding: 12px 14px; font-size: 14px;

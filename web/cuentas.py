@@ -14,6 +14,10 @@ class EmailNoConfirmadoError(Exception):
     pass
 
 
+class UsernameDuplicadoError(Exception):
+    pass
+
+
 def normalizar_celular(celular):
     digitos = re.sub(r"\D", "", celular or "")
     # "+543513017015" y "3513017015" son el mismo celular argentino con y
@@ -25,13 +29,23 @@ def normalizar_celular(celular):
     return digitos
 
 
-def registrar_cliente(client, nombre, apellido, celular, email, password):
+def registrar_cliente(client, nombre, apellido, celular, email, password, username):
     nombre = nombre.strip()
     apellido = apellido.strip()
     celular_norm = normalizar_celular(celular)
     email = email.strip().lower()
+    username = (username or "").strip()
     if not celular_norm:
         raise ValueError("El celular ingresado no es válido")
+    if not username:
+        raise ValueError("El nombre de usuario es obligatorio")
+
+    # El username es un campo propio, no una llave de vinculación de leads
+    # invitados (esa sigue siendo solo el celular) — simplemente tiene que
+    # ser único entre cuentas ya activas.
+    existentes_username = client.table("clientes").select("*").eq("username", username).execute().data
+    if any(f.get("auth_id") for f in existentes_username):
+        raise UsernameDuplicadoError(f"Ya existe una cuenta con el usuario {username}")
 
     # La vinculación de fila "invitada" es SOLO por celular, nunca por email:
     # el email no prueba que quien se registra sea el dueño real de la
@@ -53,7 +67,7 @@ def registrar_cliente(client, nombre, apellido, celular, email, password):
         raise
     auth_id = auth_resp.user.id
 
-    datos = {"auth_id": auth_id, "nombre": nombre, "apellido": apellido, "email": email}
+    datos = {"auth_id": auth_id, "nombre": nombre, "apellido": apellido, "email": email, "username": username}
     try:
         if lead_invitado:
             propio_id = lead_invitado["id"]
@@ -73,7 +87,7 @@ def registrar_cliente(client, nombre, apellido, celular, email, password):
         raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}") from e
 
     return {"id": propio_id, "auth_id": auth_id, "nombre": nombre,
-            "apellido": apellido, "celular": celular_norm, "email": email}
+            "apellido": apellido, "celular": celular_norm, "email": email, "username": username}
 
 
 def login_cliente(client, email, password):
@@ -101,4 +115,5 @@ def login_cliente(client, email, password):
         return None
     perfil = filas[0]
     return {"id": perfil["id"], "auth_id": auth_id, "nombre": perfil["nombre"],
-            "apellido": perfil["apellido"], "celular": perfil["celular"], "email": perfil["email"]}
+            "apellido": perfil["apellido"], "celular": perfil["celular"], "email": perfil["email"],
+            "username": perfil.get("username")}

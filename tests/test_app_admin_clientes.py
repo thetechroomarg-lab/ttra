@@ -11,7 +11,7 @@ def _cliente_logueado(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234",
+        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
     })
     c.post("/api/pedidos", json={"productos": ["iPhone 13"]})
     c.post("/logout")

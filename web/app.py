@@ -194,26 +194,28 @@ def admin_clientes_logout(request: Request):
 
 _ADMIN_CLIENTES_ESTILO = """
 <style>
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background:#4fb3e8; margin:0;
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background:#111318; margin:0;
          min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
-  .tarjeta { background:#fff; border-radius:14px; padding:28px 24px; width:100%; max-width:340px;
-             box-shadow:0 10px 30px rgba(16,33,79,0.25); box-sizing:border-box; }
-  .tarjeta h1 { margin:0 0 16px; color:#10214f; font-size:20px; }
+  .tarjeta { background:#1b1e24; border-radius:14px; padding:28px 24px; width:100%; max-width:340px;
+             box-shadow:0 10px 30px rgba(0,0,0,0.5); box-sizing:border-box; border:1px solid #2a2e37; }
+  .tarjeta h1 { margin:0 0 16px; color:#f2f4f8; font-size:20px; }
   .tarjeta input { width:100%; height:42px; padding:0 12px; font-size:15px; box-sizing:border-box;
-                   border:2px solid #cfe9f7; border-radius:10px; margin-bottom:10px; }
+                   border:2px solid #333844; border-radius:10px; margin-bottom:10px;
+                   background:#12141a; color:#f2f4f8; }
   .tarjeta button { width:100%; height:44px; border:none; border-radius:10px; background:#c8102e;
                     color:#fff; font-size:15px; font-weight:800; cursor:pointer; }
-  .error { color:#c8102e; font-size:13px; margin:0 0 10px; }
-  .panel { background:#fff; border-radius:14px; padding:20px; max-width:1000px; width:100%;
-           margin:20px auto; box-shadow:0 10px 30px rgba(16,33,79,0.2); box-sizing:border-box; }
+  .error { color:#ff6b6b; font-size:13px; margin:0 0 10px; }
+  .panel { background:#1b1e24; border-radius:14px; padding:20px; max-width:1000px; width:100%;
+           margin:20px auto; box-shadow:0 10px 30px rgba(0,0,0,0.5); box-sizing:border-box;
+           border:1px solid #2a2e37; }
   .panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .panel-header h1 { color:#10214f; font-size:20px; margin:0; }
-  .panel-header button { border:none; background:#10214f; color:#fff; border-radius:8px;
+  .panel-header h1 { color:#f2f4f8; font-size:20px; margin:0; }
+  .panel-header button { border:none; background:#3a3f4b; color:#f2f4f8; border-radius:8px;
                           padding:8px 14px; cursor:pointer; font-weight:700; }
-  table { width:100%; border-collapse:collapse; font-size:14px; }
-  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #eaf5fb; }
-  th { color:#10214f; }
-  .vacio { color:#10214f; text-align:center; padding:30px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; color:#dfe2e8; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #2a2e37; }
+  th { color:#f2f4f8; }
+  .vacio { color:#9aa0ab; text-align:center; padding:30px; }
 </style>
 """
 
@@ -299,6 +301,7 @@ class RegistroIn(BaseModel):
     celular: str
     email: EmailStr
     password: str = Field(min_length=8)
+    username: str = Field(min_length=3)
 
 
 class LoginIn(BaseModel):
@@ -326,9 +329,10 @@ def registro(entrada: RegistroIn, request: Request):
         client = get_client()
         cliente = cuentas.registrar_cliente(
             client, entrada.nombre, entrada.apellido, entrada.celular,
-            entrada.email, entrada.password,
+            entrada.email, entrada.password, entrada.username,
         )
-    except (cuentas.CelularDuplicadoError, cuentas.EmailDuplicadoError, ValueError) as e:
+    except (cuentas.CelularDuplicadoError, cuentas.EmailDuplicadoError,
+            cuentas.UsernameDuplicadoError, ValueError) as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo completar el registro (¿Supabase no disponible?)")

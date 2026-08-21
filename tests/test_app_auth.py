@@ -14,7 +14,7 @@ def test_registro_exitoso_crea_sesion(monkeypatch):
     c = _cliente(monkeypatch)
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234",
+        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
     })
     assert r.status_code == 200
     assert r.json() == {"ok": True}
@@ -24,11 +24,11 @@ def test_registro_celular_duplicado_devuelve_400(monkeypatch):
     c = _cliente(monkeypatch)
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234",
+        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
     })
     r = c.post("/registro", json={
         "nombre": "Otro", "apellido": "Nombre", "celular": "3511234567",
-        "email": "otro@x.com", "password": "clave1234",
+        "email": "otro@x.com", "password": "clave1234", "username": "otronombre",
     })
     assert r.status_code == 400
     assert "error" in r.json()
@@ -38,7 +38,7 @@ def test_login_correcto(monkeypatch):
     c = _cliente(monkeypatch)
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234",
+        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
     })
     r = c.post("/login", json={"email": "juan@x.com", "password": "clave1234"})
     assert r.status_code == 200
@@ -56,7 +56,7 @@ def test_logout_limpia_sesion(monkeypatch):
     c = _cliente(monkeypatch)
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234",
+        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
     })
     r = c.post("/logout")
     assert r.status_code == 200
@@ -72,7 +72,7 @@ def test_registro_con_supabase_caido_da_mensaje_claro(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234",
+        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
     })
     assert r.status_code == 503
     assert "error" in r.json()

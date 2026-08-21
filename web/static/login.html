@@ -1,40 +1,39 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-modo="classic" data-tema="oscuro">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>THE TECH ROOM ARG — Ingresar</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="login.css">
 </head>
 <body>
   <div id="rc-boot"></div>
   <div class="rc-crt"></div>
   <main class="tarjeta">
-    <h1>THE TECH ROOM ARG</h1>
-    <p class="subtitulo">Tu catálogo, a un clic.</p>
-
-    <div class="tabs">
-      <button type="button" class="tab activa" data-tab="login">Ingresar</button>
-      <button type="button" class="tab" data-tab="registro">Crear cuenta</button>
-    </div>
+    <h1 id="titulo-login">Bienvenid@ a The Tech Room Arg</h1>
 
     <form id="form-login" class="form">
       <input type="email" id="login-email" placeholder="Email" autocomplete="email" required>
       <input type="password" id="login-password" placeholder="Contraseña" autocomplete="current-password" required>
       <button type="submit">Ingresar</button>
       <p class="error" id="login-error"></p>
+      <p class="rc-switch-form">¿No tenés cuenta? <a href="#" id="link-ir-a-registro">Creá una acá</a></p>
     </form>
 
     <form id="form-registro" class="form oculto">
+      <input type="text" id="registro-username" placeholder="Nombre de usuario" autocomplete="username" required>
       <input type="text" id="registro-nombre" placeholder="Nombre" autocomplete="given-name" required>
       <input type="text" id="registro-apellido" placeholder="Apellido" autocomplete="family-name" required>
+      <input type="password" id="registro-password" placeholder="Contraseña" autocomplete="new-password" required>
+      <input type="password" id="registro-password-repetir" placeholder="Repetir contraseña" autocomplete="new-password" required>
       <input type="tel" id="registro-celular" placeholder="Celular" autocomplete="tel" required>
       <input type="email" id="registro-email" placeholder="Email" autocomplete="email" required>
-      <input type="password" id="registro-password" placeholder="Contraseña" autocomplete="new-password" required>
       <button type="submit">Crear cuenta</button>
       <p class="error" id="registro-error"></p>
+      <p class="rc-switch-form">¿Ya tenés cuenta? <a href="#" id="link-ir-a-login">Iniciá sesión acá</a></p>
     </form>
   </main>
   <script src="boot.js"></script>
