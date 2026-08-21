@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <script>
+    document.documentElement.setAttribute(
+      "data-modo",
+      new URLSearchParams(location.search).get("modo") === "fallout" ? "fallout" : "classic"
+    );
+    // Mismo criterio que el toggle sol/luna del header (ver landing.js):
+    // oscuro por default, "claro" solo si el usuario lo eligió antes acá.
+    let temaGuardado = "oscuro";
+    try {
+      temaGuardado = localStorage.getItem("rc-tema-classic") === "claro" ? "claro" : "oscuro";
+    } catch {
+      // Sin localStorage, siempre arranca en oscuro: no es crítico.
+    }
+    document.documentElement.setAttribute("data-tema", temaGuardado);
+  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>THE TECH ROOM ARG — Mi perfil</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="classic.css">
+  <link rel="stylesheet" href="login.css">
+  <link rel="stylesheet" href="perfil.css">
+</head>
+<body>
+  <div class="rc-crt"></div>
+  <main class="tarjeta">
+    <a id="link-volver" class="rc-perfil-volver" href="/">← Volver</a>
+    <h1>Mi perfil</h1>
+    <form id="form-perfil" class="form">
+      <input id="perfil-nombre" type="text" placeholder="Nombre" autocomplete="given-name" required>
+      <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required>
+      <input id="perfil-username" type="text" placeholder="Nombre de usuario" autocomplete="username" required minlength="3">
+      <input id="perfil-email" type="email" placeholder="Email" disabled>
+      <input id="perfil-celular" type="tel" placeholder="Celular" autocomplete="tel" required>
+      <button type="submit">Guardar cambios</button>
+      <p class="error" id="perfil-error"></p>
+      <p class="ok" id="perfil-ok"></p>
+    </form>
+
+    <h2>Cambiar contraseña</h2>
+    <form id="form-password" class="form">
+      <input id="password-actual" type="password" placeholder="Contraseña actual" autocomplete="current-password" required>
+      <input id="password-nueva" type="password" placeholder="Contraseña nueva" autocomplete="new-password" required minlength="8">
+      <input id="password-nueva-repetir" type="password" placeholder="Repetir contraseña nueva" autocomplete="new-password" required minlength="8">
+      <button type="submit">Cambiar contraseña</button>
+      <p class="error" id="password-error"></p>
+      <p class="ok" id="password-ok"></p>
+    </form>
+  </main>
+  <script src="perfil.js"></script>
+</body>
+</html>

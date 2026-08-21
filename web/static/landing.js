@@ -1749,8 +1749,69 @@ async function cerrarSesionCliente() {
   window.location.href = "/";
 }
 
+// --- Menú de perfil del header: botón con nombre + ícono redondo que
+// despliega "Ir a perfil" (los dos modos) y "Cerrar sesión" (solo Classic;
+// en Fallout ese log out sigue siendo el interruptor de la barra lateral).
+const menuPerfil = document.getElementById("rc-perfil-menu");
+const btnPerfilToggle = document.getElementById("btn-perfil-toggle");
+const dropdownPerfil = document.getElementById("rc-perfil-dropdown");
+const linkIrAPerfil = document.getElementById("link-ir-a-perfil");
+
+function cerrarMenuPerfil() {
+  if (!dropdownPerfil) return;
+  dropdownPerfil.classList.add("oculto");
+  if (btnPerfilToggle) btnPerfilToggle.setAttribute("aria-expanded", "false");
+}
+
+if (btnPerfilToggle && dropdownPerfil) {
+  btnPerfilToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const abierto = !dropdownPerfil.classList.contains("oculto");
+    if (abierto) {
+      cerrarMenuPerfil();
+    } else {
+      dropdownPerfil.classList.remove("oculto");
+      btnPerfilToggle.setAttribute("aria-expanded", "true");
+    }
+  });
+  document.addEventListener("click", (e) => {
+    if (menuPerfil && !menuPerfil.contains(e.target)) cerrarMenuPerfil();
+  });
+}
+
+if (linkIrAPerfil) {
+  linkIrAPerfil.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.location.href = modoVisual === "fallout" ? "/perfil?modo=fallout" : "/perfil";
+  });
+}
+
+function inicialesDe(nombre, apellido) {
+  const inicial = (texto) => (texto || "").trim().charAt(0).toUpperCase();
+  return `${inicial(nombre)}${inicial(apellido)}`;
+}
+
+async function cargarInicialesHeader() {
+  const el = document.getElementById("perfil-primer-nombre");
+  if (!el) return;
+  try {
+    const r = await fetch("/api/me");
+    if (!r.ok) return;
+    const datos = await r.json();
+    el.textContent = inicialesDe(datos.nombre, datos.apellido);
+  } catch {
+    // Sin datos de perfil el header simplemente no muestra iniciales: no es crítico.
+  }
+}
+cargarInicialesHeader();
+
 const btnLogoutClassic = document.getElementById("btn-logout-classic");
-if (btnLogoutClassic) btnLogoutClassic.addEventListener("click", mostrarConfirmacionLogout);
+if (btnLogoutClassic) {
+  btnLogoutClassic.addEventListener("click", () => {
+    cerrarMenuPerfil();
+    mostrarConfirmacionLogout();
+  });
+}
 
 const btnLogoutFallout = document.getElementById("btn-logout-fallout");
 if (btnLogoutFallout) {
@@ -2300,10 +2361,25 @@ function pintarGrilla(el, productos, mensajeVacio) {
   }
 }
 
+// Etiqueta del placeholder del buscador: aclara si la búsqueda va a correr
+// sobre todo el catálogo, sobre una sección puntual, o sobre todas las marcas
+// (Búsqueda por Marca busca igual que la general, solo cambia el universo).
+function etiquetaPlaceholderBusqueda() {
+  if (seccionActiva === BUSQUEDA_MARCA_CLAVE || filtroMarcaGlobal) return "Busca en todas las marcas";
+  if (seccionActiva) {
+    const cat = CATEGORIAS_BOTONES.find((c) => c.clave === seccionActiva);
+    const nombre = (cat ? cat.etiqueta : seccionActiva).toLowerCase();
+    return `Busca en ${nombre}...`;
+  }
+  return "Busca en todo The Tech Room Arg...";
+}
+
 // Decide qué mostrar según la sección elegida (si hay), el sub-filtro (marca
 // o tipo) y el término de búsqueda, y pinta categorías/sub-nav/grilla/volver.
 function actualizarVista() {
-  const termino = document.getElementById("input-busqueda").value.trim().toLowerCase();
+  const inputBusquedaEl = document.getElementById("input-busqueda");
+  inputBusquedaEl.placeholder = etiquetaPlaceholderBusqueda();
+  const termino = inputBusquedaEl.value.trim().toLowerCase();
   const categoriasEl = document.getElementById("categorias");
   const subNavEl = document.getElementById("sub-nav");
   const volverBtn = document.getElementById("btn-volver");

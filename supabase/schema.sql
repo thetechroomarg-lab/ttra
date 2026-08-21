@@ -12,6 +12,7 @@ create table if not exists clientes (
   email text not null unique,
   username text unique,
   tipo_cliente text not null default 'minorista',
+  debe_cambiar_password boolean not null default false,
   creado_en timestamptz not null default now(),
   actualizado_en timestamptz not null default now()
 );

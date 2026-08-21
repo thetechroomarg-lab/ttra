@@ -42,7 +42,7 @@ def test_login_correcto(monkeypatch):
     })
     r = c.post("/login", json={"email": "juan@x.com", "password": "clave1234"})
     assert r.status_code == 200
-    assert r.json() == {"ok": True}
+    assert r.json() == {"ok": True, "debe_cambiar_password": False}
 
 
 def test_login_incorrecto_devuelve_mensaje_generico(monkeypatch):
@@ -50,6 +50,37 @@ def test_login_incorrecto_devuelve_mensaje_generico(monkeypatch):
     r = c.post("/login", json={"email": "nadie@x.com", "password": "loquesea"})
     assert r.status_code == 401
     assert r.json()["error"] == "Usuario o contraseña incorrectos"
+
+
+def test_password_temporal_fuerza_cambio_antes_de_usar_el_resto_de_la_app(monkeypatch):
+    from web import cuentas as cuentas_mod
+
+    c = _cliente(monkeypatch)
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
+    })
+    fake = appmod.get_client()
+    cliente_id = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]["id"]
+    c.post("/logout")
+
+    temporal = cuentas_mod.resetear_password_cliente(fake, cliente_id)["password"]
+
+    r = c.post("/login", json={"email": "juan@x.com", "password": temporal})
+    assert r.status_code == 200
+    assert r.json() == {"ok": True, "debe_cambiar_password": True}
+
+    # Con la flag activa, el resto de la app queda bloqueado.
+    assert c.post("/chat", json={"mensaje": "hola", "sesion": "s1"}).status_code == 403
+    assert c.post("/api/pedidos", json={"productos": ["x"]}).status_code == 403
+    r_home = c.get("/", follow_redirects=False)
+    assert "login" in r_home.headers.get("location", "") or "login" in r_home.text.lower()
+
+    r = c.post("/cambiar-password-obligatorio", json={"password": "claveElegidaPorMi1"})
+    assert r.status_code == 200
+
+    # Ya cambiada, el resto de la app queda accesible de nuevo.
+    assert c.post("/chat", json={"mensaje": "hola", "sesion": "s1"}).status_code == 200
 
 
 def test_logout_limpia_sesion(monkeypatch):

@@ -188,3 +188,72 @@ def test_registrar_cliente_no_vincula_fila_invitada_solo_por_email():
     # un doble que no simula ese chequeo cruzado; lo importante acá es
     # documentar que el criterio de vinculación en sí no acepta el email
     # como prueba de identidad.
+
+
+def test_resetear_password_cliente_genera_una_password_nueva():
+    client = FakeSupabaseClient()
+    cliente = cuentas.registrar_cliente(
+        client, "Ana", "Gómez", "3511234567", "ana@x.com", "claveVieja1", "ana_gomez"
+    )
+
+    resultado = cuentas.resetear_password_cliente(client, cliente["id"])
+
+    assert resultado["email"] == "ana@x.com"
+    assert resultado["password"] != "claveVieja1"
+    assert len(resultado["password"]) == 12
+    # La password vieja ya no sirve, la nueva sí.
+    assert cuentas.login_cliente(client, "ana@x.com", "claveVieja1") is None
+    assert cuentas.login_cliente(client, "ana@x.com", resultado["password"]) is not None
+
+
+def test_resetear_password_cliente_inexistente():
+    client = FakeSupabaseClient()
+    with pytest.raises(ValueError):
+        cuentas.resetear_password_cliente(client, "id-que-no-existe")
+
+
+def test_resetear_password_cliente_sin_cuenta_activa():
+    """Un lead invitado (sin auth_id, nunca se registró) no tiene password
+    que resetear."""
+    client = FakeSupabaseClient()
+    client.table("clientes").insert({
+        "id": "id-lead-1", "auth_id": None, "nombre": "Lead", "apellido": "",
+        "celular": "3510000000", "email": "lead@x.com",
+    }).execute()
+
+    with pytest.raises(ValueError):
+        cuentas.resetear_password_cliente(client, "id-lead-1")
+
+
+def test_resetear_password_marca_debe_cambiar_password():
+    client = FakeSupabaseClient()
+    cliente = cuentas.registrar_cliente(
+        client, "Ana", "Gómez", "3511234567", "ana@x.com", "claveVieja1", "ana_gomez"
+    )
+
+    temporal = cuentas.resetear_password_cliente(client, cliente["id"])["password"]
+
+    perfil = cuentas.login_cliente(client, "ana@x.com", temporal)
+    assert perfil["debe_cambiar_password"] is True
+
+
+def test_cambiar_password_obligatorio_limpia_la_flag_y_actualiza_la_password():
+    client = FakeSupabaseClient()
+    cliente = cuentas.registrar_cliente(
+        client, "Ana", "Gómez", "3511234567", "ana@x.com", "claveVieja1", "ana_gomez"
+    )
+    temporal = cuentas.resetear_password_cliente(client, cliente["id"])["password"]
+
+    cuentas.cambiar_password_obligatorio(client, cliente["id"], "claveNuevaElegida1")
+
+    # La temporal ya no sirve, la elegida por el usuario sí, y la flag se limpió.
+    assert cuentas.login_cliente(client, "ana@x.com", temporal) is None
+    perfil = cuentas.login_cliente(client, "ana@x.com", "claveNuevaElegida1")
+    assert perfil is not None
+    assert perfil["debe_cambiar_password"] is False
+
+
+def test_cambiar_password_obligatorio_cliente_inexistente():
+    client = FakeSupabaseClient()
+    with pytest.raises(ValueError):
+        cuentas.cambiar_password_obligatorio(client, "id-que-no-existe", "claveNueva1")

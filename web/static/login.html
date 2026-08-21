@@ -35,6 +35,14 @@
       <p class="error" id="registro-error"></p>
       <p class="rc-switch-form">¿Ya tenés cuenta? <a href="#" id="link-ir-a-login">Iniciá sesión acá</a></p>
     </form>
+
+    <form id="form-cambiar-obligatorio" class="form oculto">
+      <p class="rc-switch-form">Te reseteamos la contraseña — elegí una nueva para poder seguir.</p>
+      <input type="password" id="cambiar-password" placeholder="Contraseña nueva" autocomplete="new-password" required>
+      <input type="password" id="cambiar-password-repetir" placeholder="Repetir contraseña nueva" autocomplete="new-password" required>
+      <button type="submit">Confirmar</button>
+      <p class="error" id="cambiar-error"></p>
+    </form>
   </main>
   <script src="boot.js"></script>
   <script src="login.js"></script>

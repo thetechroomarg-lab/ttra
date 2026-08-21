@@ -34,6 +34,14 @@ class _FakeAdminAuth:
         self._passwords[email] = credenciales.get("password")
         return _FakeAuthResponse(user)
 
+    def update_user_by_id(self, user_id, atributos):
+        for email, user in self._usuarios_por_email.items():
+            if user.id == user_id:
+                if "password" in atributos:
+                    self._passwords[email] = atributos["password"]
+                return _FakeAuthResponse(user)
+        raise Exception("User not found")
+
 
 class FakeAuth:
     def __init__(self):

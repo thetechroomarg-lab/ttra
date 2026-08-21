@@ -18,6 +18,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web import buscador, catalogo, cuentas, pedidos
+from web.email_util import EnvioEmailError, enviar_email
 from web.supabase_client import get_client
 from web.chat import responder
 from web.reglas import WHATSAPP
@@ -102,6 +103,13 @@ async def gate_paginas_html(request: Request, call_next):
     if ruta.endswith(".html") and ruta not in _RUTAS_HTML_PUBLICAS and not _sesion_activa(request):
         return RedirectResponse("/")
 
+    # Con una contraseña temporal pendiente de cambio, ninguna pantalla del
+    # catálogo es accesible todavía — todo redirige a login.html, que es
+    # quien muestra el form obligatorio de "elegí tu contraseña nueva".
+    if (ruta.endswith(".html") and ruta != "/login.html"
+            and _sesion_activa(request) and _debe_cambiar_password(request)):
+        return RedirectResponse("/login.html")
+
     return await call_next(request)
 
 
@@ -137,6 +145,8 @@ class ChatIn(BaseModel):
 def chat(entrada: ChatIn, request: Request):
     if not _sesion_activa(request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
+    if _debe_cambiar_password(request):
+        raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
     productos = _cargar_productos()
     if not productos:
         logger.warning("productos.json vacío o ausente")
@@ -189,6 +199,33 @@ def admin_clientes_login(entrada: ClientesLoginIn, request: Request):
 @app.post("/admin/clientes/logout")
 def admin_clientes_logout(request: Request):
     request.session.pop("clientes_admin_ok", None)
+    return {"ok": True}
+
+
+@app.post("/admin/clientes/{cliente_id}/resetear-password")
+def admin_clientes_resetear_password(cliente_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    try:
+        client = get_client()
+        resultado = cuentas.resetear_password_cliente(client, cliente_id)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception:
+        return JSONResponse({"error": "Supabase no está disponible en este momento"}, status_code=503)
+    try:
+        enviar_email(
+            resultado["email"],
+            "Tu nueva contraseña — The Tech Room Arg",
+            f"<p>Se generó una nueva contraseña para tu cuenta:</p>"
+            f"<p style='font-size:18px;font-weight:bold'>{html.escape(resultado['password'])}</p>"
+            f"<p>Usala para ingresar en thetechroomarg.com y, si querés, cambiala después "
+            f"desde tu cuenta.</p>",
+        )
+    except EnvioEmailError:
+        return JSONResponse(
+            {"error": "La contraseña se reseteó pero no se pudo enviar el mail"}, status_code=502
+        )
     return {"ok": True}
 
 
@@ -256,22 +293,31 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         pedidos_por_cliente.setdefault(p["cliente_id"], []).extend(p.get("productos", []))
     clientes = [
         {
+            "id": c.get("id", ""),
             "nombre": f"{c.get('nombre', '')} {c.get('apellido', '')}".strip(),
             "celular": c.get("celular", ""),
             "productos": pedidos_por_cliente.get(c.get("id"), []),
             "fecha": c.get("creado_en", ""),
+            "tiene_cuenta": bool(c.get("auth_id")),
         }
         for c in filas_clientes
     ]
     clientes.sort(key=lambda r: r.get("fecha", ""), reverse=True)
     if not clientes:
-        filas_html = '<tr><td colspan="4" class="vacio">Todavía no hay clientes registrados.</td></tr>'
+        filas_html = '<tr><td colspan="5" class="vacio">Todavía no hay clientes registrados.</td></tr>'
     else:
+        def _celda_cuenta(c):
+            if not c.get("tiene_cuenta"):
+                return "—"
+            id_seguro = html.escape(c.get("id", ""))
+            return f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
+
         filas_html = "".join(
             f"<tr><td>{html.escape(c.get('nombre', ''))}</td>"
             f"<td>{html.escape(c.get('celular', ''))}</td>"
             f"<td>{html.escape(' | '.join(c.get('productos', [])))}</td>"
-            f"<td>{html.escape(c.get('fecha', ''))}</td></tr>"
+            f"<td>{html.escape(c.get('fecha', ''))}</td>"
+            f"<td>{_celda_cuenta(c)}</td></tr>"
             for c in clientes
         )
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
@@ -282,7 +328,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <button id="salir">Cerrar sesión</button>
   </div>
   <table>
-    <thead><tr><th>Nombre</th><th>Celular</th><th>Productos consultados</th><th>Fecha</th></tr></thead>
+    <thead><tr><th>Nombre</th><th>Celular</th><th>Productos consultados</th><th>Fecha</th><th>Cuenta</th></tr></thead>
     <tbody>{filas_html}</tbody>
   </table>
 </div>
@@ -290,6 +336,23 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 document.getElementById("salir").addEventListener("click", async () => {{
   await fetch("/admin/clientes/logout", {{ method: "POST" }});
   location.reload();
+}});
+document.querySelectorAll(".btn-reset").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Generar una contraseña nueva para este cliente y mandársela por mail?")) return;
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+    const r = await fetch(`/admin/clientes/${{btn.dataset.id}}/resetear-password`, {{ method: "POST" }});
+    const datos = await r.json();
+    if (r.ok) {{
+      alert("Listo, le llegó un mail con la contraseña nueva.");
+      btn.textContent = "Resetear contraseña";
+    }} else {{
+      alert(datos.error || "No se pudo resetear la contraseña");
+      btn.textContent = "Resetear contraseña";
+    }}
+    btn.disabled = false;
+  }});
 }});
 </script>
 </body></html>"""
@@ -311,6 +374,10 @@ class LoginIn(BaseModel):
 
 def _sesion_activa(request: Request):
     return bool(request.session.get("cliente_id"))
+
+
+def _debe_cambiar_password(request: Request):
+    return bool(request.session.get("debe_cambiar_password"))
 
 
 @app.get("/login")
@@ -356,13 +423,102 @@ def login(entrada: LoginIn, request: Request):
         return JSONResponse({"error": "Usuario o contraseña incorrectos"}, status_code=401)
     request.session["cliente_id"] = cliente["id"]
     request.session["cliente_nombre"] = cliente["nombre"]
-    return {"ok": True}
+    request.session["debe_cambiar_password"] = cliente["debe_cambiar_password"]
+    return {"ok": True, "debe_cambiar_password": cliente["debe_cambiar_password"]}
 
 
 @app.post("/logout")
 def logout(request: Request):
     request.session.clear()
     return {"ok": True}
+
+
+class CambiarPasswordObligatorioIn(BaseModel):
+    password: str = Field(min_length=8)
+
+
+@app.post("/cambiar-password-obligatorio")
+def cambiar_password_obligatorio(entrada: CambiarPasswordObligatorioIn, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        cuentas.cambiar_password_obligatorio(get_client(), request.session["cliente_id"], entrada.password)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo cambiar la contraseña obligatoria (¿Supabase no disponible?)")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    request.session["debe_cambiar_password"] = False
+    return {"ok": True}
+
+
+@app.get("/api/me")
+def api_me(request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        cliente = cuentas.obtener_cliente(get_client(), request.session["cliente_id"])
+    except Exception:
+        logger.exception("No se pudo obtener el perfil del cliente")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    if cliente is None:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    return cliente
+
+
+class ActualizarMeIn(BaseModel):
+    nombre: str
+    apellido: str
+    celular: str
+    username: str = Field(min_length=3)
+
+
+@app.put("/api/me")
+def api_me_actualizar(entrada: ActualizarMeIn, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        cliente = cuentas.actualizar_cliente(
+            get_client(), request.session["cliente_id"],
+            entrada.nombre, entrada.apellido, entrada.celular, entrada.username,
+        )
+    except (cuentas.CelularDuplicadoError, cuentas.UsernameDuplicadoError, ValueError) as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo actualizar el perfil del cliente")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    return cliente
+
+
+class CambiarPasswordPropioIn(BaseModel):
+    password_actual: str
+    password_nueva: str = Field(min_length=8)
+
+
+@app.post("/api/me/password")
+def api_me_password(entrada: CambiarPasswordPropioIn, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        cuentas.cambiar_password_propio(
+            get_client(), get_client(), request.session["cliente_id"],
+            entrada.password_actual, entrada.password_nueva,
+        )
+    except cuentas.PasswordActualIncorrectaError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo cambiar la contraseña del cliente")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    return {"ok": True}
+
+
+@app.get("/perfil")
+def pagina_perfil(request: Request):
+    if not _sesion_activa(request) or _debe_cambiar_password(request):
+        return RedirectResponse("/login.html")
+    return FileResponse(str(BASE / "static" / "perfil.html"))
 
 
 class PedidoIn(BaseModel):
@@ -374,13 +530,15 @@ def api_pedidos(entrada: PedidoIn, request: Request):
     cliente_id = request.session.get("cliente_id")
     if not cliente_id:
         raise HTTPException(status_code=401, detail="Sesión requerida")
+    if _debe_cambiar_password(request):
+        raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
     pedidos.guardar_pedido(get_client(), cliente_id, entrada.productos)
     return {"ok": True}
 
 
 @app.get("/catalogo")
 def pagina_catalogo(request: Request):
-    if not _sesion_activa(request):
+    if not _sesion_activa(request) or _debe_cambiar_password(request):
         return RedirectResponse("/login.html")
     return FileResponse(str(BASE / "static" / "catalogo.html"))
 
@@ -461,7 +619,7 @@ async def admin_subir_productos(request: Request, x_admin_token: str = Header(de
 
 @app.get("/")
 def pagina_inicio(request: Request):
-    if not _sesion_activa(request):
+    if not _sesion_activa(request) or _debe_cambiar_password(request):
         return FileResponse(str(BASE / "static" / "login.html"))
     return FileResponse(str(BASE / "static" / "index.html"))
 

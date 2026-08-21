@@ -1,0 +1,12 @@
+/* web/static/perfil.css — Agrega a login.css solo lo propio de esta
+   página (el resto de tarjeta/form/input/button lo hereda de ahí, para que
+   el formato sea igual al de registro). */
+.rc-perfil-volver {
+  display: inline-block; margin-bottom: 16px; font-size: 13px; text-decoration: none;
+  color: var(--rc-green-dim);
+}
+.rc-perfil-volver:hover { color: var(--rc-green-bright); }
+h2 { margin: 28px 0 16px; font-size: 16px; letter-spacing: .05em; text-transform: uppercase;
+     color: var(--rc-green-bright); }
+input:disabled { opacity: .6; cursor: not-allowed; }
+.ok { min-height: 16px; margin: 6px 0 0; font-size: 12px; color: var(--rc-green-bright); }

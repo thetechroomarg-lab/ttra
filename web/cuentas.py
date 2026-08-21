@@ -1,4 +1,6 @@
 import re
+import secrets
+import string
 import uuid
 
 
@@ -15,6 +17,10 @@ class EmailNoConfirmadoError(Exception):
 
 
 class UsernameDuplicadoError(Exception):
+    pass
+
+
+class PasswordActualIncorrectaError(Exception):
     pass
 
 
@@ -116,4 +122,92 @@ def login_cliente(client, email, password):
     perfil = filas[0]
     return {"id": perfil["id"], "auth_id": auth_id, "nombre": perfil["nombre"],
             "apellido": perfil["apellido"], "celular": perfil["celular"], "email": perfil["email"],
-            "username": perfil.get("username")}
+            "username": perfil.get("username"),
+            "debe_cambiar_password": bool(perfil.get("debe_cambiar_password"))}
+
+
+def obtener_cliente(client, cliente_id):
+    filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas:
+        return None
+    perfil = filas[0]
+    return {"id": perfil["id"], "nombre": perfil["nombre"], "apellido": perfil["apellido"],
+            "celular": perfil.get("celular"), "email": perfil.get("email"),
+            "username": perfil.get("username"),
+            "debe_cambiar_password": bool(perfil.get("debe_cambiar_password"))}
+
+
+def actualizar_cliente(client, cliente_id, nombre, apellido, celular, username):
+    nombre = nombre.strip()
+    apellido = apellido.strip()
+    celular_norm = normalizar_celular(celular)
+    username = (username or "").strip()
+    if not celular_norm:
+        raise ValueError("El celular ingresado no es válido")
+    if not username:
+        raise ValueError("El nombre de usuario es obligatorio")
+
+    existentes_username = client.table("clientes").select("*").eq("username", username).execute().data
+    if any(f.get("auth_id") and f["id"] != cliente_id for f in existentes_username):
+        raise UsernameDuplicadoError(f"Ya existe una cuenta con el usuario {username}")
+
+    existentes_celular = client.table("clientes").select("*").eq("celular", celular_norm).execute().data
+    if any(f.get("auth_id") and f["id"] != cliente_id for f in existentes_celular):
+        raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}")
+
+    datos = {"nombre": nombre, "apellido": apellido, "celular": celular_norm, "username": username}
+    client.table("clientes").update(datos).eq("id", cliente_id).execute()
+    return obtener_cliente(client, cliente_id)
+
+
+def cambiar_password_propio(client, client_verificacion, cliente_id, password_actual, password_nueva):
+    filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas:
+        raise ValueError(f"No existe un cliente con id {cliente_id}")
+    perfil = filas[0]
+    auth_id = perfil.get("auth_id")
+    email = perfil.get("email")
+    if not auth_id:
+        raise ValueError("Este cliente todavía no tiene una cuenta activa")
+    try:
+        client_verificacion.auth.sign_in_with_password({"email": email, "password": password_actual})
+    except Exception as e:
+        mensaje = str(e).lower()
+        if "invalid" in mensaje or "credentials" in mensaje:
+            raise PasswordActualIncorrectaError("La contraseña actual no es correcta") from e
+        raise
+    client.auth.admin.update_user_by_id(auth_id, {"password": password_nueva})
+
+
+def generar_password_temporal():
+    alfabeto = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alfabeto) for _ in range(12))
+
+
+def resetear_password_cliente(client, cliente_id):
+    filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas:
+        raise ValueError(f"No existe un cliente con id {cliente_id}")
+    perfil = filas[0]
+    auth_id = perfil.get("auth_id")
+    if not auth_id:
+        raise ValueError("Este cliente todavía no tiene una cuenta activa (es un lead sin registrar)")
+    nueva_password = generar_password_temporal()
+    # email_confirm=True: el reseteo lo hace un admin de confianza, así que
+    # la cuenta queda habilitada para entrar aunque nunca haya confirmado el
+    # mail original de registro.
+    client.auth.admin.update_user_by_id(auth_id, {"password": nueva_password, "email_confirm": True})
+    client.table("clientes").update({"debe_cambiar_password": True}).eq("id", cliente_id).execute()
+    return {"email": perfil["email"], "password": nueva_password}
+
+
+def cambiar_password_obligatorio(client, cliente_id, nueva_password):
+    filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas:
+        raise ValueError(f"No existe un cliente con id {cliente_id}")
+    perfil = filas[0]
+    auth_id = perfil.get("auth_id")
+    if not auth_id:
+        raise ValueError("Este cliente todavía no tiene una cuenta activa")
+    client.auth.admin.update_user_by_id(auth_id, {"password": nueva_password})
+    client.table("clientes").update({"debe_cambiar_password": False}).eq("id", cliente_id).execute()
