@@ -2647,20 +2647,13 @@ document.getElementById("btn-vaciar-carrito").addEventListener("click", vaciarCa
 // buscador por chat) — así el panel /admin/clientes también refleja los
 // pedidos hechos desde la web, no solo el alta inicial.
 function registrarPedidoEnClientes(carrito) {
-  let cliente;
-  try {
-    cliente = JSON.parse(localStorage.getItem("ttra_cliente") || "null");
-  } catch {
-    cliente = null;
-  }
-  if (!cliente || !cliente.nombre || !cliente.celular) return;
   const productos = [...new Set(carrito.map((it) =>
     it.color && it.color !== "Color único" ? `${it.nombre} (${it.color})` : it.nombre
   ))];
-  fetch("/api/registro-cliente", {
+  fetch("/api/pedidos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nombre: cliente.nombre, celular: cliente.celular, productos }),
+    body: JSON.stringify({ productos }),
   }).catch(() => {});
 }
 

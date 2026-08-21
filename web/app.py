@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, leads
+from web import buscador, catalogo, cuentas, leads, pedidos
 from web.supabase_client import get_client
 from web.chat import responder
 from web.reglas import WHATSAPP
@@ -316,6 +316,19 @@ def login(entrada: LoginIn, request: Request):
 @app.post("/logout")
 def logout(request: Request):
     request.session.clear()
+    return {"ok": True}
+
+
+class PedidoIn(BaseModel):
+    productos: list[str]
+
+
+@app.post("/api/pedidos")
+def api_pedidos(entrada: PedidoIn, request: Request):
+    cliente_id = request.session.get("cliente_id")
+    if not cliente_id:
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    pedidos.guardar_pedido(get_client(), cliente_id, entrada.productos)
     return {"ok": True}
 
 
