@@ -30,6 +30,30 @@ def _clientes_json(tmp_path):
     return json_path
 
 
+def test_migrar_fusiona_leads_que_normalizan_al_mismo_celular(tmp_path):
+    """En clientes.json real aparecen entradas de la misma persona guardadas
+    con y sin código de país (ej. "+543513017015" y "3513017015") en
+    sesiones distintas, con productos distintos en cada una. Antes de este
+    fix, la segunda entrada se descartaba entera por "celular ya existe",
+    perdiendo sus productos. Ahora se fusionan en un solo cliente."""
+    client = FakeSupabaseClient()
+    json_path = tmp_path / "clientes.json"
+    json_path.write_text(json.dumps({
+        "s1": {"nombre": "Marina", "celular": "+543513017015", "productos": [], "fecha": "2026-01-01 10:00"},
+        "s2": {"nombre": "Marina", "celular": "3513017015", "productos": ["iPhone 13", "AirPods"], "fecha": "2026-01-02 11:00"},
+    }), encoding="utf-8")
+
+    conteos = migrar(client, tmp_path / "no-existe.db", json_path)
+
+    assert conteos["leads"] == 1  # una sola persona, no dos
+    filas = client.table("clientes").select("*").execute().data
+    assert len(filas) == 1
+    assert filas[0]["celular"] == "3513017015"
+    pedidos = client.table("pedidos").select("*").eq("cliente_id", filas[0]["id"]).execute().data
+    assert len(pedidos) == 1
+    assert pedidos[0]["productos"] == ["iPhone 13", "AirPods"]  # no se perdieron
+
+
 def test_migrar_crea_mayoristas_con_cuenta_real_y_leads_invitados(tmp_path):
     client = FakeSupabaseClient()
     db_path = _usuarios_db(tmp_path)

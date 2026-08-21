@@ -15,7 +15,14 @@ class EmailNoConfirmadoError(Exception):
 
 
 def normalizar_celular(celular):
-    return re.sub(r"\D", "", celular or "")
+    digitos = re.sub(r"\D", "", celular or "")
+    # "+543513017015" y "3513017015" son el mismo celular argentino con y
+    # sin código de país — sin esto quedan como dos clientes distintos.
+    if digitos.startswith("549") and len(digitos) == 13:
+        digitos = digitos[3:]
+    elif digitos.startswith("54") and len(digitos) == 12:
+        digitos = digitos[2:]
+    return digitos
 
 
 def registrar_cliente(client, nombre, apellido, celular, email, password):

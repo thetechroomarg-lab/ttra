@@ -4,6 +4,18 @@ from tests.fakes_supabase import FakeSupabaseClient
 from web import cuentas
 
 
+def test_normalizar_celular_saca_el_codigo_de_pais_argentino():
+    """"+543513017015" y "3513017015" son el mismo número de celular — sin
+    esto, se migran/registran como dos clientes distintos."""
+    assert cuentas.normalizar_celular("+543513017015") == "3513017015"
+    assert cuentas.normalizar_celular("543513017015") == "3513017015"
+    assert cuentas.normalizar_celular("3513017015") == "3513017015"
+
+
+def test_normalizar_celular_no_toca_numeros_que_no_empiezan_con_54():
+    assert cuentas.normalizar_celular("351 123-4567") == "3511234567"
+
+
 def test_registrar_cliente_exitoso():
     client = FakeSupabaseClient()
     cliente = cuentas.registrar_cliente(

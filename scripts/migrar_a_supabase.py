@@ -82,15 +82,37 @@ def _migrar_mayoristas(client, db_path):
     return migrados
 
 
+def _fusionar_leads_por_celular(db):
+    """clientes.json puede tener la misma persona guardada varias veces con
+    formatos de celular distintos (ej. "+543513017015" y "3513017015" en
+    sesiones distintas) — normalizar_celular los unifica, pero si cada
+    entrada se migrara por separado, la primera "ganaría" el celular y las
+    demás se descartarían enteras por "ya existe", perdiendo sus productos.
+    Acá se fusionan ANTES de tocar Supabase: se acumulan todos los
+    productos, se queda el nombre más largo/completo y la fecha más
+    reciente."""
+    fusionados = {}
+    for reg in db.values():
+        celular = normalizar_celular(reg.get("celular", ""))
+        if not celular:
+            continue
+        actual = fusionados.setdefault(celular, {"nombre": "", "productos": [], "fecha": ""})
+        if len(reg.get("nombre") or "") > len(actual["nombre"]):
+            actual["nombre"] = reg["nombre"]
+        for producto in (reg.get("productos") or []):
+            if producto not in actual["productos"]:
+                actual["productos"].append(producto)
+        if (reg.get("fecha") or "") > actual["fecha"]:
+            actual["fecha"] = reg["fecha"]
+    return fusionados
+
+
 def _migrar_leads(client, json_path):
     if not Path(json_path).exists():
         return 0
     db = json.loads(Path(json_path).read_text(encoding="utf-8"))
     migrados = 0
-    for reg in db.values():
-        celular = normalizar_celular(reg.get("celular", ""))
-        if not celular:
-            continue
+    for celular, datos in _fusionar_leads_por_celular(db).items():
         existentes = client.table("clientes").select("*").eq("celular", celular).execute().data
         if existentes:
             continue
@@ -98,16 +120,15 @@ def _migrar_leads(client, json_path):
         client.table("clientes").insert({
             "id": cliente_id,
             "auth_id": None,
-            "nombre": reg.get("nombre", ""),
+            "nombre": datos["nombre"],
             "apellido": "",
             "celular": celular,
             "email": f"pendiente-{uuid.uuid4()}@sin-email.local",  # placeholder: no había email en clientes.json
             "tipo_cliente": "minorista",
-            "creado_en": reg.get("fecha", ""),
+            "creado_en": datos["fecha"],
         }).execute()
-        productos = reg.get("productos") or []
-        if productos:
-            guardar_pedido(client, cliente_id, productos, origen="whatsapp")
+        if datos["productos"]:
+            guardar_pedido(client, cliente_id, datos["productos"], origen="whatsapp")
         migrados += 1
     return migrados
 
