@@ -24,7 +24,7 @@ async function enviar(url, body, errorEl) {
     errorEl.textContent = datos.error || "Ocurrió un error, probá de nuevo.";
     return;
   }
-  window.location.href = "/catalogo";
+  window.location.href = "/";
 }
 
 formLogin.addEventListener("submit", (e) => {
@@ -45,6 +45,8 @@ formRegistro.addEventListener("submit", (e) => {
     "/registro",
     {
       nombre: document.getElementById("registro-nombre").value,
+      apellido: document.getElementById("registro-apellido").value,
+      celular: document.getElementById("registro-celular").value,
       email: document.getElementById("registro-email").value,
       password: document.getElementById("registro-password").value,
     },

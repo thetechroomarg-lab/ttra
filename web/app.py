@@ -400,4 +400,11 @@ async def admin_subir_productos(request: Request, x_admin_token: str = Header(de
     return {"ok": True, "productos": len(productos)}
 
 
+@app.get("/")
+def pagina_inicio(request: Request):
+    if not _sesion_activa(request):
+        return FileResponse(str(BASE / "static" / "login.html"))
+    return FileResponse(str(BASE / "static" / "index.html"))
+
+
 app.mount("/", StaticFiles(directory=str(BASE / "static"), html=True), name="static")
