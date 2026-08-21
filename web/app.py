@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, leads, pedidos
+from web import buscador, catalogo, cuentas, pedidos
 from web.supabase_client import get_client
 from web.chat import responder
 from web.reglas import WHATSAPP
@@ -91,12 +91,6 @@ def chat(entrada: ChatIn):
     # Modo GRATIS (sin IA): buscador determinístico, costo cero.
     if not USAR_IA:
         texto, genero, datos = buscador.responder_sin_ia(entrada.mensaje, entrada.sesion, productos)
-        if datos:
-            try:
-                leads.guardar_lead(entrada.sesion, datos,
-                                   fecha=datetime.now().strftime("%Y-%m-%d %H:%M"))
-            except Exception:
-                logger.exception("No se pudo guardar el lead")
         return {"respuesta": texto, "genero": genero}
 
     # Tope de gasto por sesión: si ya lo superó, no llamamos a la IA (costo 0).
@@ -110,12 +104,6 @@ def chat(entrada: ChatIn):
         _gasto[entrada.sesion] = _gasto.get(entrada.sesion, 0.0) + costo
         logger.info("Sesión %s: acumulado USD %.4f / %.2f",
                     entrada.sesion, _gasto[entrada.sesion], LIMITE_USD)
-        if datos:
-            try:
-                leads.guardar_lead(entrada.sesion, datos,
-                                   fecha=datetime.now().strftime("%Y-%m-%d %H:%M"))
-            except Exception:
-                logger.exception("No se pudo guardar el lead")
         genero = (datos or {}).get("genero", "")
     except Exception:
         logger.exception("Error al responder")
@@ -125,24 +113,7 @@ def chat(entrada: ChatIn):
     return {"respuesta": texto, "genero": genero}
 
 
-class ClienteIn(BaseModel):
-    nombre: str
-    celular: str
-    productos: list[str] = []
-
-
-@app.post("/api/registro-cliente")
-def registro_cliente(entrada: ClienteIn):
-    nombre = entrada.nombre.strip()
-    celular = entrada.celular.strip()
-    if not nombre or not celular:
-        raise HTTPException(status_code=400, detail="Nombre y celular son obligatorios")
-    leads.guardar_lead(celular, {"nombre": nombre, "celular": celular, "productos": entrada.productos},
-                        fecha=datetime.now().strftime("%Y-%m-%d %H:%M"))
-    return {"ok": True}
-
-
-# --- Panel simple para ver el registro de clientes (ver web/leads.py) ---
+# --- Panel simple para ver el registro de clientes ---
 
 class ClientesLoginIn(BaseModel):
     password: str
