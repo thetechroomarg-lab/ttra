@@ -1734,14 +1734,19 @@ function ocultarConfirmacionLogout() {
   if (confirmar) confirmar.classList.remove("visible");
 }
 
-function cerrarSesionCliente() {
+async function cerrarSesionCliente() {
   try {
     localStorage.removeItem("ttra_cliente");
   } catch {
     // Sin localStorage no había nada que borrar: no es crítico.
   }
-  const msg = document.getElementById("rc-logout-msg");
-  if (msg) msg.classList.add("visible");
+  try {
+    await fetch("/logout", { method: "POST" });
+  } catch {
+    // Si falla la llamada de red, igual redirigimos: la sesión del server
+    // puede seguir viva, pero no tiene sentido bloquear al usuario acá.
+  }
+  window.location.href = "/";
 }
 
 const btnLogoutClassic = document.getElementById("btn-logout-classic");
