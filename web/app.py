@@ -220,7 +220,22 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 </script>
 </body></html>"""
 
-    clientes = leads.listar_clientes()
+    client = get_client()
+    filas_clientes = client.table("clientes").select("*").execute().data
+    filas_pedidos = client.table("pedidos").select("*").execute().data
+    pedidos_por_cliente = {}
+    for p in filas_pedidos:
+        pedidos_por_cliente.setdefault(p["cliente_id"], []).extend(p.get("productos", []))
+    clientes = [
+        {
+            "nombre": f"{c.get('nombre', '')} {c.get('apellido', '')}".strip(),
+            "celular": c.get("celular", ""),
+            "productos": pedidos_por_cliente.get(c.get("id"), []),
+            "fecha": c.get("creado_en", ""),
+        }
+        for c in filas_clientes
+    ]
+    clientes.sort(key=lambda r: r.get("fecha", ""), reverse=True)
     if not clientes:
         filas_html = '<tr><td colspan="4" class="vacio">Todavía no hay clientes registrados.</td></tr>'
     else:
