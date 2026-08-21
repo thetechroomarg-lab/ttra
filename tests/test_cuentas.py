@@ -78,3 +78,39 @@ def test_login_cliente_password_incorrecta():
 def test_login_cliente_sin_cuenta():
     client = FakeSupabaseClient()
     assert cuentas.login_cliente(client, "nadie@x.com", "loquesea") is None
+
+
+def test_registrar_cliente_insert_falla_por_email_duplicado():
+    """Caso concreto: lead invitado con email X, se intenta registrar distinto celular con email X.
+    Auth sign_up tiene éxito, pero insert falla por violación del unique de email.
+    Debe levantarse EmailDuplicadoError, no CelularDuplicadoError."""
+    client = FakeSupabaseClient()
+    # Simula un lead invitado con celular Y, email X, sin auth_id
+    client.table("clientes").insert({
+        "id": "id-lead-1", "auth_id": None, "nombre": "Ana", "apellido": "",
+        "celular": "3511111111", "email": "x@example.com",
+    }).execute()
+
+    # Monkeypatchea insert para simular falla de unique constraint en email
+    original_table = client.table
+
+    def patched_table(nombre):
+        tabla = original_table(nombre)
+        if nombre == "clientes":
+            original_insert = tabla.insert
+            def failing_insert(payload):
+                if "3519999999" in str(payload):  # Solo falla para el nuevo celular
+                    raise Exception('duplicate key value violates unique constraint "clientes_email_key"')
+                return original_insert(payload)
+            tabla.insert = failing_insert
+        return tabla
+
+    client.table = patched_table
+
+    # Intenta registrar con celular distinto (3519999999) pero email X (igual al lead)
+    with pytest.raises(cuentas.EmailDuplicadoError):
+        cuentas.registrar_cliente(
+            client, "Otra", "Persona", "3519999999", "x@example.com", "clave1234"
+        )
+    # El usuario de auth debe haber hecho rollback
+    assert "x@example.com" not in client.auth._usuarios_por_email

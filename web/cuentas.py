@@ -29,8 +29,12 @@ def registrar_cliente(client, nombre, apellido, celular, email, password):
 
     try:
         auth_resp = client.auth.sign_up({"email": email, "password": password})
-    except Exception:
-        raise EmailDuplicadoError(f"Ya existe una cuenta con el email {email}")
+    except Exception as e:
+        # Solo es EmailDuplicadoError si el mensaje indica email duplicado
+        if "already registered" in str(e).lower() or "already exists" in str(e).lower():
+            raise EmailDuplicadoError(f"Ya existe una cuenta con el email {email}") from e
+        # Si es otro tipo de error, relanzarlo sin enmascarar
+        raise
     auth_id = auth_resp.user.id
 
     datos = {"auth_id": auth_id, "nombre": nombre, "apellido": apellido, "email": email}
@@ -42,9 +46,14 @@ def registrar_cliente(client, nombre, apellido, celular, email, password):
             propio_id = str(uuid.uuid4())
             datos.update({"id": propio_id, "celular": celular_norm})
             client.table("clientes").insert(datos).execute()
-    except Exception:
+    except Exception as e:
         client.auth.admin.delete_user(auth_id)
-        raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}")
+        # Inspecciona el mensaje para determinar qué tipo de duplicado es
+        error_msg = str(e).lower()
+        if "email" in error_msg or "clientes_email_key" in error_msg:
+            raise EmailDuplicadoError(f"Ya existe una cuenta con el email {email}") from e
+        # Si no se puede determinar con certeza, asume que es de celular
+        raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}") from e
 
     return {"id": propio_id, "auth_id": auth_id, "nombre": nombre,
             "apellido": apellido, "celular": celular_norm, "email": email}
@@ -62,4 +71,4 @@ def login_cliente(client, email, password):
         return None
     perfil = filas[0]
     return {"id": perfil["id"], "auth_id": auth_id, "nombre": perfil["nombre"],
-            "apellido": perfil["apellido"], "celular": perfil["celular"], "email": email}
+            "apellido": perfil["apellido"], "celular": perfil["celular"], "email": perfil["email"]}
