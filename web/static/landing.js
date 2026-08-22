@@ -105,6 +105,7 @@ const ORDEN_MARCAS = [
 ];
 
 const CLAVE_CARRITO = "ttra_carrito";
+const CLAVE_CARRITO_PENDIENTE = "ttra_carrito_pendiente";
 const WHATSAPP_NUMERO = "543512145217";
 
 let SECCIONES_DATA = {};
@@ -116,6 +117,7 @@ let subFiltrosActivos = new Set(); // marcas (o "Notebooks"/"Macbooks") elegidas
 let filtroMarcaGlobal = null; // marca elegida desde el carrousel o "Búsqueda por Marca", busca en TODO el catálogo
 let modoVista = "cards"; // "cards" | "lista"
 let ordenPrecio = null; // null (sin orden) | "asc" | "desc"
+let estadoSesionCliente = null;
 // Classic es siempre el modo de arranque (ver boot.js); Fallout solo dura
 // mientras no se recarga la página, no se persiste entre refrescos.
 // Atajo de desarrollo: ?modo=fallout en la URL arranca directo en Fallout
@@ -1380,8 +1382,8 @@ function wireTarjetasRecomendadas(el) {
       });
     }
     if (btnAgregar) {
-      btnAgregar.addEventListener("click", () => {
-        agregarAlCarrito(producto, btnAgregar.dataset.color || null);
+      btnAgregar.addEventListener("click", async () => {
+        await agregarAlCarritoProtegido(producto, btnAgregar.dataset.color || null);
       });
     }
     const btnCompartir = card.querySelector(".btn-compartir");
@@ -2057,6 +2059,56 @@ function escapeHtml(s) {
   return div.innerHTML.replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
+async function obtenerEstadoSesionCliente(force = false) {
+  if (!force && estadoSesionCliente !== null) return estadoSesionCliente;
+  try {
+    const r = await fetch("/api/me");
+    if (!r.ok) {
+      estadoSesionCliente = null;
+      return null;
+    }
+    estadoSesionCliente = await r.json();
+    return estadoSesionCliente;
+  } catch {
+    estadoSesionCliente = null;
+    return null;
+  }
+}
+
+function guardarPendienteCarrito(producto, color) {
+  sessionStorage.setItem(CLAVE_CARRITO_PENDIENTE, JSON.stringify({
+    nombre: producto.nombre,
+    color: color || null,
+  }));
+}
+
+function leerPendienteCarrito() {
+  try {
+    return JSON.parse(sessionStorage.getItem(CLAVE_CARRITO_PENDIENTE) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function borrarPendienteCarrito() {
+  sessionStorage.removeItem(CLAVE_CARRITO_PENDIENTE);
+}
+
+function urlLoginParaCarrito() {
+  const params = new URLSearchParams();
+  params.set("registro", "1");
+  params.set("volver", `${location.pathname}${location.search}`);
+  return `/login.html?${params.toString()}`;
+}
+
+async function asegurarSesionParaCarrito(producto, color) {
+  const sesion = await obtenerEstadoSesionCliente(true);
+  if (sesion && !sesion.debe_cambiar_password) return true;
+  guardarPendienteCarrito(producto, color);
+  window.location.href = urlLoginParaCarrito();
+  return false;
+}
+
 // Ícono de cámara (SVG, no emoji): lleva a una búsqueda de Google Imágenes
 // del producto en una pestaña nueva, mismo link_imagen que ya arma el
 // catálogo por cada ítem.
@@ -2388,14 +2440,14 @@ function pintarGrilla(el, productos, mensajeVacio) {
         });
       });
     }
-    btnAgregar.addEventListener("click", (e) => {
+    btnAgregar.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (!card.classList.contains("expandida")) {
         seleccionarCard();
         return;
       }
       const producto = productos.find((p) => p.nombre === btnAgregar.dataset.nombre);
-      if (producto) agregarAlCarrito(producto, btnAgregar.dataset.color || null);
+      if (producto) await agregarAlCarritoProtegido(producto, btnAgregar.dataset.color || null);
     });
     const btnCompartir = card.querySelector(".btn-compartir");
     if (btnCompartir) {
@@ -2643,6 +2695,29 @@ function agregarAlCarrito(producto, color) {
   }
   guardarCarrito(carrito);
   abrirCarrito();
+}
+
+async function agregarAlCarritoProtegido(producto, color) {
+  if (!(await asegurarSesionParaCarrito(producto, color))) return;
+  agregarAlCarrito(producto, color);
+}
+
+async function procesarPendienteCarrito() {
+  const pendiente = leerPendienteCarrito();
+  if (!pendiente) return;
+  const sesion = await obtenerEstadoSesionCliente();
+  if (!sesion || sesion.debe_cambiar_password) return;
+
+  const catalogoPlano = {};
+  Object.values(SECCIONES_DATA).forEach((productos) => {
+    (productos || []).forEach((p) => {
+      catalogoPlano[p.nombre] = p;
+    });
+  });
+
+  const producto = catalogoPlano[pendiente.nombre];
+  borrarPendienteCarrito();
+  if (producto) agregarAlCarrito(producto, pendiente.color || null);
 }
 
 function cambiarCantidad(nombre, color, delta) {
@@ -3153,4 +3228,7 @@ function abrirProductoCompartido() {
   });
 }
 
-cargarCatalogo().then(abrirProductoCompartido);
+cargarCatalogo().then(async () => {
+  await procesarPendienteCarrito();
+  abrirProductoCompartido();
+});
