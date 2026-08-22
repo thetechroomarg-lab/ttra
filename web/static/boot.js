@@ -170,6 +170,34 @@ if ("serviceWorker" in navigator) {
   // próximo refresh.
   document.documentElement.setAttribute("data-modo", "classic");
   overlay.classList.add("rc-boot-oculto");
+  const portada = document.getElementById("rc-portada-ingreso");
+  const btnPortada = document.getElementById("btn-portada-ingreso");
+  const tituloPortada = portada ? portada.querySelector(".rc-portada-ingreso-titulo") : null;
+  const ctaPortada = portada ? portada.querySelector(".rc-portada-ingreso-cta") : null;
+  if (portada && btnPortada) {
+    document.body.classList.add("rc-portada-activa");
+    const mostrarTextoPortada = () => {
+      window.setTimeout(() => {
+        if (tituloPortada) tituloPortada.classList.add("visible");
+        window.setTimeout(() => {
+          if (ctaPortada) ctaPortada.classList.add("visible");
+        }, 3400);
+      }, 1500);
+    };
+    const imagenPortada = new Image();
+    imagenPortada.onload = mostrarTextoPortada;
+    imagenPortada.onerror = mostrarTextoPortada;
+    imagenPortada.src = "/texturas/cordoba%20city.jpg";
+    if (imagenPortada.complete) mostrarTextoPortada();
+    btnPortada.addEventListener("click", () => {
+      document.body.classList.add("rc-portada-saliendo");
+      portada.classList.add("oculto");
+      window.setTimeout(() => {
+        document.body.classList.remove("rc-portada-activa");
+        document.body.classList.remove("rc-portada-saliendo");
+      }, 700);
+    });
+  }
   return;
 
   reproducirBootCompleto(overlay, () => {});
