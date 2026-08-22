@@ -606,8 +606,8 @@ def registro(entrada: RegistroIn, request: Request):
 @app.post("/login")
 def login(entrada: LoginIn, request: Request):
     try:
-        client = get_client()
-        cliente = cuentas.login_cliente(client, client, entrada.email, entrada.password)
+        client_datos = get_client()
+        cliente = cuentas.login_cliente(get_client(), client_datos, entrada.email, entrada.password)
     except cuentas.EmailNoConfirmadoError as e:
         return JSONResponse({"error": str(e)}, status_code=403)
     except Exception:
@@ -618,10 +618,10 @@ def login(entrada: LoginIn, request: Request):
     request.session["cliente_id"] = cliente["id"]
     request.session["cliente_nombre"] = cliente["nombre"]
     request.session["debe_cambiar_password"] = cliente["debe_cambiar_password"]
-    _vincular_interacciones_anonimas(client, request, cliente["id"])
+    _vincular_interacciones_anonimas(client_datos, request, cliente["id"])
     try:
         interacciones.guardar_interaccion(
-            client, "login", cliente_id=cliente["id"], anon_id=_anon_id_request(request)
+            client_datos, "login", cliente_id=cliente["id"], anon_id=_anon_id_request(request)
         )
     except Exception:
         logger.exception("No se pudo guardar evento login para %s", cliente["id"])
