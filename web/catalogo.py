@@ -55,6 +55,10 @@ def _seccion_de(producto):
     return "Accesorios Celulares"
 
 
+def seccion_de(producto):
+    return _seccion_de(producto)
+
+
 # Marca por producto, usada por la web para armar los botones de sub-navegación
 # dentro de Celulares/Tablets/Accesorios Celulares (no afecta a qué sección va
 # cada producto, solo cómo se agrupa dentro de la sección).

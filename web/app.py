@@ -40,7 +40,7 @@ ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 ADMIN_CLIENTES_PASSWORD = os.environ.get("ADMIN_CLIENTES_PASSWORD")
 if not ADMIN_CLIENTES_PASSWORD:
     logger.warning("ADMIN_CLIENTES_PASSWORD no configurado — usando clave de desarrollo, no apta para producción")
-    ADMIN_CLIENTES_PASSWORD = "dev-cambiar-en-produccion"
+    ADMIN_CLIENTES_PASSWORD = "dev"
 
 # Tope de gasto por chat/cliente (USD). Al superarlo, se lo deriva al WhatsApp.
 LIMITE_USD = 0.25
@@ -306,6 +306,13 @@ _ADMIN_CLIENTES_ESTILO = """
   .subseccion { margin-top:22px; }
   .subseccion h2 { color:#f2f4f8; font-size:17px; margin:0 0 10px; }
   .subseccion p { margin:0 0 12px; color:#9aa0ab; font-size:13px; }
+  .acciones-mailing { display:flex; align-items:center; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .acciones-mailing button { border:none; background:#c8102e; color:#fff; border-radius:8px;
+                             padding:10px 14px; cursor:pointer; font-weight:700; }
+  .acciones-mailing button[disabled] { opacity:.45; cursor:not-allowed; }
+  .acciones-mailing span { color:#9aa0ab; font-size:13px; }
+  .col-check { width:40px; text-align:center; }
+  .col-check input { width:16px; height:16px; accent-color:#c8102e; cursor:pointer; }
 </style>
 """
 
@@ -425,70 +432,56 @@ def admin_clientes_historial(cliente_id: str, request: Request):
         filas_interacciones = client.table("interacciones_cliente").select("*").eq("cliente_id", cliente_id).execute().data
     except Exception:
         filas_interacciones = []
-    filas_interacciones.sort(key=lambda i: i.get("fecha", ""), reverse=True)
+    filas_interacciones.sort(
+        key=lambda i: ((i.get("fecha", "") or "")[:10], i.get("fecha", "") or ""),
+        reverse=True,
+    )
 
     def _tipo_evento_label(tipo):
         return {
-            "view_home": "Vio home",
-            "view_category": "Vio categoría",
-            "search": "Buscó",
-            "view_product": "Abrió producto",
-            "open_product_photo": "Abrió fotos",
-            "open_product_specs": "Abrió especificaciones",
-            "share_product": "Compartió producto",
-            "add_to_cart": "Agregó al carrito",
-            "remove_from_cart": "Quitó del carrito",
-            "begin_checkout": "Inició checkout",
-            "complete_checkout": "Completó checkout",
-            "login": "Inició sesión",
-            "register": "Creó cuenta",
+            "view_item": "view item",
+            "select_product": "view item",
+            "view_product": "view item",
         }.get(tipo, tipo or "Interacción")
 
     def _detalle_interaccion(fila):
-        partes = []
-        if fila.get("producto_nombre"):
-            partes.append(f"Producto: {html.escape(fila['producto_nombre'])}")
-        if fila.get("categoria"):
-            partes.append(f"Categoría: {html.escape(fila['categoria'])}")
-        if fila.get("marca"):
-            partes.append(f"Marca: {html.escape(fila['marca'])}")
-        metadata = fila.get("metadata") or {}
-        termino = (metadata.get("termino") or "").strip()
-        if termino:
-            partes.append(f"Búsqueda: {html.escape(termino)}")
-        color = (metadata.get("color") or "").strip()
-        if color:
-            partes.append(f"Color: {html.escape(color)}")
-        cantidad = metadata.get("cantidad")
-        if cantidad not in (None, ""):
-            partes.append(f"Cantidad: {html.escape(str(cantidad))}")
-        vista = (metadata.get("vista") or "").strip()
-        if vista:
-            partes.append(f"Vista: {html.escape(vista)}")
-        return " · ".join(partes) if partes else "—"
+        producto = (fila.get("producto_nombre") or "").strip()
+        return html.escape(producto) if producto else "—"
 
     if not filas_pedidos:
-        filas_pedidos_html = '<tr><td colspan="4" class="vacio">Este cliente todavía no tiene pedidos confirmados.</td></tr>'
+        filas_pedidos_html = '<tr><td colspan="5" class="vacio">Este cliente todavía no tiene pedidos confirmados.</td></tr>'
     else:
         def _fila_pedido(fila):
             fecha, dia, hora = _formatear_fecha_ar(fila.get("fecha", ""))
             detalle = html.escape(" | ".join(fila.get("productos", []))) or "—"
-            return f"<tr><td>{fecha}</td><td>{dia}</td><td>{hora}</td><td>{detalle}</td></tr>"
+            return (
+                f'<tr data-campaign-item="{detalle}" data-campaign-source="pedido">'
+                f'<td class="col-check"><input type="checkbox" class="chk-mailing" '
+                f'aria-label="Seleccionar pedido confirmado"></td>'
+                f"<td>{fecha}</td><td>{dia}</td><td>{hora}</td><td>{detalle}</td></tr>"
+            )
 
         filas_pedidos_html = "".join(_fila_pedido(fila) for fila in filas_pedidos)
 
     if not filas_interacciones:
-        filas_interacciones_html = '<tr><td colspan="5" class="vacio">Este cliente todavía no tiene historial de vistas registrado.</td></tr>'
+        filas_interacciones_html = '<tr><td colspan="6" class="vacio">Este cliente todavía no tiene historial de vistas registrado.</td></tr>'
     else:
         def _fila_interaccion(fila):
             fecha, dia, hora = _formatear_fecha_ar(fila.get("fecha", ""))
+            evento = html.escape(_tipo_evento_label(fila.get('tipo_evento', '')))
+            detalle = _detalle_interaccion(fila)
             return (
-                f"<tr><td>{fecha}</td><td>{dia}</td><td>{hora}</td>"
-                f"<td>{html.escape(_tipo_evento_label(fila.get('tipo_evento', '')))}</td>"
-                f"<td>{_detalle_interaccion(fila)}</td></tr>"
+                f'<tr data-campaign-item="{evento} — {detalle}" data-campaign-source="vista">'
+                f'<td class="col-check"><input type="checkbox" class="chk-mailing" '
+                f'aria-label="Seleccionar interacción"></td>'
+                f"<td>{fecha}</td><td>{dia}</td><td>{hora}</td>"
+                f"<td>{evento}</td><td>{detalle}</td></tr>"
             )
 
         filas_interacciones_html = "".join(_fila_interaccion(fila) for fila in filas_interacciones)
+
+    email_cliente = html.escape(cliente.get("email", "") or "")
+    asunto_mailing = html.escape(f"Propuesta personalizada — The Tech Room Arg")
 
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Historial — {html.escape(nombre_cliente)}</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
@@ -501,7 +494,7 @@ def admin_clientes_historial(cliente_id: str, request: Request):
     <h2>Pedidos confirmados</h2>
     <p>Acá ves todo lo que el cliente cargó al carrito y confirmó.</p>
     <table>
-      <thead><tr><th>Fecha</th><th>Día</th><th>Hora</th><th>Productos</th></tr></thead>
+      <thead><tr><th class="col-check"></th><th>Fecha</th><th>Día</th><th>Hora</th><th>Productos</th></tr></thead>
       <tbody>{filas_pedidos_html}</tbody>
     </table>
   </section>
@@ -509,11 +502,51 @@ def admin_clientes_historial(cliente_id: str, request: Request):
     <h2>Historial de vistas</h2>
     <p>Acá ves todas las interacciones de navegación, vistas e íconos que tocó el cliente.</p>
     <table>
-      <thead><tr><th>Fecha</th><th>Día</th><th>Hora</th><th>Evento</th><th>Detalle</th></tr></thead>
+      <thead><tr><th class="col-check"></th><th>Fecha</th><th>Día</th><th>Hora</th><th>Evento</th><th>Detalle</th></tr></thead>
       <tbody>{filas_interacciones_html}</tbody>
     </table>
   </section>
+  <div class="acciones-mailing">
+    <button id="btn-preparar-mailing" {'disabled' if not email_cliente else ''}>Preparar mailing</button>
+    <span id="mailing-ayuda">{'Seleccioná productos o vistas y se arma un borrador al mail del cliente.' if email_cliente else 'Este cliente no tiene email disponible para mailing.'}</span>
+  </div>
 </div>
+<script>
+const btnMailing = document.getElementById("btn-preparar-mailing");
+const checksMailing = [...document.querySelectorAll(".chk-mailing")];
+const emailCliente = {json.dumps(cliente.get("email", "") or "")};
+const nombreCliente = {json.dumps(nombre_cliente or "cliente")};
+
+function filasSeleccionadas() {{
+  return checksMailing
+    .filter((chk) => chk.checked)
+    .map((chk) => chk.closest("tr"))
+    .filter(Boolean);
+}}
+
+function actualizarEstadoMailing() {{
+  if (!btnMailing || !emailCliente) return;
+  btnMailing.disabled = filasSeleccionadas().length === 0;
+}}
+
+checksMailing.forEach((chk) => chk.addEventListener("change", actualizarEstadoMailing));
+actualizarEstadoMailing();
+
+if (btnMailing) {{
+  btnMailing.addEventListener("click", () => {{
+    const filas = filasSeleccionadas();
+    if (!emailCliente || filas.length === 0) return;
+    const items = filas.map((fila) => `- ${{fila.dataset.campaignItem || ""}}`);
+    const cuerpo =
+      `Hola ${{nombreCliente}},\\n\\n` +
+      `Estuvimos revisando tus intereses recientes en The Tech Room Arg y preparamos una propuesta para vos.\\n\\n` +
+      `Referencias seleccionadas:\\n${{items.join("\\n")}}\\n\\n` +
+      `Si querés, te armamos una oferta personalizada sobre alguno de estos productos.\\n\\n` +
+      `Saludos,\\nThe Tech Room Arg`;
+    window.location.href = `mailto:${{encodeURIComponent(emailCliente)}}?subject=${{encodeURIComponent({json.dumps("Propuesta personalizada — The Tech Room Arg")})}}&body=${{encodeURIComponent(cuerpo)}}`;
+  }});
+}}
+</script>
 </body></html>"""
 
 
@@ -578,12 +611,6 @@ def registro(entrada: RegistroIn, request: Request):
         return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
     if cliente["requiere_confirmacion_email"]:
         _vincular_interacciones_anonimas(client, request, cliente["id"])
-        try:
-            interacciones.guardar_interaccion(
-                client, "register", cliente_id=cliente["id"], anon_id=_anon_id_request(request)
-            )
-        except Exception:
-            logger.exception("No se pudo guardar evento register para %s", cliente["id"])
         request.session.clear()
         return {
             "ok": True,
@@ -594,12 +621,6 @@ def registro(entrada: RegistroIn, request: Request):
     request.session["cliente_nombre"] = cliente["nombre"]
     request.session["debe_cambiar_password"] = False
     _vincular_interacciones_anonimas(client, request, cliente["id"])
-    try:
-        interacciones.guardar_interaccion(
-            client, "register", cliente_id=cliente["id"], anon_id=_anon_id_request(request)
-        )
-    except Exception:
-        logger.exception("No se pudo guardar evento register para %s", cliente["id"])
     return {"ok": True, "requiere_confirmacion_email": False}
 
 
@@ -619,12 +640,6 @@ def login(entrada: LoginIn, request: Request):
     request.session["cliente_nombre"] = cliente["nombre"]
     request.session["debe_cambiar_password"] = cliente["debe_cambiar_password"]
     _vincular_interacciones_anonimas(client_datos, request, cliente["id"])
-    try:
-        interacciones.guardar_interaccion(
-            client_datos, "login", cliente_id=cliente["id"], anon_id=_anon_id_request(request)
-        )
-    except Exception:
-        logger.exception("No se pudo guardar evento login para %s", cliente["id"])
     return {"ok": True, "debe_cambiar_password": cliente["debe_cambiar_password"]}
 
 
@@ -734,8 +749,18 @@ class InteraccionIn(BaseModel):
     metadata: dict = Field(default_factory=dict)
 
 
+_EVENTOS_INTERACCION_PERMITIDOS = {"view_item", "select_product", "view_product"}
+
+
 @app.post("/api/interacciones")
 def api_interacciones(entrada: InteraccionIn, request: Request):
+    if entrada.tipo_evento not in _EVENTOS_INTERACCION_PERMITIDOS:
+        return {"ok": True}
+    tipo_evento = (
+        "view_item"
+        if entrada.tipo_evento in {"select_product", "view_product"}
+        else entrada.tipo_evento
+    )
     anon_id = _anon_id_request(request)
     cliente_id = request.session.get("cliente_id")
     if not cliente_id and not anon_id:
@@ -743,17 +768,17 @@ def api_interacciones(entrada: InteraccionIn, request: Request):
     try:
         interacciones.guardar_interaccion(
             get_client(),
-            entrada.tipo_evento,
+            tipo_evento,
             cliente_id=cliente_id,
             anon_id=anon_id,
             session_id=entrada.session_id,
             producto_nombre=entrada.producto_nombre,
-            categoria=entrada.categoria,
-            marca=entrada.marca,
-            metadata=entrada.metadata,
+            categoria=None,
+            marca=None,
+            metadata={},
         )
     except Exception:
-        logger.exception("No se pudo guardar interacción %s", entrada.tipo_evento)
+        logger.exception("No se pudo guardar interacción %s", tipo_evento)
     return {"ok": True}
 
 
@@ -782,6 +807,33 @@ def api_catalogo():
         return {"secciones": {s: [] for s in catalogo.SECCIONES},
                 "mensaje": "Estamos actualizando los precios"}
     return {"secciones": catalogo.secciones_catalogo(productos)}
+
+
+@app.get("/api/recomendados")
+def api_recomendados(request: Request, limit: int = 16):
+    productos = _cargar_productos()
+    if not productos:
+        return {"productos": []}
+
+    filas_interacciones = []
+    cliente_id = request.session.get("cliente_id")
+    anon_id = _anon_id_request(request)
+    if cliente_id or anon_id:
+        try:
+            query = get_client().table("interacciones_cliente").select("*")
+            if cliente_id:
+                filas_interacciones = query.eq("cliente_id", cliente_id).execute().data
+            else:
+                filas_interacciones = query.eq("anon_id", anon_id).execute().data
+        except Exception:
+            logger.exception("No se pudieron cargar interacciones para recomendaciones")
+
+    limite = max(1, min(limit, 24))
+    return {
+        "productos": interacciones.recomendar_productos(
+            productos, filas_interacciones, limite=limite
+        )
+    }
 
 
 # Cotización del dólar en Córdoba usada como referencia en el sitio (a mano,

@@ -1067,6 +1067,18 @@ main#productos::-webkit-scrollbar-thumb:hover,
   display: flex; flex-direction: column;
   height: 100%;
 }
+html[data-modo="fallout"] .carrousel-recomendados-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: auto auto auto auto;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+html[data-modo="fallout"] .carrousel-recomendados-grid.visible { opacity: 1; }
 /* Carrousel de recomendados con temática Fallout: en Classic el acento es
    rojo Martini (--cl-rojo, ver classic.css); acá, verde fosforescente con el
    mismo glow de texto que usa el resto de la terminal. Reemplaza al Pip-Boy

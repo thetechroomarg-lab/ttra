@@ -639,12 +639,12 @@ html[data-modo="classic"] .card.expandida {
 
 /* --- Carrousel de recomendados (reemplaza al Pip-Boy en Modo Classic, y al
    Pip-Boy apagado en Modo Fallout, ver landing.css/landing.js):
-   6 cards de productos al azar (2 filas x 3), refrescadas cada 12s ---
+   en desktop muestra 8 cards (2 filas x 4), refrescadas cada 12s ---
    Cada card tiene 4 sub-secciones (etiqueta / título / precios / acciones).
    El grid padre define esas 4 filas explícitas y cada card las hereda con
-   "subgrid" vía grid-row: span 4; con 6 cards y solo 3 columnas, el grid
-   ubica automáticamente la segunda tanda de 3 en las siguientes 4 filas
-   implícitas, alineando título/precio/acciones dentro de cada fila de 3
+   "subgrid" vía grid-row: span 4; con 8 cards y 4 columnas, el grid ubica
+   automáticamente la segunda tanda de 4 en las siguientes 4 filas
+   implícitas, alineando título/precio/acciones dentro de cada fila de 4
    sin importar el largo del nombre. Mismo gap que la separación entre los
    botones del menú principal (10px, ver .categorias-columna). Layout
    compartido por los dos modos (ver .carrousel-recomendados-wrap en
@@ -656,7 +656,7 @@ html[data-modo="classic"] .carrousel-recomendados-wrap {
   border-radius: 18px;
   padding: 16px;
 }
-.carrousel-recomendados-grid {
+html[data-modo="classic"] .carrousel-recomendados-grid {
   /* min-height:0 (no un piso fijo): sin esto, un flex item con
      grid-template-rows:auto no puede achicarse por debajo del alto natural
      de sus 2 filas de cards — así, si esa altura no entraba en el espacio
@@ -667,13 +667,13 @@ html[data-modo="classic"] .carrousel-recomendados-wrap {
   flex: 1; min-height: 0;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: auto auto auto auto;
   gap: 10px;
   opacity: 0;
   transition: opacity .25s ease;
 }
-.carrousel-recomendados-grid.visible { opacity: 1; }
+html[data-modo="classic"] .carrousel-recomendados-grid.visible { opacity: 1; }
 /* Padding/gap/fuentes recortados a propósito (ver comentario de
    .carrousel-recomendados-grid más arriba): esta card entra 2 veces (2
    filas x 3) en el mismo alto que ocupa la barra lateral, así que no puede
@@ -805,7 +805,7 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
     min-height: 0;
     padding-bottom: 12px;
   }
-  .carrousel-recomendados-grid { grid-template-columns: 1fr; }
+  html[data-modo="classic"] .carrousel-recomendados-grid { grid-template-columns: 1fr; }
   html[data-modo="classic"] body:not(.rc-vista-seccion) main#productos {
     flex: 1 1 auto;
     min-height: 0;

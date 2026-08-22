@@ -118,6 +118,7 @@ const CLAVE_ANON_ID = "ttra_anon_id";
 const WHATSAPP_NUMERO = "543512145217";
 
 let SECCIONES_DATA = {};
+let RECOMENDADOS_DATA = [];
 let cotizacionActual = null; // U$D actual, usado en el reloj del header y en el narrador de noticias
 let pronosticoManana = null; // texto del pronóstico del día siguiente, para el narrador
 let pronosticoConsejo = null; // consejo práctico según ese pronóstico (paraguas, abrigo, etc.)
@@ -151,6 +152,7 @@ function obtenerAnonId() {
 }
 
 function registrarInteraccion(tipoEvento, datos = {}) {
+  if (tipoEvento !== "view_item") return;
   const anonId = obtenerAnonId();
   const payload = {
     tipo_evento: tipoEvento,
@@ -1371,11 +1373,12 @@ function bloquePreciosHtml(p) {
 function tarjetaRecomendadoHtml(p) {
   const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
   const listaColores = tieneColores ? p.colores : ["Color único"];
+  const etiquetaRecomendacion = p.motivo_recomendacion || "✨ Recomendado para vos";
   // Mismo criterio que tarjetaProducto: siempre "Elegir color" sin nada
   // preseleccionado, Agregar inactivo hasta elegir explícitamente.
   return `
     <div class="tarjeta-recomendado" data-nombre="${escapeHtml(p.nombre)}">
-      <div class="tarjeta-recomendado-etiqueta">✨ Recomendado para vos</div>
+      <div class="tarjeta-recomendado-etiqueta">${escapeHtml(etiquetaRecomendacion)}</div>
       <h3>${marcaLogoHtml(p.marca, "marca-logo-card")}${escapeHtml(p.nombre)}</h3>
       <p class="tarjeta-recomendado-precio">
         ${bloquePreciosHtml(p)}
@@ -1396,8 +1399,19 @@ function tarjetaRecomendadoHtml(p) {
   `;
 }
 
-function tarjetasRecomendadosHtml() {
-  const productos = productosAlAzar(6);
+function esClassicDesktopActivo() {
+  return modoVisual === "classic" && window.innerWidth > 700;
+}
+
+function productosRecomendados(cantidad, personalizados = false) {
+  const pool = personalizados && RECOMENDADOS_DATA.length
+    ? barajar(RECOMENDADOS_DATA)
+    : productosAlAzar(cantidad);
+  return pool.slice(0, cantidad);
+}
+
+function tarjetasRecomendadosHtml(cantidad = 6, personalizados = false) {
+  const productos = productosRecomendados(cantidad, personalizados);
   if (!productos.length) {
     return `<div class="tarjeta-recomendado tarjeta-recomendado-vacia"><p>Cargando recomendaciones...</p></div>`;
   }
@@ -1405,7 +1419,7 @@ function tarjetasRecomendadosHtml() {
 }
 
 function renovarLoteRecomendadosMobile() {
-  recomendacionesMobileLote = productosAlAzar(6);
+  recomendacionesMobileLote = productosRecomendados(6, false);
   recomendacionesMobileIndice = 0;
 }
 
@@ -1445,27 +1459,6 @@ function wireTarjetasRecomendadas(el) {
         });
       });
     }
-    const botonesInfo = card.querySelectorAll(".tarjeta-recomendado-iconos .btn-foto");
-    const btnFoto = botonesInfo[0];
-    const btnSpecs = botonesInfo[1];
-    if (btnFoto) {
-      btnFoto.addEventListener("click", () => {
-        registrarInteraccion("open_product_photo", {
-          producto_nombre: producto.nombre,
-          categoria: productoSeccion(producto),
-          marca: producto.marca || "Otras marcas",
-        });
-      });
-    }
-    if (btnSpecs) {
-      btnSpecs.addEventListener("click", () => {
-        registrarInteraccion("open_product_specs", {
-          producto_nombre: producto.nombre,
-          categoria: productoSeccion(producto),
-          marca: producto.marca || "Otras marcas",
-        });
-      });
-    }
     if (btnAgregar) {
       btnAgregar.addEventListener("click", async () => {
         await agregarAlCarritoProtegido(producto, btnAgregar.dataset.color || null);
@@ -1480,7 +1473,7 @@ function wireTarjetasRecomendadas(el) {
     }
     card.addEventListener("click", (e) => {
       if (e.target.closest("button, a, .dropdown-color, li")) return;
-      registrarInteraccion("view_product", {
+      registrarInteraccion("view_item", {
         producto_nombre: producto.nombre,
         categoria: productoSeccion(producto),
         marca: producto.marca || "Otras marcas",
@@ -1621,9 +1614,12 @@ function pintarCarrouselRecomendados(el) {
     // columna lateral sólo volvería a introducir un límite artificial.
     el.style.height = "";
   }
+  const esClassicDesktop = esClassicDesktopActivo();
+  const cantidad = esClassicDesktop ? 8 : 6;
+  const personalizados = esClassicDesktop;
   el.innerHTML = `
     <div class="carrousel-recomendados-wrap">
-      <div class="carrousel-recomendados-grid visible">${tarjetasRecomendadosHtml()}</div>
+      <div class="carrousel-recomendados-grid visible">${tarjetasRecomendadosHtml(cantidad, personalizados)}</div>
     </div>
   `;
   wireTarjetasRecomendadas(el);
@@ -2721,6 +2717,8 @@ function pintarGrilla(el, productos, mensajeVacio) {
   const controlesHtml = esMobileClassic ? "" : controlVistaHtml();
   el.innerHTML = `<div class="rc-catalogo-surface">${controlesHtml}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div></div>`;
   el.querySelectorAll(".card").forEach((card) => {
+    const producto = productos.find((item) => item.nombre === card.dataset.nombre);
+    if (!producto) return;
     const btnAgregar = card.querySelector(".btn-agregar");
     const botonColor = card.querySelector(".dropdown-color-boton");
     const listaColor = card.querySelector(".dropdown-color-lista");
@@ -2733,6 +2731,7 @@ function pintarGrilla(el, productos, mensajeVacio) {
     // selecciona nomás (no abre el dropdown ni agrega todavía).
     function seleccionarCard() {
       const yaExpandida = card.classList.contains("expandida");
+      cerrarDropdownsColor();
       el.querySelectorAll(".card.expandida").forEach((c) => c.classList.remove("expandida"));
       if (!yaExpandida) card.classList.add("expandida");
       // La card no es un <button>, así que el beep global de Fallout (que
@@ -2761,26 +2760,6 @@ function pintarGrilla(el, productos, mensajeVacio) {
         });
       });
     }
-    const btnFoto = card.querySelector(".btn-foto[href*='google']");
-    if (btnFoto) {
-      btnFoto.addEventListener("click", () => {
-        registrarInteraccion("open_product_photo", {
-          producto_nombre: p.nombre,
-          categoria: productoSeccion(p),
-          marca: p.marca || "Otras marcas",
-        });
-      });
-    }
-    const btnSpecs = card.querySelectorAll(".btn-foto[href*='google']").item(1);
-    if (btnSpecs) {
-      btnSpecs.addEventListener("click", () => {
-        registrarInteraccion("open_product_specs", {
-          producto_nombre: p.nombre,
-          categoria: productoSeccion(p),
-          marca: p.marca || "Otras marcas",
-        });
-      });
-    }
     btnAgregar.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (!card.classList.contains("expandida")) {
@@ -2799,10 +2778,10 @@ function pintarGrilla(el, productos, mensajeVacio) {
     }
     card.addEventListener("click", (e) => {
       if (e.target.closest("button, a, .dropdown-color, li")) return;
-      registrarInteraccion("view_product", {
-        producto_nombre: p.nombre,
-        categoria: productoSeccion(p),
-        marca: p.marca || "Otras marcas",
+      registrarInteraccion("view_item", {
+        producto_nombre: producto.nombre,
+        categoria: productoSeccion(producto),
+        marca: producto.marca || "Otras marcas",
         metadata: { vista: modoVista },
       });
       seleccionarCard();
@@ -2985,9 +2964,17 @@ function ocultarNavegacionCatalogo() {
 async function cargarCatalogo() {
   let datos;
   try {
-    const r = await fetch("/api/catalogo");
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    datos = await r.json();
+    const anonId = obtenerAnonId();
+    const headers = { "X-TTRA-ANON-ID": anonId };
+    const [catalogoR, recomendadosR] = await Promise.all([
+      fetch("/api/catalogo", { headers }),
+      fetch("/api/recomendados?limit=24", { headers }),
+    ]);
+    if (!catalogoR.ok) throw new Error(`HTTP ${catalogoR.status}`);
+    datos = await catalogoR.json();
+    RECOMENDADOS_DATA = recomendadosR.ok
+      ? ((await recomendadosR.json()).productos || [])
+      : [];
   } catch {
     ocultarNavegacionCatalogo();
     document.getElementById("productos").innerHTML =
@@ -2996,6 +2983,9 @@ async function cargarCatalogo() {
     return;
   }
   SECCIONES_DATA = datos.secciones || {};
+  RECOMENDADOS_DATA = RECOMENDADOS_DATA
+    .map((p) => ({ ...p, marca: p.marca || "Otras marcas" }))
+    .filter((p) => p && p.nombre);
   refrescarPreciosCarrito();
   if (datos.mensaje) {
     ocultarNavegacionCatalogo();
