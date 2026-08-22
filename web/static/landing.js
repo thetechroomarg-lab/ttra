@@ -1352,6 +1352,18 @@ function tarjetasRecomendadosHtml() {
   return productos.map(tarjetaRecomendadoHtml).join("");
 }
 
+function renovarLoteRecomendadosMobile() {
+  recomendacionesMobileLote = productosAlAzar(6);
+  recomendacionesMobileIndice = 0;
+}
+
+function tarjetaRecomendadoMobileHtml() {
+  if (!recomendacionesMobileLote.length) {
+    return `<div class="tarjeta-recomendado tarjeta-recomendado-vacia"><p>Cargando recomendaciones...</p></div>`;
+  }
+  return tarjetaRecomendadoHtml(recomendacionesMobileLote[recomendacionesMobileIndice]);
+}
+
 // Engancha el dropdown de color y "Agregar al carrito" de cada card
 // recomendada (mismo patrón que las cards del catálogo normal).
 function wireTarjetasRecomendadas(el) {
@@ -1410,7 +1422,112 @@ function iniciarCicloRecomendados(el) {
   }, 12000);
 }
 
+function esHomeMobileClassicActivo() {
+  const inputBusquedaEl = document.getElementById("input-busqueda");
+  const termino = inputBusquedaEl ? inputBusquedaEl.value.trim() : "";
+  return modoVisual === "classic" &&
+    window.innerWidth <= 700 &&
+    !seccionActiva &&
+    !filtroMarcaGlobal &&
+    termino === "";
+}
+
+function ajustarAlturaRecomendadosMobile() {
+  const productosEl = document.getElementById("productos");
+  if (!productosEl) return;
+  if (!esHomeMobileClassicActivo()) {
+    productosEl.style.removeProperty("height");
+    return;
+  }
+  // En mobile Classic el alto útil se resuelve por layout CSS: body/fila/main
+  // reparten el viewport y el footer queda al final del flujo. Acá solo
+  // limpiamos cualquier altura inline vieja para no pelear contra ese layout.
+  productosEl.style.removeProperty("height");
+}
+
+function avanzarCarrouselRecomendadosMobile(el, direccion = 1) {
+  if (!recomendacionesMobileLote.length) renovarLoteRecomendadosMobile();
+  if (!recomendacionesMobileLote.length) return;
+
+  if (direccion > 0) {
+    if (recomendacionesMobileIndice >= recomendacionesMobileLote.length - 1) {
+      renovarLoteRecomendadosMobile();
+    } else {
+      recomendacionesMobileIndice += 1;
+    }
+  } else {
+    recomendacionesMobileIndice = recomendacionesMobileIndice === 0
+      ? recomendacionesMobileLote.length - 1
+      : recomendacionesMobileIndice - 1;
+  }
+
+  pintarCarrouselRecomendadosMobile(el);
+}
+
+function iniciarCicloRecomendadosMobile(el) {
+  clearInterval(intervaloCiudad);
+  intervaloCiudad = setInterval(() => {
+    avanzarCarrouselRecomendadosMobile(el, 1);
+  }, 6000);
+}
+
+function pintarCarrouselRecomendadosMobile(el) {
+  if (!recomendacionesMobileLote.length) renovarLoteRecomendadosMobile();
+  ajustarAlturaRecomendadosMobile();
+  el.innerHTML = `
+    <div class="carrousel-recomendados-wrap carrousel-recomendados-wrap-mobile">
+      <div class="carrousel-recomendados-mobile-viewport">
+        <div class="carrousel-recomendados-grid carrousel-recomendados-grid-mobile visible">
+          <div class="carrousel-recomendados-mobile-card">
+            <div class="carrousel-recomendados-mobile-contador">${recomendacionesMobileIndice + 1} / ${recomendacionesMobileLote.length}</div>
+            ${tarjetaRecomendadoMobileHtml()}
+          </div>
+        </div>
+      </div>
+      <div class="carrousel-recomendados-mobile-puntos">
+        ${recomendacionesMobileLote.map((_, indice) => `<button type="button" class="carrousel-recomendados-mobile-punto ${indice === recomendacionesMobileIndice ? "activo" : ""}" data-indice="${indice}" aria-label="Ir a recomendación ${indice + 1}"></button>`).join("")}
+      </div>
+    </div>
+  `;
+  wireTarjetasRecomendadas(el);
+  const viewport = el.querySelector(".carrousel-recomendados-mobile-viewport");
+  el.querySelectorAll(".carrousel-recomendados-mobile-punto").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      recomendacionesMobileIndice = Number(btn.dataset.indice) || 0;
+      pintarCarrouselRecomendadosMobile(el);
+    });
+  });
+  if (viewport) {
+    let touchInicioX = 0;
+    let touchFinX = 0;
+    viewport.addEventListener("mouseenter", () => clearInterval(intervaloCiudad));
+    viewport.addEventListener("mouseleave", () => iniciarCicloRecomendadosMobile(el));
+    viewport.addEventListener("touchstart", (e) => {
+      clearInterval(intervaloCiudad);
+      touchInicioX = e.changedTouches[0]?.clientX || 0;
+      touchFinX = touchInicioX;
+    }, { passive: true });
+    viewport.addEventListener("touchmove", (e) => {
+      touchFinX = e.changedTouches[0]?.clientX || touchFinX;
+    }, { passive: true });
+    viewport.addEventListener("touchend", () => {
+      const deltaX = touchFinX - touchInicioX;
+      if (Math.abs(deltaX) > 36) {
+        avanzarCarrouselRecomendadosMobile(el, deltaX < 0 ? 1 : -1);
+        return;
+      }
+      iniciarCicloRecomendadosMobile(el);
+    }, { passive: true });
+  }
+  iniciarCicloRecomendadosMobile(el);
+  requestAnimationFrame(ajustarAlturaRecomendadosMobile);
+}
+
 function pintarCarrouselRecomendados(el) {
+  if (modoVisual === "classic" && window.innerWidth <= 700) {
+    pintarCarrouselRecomendadosMobile(el);
+    return;
+  }
   if (modoVisual === "fallout" && alturaPipboyHomePx) {
     // Fallout con el Pip-Boy apagado: mismo alto que tenía prendido (ver
     // alturaPipboyHomePx), así apagarlo no mueve nada de la columna
@@ -1636,10 +1753,11 @@ function aplicarLayoutCatalogoPorModo(modo) {
   const header = document.querySelector("header");
   const headerCentro = document.querySelector(".rc-header-centro");
   const headerNav = document.querySelector(".rc-header-nav");
+  const categoriasClassicWrap = document.getElementById("rc-categorias-classic-wrap");
   const columnaIzquierda = document.getElementById("columna-izquierda-layout");
   const buscador = document.querySelector(".rc-buscador-header");
   const switches = document.getElementById("rc-switches-fallout-wrap");
-  if (!header || !headerCentro || !headerNav || !columnaIzquierda || !buscador || !switches) return;
+  if (!header || !headerCentro || !headerNav || !categoriasClassicWrap || !columnaIzquierda || !buscador || !switches) return;
 
   if (modo === "fallout") {
     if (buscador.parentElement !== columnaIzquierda) columnaIzquierda.prepend(buscador);
@@ -1656,7 +1774,7 @@ function aplicarLayoutCatalogoPorModo(modo) {
   } else if (buscador.parentElement !== headerCentro) {
     headerCentro.appendChild(buscador);
   }
-  if (headerNav.parentElement !== header) header.insertBefore(headerNav, switches);
+  if (headerNav.parentElement !== categoriasClassicWrap) categoriasClassicWrap.appendChild(headerNav);
   if (switches.parentElement !== header) header.appendChild(switches);
 }
 
@@ -1696,7 +1814,7 @@ function aplicarModoVisual(modo, opciones) {
   actualizarVista();
 }
 
-document.getElementById("btn-modo-fallout").addEventListener("click", () => {
+function entrarAModoFallout() {
   transicionandoAFallout = true;
   aplicarModoVisual("fallout");
   if (typeof window.reproducirBootSequenceTTRA === "function") {
@@ -1709,8 +1827,14 @@ document.getElementById("btn-modo-fallout").addEventListener("click", () => {
   } else {
     transicionandoAFallout = false;
   }
-});
-document.getElementById("btn-modo-classic").addEventListener("click", () => {
+}
+
+const btnLogoFallout = document.getElementById("btn-logo-fallout");
+if (btnLogoFallout) {
+  btnLogoFallout.addEventListener("click", entrarAModoFallout);
+}
+const btnModoClassic = document.getElementById("btn-modo-classic");
+if (btnModoClassic) btnModoClassic.addEventListener("click", () => {
   if (modoVisual !== "fallout") {
     aplicarModoVisual("classic");
     return;
@@ -1856,7 +1980,6 @@ if (btnLogoutCerrar) {
 // (el mouse se va del botón apenas aparece el overlay, pero no hay que
 // cortarla ahí) y recién se desvanece cuando termina, en el home de Fallout.
 let transicionandoAFallout = false;
-const btnModoFallout = document.getElementById("btn-modo-fallout");
 const audioModoFallout = document.getElementById("audio-modo-fallout");
 
 function desvanecerAudioModoFallout() {
@@ -1875,8 +1998,8 @@ function desvanecerAudioModoFallout() {
   }, pasoMs);
 }
 
-if (btnModoFallout && audioModoFallout) {
-  btnModoFallout.addEventListener("mouseenter", () => {
+if (btnLogoFallout && audioModoFallout) {
+  btnLogoFallout.addEventListener("mouseenter", () => {
     if (transicionandoAFallout) return;
     audioModoFallout.currentTime = 0;
     audioModoFallout.volume = 1;
@@ -1884,7 +2007,7 @@ if (btnModoFallout && audioModoFallout) {
       // Autoplay bloqueado hasta el primer gesto del usuario: no es crítico.
     });
   });
-  btnModoFallout.addEventListener("mouseleave", () => {
+  btnLogoFallout.addEventListener("mouseleave", () => {
     if (transicionandoAFallout) return;
     audioModoFallout.pause();
     audioModoFallout.currentTime = 0;
@@ -1927,7 +2050,6 @@ function reproducirAbucheo() {
     // Web Audio no disponible: seguimos sin sonido, no es crítico.
   }
 }
-const btnModoClassic = document.getElementById("btn-modo-classic");
 if (btnModoClassic) {
   btnModoClassic.addEventListener("mouseenter", () => {
     if (modoVisual === "fallout") reproducirAbucheo();
@@ -2211,6 +2333,8 @@ async function compartirProducto(nombre) {
 // #btn-pipboy-switch). Se reinicia a false cada vez que se entra a Fallout
 // (ver aplicarModoVisual), así siempre arranca encendido.
 let pipboyApagado = false;
+let recomendacionesMobileLote = [];
+let recomendacionesMobileIndice = 0;
 
 // Alto (px) que ocupa #productos con el Pip-Boy encendido, medido apenas se
 // pinta. El carrousel de recomendados (6 cards, 2 filas) es naturalmente más
@@ -2224,28 +2348,30 @@ let alturaPipboyHomePx = null;
 
 function sincronizarAnchoBuscadorHeader() {
   const buscador = document.querySelector(".rc-buscador-header");
+  const categoriasClassicWrap = document.getElementById("rc-categorias-classic-wrap");
+  const headerNav = document.querySelector(".rc-header-nav");
   if (!buscador) return;
-  if (modoVisual !== "classic") {
-    buscador.style.removeProperty("--rc-header-buscador-width");
+  buscador.style.removeProperty("--rc-header-buscador-width");
+
+  if (!categoriasClassicWrap || !headerNav) return;
+
+  const esMobileClassic = modoVisual === "classic" && window.innerWidth <= 700;
+  if (!esMobileClassic) {
+    categoriasClassicWrap.style.removeProperty("width");
+    categoriasClassicWrap.style.removeProperty("max-width");
+    headerNav.style.removeProperty("width");
+    headerNav.style.removeProperty("max-width");
     return;
   }
-  if (window.innerWidth <= 700) {
-    buscador.style.removeProperty("--rc-header-buscador-width");
-    return;
-  }
-  const filas = [
-    document.getElementById("categorias"),
-    document.getElementById("sub-nav"),
-  ].filter((el) => el && !el.classList.contains("oculto"));
-  const anchoObjetivo = filas.reduce((max, el) => {
-    const ancho = el.getBoundingClientRect().width || el.scrollWidth || 0;
-    return Math.max(max, ancho);
-  }, 0);
-  if (anchoObjetivo > 0) {
-    buscador.style.setProperty("--rc-header-buscador-width", `${anchoObjetivo}px`);
-  } else {
-    buscador.style.removeProperty("--rc-header-buscador-width");
-  }
+
+  const anchoBuscador = Math.round(buscador.getBoundingClientRect().width);
+  if (!anchoBuscador) return;
+
+  const anchoPx = `${anchoBuscador}px`;
+  categoriasClassicWrap.style.width = anchoPx;
+  categoriasClassicWrap.style.maxWidth = anchoPx;
+  headerNav.style.width = "100%";
+  headerNav.style.maxWidth = "100%";
 }
 
 function pintarCategorias() {
@@ -2278,9 +2404,9 @@ function todasLasMarcasDelCatalogo() {
 
 function pintarSelectorMarcas(el) {
   const marcas = todasLasMarcasDelCatalogo();
-  el.innerHTML = `<div class="selector-marcas">${marcas.map(
+  el.innerHTML = `<div class="rc-catalogo-surface"><div class="selector-marcas">${marcas.map(
     (m) => `<button class="btn-categoria" data-marca="${escapeHtml(m)}" type="button">${escapeHtml(etiquetaMarca(m))}</button>`
-  ).join("")}</div>`;
+  ).join("")}</div></div>`;
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       filtroMarcaGlobal = btn.dataset.marca;
@@ -2453,13 +2579,15 @@ function ordenarProductos(productos) {
 }
 
 function pintarGrilla(el, productos, mensajeVacio) {
+  const esMobileClassic = modoVisual === "classic" && window.innerWidth <= 700;
   if (!productos || productos.length === 0) {
-    el.innerHTML = `<p class="mensaje-vacio">${mensajeVacio}</p>`;
+    el.innerHTML = `<div class="rc-catalogo-surface"><p class="mensaje-vacio">${mensajeVacio}</p></div>`;
     return;
   }
   productos = ordenarProductos(productos);
-  const claseModo = modoVista === "lista" ? "lista" : "";
-  el.innerHTML = `${controlVistaHtml()}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div>`;
+  const claseModo = (modoVista === "lista" || esMobileClassic) ? "lista" : "";
+  const controlesHtml = esMobileClassic ? "" : controlVistaHtml();
+  el.innerHTML = `<div class="rc-catalogo-surface">${controlesHtml}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div></div>`;
   el.querySelectorAll(".card").forEach((card) => {
     const btnAgregar = card.querySelector(".btn-agregar");
     const botonColor = card.querySelector(".dropdown-color-boton");
@@ -2545,7 +2673,7 @@ function etiquetaPlaceholderBusqueda() {
   if (seccionActiva) {
     const cat = CATEGORIAS_BOTONES.find((c) => c.clave === seccionActiva);
     const nombre = (cat ? cat.etiqueta : seccionActiva).toLowerCase();
-    return `Busca en ${nombre}...`;
+    return `Busca dentro de ${nombre}`;
   }
   return "Busca en todo The Tech Room Arg...";
 }
@@ -2556,6 +2684,7 @@ function actualizarVista() {
   const inputBusquedaEl = document.getElementById("input-busqueda");
   inputBusquedaEl.placeholder = etiquetaPlaceholderBusqueda();
   const termino = inputBusquedaEl.value.trim().toLowerCase();
+  const esMobileClassic = modoVisual === "classic" && window.innerWidth <= 700;
   const categoriasEl = document.getElementById("categorias");
   const subNavEl = document.getElementById("sub-nav");
   const volverBtn = document.getElementById("btn-volver");
@@ -3255,6 +3384,7 @@ sincronizarAlturaNoticiero();
   .then(sincronizarAlturaNoticiero);
 window.addEventListener("resize", sincronizarAlturaNoticiero);
 window.addEventListener("resize", sincronizarAnchoBuscadorHeader);
+window.addEventListener("resize", ajustarAlturaRecomendadosMobile);
 
 pintarCarrousel();
 renderCarrito();

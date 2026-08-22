@@ -23,7 +23,7 @@
           <span class="rc-logo-linea">THE</span>
           <span class="rc-logo-linea">TECH</span>
           <span class="rc-logo-linea">ROOM</span>
-          <span class="rc-logo-linea">ARG<span class="rc-logo-punto">.</span></span>
+          <span class="rc-logo-linea">ARG<button id="btn-logo-fallout" type="button" class="rc-logo-punto-boton" aria-label="Entrar al modo Fallout"><span class="rc-logo-punto">.</span></button></span>
         </h1>
         <span class="rc-cara-wrap" aria-hidden="true">
           <span id="cara-animada-a" class="rc-cara-animada visible">:)</span>
@@ -73,7 +73,6 @@
               <button id="btn-logout-classic" type="button" class="rc-perfil-opcion rc-perfil-opcion-salir" role="menuitem">Cerrar sesión</button>
             </div>
           </div>
-          <button id="btn-modo-fallout" type="button" class="btn-modo" data-modo="fallout">Modo Fallout</button>
           <button id="btn-modo-classic" type="button" class="btn-modo" data-modo="classic">Modo Classic</button>
           <button id="btn-carrito" type="button">
             <svg class="rc-carrito-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -85,11 +84,6 @@
           </button>
         </div>
       </div>
-    </div>
-    <div class="rc-header-nav">
-      <button id="btn-volver" type="button" class="btn-categoria btn-volver oculto">← Volver</button>
-      <div id="categorias" class="categorias-columna"></div>
-      <div id="sub-nav" class="categorias-columna oculto"></div>
     </div>
     <div id="rc-switches-fallout-wrap" class="rc-switch-fallout-wrap">
       <div class="rc-switches-columna">
@@ -153,6 +147,13 @@
       </div>
     </div>
   </header>
+  <div id="rc-categorias-classic-wrap" class="rc-categorias-classic-wrap">
+    <div class="rc-header-nav">
+      <button id="btn-volver" type="button" class="btn-categoria btn-volver oculto">← Volver</button>
+      <div id="categorias" class="categorias-columna"></div>
+      <div id="sub-nav" class="categorias-columna oculto"></div>
+    </div>
+  </div>
 
   <div class="carrousel-wrap">
     <div class="carrousel" id="carrousel"></div>

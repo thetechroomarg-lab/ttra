@@ -141,10 +141,25 @@ header {
   box-shadow: 0 0 14px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
 }
 
-/* Solo se muestra el botón del OTRO modo (al que se puede cambiar); no
-   tiene sentido ver "Modo Classic" estando ya en Classic, ni viceversa. */
+/* Solo se muestra el botón del OTRO modo (al que se puede cambiar); en
+   Classic la entrada a Fallout vive en el punto rojo del logo. */
 html[data-modo="classic"] #btn-modo-classic { display: none; }
-html[data-modo="fallout"] #btn-modo-fallout { display: none; }
+
+.rc-logo-punto-boton {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: baseline;
+}
+.rc-logo-punto-boton:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 
 /* Menú de perfil del header (nombre + ícono redondo): visible en los dos
    modos, ocupando el mismo lugar/ancho que antes tenía el botón "Cerrar
@@ -198,7 +213,7 @@ html[data-modo="fallout"] .rc-perfil-nombre {
 .rc-perfil-opcion:hover, .rc-perfil-opcion:focus-visible {
   color: var(--rc-green-bright); background: var(--rc-bg-panel-2); cursor: var(--rc-cursor-mira);
 }
-a.rc-perfil-opcion { border-bottom: 1px solid var(--rc-green-faint); }
+.rc-perfil-opcion:first-child { border-bottom: 1px solid var(--rc-green-faint); }
 
 /* "Cerrar sesión" del menú de perfil solo existe en Modo Classic. */
 #btn-logout-classic { display: block; }
@@ -350,17 +365,14 @@ html[data-modo="fallout"] #btn-logout-classic { display: none; }
   font-weight: 600;
 }
 
-/* Filtros de marca/tipo dentro de una sección: al aplicarse, un pop sutil
-   hacia adelante (sin cambiar de tamaño) con la misma luz de fondo que las
-   cards (amarilla en Classic, verde fósforo en Fallout). Un click más lo
-   vuelve a su lugar (se saca la clase "activo"). */
+/* Filtros de marca/tipo dentro de una sección: al activarse conservan solo
+   el brillo de selección, sin desplazarse ni "saltar" hacia adelante. */
 #sub-nav .btn-categoria {
   position: relative;
   transition: transform .2s ease, box-shadow .2s ease;
 }
 #sub-nav .btn-categoria.activo {
   z-index: 3;
-  transform: translateY(-3px);
   box-shadow: 0 0 20px 4px var(--rc-halo-seleccion-glow), 0 6px 14px -6px rgba(0, 0, 0, 0.35);
 }
 

@@ -68,10 +68,9 @@ html[data-modo="classic"] header {
   background: var(--cl-azul-francia);
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
-  grid-template-rows: auto auto;
+  grid-template-rows: auto;
   align-items: start;
   column-gap: 18px;
-  row-gap: 10px;
   padding: 14px 20px 12px;
 }
 html[data-modo="classic"] .rc-header-superior {
@@ -87,7 +86,12 @@ html[data-modo="classic"] .rc-header-centro {
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
-  transform: translateY(10px);
+  align-self: center;
+}
+html[data-modo="classic"] .rc-categorias-classic-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10px 20px 0;
 }
 html[data-modo="classic"] .rc-header-nav {
   display: flex;
@@ -95,14 +99,10 @@ html[data-modo="classic"] .rc-header-nav {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  width: var(--rc-header-buscador-width, 960px);
-  margin: 0;
-  margin-top: -21px;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  margin: 0 auto;
   padding-top: 0;
-  grid-column: 2;
-  grid-row: 2;
-  justify-self: center;
-  transform: translateY(10px);
 }
 html[data-modo="classic"] .rc-header-nav .categorias-columna {
   flex: 0 1 auto;
@@ -132,18 +132,36 @@ html[data-modo="classic"] .columna-izquierda {
 html[data-modo="classic"] main#productos {
   margin-top: 0;
 }
+html[data-modo="classic"] .rc-catalogo-surface {
+  background: linear-gradient(180deg, #2b2b2b 0%, #323232 18%, #3a3a3a 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 18px;
+  padding: 16px;
+}
 
 /* Logo en blanco sobre el header azul Francia */
+html[data-modo="classic"] .rc-logo {
+  line-height: 0.68;
+  letter-spacing: -0.055em;
+}
 html[data-modo="classic"] .rc-logo-linea {
   color: #fff;
   -webkit-text-stroke: 1px #fff;
   font-size: calc(clamp(20px, 5vw, 32px) * 1.38);
   font-family: Arial, Helvetica, sans-serif;
   font-weight: 700;
+  display: block;
+}
+html[data-modo="classic"] .rc-logo-linea:last-child {
+  margin-top: -0.06em;
 }
 html[data-modo="classic"] .rc-logo-punto {
   color: #d62828;
   -webkit-text-stroke: 0;
+}
+html[data-modo="classic"] .rc-logo-punto-boton:hover .rc-logo-punto,
+html[data-modo="classic"] .rc-logo-punto-boton:focus-visible .rc-logo-punto {
+  filter: drop-shadow(0 0 6px rgba(214, 40, 40, 0.7));
 }
 
 /* Fecha/hora/ciudad/dólar en blanco, legibles sobre el header oscuro */
@@ -163,9 +181,9 @@ html[data-modo="classic"] .rc-header-derecha {
   flex-wrap: nowrap;
   flex-shrink: 0;
   grid-column: 3;
-  grid-row: 1 / span 2;
+  grid-row: 1;
   justify-self: end;
-  transform: translateY(10px);
+  align-self: center;
   margin-right: 0.5cm;
 }
 html[data-modo="classic"] .rc-modo-y-carrito {
@@ -186,13 +204,26 @@ html[data-modo="classic"] .rc-perfil-menu {
 }
 html[data-modo="classic"] .rc-modo-y-carrito .rc-perfil-boton {
   width: auto;
+  min-width: 0;
+  min-height: 0;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+html[data-modo="classic"] .rc-modo-y-carrito .rc-perfil-boton:hover,
+html[data-modo="classic"] .rc-modo-y-carrito .rc-perfil-boton:focus-visible {
+  border: none;
+  box-shadow: none;
 }
 html[data-modo="classic"] .rc-perfil-nombre {
-  max-width: 120px;
+  display: none;
 }
 html[data-modo="classic"] .rc-titulo-grupo {
   grid-column: 1;
-  grid-row: 1 / span 2;
+  grid-row: 1;
   justify-self: start;
   margin-left: 0.5cm;
 }
@@ -297,7 +328,6 @@ html[data-modo="classic"] .btn-categoria::after {
 }
 html[data-modo="classic"] .btn-categoria:hover {
   transform: translateY(-2px);
-  color: var(--cl-azul-francia);
 }
 html[data-modo="classic"] .btn-categoria:hover::after {
   transform: scaleX(1);
@@ -341,32 +371,98 @@ html[data-modo="classic"] .rc-buscador input:focus {
 
 @media (max-width: 700px) {
   html[data-modo="classic"] header {
-    padding: 12px 12px 10px;
+    --rc-mobile-classic-edge-padding: 12px;
+    --rc-mobile-classic-content-width: calc(100vw - (var(--rc-mobile-classic-edge-padding) * 2));
+    display: block;
+    padding: 12px var(--rc-mobile-classic-edge-padding) 10px;
   }
   html[data-modo="classic"] .rc-header-superior {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    display: grid;
+    position: relative;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "logo"
+      "search";
+    align-items: start;
+    row-gap: 10px;
+  }
+  html[data-modo="classic"] .rc-titulo-grupo {
+    grid-area: logo;
+    margin-left: 0;
+    min-width: 0;
+    padding-right: 96px;
   }
   html[data-modo="classic"] .rc-header-centro {
+    grid-area: search;
+    width: var(--rc-mobile-classic-content-width);
+    max-width: var(--rc-mobile-classic-content-width);
+    justify-self: center;
     align-items: stretch;
+    align-self: stretch;
   }
   html[data-modo="classic"] .rc-header-derecha {
-    flex-direction: column;
-    align-items: stretch;
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: grid;
+    width: max-content;
+    min-width: max-content;
+    justify-items: end;
+    gap: 6px;
+    margin-right: 0;
+    padding-right: 0;
+  }
+  html[data-modo="classic"] .rc-fecha-hora {
+    order: 2;
+    font-size: 11px;
+    line-height: 1.25;
+    text-align: right;
   }
   html[data-modo="classic"] .rc-modo-y-carrito {
+    order: 1;
+    flex-direction: column;
+    align-items: flex-end;
     justify-content: flex-start;
+    gap: 6px;
     max-width: none;
+    width: max-content;
+    flex-wrap: nowrap;
   }
   html[data-modo="classic"] .rc-perfil-menu {
     width: auto;
+    order: 1;
+  }
+  html[data-modo="classic"] .rc-buscador-header {
+    width: 100%;
+    min-width: 0;
+  }
+  html[data-modo="classic"] #btn-carrito {
+    order: 2;
+    font-size: 13px;
+    padding: 6px 10px;
+    align-self: flex-end;
+  }
+  html[data-modo="classic"] .rc-categorias-classic-wrap {
+    padding: 8px 0 0;
+    width: var(--rc-mobile-classic-content-width);
+    max-width: var(--rc-mobile-classic-content-width);
+    box-sizing: border-box;
   }
   html[data-modo="classic"] .rc-header-nav {
+    width: 100%;
+    max-width: none;
     gap: 8px;
     justify-content: stretch;
   }
+  html[data-modo="classic"] .rc-header-centro,
+  html[data-modo="classic"] .rc-categorias-classic-wrap {
+    margin-left: auto;
+    margin-right: auto;
+  }
   html[data-modo="classic"] .rc-header-nav .categorias-columna {
     flex: 1 1 100%;
+    width: 100%;
     justify-content: stretch;
   }
   html[data-modo="classic"] .fila-principal {
@@ -378,6 +474,137 @@ html[data-modo="classic"] .rc-buscador input:focus {
   html[data-modo="classic"] .btn-categoria,
   html[data-modo="classic"] #categorias .btn-categoria {
     width: 100%;
+  }
+  html[data-modo="classic"] .btn-volver {
+    width: 100%;
+    align-self: stretch;
+  }
+}
+
+@media (max-width: 1024px) {
+  html[data-modo="classic"] body.rc-vista-seccion main#productos {
+    padding: 0 28px 40px;
+  }
+  html[data-modo="classic"] .rc-catalogo-surface {
+    padding: 14px;
+    border-radius: 16px;
+  }
+  html[data-modo="classic"] .control-vista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: stretch;
+  }
+  html[data-modo="classic"] .control-orden {
+    flex: 1 1 240px;
+    min-width: 0;
+  }
+  html[data-modo="classic"] .btn-select-orden {
+    min-width: 0;
+    width: 100%;
+  }
+  html[data-modo="classic"] .grilla {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  html[data-modo="classic"] .selector-marcas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  html[data-modo="classic"] .card.expandida {
+    transform: scale(1.08);
+  }
+}
+
+@media (max-width: 700px) {
+  html[data-modo="classic"] body.rc-vista-seccion main#productos {
+    padding: 0 12px 20px;
+  }
+  html[data-modo="classic"] .rc-catalogo-surface {
+    padding: 12px;
+    border-radius: 14px;
+  }
+  html[data-modo="classic"] .control-vista {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  html[data-modo="classic"] .btn-vista,
+  html[data-modo="classic"] .btn-select-orden {
+    width: 100%;
+    min-width: 0;
+  }
+  html[data-modo="classic"] .control-orden {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  html[data-modo="classic"] .control-orden-etiqueta {
+    font-size: 11px;
+  }
+  html[data-modo="classic"] .grilla {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  html[data-modo="classic"] .card {
+    min-height: 0;
+    padding: 14px;
+  }
+  html[data-modo="classic"] .card.expandida,
+  html[data-modo="classic"] .grilla.lista .card.expandida {
+    transform: none;
+    transform-origin: center;
+  }
+  html[data-modo="classic"] .card .precios,
+  html[data-modo="classic"] .grilla.lista .card .precios {
+    text-align: left;
+  }
+  html[data-modo="classic"] .card-acciones,
+  html[data-modo="classic"] .grilla.lista .card .card-acciones {
+    width: 100%;
+    align-items: stretch;
+  }
+  html[data-modo="classic"] .dropdown-color {
+    width: 100%;
+    min-width: 0;
+  }
+  html[data-modo="classic"] .card .btn-agregar,
+  html[data-modo="classic"] .grilla.lista .card .btn-agregar {
+    width: 100%;
+  }
+  html[data-modo="classic"] .selector-marcas {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  html[data-modo="classic"] .grilla.lista .card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px;
+  }
+  html[data-modo="classic"] .grilla.lista .card h3,
+  html[data-modo="classic"] .grilla.lista .card .selector-colores,
+  html[data-modo="classic"] .grilla.lista .card .precios,
+  html[data-modo="classic"] .grilla.lista .card .card-acciones {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+  html[data-modo="classic"] #panel-carrito {
+    width: 100vw;
+    max-width: 100vw;
+    padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  html[data-modo="classic"] .rc-logout-overlay {
+    padding: 12px;
+  }
+  html[data-modo="classic"] .rc-logout-tarjeta {
+    max-width: none;
+    width: 100%;
+  }
+  html[data-modo="classic"] .rc-logout-acciones {
+    flex-direction: column;
   }
 }
 
@@ -418,6 +645,12 @@ html[data-modo="classic"] .card.expandida {
    compartido por los dos modos (ver .carrousel-recomendados-wrap en
    landing.css, con height:100% para llegar hasta el borde inferior de la
    barra lateral). Acá solo quedan los colores propios de Classic. */
+html[data-modo="classic"] .carrousel-recomendados-wrap {
+  background: linear-gradient(180deg, #2b2b2b 0%, #323232 18%, #3a3a3a 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 18px;
+  padding: 16px;
+}
 .carrousel-recomendados-grid {
   /* min-height:0 (no un piso fijo): sin esto, un flex item con
      grid-template-rows:auto no puede achicarse por debajo del alto natural
@@ -507,6 +740,13 @@ html[data-modo="classic"] .rc-logout-tarjeta button {
   border-radius: 12px;
   font-weight: 800;
 }
+html[data-modo="classic"] #btn-logout-confirmar-si {
+  color: var(--cl-rojo);
+}
+html[data-modo="classic"] #btn-logout-confirmar-si:hover,
+html[data-modo="classic"] #btn-logout-confirmar-si:focus-visible {
+  color: var(--cl-rojo);
+}
 html[data-modo="classic"] .rc-logout-tarjeta button:hover {
   background: #000000;
   border-color: var(--rc-green-dim);
@@ -552,5 +792,117 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
 .tarjeta-recomendado-vacia { justify-content: center; align-items: center; text-align: center; }
 
 @media (max-width: 700px) {
+  html[data-modo="classic"] body:not(.rc-vista-seccion) {
+    min-height: 100dvh;
+  }
+  html[data-modo="classic"] body:not(.rc-vista-seccion) .fila-principal {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-bottom: 12px;
+  }
   .carrousel-recomendados-grid { grid-template-columns: 1fr; }
+  html[data-modo="classic"] body:not(.rc-vista-seccion) main#productos {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: 12px;
+    overflow: hidden;
+    display: flex;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-wrap-mobile {
+    flex: 1 1 auto;
+    height: 100%;
+    padding: 12px;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-viewport {
+    min-height: 0;
+    display: block;
+    height: 100%;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-grid-mobile {
+    min-height: 0;
+    overflow: hidden;
+    display: block;
+    height: 100%;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card {
+    position: relative;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-contador {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    z-index: 2;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado {
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 14px 14px;
+    overflow-y: auto;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado h3 {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.2;
+    padding-right: 48px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: calc(1.2em * 2);
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio {
+    gap: 3px;
+    flex: 1 1 auto;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio strong {
+    font-size: 16px;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio span {
+    font-size: 11px;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones {
+    opacity: 1;
+    pointer-events: auto;
+    margin-top: auto;
+    gap: 6px;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones .dropdown-color-boton,
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones .btn-agregar {
+    font-size: 10px;
+    padding: 5px 8px;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-puntos {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-punto {
+    width: 8px;
+    min-width: 8px;
+    height: 8px;
+    padding: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    border: none;
+    box-shadow: none;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-punto.activo {
+    background: var(--cl-rojo);
+  }
 }
