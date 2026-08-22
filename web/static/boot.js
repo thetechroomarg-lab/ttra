@@ -187,7 +187,7 @@ if ("serviceWorker" in navigator) {
     const imagenPortada = new Image();
     imagenPortada.onload = mostrarTextoPortada;
     imagenPortada.onerror = mostrarTextoPortada;
-    imagenPortada.src = "/texturas/cordoba%20city.jpg";
+    imagenPortada.src = "/texturas/cordoba-city.jpg";
     if (imagenPortada.complete) mostrarTextoPortada();
     btnPortada.addEventListener("click", () => {
       document.body.classList.add("rc-portada-saliendo");
