@@ -132,7 +132,19 @@ _session_secret = os.environ.get("SESSION_SECRET")
 if not _session_secret:
     logger.warning("SESSION_SECRET no configurado — usando clave de desarrollo, no apta para producción")
     _session_secret = "dev-secret-cambiar-en-produccion"
-app.add_middleware(SessionMiddleware, secret_key=_session_secret, https_only=True)
+_session_https_only_raw = (os.environ.get("SESSION_HTTPS_ONLY") or "").strip().lower()
+if _session_https_only_raw in {"1", "true", "yes", "on"}:
+    _session_https_only = True
+elif _session_https_only_raw in {"0", "false", "no", "off"}:
+    _session_https_only = False
+else:
+    _public_app_url = (os.environ.get("PUBLIC_APP_URL") or "").strip().lower()
+    _session_https_only = bool(
+        os.environ.get("RAILWAY_ENVIRONMENT")
+        or os.environ.get("RAILWAY_PROJECT_ID")
+        or _public_app_url.startswith("https://")
+    )
+app.add_middleware(SessionMiddleware, secret_key=_session_secret, https_only=_session_https_only)
 
 
 def _cargar_productos():

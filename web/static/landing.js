@@ -1880,6 +1880,8 @@ async function cerrarSesionCliente() {
     // Si falla la llamada de red, igual redirigimos: la sesión del server
     // puede seguir viva, pero no tiene sentido bloquear al usuario acá.
   }
+  estadoSesionCliente = null;
+  cerrarMenuPerfil();
   window.location.href = "/";
 }
 
@@ -1916,7 +1918,9 @@ if (btnPerfilToggle && dropdownPerfil) {
 if (linkIrAPerfil) {
   linkIrAPerfil.addEventListener("click", (e) => {
     e.preventDefault();
-    window.location.href = modoVisual === "fallout" ? "/perfil?modo=fallout" : "/perfil";
+    const destinoPerfil = modoVisual === "fallout" ? "/perfil?modo=fallout" : "/perfil";
+    const destinoLogin = `/login.html?volver=${encodeURIComponent(`${location.pathname}${location.search}`)}`;
+    window.location.href = estadoSesionCliente ? destinoPerfil : destinoLogin;
   });
 }
 
@@ -1930,16 +1934,36 @@ async function cargarInicialesHeader() {
   if (!el) return;
   try {
     const r = await fetch("/api/me");
-    if (!r.ok) return;
+    if (!r.ok) {
+      el.textContent = "";
+      return;
+    }
     const datos = await r.json();
     el.textContent = inicialesDe(datos.nombre, datos.apellido);
   } catch {
-    // Sin datos de perfil el header simplemente no muestra iniciales: no es crítico.
+    el.textContent = "";
   }
 }
-cargarInicialesHeader();
 
 const btnLogoutClassic = document.getElementById("btn-logout-classic");
+const btnLogoutFallout = document.getElementById("btn-logout-fallout");
+
+async function sincronizarMenuPerfilSegunSesion(force = false) {
+  const sesion = await obtenerEstadoSesionCliente(force);
+  await cargarInicialesHeader();
+  if (linkIrAPerfil) {
+    linkIrAPerfil.textContent = sesion ? "Ir a perfil" : "Iniciar sesión";
+  }
+  if (btnLogoutClassic) {
+    btnLogoutClassic.classList.toggle("oculto", !sesion);
+  }
+  if (btnLogoutFallout) {
+    btnLogoutFallout.classList.toggle("oculto", !sesion);
+  }
+  return sesion;
+}
+sincronizarMenuPerfilSegunSesion(true);
+
 if (btnLogoutClassic) {
   btnLogoutClassic.addEventListener("click", () => {
     cerrarMenuPerfil();
@@ -1947,7 +1971,6 @@ if (btnLogoutClassic) {
   });
 }
 
-const btnLogoutFallout = document.getElementById("btn-logout-fallout");
 if (btnLogoutFallout) {
   btnLogoutFallout.addEventListener("click", mostrarConfirmacionLogout);
 }

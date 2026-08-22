@@ -206,7 +206,7 @@ html[data-modo="classic"] .rc-modo-y-carrito .rc-perfil-boton {
   width: auto;
   min-width: 0;
   min-height: 0;
-  justify-content: center;
+  justify-content: flex-end;
   padding: 0;
   border: none;
   border-radius: 0;
@@ -219,7 +219,12 @@ html[data-modo="classic"] .rc-modo-y-carrito .rc-perfil-boton:focus-visible {
   box-shadow: none;
 }
 html[data-modo="classic"] .rc-perfil-nombre {
-  display: none;
+  display: inline-block;
+  max-width: 3ch;
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: 800;
+  color: #fff;
 }
 html[data-modo="classic"] .rc-titulo-grupo {
   grid-column: 1;
