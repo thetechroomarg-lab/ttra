@@ -32,11 +32,22 @@ def test_admin_clientes_historial_muestra_pedidos_del_cliente(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     fake = appmod.get_client()
     cliente_id = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]["id"]
+    fake.table("interacciones_cliente").insert({
+        "id": "inter-1",
+        "cliente_id": cliente_id,
+        "anon_id": "anon-juan",
+        "session_id": "anon-juan",
+        "tipo_evento": "search",
+        "metadata": {"termino": "iphone"},
+        "fecha": "2026-08-22T18:35:00+00:00",
+    }).execute()
 
     r = c.get(f"/admin/clientes/{cliente_id}/historial")
     assert r.status_code == 200
     assert "Juan" in r.text
     assert "iPhone 13" in r.text
+    assert "Buscó" in r.text
+    assert "iphone" in r.text
 
 
 def test_admin_clientes_historial_requiere_sesion_admin():

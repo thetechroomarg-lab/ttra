@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, pedidos
+from web import buscador, catalogo, cuentas, interacciones, pedidos
 from web.email_util import EnvioEmailError, enviar_email
 from web.supabase_client import get_client
 from web.chat import responder
@@ -303,6 +303,9 @@ _ADMIN_CLIENTES_ESTILO = """
   .btn-historial:hover { color:#fff; }
   .panel-header a.volver { color:#dfe2e8; text-decoration:none; font-weight:700; font-size:14px; }
   .panel-header a.volver:hover { color:#fff; }
+  .subseccion { margin-top:22px; }
+  .subseccion h2 { color:#f2f4f8; font-size:17px; margin:0 0 10px; }
+  .subseccion p { margin:0 0 12px; color:#9aa0ab; font-size:13px; }
 </style>
 """
 
@@ -418,28 +421,98 @@ def admin_clientes_historial(cliente_id: str, request: Request):
 
     filas_pedidos = client.table("pedidos").select("*").eq("cliente_id", cliente_id).execute().data
     filas_pedidos.sort(key=lambda p: p.get("fecha", ""), reverse=True)
+    try:
+        filas_interacciones = client.table("interacciones_cliente").select("*").eq("cliente_id", cliente_id).execute().data
+    except Exception:
+        filas_interacciones = []
+    filas_interacciones.sort(key=lambda i: i.get("fecha", ""), reverse=True)
+
+    def _tipo_evento_label(tipo):
+        return {
+            "view_home": "Vio home",
+            "view_category": "Vio categoría",
+            "search": "Buscó",
+            "view_product": "Abrió producto",
+            "open_product_photo": "Abrió fotos",
+            "open_product_specs": "Abrió especificaciones",
+            "share_product": "Compartió producto",
+            "add_to_cart": "Agregó al carrito",
+            "remove_from_cart": "Quitó del carrito",
+            "begin_checkout": "Inició checkout",
+            "complete_checkout": "Completó checkout",
+            "login": "Inició sesión",
+            "register": "Creó cuenta",
+        }.get(tipo, tipo or "Interacción")
+
+    def _detalle_interaccion(fila):
+        partes = []
+        if fila.get("producto_nombre"):
+            partes.append(f"Producto: {html.escape(fila['producto_nombre'])}")
+        if fila.get("categoria"):
+            partes.append(f"Categoría: {html.escape(fila['categoria'])}")
+        if fila.get("marca"):
+            partes.append(f"Marca: {html.escape(fila['marca'])}")
+        metadata = fila.get("metadata") or {}
+        termino = (metadata.get("termino") or "").strip()
+        if termino:
+            partes.append(f"Búsqueda: {html.escape(termino)}")
+        color = (metadata.get("color") or "").strip()
+        if color:
+            partes.append(f"Color: {html.escape(color)}")
+        cantidad = metadata.get("cantidad")
+        if cantidad not in (None, ""):
+            partes.append(f"Cantidad: {html.escape(str(cantidad))}")
+        vista = (metadata.get("vista") or "").strip()
+        if vista:
+            partes.append(f"Vista: {html.escape(vista)}")
+        return " · ".join(partes) if partes else "—"
 
     if not filas_pedidos:
-        filas_html = '<tr><td colspan="4" class="vacio">Este cliente todavía no tiene pedidos confirmados.</td></tr>'
+        filas_pedidos_html = '<tr><td colspan="4" class="vacio">Este cliente todavía no tiene pedidos confirmados.</td></tr>'
     else:
-        def _fila(p):
-            fecha, dia, hora = _formatear_fecha_ar(p.get("fecha", ""))
-            productos = html.escape(" | ".join(p.get("productos", [])))
-            return f"<tr><td>{fecha}</td><td>{dia}</td><td>{hora}</td><td>{productos}</td></tr>"
+        def _fila_pedido(fila):
+            fecha, dia, hora = _formatear_fecha_ar(fila.get("fecha", ""))
+            detalle = html.escape(" | ".join(fila.get("productos", []))) or "—"
+            return f"<tr><td>{fecha}</td><td>{dia}</td><td>{hora}</td><td>{detalle}</td></tr>"
 
-        filas_html = "".join(_fila(p) for p in filas_pedidos)
+        filas_pedidos_html = "".join(_fila_pedido(fila) for fila in filas_pedidos)
+
+    if not filas_interacciones:
+        filas_interacciones_html = '<tr><td colspan="5" class="vacio">Este cliente todavía no tiene historial de vistas registrado.</td></tr>'
+    else:
+        def _fila_interaccion(fila):
+            fecha, dia, hora = _formatear_fecha_ar(fila.get("fecha", ""))
+            return (
+                f"<tr><td>{fecha}</td><td>{dia}</td><td>{hora}</td>"
+                f"<td>{html.escape(_tipo_evento_label(fila.get('tipo_evento', '')))}</td>"
+                f"<td>{_detalle_interaccion(fila)}</td></tr>"
+            )
+
+        filas_interacciones_html = "".join(_fila_interaccion(fila) for fila in filas_interacciones)
 
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Historial — {html.escape(nombre_cliente)}</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
 <div class="panel">
   <div class="panel-header">
-    <h1>Historial de {html.escape(nombre_cliente) or "cliente"} ({len(filas_pedidos)})</h1>
+    <h1>Historial de {html.escape(nombre_cliente) or "cliente"}</h1>
     <a class="volver" href="/admin/clientes">← Volver</a>
   </div>
-  <table>
-    <thead><tr><th>Fecha</th><th>Día</th><th>Hora</th><th>Productos</th></tr></thead>
-    <tbody>{filas_html}</tbody>
-  </table>
+  <section class="subseccion">
+    <h2>Pedidos confirmados</h2>
+    <p>Acá ves todo lo que el cliente cargó al carrito y confirmó.</p>
+    <table>
+      <thead><tr><th>Fecha</th><th>Día</th><th>Hora</th><th>Productos</th></tr></thead>
+      <tbody>{filas_pedidos_html}</tbody>
+    </table>
+  </section>
+  <section class="subseccion">
+    <h2>Historial de vistas</h2>
+    <p>Acá ves todas las interacciones de navegación, vistas e íconos que tocó el cliente.</p>
+    <table>
+      <thead><tr><th>Fecha</th><th>Día</th><th>Hora</th><th>Evento</th><th>Detalle</th></tr></thead>
+      <tbody>{filas_interacciones_html}</tbody>
+    </table>
+  </section>
 </div>
 </body></html>"""
 
@@ -463,6 +536,20 @@ def _sesion_activa(request: Request):
 
 def _debe_cambiar_password(request: Request):
     return bool(request.session.get("debe_cambiar_password"))
+
+
+def _anon_id_request(request: Request):
+    return (request.headers.get("X-TTRA-ANON-ID") or "").strip() or None
+
+
+def _vincular_interacciones_anonimas(client, request: Request, cliente_id: str):
+    anon_id = _anon_id_request(request)
+    if not anon_id:
+        return
+    try:
+        interacciones.vincular_interacciones_anonimas(client, anon_id, cliente_id)
+    except Exception:
+        logger.exception("No se pudieron vincular interacciones anónimas para %s", cliente_id)
 
 
 @app.get("/login")
@@ -490,6 +577,13 @@ def registro(entrada: RegistroIn, request: Request):
         logger.exception("No se pudo completar el registro (¿Supabase no disponible?)")
         return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
     if cliente["requiere_confirmacion_email"]:
+        _vincular_interacciones_anonimas(client, request, cliente["id"])
+        try:
+            interacciones.guardar_interaccion(
+                client, "register", cliente_id=cliente["id"], anon_id=_anon_id_request(request)
+            )
+        except Exception:
+            logger.exception("No se pudo guardar evento register para %s", cliente["id"])
         request.session.clear()
         return {
             "ok": True,
@@ -499,13 +593,21 @@ def registro(entrada: RegistroIn, request: Request):
     request.session["cliente_id"] = cliente["id"]
     request.session["cliente_nombre"] = cliente["nombre"]
     request.session["debe_cambiar_password"] = False
+    _vincular_interacciones_anonimas(client, request, cliente["id"])
+    try:
+        interacciones.guardar_interaccion(
+            client, "register", cliente_id=cliente["id"], anon_id=_anon_id_request(request)
+        )
+    except Exception:
+        logger.exception("No se pudo guardar evento register para %s", cliente["id"])
     return {"ok": True, "requiere_confirmacion_email": False}
 
 
 @app.post("/login")
 def login(entrada: LoginIn, request: Request):
     try:
-        cliente = cuentas.login_cliente(get_client(), get_client(), entrada.email, entrada.password)
+        client = get_client()
+        cliente = cuentas.login_cliente(client, client, entrada.email, entrada.password)
     except cuentas.EmailNoConfirmadoError as e:
         return JSONResponse({"error": str(e)}, status_code=403)
     except Exception:
@@ -516,6 +618,13 @@ def login(entrada: LoginIn, request: Request):
     request.session["cliente_id"] = cliente["id"]
     request.session["cliente_nombre"] = cliente["nombre"]
     request.session["debe_cambiar_password"] = cliente["debe_cambiar_password"]
+    _vincular_interacciones_anonimas(client, request, cliente["id"])
+    try:
+        interacciones.guardar_interaccion(
+            client, "login", cliente_id=cliente["id"], anon_id=_anon_id_request(request)
+        )
+    except Exception:
+        logger.exception("No se pudo guardar evento login para %s", cliente["id"])
     return {"ok": True, "debe_cambiar_password": cliente["debe_cambiar_password"]}
 
 
@@ -614,6 +723,38 @@ def pagina_perfil(request: Request):
 
 class PedidoIn(BaseModel):
     productos: list[str]
+
+
+class InteraccionIn(BaseModel):
+    tipo_evento: str
+    producto_nombre: str | None = None
+    categoria: str | None = None
+    marca: str | None = None
+    session_id: str | None = None
+    metadata: dict = Field(default_factory=dict)
+
+
+@app.post("/api/interacciones")
+def api_interacciones(entrada: InteraccionIn, request: Request):
+    anon_id = _anon_id_request(request)
+    cliente_id = request.session.get("cliente_id")
+    if not cliente_id and not anon_id:
+        return {"ok": True}
+    try:
+        interacciones.guardar_interaccion(
+            get_client(),
+            entrada.tipo_evento,
+            cliente_id=cliente_id,
+            anon_id=anon_id,
+            session_id=entrada.session_id,
+            producto_nombre=entrada.producto_nombre,
+            categoria=entrada.categoria,
+            marca=entrada.marca,
+            metadata=entrada.metadata,
+        )
+    except Exception:
+        logger.exception("No se pudo guardar interacción %s", entrada.tipo_evento)
+    return {"ok": True}
 
 
 @app.post("/api/pedidos")

@@ -26,6 +26,27 @@ const loginErrorEl = document.getElementById("login-error");
 const loginOkEl = document.getElementById("login-ok");
 const registroErrorEl = document.getElementById("registro-error");
 const registroOkEl = document.getElementById("registro-ok");
+const CLAVE_ANON_ID = "ttra_anon_id";
+
+function generarIdLocal() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  return `ttra-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function obtenerAnonId() {
+  try {
+    let anonId = localStorage.getItem(CLAVE_ANON_ID);
+    if (!anonId) {
+      anonId = generarIdLocal();
+      localStorage.setItem(CLAVE_ANON_ID, anonId);
+    }
+    return anonId;
+  } catch {
+    return generarIdLocal();
+  }
+}
 
 function limpiarMensajes() {
   [loginErrorEl, loginOkEl, registroErrorEl, registroOkEl, document.getElementById("cambiar-error")]
@@ -96,7 +117,10 @@ async function enviar(url, body, errorEl) {
   errorEl.textContent = "";
   const r = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "X-TTRA-ANON-ID": obtenerAnonId(),
+    },
     body: JSON.stringify(body),
   });
   const datos = await r.json();

@@ -25,8 +25,22 @@ create table if not exists pedidos (
   fecha timestamptz not null default now()
 );
 
+create table if not exists interacciones_cliente (
+  id uuid primary key default gen_random_uuid(),
+  cliente_id uuid references clientes(id) on delete cascade,
+  anon_id text,
+  session_id text,
+  tipo_evento text not null,
+  producto_nombre text,
+  categoria text,
+  marca text,
+  metadata jsonb not null default '{}'::jsonb,
+  fecha timestamptz not null default now()
+);
+
 -- El backend siempre accede con la service_role key (bypassa RLS). No hay
 -- llamadas a Supabase desde el browser, así que dejamos RLS activado sin
 -- policies: cualquier acceso con la clave anon/pública queda bloqueado.
 alter table clientes enable row level security;
 alter table pedidos enable row level security;
+alter table interacciones_cliente enable row level security;

@@ -78,6 +78,13 @@ function marcaLogoHtml(marca, clase) {
   return `<img class="${clase}" src="/logos/${slug}.svg" alt="" />`;
 }
 
+function productoSeccion(producto) {
+  for (const [seccion, productos] of Object.entries(SECCIONES_DATA)) {
+    if ((productos || []).some((p) => p.nombre === producto.nombre)) return seccion;
+  }
+  return producto.categoria || null;
+}
+
 // Orden y etiquetas de los botones de categoría en la pantalla principal.
 // "clave" es el nombre de sección tal cual lo devuelve /api/catalogo;
 // "etiqueta" es lo que se muestra en el botón (más corto en el caso de accesorios).
@@ -107,6 +114,7 @@ const ORDEN_MARCAS = [
 const CLAVE_CARRITO = "ttra_carrito";
 const CLAVE_CARRITO_PENDIENTE = "ttra_carrito_pendiente";
 const CLAVE_CHECKOUT_PENDIENTE = "ttra_checkout_pendiente";
+const CLAVE_ANON_ID = "ttra_anon_id";
 const WHATSAPP_NUMERO = "543512145217";
 
 let SECCIONES_DATA = {};
@@ -118,6 +126,49 @@ let subFiltrosActivos = new Set(); // marcas (o "Notebooks"/"Macbooks") elegidas
 let filtroMarcaGlobal = null; // marca elegida desde el carrousel o "Búsqueda por Marca", busca en TODO el catálogo
 let modoVista = "cards"; // "cards" | "lista"
 let criterioOrden = "default"; // default | nombre-asc | nombre-desc | precio-asc | precio-desc
+let ultimoEventoVista = "";
+let ultimoTerminoBuscado = "";
+let timeoutBusquedaTrack = null;
+
+function generarIdLocal() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  return `ttra-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function obtenerAnonId() {
+  try {
+    let anonId = localStorage.getItem(CLAVE_ANON_ID);
+    if (!anonId) {
+      anonId = generarIdLocal();
+      localStorage.setItem(CLAVE_ANON_ID, anonId);
+    }
+    return anonId;
+  } catch {
+    return generarIdLocal();
+  }
+}
+
+function registrarInteraccion(tipoEvento, datos = {}) {
+  const anonId = obtenerAnonId();
+  const payload = {
+    tipo_evento: tipoEvento,
+    producto_nombre: datos.producto_nombre || null,
+    categoria: datos.categoria || null,
+    marca: datos.marca || null,
+    session_id: anonId,
+    metadata: datos.metadata || {},
+  };
+  fetch("/api/interacciones", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-TTRA-ANON-ID": anonId,
+    },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
 let estadoSesionCliente = null;
 // Classic es siempre el modo de arranque (ver boot.js); Fallout solo dura
 // mientras no se recarga la página, no se persiste entre refrescos.
@@ -1394,6 +1445,27 @@ function wireTarjetasRecomendadas(el) {
         });
       });
     }
+    const botonesInfo = card.querySelectorAll(".tarjeta-recomendado-iconos .btn-foto");
+    const btnFoto = botonesInfo[0];
+    const btnSpecs = botonesInfo[1];
+    if (btnFoto) {
+      btnFoto.addEventListener("click", () => {
+        registrarInteraccion("open_product_photo", {
+          producto_nombre: producto.nombre,
+          categoria: productoSeccion(producto),
+          marca: producto.marca || "Otras marcas",
+        });
+      });
+    }
+    if (btnSpecs) {
+      btnSpecs.addEventListener("click", () => {
+        registrarInteraccion("open_product_specs", {
+          producto_nombre: producto.nombre,
+          categoria: productoSeccion(producto),
+          marca: producto.marca || "Otras marcas",
+        });
+      });
+    }
     if (btnAgregar) {
       btnAgregar.addEventListener("click", async () => {
         await agregarAlCarritoProtegido(producto, btnAgregar.dataset.color || null);
@@ -1406,6 +1478,15 @@ function wireTarjetasRecomendadas(el) {
         compartirProducto(card.dataset.nombre);
       });
     }
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("button, a, .dropdown-color, li")) return;
+      registrarInteraccion("view_product", {
+        producto_nombre: producto.nombre,
+        categoria: productoSeccion(producto),
+        marca: producto.marca || "Otras marcas",
+        metadata: { vista: "recomendado" },
+      });
+    });
   });
 }
 
@@ -2352,6 +2433,12 @@ function mostrarAvisoFlotante(mensaje) {
 // lo manda al registro y, ya creada la cuenta, lo redirige acá mismo (ver
 // login.js).
 async function compartirProducto(nombre) {
+  const producto = catalogoPlano.find((p) => p.nombre === nombre);
+  registrarInteraccion("share_product", {
+    producto_nombre: nombre,
+    categoria: producto ? productoSeccion(producto) : null,
+    marca: producto ? (producto.marca || "Otras marcas") : null,
+  });
   const params = new URLSearchParams();
   params.set("producto", nombre);
   if (modoVisual === "fallout") params.set("modo", "fallout");
@@ -2419,6 +2506,7 @@ function pintarCategorias() {
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       seccionActiva = btn.dataset.seccion;
+      registrarInteraccion("view_category", { categoria: seccionActiva });
       subFiltrosActivos = new Set();
       document.getElementById("input-busqueda").value = "";
       pushEstadoNav();
@@ -2446,6 +2534,10 @@ function pintarSelectorMarcas(el) {
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       filtroMarcaGlobal = btn.dataset.marca;
+      registrarInteraccion("view_category", {
+        categoria: "Búsqueda por Marca",
+        marca: filtroMarcaGlobal,
+      });
       seccionActiva = null;
       subFiltrosActivos = new Set();
       pushEstadoNav();
@@ -2489,6 +2581,10 @@ function pintarSubNav(seccion) {
       } else {
         subFiltrosActivos.add(clave);
       }
+      registrarInteraccion("view_category", {
+        categoria: seccionActiva,
+        marca: clave === "Todos" ? null : clave,
+      });
       pushEstadoNav();
       reproducirTransicionTV(actualizarVista);
     });
@@ -2665,6 +2761,26 @@ function pintarGrilla(el, productos, mensajeVacio) {
         });
       });
     }
+    const btnFoto = card.querySelector(".btn-foto[href*='google']");
+    if (btnFoto) {
+      btnFoto.addEventListener("click", () => {
+        registrarInteraccion("open_product_photo", {
+          producto_nombre: p.nombre,
+          categoria: productoSeccion(p),
+          marca: p.marca || "Otras marcas",
+        });
+      });
+    }
+    const btnSpecs = card.querySelectorAll(".btn-foto[href*='google']").item(1);
+    if (btnSpecs) {
+      btnSpecs.addEventListener("click", () => {
+        registrarInteraccion("open_product_specs", {
+          producto_nombre: p.nombre,
+          categoria: productoSeccion(p),
+          marca: p.marca || "Otras marcas",
+        });
+      });
+    }
     btnAgregar.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (!card.classList.contains("expandida")) {
@@ -2683,6 +2799,12 @@ function pintarGrilla(el, productos, mensajeVacio) {
     }
     card.addEventListener("click", (e) => {
       if (e.target.closest("button, a, .dropdown-color, li")) return;
+      registrarInteraccion("view_product", {
+        producto_nombre: p.nombre,
+        categoria: productoSeccion(p),
+        marca: p.marca || "Otras marcas",
+        metadata: { vista: modoVista },
+      });
       seleccionarCard();
     });
   });
@@ -2747,6 +2869,10 @@ function actualizarVista() {
   detenerCarrouselCiudad();
 
   if (enInicio) {
+    if (ultimoEventoVista !== "home") {
+      ultimoEventoVista = "home";
+      registrarInteraccion("view_home");
+    }
     pintarCarrouselSegunModo(productosEl);
     return;
   }
@@ -2782,6 +2908,19 @@ function actualizarVista() {
     : base;
 
   const mensajeVacio = termino ? "Lo siento, pero no hay resultados :(" : mensajeVacioSinFiltro;
+
+  const claveVista = [
+    seccionActiva || "",
+    filtroMarcaGlobal || "",
+    [...subFiltrosActivos].sort().join("|"),
+  ].join("::");
+  if (ultimoEventoVista !== claveVista) {
+    ultimoEventoVista = claveVista;
+    registrarInteraccion("view_category", {
+      categoria: seccionActiva || "General",
+      marca: filtroMarcaGlobal || null,
+    });
+  }
 
   pintarGrilla(productosEl, productos, mensajeVacio);
 }
@@ -2921,6 +3060,12 @@ function agregarAlCarrito(producto, color) {
     });
   }
   guardarCarrito(carrito);
+  registrarInteraccion("add_to_cart", {
+    producto_nombre: producto.nombre,
+    categoria: productoSeccion(producto),
+    marca: producto.marca || "Otras marcas",
+    metadata: { color: color || "", cantidad: 1 },
+  });
   abrirCarrito();
 }
 
@@ -2977,6 +3122,19 @@ function cambiarCantidad(nombre, color, delta) {
 }
 
 function quitarDelCarrito(nombre, color) {
+  const catalogoPlano = {};
+  Object.values(SECCIONES_DATA).forEach((productos) => {
+    (productos || []).forEach((p) => {
+      catalogoPlano[p.nombre] = p;
+    });
+  });
+  const producto = catalogoPlano[nombre];
+  registrarInteraccion("remove_from_cart", {
+    producto_nombre: nombre,
+    categoria: producto ? productoSeccion(producto) : null,
+    marca: producto ? (producto.marca || "Otras marcas") : null,
+    metadata: { color: color || "" },
+  });
   guardarCarrito(cargarCarrito().filter((it) => !mismoItemCarrito(it, nombre, color)));
 }
 
@@ -3105,6 +3263,9 @@ function armarMensajeWhatsapp(carrito) {
 }
 
 function derivarCheckoutAWhatsapp(carrito) {
+  registrarInteraccion("complete_checkout", {
+    metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
+  });
   const mensaje = armarMensajeWhatsapp(carrito);
   registrarPedidoEnClientes(carrito);
   borrarCheckoutPendiente();
@@ -3135,12 +3296,28 @@ function registrarPedidoEnClientes(carrito) {
 document.getElementById("btn-whatsapp").addEventListener("click", async () => {
   const carrito = cargarCarrito();
   if (carrito.length === 0) return;
+  registrarInteraccion("begin_checkout", {
+    metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
+  });
   if (!(await asegurarSesionParaCheckout())) return;
   derivarCheckoutAWhatsapp(carrito);
 });
 document.getElementById("btn-volver").addEventListener("click", volverUnPaso);
 document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);
-document.getElementById("input-busqueda").addEventListener("input", actualizarVista);
+document.getElementById("input-busqueda").addEventListener("input", () => {
+  actualizarVista();
+  clearTimeout(timeoutBusquedaTrack);
+  timeoutBusquedaTrack = setTimeout(() => {
+    const termino = document.getElementById("input-busqueda").value.trim();
+    if (!termino || termino === ultimoTerminoBuscado) return;
+    ultimoTerminoBuscado = termino;
+    registrarInteraccion("search", {
+      categoria: seccionActiva || "General",
+      marca: filtroMarcaGlobal || null,
+      metadata: { termino },
+    });
+  }, 450);
+});
 
 // --- Carita animada de caracteres, junto al título ---
 
