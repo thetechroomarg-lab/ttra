@@ -19,6 +19,17 @@ const destinoTrasIngresar = productoCompartido ? `/${location.search}` : "/";
 
 const btnVerLoginPassword = document.getElementById("btn-ver-login-password");
 const loginPasswordInput = document.getElementById("login-password");
+const loginErrorEl = document.getElementById("login-error");
+const loginOkEl = document.getElementById("login-ok");
+const registroErrorEl = document.getElementById("registro-error");
+const registroOkEl = document.getElementById("registro-ok");
+
+function limpiarMensajes() {
+  [loginErrorEl, loginOkEl, registroErrorEl, registroOkEl, document.getElementById("cambiar-error")]
+    .filter(Boolean)
+    .forEach((el) => { el.textContent = ""; });
+}
+
 if (btnVerLoginPassword && loginPasswordInput) {
   btnVerLoginPassword.addEventListener("click", () => {
     const visible = loginPasswordInput.type === "text";
@@ -47,14 +58,18 @@ fetch("/api/me")
   .catch(() => {});
 
 function mostrarRegistro() {
+  limpiarMensajes();
   formLogin.classList.add("oculto");
   formRegistro.classList.remove("oculto");
+  formCambiarObligatorio.classList.add("oculto");
   tituloLogin.textContent = TITULO_REGISTRO;
 }
 
 function mostrarLogin() {
+  limpiarMensajes();
   formRegistro.classList.add("oculto");
   formLogin.classList.remove("oculto");
+  formCambiarObligatorio.classList.add("oculto");
   tituloLogin.textContent = TITULO_LOGIN;
 }
 
@@ -74,6 +89,7 @@ linkIrALogin.addEventListener("click", (e) => {
 });
 
 async function enviar(url, body, errorEl) {
+  limpiarMensajes();
   errorEl.textContent = "";
   const r = await fetch(url, {
     method: "POST",
@@ -122,25 +138,31 @@ formCambiarObligatorio.addEventListener("submit", async (e) => {
 
 formRegistro.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const errorEl = document.getElementById("registro-error");
   const password = document.getElementById("registro-password").value;
   const repetir = document.getElementById("registro-password-repetir").value;
+  const email = document.getElementById("registro-email").value;
   if (password !== repetir) {
-    errorEl.textContent = "Las contraseñas no coinciden.";
+    registroErrorEl.textContent = "Las contraseñas no coinciden.";
     return;
   }
   const datos = await enviar(
     "/registro",
     {
-      username: document.getElementById("registro-username").value,
       nombre: document.getElementById("registro-nombre").value,
       apellido: document.getElementById("registro-apellido").value,
       celular: document.getElementById("registro-celular").value,
-      email: document.getElementById("registro-email").value,
+      email,
       password,
     },
-    errorEl,
+    registroErrorEl,
   );
   if (!datos) return;
+  if (datos.requiere_confirmacion_email) {
+    formRegistro.reset();
+    mostrarLogin();
+    document.getElementById("login-email").value = email;
+    loginOkEl.textContent = "Te mandamos un mail para verificar tu cuenta. Confirmalo antes de ingresar.";
+    return;
+  }
   window.location.href = destinoTrasIngresar;
 });

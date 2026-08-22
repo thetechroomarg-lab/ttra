@@ -14,21 +14,57 @@ def test_registro_exitoso_crea_sesion(monkeypatch):
     c = _cliente(monkeypatch)
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
+        "email": "juan@x.com", "password": "clave1234",
     })
     assert r.status_code == 200
-    assert r.json() == {"ok": True}
+    assert r.json() == {"ok": True, "requiere_confirmacion_email": False}
+
+
+def test_registro_pasa_redirect_publico_a_supabase(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://thetechroomarg.com")
+
+    r = c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234",
+    })
+
+    assert r.status_code == 200
+    assert fake.auth.last_sign_up_payload["options"]["email_redirect_to"] == (
+        "https://thetechroomarg.com/login.html"
+    )
+
+
+def test_registro_pendiente_de_confirmacion_no_crea_sesion(monkeypatch):
+    fake = FakeSupabaseClient()
+    fake.auth.next_sign_up_session = None
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://thetechroomarg.com", follow_redirects=False)
+
+    r = c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234",
+    })
+
+    assert r.status_code == 200
+    assert r.json() == {
+        "ok": True,
+        "requiere_confirmacion_email": True,
+        "email_redirect_to": "https://thetechroomarg.com/login.html",
+    }
+    assert c.get("/api/me").status_code == 401
 
 
 def test_registro_celular_duplicado_devuelve_400(monkeypatch):
     c = _cliente(monkeypatch)
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
+        "email": "juan@x.com", "password": "clave1234",
     })
     r = c.post("/registro", json={
         "nombre": "Otro", "apellido": "Nombre", "celular": "3511234567",
-        "email": "otro@x.com", "password": "clave1234", "username": "otronombre",
+        "email": "otro@x.com", "password": "clave1234",
     })
     assert r.status_code == 400
     assert "error" in r.json()
@@ -38,7 +74,7 @@ def test_login_correcto(monkeypatch):
     c = _cliente(monkeypatch)
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
+        "email": "juan@x.com", "password": "clave1234",
     })
     r = c.post("/login", json={"email": "juan@x.com", "password": "clave1234"})
     assert r.status_code == 200
@@ -58,7 +94,7 @@ def test_password_temporal_fuerza_cambio_antes_de_usar_el_resto_de_la_app(monkey
     c = _cliente(monkeypatch)
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
+        "email": "juan@x.com", "password": "clave1234",
     })
     fake = appmod.get_client()
     cliente_id = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]["id"]
@@ -87,7 +123,7 @@ def test_logout_limpia_sesion(monkeypatch):
     c = _cliente(monkeypatch)
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
+        "email": "juan@x.com", "password": "clave1234",
     })
     r = c.post("/logout")
     assert r.status_code == 200
@@ -103,7 +139,7 @@ def test_registro_con_supabase_caido_da_mensaje_claro(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "username": "juanperez",
+        "email": "juan@x.com", "password": "clave1234",
     })
     assert r.status_code == 503
     assert "error" in r.json()

@@ -17,10 +17,6 @@ class EmailNoConfirmadoError(Exception):
     pass
 
 
-class UsernameDuplicadoError(Exception):
-    pass
-
-
 class PasswordActualIncorrectaError(Exception):
     pass
 
@@ -36,23 +32,13 @@ def normalizar_celular(celular):
     return digitos
 
 
-def registrar_cliente(client, nombre, apellido, celular, email, password, username):
+def registrar_cliente(client, nombre, apellido, celular, email, password, email_redirect_to=None):
     nombre = nombre.strip()
     apellido = apellido.strip()
     celular_norm = normalizar_celular(celular)
     email = email.strip().lower()
-    username = (username or "").strip()
     if not celular_norm:
         raise ValueError("El celular ingresado no es válido")
-    if not username:
-        raise ValueError("El nombre de usuario es obligatorio")
-
-    # El username es un campo propio, no una llave de vinculación de leads
-    # invitados (esa sigue siendo solo el celular) — simplemente tiene que
-    # ser único entre cuentas ya activas.
-    existentes_username = client.table("clientes").select("*").eq("username", username).execute().data
-    if any(f.get("auth_id") for f in existentes_username):
-        raise UsernameDuplicadoError(f"Ya existe una cuenta con el usuario {username}")
 
     # La vinculación de fila "invitada" es SOLO por celular, nunca por email:
     # el email no prueba que quien se registra sea el dueño real de la
@@ -65,14 +51,13 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, userna
     lead_invitado = next((f for f in existentes_celular if not f.get("auth_id")), None)
 
     try:
-        auth_resp = client.auth.sign_up({
-            "email": email, "password": password,
-            # Sin esto, el link del mail de confirmación usa el "Site URL"
-            # configurado en el dashboard de Supabase — que quedó en
-            # localhost desde que se armó el proyecto en desarrollo — y
-            # redirige mal aunque la confirmación en sí sí se procese.
-            "options": {"email_redirect_to": "https://thetechroomarg.com/login.html"},
-        })
+        credenciales = {"email": email, "password": password}
+        if email_redirect_to:
+            # Si el proyecto de Supabase tiene el "Site URL" mal cargado
+            # (ej. localhost viejo de desarrollo), el mail de confirmación
+            # igual puede apuntar al destino correcto si se lo pasamos acá.
+            credenciales["options"] = {"email_redirect_to": email_redirect_to}
+        auth_resp = client.auth.sign_up(credenciales)
     except Exception as e:
         # Solo es EmailDuplicadoError si el mensaje indica email duplicado
         if "already registered" in str(e).lower() or "already exists" in str(e).lower():
@@ -81,7 +66,7 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, userna
         raise
     auth_id = auth_resp.user.id
 
-    datos = {"auth_id": auth_id, "nombre": nombre, "apellido": apellido, "email": email, "username": username}
+    datos = {"auth_id": auth_id, "nombre": nombre, "apellido": apellido, "email": email}
     if lead_invitado:
         propio_id = lead_invitado["id"]
         datos["celular"] = celular_norm
@@ -121,8 +106,6 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, userna
         error_msg = str(error_final).lower()
         if "clientes_email_key" in error_msg:
             raise EmailDuplicadoError(f"Ya existe una cuenta con el email {email}") from error_final
-        if "clientes_username_key" in error_msg:
-            raise UsernameDuplicadoError(f"Ya existe una cuenta con el usuario {username}") from error_final
         if "clientes_auth_id_fkey" in error_msg:
             # Se agotaron los reintentos y la ventana de propagación del
             # auth_id nunca cerró: no es un duplicado de ningún campo, así
@@ -133,8 +116,20 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, userna
         # se trata como duplicado de celular, que es el caso más común.
         raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}") from error_final
 
-    return {"id": propio_id, "auth_id": auth_id, "nombre": nombre,
-            "apellido": apellido, "celular": celular_norm, "email": email, "username": username}
+    requiere_confirmacion_email = (
+        getattr(auth_resp, "session", None) is None
+        and not getattr(getattr(auth_resp, "user", None), "email_confirmed_at", None)
+    )
+
+    return {
+        "id": propio_id,
+        "auth_id": auth_id,
+        "nombre": nombre,
+        "apellido": apellido,
+        "celular": celular_norm,
+        "email": email,
+        "requiere_confirmacion_email": requiere_confirmacion_email,
+    }
 
 
 def login_cliente(client, client_datos, email, password):
@@ -170,7 +165,6 @@ def login_cliente(client, client_datos, email, password):
     perfil = filas[0]
     return {"id": perfil["id"], "auth_id": auth_id, "nombre": perfil["nombre"],
             "apellido": perfil["apellido"], "celular": perfil["celular"], "email": perfil["email"],
-            "username": perfil.get("username"),
             "debe_cambiar_password": bool(perfil.get("debe_cambiar_password"))}
 
 
@@ -181,29 +175,21 @@ def obtener_cliente(client, cliente_id):
     perfil = filas[0]
     return {"id": perfil["id"], "nombre": perfil["nombre"], "apellido": perfil["apellido"],
             "celular": perfil.get("celular"), "email": perfil.get("email"),
-            "username": perfil.get("username"),
             "debe_cambiar_password": bool(perfil.get("debe_cambiar_password"))}
 
 
-def actualizar_cliente(client, cliente_id, nombre, apellido, celular, username):
+def actualizar_cliente(client, cliente_id, nombre, apellido, celular):
     nombre = nombre.strip()
     apellido = apellido.strip()
     celular_norm = normalizar_celular(celular)
-    username = (username or "").strip()
     if not celular_norm:
         raise ValueError("El celular ingresado no es válido")
-    if not username:
-        raise ValueError("El nombre de usuario es obligatorio")
-
-    existentes_username = client.table("clientes").select("*").eq("username", username).execute().data
-    if any(f.get("auth_id") and f["id"] != cliente_id for f in existentes_username):
-        raise UsernameDuplicadoError(f"Ya existe una cuenta con el usuario {username}")
 
     existentes_celular = client.table("clientes").select("*").eq("celular", celular_norm).execute().data
     if any(f.get("auth_id") and f["id"] != cliente_id for f in existentes_celular):
         raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}")
 
-    datos = {"nombre": nombre, "apellido": apellido, "celular": celular_norm, "username": username}
+    datos = {"nombre": nombre, "apellido": apellido, "celular": celular_norm}
     client.table("clientes").update(datos).eq("id", cliente_id).execute()
     return obtener_cliente(client, cliente_id)
 

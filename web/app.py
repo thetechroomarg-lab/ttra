@@ -49,6 +49,17 @@ _gasto = {}  # sesion -> USD acumulado
 app = FastAPI()
 
 
+def _public_app_base_url(request: Request):
+    base_publica = (os.environ.get("PUBLIC_APP_URL") or "").strip()
+    if base_publica:
+        return base_publica.rstrip("/")
+    return str(request.base_url).rstrip("/")
+
+
+def _public_login_url(request: Request):
+    return f"{_public_app_base_url(request)}/login.html"
+
+
 @app.middleware("http")
 async def sin_cache_estaticos(request: Request, call_next):
     """Evita que el navegador se quede con una versión vieja de JS/CSS
@@ -427,7 +438,6 @@ class RegistroIn(BaseModel):
     celular: str
     email: EmailStr
     password: str = Field(min_length=8)
-    username: str = Field(min_length=3)
 
 
 class LoginIn(BaseModel):
@@ -459,17 +469,25 @@ def registro(entrada: RegistroIn, request: Request):
         client = get_client()
         cliente = cuentas.registrar_cliente(
             client, entrada.nombre, entrada.apellido, entrada.celular,
-            entrada.email, entrada.password, entrada.username,
+            entrada.email, entrada.password,
+            email_redirect_to=_public_login_url(request),
         )
-    except (cuentas.CelularDuplicadoError, cuentas.EmailDuplicadoError,
-            cuentas.UsernameDuplicadoError, ValueError) as e:
+    except (cuentas.CelularDuplicadoError, cuentas.EmailDuplicadoError, ValueError) as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo completar el registro (¿Supabase no disponible?)")
         return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    if cliente["requiere_confirmacion_email"]:
+        request.session.clear()
+        return {
+            "ok": True,
+            "requiere_confirmacion_email": True,
+            "email_redirect_to": _public_login_url(request),
+        }
     request.session["cliente_id"] = cliente["id"]
     request.session["cliente_nombre"] = cliente["nombre"]
-    return {"ok": True}
+    request.session["debe_cambiar_password"] = False
+    return {"ok": True, "requiere_confirmacion_email": False}
 
 
 @app.post("/login")
@@ -532,7 +550,6 @@ class ActualizarMeIn(BaseModel):
     nombre: str
     apellido: str
     celular: str
-    username: str = Field(min_length=3)
 
 
 @app.put("/api/me")
@@ -542,9 +559,9 @@ def api_me_actualizar(entrada: ActualizarMeIn, request: Request):
     try:
         cliente = cuentas.actualizar_cliente(
             get_client(), request.session["cliente_id"],
-            entrada.nombre, entrada.apellido, entrada.celular, entrada.username,
+            entrada.nombre, entrada.apellido, entrada.celular,
         )
-    except (cuentas.CelularDuplicadoError, cuentas.UsernameDuplicadoError, ValueError) as e:
+    except (cuentas.CelularDuplicadoError, ValueError) as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo actualizar el perfil del cliente")

@@ -8,11 +8,13 @@ class _FakeAuthUser:
     def __init__(self, id_, email):
         self.id = id_
         self.email = email
+        self.email_confirmed_at = None
 
 
 class _FakeAuthResponse:
-    def __init__(self, user):
+    def __init__(self, user, session=None):
         self.user = user
+        self.session = session
 
 
 class _FakeAdminAuth:
@@ -49,18 +51,21 @@ class FakeAuth:
         self._passwords = {}
         self.admin = _FakeAdminAuth(self._usuarios_por_email, self._passwords)
         self.emails_con_reset_pedido = []
+        self.last_sign_up_payload = None
+        self.next_sign_up_session = object()
 
     def reset_password_for_email(self, email):
         self.emails_con_reset_pedido.append(email.strip().lower())
 
     def sign_up(self, credenciales):
+        self.last_sign_up_payload = credenciales
         email = credenciales["email"].strip().lower()
         if email in self._usuarios_por_email:
             raise Exception("User already registered")
         user = _FakeAuthUser(id_=str(uuid.uuid4()), email=email)
         self._usuarios_por_email[email] = user
         self._passwords[email] = credenciales["password"]
-        return _FakeAuthResponse(user)
+        return _FakeAuthResponse(user, session=self.next_sign_up_session)
 
     def sign_in_with_password(self, credenciales):
         email = credenciales["email"].strip().lower()

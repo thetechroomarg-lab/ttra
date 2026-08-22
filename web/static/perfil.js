@@ -18,7 +18,6 @@ async function cargarPerfil() {
     }
     document.getElementById("perfil-nombre").value = datos.nombre || "";
     document.getElementById("perfil-apellido").value = datos.apellido || "";
-    document.getElementById("perfil-username").value = datos.username || "";
     document.getElementById("perfil-email").value = datos.email || "";
     document.getElementById("perfil-celular").value = datos.celular || "";
   } catch {
@@ -42,7 +41,6 @@ formPerfil.addEventListener("submit", async (e) => {
       body: JSON.stringify({
         nombre: document.getElementById("perfil-nombre").value,
         apellido: document.getElementById("perfil-apellido").value,
-        username: document.getElementById("perfil-username").value,
         celular: document.getElementById("perfil-celular").value,
       }),
     });
