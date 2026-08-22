@@ -5,21 +5,28 @@
       "costo": 915.0,
       "proveedor": "em",
       "colores": [
-        "Black",
         "Mist Blue"
       ]
     },
     {
-      "nombre": "iPhone 17 Pro Max 256GB",
-      "costo": 1237.5,
+      "nombre": "iPhone 17 Pro 256GB",
+      "costo": 1160.0,
       "proveedor": "em",
       "colores": [
-        "Silver",
+        "Orange",
         "Blue"
       ]
     },
     {
-      "nombre": "MacMini M1 8CPU 8GPU 512GB 8GB",
+      "nombre": "iPhone 17 Pro Max 256GB",
+      "costo": 1250.0,
+      "proveedor": "em",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Mac Mini M1 8CPU 8GPU 512GB 8GB",
       "costo": 650.0,
       "proveedor": "em",
       "colores": [
@@ -27,7 +34,7 @@
       ]
     },
     {
-      "nombre": "MacMini M4 10GPU 10CPU 256GB 16GB",
+      "nombre": "Mac Mini M4 10CPU 10GPU 256GB 16GB",
       "costo": 980.0,
       "proveedor": "em",
       "colores": [
@@ -39,7 +46,6 @@
       "costo": 850.0,
       "proveedor": "em",
       "colores": [
-        "Silver",
         "Indigo",
         "Blush",
         "Citrus"
@@ -50,13 +56,12 @@
       "costo": 950.0,
       "proveedor": "em",
       "colores": [
-        "Indigo",
         "Blush",
         "Citrus"
       ]
     },
     {
-      "nombre": "Macbook Air 13 M5 10CPU 8GPU 512GB 16GB",
+      "nombre": "MacBook Air 13 M5 10CPU 8GPU 512GB 16GB",
       "costo": 1400.0,
       "proveedor": "em",
       "colores": [
@@ -67,7 +72,7 @@
       ]
     },
     {
-      "nombre": "Macbook Air 15 M5 10CPU 10GPU 512GB 16GB",
+      "nombre": "MacBook Air 15 M5 10CPU 10GPU 512GB 16GB",
       "costo": 1610.0,
       "proveedor": "em",
       "colores": [
@@ -75,7 +80,7 @@
       ]
     },
     {
-      "nombre": "Macbook Air 15 M5 10CPU 10GPU 1TB 16GB",
+      "nombre": "MacBook Air 15 M5 10CPU 10GPU 1TB 16GB",
       "costo": 1950.0,
       "proveedor": "em",
       "colores": [
@@ -99,7 +104,7 @@
       ]
     },
     {
-      "nombre": "MacBook Pro 14 M5 PRO 15CPU 16GPU 1TB 24GB",
+      "nombre": "MacBook Pro 14 M5 Pro 15CPU 16GPU 1TB 24GB",
       "costo": 2850.0,
       "proveedor": "em",
       "colores": [
@@ -108,7 +113,7 @@
       ]
     },
     {
-      "nombre": "MacBook Pro 16 M5 PRO 18CPU 20GPU 1TB 24GB",
+      "nombre": "MacBook Pro 16 M5 Pro 18CPU 20GPU 1TB 24GB",
       "costo": 2950.0,
       "proveedor": "em",
       "colores": [
@@ -126,11 +131,19 @@
     },
     {
       "nombre": "iPad A16 11\" 2025 128GB",
-      "costo": 503.33,
+      "costo": 510.0,
       "proveedor": "em",
       "colores": [
         "Blue",
         "Pink",
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "iPad A16 11\" 2025 128GB Amarillo",
+      "costo": 490.0,
+      "proveedor": "em",
+      "colores": [
         "Yellow"
       ]
     },
@@ -144,12 +157,21 @@
     },
     {
       "nombre": "iPad Air M4 11\" 128GB",
-      "costo": 750.0,
+      "costo": 820.0,
       "proveedor": "em",
       "colores": [
+        "Space Gray",
         "Purple",
         "Blue",
         "Starlight"
+      ]
+    },
+    {
+      "nombre": "iPad Air M4 11\" 256GB",
+      "costo": 920.0,
+      "proveedor": "em",
+      "colores": [
+        "Purple"
       ]
     },
     {
@@ -159,7 +181,7 @@
       "colores": [
         "Purple",
         "Starlight",
-        "Space gray"
+        "Space Gray"
       ]
     },
     {
@@ -180,7 +202,23 @@
       ]
     },
     {
-      "nombre": "Watch Xiaomi Band 7",
+      "nombre": "iPad Air M4 13\" 256GB",
+      "costo": 1090.0,
+      "proveedor": "em",
+      "colores": [
+        "Purple"
+      ]
+    },
+    {
+      "nombre": "iPad Pro 11 M5 256GB",
+      "costo": 1200.0,
+      "proveedor": "em",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Xiaomi Mi Band 7",
       "costo": 23.0,
       "proveedor": "em",
       "colores": [
@@ -189,11 +227,11 @@
     },
     {
       "nombre": "Apple Watch SE 3ra Gen 40mm",
-      "costo": 300.0,
+      "costo": 320.0,
       "proveedor": "em",
       "colores": [
-        "Starlight Sport Band",
-        "Midnight Sport Band"
+        "Starlight",
+        "Midnight"
       ]
     },
     {
@@ -201,24 +239,24 @@
       "costo": 330.0,
       "proveedor": "em",
       "colores": [
-        "Starlight Sport Band",
-        "Midnight Sport Band"
+        "Starlight",
+        "Midnight"
       ]
     },
     {
-      "nombre": "Apple Watch Serie 10 + CELL 42mm Titanium Milanese Loop",
+      "nombre": "Apple Watch Serie 10 + Cell 42mm",
       "costo": 790.0,
       "proveedor": "em",
       "colores": [
-        "Gold"
+        "Titanium Gold"
       ]
     },
     {
-      "nombre": "Apple Watch Serie 10 + CELL 46mm Titanium Milanese Loop",
+      "nombre": "Apple Watch Serie 10 + Cell 46mm",
       "costo": 820.0,
       "proveedor": "em",
       "colores": [
-        "Natural"
+        "Titanium Natural"
       ]
     },
     {
@@ -226,9 +264,9 @@
       "costo": 420.0,
       "proveedor": "em",
       "colores": [
-        "Jet Black Sport Band",
-        "Rose Gold Sport Band",
-        "Space Gray Sport Band"
+        "Jet Black",
+        "Rose Gold",
+        "Space Gray"
       ]
     },
     {
@@ -236,17 +274,17 @@
       "costo": 450.0,
       "proveedor": "em",
       "colores": [
-        "Silver Purple Fog Sport Band",
-        "Space Gray Sport Band"
+        "Silver",
+        "Space Gray"
       ]
     },
     {
-      "nombre": "Apple Watch Ultra 3 GPS + CELL 49mm",
-      "costo": 820.0,
+      "nombre": "Apple Watch Ultra 3 GPS + Cell 49mm",
+      "costo": 850.0,
       "proveedor": "em",
       "colores": [
-        "Black Alpine Loop",
-        "Anchor Blue Ocean Band"
+        "Black Titanium",
+        "Blue Ocean Titanium"
       ]
     },
     {
@@ -264,7 +302,7 @@
       "costo": 200.0,
       "proveedor": "em",
       "colores": [
-        "Blanco"
+        "White"
       ]
     },
     {
@@ -277,11 +315,41 @@
       ]
     },
     {
+      "nombre": "Magic Mouse 2",
+      "costo": 140.0,
+      "proveedor": "em",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Magic Mouse 2 White",
+      "costo": 120.0,
+      "proveedor": "em",
+      "colores": [
+        "White"
+      ]
+    },
+    {
+      "nombre": "Apple AirTag Pack por 4 unidades",
+      "costo": 130.0,
+      "proveedor": "em"
+    },
+    {
       "nombre": "Apple Magic Keyboard iPad A16",
       "costo": 350.0,
       "proveedor": "em",
       "colores": [
         "White"
+      ]
+    },
+    {
+      "nombre": "Magic Keyboard 11\" iPad Pro / iPad Air",
+      "costo": 425.0,
+      "proveedor": "em",
+      "colores": [
+        "White",
+        "Black"
       ]
     },
     {
@@ -293,12 +361,12 @@
       ]
     },
     {
-      "nombre": "Cargador Original en caja MacBook 67W USB C",
+      "nombre": "Cargador Original MacBook 67W USB C",
       "costo": 60.0,
       "proveedor": "em"
     },
     {
-      "nombre": "Cargador 20W Original Carga Rapida",
+      "nombre": "Cargador 20W Original iPhone",
       "costo": 25.0,
       "proveedor": "em"
     },
@@ -316,22 +384,24 @@
       ]
     },
     {
-      "nombre": "Pencil PRO",
-      "costo": 155.0,
-      "proveedor": "em",
-      "colores": [
-        "con iPad",
-        "sin iPad"
-      ]
+      "nombre": "Apple Pencil Pro (con iPad)",
+      "costo": 150.0,
+      "proveedor": "em"
     },
     {
-      "nombre": "Pencil USB C",
-      "costo": 145.0,
-      "proveedor": "em",
-      "colores": [
-        "con iPad",
-        "sin iPad"
-      ]
+      "nombre": "Apple Pencil USB C (con iPad)",
+      "costo": 140.0,
+      "proveedor": "em"
+    },
+    {
+      "nombre": "Apple Pencil Pro (sin iPad)",
+      "costo": 160.0,
+      "proveedor": "em"
+    },
+    {
+      "nombre": "Apple Pencil USB C (sin iPad)",
+      "costo": 150.0,
+      "proveedor": "em"
     }
   ]
 }

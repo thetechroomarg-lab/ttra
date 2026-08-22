@@ -4,13 +4,13 @@ import web.app as appmod
 from tests.fakes_supabase import FakeSupabaseClient
 
 
-def test_landing_sin_sesion_muestra_login(monkeypatch):
+def test_landing_sin_sesion_muestra_index(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
     c = TestClient(appmod.app, base_url="https://testserver")
     r = c.get("/")
     assert r.status_code == 200
-    assert "THE TECH ROOM ARG — Ingresar" in r.text
+    assert "THE TECH ROOM ARG — Catálogo" in r.text
 
 
 def test_landing_con_sesion_muestra_index(monkeypatch):
@@ -26,15 +26,13 @@ def test_landing_con_sesion_muestra_index(monkeypatch):
     assert "THE TECH ROOM ARG — Catálogo" in r.text
 
 
-def test_index_html_directo_sin_sesion_no_sirve_la_landing(monkeypatch):
-    """El StaticFiles mount serviría /index.html tal cual, sin pasar por el
-    chequeo de sesión de GET "/" — hay que bloquear ese atajo."""
+def test_index_html_directo_sin_sesion_sirve_la_landing(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
-    c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    c = TestClient(appmod.app, base_url="https://testserver")
     r = c.get("/index.html")
-    assert r.status_code in (302, 307)
-    assert r.headers["location"] == "/"
+    assert r.status_code == 200
+    assert "THE TECH ROOM ARG — Catálogo" in r.text
 
 
 def test_index_html_directo_con_sesion_sigue_funcionando(monkeypatch):
@@ -72,15 +70,13 @@ def test_triple_barra_sin_sesion_no_sirve_la_landing(monkeypatch):
     assert r.headers["location"] == "/"
 
 
-def test_index_html_con_barra_final_sin_sesion_no_sirve_la_landing(monkeypatch):
-    """"/index.html/" normaliza a "/index.html" tras sacar la barra final —
-    StaticFiles también lo serviría como el archivo real."""
+def test_index_html_con_barra_final_sin_sesion_sirve_la_landing(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
-    c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    c = TestClient(appmod.app, base_url="https://testserver")
     r = c.get("/index.html/")
-    assert r.status_code in (302, 307)
-    assert r.headers["location"] == "/"
+    assert r.status_code == 200
+    assert "THE TECH ROOM ARG — Catálogo" in r.text
 
 
 def test_catalogo_html_mayusculas_sin_sesion_no_sirve_la_landing(monkeypatch):
@@ -108,15 +104,13 @@ def test_segmentos_punto_percent_encoded_sin_sesion_no_sirven_la_landing(monkeyp
         assert r.headers["location"] == "/"
 
 
-def test_index_html_via_segmentos_punto_sin_sesion_no_sirve_la_landing(monkeypatch):
-    """"/foo/../index.html" normaliza a "/index.html" — tiene que gatear
-    igual que pedir "/index.html" directo."""
+def test_index_html_via_segmentos_punto_sin_sesion_sirve_la_landing(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
-    c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    c = TestClient(appmod.app, base_url="https://testserver")
     r = c.get("/foo/%2e%2e/index.html")
-    assert r.status_code in (302, 307)
-    assert r.headers["location"] == "/"
+    assert r.status_code == 200
+    assert "THE TECH ROOM ARG — Catálogo" in r.text
 
 
 def test_login_html_con_barra_final_sigue_siendo_publico(monkeypatch):

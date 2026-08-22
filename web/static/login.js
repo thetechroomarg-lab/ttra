@@ -14,8 +14,11 @@ const TITULO_CAMBIAR_OBLIGATORIO = "Elegí tu contraseña nueva";
 // que conservar ese query string al mandarlo de vuelta a "/" después de
 // loguearse o registrarse, así landing.js puede abrir el producto
 // directamente en vez de perderlo en el camino.
-const productoCompartido = new URLSearchParams(location.search).get("producto");
-const destinoTrasIngresar = productoCompartido ? `/${location.search}` : "/";
+const paramsPantalla = new URLSearchParams(location.search);
+const productoCompartido = paramsPantalla.get("producto");
+const forzarRegistro = paramsPantalla.get("registro") === "1";
+const volverTrasIngresar = paramsPantalla.get("volver");
+const destinoTrasIngresar = volverTrasIngresar || (productoCompartido ? `/${location.search}` : "/");
 
 const btnVerLoginPassword = document.getElementById("btn-ver-login-password");
 const loginPasswordInput = document.getElementById("login-password");
@@ -76,7 +79,7 @@ function mostrarLogin() {
 // Quien abre un link compartido probablemente no tenga cuenta todavía —
 // arranca directo en el form de registro (puede pasarse a login con el
 // link de siempre si ya tiene una).
-if (productoCompartido) mostrarRegistro();
+if (productoCompartido || forzarRegistro) mostrarRegistro();
 
 linkIrARegistro.addEventListener("click", (e) => {
   e.preventDefault();

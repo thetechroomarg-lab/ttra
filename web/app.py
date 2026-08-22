@@ -71,7 +71,7 @@ async def sin_cache_estaticos(request: Request, call_next):
     return response
 
 
-_RUTAS_HTML_PUBLICAS = {"/login.html"}
+_RUTAS_HTML_PUBLICAS = {"/login.html", "/index.html"}
 
 
 def _normalizar_ruta(path):
@@ -698,7 +698,7 @@ async def admin_subir_productos(request: Request, x_admin_token: str = Header(de
 
 @app.get("/")
 def pagina_inicio(request: Request):
-    if not _sesion_activa(request) or _debe_cambiar_password(request):
+    if _sesion_activa(request) and _debe_cambiar_password(request):
         return FileResponse(str(BASE / "static" / "login.html"))
     return FileResponse(str(BASE / "static" / "index.html"))
 

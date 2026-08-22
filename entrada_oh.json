@@ -2,7 +2,7 @@
   "items": [
     {
       "nombre": "CG Candado con Contraseña Negro",
-      "costo": 4.57,
+      "costo": 4.51,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -10,7 +10,7 @@
     },
     {
       "nombre": "Genérico Cable iPhone USB C a USB C Mallado 3,0 Premium",
-      "costo": 4.03,
+      "costo": 3.98,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -18,15 +18,23 @@
     },
     {
       "nombre": "Generico Malla Silicona 20mm",
-      "costo": 3.7,
+      "costo": 3.65,
       "proveedor": "oh",
       "colores": [
         "Azul"
       ]
     },
     {
+      "nombre": "Generico Malla Silicona 22mm",
+      "costo": 3.65,
+      "proveedor": "oh",
+      "colores": [
+        "Negro"
+      ]
+    },
+    {
       "nombre": "Genérico Malla Silicona Band 9 Active",
-      "costo": 3.87,
+      "costo": 3.82,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -34,7 +42,7 @@
     },
     {
       "nombre": "Noax  Dispensador Vinos Noax Flux",
-      "costo": 11.87,
+      "costo": 11.74,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -42,23 +50,31 @@
     },
     {
       "nombre": "NOAX Adaptador USB Wi-Fi y Bluetooth Noax ADP01",
-      "costo": 7.73,
+      "costo": 7.66,
       "proveedor": "oh",
       "colores": [
         "Negro"
       ]
     },
     {
-      "nombre": "Noax Compresor Portatil Noax AirGo",
-      "costo": 25.47,
+      "nombre": "NOAX Cafetera Espresso Portatil Noax Express 20 Bar",
+      "costo": 35.59,
       "proveedor": "oh",
       "colores": [
-        "Verde Oscuro"
+        "Negro"
+      ]
+    },
+    {
+      "nombre": "NOAX Lapiz Optico Noax Graph",
+      "costo": 4.24,
+      "proveedor": "oh",
+      "colores": [
+        "Negro"
       ]
     },
     {
       "nombre": "Noax Micrófono Noax K9",
-      "costo": 8.03,
+      "costo": 7.96,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -66,7 +82,7 @@
     },
     {
       "nombre": "Noax NOAX Car Play Box",
-      "costo": 17.9,
+      "costo": 17.96,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -74,7 +90,23 @@
     },
     {
       "nombre": "Noax Sacacorchos Noax Sco1",
-      "costo": 7.63,
+      "costo": 7.53,
+      "proveedor": "oh",
+      "colores": [
+        "Negro"
+      ]
+    },
+    {
+      "nombre": "NOAX Transmisor Hdmi Inalámbrico Noax Cnv01 FullHD",
+      "costo": 49.47,
+      "proveedor": "oh",
+      "colores": [
+        "Negro"
+      ]
+    },
+    {
+      "nombre": "Remax Cable Remax Tipo C a C PD 65W",
+      "costo": 3.72,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -82,7 +114,7 @@
     },
     {
       "nombre": "Xiaomi  33W Power Bank 20000 MAh",
-      "costo": 33.43,
+      "costo": 33.12,
       "proveedor": "oh",
       "colores": [
         "Azul"
@@ -90,7 +122,7 @@
     },
     {
       "nombre": "Xiaomi  Cargador Portátil Xiaomi Power Bank P15ZM 10000mAh",
-      "costo": 21.5,
+      "costo": 21.32,
       "proveedor": "oh",
       "colores": [
         "Azul"
@@ -98,7 +130,7 @@
     },
     {
       "nombre": "Xiaomi  Compresor de Aire Mijia Compact Portable",
-      "costo": 40.37,
+      "costo": 39.9,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -106,36 +138,23 @@
     },
     {
       "nombre": "Xiaomi  Compresor de Aire Xiaomi 2 Pro",
-      "costo": 68.87,
+      "costo": 68.06,
       "proveedor": "oh",
       "colores": [
         "Negro"
       ]
     },
     {
-      "nombre": "Xiaomi  Power Bank BHR9341GL 10000mAh 33W Carga Rapida",
-      "costo": 27.07,
-      "proveedor": "oh",
-      "colores": [
-        "Azul"
-      ]
-    },
-    {
       "nombre": "Xiaomi  Mi Power Bank 20000mAh BHR9738GL",
-      "costo": 27.97,
+      "costo": 27.7,
       "proveedor": "oh",
       "colores": [
         "Gris Oscuro"
       ]
     },
     {
-      "nombre": "Xiaomi Cable USB A Xiaomi Braided",
-      "costo": 5.4,
-      "proveedor": "oh"
-    },
-    {
       "nombre": "Xiaomi Cafetera Xiaomi Semi automatic Espresso Machine",
-      "costo": 109.83,
+      "costo": 108.82,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -143,7 +162,7 @@
     },
     {
       "nombre": "Xiaomi Destornillador Xiaomi WowStick 1F+",
-      "costo": 48.33,
+      "costo": 47.76,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -151,7 +170,7 @@
     },
     {
       "nombre": "Xiaomi Humidifier 2 Lite",
-      "costo": 36.6,
+      "costo": 36.25,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -159,7 +178,7 @@
     },
     {
       "nombre": "Xiaomi Mi Body Composition Scale S400",
-      "costo": 34.83,
+      "costo": 34.51,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -167,7 +186,7 @@
     },
     {
       "nombre": "Xiaomi Mi Portable Air Pump 2",
-      "costo": 49.5,
+      "costo": 47.27,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -175,7 +194,7 @@
     },
     {
       "nombre": "Xiaomi Mi Portable Photo Printer 1S",
-      "costo": 84.9,
+      "costo": 83.91,
       "proveedor": "oh",
       "colores": [
         "Silver"
@@ -183,7 +202,7 @@
     },
     {
       "nombre": "Xiaomi Mi Portable Photo Printer Paper",
-      "costo": 13.47,
+      "costo": 13.29,
       "proveedor": "oh",
       "colores": [
         "White"
@@ -191,7 +210,7 @@
     },
     {
       "nombre": "Xiaomi Mi Smart Scale S200",
-      "costo": 24.07,
+      "costo": 23.85,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -199,7 +218,7 @@
     },
     {
       "nombre": "Xiaomi Mi Wi-Fi Range Extender Pro",
-      "costo": 16.43,
+      "costo": 16.28,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -207,7 +226,7 @@
     },
     {
       "nombre": "Xiaomi Mijia Lint Remover 2",
-      "costo": 21.17,
+      "costo": 20.99,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -215,12 +234,12 @@
     },
     {
       "nombre": "Xiaomi Pack 10 Pilas Xiaomi AA Alkaline",
-      "costo": 4.03,
+      "costo": 3.98,
       "proveedor": "oh"
     },
     {
       "nombre": "Xiaomi Routers Xiaomi Mesh System WiFi Dual Band AC1200 5 GHz 867 Mbps Pack 2",
-      "costo": 43.0,
+      "costo": 42.6,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -228,23 +247,15 @@
     },
     {
       "nombre": "Xiaomi Wireless Mouse 3",
-      "costo": 16.6,
+      "costo": 16.45,
       "proveedor": "oh",
       "colores": [
         "Blanco"
       ]
     },
     {
-      "nombre": "Xiaomi Zoom Floor Selfie Stick Tripod 62",
-      "costo": 44.6,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ]
-    },
-    {
       "nombre": "Xiaomi  Aspiradora Mi Vacuum Mini",
-      "costo": 51.77,
+      "costo": 51.32,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -252,7 +263,7 @@
     },
     {
       "nombre": "Xiaomi  Aspiradora Robot Xiaomi Robot Vacuum S40C",
-      "costo": 182.37,
+      "costo": 180.72,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -260,31 +271,15 @@
     },
     {
       "nombre": "Xiaomi  Xiaomi Robot Vacuum H50 BHR08GUEU",
-      "costo": 444.87,
+      "costo": 440.66,
       "proveedor": "oh",
       "colores": [
         "Blanco"
-      ]
-    },
-    {
-      "nombre": "AAA Airpods Pro 2 2023 Tipo C",
-      "costo": 16.43,
-      "proveedor": "oh",
-      "colores": [
-        "Blanco"
-      ]
-    },
-    {
-      "nombre": "Haylou HQ5 ANC ENC",
-      "costo": 15.67,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
       ]
     },
     {
       "nombre": "Haylou Mori Plus",
-      "costo": 22.8,
+      "costo": 22.53,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -292,7 +287,7 @@
     },
     {
       "nombre": "Haylou S30 Pro",
-      "costo": 42.4,
+      "costo": 41.91,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -300,7 +295,7 @@
     },
     {
       "nombre": "Haylou S40",
-      "costo": 68.17,
+      "costo": 67.37,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -308,7 +303,7 @@
     },
     {
       "nombre": "JBL Quantum TWS Bluetooth",
-      "costo": 86.5,
+      "costo": 85.72,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -316,15 +311,7 @@
     },
     {
       "nombre": "JBL Tour Pro 2 Wireless",
-      "costo": 179.1,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ]
-    },
-    {
-      "nombre": "JBL Tune 530BT Wireless",
-      "costo": 50.23,
+      "costo": 180.86,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -332,7 +319,7 @@
     },
     {
       "nombre": "JBL Tune 720 BT",
-      "costo": 56.57,
+      "costo": 56.05,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -340,7 +327,7 @@
     },
     {
       "nombre": "JBL Tune Buds 2 TWS ANC",
-      "costo": 76.73,
+      "costo": 76.05,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -348,7 +335,7 @@
     },
     {
       "nombre": "JBL Tune Flex 2",
-      "costo": 80.83,
+      "costo": 80.1,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -356,7 +343,7 @@
     },
     {
       "nombre": "JBL Wave Beam 2 Bluetooth",
-      "costo": 53.9,
+      "costo": 53.42,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -364,7 +351,7 @@
     },
     {
       "nombre": "JBL Wave Buds 2 ANC",
-      "costo": 50.4,
+      "costo": 49.93,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -372,7 +359,7 @@
     },
     {
       "nombre": "QCY Buds T43",
-      "costo": 19.6,
+      "costo": 19.38,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -380,7 +367,7 @@
     },
     {
       "nombre": "QCY H3 Lite",
-      "costo": 46.7,
+      "costo": 46.15,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -388,7 +375,7 @@
     },
     {
       "nombre": "QCY T13 ANC2",
-      "costo": 30.83,
+      "costo": 30.49,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -396,7 +383,7 @@
     },
     {
       "nombre": "Xiaomi Basic Earphones",
-      "costo": 5.93,
+      "costo": 5.89,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -404,15 +391,7 @@
     },
     {
       "nombre": "Xiaomi Buds 6 Play",
-      "costo": 12.67,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ]
-    },
-    {
-      "nombre": "Xiaomi Redmi Buds 8 Active",
-      "costo": 23.53,
+      "costo": 12.57,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -420,7 +399,15 @@
     },
     {
       "nombre": "Xiaomi Neo Wireless",
-      "costo": 61.7,
+      "costo": 61.15,
+      "proveedor": "oh",
+      "colores": [
+        "Negro"
+      ]
+    },
+    {
+      "nombre": "Xiaomi Redmi Buds 8 Active",
+      "costo": 23.32,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -428,23 +415,15 @@
     },
     {
       "nombre": "Xiaomi Redmi Buds 8 Pro",
-      "costo": 75.87,
+      "costo": 75.16,
       "proveedor": "oh",
       "colores": [
         "Negro"
       ]
     },
     {
-      "nombre": "Noax Camara De Seguridad Exterior PTZ A6",
-      "costo": 17.4,
-      "proveedor": "oh",
-      "colores": [
-        "Blanco"
-      ]
-    },
-    {
       "nombre": "Xiaomi Type C Earphones",
-      "costo": 6.73,
+      "costo": 6.64,
       "proveedor": "oh",
       "colores": [
         "Negro",
@@ -452,16 +431,16 @@
       ]
     },
     {
-      "nombre": "Noax Camara De Seguridad Interior PTZ A7",
-      "costo": 12.1,
+      "nombre": "Noax Camara De Seguridad Exterior PTZ A6",
+      "costo": 17.8,
       "proveedor": "oh",
       "colores": [
         "Blanco"
       ]
     },
     {
-      "nombre": "Xiaomi Camara Mi Home Security C300 Dual",
-      "costo": 52.83,
+      "nombre": "Noax Camara De Seguridad Interior PTZ A7",
+      "costo": 11.94,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -469,15 +448,15 @@
     },
     {
       "nombre": "Noax Camara Seguridad Interior Noax PTZ Q6",
-      "costo": 12.1,
+      "costo": 11.97,
       "proveedor": "oh",
       "colores": [
         "Blanco"
       ]
     },
     {
-      "nombre": "Xiaomi Mi Camera 2K",
-      "costo": 37.27,
+      "nombre": "Xiaomi Camara Mi Home Security C300 Dual",
+      "costo": 52.34,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -485,7 +464,7 @@
     },
     {
       "nombre": "Xiaomi Mi Outdoor BW300",
-      "costo": 57.97,
+      "costo": 57.43,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -493,7 +472,7 @@
     },
     {
       "nombre": "Xiaomi Smart C201 Full HD WiFi",
-      "costo": 30.6,
+      "costo": 30.3,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -501,17 +480,17 @@
     },
     {
       "nombre": "Réplica Certificada Cable Lightning Tipo C",
-      "costo": 3.27,
+      "costo": 3.22,
       "proveedor": "oh"
     },
     {
       "nombre": "Réplica Certificada Cargador 20w Iphone",
-      "costo": 7.13,
+      "costo": 7.07,
       "proveedor": "oh"
     },
     {
       "nombre": "Xiaomi  Cargador Portátil Xiaomi 22.5W Lite 10000MAH P16ZM",
-      "costo": 17.43,
+      "costo": 17.27,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -519,7 +498,7 @@
     },
     {
       "nombre": "Xiaomi  Cargador Xiaomi 20W USB C",
-      "costo": 11.3,
+      "costo": 11.18,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -527,7 +506,7 @@
     },
     {
       "nombre": "Xiaomi  Enchufe Inteligente Xiaomi Smart Plug 2 WiFi",
-      "costo": 14.77,
+      "costo": 14.64,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -535,12 +514,12 @@
     },
     {
       "nombre": "Xiaomi Cargador Xiaomi 5W USB A",
-      "costo": 2.23,
+      "costo": 2.24,
       "proveedor": "oh"
     },
     {
       "nombre": "Xiaomi Xiaomi Power Adapter 22.5W USB A 7757EU",
-      "costo": 11.63,
+      "costo": 11.51,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -548,15 +527,7 @@
     },
     {
       "nombre": "Genérico Consola Retro Game Stick Lite 4K 1000 Juegos 2 Joystick",
-      "costo": 21.4,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ]
-    },
-    {
-      "nombre": "KZ EDX PRO",
-      "costo": 12.93,
+      "costo": 21.22,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -564,7 +535,7 @@
     },
     {
       "nombre": "Genérico Funda Silicona Joystick PS4",
-      "costo": 2.2,
+      "costo": 2.17,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -572,15 +543,23 @@
     },
     {
       "nombre": "Microsoft  Joystick Microsoft Xbox One / S  / X",
-      "costo": 65.73,
+      "costo": 65.13,
       "proveedor": "oh",
       "colores": [
         "Blanco"
       ]
     },
     {
+      "nombre": "Sony Joystick Sony PlayStation 5 PS5 DualSense",
+      "costo": 77.01,
+      "proveedor": "oh",
+      "colores": [
+        "Negro"
+      ]
+    },
+    {
       "nombre": "Xiaomi Desk Lamp Lite",
-      "costo": 28.03,
+      "costo": 27.66,
       "proveedor": "oh",
       "colores": [
         "Blanco"
@@ -588,25 +567,20 @@
     },
     {
       "nombre": "Xiaomi Flexible Rechargeable Lamp",
-      "costo": 26.2,
+      "costo": 25.95,
       "proveedor": "oh",
       "colores": [
         "Blanco"
       ]
     },
     {
-      "nombre": "Sandisk Pen Drive 64GB Sandisk CruzerBlade 2.0",
-      "costo": 12.03,
-      "proveedor": "oh"
-    },
-    {
       "nombre": "Kingston  Pendrive 128Gb Usb C 3.2 Kingston Data Traveler 70",
-      "costo": 15.33,
+      "costo": 15.16,
       "proveedor": "oh"
     },
     {
       "nombre": "Generico Mochila Antirrobo 35L",
-      "costo": 15.17,
+      "costo": 15.0,
       "proveedor": "oh",
       "colores": [
         "Gris"
@@ -614,7 +588,7 @@
     },
     {
       "nombre": "Xiaomi Mi Casual Daypack 13.3",
-      "costo": 8.0,
+      "costo": 7.93,
       "proveedor": "oh",
       "colores": [
         "Azul Oscuro",
@@ -623,7 +597,7 @@
     },
     {
       "nombre": "Xtrem Mochila Notebook Xtrem Force 15.6''",
-      "costo": 18.53,
+      "costo": 18.32,
       "proveedor": "oh",
       "colores": [
         "Burdeau",
@@ -632,7 +606,7 @@
     },
     {
       "nombre": "Xtrem Mochila Notebook Xtrem Montreal 15.6''",
-      "costo": 21.07,
+      "costo": 20.82,
       "proveedor": "oh",
       "colores": [
         "Negro",
@@ -641,7 +615,7 @@
     },
     {
       "nombre": "Xtrem Mochila Notebook Xtrem Nebraska 16''",
-      "costo": 29.97,
+      "costo": 29.61,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -649,7 +623,7 @@
     },
     {
       "nombre": "Xiaomi Electric Scooter 6 Ultra BHR08KTGL",
-      "costo": 945.23,
+      "costo": 936.74,
       "proveedor": "oh",
       "colores": [
         "Amarillo"
@@ -657,7 +631,7 @@
     },
     {
       "nombre": "Amazon Echo Dot (5th Gen)",
-      "costo": 77.77,
+      "costo": 77.07,
       "proveedor": "oh",
       "colores": [
         "Charcoal"
@@ -665,7 +639,7 @@
     },
     {
       "nombre": "JBL  Clip 5",
-      "costo": 52.57,
+      "costo": 52.11,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -673,23 +647,7 @@
     },
     {
       "nombre": "JBL  Go Essential 2",
-      "costo": 34.03,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ]
-    },
-    {
-      "nombre": "JBL  Partybox Encore Essential 2",
-      "costo": 280.83,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ]
-    },
-    {
-      "nombre": "JBL  PartyBox Club 120",
-      "costo": 358.03,
+      "costo": 33.72,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -697,7 +655,7 @@
     },
     {
       "nombre": "Philips  Bluetooth 40W Philips TAS7807B",
-      "costo": 79.53,
+      "costo": 78.62,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -705,7 +663,7 @@
     },
     {
       "nombre": "Xiaomi Mi Smart Speaker 12W",
-      "costo": 47.33,
+      "costo": 46.88,
       "proveedor": "oh",
       "colores": [
         "Plata"
@@ -713,7 +671,7 @@
     },
     {
       "nombre": "Xiaomi Mini Asm01g",
-      "costo": 33.37,
+      "costo": 33.06,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -721,7 +679,7 @@
     },
     {
       "nombre": "Xiaomi Parlante Bluetooth Xiaomi Outdoor 30W",
-      "costo": 47.63,
+      "costo": 47.2,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -729,15 +687,7 @@
     },
     {
       "nombre": "Xiaomi Parlante Bluetooth Xiaomi Sound Pocket 5W",
-      "costo": 20.3,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ]
-    },
-    {
-      "nombre": "Xiaomi Speaker Xiaomi Sound Party",
-      "costo": 113.27,
+      "costo": 20.1,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -745,7 +695,7 @@
     },
     {
       "nombre": "SKMEI Reloj Deportivo Skmei 0990",
-      "costo": 25.07,
+      "costo": 24.77,
       "proveedor": "oh",
       "colores": [
         "Negro",
@@ -754,7 +704,7 @@
     },
     {
       "nombre": "Xiaomi Band 10 Pro",
-      "costo": 82.6,
+      "costo": 81.84,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -762,15 +712,15 @@
     },
     {
       "nombre": "Xiaomi Band 9 Active",
-      "costo": 25.47,
+      "costo": 25.16,
       "proveedor": "oh",
       "colores": [
-        "Rosa"
+        "Negro"
       ]
     },
     {
       "nombre": "Xiaomi Mi Band 10",
-      "costo": 46.53,
+      "costo": 46.84,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -778,7 +728,7 @@
     },
     {
       "nombre": "Amazfit Active 2 Square Premium",
-      "costo": 141.37,
+      "costo": 140.07,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -786,7 +736,7 @@
     },
     {
       "nombre": "Amazfit Amazfit Active Max",
-      "costo": 171.5,
+      "costo": 170.03,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -794,23 +744,15 @@
     },
     {
       "nombre": "Amazfit Bip Max A2568",
-      "costo": 109.47,
+      "costo": 108.52,
       "proveedor": "oh",
       "colores": [
         "Negro"
       ]
     },
     {
-      "nombre": "Haylou  LS02 PRO",
-      "costo": 20.67,
-      "proveedor": "oh",
-      "colores": [
-        "Dark Blue"
-      ]
-    },
-    {
-      "nombre": "Haylou Solar 2 Lite",
-      "costo": 23.77,
+      "nombre": "Haylou Iron Neo5",
+      "costo": 21.84,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -818,7 +760,7 @@
     },
     {
       "nombre": "Haylou Solar 5",
-      "costo": 43.83,
+      "costo": 43.32,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -826,7 +768,7 @@
     },
     {
       "nombre": "Haylou Vibe LS30",
-      "costo": 32.47,
+      "costo": 32.11,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -834,15 +776,7 @@
     },
     {
       "nombre": "Haylou Watch 4",
-      "costo": 26.23,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ]
-    },
-    {
-      "nombre": "Haylou Watch 4s",
-      "costo": 33.7,
+      "costo": 25.92,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -850,7 +784,7 @@
     },
     {
       "nombre": "Haylou Watch Solar Ultra",
-      "costo": 50.17,
+      "costo": 49.61,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -858,7 +792,7 @@
     },
     {
       "nombre": "Xiaomi  Watch 2",
-      "costo": 160.9,
+      "costo": 159.51,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -866,7 +800,7 @@
     },
     {
       "nombre": "Xiaomi Amazfit Active 2 Premium A2437",
-      "costo": 148.03,
+      "costo": 146.64,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -874,7 +808,7 @@
     },
     {
       "nombre": "Xiaomi Amazfit Balance 2 A2430GL",
-      "costo": 277.7,
+      "costo": 275.26,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -882,7 +816,7 @@
     },
     {
       "nombre": "Xiaomi Amazfit T-Rex 3 Pro 48mm A2444",
-      "costo": 376.73,
+      "costo": 373.42,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -890,15 +824,31 @@
     },
     {
       "nombre": "Xiaomi Amazfit T-Rex Ultra 2 A2550 44mm",
-      "costo": 514.23,
+      "costo": 509.61,
       "proveedor": "oh",
       "colores": [
         "Negro"
       ]
     },
     {
+      "nombre": "Xiaomi Redmi Watch 5 Active",
+      "costo": 36.38,
+      "proveedor": "oh",
+      "colores": [
+        "Silver"
+      ]
+    },
+    {
       "nombre": "Xiaomi Redmi Watch 5 Lite",
-      "costo": 51.07,
+      "costo": 50.46,
+      "proveedor": "oh",
+      "colores": [
+        "Negro"
+      ]
+    },
+    {
+      "nombre": "Xiaomi Redmi Watch 6",
+      "costo": 90.62,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -906,15 +856,7 @@
     },
     {
       "nombre": "Xiaomi Watch S5 46mm BHR08IVGL",
-      "costo": 184.03,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ]
-    },
-    {
-      "nombre": "Watch ONN Conversor Watch ONN Box Google Tv 4K",
-      "costo": 57.87,
+      "costo": 182.37,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -922,7 +864,7 @@
     },
     {
       "nombre": "Watch ONN Conversor Watch ONN Con Google Tv Full HD",
-      "costo": 49.67,
+      "costo": 49.08,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -930,7 +872,7 @@
     },
     {
       "nombre": "Amazon Fire HD 10 Pantalla 32GB",
-      "costo": 116.47,
+      "costo": 115.43,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -938,7 +880,7 @@
     },
     {
       "nombre": "Noax E-Reader Aura con cover",
-      "costo": 106.83,
+      "costo": 110.53,
       "proveedor": "oh",
       "colores": [
         "Negro"
@@ -946,12 +888,12 @@
     },
     {
       "nombre": "Generico BOLSO MATERO NORDICO C/ SET MATE",
-      "costo": 11.13,
+      "costo": 11.02,
       "proveedor": "oh"
     },
     {
       "nombre": "Genérico TERMO ACERO 1 LITRO / COLOR",
-      "costo": 9.93,
+      "costo": 9.8,
       "proveedor": "oh",
       "colores": [
         "Plateado"
@@ -959,7 +901,7 @@
     },
     {
       "nombre": "Xiaomi Botella Xiaomi Tritan Water Bottle 600ml",
-      "costo": 13.03,
+      "costo": 12.89,
       "proveedor": "oh",
       "colores": [
         "Gris"
@@ -967,7 +909,7 @@
     },
     {
       "nombre": "Xiaomi Sport Water Bottle 1L",
-      "costo": 16.17,
+      "costo": 16.02,
       "proveedor": "oh",
       "colores": [
         "Blanco"

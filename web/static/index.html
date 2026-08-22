@@ -17,62 +17,139 @@
   <div class="rc-crt"></div>
   <audio id="audio-modo-fallout" src="audio/modo-fallout-hover.mp3" preload="none" loop></audio>
   <header>
-    <div class="rc-titulo-grupo">
-      <h1 id="titulo-inicio" class="rc-logo">
-        <span class="rc-logo-linea">THE</span>
-        <span class="rc-logo-linea">TECH</span>
-        <span class="rc-logo-linea">ROOM</span>
-        <span class="rc-logo-linea">ARG</span>
-      </h1>
-      <span class="rc-cara-wrap" aria-hidden="true">
-        <span id="cara-animada-a" class="rc-cara-animada visible">:)</span>
-        <span id="cara-animada-b" class="rc-cara-animada">:)</span>
-      </span>
-    </div>
-    <div class="rc-noticiero">
-      <a id="noticiero-texto" class="rc-noticiero-texto" target="_blank" rel="noopener"></a>
-    </div>
-    <div class="rc-header-derecha">
-      <span class="rc-fecha-hora" aria-hidden="true">
-        <span id="fecha-hora" class="rc-fecha-hora-linea"></span>
-        <span id="ciudad-temp" class="rc-fecha-hora-linea"></span>
-        <span id="dolar-linea" class="rc-fecha-hora-linea"></span>
-      </span>
-      <div class="rc-modo-y-carrito">
-        <div id="rc-perfil-menu" class="rc-perfil-menu">
-          <button id="btn-perfil-toggle" type="button" class="rc-perfil-boton" aria-haspopup="true" aria-expanded="false">
-            <span id="perfil-primer-nombre" class="rc-perfil-nombre"></span>
-            <span class="rc-perfil-icono" aria-hidden="true">
-              <svg class="rc-perfil-icono-svg rc-perfil-icono-classic" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                <circle cx="12" cy="9.5" r="3.6" fill="currentColor"/>
-                <path d="M4.8 19.2c1.1-3.4 3.9-5.2 7.2-5.2s6.1 1.8 7.2 5.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
-              <svg class="rc-perfil-icono-svg rc-perfil-icono-fallout" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                <path d="M8.2 6.4c1.6-1 2.6-1.3 3.8-1.3s2.2.3 3.8 1.3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-                <ellipse cx="12" cy="11.5" rx="4.6" ry="5.1" fill="currentColor"/>
-                <circle cx="10.1" cy="10.6" r="0.85" fill="var(--rc-bg-panel)"/>
-                <circle cx="13.9" cy="10.6" r="0.85" fill="var(--rc-bg-panel)"/>
-                <path d="M9.8 13.4c0.7 0.7 1.5 1 2.2 1s1.5-0.3 2.2-1" fill="none" stroke="var(--rc-bg-panel)" stroke-width="0.9" stroke-linecap="round"/>
-              </svg>
-            </span>
+    <div class="rc-header-superior">
+      <div class="rc-titulo-grupo">
+        <h1 id="titulo-inicio" class="rc-logo">
+          <span class="rc-logo-linea">THE</span>
+          <span class="rc-logo-linea">TECH</span>
+          <span class="rc-logo-linea">ROOM</span>
+          <span class="rc-logo-linea">ARG<span class="rc-logo-punto">.</span></span>
+        </h1>
+        <span class="rc-cara-wrap" aria-hidden="true">
+          <span id="cara-animada-a" class="rc-cara-animada visible">:)</span>
+          <span id="cara-animada-b" class="rc-cara-animada">:)</span>
+        </span>
+      </div>
+      <div class="rc-header-centro">
+        <div class="rc-buscador rc-buscador-header">
+          <svg class="rc-buscador-icono" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+            <line x1="15" y1="15" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input id="input-busqueda" type="text" placeholder="Busca en todo The Tech Room Arg..." autocomplete="off">
+        </div>
+        <div class="rc-noticiero">
+          <a id="noticiero-texto" class="rc-noticiero-texto" target="_blank" rel="noopener"></a>
+        </div>
+      </div>
+      <div class="rc-header-derecha">
+        <span class="rc-fecha-hora" aria-hidden="true">
+          <span id="fecha-hora" class="rc-fecha-hora-linea"></span>
+          <span id="ciudad-temp" class="rc-fecha-hora-linea"></span>
+          <span id="dolar-linea" class="rc-fecha-hora-linea"></span>
+        </span>
+        <div class="rc-modo-y-carrito">
+          <div id="rc-perfil-menu" class="rc-perfil-menu">
+            <button id="btn-perfil-toggle" type="button" class="rc-perfil-boton" aria-haspopup="true" aria-expanded="false">
+              <span id="perfil-primer-nombre" class="rc-perfil-nombre"></span>
+              <span class="rc-perfil-icono" aria-hidden="true">
+                <svg class="rc-perfil-icono-svg rc-perfil-icono-classic" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                  <circle cx="12" cy="9.5" r="3.6" fill="currentColor"/>
+                  <path d="M4.8 19.2c1.1-3.4 3.9-5.2 7.2-5.2s6.1 1.8 7.2 5.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                <svg class="rc-perfil-icono-svg rc-perfil-icono-fallout" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                  <path d="M8.2 6.4c1.6-1 2.6-1.3 3.8-1.3s2.2.3 3.8 1.3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                  <ellipse cx="12" cy="11.5" rx="4.6" ry="5.1" fill="currentColor"/>
+                  <circle cx="10.1" cy="10.6" r="0.85" fill="var(--rc-bg-panel)"/>
+                  <circle cx="13.9" cy="10.6" r="0.85" fill="var(--rc-bg-panel)"/>
+                  <path d="M9.8 13.4c0.7 0.7 1.5 1 2.2 1s1.5-0.3 2.2-1" fill="none" stroke="var(--rc-bg-panel)" stroke-width="0.9" stroke-linecap="round"/>
+                </svg>
+              </span>
+            </button>
+            <div id="rc-perfil-dropdown" class="rc-perfil-dropdown oculto" role="menu">
+              <a id="link-ir-a-perfil" class="rc-perfil-opcion" role="menuitem">Ir a perfil</a>
+              <button id="btn-logout-classic" type="button" class="rc-perfil-opcion rc-perfil-opcion-salir" role="menuitem">Cerrar sesión</button>
+            </div>
+          </div>
+          <button id="btn-modo-fallout" type="button" class="btn-modo" data-modo="fallout">Modo Fallout</button>
+          <button id="btn-modo-classic" type="button" class="btn-modo" data-modo="classic">Modo Classic</button>
+          <button id="btn-carrito" type="button">
+            <svg class="rc-carrito-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            Carrito <span id="carrito-contador">0</span>
           </button>
-          <div id="rc-perfil-dropdown" class="rc-perfil-dropdown oculto" role="menu">
-            <a id="link-ir-a-perfil" class="rc-perfil-opcion" role="menuitem">Ir a perfil</a>
-            <button id="btn-logout-classic" type="button" class="rc-perfil-opcion rc-perfil-opcion-salir" role="menuitem">Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
+    <div class="rc-header-nav">
+      <button id="btn-volver" type="button" class="btn-categoria btn-volver oculto">← Volver</button>
+      <div id="categorias" class="categorias-columna"></div>
+      <div id="sub-nav" class="categorias-columna oculto"></div>
+    </div>
+    <div id="rc-switches-fallout-wrap" class="rc-switch-fallout-wrap">
+      <div class="rc-switches-columna">
+        <div class="rc-switch-fallout-item rc-switch-fallout-item-pipboy">
+          <div class="rc-switch-fallout-grupo">
+            <button id="btn-pipboy-switch" type="button" class="rc-switch-fallout" aria-label="Apagar Pip-Boy" aria-pressed="true">
+              <span class="rc-switch-etiqueta">ON</span>
+              <span class="rc-switch-riel"><span class="rc-switch-perilla"></span></span>
+              <span class="rc-switch-etiqueta">OFF</span>
+            </button>
+            <span class="rc-switch-placa">PIP-BOY ON/OFF</span>
           </div>
         </div>
-        <button id="btn-modo-fallout" type="button" class="btn-modo" data-modo="fallout">Modo Fallout</button>
-        <button id="btn-modo-classic" type="button" class="btn-modo" data-modo="classic">Modo Classic</button>
-        <button id="btn-carrito" type="button">
-          <svg class="rc-carrito-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="9" cy="21" r="1"/>
-            <circle cx="20" cy="21" r="1"/>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-          </svg>
-          Carrito <span id="carrito-contador">0</span>
-        </button>
+        <div class="rc-switch-fallout-item">
+          <div class="rc-switch-fallout-grupo">
+            <button id="btn-logout-fallout" type="button" class="rc-switch-fallout" aria-label="Cerrar sesión" aria-pressed="true">
+              <span class="rc-switch-etiqueta">ON</span>
+              <span class="rc-switch-riel"><span class="rc-switch-perilla"></span></span>
+              <span class="rc-switch-etiqueta">OFF</span>
+            </button>
+            <span class="rc-switch-placa">LOG OUT</span>
+          </div>
+        </div>
+      </div>
+      <div class="rc-boton-musica-item">
+        <div class="rc-boton-musica" aria-label="Reproductor de jazz instrumental en Spotify">
+          <span class="rc-boton-musica-controles">
+            <button type="button" id="btn-musica-rw" class="rc-boton-musica-mini" aria-label="Reiniciar canción (dos toques: canción anterior)" title="Reiniciar canción (2 toques: anterior)">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M11.5 12 L18.5 6.5 V17.5 Z" fill="currentColor"/>
+                <path d="M4.5 12 L11.5 6.5 V17.5 Z" fill="currentColor"/>
+              </svg>
+            </button>
+            <button type="button" id="btn-play-music" class="rc-boton-musica-disco" aria-label="Reproducir/pausar" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="rc-boton-musica-icono rc-icono-play">
+                <path d="M8 5.5 L18 12 L8 18.5 Z" fill="currentColor"/>
+              </svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="rc-boton-musica-icono rc-icono-pause">
+                <rect x="7" y="5.5" width="4" height="13" fill="currentColor"/>
+                <rect x="13" y="5.5" width="4" height="13" fill="currentColor"/>
+              </svg>
+            </button>
+            <button type="button" id="btn-musica-ff" class="rc-boton-musica-mini" aria-label="Siguiente canción" title="Siguiente canción">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12.5 12 L5.5 6.5 V17.5 Z" fill="currentColor"/>
+                <path d="M19.5 12 L12.5 6.5 V17.5 Z" fill="currentColor"/>
+              </svg>
+            </button>
+          </span>
+          <span class="rc-ecualizador" aria-hidden="true">
+            <span class="rc-eq-barra"></span>
+            <span class="rc-eq-barra"></span>
+            <span class="rc-eq-barra"></span>
+            <span class="rc-eq-barra"></span>
+          </span>
+          <span class="rc-boton-musica-visor">
+            <span class="rc-visor-texto" id="rc-visor-texto"></span>
+          </span>
+        </div>
+        <span class="rc-switch-placa">PLAY MUSIC</span>
       </div>
     </div>
   </header>
@@ -82,79 +159,7 @@
   </div>
 
   <div class="fila-principal">
-    <div class="columna-izquierda">
-      <div class="rc-buscador">
-        <svg class="rc-buscador-icono" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
-          <line x1="15" y1="15" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <input id="input-busqueda" type="text" placeholder="Busca en todo The Tech Room Arg..." autocomplete="off">
-      </div>
-      <button id="btn-volver" type="button" class="btn-categoria btn-volver oculto">← Volver</button>
-      <div id="categorias" class="categorias-columna"></div>
-      <div id="rc-switches-fallout-wrap" class="rc-switch-fallout-wrap">
-        <div class="rc-switches-columna">
-          <div class="rc-switch-fallout-item rc-switch-fallout-item-pipboy">
-            <div class="rc-switch-fallout-grupo">
-              <button id="btn-pipboy-switch" type="button" class="rc-switch-fallout" aria-label="Apagar Pip-Boy" aria-pressed="true">
-                <span class="rc-switch-etiqueta">ON</span>
-                <span class="rc-switch-riel"><span class="rc-switch-perilla"></span></span>
-                <span class="rc-switch-etiqueta">OFF</span>
-              </button>
-              <span class="rc-switch-placa">PIP-BOY ON/OFF</span>
-            </div>
-          </div>
-          <div class="rc-switch-fallout-item">
-            <div class="rc-switch-fallout-grupo">
-              <button id="btn-logout-fallout" type="button" class="rc-switch-fallout" aria-label="Cerrar sesión" aria-pressed="true">
-                <span class="rc-switch-etiqueta">ON</span>
-                <span class="rc-switch-riel"><span class="rc-switch-perilla"></span></span>
-                <span class="rc-switch-etiqueta">OFF</span>
-              </button>
-              <span class="rc-switch-placa">LOG OUT</span>
-            </div>
-          </div>
-        </div>
-        <div class="rc-boton-musica-item">
-          <div class="rc-boton-musica" aria-label="Reproductor de jazz instrumental en Spotify">
-            <span class="rc-boton-musica-controles">
-              <button type="button" id="btn-musica-rw" class="rc-boton-musica-mini" aria-label="Reiniciar canción (dos toques: canción anterior)" title="Reiniciar canción (2 toques: anterior)">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M11.5 12 L18.5 6.5 V17.5 Z" fill="currentColor"/>
-                  <path d="M4.5 12 L11.5 6.5 V17.5 Z" fill="currentColor"/>
-                </svg>
-              </button>
-              <button type="button" id="btn-play-music" class="rc-boton-musica-disco" aria-label="Reproducir/pausar" aria-pressed="false">
-                <svg viewBox="0 0 24 24" aria-hidden="true" class="rc-boton-musica-icono rc-icono-play">
-                  <path d="M8 5.5 L18 12 L8 18.5 Z" fill="currentColor"/>
-                </svg>
-                <svg viewBox="0 0 24 24" aria-hidden="true" class="rc-boton-musica-icono rc-icono-pause">
-                  <rect x="7" y="5.5" width="4" height="13" fill="currentColor"/>
-                  <rect x="13" y="5.5" width="4" height="13" fill="currentColor"/>
-                </svg>
-              </button>
-              <button type="button" id="btn-musica-ff" class="rc-boton-musica-mini" aria-label="Siguiente canción" title="Siguiente canción">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12.5 12 L5.5 6.5 V17.5 Z" fill="currentColor"/>
-                  <path d="M19.5 12 L12.5 6.5 V17.5 Z" fill="currentColor"/>
-                </svg>
-              </button>
-            </span>
-            <span class="rc-ecualizador" aria-hidden="true">
-              <span class="rc-eq-barra"></span>
-              <span class="rc-eq-barra"></span>
-              <span class="rc-eq-barra"></span>
-              <span class="rc-eq-barra"></span>
-            </span>
-            <span class="rc-boton-musica-visor">
-              <span class="rc-visor-texto" id="rc-visor-texto"></span>
-            </span>
-          </div>
-          <span class="rc-switch-placa">PLAY MUSIC</span>
-        </div>
-      </div>
-      <div id="sub-nav" class="categorias-columna oculto"></div>
-    </div>
+    <div id="columna-izquierda-layout" class="columna-izquierda"></div>
     <main id="productos"></main>
   </div>
 
