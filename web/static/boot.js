@@ -174,7 +174,23 @@ if ("serviceWorker" in navigator) {
   const btnPortada = document.getElementById("btn-portada-ingreso");
   const tituloPortada = portada ? portada.querySelector(".rc-portada-ingreso-titulo") : null;
   const ctaPortada = portada ? portada.querySelector(".rc-portada-ingreso-cta") : null;
-  if (portada && btnPortada) {
+  // Se muestra una sola vez por sesión de pestaña: si ya se descartó antes
+  // (por ej. el redirect de vuelta desde login.html tras un login exitoso),
+  // sessionStorage lo recuerda y no la volvemos a mostrar. Un refresh manual
+  // de la pestaña sí la puede volver a mostrar (sessionStorage sobrevive al
+  // refresh, pero un cierre de pestaña la borra) — no rompe nada porque el
+  // botón "Entrá" solo descarta la portada, no fuerza login.
+  const CLAVE_PORTADA_VISTA = "ttra_portada_vista";
+  let yaVioPortada = false;
+  try {
+    yaVioPortada = sessionStorage.getItem(CLAVE_PORTADA_VISTA) === "1";
+  } catch {
+    // sessionStorage no disponible (ej. modo privado estricto): tratamos
+    // como si no la hubiera visto, para no romper el flujo de portada.
+  }
+  if (portada && btnPortada && yaVioPortada) {
+    portada.classList.add("oculto");
+  } else if (portada && btnPortada) {
     document.body.classList.add("rc-portada-activa");
     const mostrarTextoPortada = () => {
       window.setTimeout(() => {
@@ -190,6 +206,12 @@ if ("serviceWorker" in navigator) {
     imagenPortada.src = "/texturas/cordoba-city.jpg";
     if (imagenPortada.complete) mostrarTextoPortada();
     btnPortada.addEventListener("click", () => {
+      try {
+        sessionStorage.setItem(CLAVE_PORTADA_VISTA, "1");
+      } catch {
+        // No pasa nada si no se puede persistir: en el peor caso vuelve a
+        // aparecer en la próxima carga, no rompe el flujo de ingreso.
+      }
       document.body.classList.add("rc-portada-saliendo");
       portada.classList.add("oculto");
       window.setTimeout(() => {
