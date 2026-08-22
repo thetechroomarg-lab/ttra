@@ -106,6 +106,7 @@ const ORDEN_MARCAS = [
 
 const CLAVE_CARRITO = "ttra_carrito";
 const CLAVE_CARRITO_PENDIENTE = "ttra_carrito_pendiente";
+const CLAVE_CHECKOUT_PENDIENTE = "ttra_checkout_pendiente";
 const WHATSAPP_NUMERO = "543512145217";
 
 let SECCIONES_DATA = {};
@@ -2257,6 +2258,18 @@ function borrarPendienteCarrito() {
   sessionStorage.removeItem(CLAVE_CARRITO_PENDIENTE);
 }
 
+function guardarPendienteCheckout() {
+  localStorage.setItem(CLAVE_CHECKOUT_PENDIENTE, "1");
+}
+
+function hayCheckoutPendiente() {
+  return localStorage.getItem(CLAVE_CHECKOUT_PENDIENTE) === "1";
+}
+
+function borrarCheckoutPendiente() {
+  localStorage.removeItem(CLAVE_CHECKOUT_PENDIENTE);
+}
+
 function urlLoginParaCarrito() {
   const params = new URLSearchParams();
   params.set("registro", "1");
@@ -2912,7 +2925,6 @@ function agregarAlCarrito(producto, color) {
 }
 
 async function agregarAlCarritoProtegido(producto, color) {
-  if (!(await asegurarSesionParaCarrito(producto, color))) return;
   agregarAlCarrito(producto, color);
 }
 
@@ -2932,6 +2944,27 @@ async function procesarPendienteCarrito() {
   const producto = catalogoPlano[pendiente.nombre];
   borrarPendienteCarrito();
   if (producto) agregarAlCarrito(producto, pendiente.color || null);
+}
+
+async function procesarCheckoutPendiente() {
+  if (!hayCheckoutPendiente()) return false;
+  const sesion = await obtenerEstadoSesionCliente(true);
+  if (!sesion || sesion.debe_cambiar_password) return false;
+  const carrito = cargarCarrito();
+  if (carrito.length === 0) {
+    borrarCheckoutPendiente();
+    return false;
+  }
+  derivarCheckoutAWhatsapp(carrito);
+  return true;
+}
+
+async function asegurarSesionParaCheckout() {
+  const sesion = await obtenerEstadoSesionCliente(true);
+  if (sesion && !sesion.debe_cambiar_password) return true;
+  guardarPendienteCheckout();
+  window.location.href = urlLoginParaCarrito();
+  return false;
 }
 
 function cambiarCantidad(nombre, color, delta) {
@@ -3071,6 +3104,15 @@ function armarMensajeWhatsapp(carrito) {
   return `Hola! Quiero encargar:\n${lineas.join("\n")}\n\n${total}`;
 }
 
+function derivarCheckoutAWhatsapp(carrito) {
+  const mensaje = armarMensajeWhatsapp(carrito);
+  registrarPedidoEnClientes(carrito);
+  borrarCheckoutPendiente();
+  vaciarCarrito();
+  cerrarCarrito();
+  window.location.href = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
+}
+
 document.getElementById("btn-carrito").addEventListener("click", abrirCarrito);
 document.getElementById("btn-cerrar-carrito").addEventListener("click", cerrarCarrito);
 document.getElementById("overlay-carrito").addEventListener("click", cerrarCarrito);
@@ -3090,14 +3132,11 @@ function registrarPedidoEnClientes(carrito) {
   }).catch(() => {});
 }
 
-document.getElementById("btn-whatsapp").addEventListener("click", () => {
+document.getElementById("btn-whatsapp").addEventListener("click", async () => {
   const carrito = cargarCarrito();
   if (carrito.length === 0) return;
-  const mensaje = armarMensajeWhatsapp(carrito);
-  registrarPedidoEnClientes(carrito);
-  window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`, "_blank");
-  vaciarCarrito();
-  cerrarCarrito();
+  if (!(await asegurarSesionParaCheckout())) return;
+  derivarCheckoutAWhatsapp(carrito);
 });
 document.getElementById("btn-volver").addEventListener("click", volverUnPaso);
 document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);
@@ -3446,5 +3485,6 @@ function abrirProductoCompartido() {
 
 cargarCatalogo().then(async () => {
   await procesarPendienteCarrito();
+  if (await procesarCheckoutPendiente()) return;
   abrirProductoCompartido();
 });
