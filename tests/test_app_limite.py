@@ -16,7 +16,7 @@ def _preparar(monkeypatch, costo):
     # /chat ahora requiere sesión activa: nos registramos para tener una.
     c.post("/registro", json={
         "nombre": "Test", "apellido": "Usuario", "celular": "3511234567",
-        "email": "test@x.com", "password": "clave1234", "username": "testusuario",
+        "email": "test@x.com", "password": "clave1234",
     })
     return c
 
