@@ -174,15 +174,21 @@ html[data-modo="fallout"] .rc-perfil-nombre {
 }
 
 .rc-perfil-dropdown {
-  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 20;
+  position: absolute; top: calc(100% + 6px); right: 0; left: auto; z-index: 20;
   display: flex; flex-direction: column;
+  min-width: 152px;
+  width: max-content;
+  max-width: min(220px, calc(100vw - 24px));
   background: var(--rc-bg-panel); border: 1px solid var(--rc-green-dim);
+  box-sizing: border-box;
 }
 .rc-perfil-dropdown.oculto { display: none; }
 .rc-perfil-opcion {
   display: block; width: 100%; padding: 9px 12px; font-size: 13px; text-align: left;
   font-family: var(--rc-font); font-weight: 600;
   background: transparent; border: none; box-shadow: none;
+  line-height: 1.25;
+  white-space: nowrap;
   color: var(--rc-green); text-decoration: none; cursor: var(--rc-cursor);
 }
 .rc-perfil-opcion:hover, .rc-perfil-opcion:focus-visible {

@@ -312,11 +312,8 @@ html[data-modo="classic"] .btn-modo.activo {
   border-color: var(--cl-rojo);
 }
 
-/* Menú de perfil del header: "Ir a perfil" y "Cerrar sesión" comparten el
-   mismo diseño sólido navy (mismo look que el panel de admin de clientes)
-   vía .rc-perfil-opcion en landing.css — acá solo se pisa el color de
-   texto de "Cerrar sesión" a amarillo huevo, para diferenciarlo un poco
-   sin romper la tipografía compartida. */
+/* Menú de perfil del header: comparte el bloque navy del header Classic,
+   pero "Cerrar sesión" va en rojo para marcar la acción destructiva. */
 html[data-modo="classic"] .rc-perfil-opcion {
   background: var(--cl-azul-francia);
   color: #fff;
@@ -326,10 +323,10 @@ html[data-modo="classic"] .rc-perfil-opcion:hover {
   color: #fff;
 }
 html[data-modo="classic"] #btn-logout-classic {
-  color: var(--cl-amarillo-huevo);
+  color: var(--cl-rojo);
 }
 html[data-modo="classic"] #btn-logout-classic:hover {
-  color: var(--cl-amarillo-huevo);
+  color: var(--cl-rojo);
 }
 
 /* Mensaje de confirmación de log out: tarjeta blanca redondeada, igual
