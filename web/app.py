@@ -1,13 +1,17 @@
 import html
 import json
 import logging
+import math
 import os
 import posixpath
 import re
+import secrets
+import string
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlencode
 
 import httpx
 from dotenv import load_dotenv
@@ -58,6 +62,15 @@ def _public_app_base_url(request: Request):
 
 def _public_login_url(request: Request):
     return f"{_public_app_base_url(request)}/login.html"
+
+
+def _public_producto_mailing_url(request: Request, nombre_producto: str, codigo: str):
+    query = urlencode({
+        "producto": nombre_producto,
+        "agregar": "1",
+        "codigo": codigo,
+    })
+    return f"{_public_app_base_url(request)}/?{query}"
 
 
 @app.middleware("http")
@@ -207,8 +220,153 @@ class ClientesLoginIn(BaseModel):
     password: str
 
 
+class MailingOfertaIn(BaseModel):
+    productos: list[str]
+
+
+class DescuentoItemIn(BaseModel):
+    nombre: str
+    cantidad: int = Field(ge=1)
+
+
+class DescuentoCodigoIn(BaseModel):
+    codigo: str
+    items: list[DescuentoItemIn]
+
+
+_DESCUENTO_MAILING_USD = 5
+
+
 def _clientes_admin_activo(request: Request):
     return bool(request.session.get("clientes_admin_ok"))
+
+
+def _formatear_entero_ar(valor):
+    if valor is None:
+        return "—"
+    return f"{int(valor):,}".replace(",", ".")
+
+
+def _precios_mail_producto(producto):
+    usd = producto.get("usd")
+    pesos = producto.get("pesos")
+    transferencia = producto.get("transferencia")
+    if usd in (None, "") or pesos in (None, "") or transferencia in (None, ""):
+        return None
+
+    usd = int(usd)
+    pesos = int(pesos)
+    transferencia = int(transferencia)
+    usd_promo = max(usd - _DESCUENTO_MAILING_USD, 0)
+    banco_usa_promo = math.ceil(usd_promo / 0.975)
+    usdt_promo = math.ceil(usd_promo / 0.99)
+
+    if usd > 0:
+        pesos_promo = max(round(usd_promo * (pesos / usd)), 0)
+        transferencia_promo = max(round(usd_promo * (transferencia / usd)), 0)
+    else:
+        pesos_promo = pesos
+        transferencia_promo = transferencia
+
+    return {
+        "usd_promo": usd_promo,
+        "banco_usa_promo": banco_usa_promo,
+        "usdt_promo": usdt_promo,
+        "pesos_promo": pesos_promo,
+        "transferencia_promo": transferencia_promo,
+    }
+
+
+def _generar_codigo_descuento(client):
+    alfabeto = string.ascii_uppercase + string.digits
+    for _ in range(12):
+        codigo = "TTRA-" + "".join(secrets.choice(alfabeto) for _ in range(8))
+        existe = client.table("codigos_descuento").select("*").eq("code", codigo).execute().data
+        if not existe:
+            return codigo
+    raise RuntimeError("No se pudo generar un código de descuento único")
+
+
+def _descuento_codigo_row(client, cliente_id, codigo):
+    codigo = (codigo or "").strip().upper()
+    if not codigo:
+        return None
+    filas = (
+        client.table("codigos_descuento")
+        .select("*")
+        .eq("cliente_id", cliente_id)
+        .eq("code", codigo)
+        .execute()
+        .data
+    )
+    if not filas:
+        return None
+    fila = filas[0]
+    if not fila.get("activo") or fila.get("usado_en"):
+        return None
+    return fila
+
+
+def _resolver_descuento_codigo(productos_catalogo, descuento_row, items):
+    disponibles = {p.get("nombre", "").strip(): p for p in productos_catalogo if p.get("nombre")}
+    elegibles = set(descuento_row.get("productos") or [])
+    items_norm = []
+    vistos = set()
+    for item in items:
+        nombre = (item.nombre or "").strip()
+        if not nombre:
+            continue
+        items_norm.append({"nombre": nombre, "cantidad": int(item.cantidad)})
+        vistos.add(nombre)
+
+    productos_aplicables = [nombre for nombre in elegibles if nombre in disponibles and nombre in vistos]
+    if not productos_aplicables:
+        return None
+
+    descuento_total = {"usd": 0, "pesos": 0, "transferencia": 0}
+    cantidad_total = 0
+    for item in items_norm:
+        if item["nombre"] not in productos_aplicables:
+            continue
+        producto = disponibles[item["nombre"]]
+        usd = int(producto.get("usd") or 0)
+        pesos = int(producto.get("pesos") or 0)
+        transferencia = int(producto.get("transferencia") or 0)
+        if usd <= 0:
+            continue
+        qty = item["cantidad"]
+        cantidad_total += qty
+        descuento_usd_unit = min(int(descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD), usd)
+        descuento_total["usd"] += descuento_usd_unit * qty
+        descuento_total["pesos"] += round(descuento_usd_unit * (pesos / usd)) * qty
+        descuento_total["transferencia"] += round(descuento_usd_unit * (transferencia / usd)) * qty
+
+    if cantidad_total == 0:
+        return None
+
+    return {
+        "codigo": descuento_row["code"],
+        "productos": sorted(productos_aplicables),
+        "cantidad": cantidad_total,
+        "descuento_usd_por_item": int(descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD),
+        "descuento": descuento_total,
+    }
+
+
+def _validar_descuento_codigo(cliente_id, entrada: DescuentoCodigoIn):
+    fila = _descuento_codigo_row(get_client(), cliente_id, entrada.codigo)
+    if not fila:
+        return None
+    return _resolver_descuento_codigo(_cargar_productos(), fila, entrada.items)
+
+
+def _mensaje_error_codigos_descuento(exc: Exception):
+    texto = str(exc).lower()
+    if "codigos_descuento" in texto or "relation" in texto or "does not exist" in texto:
+        return (
+            "Falta crear la tabla codigos_descuento en Supabase antes de enviar este mailing."
+        )
+    return "No se pudo guardar el código de descuento del mailing."
 
 
 @app.post("/admin/clientes/login")
@@ -252,6 +410,130 @@ def admin_clientes_resetear_password(cliente_id: str, request: Request):
     return {"ok": True}
 
 
+@app.post("/admin/clientes/{cliente_id}/mailing-oferta")
+def admin_clientes_mailing_oferta(cliente_id: str, entrada: MailingOfertaIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+
+    client = get_client()
+    filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    cliente = filas[0]
+    email_cliente = (cliente.get("email") or "").strip()
+    if not email_cliente:
+        return JSONResponse({"error": "Este cliente no tiene email cargado"}, status_code=400)
+
+    productos_catalogo = _cargar_productos()
+    disponibles = {p.get("nombre", "").strip(): p for p in productos_catalogo if p.get("nombre")}
+    pedidos = []
+    vistos = set()
+    for nombre in entrada.productos:
+        nombre = (nombre or "").strip()
+        if not nombre or nombre in vistos:
+            continue
+        vistos.add(nombre)
+        pedidos.append(nombre)
+
+    if not pedidos:
+        return JSONResponse({"error": "Seleccioná al menos un producto"}, status_code=400)
+
+    productos_disponibles = [nombre for nombre in pedidos if nombre in disponibles]
+    productos_no_disponibles = [nombre for nombre in pedidos if nombre not in disponibles]
+
+    if not productos_disponibles:
+        return JSONResponse(
+            {"error": "Ninguno de los productos seleccionados sigue disponible en el catálogo"},
+            status_code=400,
+        )
+
+    nombre_cliente = f"{cliente.get('nombre', '')} {cliente.get('apellido', '')}".strip() or "cliente"
+    productos_oferta = []
+    productos_oferta_detalle = []
+    for nombre in productos_disponibles:
+        precios = _precios_mail_producto(disponibles[nombre])
+        if not precios:
+            continue
+        productos_oferta.append(nombre)
+        productos_oferta_detalle.append((nombre, precios))
+
+    if not productos_oferta_detalle:
+        return JSONResponse(
+            {"error": "Los productos seleccionados no tienen precios válidos para armar la oferta"},
+            status_code=400,
+        )
+
+    try:
+        codigo = _generar_codigo_descuento(client)
+        client.table("codigos_descuento").insert({
+            "cliente_id": cliente_id,
+            "code": codigo,
+            "productos": productos_oferta,
+            "descuento_usd": _DESCUENTO_MAILING_USD,
+            "activo": False,
+        }).execute()
+    except Exception as e:
+        logger.exception("No se pudo crear el código de descuento para mailing")
+        return JSONResponse({"error": _mensaje_error_codigos_descuento(e)}, status_code=503)
+
+    bloques_producto = []
+    for nombre, precios in productos_oferta_detalle:
+        link_producto = _public_producto_mailing_url(request, nombre, codigo)
+        bloques_producto.append(
+            "<li>"
+            f"<strong>{html.escape(nombre)}</strong><br>"
+            f"Promo especial: U$D {_DESCUENTO_MAILING_USD} de descuento.<br>"
+            f"USD billete: U$D {precios['usd_promo']}<br>"
+            f"Dólar banco USA: U$D {precios['banco_usa_promo']}<br>"
+            f"USDT: U$D {precios['usdt_promo']}<br>"
+            f"Pesos contado: $ {_formatear_entero_ar(precios['pesos_promo'])}<br>"
+            f"Transferencia en pesos: $ {_formatear_entero_ar(precios['transferencia_promo'])}<br>"
+            f'<a href="{html.escape(link_producto)}" '
+            "style=\"display:inline-block;margin-top:8px;padding:10px 14px;background:#c8102e;"
+            "color:#fff;text-decoration:none;border-radius:8px;font-weight:700\">"
+            "Abrir este producto en el carrito con mi descuento"
+            "</a>"
+            "</li>"
+        )
+
+    items_html = "".join(bloques_producto)
+    html_mail = (
+        f"<p>Hola {html.escape(nombre_cliente)},</p>"
+        f"<p>Estuve viendo que miraste estos productos en The Tech Room Arg y te ofrezco "
+        f"un descuento de U$D {_DESCUENTO_MAILING_USD} por producto si avanzás hoy:</p>"
+        f"<ul>{items_html}</ul>"
+        f"<p>Tu código de descuento es: <strong>{html.escape(codigo)}</strong></p>"
+        f"<p>Podés cargarlo directamente en el checkout del carrito y se van a descontar "
+        f"U$D {_DESCUENTO_MAILING_USD} por cada producto incluido en este mail.</p>"
+        f"<p>Si te interesa alguno, respondé este mail y te armo la propuesta.</p>"
+        f"<p>Saludos,<br>The Tech Room Arg</p>"
+    )
+    try:
+        enviar_email(
+            email_cliente,
+            "Descuento especial en productos que viste — The Tech Room Arg",
+            html_mail,
+        )
+    except EnvioEmailError as e:
+        return JSONResponse({"error": str(e)}, status_code=502)
+
+    try:
+        client.table("codigos_descuento").update({"activo": True}).eq("code", codigo).execute()
+    except Exception as e:
+        logger.exception("Se envió el mailing pero no se pudo activar el código de descuento")
+        return JSONResponse(
+            {"error": "El mail salió, pero no se pudo activar el código de descuento en Supabase."},
+            status_code=503,
+        )
+
+    return {
+        "ok": True,
+        "codigo": codigo,
+        "enviados": len(productos_oferta),
+        "omitidos": productos_no_disponibles,
+    }
+
+
 _DIAS_SEMANA = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
 
@@ -266,6 +548,28 @@ def _formatear_fecha_ar(fecha_iso):
     except ValueError:
         return fecha_iso, "—", "—"
     return momento.strftime("%d/%m/%Y"), _DIAS_SEMANA[momento.weekday()], momento.strftime("%H:%M")
+
+
+def _ranking_productos_consultados(filas_interacciones):
+    conteos = {}
+    ultima_fecha = {}
+    for fila in filas_interacciones:
+        tipo = (fila.get("tipo_evento") or "").strip()
+        producto = (fila.get("producto_nombre") or "").strip()
+        if tipo not in {"view_item", "select_product", "view_product"} or not producto:
+            continue
+        conteos[producto] = conteos.get(producto, 0) + 1
+        fecha = fila.get("fecha", "") or ""
+        if fecha > (ultima_fecha.get(producto) or ""):
+            ultima_fecha[producto] = fecha
+    ranking = [
+        {"producto": producto, "vistas": vistas, "ultima_fecha": ultima_fecha.get(producto, "")}
+        for producto, vistas in conteos.items()
+    ]
+    ranking.sort(key=lambda r: (-r["vistas"], -(0 if not r["ultima_fecha"] else 1), r["producto"].lower()))
+    ranking.sort(key=lambda r: r["ultima_fecha"], reverse=True)
+    ranking.sort(key=lambda r: r["vistas"], reverse=True)
+    return ranking
 
 
 _ICONO_OJO = (
@@ -436,6 +740,7 @@ def admin_clientes_historial(cliente_id: str, request: Request):
         key=lambda i: ((i.get("fecha", "") or "")[:10], i.get("fecha", "") or ""),
         reverse=True,
     )
+    ranking_consultados = _ranking_productos_consultados(filas_interacciones)
 
     def _tipo_evento_label(tipo):
         return {
@@ -453,9 +758,11 @@ def admin_clientes_historial(cliente_id: str, request: Request):
     else:
         def _fila_pedido(fila):
             fecha, dia, hora = _formatear_fecha_ar(fila.get("fecha", ""))
-            detalle = html.escape(" | ".join(fila.get("productos", []))) or "—"
+            productos_fila = [p for p in (fila.get("productos") or []) if p]
+            detalle = html.escape(" | ".join(productos_fila)) or "—"
             return (
-                f'<tr data-campaign-item="{detalle}" data-campaign-source="pedido">'
+                f'<tr data-campaign-item="{detalle}" data-campaign-source="pedido" '
+                f'data-campaign-products="{html.escape(json.dumps(productos_fila))}">'
                 f'<td class="col-check"><input type="checkbox" class="chk-mailing" '
                 f'aria-label="Seleccionar pedido confirmado"></td>'
                 f"<td>{fecha}</td><td>{dia}</td><td>{hora}</td><td>{detalle}</td></tr>"
@@ -470,8 +777,10 @@ def admin_clientes_historial(cliente_id: str, request: Request):
             fecha, dia, hora = _formatear_fecha_ar(fila.get("fecha", ""))
             evento = html.escape(_tipo_evento_label(fila.get('tipo_evento', '')))
             detalle = _detalle_interaccion(fila)
+            productos_fila = [fila.get("producto_nombre")] if fila.get("producto_nombre") else []
             return (
-                f'<tr data-campaign-item="{evento} — {detalle}" data-campaign-source="vista">'
+                f'<tr data-campaign-item="{evento} — {detalle}" data-campaign-source="vista" '
+                f'data-campaign-products="{html.escape(json.dumps(productos_fila))}">'
                 f'<td class="col-check"><input type="checkbox" class="chk-mailing" '
                 f'aria-label="Seleccionar interacción"></td>'
                 f"<td>{fecha}</td><td>{dia}</td><td>{hora}</td>"
@@ -480,8 +789,23 @@ def admin_clientes_historial(cliente_id: str, request: Request):
 
         filas_interacciones_html = "".join(_fila_interaccion(fila) for fila in filas_interacciones)
 
+    if not ranking_consultados:
+        filas_consultados_html = '<tr><td colspan="4" class="vacio">Todavía no hay productos consultados para ordenar.</td></tr>'
+    else:
+        def _fila_consultado(fila):
+            fecha, dia, hora = _formatear_fecha_ar(fila.get("ultima_fecha", ""))
+            producto = html.escape(fila.get("producto", "")) or "—"
+            return (
+                f'<tr data-campaign-item="{producto}" data-campaign-source="ranking" '
+                f'data-campaign-products="{html.escape(json.dumps([fila.get("producto", "")]))}">'
+                f'<td class="col-check"><input type="checkbox" class="chk-mailing" '
+                f'aria-label="Seleccionar producto consultado"></td>'
+                f"<td>{producto}</td><td>{fila.get('vistas', 0)}</td><td>{fecha} {hora}</td></tr>"
+            )
+
+        filas_consultados_html = "".join(_fila_consultado(fila) for fila in ranking_consultados)
+
     email_cliente = html.escape(cliente.get("email", "") or "")
-    asunto_mailing = html.escape(f"Propuesta personalizada — The Tech Room Arg")
 
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Historial — {html.escape(nombre_cliente)}</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
@@ -499,6 +823,14 @@ def admin_clientes_historial(cliente_id: str, request: Request):
     </table>
   </section>
   <section class="subseccion">
+    <h2>Productos más consultados</h2>
+    <p>Ranking por cantidad de vistas de este cliente, ordenado de mayor a menor para decidir mejor el mailing.</p>
+    <table>
+      <thead><tr><th class="col-check"></th><th>Producto</th><th>Vistas</th><th>Última vista</th></tr></thead>
+      <tbody>{filas_consultados_html}</tbody>
+    </table>
+  </section>
+  <section class="subseccion">
     <h2>Historial de vistas</h2>
     <p>Acá ves todas las interacciones de navegación, vistas e íconos que tocó el cliente.</p>
     <table>
@@ -507,8 +839,8 @@ def admin_clientes_historial(cliente_id: str, request: Request):
     </table>
   </section>
   <div class="acciones-mailing">
-    <button id="btn-preparar-mailing" {'disabled' if not email_cliente else ''}>Preparar mailing</button>
-    <span id="mailing-ayuda">{'Seleccioná productos o vistas y se arma un borrador al mail del cliente.' if email_cliente else 'Este cliente no tiene email disponible para mailing.'}</span>
+    <button id="btn-preparar-mailing" {'disabled' if not email_cliente else ''}>Enviar mailing</button>
+    <span id="mailing-ayuda">{'Seleccioná productos o vistas y se envía una oferta por mail si siguen disponibles en catálogo.' if email_cliente else 'Este cliente no tiene email disponible para mailing.'}</span>
   </div>
 </div>
 <script>
@@ -516,6 +848,7 @@ const btnMailing = document.getElementById("btn-preparar-mailing");
 const checksMailing = [...document.querySelectorAll(".chk-mailing")];
 const emailCliente = {json.dumps(cliente.get("email", "") or "")};
 const nombreCliente = {json.dumps(nombre_cliente or "cliente")};
+const clienteId = {json.dumps(cliente.get("id", ""))};
 
 function filasSeleccionadas() {{
   return checksMailing
@@ -529,21 +862,57 @@ function actualizarEstadoMailing() {{
   btnMailing.disabled = filasSeleccionadas().length === 0;
 }}
 
+function productosSeleccionados() {{
+  const productos = [];
+  const vistos = new Set();
+  for (const fila of filasSeleccionadas()) {{
+    let lista = [];
+    try {{
+      lista = JSON.parse(fila.dataset.campaignProducts || "[]");
+    }} catch {{
+      lista = [];
+    }}
+    for (const producto of lista) {{
+      if (!producto || vistos.has(producto)) continue;
+      vistos.add(producto);
+      productos.push(producto);
+    }}
+  }}
+  return productos;
+}}
+
 checksMailing.forEach((chk) => chk.addEventListener("change", actualizarEstadoMailing));
 actualizarEstadoMailing();
 
 if (btnMailing) {{
-  btnMailing.addEventListener("click", () => {{
-    const filas = filasSeleccionadas();
-    if (!emailCliente || filas.length === 0) return;
-    const items = filas.map((fila) => `- ${{fila.dataset.campaignItem || ""}}`);
-    const cuerpo =
-      `Hola ${{nombreCliente}},\\n\\n` +
-      `Estuvimos revisando tus intereses recientes en The Tech Room Arg y preparamos una propuesta para vos.\\n\\n` +
-      `Referencias seleccionadas:\\n${{items.join("\\n")}}\\n\\n` +
-      `Si querés, te armamos una oferta personalizada sobre alguno de estos productos.\\n\\n` +
-      `Saludos,\\nThe Tech Room Arg`;
-    window.location.href = `mailto:${{encodeURIComponent(emailCliente)}}?subject=${{encodeURIComponent({json.dumps("Propuesta personalizada — The Tech Room Arg")})}}&body=${{encodeURIComponent(cuerpo)}}`;
+  btnMailing.addEventListener("click", async () => {{
+    const productos = productosSeleccionados();
+    if (!emailCliente || productos.length === 0) return;
+    btnMailing.disabled = true;
+    const ayudaPrev = document.getElementById("mailing-ayuda").textContent;
+    document.getElementById("mailing-ayuda").textContent = "Enviando mailing...";
+    try {{
+      const r = await fetch(`/admin/clientes/${{clienteId}}/mailing-oferta`, {{
+        method: "POST",
+        headers: {{"Content-Type": "application/json"}},
+        body: JSON.stringify({{ productos }}),
+      }});
+      const datos = await r.json();
+      if (!r.ok) {{
+        document.getElementById("mailing-ayuda").textContent = datos.error || "No se pudo enviar el mailing.";
+        return;
+      }}
+      const omitidos = (datos.omitidos || []).length
+        ? ` Omitidos por falta de stock/catálogo: ${{datos.omitidos.join(", ")}}.`
+        : "";
+      document.getElementById("mailing-ayuda").textContent =
+        `Mail enviado a ${{emailCliente}} con ${{datos.enviados}} producto(s).${{omitidos}}`;
+    }} catch {{
+      document.getElementById("mailing-ayuda").textContent = "No se pudo enviar el mailing.";
+    }} finally {{
+      actualizarEstadoMailing();
+      if (!filasSeleccionadas().length) btnMailing.disabled = true;
+    }}
   }});
 }}
 </script>
@@ -791,6 +1160,37 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
     pedidos.guardar_pedido(get_client(), cliente_id, entrada.productos)
     return {"ok": True}
+
+
+@app.post("/api/descuentos/validar")
+def api_descuentos_validar(entrada: DescuentoCodigoIn, request: Request):
+    cliente_id = request.session.get("cliente_id")
+    if not cliente_id:
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    if _debe_cambiar_password(request):
+        raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
+    descuento = _validar_descuento_codigo(cliente_id, entrada)
+    if not descuento:
+        return JSONResponse({"error": "Código inválido o sin productos aplicables para este carrito"}, status_code=400)
+    return {"ok": True, **descuento}
+
+
+@app.post("/api/descuentos/consumir")
+def api_descuentos_consumir(entrada: DescuentoCodigoIn, request: Request):
+    cliente_id = request.session.get("cliente_id")
+    if not cliente_id:
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    if _debe_cambiar_password(request):
+        raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
+    client = get_client()
+    fila = _descuento_codigo_row(client, cliente_id, entrada.codigo)
+    if not fila:
+        return JSONResponse({"error": "Código inválido o ya utilizado"}, status_code=400)
+    descuento = _resolver_descuento_codigo(_cargar_productos(), fila, entrada.items)
+    if not descuento:
+        return JSONResponse({"error": "El código no aplica a los productos actuales del carrito"}, status_code=400)
+    client.table("codigos_descuento").update({"usado_en": datetime.utcnow().isoformat()}).eq("code", fila["code"]).execute()
+    return {"ok": True, **descuento}
 
 
 @app.get("/catalogo")

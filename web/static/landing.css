@@ -1307,6 +1307,22 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 .item-controles { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .item-controles button { padding: 4px 10px; font-size: 13px; }
 .panel-carrito-footer { border-top: 1px solid var(--rc-green-faint); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.descuento-mailing {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px; border: 1px solid var(--rc-green-faint);
+  background: rgba(15, 24, 18, .55);
+}
+.descuento-mailing label { font-size: 12px; color: var(--rc-green-dim); text-transform: uppercase; letter-spacing: .04em; }
+.descuento-mailing-fila { display: flex; gap: 8px; }
+.descuento-mailing input {
+  flex: 1 1 auto; min-width: 0;
+  background: #0b140f; color: var(--rc-green-bright);
+  border: 1px solid var(--rc-green-faint); padding: 10px 12px;
+  font-family: var(--rc-font); text-transform: uppercase;
+}
+.descuento-mailing-estado { margin: 0; min-height: 18px; font-size: 12px; color: var(--rc-green-dim); }
+.descuento-mailing-estado.ok { color: var(--rc-green-bright); }
+.descuento-mailing-estado.error { color: #ff8b8b; }
 #total-carrito { margin: 0; font-size: 14px; color: var(--rc-green-bright); }
 
 .rc-pie {

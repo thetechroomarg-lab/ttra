@@ -114,6 +114,7 @@ const ORDEN_MARCAS = [
 const CLAVE_CARRITO = "ttra_carrito";
 const CLAVE_CARRITO_PENDIENTE = "ttra_carrito_pendiente";
 const CLAVE_CHECKOUT_PENDIENTE = "ttra_checkout_pendiente";
+const CLAVE_DESCUENTO_MAILING = "ttra_descuento_mailing";
 const CLAVE_ANON_ID = "ttra_anon_id";
 const WHATSAPP_NUMERO = "543512145217";
 
@@ -2347,6 +2348,24 @@ function borrarCheckoutPendiente() {
   localStorage.removeItem(CLAVE_CHECKOUT_PENDIENTE);
 }
 
+function paramsMailingActuales() {
+  const params = new URLSearchParams(location.search);
+  return {
+    producto: params.get("producto"),
+    codigo: (params.get("codigo") || "").trim().toUpperCase(),
+    agregar: params.get("agregar") === "1",
+    modo: params.get("modo"),
+  };
+}
+
+function limpiarParametrosMailingProcesados() {
+  const params = new URLSearchParams(location.search);
+  params.delete("agregar");
+  params.delete("codigo");
+  const query = params.toString();
+  history.replaceState({}, "", `${location.pathname}${query ? `?${query}` : ""}`);
+}
+
 function urlLoginParaCarrito() {
   const params = new URLSearchParams();
   params.set("registro", "1");
@@ -3030,6 +3049,59 @@ function guardarCarrito(carrito) {
   renderCarrito();
 }
 
+function cargarDescuentoMailing() {
+  try {
+    return JSON.parse(localStorage.getItem(CLAVE_DESCUENTO_MAILING) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function guardarDescuentoMailing(descuento) {
+  localStorage.setItem(CLAVE_DESCUENTO_MAILING, JSON.stringify(descuento));
+  renderCarrito();
+}
+
+function borrarDescuentoMailing() {
+  localStorage.removeItem(CLAVE_DESCUENTO_MAILING);
+  renderCarrito();
+}
+
+function itemsCarritoParaDescuento(carrito) {
+  return carrito.map((it) => ({ nombre: it.nombre, cantidad: it.cantidad }));
+}
+
+function setEstadoCodigoMailing(mensaje, tipo = "") {
+  const el = document.getElementById("estado-codigo-mailing");
+  if (!el) return;
+  el.textContent = mensaje || "";
+  el.className = `descuento-mailing-estado${tipo ? ` ${tipo}` : ""}`;
+}
+
+function descuentoMailingAplicado(carrito) {
+  const descuento = cargarDescuentoMailing();
+  if (!descuento || !Array.isArray(descuento.productos) || !descuento.productos.length) return null;
+
+  const productosElegibles = new Set(descuento.productos);
+  let cantidad = 0;
+  let usd = 0;
+  let pesos = 0;
+  let transferencia = 0;
+
+  carrito.forEach((it) => {
+    if (!productosElegibles.has(it.nombre) || !it.usd) return;
+    const descuentoUsdUnit = Math.min(Number(descuento.descuento_usd_por_item) || 0, Number(it.usd) || 0);
+    if (descuentoUsdUnit <= 0) return;
+    cantidad += it.cantidad;
+    usd += descuentoUsdUnit * it.cantidad;
+    pesos += Math.round(descuentoUsdUnit * ((it.pesos || 0) / it.usd)) * it.cantidad;
+    transferencia += Math.round(descuentoUsdUnit * ((it.transferencia || 0) / it.usd)) * it.cantidad;
+  });
+
+  if (!cantidad) return null;
+  return { codigo: descuento.codigo, cantidad, usd, pesos, transferencia, productos: descuento.productos };
+}
+
 function mismoItemCarrito(it, nombre, color) {
   return it.nombre === nombre && (it.color || null) === (color || null);
 }
@@ -3090,7 +3162,7 @@ async function procesarCheckoutPendiente() {
     borrarCheckoutPendiente();
     return false;
   }
-  derivarCheckoutAWhatsapp(carrito);
+  await derivarCheckoutAWhatsapp(carrito);
   return true;
 }
 
@@ -3191,16 +3263,30 @@ function itemDescuentoHtml(descuento) {
   `;
 }
 
+function itemDescuentoMailingHtml(descuento) {
+  return `
+    <div class="item-carrito item-descuento">
+      <p class="item-nombre">✉️ Código ${escapeHtml(descuento.codigo)} aplicado a ${descuento.cantidad} ítem(s)</p>
+      <p class="item-descuento-valor">
+        -U$D ${descuento.usd} · -$ ${formatearPesos(descuento.pesos)} contado · -$ ${formatearPesos(descuento.transferencia)} transferencia
+      </p>
+    </div>
+  `;
+}
+
 function renderCarrito() {
   const carrito = cargarCarrito();
   const cantidadTotal = carrito.reduce((n, it) => n + it.cantidad, 0);
   document.getElementById("carrito-contador").textContent = cantidadTotal;
 
   const descuento = calcularDescuento(carrito);
+  const descuentoMailing = descuentoMailingAplicado(carrito);
   const el = document.getElementById("items-carrito");
   el.innerHTML = carrito.length === 0
     ? '<p class="mensaje-vacio">Tu carrito está vacío.</p>'
-    : carrito.map(itemCarritoHtml).join("") + (descuento ? itemDescuentoHtml(descuento) : "");
+    : carrito.map(itemCarritoHtml).join("")
+      + (descuento ? itemDescuentoHtml(descuento) : "")
+      + (descuentoMailing ? itemDescuentoMailingHtml(descuentoMailing) : "");
 
   el.querySelectorAll(".btn-menos").forEach((btn) => {
     btn.addEventListener("click", () => cambiarCantidad(btn.dataset.nombre, btn.dataset.color || null, -1));
@@ -3214,12 +3300,28 @@ function renderCarrito() {
 
   const t = totales(carrito);
   const totalEl = document.getElementById("total-carrito");
+  const inputCodigo = document.getElementById("input-codigo-mailing");
+  const descuentoGuardado = cargarDescuentoMailing();
+  if (inputCodigo && document.activeElement !== inputCodigo) {
+    inputCodigo.value = descuentoGuardado?.codigo || "";
+  }
+  if (descuentoGuardado && descuentoMailing) {
+    setEstadoCodigoMailing(`Código ${descuentoMailing.codigo} aplicado sobre ${descuentoMailing.cantidad} ítem(s).`, "ok");
+  } else if (descuentoGuardado) {
+    setEstadoCodigoMailing("El código está cargado, pero hoy no aplica a los productos actuales del carrito.", "error");
+  } else {
+    setEstadoCodigoMailing("");
+  }
+
+  const descuentoUsd = (descuento?.usd || 0) + (descuentoMailing?.usd || 0);
+  const descuentoPesos = (descuento?.pesos || 0) + (descuentoMailing?.pesos || 0);
+  const descuentoTransferencia = (descuento?.transferencia || 0) + (descuentoMailing?.transferencia || 0);
   if (carrito.length === 0) {
     totalEl.textContent = "";
-  } else if (descuento) {
+  } else if (descuentoUsd > 0 || descuentoPesos > 0 || descuentoTransferencia > 0) {
     totalEl.textContent =
-      `Total: U$D ${t.usd - descuento.usd} · $ ${formatearPesos(t.pesos - descuento.pesos)} contado · ` +
-      `$ ${formatearPesos(t.transferencia - descuento.transferencia)} transferencia`;
+      `Total: U$D ${t.usd - descuentoUsd} · $ ${formatearPesos(t.pesos - descuentoPesos)} contado · ` +
+      `$ ${formatearPesos(t.transferencia - descuentoTransferencia)} transferencia`;
   } else {
     totalEl.textContent = `Total: U$D ${t.usd} · $ ${formatearPesos(t.pesos)} contado · $ ${formatearPesos(t.transferencia)} transferencia`;
   }
@@ -3241,25 +3343,95 @@ function armarMensajeWhatsapp(carrito) {
     return `- ${it.nombre}${color} x${it.cantidad} — U$D ${(it.usd || 0) * it.cantidad}`;
   });
   const descuento = calcularDescuento(carrito);
+  const descuentoMailing = descuentoMailingAplicado(carrito);
   if (descuento) {
     lineas.push(`- 🎉 Descuento por ${descuento.cantidadTotal} unidades — -U$D ${descuento.usd}`);
   }
+  if (descuentoMailing) {
+    lineas.push(`- ✉️ Código ${descuentoMailing.codigo} — -U$D ${descuentoMailing.usd}`);
+  }
   const t = totales(carrito);
-  const totalUsd = descuento ? t.usd - descuento.usd : t.usd;
-  const totalPesos = descuento ? t.pesos - descuento.pesos : t.pesos;
-  const totalTransferencia = descuento ? t.transferencia - descuento.transferencia : t.transferencia;
+  const totalUsd = t.usd - (descuento?.usd || 0) - (descuentoMailing?.usd || 0);
+  const totalPesos = t.pesos - (descuento?.pesos || 0) - (descuentoMailing?.pesos || 0);
+  const totalTransferencia = t.transferencia - (descuento?.transferencia || 0) - (descuentoMailing?.transferencia || 0);
   const total = `Total: U$D ${totalUsd} · $ ${formatearPesos(totalPesos)} contado · $ ${formatearPesos(totalTransferencia)} transferencia`;
   return `Hola! Quiero encargar:\n${lineas.join("\n")}\n\n${total}`;
 }
 
-function derivarCheckoutAWhatsapp(carrito) {
+async function consumirCodigoMailing(carrito) {
+  const descuento = cargarDescuentoMailing();
+  if (!descuento?.codigo) return { ok: true };
+  const r = await fetch("/api/descuentos/consumir", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ codigo: descuento.codigo, items: itemsCarritoParaDescuento(carrito) }),
+  });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    setEstadoCodigoMailing(body.error || "No se pudo aplicar el código en este checkout.", "error");
+    return { ok: false };
+  }
+  return { ok: true };
+}
+
+async function aplicarCodigoMailing() {
+  const carrito = cargarCarrito();
+  if (!carrito.length) {
+    setEstadoCodigoMailing("Agregá productos al carrito antes de aplicar un código.", "error");
+    return;
+  }
+  const input = document.getElementById("input-codigo-mailing");
+  const codigo = (input?.value || "").trim().toUpperCase();
+  if (!codigo) {
+    borrarDescuentoMailing();
+    setEstadoCodigoMailing("");
+    return;
+  }
+  setEstadoCodigoMailing("Validando código...");
+  const r = await fetch("/api/descuentos/validar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ codigo, items: itemsCarritoParaDescuento(carrito) }),
+  });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    setEstadoCodigoMailing(body.error || "No se pudo validar el código.", "error");
+    return;
+  }
+  guardarDescuentoMailing(body);
+}
+
+async function aplicarCodigoMailingPorValor(codigo) {
+  const input = document.getElementById("input-codigo-mailing");
+  if (input) input.value = codigo;
+  const carrito = cargarCarrito();
+  if (!carrito.length || !codigo) return false;
+  setEstadoCodigoMailing("Validando código...");
+  const r = await fetch("/api/descuentos/validar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ codigo, items: itemsCarritoParaDescuento(carrito) }),
+  });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    setEstadoCodigoMailing(body.error || "No se pudo validar el código.", "error");
+    return false;
+  }
+  guardarDescuentoMailing(body);
+  return true;
+}
+
+async function derivarCheckoutAWhatsapp(carrito) {
   registrarInteraccion("complete_checkout", {
     metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
   });
+  const consume = await consumirCodigoMailing(carrito);
+  if (!consume.ok) return;
   const mensaje = armarMensajeWhatsapp(carrito);
   registrarPedidoEnClientes(carrito);
   borrarCheckoutPendiente();
   vaciarCarrito();
+  borrarDescuentoMailing();
   cerrarCarrito();
   window.location.href = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
 }
@@ -3267,7 +3439,17 @@ function derivarCheckoutAWhatsapp(carrito) {
 document.getElementById("btn-carrito").addEventListener("click", abrirCarrito);
 document.getElementById("btn-cerrar-carrito").addEventListener("click", cerrarCarrito);
 document.getElementById("overlay-carrito").addEventListener("click", cerrarCarrito);
-document.getElementById("btn-vaciar-carrito").addEventListener("click", vaciarCarrito);
+document.getElementById("btn-vaciar-carrito").addEventListener("click", () => {
+  vaciarCarrito();
+  borrarDescuentoMailing();
+});
+document.getElementById("btn-aplicar-codigo").addEventListener("click", aplicarCodigoMailing);
+document.getElementById("input-codigo-mailing").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    aplicarCodigoMailing();
+  }
+});
 // Al cerrar un pedido, suma los productos encargados al registro del
 // cliente (mismo clientes.json/csv que ya alimentan el gate inicial y el
 // buscador por chat) — así el panel /admin/clientes también refleja los
@@ -3290,7 +3472,7 @@ document.getElementById("btn-whatsapp").addEventListener("click", async () => {
     metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
   });
   if (!(await asegurarSesionParaCheckout())) return;
-  derivarCheckoutAWhatsapp(carrito);
+  await derivarCheckoutAWhatsapp(carrito);
 });
 document.getElementById("btn-volver").addEventListener("click", volverUnPaso);
 document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);
@@ -3632,7 +3814,7 @@ function buscarProductoYSeccion(nombre) {
 }
 
 function abrirProductoCompartido() {
-  const nombreObjetivo = new URLSearchParams(location.search).get("producto");
+  const nombreObjetivo = paramsMailingActuales().producto;
   if (!nombreObjetivo) return;
   const clave = buscarProductoYSeccion(nombreObjetivo);
   if (!clave) return;
@@ -3650,8 +3832,28 @@ function abrirProductoCompartido() {
   });
 }
 
+async function procesarLinkMailing() {
+  const { producto: nombreObjetivo, codigo, agregar } = paramsMailingActuales();
+  if (!nombreObjetivo || !agregar) return;
+
+  const clave = buscarProductoYSeccion(nombreObjetivo);
+  if (!clave) return;
+  const producto = (SECCIONES_DATA[clave] || []).find((p) => p.nombre === nombreObjetivo);
+  if (!producto) return;
+
+  if (!(await asegurarSesionParaCarrito(producto, null))) return;
+
+  agregarAlCarrito(producto, null);
+  if (codigo) {
+    await aplicarCodigoMailingPorValor(codigo);
+  }
+  abrirCarrito();
+  limpiarParametrosMailingProcesados();
+}
+
 cargarCatalogo().then(async () => {
   await procesarPendienteCarrito();
   if (await procesarCheckoutPendiente()) return;
   abrirProductoCompartido();
+  await procesarLinkMailing();
 });

@@ -178,6 +178,14 @@
     <p class="carrito-nota">Tu pedido se guarda solo en este navegador.</p>
     <div id="items-carrito"></div>
     <div class="panel-carrito-footer">
+      <div class="descuento-mailing">
+        <label for="input-codigo-mailing">Código de descuento</label>
+        <div class="descuento-mailing-fila">
+          <input id="input-codigo-mailing" type="text" placeholder="TTRA-XXXXXXXX" autocomplete="off">
+          <button id="btn-aplicar-codigo" type="button">Aplicar</button>
+        </div>
+        <p id="estado-codigo-mailing" class="descuento-mailing-estado"></p>
+      </div>
       <p id="total-carrito"></p>
       <button id="btn-vaciar-carrito" type="button">Vaciar carrito</button>
       <button id="btn-whatsapp" type="button">Cerrar pedido por WhatsApp</button>
