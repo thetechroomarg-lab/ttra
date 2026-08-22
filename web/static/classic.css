@@ -66,17 +66,135 @@ html[data-modo="classic"] .rc-logout-tarjeta {
 
 html[data-modo="classic"] header {
   background: var(--cl-azul-francia);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: start;
+  column-gap: 18px;
+  row-gap: 10px;
+  padding: 14px 20px 12px;
+}
+html[data-modo="classic"] .rc-header-superior {
+  display: contents;
+}
+html[data-modo="classic"] .rc-header-centro {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  width: var(--rc-header-buscador-width, 960px);
+  align-items: center;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  transform: translateY(10px);
+}
+html[data-modo="classic"] .rc-header-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: var(--rc-header-buscador-width, 960px);
+  margin: 0;
+  margin-top: -21px;
+  padding-top: 0;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: center;
+  transform: translateY(10px);
+}
+html[data-modo="classic"] .rc-header-nav .categorias-columna {
+  flex: 0 1 auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+html[data-modo="classic"] .rc-header-nav #sub-nav {
+  margin-top: -2px;
+}
+html[data-modo="classic"] .rc-buscador-header {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  align-self: center;
+  margin-top: 0;
+}
+html[data-modo="classic"] .fila-principal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 20px 16px;
+}
+html[data-modo="classic"] .columna-izquierda {
+  display: none;
+}
+html[data-modo="classic"] main#productos {
+  margin-top: 0;
 }
 
 /* Logo en blanco sobre el header azul Francia */
 html[data-modo="classic"] .rc-logo-linea {
   color: #fff;
   -webkit-text-stroke: 1px #fff;
+  font-size: calc(clamp(20px, 5vw, 32px) * 1.38);
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+}
+html[data-modo="classic"] .rc-logo-punto {
+  color: #d62828;
+  -webkit-text-stroke: 0;
 }
 
 /* Fecha/hora/ciudad/dólar en blanco, legibles sobre el header oscuro */
 html[data-modo="classic"] .rc-fecha-hora {
   color: #fff;
+}
+html[data-modo="classic"] .rc-noticiero {
+  min-width: 0;
+  margin: 0;
+  height: 24px;
+  width: 100%;
+}
+html[data-modo="classic"] .rc-header-derecha {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  justify-self: end;
+  transform: translateY(10px);
+  margin-right: 0.5cm;
+}
+html[data-modo="classic"] .rc-modo-y-carrito {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 420px;
+}
+html[data-modo="classic"] .rc-modo-y-carrito button {
+  width: auto;
+}
+html[data-modo="classic"] .rc-perfil-menu {
+  width: auto;
+  min-width: 0;
+}
+html[data-modo="classic"] .rc-modo-y-carrito .rc-perfil-boton {
+  width: auto;
+}
+html[data-modo="classic"] .rc-perfil-nombre {
+  max-width: 120px;
+}
+html[data-modo="classic"] .rc-titulo-grupo {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  justify-self: start;
+  margin-left: 0.5cm;
 }
 
 /* Texto del noticiero (crawl) en amarillo huevo */
@@ -93,22 +211,7 @@ html[data-modo="classic"] .rc-noticiero-texto.clickeable:hover {
    centra la única tanda visible, así queda equidistante de ambos bordes
    de la pantalla sin tocar el gap entre marcas. */
 html[data-modo="classic"] .carrousel-wrap {
-  overflow: visible;
-}
-html[data-modo="classic"] .carrousel {
-  width: 100%;
-  justify-content: center;
-}
-html[data-modo="classic"] .carrousel-tanda:nth-of-type(2) {
   display: none;
-}
-/* En pantallas chicas, cada marca pasa a bloque propio y se acomodan en
-   varias filas centradas, en vez de desbordar el ancho de la pantalla. */
-html[data-modo="classic"] .carrousel-tanda {
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  justify-content: center;
-  row-gap: 10px;
 }
 html[data-modo="classic"] .carrousel span:hover {
   color: #000;
@@ -179,6 +282,8 @@ html[data-modo="classic"] .btn-categoria {
   position: relative;
   overflow: hidden;
   transition: transform .2s ease, box-shadow .2s ease, color .2s ease;
+  padding: 12px 16px;
+  font-size: 14px;
 }
 html[data-modo="classic"] .btn-categoria::after {
   content: "";
@@ -196,6 +301,16 @@ html[data-modo="classic"] .btn-categoria:hover {
 }
 html[data-modo="classic"] .btn-categoria:hover::after {
   transform: scaleX(1);
+}
+html[data-modo="classic"] #categorias .btn-categoria {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 12px 16px;
+}
+html[data-modo="classic"] .btn-volver {
+  width: auto;
+  align-self: flex-start;
+  flex: 0 0 auto;
 }
 
 /* El botón "Modo Fallout" se va transformando lentamente al pasar el mouse:
@@ -224,10 +339,52 @@ html[data-modo="classic"] .rc-buscador input:focus {
   box-shadow: none !important;
 }
 
+@media (max-width: 700px) {
+  html[data-modo="classic"] header {
+    padding: 12px 12px 10px;
+  }
+  html[data-modo="classic"] .rc-header-superior {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  html[data-modo="classic"] .rc-header-centro {
+    align-items: stretch;
+  }
+  html[data-modo="classic"] .rc-header-derecha {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  html[data-modo="classic"] .rc-modo-y-carrito {
+    justify-content: flex-start;
+    max-width: none;
+  }
+  html[data-modo="classic"] .rc-perfil-menu {
+    width: auto;
+  }
+  html[data-modo="classic"] .rc-header-nav {
+    gap: 8px;
+    justify-content: stretch;
+  }
+  html[data-modo="classic"] .rc-header-nav .categorias-columna {
+    flex: 1 1 100%;
+    justify-content: stretch;
+  }
+  html[data-modo="classic"] .fila-principal {
+    padding: 6px 12px 16px;
+  }
+  html[data-modo="classic"] .categorias-columna {
+    gap: 8px;
+  }
+  html[data-modo="classic"] .btn-categoria,
+  html[data-modo="classic"] #categorias .btn-categoria {
+    width: 100%;
+  }
+}
+
 /* Logo: tipografía redondeada, blanca y en negrita, sin la carita animada */
 html[data-modo="classic"] .rc-logo-linea {
-  font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
-  font-weight: 800;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
 }
 html[data-modo="classic"] .rc-cara-wrap { display: none; }
 
@@ -332,21 +489,30 @@ html[data-modo="classic"] #btn-logout-classic:hover {
   color: var(--cl-amarillo-huevo);
 }
 
-/* Mensaje de confirmación de log out: tarjeta blanca redondeada, igual
-   estética que el gate inicial y el panel de clientes. */
+/* Mensaje de confirmación de log out: mismo lenguaje visual del modo
+   Classic, sin volver al modal blanco anterior. */
 html[data-modo="classic"] .rc-logout-tarjeta {
-  background: #fff;
-  border: none;
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(16, 33, 79, 0.25);
+  background: linear-gradient(180deg, #202020 0%, #121212 100%);
+  border: 1px solid var(--rc-green-faint);
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  color: var(--rc-green-bright);
+}
+html[data-modo="classic"] .rc-logout-texto {
+  color: var(--rc-green-bright);
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 html[data-modo="classic"] .rc-logout-tarjeta button {
-  background: var(--cl-azul-francia);
-  color: #fff;
-  border-color: var(--cl-azul-francia);
+  background: var(--rc-bg-panel-2);
+  color: var(--rc-green-bright);
+  border: 1px solid var(--rc-green-faint);
+  border-radius: 12px;
+  font-weight: 800;
 }
 html[data-modo="classic"] .rc-logout-tarjeta button:hover {
-  background: #001835;
+  background: #000000;
+  border-color: var(--rc-green-dim);
 }
 .tarjeta-recomendado h3 {
   grid-row: 2;

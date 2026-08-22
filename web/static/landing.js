@@ -105,6 +105,7 @@ const ORDEN_MARCAS = [
 ];
 
 const CLAVE_CARRITO = "ttra_carrito";
+const CLAVE_CARRITO_PENDIENTE = "ttra_carrito_pendiente";
 const WHATSAPP_NUMERO = "543512145217";
 
 let SECCIONES_DATA = {};
@@ -115,7 +116,8 @@ let seccionActiva = null; // clave de sección elegida en la pantalla principal,
 let subFiltrosActivos = new Set(); // marcas (o "Notebooks"/"Macbooks") elegidas, acumulables
 let filtroMarcaGlobal = null; // marca elegida desde el carrousel o "Búsqueda por Marca", busca en TODO el catálogo
 let modoVista = "cards"; // "cards" | "lista"
-let ordenPrecio = null; // null (sin orden) | "asc" | "desc"
+let criterioOrden = "default"; // default | nombre-asc | nombre-desc | precio-asc | precio-desc
+let estadoSesionCliente = null;
 // Classic es siempre el modo de arranque (ver boot.js); Fallout solo dura
 // mientras no se recarga la página, no se persiste entre refrescos.
 // Atajo de desarrollo: ?modo=fallout en la URL arranca directo en Fallout
@@ -1325,7 +1327,7 @@ function tarjetaRecomendadoHtml(p) {
       <h3>${marcaLogoHtml(p.marca, "marca-logo-card")}${escapeHtml(p.nombre)}</h3>
       <p class="tarjeta-recomendado-precio">
         ${bloquePreciosHtml(p)}
-        <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}</span>
+        <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}</span>
       </p>
       <div class="tarjeta-recomendado-acciones">
         <div class="dropdown-color">
@@ -1380,8 +1382,15 @@ function wireTarjetasRecomendadas(el) {
       });
     }
     if (btnAgregar) {
-      btnAgregar.addEventListener("click", () => {
-        agregarAlCarrito(producto, btnAgregar.dataset.color || null);
+      btnAgregar.addEventListener("click", async () => {
+        await agregarAlCarritoProtegido(producto, btnAgregar.dataset.color || null);
+      });
+    }
+    const btnCompartir = card.querySelector(".btn-compartir");
+    if (btnCompartir) {
+      btnCompartir.addEventListener("click", (e) => {
+        e.stopPropagation();
+        compartirProducto(card.dataset.nombre);
       });
     }
   });
@@ -1408,21 +1417,10 @@ function pintarCarrouselRecomendados(el) {
     // izquierda (switches/reproductor).
     el.style.height = `${alturaPipboyHomePx}px`;
   } else {
-    // Classic (o Fallout antes de medir el Pip-Boy alguna vez): el borde
-    // inferior de la columna izquierda ES el límite — el diseño manda que
-    // el carrousel llegue exactamente hasta el borde inferior real de la
-    // barra lateral (último botón de categoría/Búsqueda por Marca), ni un
-    // pixel más. Ojo: NO alcanza con igualar alturas (columnaIzquierda.height
-    // == el.height) porque main#productos tiene margin-top:20px y
-    // columna-izquierda no — con la misma altura pero arrancando 20px más
-    // abajo, el carrousel terminaba 20px más abajo también, pisando el
-    // footer. Restando el "top" real de acá (que ya incluye ese margin) se
-    // obtiene el alto exacto para que ambos bordes inferiores coincidan.
-    const columnaIzquierda = document.querySelector(".columna-izquierda");
-    const altura = columnaIzquierda
-      ? columnaIzquierda.getBoundingClientRect().bottom - el.getBoundingClientRect().top
-      : 0;
-    el.style.height = altura > 0 ? `${altura}px` : "";
+    // Con la navegación arriba y sin carrusel de marcas, el main ya ocupa
+    // el viewport útil por flujo natural; fijarle altura contra la vieja
+    // columna lateral sólo volvería a introducir un límite artificial.
+    el.style.height = "";
   }
   el.innerHTML = `
     <div class="carrousel-recomendados-wrap">
@@ -1634,6 +1632,34 @@ function actualizarFavicon(modo) {
   link.href = modo === "fallout" ? "favicon-fallout.svg" : "favicon.svg";
 }
 
+function aplicarLayoutCatalogoPorModo(modo) {
+  const header = document.querySelector("header");
+  const headerCentro = document.querySelector(".rc-header-centro");
+  const headerNav = document.querySelector(".rc-header-nav");
+  const columnaIzquierda = document.getElementById("columna-izquierda-layout");
+  const buscador = document.querySelector(".rc-buscador-header");
+  const switches = document.getElementById("rc-switches-fallout-wrap");
+  if (!header || !headerCentro || !headerNav || !columnaIzquierda || !buscador || !switches) return;
+
+  if (modo === "fallout") {
+    if (buscador.parentElement !== columnaIzquierda) columnaIzquierda.prepend(buscador);
+    if (headerNav.parentElement !== columnaIzquierda) columnaIzquierda.appendChild(headerNav);
+    if (switches.parentElement !== columnaIzquierda) columnaIzquierda.appendChild(switches);
+    return;
+  }
+
+  const noticiero = headerCentro.querySelector(".rc-noticiero");
+  if (noticiero) {
+    if (buscador.previousElementSibling !== null || buscador.parentElement !== headerCentro) {
+      headerCentro.insertBefore(buscador, noticiero);
+    }
+  } else if (buscador.parentElement !== headerCentro) {
+    headerCentro.appendChild(buscador);
+  }
+  if (headerNav.parentElement !== header) header.insertBefore(headerNav, switches);
+  if (switches.parentElement !== header) header.appendChild(switches);
+}
+
 function aplicarModoVisual(modo, opciones) {
   const opts = opciones || {};
   modoVisual = modo;
@@ -1642,6 +1668,7 @@ function aplicarModoVisual(modo, opciones) {
     b.classList.toggle("activo", b.dataset.modo === modo);
   });
   actualizarFavicon(modo);
+  aplicarLayoutCatalogoPorModo(modo);
   // La música (si estaba sonando) sigue de fondo al navegar por secciones
   // dentro de Fallout — el iframe de Spotify vive fuera de #productos, así
   // que no se toca al repintar la vista. Solo se corta acá, al pasar a
@@ -2050,6 +2077,56 @@ function escapeHtml(s) {
   return div.innerHTML.replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
+async function obtenerEstadoSesionCliente(force = false) {
+  if (!force && estadoSesionCliente !== null) return estadoSesionCliente;
+  try {
+    const r = await fetch("/api/me");
+    if (!r.ok) {
+      estadoSesionCliente = null;
+      return null;
+    }
+    estadoSesionCliente = await r.json();
+    return estadoSesionCliente;
+  } catch {
+    estadoSesionCliente = null;
+    return null;
+  }
+}
+
+function guardarPendienteCarrito(producto, color) {
+  sessionStorage.setItem(CLAVE_CARRITO_PENDIENTE, JSON.stringify({
+    nombre: producto.nombre,
+    color: color || null,
+  }));
+}
+
+function leerPendienteCarrito() {
+  try {
+    return JSON.parse(sessionStorage.getItem(CLAVE_CARRITO_PENDIENTE) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function borrarPendienteCarrito() {
+  sessionStorage.removeItem(CLAVE_CARRITO_PENDIENTE);
+}
+
+function urlLoginParaCarrito() {
+  const params = new URLSearchParams();
+  params.set("registro", "1");
+  params.set("volver", `${location.pathname}${location.search}`);
+  return `/login.html?${params.toString()}`;
+}
+
+async function asegurarSesionParaCarrito(producto, color) {
+  const sesion = await obtenerEstadoSesionCliente(true);
+  if (sesion && !sesion.debe_cambiar_password) return true;
+  guardarPendienteCarrito(producto, color);
+  window.location.href = urlLoginParaCarrito();
+  return false;
+}
+
 // Ícono de cámara (SVG, no emoji): lleva a una búsqueda de Google Imágenes
 // del producto en una pestaña nueva, mismo link_imagen que ya arma el
 // catálogo por cada ítem.
@@ -2145,11 +2222,38 @@ let pipboyApagado = false;
 // con el Pip-Boy encendido.
 let alturaPipboyHomePx = null;
 
+function sincronizarAnchoBuscadorHeader() {
+  const buscador = document.querySelector(".rc-buscador-header");
+  if (!buscador) return;
+  if (modoVisual !== "classic") {
+    buscador.style.removeProperty("--rc-header-buscador-width");
+    return;
+  }
+  if (window.innerWidth <= 700) {
+    buscador.style.removeProperty("--rc-header-buscador-width");
+    return;
+  }
+  const filas = [
+    document.getElementById("categorias"),
+    document.getElementById("sub-nav"),
+  ].filter((el) => el && !el.classList.contains("oculto"));
+  const anchoObjetivo = filas.reduce((max, el) => {
+    const ancho = el.getBoundingClientRect().width || el.scrollWidth || 0;
+    return Math.max(max, ancho);
+  }, 0);
+  if (anchoObjetivo > 0) {
+    buscador.style.setProperty("--rc-header-buscador-width", `${anchoObjetivo}px`);
+  } else {
+    buscador.style.removeProperty("--rc-header-buscador-width");
+  }
+}
+
 function pintarCategorias() {
   const el = document.getElementById("categorias");
   el.innerHTML = CATEGORIAS_BOTONES.map(
     (c) => `<button data-seccion="${escapeHtml(c.clave)}" class="btn-categoria" type="button">${escapeHtml(c.etiqueta)}</button>`
   ).join("");
+  sincronizarAnchoBuscadorHeader();
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       seccionActiva = btn.dataset.seccion;
@@ -2212,6 +2316,7 @@ function pintarSubNav(seccion) {
     const activo = o === "Todos" ? subFiltrosActivos.size === 0 : subFiltrosActivos.has(o);
     return `<button data-clave="${escapeHtml(o)}" class="btn-categoria ${activo ? "activo" : ""}" type="button">${escapeHtml(etiquetaMarca(o))}</button>`;
   }).join("");
+  sincronizarAnchoBuscadorHeader();
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       const clave = btn.dataset.clave;
@@ -2302,11 +2407,12 @@ function tarjetaProducto(p) {
   `;
 }
 
-// Etiqueta y flecha del botón de orden, según el estado actual.
-function etiquetaOrdenPrecio() {
-  if (ordenPrecio === "asc") return 'Precio <span class="flecha-orden">↑</span>';
-  if (ordenPrecio === "desc") return 'Precio <span class="flecha-orden">↓</span>';
-  return "Ordenar precio";
+function etiquetaOrdenActual() {
+  if (criterioOrden === "nombre-asc") return "Nombre A-Z";
+  if (criterioOrden === "nombre-desc") return "Nombre Z-A";
+  if (criterioOrden === "precio-asc") return "Precio menor a mayor";
+  if (criterioOrden === "precio-desc") return "Precio mayor a menor";
+  return "Ordenar";
 }
 
 function controlVistaHtml() {
@@ -2314,22 +2420,36 @@ function controlVistaHtml() {
     <div class="control-vista">
       <button type="button" class="btn-vista ${modoVista === "cards" ? "activo" : ""}" data-modo="cards">Cards</button>
       <button type="button" class="btn-vista ${modoVista === "lista" ? "activo" : ""}" data-modo="lista">Lista</button>
-      <button type="button" class="btn-vista btn-orden-precio ${ordenPrecio ? "activo" : ""}" id="btn-orden-precio">${etiquetaOrdenPrecio()}</button>
+      <label class="control-orden">
+        <span class="control-orden-etiqueta">Ordenar</span>
+        <select id="select-orden" class="btn-vista btn-select-orden ${criterioOrden !== "default" ? "activo" : ""}">
+          <option value="default">Sin ordenar</option>
+          <option value="nombre-asc" ${criterioOrden === "nombre-asc" ? "selected" : ""}>Nombre A-Z</option>
+          <option value="nombre-desc" ${criterioOrden === "nombre-desc" ? "selected" : ""}>Nombre Z-A</option>
+          <option value="precio-asc" ${criterioOrden === "precio-asc" ? "selected" : ""}>Precio menor a mayor</option>
+          <option value="precio-desc" ${criterioOrden === "precio-desc" ? "selected" : ""}>Precio mayor a menor</option>
+        </select>
+      </label>
     </div>
   `;
 }
 
-// Ciclo: sin orden -> ascendente -> descendente -> sin orden.
-function siguienteOrdenPrecio() {
-  if (ordenPrecio === null) return "asc";
-  if (ordenPrecio === "asc") return "desc";
-  return null;
-}
-
-function ordenarPorPrecio(productos) {
-  if (!ordenPrecio) return productos;
-  const signo = ordenPrecio === "asc" ? 1 : -1;
-  return [...productos].sort((a, b) => signo * ((a.usd ?? 0) - (b.usd ?? 0)));
+function ordenarProductos(productos) {
+  if (criterioOrden === "default") return productos;
+  const ordenados = [...productos];
+  if (criterioOrden === "nombre-asc") {
+    return ordenados.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es", { sensitivity: "base" }));
+  }
+  if (criterioOrden === "nombre-desc") {
+    return ordenados.sort((a, b) => (b.nombre || "").localeCompare(a.nombre || "", "es", { sensitivity: "base" }));
+  }
+  if (criterioOrden === "precio-asc") {
+    return ordenados.sort((a, b) => (a.usd ?? 0) - (b.usd ?? 0));
+  }
+  if (criterioOrden === "precio-desc") {
+    return ordenados.sort((a, b) => (b.usd ?? 0) - (a.usd ?? 0));
+  }
+  return productos;
 }
 
 function pintarGrilla(el, productos, mensajeVacio) {
@@ -2337,7 +2457,7 @@ function pintarGrilla(el, productos, mensajeVacio) {
     el.innerHTML = `<p class="mensaje-vacio">${mensajeVacio}</p>`;
     return;
   }
-  productos = ordenarPorPrecio(productos);
+  productos = ordenarProductos(productos);
   const claseModo = modoVista === "lista" ? "lista" : "";
   el.innerHTML = `${controlVistaHtml()}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div>`;
   el.querySelectorAll(".card").forEach((card) => {
@@ -2381,14 +2501,14 @@ function pintarGrilla(el, productos, mensajeVacio) {
         });
       });
     }
-    btnAgregar.addEventListener("click", (e) => {
+    btnAgregar.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (!card.classList.contains("expandida")) {
         seleccionarCard();
         return;
       }
       const producto = productos.find((p) => p.nombre === btnAgregar.dataset.nombre);
-      if (producto) agregarAlCarrito(producto, btnAgregar.dataset.color || null);
+      if (producto) await agregarAlCarritoProtegido(producto, btnAgregar.dataset.color || null);
     });
     const btnCompartir = card.querySelector(".btn-compartir");
     if (btnCompartir) {
@@ -2408,10 +2528,10 @@ function pintarGrilla(el, productos, mensajeVacio) {
       actualizarVista();
     });
   });
-  const btnOrden = el.querySelector("#btn-orden-precio");
-  if (btnOrden) {
-    btnOrden.addEventListener("click", () => {
-      ordenPrecio = siguienteOrdenPrecio();
+  const selectOrden = el.querySelector("#select-orden");
+  if (selectOrden) {
+    selectOrden.addEventListener("change", () => {
+      criterioOrden = selectOrden.value;
       actualizarVista();
     });
   }
@@ -2448,6 +2568,7 @@ function actualizarVista() {
   categoriasEl.classList.toggle("oculto", !enInicio);
   subNavEl.classList.toggle("oculto", !mostrarSubNav);
   volverBtn.classList.toggle("oculto", enInicio);
+  sincronizarAnchoBuscadorHeader();
   // Los switches (Main Switch / Power Switch, Modo Fallout) solo tienen
   // sentido en el home: al entrar a una sección los botones de categoría
   // desaparecen y quedaban como único control visible en la barra lateral.
@@ -2636,6 +2757,29 @@ function agregarAlCarrito(producto, color) {
   }
   guardarCarrito(carrito);
   abrirCarrito();
+}
+
+async function agregarAlCarritoProtegido(producto, color) {
+  if (!(await asegurarSesionParaCarrito(producto, color))) return;
+  agregarAlCarrito(producto, color);
+}
+
+async function procesarPendienteCarrito() {
+  const pendiente = leerPendienteCarrito();
+  if (!pendiente) return;
+  const sesion = await obtenerEstadoSesionCliente();
+  if (!sesion || sesion.debe_cambiar_password) return;
+
+  const catalogoPlano = {};
+  Object.values(SECCIONES_DATA).forEach((productos) => {
+    (productos || []).forEach((p) => {
+      catalogoPlano[p.nombre] = p;
+    });
+  });
+
+  const producto = catalogoPlano[pendiente.nombre];
+  borrarPendienteCarrito();
+  if (producto) agregarAlCarrito(producto, pendiente.color || null);
 }
 
 function cambiarCantidad(nombre, color, delta) {
@@ -3110,6 +3254,7 @@ sincronizarAlturaNoticiero();
 (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
   .then(sincronizarAlturaNoticiero);
 window.addEventListener("resize", sincronizarAlturaNoticiero);
+window.addEventListener("resize", sincronizarAnchoBuscadorHeader);
 
 pintarCarrousel();
 renderCarrito();
@@ -3146,4 +3291,7 @@ function abrirProductoCompartido() {
   });
 }
 
-cargarCatalogo().then(abrirProductoCompartido);
+cargarCatalogo().then(async () => {
+  await procesarPendienteCarrito();
+  abrirProductoCompartido();
+});

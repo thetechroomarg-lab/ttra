@@ -52,7 +52,11 @@ header {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
   padding: 16px 20px; background: var(--rc-bg-panel); border-bottom: 1px solid var(--rc-green-faint);
 }
+.rc-header-superior { display: flex; align-items: center; gap: 10px; flex: 1 1 100%; min-width: 0; }
 .rc-titulo-grupo { display: flex; align-items: flex-end; gap: 12px; min-width: 0; flex-shrink: 0; }
+.rc-header-centro {
+  flex: 1 1 0; min-width: 0;
+}
 .rc-logo {
   margin: 0; display: flex; flex-direction: column; line-height: 0.78;
   font-family: 'Archivo Black', 'Arial Black', sans-serif;
@@ -80,11 +84,7 @@ header {
 
 .rc-noticiero {
   position: relative;
-  /* flex-basis 0 (no "auto"): así su ancho mínimo real es 0, y el texto
-     largo de una noticia nunca puede empujar el resto del header. */
   flex: 1 1 0; min-width: 0; margin: 0 16px;
-  /* Altura de respaldo hasta que el JS la sincronice con la altura real del
-     logo (mismo alto, nace y termina donde el logo). */
   height: calc(17px * 1.35 * 3);
   overflow: hidden;
   user-select: none;
@@ -101,7 +101,9 @@ header {
 .rc-noticiero-texto.clickeable { pointer-events: auto; }
 .rc-noticiero-texto.clickeable:hover { cursor: var(--rc-cursor-mira); color: #c8ffdc; }
 
-.rc-header-derecha { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; flex-shrink: 0; }
+.rc-header-derecha {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; flex-shrink: 0;
+}
 .rc-fecha-hora {
   display: flex; flex-direction: column; align-items: flex-end;
   font-size: 15px; letter-spacing: .04em; color: var(--rc-green-bright); white-space: nowrap;
@@ -113,7 +115,9 @@ header {
     15px 0 0 rgba(51, 255, 102, 0.06),
     20px 0 0 rgba(51, 255, 102, 0.03);
 }
-.rc-modo-y-carrito { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 150px; }
+.rc-modo-y-carrito {
+  display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 150px;
+}
 .rc-modo-y-carrito button {
   width: 100%; text-align: center;
   padding: 8px 14px; font-size: clamp(13px, 3.5vw, 15px);
@@ -300,6 +304,7 @@ html[data-modo="fallout"] #btn-logout-classic { display: none; }
 .rc-buscador input::placeholder {
   color: var(--rc-green-dim); text-shadow: 0 0 6px var(--rc-glow); opacity: 1;
 }
+.rc-buscador-header { width: 100%; }
 
 .fila-principal {
   display: flex; align-items: stretch; gap: 20px;
@@ -326,18 +331,6 @@ html[data-modo="fallout"] #btn-logout-classic { display: none; }
     15px 0 0 rgba(51, 255, 102, 0.06),
     20px 0 0 rgba(51, 255, 102, 0.03);
 }
-/* Las 6 cards del menú principal (home) reparten entre todas el alto libre
-   de la columna izquierda, en vez de tener un padding fijo: eso es lo que
-   antes las hacía "muy altas" y disparaba el scroll interno de la columna
-   apenas la pantalla no era lo bastante alta. Alcanzado el mínimo legible
-   (min-height acá abajo), si de verdad no entran, ahí sí scrollea (ver
-   overflow-y:auto en .columna-izquierda) — no se rompe nada, es el mismo
-   fallback que ya existía. Solo #categorias: el sub-nav de marcas (más
-   itemes, lista potencialmente larga) sigue con su alto natural. */
-#categorias.categorias-columna {
-  flex: 1;
-  min-height: 0;
-}
 #categorias .btn-categoria {
   flex: 1;
   min-height: 40px;
@@ -345,20 +338,6 @@ html[data-modo="fallout"] #btn-logout-classic { display: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-}
-/* En Classic no hay switches/reproductor debajo (eso es solo de Fallout)
-   que expliquen ese alto extra: llenarlo con las cards estiradas se veía
-   demasiado grande. Vuelven al tamaño fijo de siempre (a pedido explícito,
-   aunque quede aire libre debajo, dentro de la columna — la columna sigue
-   midiendo lo mismo por fuera, así que el carrousel de recomendados de la
-   derecha no se mueve). */
-html[data-modo="classic"] #categorias.categorias-columna {
-  flex: 0 0 auto;
-}
-html[data-modo="classic"] #categorias .btn-categoria {
-  flex: 0 0 auto;
-  min-height: 0;
-  padding: 18px 20px;
 }
 .btn-categoria.activo {
   background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
@@ -379,14 +358,6 @@ html[data-modo="classic"] #categorias .btn-categoria {
   box-shadow: 0 0 20px 4px var(--rc-halo-seleccion-glow), 0 6px 14px -6px rgba(0, 0, 0, 0.35);
 }
 
-/* Interruptores tipo avión (Pip-Boy ON/OFF y Log Out), debajo de "Búsqueda
-   por Marca". Centrado en el espacio libre entre el menú y el pie de
-   página (margin auto arriba y abajo). Solo existe en Fallout: en Classic
-   el log out es el botón del header (ver #btn-logout-classic). Fila con
-   la columna de switches (casi la mitad del ancho de "Búsqueda por Marca")
-   y el reproductor de música a la derecha (llena el resto), separados por
-   el gap de acá abajo — ocupando juntos el mismo ancho total que ese
-   buscador y que los botones de categoría. */
 .rc-switch-fallout-wrap { display: none; }
 html[data-modo="fallout"] .rc-switch-fallout-wrap {
   display: flex;
@@ -712,17 +683,7 @@ html[data-modo="fallout"] .rc-switch-fallout-wrap.oculto { display: none; }
 }
 .selector-marcas .btn-categoria { padding: 22px 16px; }
 
-.btn-volver {
-  display: block; width: 100%;
-  padding: 18px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
-  text-align: center;
-  text-shadow:
-    0 0 6px var(--rc-glow),
-    5px 0 0 rgba(51, 255, 102, 0.22),
-    10px 0 0 rgba(51, 255, 102, 0.12),
-    15px 0 0 rgba(51, 255, 102, 0.06),
-    20px 0 0 rgba(51, 255, 102, 0.03);
-}
+.btn-volver { width: 100%; }
 .btn-volver.oculto { display: none; }
 
 main#productos { flex: 1; min-width: 0; margin-top: 20px; }
@@ -765,11 +726,6 @@ main#productos::-webkit-scrollbar-thumb:hover,
   box-shadow: 0 0 8px var(--rc-glow);
 }
 
-/* Al navegar dentro de una sección (no en el home): el menú de la
-   izquierda queda fijo/estático, y el listado de productos de la derecha
-   scrollea de forma independiente si no entra en la pantalla. Solo en
-   pantallas grandes: en mobile el scroll de toda la página sigue siendo
-   más usable. */
 @media (min-width: 701px) {
   body.rc-vista-seccion {
     height: 100vh;
@@ -779,23 +735,11 @@ main#productos::-webkit-scrollbar-thumb:hover,
     min-height: 0;
     overflow: hidden;
   }
-  /* El menú de la izquierda queda fijo en su lugar (no se mueve con la
-     página), pero si la lista de marcas es larga (ej. Celulares) y no
-     entra en la pantalla, scrollea internamente — si no, el botón "Volver"
-     y las últimas marcas quedaban recortados e inalcanzables. */
   body.rc-vista-seccion .columna-izquierda {
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
   }
-  /* Un contenedor con overflow-y:auto recorta también en horizontal (el
-     navegador fuerza overflow-x a "auto" apenas overflow-y deja de ser
-     "visible": no hay forma de evitarlo con overflow-x:visible). En vez de
-     pelear con esa regla, le damos aire de sobra ADENTRO del contenedor
-     (padding, sin compensar con margen negativo: eso hacía que el propio
-     panel de productos invadiera el menú) para que el "pop" de una card
-     más su glow nunca lleguen a tocar ese borde — arriba, abajo, o contra
-     el menú de la izquierda — y queden recortados. */
   body.rc-vista-seccion main#productos {
     height: 100%;
     overflow-y: auto;
@@ -803,14 +747,6 @@ main#productos::-webkit-scrollbar-thumb:hover,
   }
 }
 
-/* El home (portada, sin sección elegida) tampoco debe scrollear la página
-   entera: mismo criterio que rc-vista-seccion de acá arriba, pero en el
-   sentido inverso (:not en vez de la clase). Si el contenido no entra
-   igual (pantallas bajas), scrollea de forma interna, no la ventana.
-   De paso, main#productos con overflow-y:auto es también lo que evita que
-   el carrousel de recomendados (más alto que el Pip-Boy, ver
-   alturaPipboyHomePx en landing.js) desborde la caja al apagar el Pip-Boy:
-   scrollea ahí adentro en vez de estirar la fila. */
 @media (min-width: 701px) {
   body:not(.rc-vista-seccion) {
     height: 100vh;
@@ -828,6 +764,21 @@ main#productos::-webkit-scrollbar-thumb:hover,
   body:not(.rc-vista-seccion) main#productos {
     height: 100%;
     overflow-y: auto;
+  }
+}
+
+@media (max-width: 700px) {
+  body.rc-vista-seccion main#productos {
+    padding: 0 46px 24px 46px;
+  }
+  .fila-principal {
+    padding: 0 12px 16px;
+  }
+  html[data-modo="fallout"] .rc-switch-fallout-wrap {
+    flex-direction: column;
+  }
+  .rc-switches-columna {
+    flex: 1 1 auto;
   }
 }
 
@@ -1060,11 +1011,31 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   height: 44px; box-sizing: border-box; display: inline-flex; align-items: center;
   padding: 6px 14px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
 }
+.control-orden {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.control-orden-etiqueta {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.btn-select-orden {
+  min-width: 220px;
+  appearance: none;
+  background: var(--rc-bg-panel);
+  color: var(--rc-green-bright);
+  cursor: var(--rc-cursor);
+}
+.btn-select-orden:hover,
+.btn-select-orden:focus-visible {
+  cursor: var(--rc-cursor-mira);
+}
 .btn-vista.activo {
   background: var(--rc-green-faint); color: var(--rc-green-bright); border-color: var(--rc-green);
   font-weight: 600;
 }
-.flecha-orden { font-size: 1em; vertical-align: middle; margin-left: 2px; }
 
 .grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 16px; }
 .card {
