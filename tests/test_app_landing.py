@@ -37,6 +37,17 @@ def test_classic_header_mobile_conserva_ancho_de_busqueda_propio():
     assert "width: var(--rc-mobile-classic-content-width);" in css_mobile
 
 
+def test_classic_mobile_fija_carrousel_recomendados_a_400_por_350():
+    css = (appmod.BASE / "static" / "classic.css").read_text()
+    selector = 'html[data-modo="classic"] .carrousel-recomendados-grid-mobile {'
+    inicio = css.index(selector)
+    regla = css[inicio : css.index("}", inicio)]
+
+    assert "width: min(400px, 100%);" in regla
+    assert "height: 350px;" in regla
+    assert "margin: 0 auto;" in regla
+
+
 def test_landing_sin_sesion_muestra_index(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
