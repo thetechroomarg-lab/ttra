@@ -1424,11 +1424,16 @@ function renovarLoteRecomendadosMobile() {
   recomendacionesMobileIndice = 0;
 }
 
-function tarjetaRecomendadoMobileHtml() {
+function tarjetasRecomendadosMobileHtml() {
   if (!recomendacionesMobileLote.length) {
     return `<div class="tarjeta-recomendado tarjeta-recomendado-vacia"><p>Cargando recomendaciones...</p></div>`;
   }
-  return tarjetaRecomendadoHtml(recomendacionesMobileLote[recomendacionesMobileIndice]);
+  return recomendacionesMobileLote.map((producto, indice) => `
+    <div class="carrousel-recomendados-mobile-card">
+      <div class="carrousel-recomendados-mobile-contador">${indice + 1} / ${recomendacionesMobileLote.length}</div>
+      ${tarjetaRecomendadoHtml(producto)}
+    </div>
+  `).join("");
 }
 
 // Engancha el dropdown de color y "Agregar al carrito" de cada card
@@ -1528,6 +1533,8 @@ function avanzarCarrouselRecomendadosMobile(el, direccion = 1) {
   if (direccion > 0) {
     if (recomendacionesMobileIndice >= recomendacionesMobileLote.length - 1) {
       renovarLoteRecomendadosMobile();
+      pintarCarrouselRecomendadosMobile(el);
+      return;
     } else {
       recomendacionesMobileIndice += 1;
     }
@@ -1537,7 +1544,17 @@ function avanzarCarrouselRecomendadosMobile(el, direccion = 1) {
       : recomendacionesMobileIndice - 1;
   }
 
-  pintarCarrouselRecomendadosMobile(el);
+  actualizarCarrouselRecomendadosMobile(el);
+}
+
+function actualizarCarrouselRecomendadosMobile(el) {
+  const track = el.querySelector(".carrousel-recomendados-mobile-track");
+  const card = track?.children[recomendacionesMobileIndice];
+  if (!track || !card) return;
+  track.style.transform = `translateX(-${card.offsetLeft}px)`;
+  el.querySelectorAll(".carrousel-recomendados-mobile-punto").forEach((punto, indice) => {
+    punto.classList.toggle("activo", indice === recomendacionesMobileIndice);
+  });
 }
 
 function iniciarCicloRecomendadosMobile(el) {
@@ -1554,9 +1571,8 @@ function pintarCarrouselRecomendadosMobile(el) {
     <div class="carrousel-recomendados-wrap carrousel-recomendados-wrap-mobile">
       <div class="carrousel-recomendados-mobile-viewport">
         <div class="carrousel-recomendados-grid carrousel-recomendados-grid-mobile visible">
-          <div class="carrousel-recomendados-mobile-card">
-            <div class="carrousel-recomendados-mobile-contador">${recomendacionesMobileIndice + 1} / ${recomendacionesMobileLote.length}</div>
-            ${tarjetaRecomendadoMobileHtml()}
+          <div class="carrousel-recomendados-mobile-track">
+            ${tarjetasRecomendadosMobileHtml()}
           </div>
         </div>
       </div>
@@ -1570,7 +1586,7 @@ function pintarCarrouselRecomendadosMobile(el) {
   el.querySelectorAll(".carrousel-recomendados-mobile-punto").forEach((btn) => {
     btn.addEventListener("click", () => {
       recomendacionesMobileIndice = Number(btn.dataset.indice) || 0;
-      pintarCarrouselRecomendadosMobile(el);
+      actualizarCarrouselRecomendadosMobile(el);
     });
   });
   if (viewport) {
@@ -1596,7 +1612,10 @@ function pintarCarrouselRecomendadosMobile(el) {
     }, { passive: true });
   }
   iniciarCicloRecomendadosMobile(el);
-  requestAnimationFrame(ajustarAlturaRecomendadosMobile);
+  requestAnimationFrame(() => {
+    ajustarAlturaRecomendadosMobile();
+    actualizarCarrouselRecomendadosMobile(el);
+  });
 }
 
 function pintarCarrouselRecomendados(el) {

@@ -4,6 +4,21 @@ import web.app as appmod
 from tests.fakes_supabase import FakeSupabaseClient
 
 
+def test_landing_define_track_mobile_de_recomendados():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+
+    assert "carrousel-recomendados-mobile-track" in script
+    assert "actualizarCarrouselRecomendadosMobile" in script
+
+
+def test_classic_css_muestra_siguiente_card_mobile():
+    css = (appmod.BASE / "static" / "classic.css").read_text()
+
+    assert ".carrousel-recomendados-mobile-track" in css
+    assert "flex: 0 0 88%" in css
+    assert "transform .32s ease" in css
+
+
 def test_landing_sin_sesion_muestra_index(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)

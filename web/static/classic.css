@@ -832,8 +832,17 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
     display: block;
     height: 100%;
   }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-track {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    height: 100%;
+    transition: transform .32s ease;
+    will-change: transform;
+  }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card {
     position: relative;
+    flex: 0 0 88%;
     height: 100%;
     min-height: 0;
     display: flex;
