@@ -57,6 +57,10 @@ def _public_app_base_url(request: Request):
     base_publica = (os.environ.get("PUBLIC_APP_URL") or "").strip()
     if base_publica:
         return base_publica.rstrip("/")
+    forwarded_host = (request.headers.get("x-forwarded-host") or "").split(",")[0].strip()
+    if forwarded_host:
+        forwarded_proto = (request.headers.get("x-forwarded-proto") or "").split(",")[0].strip() or "https"
+        return f"{forwarded_proto}://{forwarded_host}".rstrip("/")
     return str(request.base_url).rstrip("/")
 
 
@@ -932,6 +936,12 @@ class LoginIn(BaseModel):
     password: str
 
 
+class CompletarSignupIn(BaseModel):
+    access_token: str | None = None
+    token_hash: str | None = None
+    type: str | None = None
+
+
 def _sesion_activa(request: Request):
     return bool(request.session.get("cliente_id"))
 
@@ -942,6 +952,17 @@ def _debe_cambiar_password(request: Request):
 
 def _anon_id_request(request: Request):
     return (request.headers.get("X-TTRA-ANON-ID") or "").strip() or None
+
+
+def _sesion_desde_auth_user(request: Request, auth_id: str):
+    filas = get_client().table("clientes").select("*").eq("auth_id", auth_id).execute().data
+    if not filas:
+        return None
+    cliente = filas[0]
+    request.session["cliente_id"] = cliente["id"]
+    request.session["cliente_nombre"] = cliente["nombre"]
+    request.session["debe_cambiar_password"] = bool(cliente.get("debe_cambiar_password"))
+    return cliente
 
 
 def _vincular_interacciones_anonimas(client, request: Request, cliente_id: str):
@@ -1016,6 +1037,36 @@ def login(entrada: LoginIn, request: Request):
 def logout(request: Request):
     request.session.clear()
     return {"ok": True}
+
+
+@app.post("/auth/completar-signup")
+def auth_completar_signup(entrada: CompletarSignupIn, request: Request):
+    client = get_client()
+    auth_user = None
+    try:
+        if entrada.access_token:
+            auth_user = client.auth.get_user(entrada.access_token).user
+        elif entrada.token_hash and entrada.type:
+            auth_resp = client.auth.verify_otp({
+                "token_hash": entrada.token_hash,
+                "type": entrada.type,
+            })
+            auth_user = getattr(auth_resp, "user", None)
+        else:
+            return JSONResponse({"error": "Faltan datos de verificación"}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo completar la verificación del signup")
+        return JSONResponse({"error": "No se pudo validar el link de verificación"}, status_code=400)
+
+    if not auth_user:
+        return JSONResponse({"error": "No se pudo validar el usuario verificado"}, status_code=400)
+
+    cliente = _sesion_desde_auth_user(request, auth_user.id)
+    if not cliente:
+        return JSONResponse({"error": "La cuenta fue verificada pero no existe el cliente asociado"}, status_code=404)
+
+    _vincular_interacciones_anonimas(client, request, cliente["id"])
+    return {"ok": True, "debe_cambiar_password": bool(cliente.get("debe_cambiar_password"))}
 
 
 class CambiarPasswordObligatorioIn(BaseModel):
