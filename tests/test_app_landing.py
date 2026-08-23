@@ -19,13 +19,22 @@ def test_classic_css_muestra_siguiente_card_mobile():
     assert "transform .32s ease" in css
 
 
-def test_classic_header_desktop_reserva_ancho_para_buscador_y_acciones():
+def test_classic_header_desktop_limita_buscador_antes_del_bloque_derecho():
     css = (appmod.BASE / "static" / "classic.css").read_text()
-    selector = 'html[data-modo="classic"] header {'
+    selector = 'html[data-modo="classic"] .rc-header-centro {'
     inicio = css.index(selector)
     regla = css[inicio:css.index("}", inicio)]
 
-    assert "grid-template-columns: minmax(180px, 1fr) minmax(0, var(--rc-header-buscador-width, 960px)) minmax(270px, 1fr);" in regla
+    assert "width: clamp(420px, calc(100vw - 610px), 960px);" in regla
+    assert "max-width: 100%;" in regla
+
+
+def test_classic_header_mobile_conserva_ancho_de_busqueda_propio():
+    css = (appmod.BASE / "static" / "classic.css").read_text()
+    inicio_mobile = css.index('@media (max-width: 700px)')
+    css_mobile = css[inicio_mobile:]
+
+    assert "width: var(--rc-mobile-classic-content-width);" in css_mobile
 
 
 def test_landing_sin_sesion_muestra_index(monkeypatch):

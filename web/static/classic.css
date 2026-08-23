@@ -81,8 +81,8 @@ html[data-modo="classic"] .rc-header-centro {
   flex-direction: column;
   gap: 0;
   min-width: 0;
-  width: 100%;
-  max-width: var(--rc-header-buscador-width, 960px);
+  width: clamp(420px, calc(100vw - 610px), 960px);
+  max-width: 100%;
   align-items: center;
   grid-column: 2;
   grid-row: 1;
