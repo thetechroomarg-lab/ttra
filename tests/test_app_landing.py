@@ -154,6 +154,64 @@ def test_classic_muestra_acciones_recomendadas_y_desactiva_agregar_sin_color():
     assert "filter: grayscale(1);" in agregar_deshabilitado
 
 
+def test_carrito_muestra_disclaimer_y_alinea_altura_de_botones():
+    html = (appmod.BASE / "static" / "index.html").read_text()
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+
+    vaciar = html.index('id="btn-vaciar-carrito"')
+    whatsapp = html.index('id="btn-whatsapp"')
+    disclaimer = html.index('class="carrito-disclaimer"')
+
+    assert vaciar < disclaimer
+    assert whatsapp < disclaimer
+    assert "no garantiza la reserva" in html
+    assert "detalles finales se confirman por WhatsApp" in html
+    assert "--carrito-boton-altura: 40px;" in css
+    assert "#btn-aplicar-codigo," in css
+    assert "#btn-vaciar-carrito," in css
+    assert "#btn-whatsapp {" in css
+    assert "height: var(--carrito-boton-altura);" in css
+
+
+def test_carrito_es_modal_flotante_y_respeta_el_footer():
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+
+    inicio = css.index("#panel-carrito {\n  --carrito-boton-altura:")
+    regla_modal = css[inicio : css.index("}", inicio)]
+    inicio_items = css.index("#items-carrito {")
+    regla_items = css[inicio_items : css.index("}", inicio_items)]
+
+    assert "left: 50%;" in regla_modal
+    assert "transform: translateX(-50%);" in regla_modal
+    assert "border: 2px solid var(--rc-green-dim);" in regla_modal
+    assert "bottom: var(--rc-carrito-separacion-footer);" in regla_modal
+    assert "overflow: hidden;" in regla_modal
+    assert "overflow-y: auto;" in regla_items
+    assert "function sincronizarLimiteCarrito()" in script
+    assert '"--rc-carrito-separacion-footer"' in script
+    assert "sincronizarLimiteCarrito();" in script
+
+
+def test_carrito_modal_se_ancla_a_la_derecha_en_desktop_y_deja_margenes_mobile():
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+
+    selector_desktop = "@media (min-width: 701px) {\n  #panel-carrito {"
+    inicio_desktop = css.index(selector_desktop)
+    desktop = css[inicio_desktop : css.index("}", inicio_desktop)]
+    selector_mobile = "@media (max-width: 700px) {\n  #panel-carrito {"
+    inicio_mobile = css.index(selector_mobile)
+    mobile = css[inicio_mobile : css.index("}", inicio_mobile)]
+
+    assert "left: auto;" in desktop
+    assert "right: 24px;" in desktop
+    assert "transform: none;" in desktop
+    assert "left: 12px;" in mobile
+    assert "right: 12px;" in mobile
+    assert "width: auto;" in mobile
+    assert "transform: none;" in mobile
+
+
 def test_landing_sin_sesion_muestra_index(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
