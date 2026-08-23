@@ -621,7 +621,33 @@ _ADMIN_CLIENTES_ESTILO = """
   .acciones-mailing span { color:#9aa0ab; font-size:13px; }
   .col-check { width:40px; text-align:center; }
   .col-check input { width:16px; height:16px; accent-color:#c8102e; cursor:pointer; }
+  .tabla-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  @media (max-width: 640px) {
+    body { align-items:flex-start; padding:12px; }
+    .panel { margin:0; padding:16px; border-radius:12px; }
+    .panel-header { align-items:stretch; flex-direction:column; gap:10px; }
+    .panel-header button, .panel-header a.volver { box-sizing:border-box; text-align:center; width:100%; }
+    table { min-width:600px; font-size:13px; }
+    th, td { padding:8px; white-space:nowrap; }
+    .acciones-mailing { align-items:stretch; flex-direction:column; }
+    .acciones-mailing button { width:100%; min-height:44px; }
+  }
 </style>
+"""
+
+_ADMIN_CLIENTES_PWA_HEAD = """
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="/admin-clientes.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#111318">
+"""
+
+_ADMIN_CLIENTES_PWA_SCRIPT = """
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+</script>
 """
 
 
@@ -629,7 +655,7 @@ _ADMIN_CLIENTES_ESTILO = """
 def admin_clientes(request: Request):
     if not _clientes_admin_activo(request):
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Clientes — Ingresar</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
+<title>Clientes — Ingresar</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
 <div class="tarjeta">
   <h1>Panel de clientes</h1>
   <p id="err" class="error" style="display:none"></p>
@@ -651,6 +677,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   if (e.key === "Enter") document.getElementById("btn").click();
 }});
 </script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
 </body></html>"""
 
     client = get_client()
@@ -685,16 +712,16 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             for c in clientes
         )
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Clientes</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
+<title>Clientes</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
 <div class="panel">
   <div class="panel-header">
     <h1>Clientes ({len(clientes)})</h1>
     <button id="salir">Cerrar sesión</button>
   </div>
-  <table>
+  <div class="tabla-scroll"><table>
     <thead><tr><th>Nombre</th><th>Celular</th><th>Fecha</th><th>Historial</th><th>Cuenta</th></tr></thead>
     <tbody>{filas_html}</tbody>
-  </table>
+  </table></div>
 </div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
@@ -719,6 +746,7 @@ document.querySelectorAll(".btn-reset").forEach((btn) => {{
   }});
 }});
 </script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
 </body></html>"""
 
 
@@ -812,7 +840,7 @@ def admin_clientes_historial(cliente_id: str, request: Request):
     email_cliente = html.escape(cliente.get("email", "") or "")
 
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Historial — {html.escape(nombre_cliente)}</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
+<title>Historial — {html.escape(nombre_cliente)}</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
 <div class="panel">
   <div class="panel-header">
     <h1>Historial de {html.escape(nombre_cliente) or "cliente"}</h1>
@@ -821,26 +849,26 @@ def admin_clientes_historial(cliente_id: str, request: Request):
   <section class="subseccion">
     <h2>Pedidos confirmados</h2>
     <p>Acá ves todo lo que el cliente cargó al carrito y confirmó.</p>
-    <table>
+    <div class="tabla-scroll"><table>
       <thead><tr><th class="col-check"></th><th>Fecha</th><th>Día</th><th>Hora</th><th>Productos</th></tr></thead>
       <tbody>{filas_pedidos_html}</tbody>
-    </table>
+    </table></div>
   </section>
   <section class="subseccion">
     <h2>Productos más consultados</h2>
     <p>Ranking por cantidad de vistas de este cliente, ordenado de mayor a menor para decidir mejor el mailing.</p>
-    <table>
+    <div class="tabla-scroll"><table>
       <thead><tr><th class="col-check"></th><th>Producto</th><th>Vistas</th><th>Última vista</th></tr></thead>
       <tbody>{filas_consultados_html}</tbody>
-    </table>
+    </table></div>
   </section>
   <section class="subseccion">
     <h2>Historial de vistas</h2>
     <p>Acá ves todas las interacciones de navegación, vistas e íconos que tocó el cliente.</p>
-    <table>
+    <div class="tabla-scroll"><table>
       <thead><tr><th class="col-check"></th><th>Fecha</th><th>Día</th><th>Hora</th><th>Evento</th><th>Detalle</th></tr></thead>
       <tbody>{filas_interacciones_html}</tbody>
-    </table>
+    </table></div>
   </section>
   <div class="acciones-mailing">
     <button id="btn-preparar-mailing" {'disabled' if not email_cliente else ''}>Enviar mailing</button>
@@ -920,6 +948,7 @@ if (btnMailing) {{
   }});
 }}
 </script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
 </body></html>"""
 
 
