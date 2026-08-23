@@ -54,6 +54,26 @@ function limpiarMensajes() {
     .forEach((el) => { el.textContent = ""; });
 }
 
+function paramsHashSupabase() {
+  const hash = location.hash.startsWith("#") ? location.hash.slice(1) : location.hash;
+  const params = new URLSearchParams(hash);
+  return {
+    accessToken: params.get("access_token"),
+    refreshToken: params.get("refresh_token"),
+    type: params.get("type"),
+  };
+}
+
+function limpiarCallbackSupabaseDeUrl() {
+  const query = new URLSearchParams(location.search);
+  query.delete("token_hash");
+  query.delete("type");
+  query.delete("code");
+  const queryStr = query.toString();
+  history.replaceState({}, "", `${location.pathname}${queryStr ? `?${queryStr}` : ""}`);
+  if (location.hash) history.replaceState({}, "", `${location.pathname}${queryStr ? `?${queryStr}` : ""}`);
+}
+
 if (btnVerLoginPassword && loginPasswordInput) {
   btnVerLoginPassword.addEventListener("click", () => {
     const visible = loginPasswordInput.type === "text";
@@ -81,6 +101,38 @@ fetch("/api/me")
   })
   .catch(() => {});
 
+async function completarSignupVerificado() {
+  const query = new URLSearchParams(location.search);
+  const tokenHash = query.get("token_hash");
+  const queryType = query.get("type");
+  const { accessToken, type: hashType } = paramsHashSupabase();
+  if (!accessToken && !tokenHash) return false;
+
+  limpiarMensajes();
+  loginOkEl.textContent = "Confirmando tu cuenta...";
+  const r = await fetch("/auth/completar-signup", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-TTRA-ANON-ID": obtenerAnonId(),
+    },
+    body: JSON.stringify({
+      access_token: accessToken,
+      token_hash: tokenHash,
+      type: queryType || hashType,
+    }),
+  });
+  const datos = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    loginOkEl.textContent = "";
+    loginErrorEl.textContent = datos.error || "No se pudo completar la verificación.";
+    return false;
+  }
+  limpiarCallbackSupabaseDeUrl();
+  window.location.href = destinoTrasIngresar;
+  return true;
+}
+
 function mostrarRegistro() {
   limpiarMensajes();
   formLogin.classList.add("oculto");
@@ -101,6 +153,11 @@ function mostrarLogin() {
 // arranca directo en el form de registro (puede pasarse a login con el
 // link de siempre si ya tiene una).
 if (productoCompartido || forzarRegistro) mostrarRegistro();
+
+completarSignupVerificado().catch(() => {
+  loginOkEl.textContent = "";
+  loginErrorEl.textContent = "No se pudo completar la verificación.";
+});
 
 linkIrARegistro.addEventListener("click", (e) => {
   e.preventDefault();

@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+from types import SimpleNamespace
 
 import web.app as appmod
 from tests.fakes_supabase import FakeSupabaseClient
@@ -36,6 +37,29 @@ def test_registro_pasa_redirect_publico_a_supabase(monkeypatch):
     )
 
 
+def test_registro_usa_forwarded_host_si_base_url_interna(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="http://127.0.0.1:8000")
+
+    r = c.post(
+        "/registro",
+        json={
+            "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+            "email": "juan@x.com", "password": "clave1234",
+        },
+        headers={
+            "X-Forwarded-Host": "thetechroomarg.com",
+            "X-Forwarded-Proto": "https",
+        },
+    )
+
+    assert r.status_code == 200
+    assert fake.auth.last_sign_up_payload["options"]["email_redirect_to"] == (
+        "https://thetechroomarg.com/login.html"
+    )
+
+
 def test_registro_pendiente_de_confirmacion_no_crea_sesion(monkeypatch):
     fake = FakeSupabaseClient()
     fake.auth.next_sign_up_session = None
@@ -54,6 +78,28 @@ def test_registro_pendiente_de_confirmacion_no_crea_sesion(monkeypatch):
         "email_redirect_to": "https://thetechroomarg.com/login.html",
     }
     assert c.get("/api/me").status_code == 401
+
+
+def test_completar_signup_con_access_token_crea_sesion_y_redirige_a_landing(monkeypatch):
+    fake = FakeSupabaseClient()
+    fake.auth.next_sign_up_session = None
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://thetechroomarg.com", follow_redirects=False)
+
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234",
+    })
+    auth_id = fake.auth._usuarios_por_email["juan@x.com"].id
+    fake.auth.get_user = lambda jwt=None: SimpleNamespace(user=SimpleNamespace(id=auth_id))
+
+    r = c.post("/auth/completar-signup", json={"access_token": "token-valido"})
+
+    assert r.status_code == 200
+    assert r.json() == {"ok": True, "debe_cambiar_password": False}
+    me = c.get("/api/me")
+    assert me.status_code == 200
+    assert me.json()["email"] == "juan@x.com"
 
 
 def test_registro_celular_duplicado_devuelve_400(monkeypatch):
