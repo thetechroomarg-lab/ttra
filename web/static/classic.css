@@ -792,10 +792,28 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
 .tarjeta-recomendado:hover .tarjeta-recomendado-acciones {
   opacity: 1; pointer-events: auto;
 }
+html[data-modo="classic"] .tarjeta-recomendado-acciones {
+  opacity: 1;
+  pointer-events: auto;
+}
 .tarjeta-recomendado-acciones .dropdown-color { flex: 1; min-width: 0; }
 .tarjeta-recomendado-acciones .dropdown-color-boton { width: 100%; font-size: 11px; padding: 5px 8px; }
 .tarjeta-recomendado-acciones .btn-agregar { flex-shrink: 0; font-size: 11px; padding: 5px 10px; }
+.tarjeta-recomendado-acciones .btn-agregar:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(1);
+  pointer-events: none;
+}
 .tarjeta-recomendado-vacia { justify-content: center; align-items: center; text-align: center; }
+
+@media (min-width: 701px) {
+  html[data-modo="classic"] .tarjeta-recomendado .dropdown-color-lista {
+    top: auto;
+    bottom: 100%;
+    margin: 0 0 2px;
+  }
+}
 
 @media (max-width: 700px) {
   html[data-modo="classic"] body:not(.rc-vista-seccion) {
@@ -835,17 +853,8 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
     height: 350px;
     margin: 0 auto;
   }
-  html[data-modo="classic"] .carrousel-recomendados-mobile-track {
-    display: flex;
-    align-items: stretch;
-    gap: 12px;
-    height: 100%;
-    transition: transform .32s ease;
-    will-change: transform;
-  }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card {
     position: relative;
-    flex: 0 0 88%;
     height: 100%;
     min-height: 0;
     display: flex;
@@ -870,9 +879,12 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
     padding: 12px 12px 10px;
     overflow: hidden;
   }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-etiqueta {
+    font-size: 14.4px;
+  }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado h3 {
     margin: 0;
-    font-size: 14px;
+    font-size: 16.1px;
     line-height: 1.12;
     padding-right: 42px;
     display: -webkit-box;
@@ -884,37 +896,43 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio {
     gap: 2px;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio strong {
-    font-size: 15px;
+    font-size: 30px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio span {
-    font-size: 10px;
+    font-size: 20px;
     line-height: 1.15;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado .tarjeta-recomendado-iconos {
     gap: 2px;
+    margin: 6px 0;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado .btn-foto + .btn-foto {
     margin-left: 4px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado .btn-foto svg {
-    width: 22px;
-    height: 22px;
+    width: 24.2px;
+    height: 24.2px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones {
     opacity: 1;
     pointer-events: auto;
-    margin-top: auto;
+    margin-top: 0;
     gap: 5px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones .dropdown-color-boton,
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones .btn-agregar {
-    font-size: 10px;
-    padding: 4px 7px;
-    min-height: 32px;
+    font-size: 12px;
+    padding: 4.8px 8.4px;
+    min-height: 38.4px;
+  }
+  html[data-modo="classic"] .carrousel-recomendados-mobile-card .dropdown-color-lista {
+    top: auto;
+    bottom: 100%;
+    margin: 0 0 2px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-puntos {
     display: flex;
