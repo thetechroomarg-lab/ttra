@@ -67,7 +67,7 @@ html[data-modo="classic"] .rc-logout-tarjeta {
 html[data-modo="classic"] header {
   background: var(--cl-azul-francia);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  grid-template-columns: minmax(180px, 1fr) minmax(0, var(--rc-header-buscador-width, 960px)) minmax(270px, 1fr);
   grid-template-rows: auto;
   align-items: start;
   column-gap: 18px;
