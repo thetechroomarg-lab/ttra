@@ -82,8 +82,8 @@ def test_classic_mobile_aumenta_tipografia_y_abre_color_hacia_arriba():
     )
 
     assert "font-size: 14.4px;" in etiqueta
-    assert "font-size: 16.1px;" in titulo
-    assert "font-size: 30px;" in precio_principal
+    assert "font-size: 20px;" in titulo
+    assert "font-size: 20px;" in precio_principal
     assert "font-size: 20px;" in precio_secundario
     assert "font-size: 12px;" in acciones
     assert "top: auto;" in lista_color

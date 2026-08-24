@@ -26,6 +26,10 @@ class _FakeAdminAuth:
         for email, user in list(self._usuarios_por_email.items()):
             if user.id == user_id:
                 del self._usuarios_por_email[email]
+                if hasattr(self, "_on_delete_user"):
+                    self._on_delete_user(user_id)
+                return
+        raise Exception("User not found")
 
     def create_user(self, credenciales):
         email = credenciales["email"].strip().lower()
@@ -108,6 +112,10 @@ class _FakeQuery:
             for fila in objetivo:
                 fila.update(self._payload)
             return _FakeExecuteResult(objetivo)
+        if self._operacion == "delete":
+            objetivo = self._filtrar(self._tabla._filas)
+            self._tabla._filas[:] = [fila for fila in self._tabla._filas if fila not in objetivo]
+            return _FakeExecuteResult(objetivo)
         raise ValueError(self._operacion)
 
 
@@ -124,11 +132,24 @@ class _FakeTable:
     def update(self, payload):
         return _FakeQuery(self, "update", payload)
 
+    def delete(self):
+        return _FakeQuery(self, "delete")
+
 
 class FakeSupabaseClient:
     def __init__(self):
         self.auth = FakeAuth()
         self._tablas = {}
+        self.auth.admin._on_delete_user = self._eliminar_perfil_por_auth_id
 
     def table(self, nombre):
         return self._tablas.setdefault(nombre, _FakeTable())
+
+    def _eliminar_perfil_por_auth_id(self, auth_id):
+        """Simula el trigger que borra el perfil y sus registros en cascada."""
+        clientes = self.table("clientes")._filas
+        cliente_ids = {fila["id"] for fila in clientes if fila.get("auth_id") == auth_id}
+        self.table("clientes")._filas[:] = [fila for fila in clientes if fila.get("id") not in cliente_ids]
+        for nombre in ("pedidos", "interacciones_cliente", "codigos_descuento"):
+            tabla = self.table(nombre)
+            tabla._filas[:] = [fila for fila in tabla._filas if fila.get("cliente_id") not in cliente_ids]

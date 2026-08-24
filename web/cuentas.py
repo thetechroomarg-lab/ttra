@@ -235,6 +235,20 @@ def resetear_password_cliente(client, cliente_id):
     return {"email": perfil["email"], "password": nueva_password}
 
 
+def eliminar_cliente(client, cliente_id):
+    """Elimina definitivamente un perfil y su cuenta de autenticación."""
+    filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas:
+        raise ValueError(f"No existe un cliente con id {cliente_id}")
+
+    auth_id = filas[0].get("auth_id")
+    if auth_id:
+        # El trigger en Supabase borra el perfil y sus registros relacionados
+        # antes de eliminar auth.users. Esto también cubre migraciones previas.
+        client.auth.admin.delete_user(auth_id)
+    client.table("clientes").delete().eq("id", cliente_id).execute()
+
+
 def cambiar_password_obligatorio(client, cliente_id, nueva_password):
     filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
     if not filas:

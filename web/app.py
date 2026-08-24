@@ -436,6 +436,20 @@ def admin_clientes_resetear_password(cliente_id: str, request: Request):
     return {"ok": True}
 
 
+@app.post("/admin/clientes/{cliente_id}/eliminar")
+def admin_clientes_eliminar(cliente_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    try:
+        cuentas.eliminar_cliente(get_client(), cliente_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception:
+        logger.exception("No se pudo eliminar el cliente %s", cliente_id)
+        return JSONResponse({"error": "No se pudo eliminar la cuenta en este momento"}, status_code=503)
+    return {"ok": True}
+
+
 @app.post("/admin/clientes/{cliente_id}/mailing-oferta")
 def admin_clientes_mailing_oferta(cliente_id: str, entrada: MailingOfertaIn, request: Request):
     if not _clientes_admin_activo(request):
@@ -631,6 +645,8 @@ _ADMIN_CLIENTES_ESTILO = """
   .vacio { color:#9aa0ab; text-align:center; padding:30px; }
   .btn-historial { display:inline-flex; color:#dfe2e8; }
   .btn-historial:hover { color:#fff; }
+  .btn-eliminar { background:#8d1627; border:1px solid #c8102e; color:#fff; }
+  .btn-eliminar:hover { background:#c8102e; }
   .panel-header a.volver { color:#dfe2e8; text-decoration:none; font-weight:700; font-size:14px; }
   .panel-header a.volver:hover { color:#fff; }
   .subseccion { margin-top:22px; }
@@ -716,7 +732,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     ]
     clientes.sort(key=lambda r: r.get("fecha", ""), reverse=True)
     if not clientes:
-        filas_html = '<tr><td colspan="5" class="vacio">Todavía no hay clientes registrados.</td></tr>'
+        filas_html = '<tr><td colspan="6" class="vacio">Todavía no hay clientes registrados.</td></tr>'
     else:
         def _celda_cuenta(c):
             if not c.get("tiene_cuenta"):
@@ -724,13 +740,19 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             id_seguro = html.escape(c.get("id", ""))
             return f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
 
+        def _celda_eliminar(c):
+            if not c.get("tiene_cuenta"):
+                return "—"
+            id_seguro = html.escape(c.get("id", ""))
+            return f'<button class="btn-eliminar" data-id="{id_seguro}">Eliminar cuenta</button>'
+
         filas_html = "".join(
             f"<tr><td>{html.escape(c.get('nombre', ''))}</td>"
             f"<td>{html.escape(c.get('celular', ''))}</td>"
             f"<td>{html.escape(c.get('fecha', ''))}</td>"
             f'<td><a class="btn-historial" href="/admin/clientes/{html.escape(c.get("id", ""))}/historial" '
             f'title="Ver historial de pedidos" aria-label="Ver historial de pedidos">{_ICONO_OJO}</a></td>'
-            f"<td>{_celda_cuenta(c)}</td></tr>"
+            f"<td>{_celda_cuenta(c)}</td><td>{_celda_eliminar(c)}</td></tr>"
             for c in clientes
         )
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
@@ -741,7 +763,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <button id="salir">Cerrar sesión</button>
   </div>
   <div class="tabla-scroll"><table>
-    <thead><tr><th>Nombre</th><th>Celular</th><th>Fecha</th><th>Historial</th><th>Cuenta</th></tr></thead>
+    <thead><tr><th>Nombre</th><th>Celular</th><th>Fecha</th><th>Historial</th><th>Cuenta</th><th>Acciones</th></tr></thead>
     <tbody>{filas_html}</tbody>
   </table></div>
 </div>
@@ -764,6 +786,19 @@ document.querySelectorAll(".btn-reset").forEach((btn) => {{
       alert(datos.error || "No se pudo resetear la contraseña");
       btn.textContent = "Resetear contraseña";
     }}
+    btn.disabled = false;
+  }});
+}});
+document.querySelectorAll(".btn-eliminar").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta cuenta definitivamente? También se borrarán sus pedidos e historial. Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    btn.textContent = "Eliminando...";
+    const r = await fetch(`/admin/clientes/${{btn.dataset.id}}/eliminar`, {{ method: "POST" }});
+    const datos = await r.json();
+    if (r.ok) {{ location.reload(); return; }}
+    alert(datos.error || "No se pudo eliminar la cuenta");
+    btn.textContent = "Eliminar cuenta";
     btn.disabled = false;
   }});
 }});
