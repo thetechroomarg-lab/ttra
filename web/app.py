@@ -16,6 +16,7 @@ from urllib.parse import urlencode
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
@@ -51,6 +52,21 @@ LIMITE_USD = 0.25
 _gasto = {}  # sesion -> USD acumulado
 
 app = FastAPI()
+
+
+@app.exception_handler(RequestValidationError)
+async def _manejar_error_validacion(request: Request, exc: RequestValidationError):
+    # El detalle default de FastAPI/Pydantic incluye "input" con el valor
+    # crudo que falló la validación — si ese campo es una contraseña, la
+    # devuelve en texto plano en la respuesta. Acá la reemplazamos por un
+    # mensaje propio (mismo formato {"error": ...} que usa el resto de la
+    # app) sin exponer ningún valor de entrada.
+    campos = {".".join(str(p) for p in err["loc"] if p != "body") for err in exc.errors()}
+    if "password" in campos:
+        mensaje = "La contraseña tiene que tener al menos 8 caracteres."
+    else:
+        mensaje = "Revisá los datos ingresados e intentá de nuevo."
+    return JSONResponse(status_code=422, content={"error": mensaje})
 
 
 def _public_app_base_url(request: Request):
