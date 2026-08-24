@@ -314,6 +314,8 @@ html[data-modo="fallout"] .rc-perfil-nombre {
 /* "Cerrar sesión" del menú de perfil solo existe en Modo Classic. */
 #btn-logout-classic { display: block; }
 html[data-modo="fallout"] #btn-logout-classic { display: none; }
+#btn-classic-theme { display: none; }
+html[data-modo="classic"] #btn-classic-theme { display: block; }
 
 
 /* Mensaje de confirmación de log out y diálogo de "¿estás seguro?" previo

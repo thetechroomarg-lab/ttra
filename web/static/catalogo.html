@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="es">
 <head>
+  <script>
+    try {
+      if (localStorage.getItem("ttra_classic_theme") === "light") {
+        document.documentElement.setAttribute("data-classic-theme", "light");
+      }
+    } catch {
+      // Sin storage, el catálogo conserva el Classic oscuro por defecto.
+    }
+  </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>THE TECH ROOM ARG — Catálogo</title>

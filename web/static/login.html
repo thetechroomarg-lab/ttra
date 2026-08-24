@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="es" data-modo="classic">
 <head>
+  <script>
+    try {
+      if (localStorage.getItem("ttra_classic_theme") === "light") {
+        document.documentElement.setAttribute("data-classic-theme", "light");
+      }
+    } catch {
+      // Sin storage, el login conserva el Classic oscuro por defecto.
+    }
+  </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>THE TECH ROOM ARG — Ingresar</title>

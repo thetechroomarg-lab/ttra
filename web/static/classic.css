@@ -787,6 +787,90 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
   background: #000000;
   border-color: var(--rc-green-dim);
 }
+
+/* Variante clara de Classic: misma composición y tipografía, con una paleta
+   editorial de porcelana, azul tinta y acento atlántico. */
+html[data-modo="classic"][data-classic-theme="light"] {
+  --rc-bg: #c7dbe7;
+  --rc-bg-panel: #e2ebf0;
+  --rc-bg-panel-2: #cddde7;
+  --rc-green: #1f2937;
+  --rc-green-bright: #102a43;
+  --rc-green-dim: #64748b;
+  --rc-green-faint: #cbd5e1;
+  --rc-glow: rgba(29, 111, 165, 0.14);
+  --cl-rojo: #c6283b;
+  --cl-crema: #ffffff;
+  --cl-azul-francia: #102a43;
+  --cl-amarillo-huevo: #dbeafe;
+  --rc-halo-seleccion: #1d6fa5;
+  --rc-halo-seleccion-glow: rgba(29, 111, 165, 0.26);
+  --rc-halo-seleccion-glow-suave: rgba(29, 111, 165, 0.16);
+}
+html[data-modo="classic"][data-classic-theme="light"] .rc-catalogo-surface,
+html[data-modo="classic"][data-classic-theme="light"] .carrousel-recomendados-wrap {
+  background: linear-gradient(180deg, #e7eff3 0%, #d7e4eb 100%);
+  border-color: #dbe3ec;
+}
+html[data-modo="classic"][data-classic-theme="light"] .btn-categoria {
+  background: #3b4650;
+  color: #ffffff;
+  border-color: #3b4650;
+}
+html[data-modo="classic"][data-classic-theme="light"] .btn-categoria:hover,
+html[data-modo="classic"][data-classic-theme="light"] .btn-categoria:focus-visible {
+  background: #4b5863;
+  color: #ffffff;
+  border-color: #4b5863;
+}
+html[data-modo="classic"][data-classic-theme="light"] .rc-perfil-boton {
+  color: #ffffff;
+}
+html[data-modo="classic"][data-classic-theme="light"] .descuento-mailing {
+  background: #dce8ef;
+  border-color: #bcced9;
+}
+html[data-modo="classic"][data-classic-theme="light"] .descuento-mailing input {
+  background: #eef3f6;
+  color: #102a43;
+  border-color: #aebfca;
+}
+html[data-modo="classic"][data-classic-theme="light"] .descuento-mailing input:focus {
+  border-color: #1d6fa5;
+  box-shadow: 0 0 0 3px rgba(29, 111, 165, 0.18);
+}
+html[data-modo="classic"][data-classic-theme="light"] #btn-aplicar-codigo {
+  background: #3b4650;
+  color: #ffffff;
+  border-color: #3b4650;
+}
+html[data-modo="classic"][data-classic-theme="light"] .marca-logo-carrousel,
+html[data-modo="classic"][data-classic-theme="light"] .marca-logo-card,
+html[data-modo="classic"][data-classic-theme="light"] .marca-logo-selector {
+  filter: brightness(0) saturate(100%) invert(14%) sepia(31%) saturate(1474%) hue-rotate(169deg) brightness(93%) contrast(94%);
+}
+html[data-modo="classic"][data-classic-theme="light"] .selector-marcas .btn-categoria.btn-marca-logo {
+  background: #dee8ee;
+  border-color: #cbd5e1;
+}
+html[data-modo="classic"][data-classic-theme="light"] .selector-marcas .btn-categoria.btn-marca-logo:hover {
+  border-color: #1d6fa5;
+  box-shadow: 0 8px 22px rgba(29, 111, 165, 0.14);
+}
+html[data-modo="classic"][data-classic-theme="light"] .card.expandida {
+  border-color: #1d6fa5;
+  box-shadow: 0 16px 34px -6px rgba(29, 111, 165, 0.2);
+}
+html[data-modo="classic"][data-classic-theme="light"] .rc-perfil-opcion:hover {
+  background: #173b5a;
+}
+html[data-modo="classic"][data-classic-theme="light"] .rc-logout-tarjeta {
+  background: linear-gradient(180deg, #e7eff3 0%, #d3e1e8 100%);
+  box-shadow: 0 18px 40px rgba(29, 42, 67, 0.2);
+}
+html[data-modo="classic"][data-classic-theme="light"] .rc-logout-tarjeta button:hover {
+  background: #dbeafe;
+}
 .tarjeta-recomendado h3 {
   grid-row: 2;
   margin: 0;

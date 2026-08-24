@@ -90,6 +90,79 @@ def test_carrito_fallout_mobile_permite_scroll_cuando_el_footer_es_mas_alto_que_
     assert "overscroll-behavior: contain;" in regla
 
 
+def test_classic_tiene_alternancia_light_persistente_dentro_del_menu_de_perfil():
+    html = (appmod.BASE / "static" / "index.html").read_text()
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    css = (appmod.BASE / "static" / "classic.css").read_text()
+
+    dropdown_inicio = html.index('id="rc-perfil-dropdown"')
+    dropdown_fin = html.index("</div>", dropdown_inicio)
+    dropdown = html[dropdown_inicio:dropdown_fin]
+
+    assert 'id="btn-classic-theme"' in dropdown
+    assert 'const CLAVE_TEMA_CLASSIC = "ttra_classic_theme";' in script
+    assert 'document.documentElement.setAttribute("data-classic-theme", temaNormalizado);' in script
+    assert 'localStorage.setItem(CLAVE_TEMA_CLASSIC, temaNormalizado);' in script
+    assert 'html[data-modo="classic"][data-classic-theme="light"]' in css
+    assert "--rc-bg: #c7dbe7;" in css
+    assert "--rc-bg-panel: #e2ebf0;" in css
+    assert "--cl-azul-francia: #102a43;" in css
+
+
+def test_perfil_recupera_el_tema_light_classic_antes_de_cargar_estilos():
+    perfil = (appmod.BASE / "static" / "perfil.html").read_text()
+
+    assert 'localStorage.getItem("ttra_classic_theme") === "light"' in perfil
+    assert 'document.documentElement.setAttribute("data-classic-theme", "light")' in perfil
+
+
+def test_login_recupera_el_tema_light_classic_antes_de_cargar_estilos():
+    login = (appmod.BASE / "static" / "login.html").read_text()
+
+    assert 'localStorage.getItem("ttra_classic_theme") === "light"' in login
+    assert 'document.documentElement.setAttribute("data-classic-theme", "light")' in login
+
+
+def test_landing_y_catalogo_recuperan_el_tema_light_classic_antes_de_cargar_estilos():
+    landing = (appmod.BASE / "static" / "index.html").read_text()
+    catalogo = (appmod.BASE / "static" / "catalogo.html").read_text()
+    catalogo_css = (appmod.BASE / "static" / "catalogo.css").read_text()
+
+    for pagina in (landing, catalogo):
+        assert 'localStorage.getItem("ttra_classic_theme") === "light"' in pagina
+        assert 'document.documentElement.setAttribute("data-classic-theme", "light")' in pagina
+    assert 'html[data-classic-theme="light"]' in catalogo_css
+
+
+def test_classic_light_usa_botones_de_categoria_gris_oscuro_con_tipografia_blanca():
+    css = (appmod.BASE / "static" / "classic.css").read_text()
+    selector = 'html[data-modo="classic"][data-classic-theme="light"] .btn-categoria {'
+    inicio = css.index(selector)
+    regla = css[inicio : css.index("}", inicio)]
+
+    assert "background: #3b4650;" in regla
+    assert "color: #ffffff;" in regla
+
+
+def test_classic_light_saca_el_modulo_de_descuento_del_fondo_oscuro():
+    css = (appmod.BASE / "static" / "classic.css").read_text()
+    selector = 'html[data-modo="classic"][data-classic-theme="light"] .descuento-mailing {'
+    inicio = css.index(selector)
+    regla = css[inicio : css.index("}", inicio)]
+
+    assert "background: #dce8ef;" in regla
+    assert 'html[data-modo="classic"][data-classic-theme="light"] .descuento-mailing input {' in css
+
+
+def test_classic_light_muestra_el_icono_de_perfil_en_blanco_sobre_el_header():
+    css = (appmod.BASE / "static" / "classic.css").read_text()
+    selector = 'html[data-modo="classic"][data-classic-theme="light"] .rc-perfil-boton {'
+    inicio = css.index(selector)
+    regla = css[inicio : css.index("}", inicio)]
+
+    assert "color: #ffffff;" in regla
+
+
 def test_classic_css_mobile_no_desplaza_la_card_recomendada():
     css = (appmod.BASE / "static" / "classic.css").read_text()
 

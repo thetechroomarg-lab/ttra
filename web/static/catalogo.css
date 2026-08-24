@@ -1,4 +1,14 @@
 * { box-sizing: border-box; }
+html[data-classic-theme="light"] {
+  --rc-bg: #c7dbe7;
+  --rc-bg-panel: #e2ebf0;
+  --rc-bg-panel-2: #cddde7;
+  --rc-green: #1f2937;
+  --rc-green-bright: #102a43;
+  --rc-green-dim: #64748b;
+  --rc-green-faint: #cbd5e1;
+  --rc-glow: rgba(29, 111, 165, 0.14);
+}
 body {
   margin: 0; font-family: var(--rc-font); background: var(--rc-bg); color: var(--rc-green);
   min-height: 100vh;

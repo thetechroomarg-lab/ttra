@@ -116,6 +116,7 @@ const CLAVE_CARRITO_PENDIENTE = "ttra_carrito_pendiente";
 const CLAVE_CHECKOUT_PENDIENTE = "ttra_checkout_pendiente";
 const CLAVE_DESCUENTO_MAILING = "ttra_descuento_mailing";
 const CLAVE_ANON_ID = "ttra_anon_id";
+const CLAVE_TEMA_CLASSIC = "ttra_classic_theme";
 const WHATSAPP_NUMERO = "543512145217";
 
 // Un descuento de mailing solo es válido al entrar desde su enlace. Esto
@@ -186,6 +187,34 @@ let estadoSesionCliente = null;
 // el click en el botón lo envuelve con la animación), para poder iterar
 // sobre cambios de Fallout sin pasar por Classic cada vez.
 let modoVisual = new URLSearchParams(location.search).get("modo") === "fallout" ? "fallout" : "classic";
+
+function temaClassicGuardado() {
+  try {
+    return localStorage.getItem(CLAVE_TEMA_CLASSIC) === "light" ? "light" : "dark";
+  } catch {
+    return "dark";
+  }
+}
+
+function aplicarTemaClassic(tema, persistir = false) {
+  const temaNormalizado = tema === "light" ? "light" : "dark";
+  document.documentElement.setAttribute("data-classic-theme", temaNormalizado);
+  if (persistir) {
+    try {
+      localStorage.setItem(CLAVE_TEMA_CLASSIC, temaNormalizado);
+    } catch {
+      // Sin storage, el tema se conserva durante esta visita.
+    }
+  }
+  const botonTema = document.getElementById("btn-classic-theme");
+  if (botonTema) {
+    const siguienteTema = temaNormalizado === "light" ? "dark" : "light";
+    botonTema.textContent = `Usar modo ${siguienteTema}`;
+    botonTema.setAttribute("aria-label", `Cambiar a modo ${siguienteTema}`);
+  }
+}
+
+aplicarTemaClassic(temaClassicGuardado());
 
 // Fotos decorativas de la ciudad, solo visibles en la pantalla principal.
 // Cada archivo se muestra dentro de una "tarjeta" tipo terminal (ver
@@ -1994,6 +2023,7 @@ const menuPerfil = document.getElementById("rc-perfil-menu");
 const btnPerfilToggle = document.getElementById("btn-perfil-toggle");
 const dropdownPerfil = document.getElementById("rc-perfil-dropdown");
 const linkIrAPerfil = document.getElementById("link-ir-a-perfil");
+const btnClassicTheme = document.getElementById("btn-classic-theme");
 
 function cerrarMenuPerfil() {
   if (!dropdownPerfil) return;
@@ -2025,6 +2055,13 @@ if (linkIrAPerfil) {
     if (modoVisual === "fallout") paramsLogin.set("modo", "fallout");
     const destinoLogin = `/login.html?${paramsLogin.toString()}`;
     window.location.href = estadoSesionCliente ? destinoPerfil : destinoLogin;
+  });
+}
+
+if (btnClassicTheme) {
+  btnClassicTheme.addEventListener("click", () => {
+    const temaActual = document.documentElement.getAttribute("data-classic-theme");
+    aplicarTemaClassic(temaActual === "light" ? "dark" : "light", true);
   });
 }
 
