@@ -39,6 +39,26 @@ def test_html_recibo_no_depende_de_imagenes_externas_para_el_logo():
     assert "THE TECH ROOM ARG" in contenido
 
 
+def test_html_recibo_ajusta_nombres_largos_sin_invadir_otras_columnas():
+    contenido = recibos.html_recibo(
+        {"nombre": "Ana", "apellido": "Pérez"},
+        {
+            "recibo_id": "TTRA-000004",
+            "detalle": [{
+                "nombre": "ProductoConUnNombreExtraordinariamenteLargoSinEspaciosParaProbarElCorte",
+                "cantidad": 1,
+                "usd_unitario": 900,
+                "usd_subtotal": 900,
+            }],
+            "total_usd": 900,
+        },
+    )
+
+    assert "table-layout:fixed" in contenido
+    assert "<colgroup>" in contenido
+    assert "word-break:break-word" in contenido
+
+
 def test_pdf_recibo_contiene_el_detalle_y_la_fecha_original():
     pdf = recibos.pdf_recibo(
         {"nombre": "Ana", "apellido": "Pérez"},

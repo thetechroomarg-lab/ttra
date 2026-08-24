@@ -61,10 +61,10 @@ def html_recibo(cliente, pedido, logo_url=""):
     detalle = pedido.get("detalle") or []
     filas = "".join(
         "<tr>"
-        f"<td>{html.escape(item.get('nombre') or '')}{(' · ' + html.escape(item['color'])) if item.get('color') else ''}</td>"
-        f"<td style='text-align:center'>{int(item.get('cantidad') or 0)}</td>"
-        f"<td style='text-align:right'>{_formatear_usd(item.get('usd_unitario'))}</td>"
-        f"<td style='text-align:right'>{_formatear_usd(item.get('usd_subtotal'))}</td>"
+        f"<td style='padding:10px 8px;vertical-align:top;word-break:break-word;overflow-wrap:anywhere'>{html.escape(item.get('nombre') or '')}{(' · ' + html.escape(item['color'])) if item.get('color') else ''}</td>"
+        f"<td style='padding:10px 6px;text-align:center;vertical-align:top'>{int(item.get('cantidad') or 0)}</td>"
+        f"<td style='padding:10px 6px;text-align:right;vertical-align:top;white-space:nowrap'>{_formatear_usd(item.get('usd_unitario'))}</td>"
+        f"<td style='padding:10px 6px;text-align:right;vertical-align:top;white-space:nowrap'>{_formatear_usd(item.get('usd_subtotal'))}</td>"
         "</tr>"
         for item in detalle
     )
@@ -84,8 +84,9 @@ def html_recibo(cliente, pedido, logo_url=""):
     <p style='margin:14px 0 0;color:#555'>Recibo interno {recibo_id}<br>Emitido el {fecha_emision}</p>
   </header>
   <p>Hola {nombre_cliente},</p><p>Este comprobante resume tu compra.</p>
-  <table style='width:100%;border-collapse:collapse;margin:20px 0'>
-    <thead><tr style='background:#161616;color:#fff'><th style='text-align:left;padding:10px'>Producto</th><th>Cant.</th><th style='text-align:right'>Unitario</th><th style='text-align:right'>Subtotal</th></tr></thead>
+  <table role='presentation' style='width:100%;border-collapse:collapse;table-layout:fixed;margin:20px 0'>
+    <colgroup><col style='width:52%'><col style='width:10%'><col style='width:19%'><col style='width:19%'></colgroup>
+    <thead><tr style='background:#161616;color:#fff'><th style='text-align:left;padding:10px 8px'>Producto</th><th style='padding:10px 6px'>Cant.</th><th style='text-align:right;padding:10px 6px'>Unitario</th><th style='text-align:right;padding:10px 6px'>Subtotal</th></tr></thead>
     <tbody>{filas}</tbody>
   </table>
   {descuento_html}

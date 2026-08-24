@@ -22,11 +22,47 @@ def _cliente_logueado(monkeypatch):
 
 def test_admin_clientes_lista_nombre_y_link_a_historial(monkeypatch):
     c = _cliente_logueado(monkeypatch)
-    r = c.get("/admin/clientes")
+    r = c.get("/admin/clientes/lista")
     assert r.status_code == 200
     assert "Juan" in r.text
     assert "/historial" in r.text
     assert "Productos consultados" not in r.text
+
+
+def test_landing_admin_separa_clientes_en_una_vista_accesible(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+
+    r = c.get("/admin/clientes")
+
+    assert 'href="/admin/clientes/lista"' in r.text
+    assert "Clientes" in r.text
+    assert "Buscar por nombre, email, celular o provincia" not in r.text
+
+
+def test_admin_historial_muestra_el_icono_de_calendario_claro(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+
+    r = c.get("/admin/clientes")
+
+    assert 'color-scheme:dark' in r.text
+    assert '#fecha-historial-pedidos::-webkit-calendar-picker-indicator' in r.text
+    assert 'filter:none' in r.text
+
+
+def test_admin_apila_controles_y_muestra_clientes_como_tarjetas_en_mobile(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+
+    r = c.get("/admin/clientes/lista")
+
+    assert ".filtros-clientes { flex-direction:column; }" in r.text
+    assert ".pedido-hoy { align-items:stretch; flex-direction:column; }" in r.text
+    assert "overflow-wrap:anywhere" in r.text
+    assert ".tabla-scroll { overflow:visible; }" in r.text
+    assert "#tabla-clientes thead { display:none; }" in r.text
+    assert '#tabla-clientes td:nth-child(2)::before { content:"Nombre"; }' in r.text
+    assert "#tabla-clientes, #tabla-clientes tbody, #tabla-clientes tr, #tabla-clientes td" in r.text
+    assert "#filtro-clientes { flex:0 1 auto; min-height:38px; }" in r.text
+    assert "#tabla-clientes .col-check { justify-content:flex-start; text-align:left; }" in r.text
 
 
 def test_admin_muestra_pedidos_programados_para_hoy(monkeypatch):
@@ -216,7 +252,7 @@ def test_admin_ubica_historial_arriba_y_muestra_controles_de_entrega(monkeypatch
 def test_admin_clientes_es_instalable_y_responsive_en_mobile(monkeypatch):
     c = _cliente_logueado(monkeypatch)
 
-    panel = c.get("/admin/clientes")
+    panel = c.get("/admin/clientes/lista")
     manifest = c.get("/admin-clientes.webmanifest")
 
     assert panel.status_code == 200
@@ -251,6 +287,7 @@ def test_admin_clientes_historial_muestra_pedidos_del_cliente(monkeypatch):
     assert "Juan" in r.text
     assert "iPhone 13" in r.text
     assert "view item" in r.text
+    assert 'href="/admin/clientes/lista"' in r.text
 
 
 def test_admin_clientes_historial_muestra_ranking_de_productos_consultados(monkeypatch):

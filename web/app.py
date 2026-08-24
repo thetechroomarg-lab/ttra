@@ -778,6 +778,9 @@ _ADMIN_CLIENTES_ESTILO = """
   .panel-header h1 { color:#f2f4f8; font-size:20px; margin:0; }
   .panel-header button { border:none; background:#3a3f4b; color:#f2f4f8; border-radius:8px;
                           padding:8px 14px; cursor:pointer; font-weight:700; }
+  .panel-header-acciones { display:flex; align-items:center; gap:10px; }
+  .btn-clientes { background:#3a3f4b; border-radius:8px; color:#f2f4f8; font-size:14px; font-weight:700; padding:8px 14px; text-decoration:none; }
+  .btn-clientes:hover { background:#4a5160; }
   table { width:100%; border-collapse:collapse; font-size:14px; color:#dfe2e8; }
   th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #2a2e37; }
   th { color:#f2f4f8; }
@@ -810,6 +813,8 @@ _ADMIN_CLIENTES_ESTILO = """
   .historial-pedidos h2 { margin:0 0 10px; color:#f2f4f8; font-size:17px; }
   .historial-pedidos label { color:#dfe2e8; font-size:13px; font-weight:700; }
   .historial-pedidos input { margin-left:8px; min-height:34px; border:1px solid #4a5160; border-radius:8px; padding:0 8px; background:#12141a; color:#f2f4f8; font:inherit; }
+  #fecha-historial-pedidos { color-scheme:dark; }
+  #fecha-historial-pedidos::-webkit-calendar-picker-indicator { filter:none; opacity:.9; cursor:pointer; }
   .pedido-historico { padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
   .estado-recibo { display:inline-block; margin-top:4px; color:#9aa0ab; font-size:12px; }
   .acciones-recibo { display:inline-flex; gap:8px; margin-left:8px; vertical-align:middle; }
@@ -838,16 +843,48 @@ _ADMIN_CLIENTES_ESTILO = """
   .acciones-mailing span { color:#9aa0ab; font-size:13px; }
   .col-check { width:40px; text-align:center; }
   .col-check input { width:16px; height:16px; accent-color:#c8102e; cursor:pointer; }
-  .tabla-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .tabla-scroll { width:100%; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
   @media (max-width: 640px) {
     body { align-items:flex-start; padding:12px; }
     .panel { margin:0; padding:16px; border-radius:12px; }
     .panel-header { align-items:stretch; flex-direction:column; gap:10px; }
+    .panel-header-acciones { align-items:stretch; flex-direction:column; }
     .panel-header button, .panel-header a.volver { box-sizing:border-box; text-align:center; width:100%; }
-    table { min-width:600px; font-size:13px; }
-    th, td { padding:8px; white-space:nowrap; }
+    .panel-header .btn-clientes { box-sizing:border-box; text-align:center; width:100%; }
+    .historial-pedidos input { box-sizing:border-box; display:block; margin:8px 0 0; max-width:100%; width:100%; }
+    .filtros-clientes { flex-direction:column; }
+    .filtros-clientes input, .filtros-clientes select { min-width:0; width:100%; }
+    #filtro-clientes { flex:0 1 auto; min-height:38px; }
+    .pedido-hoy { align-items:stretch; flex-direction:column; }
+    .pedido-hoy-detalle, .pedido-historico { overflow-wrap:anywhere; word-break:break-word; }
+    .pedido-acciones { justify-content:stretch; width:100%; }
+    .pedido-acciones button { flex:1 1 140px; min-height:42px; }
+    .acciones-recibo { margin:8px 0 0; }
+    .tabla-scroll { overflow:visible; }
+    #tabla-clientes { min-width:0; font-size:13px; }
+    #tabla-clientes thead { display:none; }
+    #tabla-clientes, #tabla-clientes tbody, #tabla-clientes tr, #tabla-clientes td { box-sizing:border-box; display:block; width:100%; }
+    #tabla-clientes tbody { display:grid; gap:12px; }
+    #tabla-clientes tr { background:#12141a; border:1px solid #2a2e37; border-radius:10px; padding:4px 12px; }
+    #tabla-clientes td { align-items:flex-start; border-bottom:1px solid #2a2e37; display:flex; gap:12px; justify-content:space-between; min-height:42px; padding:10px 0; white-space:normal; overflow-wrap:anywhere; vertical-align:top; }
+    #tabla-clientes td::before { color:#9aa0ab; content:""; flex:0 0 82px; font-size:12px; font-weight:700; }
+    #tabla-clientes td:nth-child(1)::before { content:"Seleccionar"; }
+    #tabla-clientes td:nth-child(2)::before { content:"Nombre"; }
+    #tabla-clientes td:nth-child(3)::before { content:"Celular"; }
+    #tabla-clientes td:nth-child(4)::before { content:"Provincia"; }
+    #tabla-clientes td:nth-child(5)::before { content:"Historial"; }
+    #tabla-clientes td:nth-child(6)::before { content:"Cuenta"; }
+    #tabla-clientes td:nth-child(7)::before { content:"Acciones"; }
+    #tabla-clientes td:last-child { border-bottom:0; }
+    #tabla-clientes .col-check { justify-content:flex-start; text-align:left; }
+    #tabla-clientes .col-check::before { display:none; }
+    #tabla-clientes .btn-reset, #tabla-clientes .btn-eliminar { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
     .acciones-mailing { align-items:stretch; flex-direction:column; }
     .acciones-mailing button { width:100%; min-height:44px; }
+    .modal-mail { align-items:flex-end; padding:12px; }
+    .modal-mail-contenido { max-height:calc(100vh - 24px); overflow-y:auto; padding:16px; }
+    .modal-mail-acciones { flex-direction:column-reverse; }
+    .modal-mail-acciones button { min-height:44px; width:100%; }
   }
 </style>
 """
@@ -870,6 +907,15 @@ if ("serviceWorker" in navigator) {
 
 @app.get("/admin/clientes", response_class=HTMLResponse)
 def admin_clientes(request: Request):
+    return _admin_clientes_pagina(request, mostrar_clientes=False)
+
+
+@app.get("/admin/clientes/lista", response_class=HTMLResponse)
+def admin_clientes_lista(request: Request):
+    return _admin_clientes_pagina(request, mostrar_clientes=True)
+
+
+def _admin_clientes_pagina(request: Request, mostrar_clientes: bool):
     if not _clientes_admin_activo(request):
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Clientes — Ingresar</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
@@ -984,6 +1030,76 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         )
     else:
         pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'
+
+    if not mostrar_clientes:
+        return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
+<div class="panel">
+  <div class="panel-header">
+    <h1>Pedidos y recibos</h1>
+    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><button id="salir">Cerrar sesión</button></div>
+  </div>
+  <section class="historial-pedidos"><h2>Historial de pedidos</h2><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
+  <section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy)})</h2>{pedidos_hoy_html}</section>
+</div>
+<script>
+document.getElementById("salir").addEventListener("click", async () => {{
+  await fetch("/admin/clientes/logout", {{ method: "POST" }});
+  location.reload();
+}});
+document.querySelectorAll(".btn-enviar-recibo").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Enviar el recibo por email a este cliente?")) return;
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/recibo`, {{ method: "POST" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo enviar el recibo."); btn.disabled = false; btn.textContent = "Enviar recibo"; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-reenviar-recibo").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Reenviar el recibo original por email?")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/recibo`, {{ method: "POST" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo reenviar el recibo."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-editar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const fecha = prompt("Nueva fecha de entrega (AAAA-MM-DD)", btn.dataset.fecha);
+    if (!fecha || fecha === btn.dataset.fecha) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/fecha-entrega`, {{
+      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{fecha_entrega: fecha}}),
+    }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo editar la fecha de entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-eliminar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta entrega? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}`, {{ method: "DELETE" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.getElementById("fecha-historial-pedidos").addEventListener("change", (e) => {{
+  const url = new URL(location.href);
+  url.searchParams.set("fecha_pedidos", e.target.value);
+  location.href = url.toString();
+}});
+</script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
+</body></html>"""
+
     provincias = sorted({c["provincia"] for c in clientes}, key=str.casefold)
     opciones_provincia_html = "".join(
         f'<option value="{html.escape(provincia)}">{html.escape(provincia)}</option>'
@@ -1020,10 +1136,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 <div class="panel">
   <div class="panel-header">
     <h1>Clientes ({len(clientes)})</h1>
-    <button id="salir">Cerrar sesión</button>
+    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes">Pedidos y recibos</a><button id="salir">Cerrar sesión</button></div>
   </div>
-  <section class="historial-pedidos"><h2>Historial de pedidos</h2><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
-  <section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy)})</h2>{pedidos_hoy_html}</section>
   <div class="filtros-clientes">
     <input id="filtro-clientes" type="search" placeholder="Buscar por nombre, email, celular o provincia">
     <select id="filtro-provincia"><option value="">Todas las provincias</option>{opciones_provincia_html}</select>
@@ -1125,11 +1239,6 @@ document.querySelectorAll(".btn-eliminar-entrega").forEach((btn) => {{
     if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la entrega."); btn.disabled = false; return; }}
     location.reload();
   }});
-}});
-document.getElementById("fecha-historial-pedidos").addEventListener("change", (e) => {{
-  const url = new URL(location.href);
-  url.searchParams.set("fecha_pedidos", e.target.value);
-  location.href = url.toString();
 }});
 const checksClientes = Array.from(document.querySelectorAll(".cliente-check"));
 const seleccionarTodos = document.getElementById("seleccionar-todos");
@@ -1318,7 +1427,7 @@ def admin_clientes_historial(cliente_id: str, request: Request):
 <div class="panel">
   <div class="panel-header">
     <h1>Historial de {html.escape(nombre_cliente) or "cliente"}</h1>
-    <a class="volver" href="/admin/clientes">← Volver</a>
+    <a class="volver" href="/admin/clientes/lista">← Volver</a>
   </div>
   <section class="subseccion">
     <h2>Pedidos confirmados</h2>

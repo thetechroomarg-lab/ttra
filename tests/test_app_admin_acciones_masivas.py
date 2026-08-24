@@ -26,7 +26,7 @@ def _admin_con_clientes(monkeypatch):
 def test_admin_lista_checkboxes_provincia_y_columnas_ordenables(monkeypatch):
     cliente, _fake, _ids = _admin_con_clientes(monkeypatch)
 
-    respuesta = cliente.get("/admin/clientes")
+    respuesta = cliente.get("/admin/clientes/lista")
 
     assert respuesta.status_code == 200
     assert 'id="seleccionar-todos"' in respuesta.text
