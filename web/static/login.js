@@ -225,6 +225,10 @@ formRegistro.addEventListener("submit", async (e) => {
   const password = document.getElementById("registro-password").value;
   const repetir = document.getElementById("registro-password-repetir").value;
   const email = document.getElementById("registro-email").value;
+  if (password.length < 8) {
+    registroErrorEl.textContent = "La contraseña tiene que tener al menos 8 caracteres.";
+    return;
+  }
   if (password !== repetir) {
     registroErrorEl.textContent = "Las contraseñas no coinciden.";
     return;

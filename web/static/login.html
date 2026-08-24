@@ -43,8 +43,8 @@
     <form id="form-registro" class="form oculto">
       <input type="text" id="registro-nombre" placeholder="Nombre" autocomplete="given-name" required>
       <input type="text" id="registro-apellido" placeholder="Apellido" autocomplete="family-name" required>
-      <input type="password" id="registro-password" placeholder="Contraseña" autocomplete="new-password" required>
-      <input type="password" id="registro-password-repetir" placeholder="Repetir contraseña" autocomplete="new-password" required>
+      <input type="password" id="registro-password" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="new-password" minlength="8" required>
+      <input type="password" id="registro-password-repetir" placeholder="Repetir contraseña" autocomplete="new-password" minlength="8" required>
       <input type="tel" id="registro-celular" placeholder="Celular" autocomplete="tel" required>
       <input type="email" id="registro-email" placeholder="Email" autocomplete="email" required>
       <button type="submit">Crear cuenta</button>
