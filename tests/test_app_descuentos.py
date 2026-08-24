@@ -11,6 +11,7 @@ def _cliente_con_codigo(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
+    "provincia": "Córdoba",
     })
     cliente_id = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]["id"]
     fake.table("codigos_descuento").insert({

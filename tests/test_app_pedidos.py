@@ -19,6 +19,7 @@ def test_pedido_con_sesion_se_guarda(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
+    "provincia": "Córdoba",
     })
     r = c.post("/api/pedidos", json={"productos": ["iPhone 13", "AirPods"]})
     assert r.status_code == 200

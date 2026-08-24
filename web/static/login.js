@@ -241,6 +241,7 @@ formRegistro.addEventListener("submit", async (e) => {
       celular: document.getElementById("registro-celular").value,
       email,
       password,
+      provincia: document.getElementById("registro-provincia").value,
     },
     registroErrorEl,
   );

@@ -32,13 +32,16 @@ def normalizar_celular(celular):
     return digitos
 
 
-def registrar_cliente(client, nombre, apellido, celular, email, password, email_redirect_to=None):
+def registrar_cliente(client, nombre, apellido, celular, email, password, provincia="Córdoba", email_redirect_to=None):
     nombre = nombre.strip()
     apellido = apellido.strip()
     celular_norm = normalizar_celular(celular)
     email = email.strip().lower()
+    provincia = provincia.strip()
     if not celular_norm:
         raise ValueError("El celular ingresado no es válido")
+    if not provincia:
+        raise ValueError("Seleccioná tu provincia")
 
     # La vinculación de fila "invitada" es SOLO por celular, nunca por email:
     # el email no prueba que quien se registra sea el dueño real de la
@@ -66,7 +69,13 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, email_
         raise
     auth_id = auth_resp.user.id
 
-    datos = {"auth_id": auth_id, "nombre": nombre, "apellido": apellido, "email": email}
+    datos = {
+        "auth_id": auth_id,
+        "nombre": nombre,
+        "apellido": apellido,
+        "email": email,
+        "provincia": provincia,
+    }
     if lead_invitado:
         propio_id = lead_invitado["id"]
         datos["celular"] = celular_norm

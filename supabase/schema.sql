@@ -10,12 +10,17 @@ create table if not exists clientes (
   apellido text not null,
   celular text not null unique,
   email text not null unique,
+  provincia text,
   username text unique,
   tipo_cliente text not null default 'minorista',
   debe_cambiar_password boolean not null default false,
   creado_en timestamptz not null default now(),
   actualizado_en timestamptz not null default now()
 );
+
+-- Los clientes existentes quedan sin provincia; las altas nuevas la
+-- completan obligatoriamente desde la aplicación.
+alter table clientes add column if not exists provincia text;
 
 create table if not exists pedidos (
   id uuid primary key default gen_random_uuid(),

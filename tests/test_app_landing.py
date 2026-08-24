@@ -228,6 +228,7 @@ def test_landing_con_sesion_muestra_index(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
+    "provincia": "Córdoba",
     })
     r = c.get("/")
     assert r.status_code == 200
@@ -250,6 +251,7 @@ def test_index_html_directo_con_sesion_sigue_funcionando(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
+    "provincia": "Córdoba",
     })
     r = c.get("/index.html")
     assert r.status_code == 200
@@ -358,6 +360,7 @@ def test_chat_con_sesion_sigue_funcionando(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
+    "provincia": "Córdoba",
     })
     r = c.post("/chat", json={"mensaje": "hola", "sesion": "s1"})
     assert r.status_code == 200

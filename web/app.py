@@ -250,6 +250,14 @@ class MailingOfertaIn(BaseModel):
     productos: list[str]
 
 
+class ClientesSeleccionadosIn(BaseModel):
+    cliente_ids: list[str] = Field(min_length=1, max_length=100)
+
+
+class MailingMasivoIn(ClientesSeleccionadosIn):
+    mensaje: str = Field(min_length=1, max_length=5000)
+
+
 class DescuentoItemIn(BaseModel):
     nombre: str
     cantidad: int = Field(ge=1)
@@ -407,6 +415,56 @@ def admin_clientes_login(entrada: ClientesLoginIn, request: Request):
 def admin_clientes_logout(request: Request):
     request.session.pop("clientes_admin_ok", None)
     return {"ok": True}
+
+
+def _clientes_seleccionados(client, cliente_ids: list[str]):
+    ids = list(dict.fromkeys(cliente_id for cliente_id in cliente_ids if cliente_id))
+    clientes_por_id = {
+        cliente.get("id"): cliente
+        for cliente in client.table("clientes").select("*").execute().data
+    }
+    if any(cliente_id not in clientes_por_id for cliente_id in ids):
+        raise ValueError("Uno o más clientes ya no existen")
+    return [clientes_por_id[cliente_id] for cliente_id in ids]
+
+
+@app.post("/admin/clientes/acciones/enviar-mail")
+def admin_clientes_enviar_mail_masivo(entrada: MailingMasivoIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    try:
+        clientes = _clientes_seleccionados(get_client(), entrada.cliente_ids)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+    mensaje_html = html.escape(entrada.mensaje.strip()).replace("\n", "<br>")
+    enviados = 0
+    fallidos = 0
+    for cliente in clientes:
+        try:
+            enviar_email(cliente["email"], "Novedades de The Tech Room Arg", f"<p>{mensaje_html}</p>")
+            enviados += 1
+        except EnvioEmailError:
+            logger.exception("No se pudo enviar mail masivo a %s", cliente.get("id"))
+            fallidos += 1
+    return {"ok": True, "enviados": enviados, "fallidos": fallidos}
+
+
+@app.post("/admin/clientes/acciones/eliminar")
+def admin_clientes_eliminar_masivo(entrada: ClientesSeleccionadosIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    try:
+        clientes = _clientes_seleccionados(client, entrada.cliente_ids)
+        for cliente in clientes:
+            cuentas.eliminar_cliente(client, cliente["id"])
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception:
+        logger.exception("No se pudo completar la eliminación masiva de clientes")
+        return JSONResponse({"error": "No se pudieron eliminar todas las cuentas"}, status_code=503)
+    return {"ok": True, "eliminados": len(clientes)}
 
 
 @app.post("/admin/clientes/{cliente_id}/resetear-password")
@@ -647,6 +705,27 @@ _ADMIN_CLIENTES_ESTILO = """
   .btn-historial:hover { color:#fff; }
   .btn-eliminar { background:#8d1627; border:1px solid #c8102e; color:#fff; }
   .btn-eliminar:hover { background:#c8102e; }
+  .acciones-masivas { display:none; align-items:center; gap:10px; margin:0 0 14px; flex-wrap:wrap; }
+  .acciones-masivas.visible { display:flex; }
+  .acciones-masivas span { color:#9aa0ab; font-size:13px; }
+  .acciones-masivas button { border:none; border-radius:8px; padding:9px 12px; color:#fff; cursor:pointer; font-weight:700; }
+  #btn-mail-masivo { background:#3a3f4b; }
+  #btn-eliminar-masivo { background:#8d1627; border:1px solid #c8102e; }
+  .filtros-clientes { display:flex; gap:8px; margin:0 0 14px; flex-wrap:wrap; }
+  .filtros-clientes input, .filtros-clientes select { min-height:38px; box-sizing:border-box; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 10px; font:inherit; }
+  #filtro-clientes { flex:1 1 240px; }
+  .ordenar-columna { appearance:none; border:0; background:transparent; color:#f2f4f8; font:inherit; font-weight:700; cursor:pointer; padding:0; }
+  .ordenar-columna:hover { color:#fff; text-decoration:underline; }
+  .modal-mail { position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
+  .modal-mail[hidden] { display:none; }
+  .modal-mail-contenido { width:min(520px, 100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
+  .modal-mail h2 { margin:0 0 8px; color:#f2f4f8; font-size:18px; }
+  .modal-mail p { margin:0 0 12px; color:#9aa0ab; font-size:13px; }
+  .modal-mail textarea { width:100%; min-height:160px; resize:vertical; box-sizing:border-box; border:1px solid #4a5160; border-radius:8px; padding:10px; color:#f2f4f8; background:#12141a; font:inherit; }
+  .modal-mail-acciones { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+  .modal-mail-acciones button { border:0; border-radius:8px; padding:9px 12px; cursor:pointer; font-weight:700; }
+  #mail-cancelar { background:#3a3f4b; color:#fff; }
+  #mail-enviar { background:#c8102e; color:#fff; }
   .panel-header a.volver { color:#dfe2e8; text-decoration:none; font-weight:700; font-size:14px; }
   .panel-header a.volver:hover { color:#fff; }
   .subseccion { margin-top:22px; }
@@ -725,14 +804,21 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             "id": c.get("id", ""),
             "nombre": f"{c.get('nombre', '')} {c.get('apellido', '')}".strip(),
             "celular": c.get("celular", ""),
+            "email": c.get("email", ""),
+            "provincia": c.get("provincia") or "Sin especificar",
             "fecha": c.get("creado_en", ""),
             "tiene_cuenta": bool(c.get("auth_id")),
         }
         for c in filas_clientes
     ]
     clientes.sort(key=lambda r: r.get("fecha", ""), reverse=True)
+    provincias = sorted({c["provincia"] for c in clientes}, key=str.casefold)
+    opciones_provincia_html = "".join(
+        f'<option value="{html.escape(provincia)}">{html.escape(provincia)}</option>'
+        for provincia in provincias
+    )
     if not clientes:
-        filas_html = '<tr><td colspan="6" class="vacio">Todavía no hay clientes registrados.</td></tr>'
+        filas_html = '<tr><td colspan="7" class="vacio">Todavía no hay clientes registrados.</td></tr>'
     else:
         def _celda_cuenta(c):
             if not c.get("tiene_cuenta"):
@@ -747,9 +833,11 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             return f'<button class="btn-eliminar" data-id="{id_seguro}">Eliminar cuenta</button>'
 
         filas_html = "".join(
-            f"<tr><td>{html.escape(c.get('nombre', ''))}</td>"
+            f'<tr class="cliente-fila" data-busqueda="{html.escape(" ".join((c.get("nombre", ""), c.get("celular", ""), c.get("email", ""), c.get("provincia", ""))).lower())}" data-provincia="{html.escape(c.get("provincia", ""))}"><td class="col-check"><input class="cliente-check" type="checkbox" '
+            f'value="{html.escape(c.get("id", ""))}" aria-label="Seleccionar cliente"></td>'
+            f"<td>{html.escape(c.get('nombre', ''))}</td>"
             f"<td>{html.escape(c.get('celular', ''))}</td>"
-            f"<td>{html.escape(c.get('fecha', ''))}</td>"
+            f"<td>{html.escape(c.get('provincia', ''))}</td>"
             f'<td><a class="btn-historial" href="/admin/clientes/{html.escape(c.get("id", ""))}/historial" '
             f'title="Ver historial de pedidos" aria-label="Ver historial de pedidos">{_ICONO_OJO}</a></td>'
             f"<td>{_celda_cuenta(c)}</td><td>{_celda_eliminar(c)}</td></tr>"
@@ -762,10 +850,28 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <h1>Clientes ({len(clientes)})</h1>
     <button id="salir">Cerrar sesión</button>
   </div>
-  <div class="tabla-scroll"><table>
-    <thead><tr><th>Nombre</th><th>Celular</th><th>Fecha</th><th>Historial</th><th>Cuenta</th><th>Acciones</th></tr></thead>
+  <div class="filtros-clientes">
+    <input id="filtro-clientes" type="search" placeholder="Buscar por nombre, email, celular o provincia">
+    <select id="filtro-provincia"><option value="">Todas las provincias</option>{opciones_provincia_html}</select>
+    <select id="ordenar-clientes"><option value="fecha-desc">Ordenar: más recientes</option><option value="nombre-asc">Nombre: A a Z</option><option value="nombre-desc">Nombre: Z a A</option><option value="celular-asc">Celular</option><option value="provincia-asc">Provincia: A a Z</option></select>
+  </div>
+  <div class="acciones-masivas" id="acciones-masivas">
+    <span id="seleccionados-texto">0 clientes seleccionados</span>
+    <button id="btn-mail-masivo" type="button">Enviar mail</button>
+    <button id="btn-eliminar-masivo" type="button">Eliminar seleccionados</button>
+  </div>
+  <div class="tabla-scroll"><table id="tabla-clientes">
+    <thead><tr><th class="col-check"><input id="seleccionar-todos" type="checkbox" aria-label="Seleccionar todos"></th><th><button class="ordenar-columna" data-sort="nombre" data-sort-index="1">Nombre</button></th><th><button class="ordenar-columna" data-sort="celular" data-sort-index="2">Celular</button></th><th><button class="ordenar-columna" data-sort="provincia" data-sort-index="3">Provincia</button></th><th>Historial</th><th>Cuenta</th><th>Acciones</th></tr></thead>
     <tbody>{filas_html}</tbody>
   </table></div>
+</div>
+<div class="modal-mail" id="modal-mail" hidden>
+  <div class="modal-mail-contenido" role="dialog" aria-modal="true" aria-labelledby="modal-mail-titulo">
+    <h2 id="modal-mail-titulo">Enviar mail</h2>
+    <p id="modal-mail-ayuda"></p>
+    <textarea id="mail-mensaje" placeholder="Escribí el mensaje para los clientes seleccionados"></textarea>
+    <div class="modal-mail-acciones"><button id="mail-cancelar" type="button">Cancelar</button><button id="mail-enviar" type="button">Enviar</button></div>
+  </div>
 </div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
@@ -801,6 +907,94 @@ document.querySelectorAll(".btn-eliminar").forEach((btn) => {{
     btn.textContent = "Eliminar cuenta";
     btn.disabled = false;
   }});
+}});
+const checksClientes = Array.from(document.querySelectorAll(".cliente-check"));
+const seleccionarTodos = document.getElementById("seleccionar-todos");
+const accionesMasivas = document.getElementById("acciones-masivas");
+const seleccionadosTexto = document.getElementById("seleccionados-texto");
+const modalMail = document.getElementById("modal-mail");
+const mailMensaje = document.getElementById("mail-mensaje");
+const filtroClientes = document.getElementById("filtro-clientes");
+const filtroProvincia = document.getElementById("filtro-provincia");
+const ordenarClientesSelect = document.getElementById("ordenar-clientes");
+
+function idsSeleccionados() {{ return checksClientes.filter((chk) => chk.checked).map((chk) => chk.value); }}
+function actualizarSeleccion() {{
+  const cantidad = idsSeleccionados().length;
+  seleccionadosTexto.textContent = `${{cantidad}} cliente${{cantidad === 1 ? "" : "s"}} seleccionado${{cantidad === 1 ? "" : "s"}}`;
+  accionesMasivas.classList.toggle("visible", cantidad > 0);
+  seleccionarTodos.checked = checksClientes.length > 0 && cantidad === checksClientes.length;
+  seleccionarTodos.indeterminate = cantidad > 0 && cantidad < checksClientes.length;
+}}
+checksClientes.forEach((chk) => chk.addEventListener("change", actualizarSeleccion));
+seleccionarTodos.addEventListener("change", () => {{ checksClientes.forEach((chk) => {{ chk.checked = seleccionarTodos.checked; }}); actualizarSeleccion(); }});
+
+function filtrarClientes() {{
+  const texto = filtroClientes.value.trim().toLowerCase();
+  const provincia = filtroProvincia.value;
+  document.querySelectorAll("#tabla-clientes tbody .cliente-fila").forEach((fila) => {{
+    fila.hidden = Boolean((texto && !fila.dataset.busqueda.includes(texto)) || (provincia && fila.dataset.provincia !== provincia));
+  }});
+}}
+filtroClientes.addEventListener("input", filtrarClientes);
+filtroProvincia.addEventListener("change", filtrarClientes);
+
+const columnasOrden = {{ nombre: 1, celular: 2, provincia: 3 }};
+function ordenarFilasClientes(campo, ascendente) {{
+  const indice = columnasOrden[campo];
+  const filas = Array.from(document.querySelectorAll("#tabla-clientes tbody .cliente-fila"));
+  filas.sort((a, b) => a.cells[indice].textContent.trim().localeCompare(
+    b.cells[indice].textContent.trim(), "es", {{ numeric: true, sensitivity: "base" }}
+  ) * (ascendente ? 1 : -1));
+  const cuerpo = document.querySelector("#tabla-clientes tbody");
+  filas.forEach((fila) => cuerpo.appendChild(fila));
+}}
+ordenarClientesSelect.addEventListener("change", () => {{
+  const [campo, direccion] = ordenarClientesSelect.value.split("-");
+  if (campo === "fecha") return;
+  ordenarFilasClientes(campo, direccion === "asc");
+}});
+
+document.querySelectorAll(".ordenar-columna").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    const ascendente = btn.dataset.orden !== "asc";
+    document.querySelectorAll(".ordenar-columna").forEach((otro) => {{ otro.dataset.orden = ""; }});
+    btn.dataset.orden = ascendente ? "asc" : "desc";
+    ordenarFilasClientes(btn.dataset.sort, ascendente);
+  }});
+}});
+
+document.getElementById("btn-mail-masivo").addEventListener("click", () => {{
+  document.getElementById("modal-mail-ayuda").textContent = `El asunto será: Novedades de The Tech Room Arg. Se enviará a ${{idsSeleccionados().length}} cliente(s).`;
+  mailMensaje.value = "";
+  modalMail.hidden = false;
+  mailMensaje.focus();
+}});
+document.getElementById("mail-cancelar").addEventListener("click", () => {{ modalMail.hidden = true; }});
+document.getElementById("mail-enviar").addEventListener("click", async () => {{
+  const mensaje = mailMensaje.value.trim();
+  if (!mensaje) {{ alert("Escribí un mensaje antes de enviar."); return; }}
+  const boton = document.getElementById("mail-enviar");
+  boton.disabled = true;
+  const r = await fetch("/admin/clientes/acciones/enviar-mail", {{
+    method: "POST", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{cliente_ids: idsSeleccionados(), mensaje}}),
+  }});
+  const datos = await r.json();
+  boton.disabled = false;
+  if (!r.ok) {{ alert(datos.error || "No se pudo enviar el mail."); return; }}
+  modalMail.hidden = true;
+  alert(`Mail enviado a ${{datos.enviados}} cliente(s). Fallidos: ${{datos.fallidos}}.`);
+}});
+document.getElementById("btn-eliminar-masivo").addEventListener("click", async () => {{
+  const ids = idsSeleccionados();
+  if (!confirm(`¿Eliminar definitivamente ${{ids.length}} cuenta(s)? También se borrarán sus pedidos e historial. Esta acción no se puede deshacer.`)) return;
+  const r = await fetch("/admin/clientes/acciones/eliminar", {{
+    method: "POST", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{cliente_ids: ids}}),
+  }});
+  const datos = await r.json();
+  if (!r.ok) {{ alert(datos.error || "No se pudieron eliminar las cuentas."); return; }}
+  location.reload();
 }});
 </script>
 {_ADMIN_CLIENTES_PWA_SCRIPT}
@@ -1015,6 +1209,7 @@ class RegistroIn(BaseModel):
     celular: str
     email: EmailStr
     password: str = Field(min_length=8)
+    provincia: str = Field(min_length=2, max_length=80)
 
 
 class LoginIn(BaseModel):
@@ -1077,7 +1272,7 @@ def registro(entrada: RegistroIn, request: Request):
         client = get_client()
         cliente = cuentas.registrar_cliente(
             client, entrada.nombre, entrada.apellido, entrada.celular,
-            entrada.email, entrada.password,
+            entrada.email, entrada.password, entrada.provincia,
             email_redirect_to=_public_login_url(request),
         )
     except (cuentas.CelularDuplicadoError, cuentas.EmailDuplicadoError, ValueError) as e:

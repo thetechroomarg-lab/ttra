@@ -92,6 +92,7 @@ def test_login_vincula_interacciones_anonimas_de_producto_al_cliente(monkeypatch
         json={
             "nombre": "Ana", "apellido": "Gómez", "celular": "3511234567",
             "email": "ana@x.com", "password": "clave1234",
+        "provincia": "Córdoba",
         },
         headers={"X-TTRA-ANON-ID": "anon-2"},
     )

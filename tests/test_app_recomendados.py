@@ -24,6 +24,7 @@ def test_api_recomendados_prioriza_producto_visto_y_similares(monkeypatch):
     c.post("/registro", json={
         "nombre": "Ana", "apellido": "Gómez", "celular": "3511234567",
         "email": "ana@x.com", "password": "clave1234",
+    "provincia": "Córdoba",
     })
     cliente_id = fake.table("clientes").select("*").eq("email", "ana@x.com").execute().data[0]["id"]
     fake.table("interacciones_cliente").insert({

@@ -11,6 +11,7 @@ def _cliente_autenticado(tmp_path, monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave123",
+    "provincia": "Córdoba",
     })
     return c
 
@@ -62,6 +63,7 @@ def test_flujo_completo_registro_logout_login_catalogo(tmp_path, monkeypatch):
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave123",
+    "provincia": "Córdoba",
     })
     assert r.status_code == 200
 
