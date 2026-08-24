@@ -28,6 +28,24 @@ def test_admin_clientes_lista_nombre_y_link_a_historial(monkeypatch):
     assert "Productos consultados" not in r.text
 
 
+def test_admin_clientes_es_instalable_y_responsive_en_mobile(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+
+    panel = c.get("/admin/clientes")
+    manifest = c.get("/admin-clientes.webmanifest")
+
+    assert panel.status_code == 200
+    assert '<meta name="viewport" content="width=device-width, initial-scale=1">' in panel.text
+    assert '<link rel="manifest" href="/admin-clientes.webmanifest">' in panel.text
+    assert 'navigator.serviceWorker.register("/sw.js")' in panel.text
+    assert 'class="tabla-scroll"' in panel.text
+    assert "@media (max-width: 640px)" in panel.text
+    assert manifest.status_code == 200
+    assert manifest.json()["start_url"] == "/admin/clientes"
+    assert manifest.json()["scope"] == "/admin/clientes"
+    assert manifest.json()["display"] == "standalone"
+
+
 def test_admin_clientes_historial_muestra_pedidos_del_cliente(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     fake = appmod.get_client()

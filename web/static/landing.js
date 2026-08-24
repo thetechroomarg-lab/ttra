@@ -3358,7 +3358,14 @@ function renderCarrito() {
   }
 }
 
+function sincronizarLimiteCarrito() {
+  const pie = document.querySelector(".rc-pie");
+  const separacion = pie ? Math.ceil(pie.getBoundingClientRect().height) + 16 : 24;
+  document.documentElement.style.setProperty("--rc-carrito-separacion-footer", `${separacion}px`);
+}
+
 function abrirCarrito() {
+  sincronizarLimiteCarrito();
   document.getElementById("panel-carrito").classList.remove("oculto");
   document.getElementById("overlay-carrito").classList.remove("oculto");
 }
@@ -3470,6 +3477,7 @@ async function derivarCheckoutAWhatsapp(carrito) {
 document.getElementById("btn-carrito").addEventListener("click", abrirCarrito);
 document.getElementById("btn-cerrar-carrito").addEventListener("click", cerrarCarrito);
 document.getElementById("overlay-carrito").addEventListener("click", cerrarCarrito);
+window.addEventListener("resize", sincronizarLimiteCarrito);
 document.getElementById("btn-vaciar-carrito").addEventListener("click", () => {
   vaciarCarrito();
   borrarDescuentoMailing();

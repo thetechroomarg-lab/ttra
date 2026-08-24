@@ -436,6 +436,20 @@ def admin_clientes_resetear_password(cliente_id: str, request: Request):
     return {"ok": True}
 
 
+@app.post("/admin/clientes/{cliente_id}/eliminar")
+def admin_clientes_eliminar(cliente_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    try:
+        cuentas.eliminar_cliente(get_client(), cliente_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception:
+        logger.exception("No se pudo eliminar el cliente %s", cliente_id)
+        return JSONResponse({"error": "No se pudo eliminar la cuenta en este momento"}, status_code=503)
+    return {"ok": True}
+
+
 @app.post("/admin/clientes/{cliente_id}/mailing-oferta")
 def admin_clientes_mailing_oferta(cliente_id: str, entrada: MailingOfertaIn, request: Request):
     if not _clientes_admin_activo(request):
@@ -631,6 +645,8 @@ _ADMIN_CLIENTES_ESTILO = """
   .vacio { color:#9aa0ab; text-align:center; padding:30px; }
   .btn-historial { display:inline-flex; color:#dfe2e8; }
   .btn-historial:hover { color:#fff; }
+  .btn-eliminar { background:#8d1627; border:1px solid #c8102e; color:#fff; }
+  .btn-eliminar:hover { background:#c8102e; }
   .panel-header a.volver { color:#dfe2e8; text-decoration:none; font-weight:700; font-size:14px; }
   .panel-header a.volver:hover { color:#fff; }
   .subseccion { margin-top:22px; }
@@ -643,7 +659,33 @@ _ADMIN_CLIENTES_ESTILO = """
   .acciones-mailing span { color:#9aa0ab; font-size:13px; }
   .col-check { width:40px; text-align:center; }
   .col-check input { width:16px; height:16px; accent-color:#c8102e; cursor:pointer; }
+  .tabla-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  @media (max-width: 640px) {
+    body { align-items:flex-start; padding:12px; }
+    .panel { margin:0; padding:16px; border-radius:12px; }
+    .panel-header { align-items:stretch; flex-direction:column; gap:10px; }
+    .panel-header button, .panel-header a.volver { box-sizing:border-box; text-align:center; width:100%; }
+    table { min-width:600px; font-size:13px; }
+    th, td { padding:8px; white-space:nowrap; }
+    .acciones-mailing { align-items:stretch; flex-direction:column; }
+    .acciones-mailing button { width:100%; min-height:44px; }
+  }
 </style>
+"""
+
+_ADMIN_CLIENTES_PWA_HEAD = """
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="/admin-clientes.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#111318">
+"""
+
+_ADMIN_CLIENTES_PWA_SCRIPT = """
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+</script>
 """
 
 
@@ -651,7 +693,7 @@ _ADMIN_CLIENTES_ESTILO = """
 def admin_clientes(request: Request):
     if not _clientes_admin_activo(request):
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Clientes — Ingresar</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
+<title>Clientes — Ingresar</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
 <div class="tarjeta">
   <h1>Panel de clientes</h1>
   <p id="err" class="error" style="display:none"></p>
@@ -673,6 +715,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   if (e.key === "Enter") document.getElementById("btn").click();
 }});
 </script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
 </body></html>"""
 
     client = get_client()
@@ -689,7 +732,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     ]
     clientes.sort(key=lambda r: r.get("fecha", ""), reverse=True)
     if not clientes:
-        filas_html = '<tr><td colspan="5" class="vacio">Todavía no hay clientes registrados.</td></tr>'
+        filas_html = '<tr><td colspan="6" class="vacio">Todavía no hay clientes registrados.</td></tr>'
     else:
         def _celda_cuenta(c):
             if not c.get("tiene_cuenta"):
@@ -697,26 +740,32 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             id_seguro = html.escape(c.get("id", ""))
             return f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
 
+        def _celda_eliminar(c):
+            if not c.get("tiene_cuenta"):
+                return "—"
+            id_seguro = html.escape(c.get("id", ""))
+            return f'<button class="btn-eliminar" data-id="{id_seguro}">Eliminar cuenta</button>'
+
         filas_html = "".join(
             f"<tr><td>{html.escape(c.get('nombre', ''))}</td>"
             f"<td>{html.escape(c.get('celular', ''))}</td>"
             f"<td>{html.escape(c.get('fecha', ''))}</td>"
             f'<td><a class="btn-historial" href="/admin/clientes/{html.escape(c.get("id", ""))}/historial" '
             f'title="Ver historial de pedidos" aria-label="Ver historial de pedidos">{_ICONO_OJO}</a></td>'
-            f"<td>{_celda_cuenta(c)}</td></tr>"
+            f"<td>{_celda_cuenta(c)}</td><td>{_celda_eliminar(c)}</td></tr>"
             for c in clientes
         )
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Clientes</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
+<title>Clientes</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
 <div class="panel">
   <div class="panel-header">
     <h1>Clientes ({len(clientes)})</h1>
     <button id="salir">Cerrar sesión</button>
   </div>
-  <table>
-    <thead><tr><th>Nombre</th><th>Celular</th><th>Fecha</th><th>Historial</th><th>Cuenta</th></tr></thead>
+  <div class="tabla-scroll"><table>
+    <thead><tr><th>Nombre</th><th>Celular</th><th>Fecha</th><th>Historial</th><th>Cuenta</th><th>Acciones</th></tr></thead>
     <tbody>{filas_html}</tbody>
-  </table>
+  </table></div>
 </div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
@@ -740,7 +789,21 @@ document.querySelectorAll(".btn-reset").forEach((btn) => {{
     btn.disabled = false;
   }});
 }});
+document.querySelectorAll(".btn-eliminar").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta cuenta definitivamente? También se borrarán sus pedidos e historial. Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    btn.textContent = "Eliminando...";
+    const r = await fetch(`/admin/clientes/${{btn.dataset.id}}/eliminar`, {{ method: "POST" }});
+    const datos = await r.json();
+    if (r.ok) {{ location.reload(); return; }}
+    alert(datos.error || "No se pudo eliminar la cuenta");
+    btn.textContent = "Eliminar cuenta";
+    btn.disabled = false;
+  }});
+}});
 </script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
 </body></html>"""
 
 
@@ -834,7 +897,7 @@ def admin_clientes_historial(cliente_id: str, request: Request):
     email_cliente = html.escape(cliente.get("email", "") or "")
 
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Historial — {html.escape(nombre_cliente)}</title>{_ADMIN_CLIENTES_ESTILO}</head><body>
+<title>Historial — {html.escape(nombre_cliente)}</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
 <div class="panel">
   <div class="panel-header">
     <h1>Historial de {html.escape(nombre_cliente) or "cliente"}</h1>
@@ -843,26 +906,26 @@ def admin_clientes_historial(cliente_id: str, request: Request):
   <section class="subseccion">
     <h2>Pedidos confirmados</h2>
     <p>Acá ves todo lo que el cliente cargó al carrito y confirmó.</p>
-    <table>
+    <div class="tabla-scroll"><table>
       <thead><tr><th class="col-check"></th><th>Fecha</th><th>Día</th><th>Hora</th><th>Productos</th></tr></thead>
       <tbody>{filas_pedidos_html}</tbody>
-    </table>
+    </table></div>
   </section>
   <section class="subseccion">
     <h2>Productos más consultados</h2>
     <p>Ranking por cantidad de vistas de este cliente, ordenado de mayor a menor para decidir mejor el mailing.</p>
-    <table>
+    <div class="tabla-scroll"><table>
       <thead><tr><th class="col-check"></th><th>Producto</th><th>Vistas</th><th>Última vista</th></tr></thead>
       <tbody>{filas_consultados_html}</tbody>
-    </table>
+    </table></div>
   </section>
   <section class="subseccion">
     <h2>Historial de vistas</h2>
     <p>Acá ves todas las interacciones de navegación, vistas e íconos que tocó el cliente.</p>
-    <table>
+    <div class="tabla-scroll"><table>
       <thead><tr><th class="col-check"></th><th>Fecha</th><th>Día</th><th>Hora</th><th>Evento</th><th>Detalle</th></tr></thead>
       <tbody>{filas_interacciones_html}</tbody>
-    </table>
+    </table></div>
   </section>
   <div class="acciones-mailing">
     <button id="btn-preparar-mailing" {'disabled' if not email_cliente else ''}>Enviar mailing</button>
@@ -942,6 +1005,7 @@ if (btnMailing) {{
   }});
 }}
 </script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
 </body></html>"""
 
 

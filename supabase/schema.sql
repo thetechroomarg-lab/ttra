@@ -49,6 +49,25 @@ create table if not exists codigos_descuento (
   creado_en timestamptz not null default now()
 );
 
+-- Al borrar auth.users se borra su perfil y, por las foreign keys en
+-- cascada, pedidos, historial de vistas y códigos de descuento asociados.
+create or replace function public.eliminar_cliente_al_borrar_auth()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from public.clientes where auth_id = old.id;
+  return old;
+end;
+$$;
+
+drop trigger if exists borrar_cliente_al_borrar_auth on auth.users;
+create trigger borrar_cliente_al_borrar_auth
+before delete on auth.users
+for each row execute function public.eliminar_cliente_al_borrar_auth();
+
 -- El backend siempre accede con la service_role key (bypassa RLS). No hay
 -- llamadas a Supabase desde el browser, así que dejamos RLS activado sin
 -- policies: cualquier acceso con la clave anon/pública queda bloqueado.
