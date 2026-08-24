@@ -1010,7 +1010,10 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         fecha_historial = date.fromisoformat(fecha_historial).isoformat()
     except ValueError:
         fecha_historial = fecha_hoy
-    pedidos_historial = [pedido for pedido in pedidos if pedido.get("fecha_entrega") == fecha_historial]
+    pedidos_historial = [
+        pedido for pedido in pedidos
+        if pedido.get("fecha_entrega") == fecha_historial and pedido.get("recibo_enviado_en")
+    ]
 
     def _descripcion_pedido(pedido):
         detalle = pedido.get("detalle") or []
@@ -1085,6 +1088,17 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     else:
         pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'
 
+    pendientes_hoy_seccion_html = (
+        f'<section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy)})</h2>{pedidos_hoy_html}</section>'
+        if fecha_historial == fecha_hoy else ""
+    )
+    tareas_hoy_seccion_html = (
+        '<section class="pedidos-hoy"><h2>Tareas para hoy</h2>'
+        '<form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea"><input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><input id="tarea-direccion" maxlength="500" placeholder="Dirección opcional"><button>Agregar tarea</button></form>'
+        f'{tareas_hoy_html}</section>'
+        if fecha_historial == fecha_hoy else ""
+    )
+
     if not mostrar_clientes:
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
@@ -1094,10 +1108,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><button id="salir">Cerrar sesión</button></div>
   </div>
   <section class="historial-pedidos"><h2>Historial de pedidos</h2><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
-  <section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy)})</h2>{pedidos_hoy_html}</section>
-  <section class="pedidos-hoy"><h2>Tareas para hoy</h2>
-    <form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea"><input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><input id="tarea-direccion" maxlength="500" placeholder="Dirección opcional"><button>Agregar tarea</button></form>{tareas_hoy_html}
-  </section>
+  {pendientes_hoy_seccion_html}
+  {tareas_hoy_seccion_html}
 </div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
@@ -1180,7 +1192,7 @@ document.getElementById("fecha-historial-pedidos").addEventListener("change", (e
   url.searchParams.set("fecha_pedidos", e.target.value);
   location.href = url.toString();
 }});
-document.getElementById("form-tarea-entrega").addEventListener("submit", async (e) => {{
+document.getElementById("form-tarea-entrega")?.addEventListener("submit", async (e) => {{
   e.preventDefault();
   const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:"{fecha_hoy}", titulo:document.getElementById("tarea-titulo").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
   if (!r.ok) {{ alert("No se pudo crear la tarea."); return; }}

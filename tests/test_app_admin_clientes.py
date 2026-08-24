@@ -211,6 +211,28 @@ def test_admin_muestra_historial_de_pedidos_para_la_fecha_elegida(monkeypatch):
     assert 'class="btn-reenviar-recibo"' in r.text
 
 
+def test_admin_historial_oculta_pendientes_y_pedidos_de_otras_fechas(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "pendiente-hoy", "cliente_id": cliente["id"], "productos": ["Galaxy A56"],
+        "fecha_entrega": "2026-08-24", "detalle": [{"nombre": "Galaxy A56", "cantidad": 1}], "total_usd": 300,
+    }).execute()
+    fake.table("pedidos").insert({
+        "id": "emitido-ayer", "cliente_id": cliente["id"], "productos": ["iPhone 15"],
+        "fecha_entrega": "2026-08-23", "recibo_enviado_en": "2026-08-23T18:00:00+00:00",
+        "detalle": [{"nombre": "iPhone 15", "cantidad": 1}], "total_usd": 500,
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    r = c.get("/admin/clientes?fecha_pedidos=2026-08-23")
+
+    assert "iPhone 15" in r.text
+    assert "Galaxy A56" not in r.text
+    assert "Pedidos pendientes para hoy" not in r.text
+
+
 def test_admin_puede_editar_y_eliminar_una_entrega_pendiente(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     fake = appmod.get_client()
