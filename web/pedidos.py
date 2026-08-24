@@ -29,6 +29,7 @@ def guardar_pedido(
     cliente_id,
     productos,
     fecha_entrega=None,
+    direccion_entrega=None,
     detalle=None,
     total_usd=None,
     descuento_usd=0,
@@ -53,6 +54,7 @@ def guardar_pedido(
                 "detalle": _combinar_detalles(pendiente.get("detalle"), detalle),
                 "total_usd": int(pendiente.get("total_usd") or 0) + int(total_usd),
                 "descuento_usd": int(pendiente.get("descuento_usd") or 0) + int(descuento_usd or 0),
+                "direccion_entrega": direccion_entrega or pendiente.get("direccion_entrega"),
             }
             client.table("pedidos").update(actualizado).eq("id", pendiente["id"]).execute()
             return {**pendiente, **actualizado}
@@ -65,6 +67,7 @@ def guardar_pedido(
         "total_usd": total_usd,
         "descuento_usd": descuento_usd,
         "fecha_entrega": fecha_iso,
+        "direccion_entrega": direccion_entrega,
         "origen": origen,
         "fecha": datetime.now(timezone.utc).isoformat(),
     }

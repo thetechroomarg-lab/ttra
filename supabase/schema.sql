@@ -44,8 +44,26 @@ alter table pedidos add column if not exists descuento_usd numeric;
 alter table pedidos add column if not exists recibo_id text;
 alter table pedidos add column if not exists recibo_emitido_en timestamptz;
 alter table pedidos add column if not exists recibo_enviado_en timestamptz;
+alter table pedidos add column if not exists direccion_entrega text;
+alter table pedidos add column if not exists orden_entrega integer;
 create unique index if not exists pedidos_recibo_id_unico
   on pedidos (recibo_id) where recibo_id is not null;
+create index if not exists pedidos_fecha_orden_entrega_idx
+  on pedidos (fecha_entrega, orden_entrega);
+
+-- Tareas operativas creadas desde el panel de entregas. No generan recibos
+-- ni se muestran al cliente.
+create table if not exists tareas_entrega (
+  id uuid primary key default gen_random_uuid(),
+  fecha_entrega date not null,
+  titulo text not null,
+  nota text,
+  direccion text,
+  orden integer not null default 0,
+  creada_en timestamptz not null default now()
+);
+create index if not exists tareas_entrega_fecha_orden_idx
+  on tareas_entrega (fecha_entrega, orden);
 
 create sequence if not exists public.recibos_numero_seq start with 1993;
 create or replace function public.siguiente_numero_recibo()
@@ -101,5 +119,6 @@ for each row execute function public.eliminar_cliente_al_borrar_auth();
 -- policies: cualquier acceso con la clave anon/pública queda bloqueado.
 alter table clientes enable row level security;
 alter table pedidos enable row level security;
+alter table tareas_entrega enable row level security;
 alter table interacciones_cliente enable row level security;
 alter table codigos_descuento enable row level security;

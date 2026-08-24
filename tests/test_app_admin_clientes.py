@@ -63,6 +63,8 @@ def test_admin_apila_controles_y_muestra_clientes_como_tarjetas_en_mobile(monkey
     assert "#tabla-clientes, #tabla-clientes tbody, #tabla-clientes tr, #tabla-clientes td" in r.text
     assert "#filtro-clientes { flex:0 1 auto; min-height:38px; }" in r.text
     assert "#tabla-clientes .col-check { justify-content:flex-start; text-align:left; }" in r.text
+    assert ".pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }" in r.text
+    assert ".pedido-acciones .btn-direcciones { align-items:center; display:flex; justify-content:center; }" in r.text
 
 
 def test_admin_muestra_pedidos_programados_para_hoy(monkeypatch):

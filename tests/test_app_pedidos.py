@@ -53,6 +53,7 @@ def test_pedido_guarda_el_detalle_y_total_usd_del_checkout(monkeypatch):
     r = c.post("/api/pedidos", json={
         "productos": ["iPhone 13 (Negro)"],
         "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123, Córdoba",
         "detalle": [{
             "nombre": "iPhone 13", "color": "Negro", "cantidad": 2,
             "usd_unitario": 500, "usd_subtotal": 1000,
@@ -68,6 +69,7 @@ def test_pedido_guarda_el_detalle_y_total_usd_del_checkout(monkeypatch):
         "proveedor": "Proveedor no identificado",
     }]
     assert pedido["total_usd"] == 1000
+    assert pedido["direccion_entrega"] == "Av. Colón 123, Córdoba"
 
 
 def test_pedido_guarda_el_proveedor_solo_resuelto_en_el_servidor(monkeypatch):
@@ -87,6 +89,7 @@ def test_pedido_guarda_el_proveedor_solo_resuelto_en_el_servidor(monkeypatch):
 
     r = c.post("/api/pedidos", json={
         "productos": ["iPhone 13"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123, Córdoba",
         "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
         "total_usd": 500,
     })
@@ -113,6 +116,7 @@ def test_pedido_normaliza_el_nombre_antes_de_resolver_proveedor(monkeypatch):
 
     r = c.post("/api/pedidos", json={
         "productos": ["Xiaomi Redmi Note 14 8GB 256GB slim"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123, Córdoba",
         "detalle": [{"nombre": "Xiaomi Redmi Note 14 8GB 256GB slim", "cantidad": 1, "usd_unitario": 300, "usd_subtotal": 300}],
         "total_usd": 300,
     })
@@ -137,6 +141,7 @@ def test_pedido_del_mismo_cliente_y_entrega_se_consolida(monkeypatch):
     })
     pedido = {
         "productos": ["iPhone 13 (Negro)"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123, Córdoba",
         "detalle": [{"nombre": "iPhone 13", "color": "Negro", "cantidad": 1,
                      "usd_unitario": 500, "usd_subtotal": 500}],
         "total_usd": 500,

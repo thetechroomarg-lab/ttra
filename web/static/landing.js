@@ -3549,9 +3549,11 @@ async function derivarCheckoutAWhatsapp(carrito) {
   const consume = await consumirCodigoMailing(carrito);
   if (!consume.ok) return;
   const fechaEntrega = document.getElementById("fecha-entrega").value;
+  const direccionEntrega = document.getElementById("direccion-entrega").value.trim();
+  if (!direccionEntrega) { alert("Especificá dirección de entrega."); return; }
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
   try {
-    await registrarPedidoEnClientes(carrito, fechaEntrega);
+    await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega);
   } catch (error) {
     console.error("No se pudo guardar el pedido", error);
     alert("No pudimos guardar tu pedido. Probá nuevamente antes de abrir WhatsApp.");
@@ -3583,7 +3585,7 @@ document.getElementById("input-codigo-mailing").addEventListener("keydown", (e) 
 // cliente (mismo clientes.json/csv que ya alimentan el gate inicial y el
 // buscador por chat) — así el panel /admin/clientes también refleja los
 // pedidos hechos desde la web, no solo el alta inicial.
-async function registrarPedidoEnClientes(carrito, fecha_entrega) {
+async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega) {
   const productos = [...new Set(carrito.map((it) =>
     it.color && it.color !== "Color único" ? `${it.nombre} (${it.color})` : it.nombre
   ))];
@@ -3601,7 +3603,7 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega) {
   const respuesta = await fetch("/api/pedidos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ productos, fecha_entrega, detalle, total_usd, descuento_usd }),
+    body: JSON.stringify({ productos, fecha_entrega, direccion_entrega, detalle, total_usd, descuento_usd }),
   });
   if (!respuesta.ok) {
     const body = await respuesta.json().catch(() => ({}));

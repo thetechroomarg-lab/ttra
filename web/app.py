@@ -800,12 +800,17 @@ _ADMIN_CLIENTES_ESTILO = """
   #filtro-clientes { flex:1 1 240px; }
   .pedidos-hoy { margin:0 0 20px; padding:14px; border:1px solid #4a5160; border-radius:10px; }
   .pedidos-hoy h2 { margin:0 0 10px; color:#f2f4f8; font-size:17px; }
+  .form-tarea-entrega { display:grid; gap:8px; grid-template-columns:1.2fr 1.5fr 1.5fr auto; margin:0 0 12px; }
+  .form-tarea-entrega input { box-sizing:border-box; min-width:0; min-height:38px; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 10px; font:inherit; }
+  .form-tarea-entrega input::placeholder { color:#9aa0ab; }
+  .form-tarea-entrega button { border:0; border-radius:8px; background:#c8102e; color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:38px; padding:0 14px; }
   .pedido-hoy { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
   .pedido-hoy strong { color:#f2f4f8; }
   .pedido-hoy-detalle { min-width:0; }
   .pedido-hoy-detalle span { color:#9aa0ab; }
   .pedido-acciones { display:flex; align-items:center; gap:7px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
   .btn-enviar-recibo { flex:0 0 auto; border:0; border-radius:8px; padding:9px 12px; background:#c8102e; color:#fff; cursor:pointer; font-weight:700; }
+  .btn-direcciones { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; text-decoration:none; }
   .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
   .btn-editar-entrega, .btn-eliminar-entrega { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; }
   .btn-eliminar-entrega { border-color:#8d1627; color:#ff9baa; }
@@ -856,9 +861,12 @@ _ADMIN_CLIENTES_ESTILO = """
     .filtros-clientes input, .filtros-clientes select { min-width:0; width:100%; }
     #filtro-clientes { flex:0 1 auto; min-height:38px; }
     .pedido-hoy { align-items:stretch; flex-direction:column; }
+    .form-tarea-entrega { grid-template-columns:1fr; }
+    .form-tarea-entrega button { min-height:44px; }
     .pedido-hoy-detalle, .pedido-historico { overflow-wrap:anywhere; word-break:break-word; }
-    .pedido-acciones { justify-content:stretch; width:100%; }
-    .pedido-acciones button { flex:1 1 140px; min-height:42px; }
+    .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); justify-content:stretch; width:100%; }
+    .pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }
+    .pedido-acciones .btn-direcciones { align-items:center; display:flex; justify-content:center; }
     .acciones-recibo { margin:8px 0 0; }
     .tabla-scroll { overflow:visible; }
     #tabla-clientes { min-width:0; font-size:13px; }
@@ -961,6 +969,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     clientes_por_id = {cliente["id"]: cliente for cliente in clientes}
     fecha_hoy = entregas.ahora_argentina().date().isoformat()
     pedidos = client.table("pedidos").select("*").execute().data
+    tareas_hoy = client.table("tareas_entrega").select("*").eq("fecha_entrega", fecha_hoy).execute().data
+    tareas_hoy.sort(key=lambda tarea: int(tarea.get("orden") or 0))
     pedidos_hoy = [
         pedido for pedido in pedidos
         if pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
@@ -993,8 +1003,15 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     def _controles_entrega(pedido):
         pedido_id = html.escape(pedido.get("id", ""))
         fecha = html.escape(pedido.get("fecha_entrega", ""))
+        direccion = (pedido.get("direccion_entrega") or "").strip()
+        boton_direcciones = (
+            f'<a class="btn-direcciones" target="_blank" rel="noopener" '
+            f'href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Direcciones</a>'
+            if direccion else ""
+        )
         return (
             '<div class="pedido-acciones">'
+            f'{boton_direcciones}'
             f'{_boton_recibo(pedido)}'
             f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}">Editar fecha</button>'
             f'<button class="btn-eliminar-entrega" type="button" data-id="{pedido_id}">Eliminar entrega</button>'
@@ -1021,6 +1038,13 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         )
     else:
         pedidos_hoy_html = '<p class="vacio">No hay pedidos pendientes para hoy.</p>'
+    tareas_hoy_html = "".join(
+        f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
+        f'<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
+        + (f'<a class="btn-direcciones" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": tarea.get("direccion")}))}">Direcciones</a>' if tarea.get("direccion") else "")
+        + '</div>'
+        for tarea in tareas_hoy
+    ) or '<p class="vacio">No hay tareas manuales para hoy.</p>'
     if pedidos_historial:
         pedidos_historial_html = "".join(
             f'<div class="pedido-historico"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
@@ -1041,6 +1065,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   </div>
   <section class="historial-pedidos"><h2>Historial de pedidos</h2><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
   <section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy)})</h2>{pedidos_hoy_html}</section>
+  <section class="pedidos-hoy"><h2>Tareas para hoy</h2>
+    <form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea"><input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><input id="tarea-direccion" maxlength="500" placeholder="Dirección opcional"><button>Agregar tarea</button></form>{tareas_hoy_html}
+  </section>
 </div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
@@ -1095,6 +1122,12 @@ document.getElementById("fecha-historial-pedidos").addEventListener("change", (e
   const url = new URL(location.href);
   url.searchParams.set("fecha_pedidos", e.target.value);
   location.href = url.toString();
+}});
+document.getElementById("form-tarea-entrega").addEventListener("submit", async (e) => {{
+  e.preventDefault();
+  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:"{fecha_hoy}", titulo:document.getElementById("tarea-titulo").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
+  if (!r.ok) {{ alert("No se pudo crear la tarea."); return; }}
+  location.reload();
 }});
 </script>
 {_ADMIN_CLIENTES_PWA_SCRIPT}
@@ -1780,6 +1813,7 @@ class DetallePedidoIn(BaseModel):
 class PedidoIn(BaseModel):
     productos: list[str] = Field(min_length=1)
     fecha_entrega: date | None = None
+    direccion_entrega: str | None = Field(default=None, max_length=500)
     detalle: list[DetallePedidoIn] = Field(default_factory=list)
     total_usd: int | None = Field(default=None, ge=0)
     descuento_usd: int = Field(default=0, ge=0)
@@ -1787,6 +1821,13 @@ class PedidoIn(BaseModel):
 
 class EditarFechaEntregaIn(BaseModel):
     fecha_entrega: date
+
+
+class TareaEntregaIn(BaseModel):
+    fecha_entrega: date
+    titulo: str = Field(min_length=1, max_length=200)
+    nota: str | None = Field(default=None, max_length=1000)
+    direccion: str | None = Field(default=None, max_length=500)
 
 
 class InteraccionIn(BaseModel):
@@ -1842,6 +1883,8 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         return JSONResponse({"error": "Elegí una fecha de entrega"}, status_code=400)
     if not entregas.fecha_entrega_valida(entrada.fecha_entrega):
         return JSONResponse({"error": "La fecha de entrega elegida ya no está disponible"}, status_code=400)
+    if entrada.detalle and not (entrada.direccion_entrega or "").strip():
+        return JSONResponse({"error": "Especificá dirección de entrega"}, status_code=400)
     proveedores = _cargar_proveedores()
     detalle = [
         {**item.model_dump(), "proveedor": resolver_proveedor(proveedores, item.nombre)}
@@ -1852,6 +1895,7 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         cliente_id,
         entrada.productos,
         entrada.fecha_entrega,
+        direccion_entrega=(entrada.direccion_entrega or "").strip() or None,
         detalle=detalle,
         total_usd=entrada.total_usd,
         descuento_usd=entrada.descuento_usd,
@@ -1887,6 +1931,26 @@ def admin_pedido_eliminar(pedido_id: str, request: Request):
         return JSONResponse({"error": "No se puede eliminar una entrega con recibo emitido"}, status_code=400)
     pedidos.eliminar_pedido(client, pedido_id)
     return {"ok": True}
+
+
+@app.post("/admin/tareas-entrega")
+def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    existentes = client.table("tareas_entrega").select("orden").eq(
+        "fecha_entrega", entrada.fecha_entrega.isoformat()
+    ).execute().data
+    orden = max((int(t.get("orden") or 0) for t in existentes), default=0) + 1
+    tarea = {
+        "fecha_entrega": entrada.fecha_entrega.isoformat(),
+        "titulo": entrada.titulo.strip(),
+        "nota": (entrada.nota or "").strip() or None,
+        "direccion": (entrada.direccion or "").strip() or None,
+        "orden": orden,
+    }
+    client.table("tareas_entrega").insert(tarea).execute()
+    return {"ok": True, "tarea": tarea}
 
 
 @app.get("/api/entregas-disponibles")
