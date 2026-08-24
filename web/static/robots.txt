@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /login.html
+Disallow: /perfil.html
+Disallow: /admin
+
+Sitemap: https://www.thetechroomarg.com/sitemap.xml
