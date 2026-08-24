@@ -44,8 +44,11 @@ PRODUCTOS_PATH = Path(os.environ.get("PRODUCTOS_PATH", str(BASE / "productos.jso
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 ADMIN_CLIENTES_PASSWORD = os.environ.get("ADMIN_CLIENTES_PASSWORD")
 if not ADMIN_CLIENTES_PASSWORD:
-    logger.warning("ADMIN_CLIENTES_PASSWORD no configurado — usando clave de desarrollo, no apta para producción")
-    ADMIN_CLIENTES_PASSWORD = "dev"
+    # Sin fallback: esta contraseña es la única puerta al panel con datos de
+    # clientes (nombre/celular/email/historial) y a poder resetear passwords
+    # ajenas — un valor por defecto adivinable ahí es un agujero de seguridad,
+    # no una comodidad de desarrollo. Mejor que el server no arranque.
+    raise RuntimeError("ADMIN_CLIENTES_PASSWORD no configurado — no se puede iniciar el servidor")
 
 # Tope de gasto por chat/cliente (USD). Al superarlo, se lo deriva al WhatsApp.
 LIMITE_USD = 0.25
@@ -163,8 +166,11 @@ async def gate_paginas_html(request: Request, call_next):
 # necesitamos que request.session ya exista cuando gate_paginas_html se ejecuta.
 _session_secret = os.environ.get("SESSION_SECRET")
 if not _session_secret:
-    logger.warning("SESSION_SECRET no configurado — usando clave de desarrollo, no apta para producción")
-    _session_secret = "dev-secret-cambiar-en-produccion"
+    # Sin fallback: esta clave firma la cookie de sesión de todos los
+    # clientes y del panel de admin — un valor fijo en el código deja
+    # cualquier sesión (incluida la de admin) forjable por cualquiera que
+    # lea el repo. Mejor que el server no arranque sin una clave propia.
+    raise RuntimeError("SESSION_SECRET no configurado — no se puede iniciar el servidor")
 _session_https_only_raw = (os.environ.get("SESSION_HTTPS_ONLY") or "").strip().lower()
 if _session_https_only_raw in {"1", "true", "yes", "on"}:
     _session_https_only = True
