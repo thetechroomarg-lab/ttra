@@ -2676,6 +2676,28 @@ function preciosDe(p) {
   };
 }
 
+function preciosCarritoHtml(precios, signo = "") {
+  const monto = (valor) => `${signo}$${formatearPesos(valor)}`;
+  return `
+    <span>Dólares: ${monto(precios.dolares)}</span>
+    <span>Dólar banco USA: ${monto(precios.bancoUsa)}</span>
+    <span>USDT: ${monto(precios.usdt)}</span>
+    <span>Pesos: ${monto(precios.pesos)}</span>
+    <span>Pesos transf: ${monto(precios.pesosTransf)}</span>
+  `;
+}
+
+function preciosWhatsapp(precios, signo = "") {
+  const monto = (valor) => `${signo}$${formatearPesos(valor)}`;
+  return [
+    `Dólares: ${monto(precios.dolares)}`,
+    `Dólar banco USA: ${monto(precios.bancoUsa)}`,
+    `USDT: ${monto(precios.usdt)}`,
+    `Pesos: ${monto(precios.pesos)}`,
+    `Pesos transf: ${monto(precios.pesosTransf)}`,
+  ].join(" · ");
+}
+
 // Cierra cualquier dropdown de color que haya quedado abierto (se llama al
 // abrir otro, o al hacer click en cualquier otro lado de la página).
 function cerrarDropdownsColor() {
@@ -3276,9 +3298,13 @@ function calcularDescuento(carrito) {
 function itemCarritoHtml(it) {
   const colorTexto = it.color ? ` (${escapeHtml(it.color)})` : "";
   const colorAttr = escapeHtml(it.color || "");
+  const totalUsd = (it.usd || 0) * it.cantidad;
+  const totalPesos = (it.pesos || 0) * it.cantidad;
+  const precios = preciosDe({ usd: totalUsd, pesos: totalPesos });
   return `
     <div class="item-carrito">
       <p class="item-nombre">${escapeHtml(it.nombre)}${colorTexto}</p>
+      <p class="item-precios">${preciosCarritoHtml(precios)}</p>
       <div class="item-controles">
         <button class="btn-menos" data-nombre="${escapeHtml(it.nombre)}" data-color="${colorAttr}" type="button">-</button>
         <span>${it.cantidad}</span>
@@ -3293,9 +3319,7 @@ function itemDescuentoHtml(descuento) {
   return `
     <div class="item-carrito item-descuento">
       <p class="item-nombre">🎉 Descuento por ${descuento.cantidadTotal} unidades (U$D ${descuento.porUnidad} c/u)</p>
-      <p class="item-descuento-valor">
-        -U$D ${descuento.usd} · -$ ${formatearPesos(descuento.pesos)} contado · -$ ${formatearPesos(descuento.transferencia)} transferencia
-      </p>
+      <p class="item-descuento-valor">${preciosCarritoHtml(preciosDe(descuento), "-")}</p>
     </div>
   `;
 }
@@ -3304,9 +3328,7 @@ function itemDescuentoMailingHtml(descuento) {
   return `
     <div class="item-carrito item-descuento">
       <p class="item-nombre">✉️ Código ${escapeHtml(descuento.codigo)} aplicado a ${descuento.cantidad} ítem(s)</p>
-      <p class="item-descuento-valor">
-        -U$D ${descuento.usd} · -$ ${formatearPesos(descuento.pesos)} contado · -$ ${formatearPesos(descuento.transferencia)} transferencia
-      </p>
+      <p class="item-descuento-valor">${preciosCarritoHtml(preciosDe(descuento), "-")}</p>
     </div>
   `;
 }
@@ -3352,15 +3374,14 @@ function renderCarrito() {
 
   const descuentoUsd = (descuento?.usd || 0) + (descuentoMailing?.usd || 0);
   const descuentoPesos = (descuento?.pesos || 0) + (descuentoMailing?.pesos || 0);
-  const descuentoTransferencia = (descuento?.transferencia || 0) + (descuentoMailing?.transferencia || 0);
+  const totalNeto = {
+    usd: t.usd - descuentoUsd,
+    pesos: t.pesos - descuentoPesos,
+  };
   if (carrito.length === 0) {
     totalEl.textContent = "";
-  } else if (descuentoUsd > 0 || descuentoPesos > 0 || descuentoTransferencia > 0) {
-    totalEl.textContent =
-      `Total: U$D ${t.usd - descuentoUsd} · $ ${formatearPesos(t.pesos - descuentoPesos)} contado · ` +
-      `$ ${formatearPesos(t.transferencia - descuentoTransferencia)} transferencia`;
   } else {
-    totalEl.textContent = `Total: U$D ${t.usd} · $ ${formatearPesos(t.pesos)} contado · $ ${formatearPesos(t.transferencia)} transferencia`;
+    totalEl.innerHTML = `<strong>Total:</strong>${preciosCarritoHtml(preciosDe(totalNeto))}`;
   }
 }
 
@@ -3385,21 +3406,22 @@ function cerrarCarrito() {
 function armarMensajeWhatsapp(carrito, fechaEntrega) {
   const lineas = carrito.map((it) => {
     const color = it.color ? ` (${it.color})` : "";
-    return `- ${it.nombre}${color} x${it.cantidad} — U$D ${(it.usd || 0) * it.cantidad}`;
+    const totalUsd = (it.usd || 0) * it.cantidad;
+    const totalPesos = (it.pesos || 0) * it.cantidad;
+    return `- ${it.nombre}${color} x${it.cantidad}\n  ${preciosWhatsapp(preciosDe({ usd: totalUsd, pesos: totalPesos }))}`;
   });
   const descuento = calcularDescuento(carrito);
   const descuentoMailing = descuentoMailingAplicado(carrito);
   if (descuento) {
-    lineas.push(`- 🎉 Descuento por ${descuento.cantidadTotal} unidades — -U$D ${descuento.usd}`);
+    lineas.push(`- 🎉 Descuento por ${descuento.cantidadTotal} unidades\n  ${preciosWhatsapp(preciosDe(descuento), "-")}`);
   }
   if (descuentoMailing) {
-    lineas.push(`- ✉️ Código ${descuentoMailing.codigo} — -U$D ${descuentoMailing.usd}`);
+    lineas.push(`- ✉️ Código ${descuentoMailing.codigo}\n  ${preciosWhatsapp(preciosDe(descuentoMailing), "-")}`);
   }
   const t = totales(carrito);
   const totalUsd = t.usd - (descuento?.usd || 0) - (descuentoMailing?.usd || 0);
   const totalPesos = t.pesos - (descuento?.pesos || 0) - (descuentoMailing?.pesos || 0);
-  const totalTransferencia = t.transferencia - (descuento?.transferencia || 0) - (descuentoMailing?.transferencia || 0);
-  const total = `Total: U$D ${totalUsd} · $ ${formatearPesos(totalPesos)} contado · $ ${formatearPesos(totalTransferencia)} transferencia`;
+  const total = `Total:\n${preciosWhatsapp(preciosDe({ usd: totalUsd, pesos: totalPesos }))}`;
   return `Hola! Quiero encargar:\n${lineas.join("\n")}\n\nEntrega solicitada: ${fechaEntrega}\n${total}`;
 }
 

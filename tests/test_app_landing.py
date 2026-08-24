@@ -180,6 +180,18 @@ def test_carrito_muestra_disclaimer_y_alinea_altura_de_botones():
     assert "height: var(--carrito-boton-altura);" in css
 
 
+def test_carrito_y_whatsapp_muestran_los_cinco_precios_de_las_cards():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+
+    assert 'class="item-precios"' in script
+    assert "function preciosCarritoHtml(precios, signo = \"\")" in script
+    assert "function preciosWhatsapp(precios, signo = \"\")" in script
+    assert "Dólar banco USA" in script
+    assert "Pesos transf" in script
+    assert "#items-carrito .item-precios" in css
+
+
 def test_carrito_es_modal_flotante_y_respeta_el_footer():
     css = (appmod.BASE / "static" / "landing.css").read_text()
     script = (appmod.BASE / "static" / "landing.js").read_text()
