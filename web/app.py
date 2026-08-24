@@ -88,7 +88,10 @@ def _public_app_base_url(request: Request):
 
 
 def _public_login_url(request: Request):
-    return f"{_public_app_base_url(request)}/login.html"
+    url = f"{_public_app_base_url(request)}/login.html"
+    if request.query_params.get("modo") == "fallout":
+        return f"{url}?modo=fallout"
+    return url
 
 
 def _public_producto_mailing_url(request: Request, nombre_producto: str, codigo: str):

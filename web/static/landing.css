@@ -797,6 +797,44 @@ html[data-modo="fallout"] .rc-switch-fallout-wrap.oculto { display: none; }
 }
 .selector-marcas .btn-categoria { padding: 22px 16px; }
 
+/* Búsqueda por Marca es una galería propia: cada acceso se reconoce por el
+   logo, no por una copia del botón de categorías con texto. */
+html[data-modo="classic"] .selector-marcas.selector-marcas-logos {
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: clamp(14px, 2vw, 24px);
+  padding: clamp(4px, 1vw, 10px);
+}
+html[data-modo="classic"] .selector-marcas .btn-categoria.btn-marca-logo {
+  min-height: clamp(108px, 12vw, 156px);
+  padding: clamp(18px, 2vw, 28px);
+  display: grid;
+  place-items: center;
+  border-color: var(--rc-green-dim);
+  background: color-mix(in srgb, var(--rc-bg-panel-2) 82%, transparent);
+}
+html[data-modo="classic"] .marca-logo-selector {
+  display: block;
+  width: min(100%, 148px);
+  height: clamp(56px, 7vw, 88px);
+  object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(78%) sepia(50%) saturate(557%) hue-rotate(84deg) brightness(105%) contrast(102%);
+}
+
+@media (max-width: 700px) {
+  html[data-modo="classic"] .selector-marcas.selector-marcas-logos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  html[data-modo="classic"] .selector-marcas .btn-categoria.btn-marca-logo {
+    min-height: 112px;
+    padding: 20px;
+  }
+  html[data-modo="classic"] .marca-logo-selector {
+    width: min(100%, 118px);
+    height: 64px;
+  }
+}
+
 .btn-volver { width: 100%; }
 .btn-volver.oculto { display: none; }
 
@@ -1402,6 +1440,40 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
     left: 12px;
     width: auto;
     transform: none;
+  }
+}
+
+/* Algunas vistas móviles informan un viewport CSS más ancho que el físico.
+   Fallout necesita cubrir también ese rango para que el modal nunca herede
+   el ancho de escritorio ni quede recortado a la derecha. */
+@media (max-width: 900px) {
+  html[data-modo="fallout"] #panel-carrito {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: calc(100vw - 24px);
+    min-width: 0;
+    box-sizing: border-box;
+    transform: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  html[data-modo="fallout"] #items-carrito,
+  html[data-modo="fallout"] .panel-carrito-footer,
+  html[data-modo="fallout"] .descuento-mailing,
+  html[data-modo="fallout"] .descuento-mailing-fila {
+    min-width: 0;
+    max-width: 100%;
+  }
+  html[data-modo="fallout"] .item-nombre {
+    overflow-wrap: anywhere;
+  }
+  html[data-modo="fallout"] #btn-aplicar-codigo {
+    min-width: 0;
+    padding-inline: 8px;
+    font-size: 12px;
   }
 }
 

@@ -19,6 +19,77 @@ def test_landing_mobile_muestra_una_sola_card_recomendada_completa():
     assert "pintarCarrouselRecomendadosMobile(el);" in script
 
 
+def test_cards_recomendadas_no_muestran_etiqueta_de_recomendacion():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+
+    inicio = script.index("function tarjetaRecomendadoHtml(p)")
+    fin = script.index("function esClassicDesktopActivo()", inicio)
+    tarjeta = script[inicio:fin]
+    assert "tarjeta-recomendado-etiqueta" not in tarjeta
+    assert "Recomendado para vos" not in tarjeta
+
+
+def test_login_fallout_conserva_el_tema_y_el_retorno_a_la_landing():
+    login = (appmod.BASE / "static" / "login.js").read_text()
+    landing = (appmod.BASE / "static" / "landing.js").read_text()
+
+    assert 'const modoFallout = paramsPantalla.get("modo") === "fallout";' in login
+    assert 'document.documentElement.setAttribute("data-modo", "fallout")' in login
+    assert 'modoFallout ? "/?modo=fallout" : "/"' in login
+    assert 'params.set("modo", "fallout")' in landing
+
+
+def test_selector_de_provincia_tiene_estilo_fallout_en_login():
+    css = (appmod.BASE / "static" / "login.css").read_text()
+
+    assert 'html[data-modo="fallout"] #registro-provincia {' in css
+    assert 'html[data-modo="fallout"] #registro-provincia option {' in css
+
+
+def test_busqueda_por_marca_muestra_un_selector_visual_solo_con_logos():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+
+    inicio = script.index("function pintarSelectorMarcas(el)")
+    fin = script.index("function", inicio + len("function pintarSelectorMarcas(el)"))
+    selector = script[inicio:fin]
+
+    assert 'modoVisual === "classic"' in selector
+    assert 'class="selector-marcas${selectorLogosClase}"' in selector
+    assert 'class="btn-categoria btn-marca-logo"' in selector
+    assert 'marcaLogoHtml(m, "marca-logo-selector")' in selector
+    assert 'aria-label="Ver productos de ${escapeHtml(etiquetaMarca(m))}"' in selector
+    assert 'class="btn-categoria" data-marca="${escapeHtml(m)}" type="button">${escapeHtml(etiquetaMarca(m))}</button>' in selector
+    assert 'html[data-modo="classic"] .selector-marcas.selector-marcas-logos' in css
+    assert 'html[data-modo="classic"] .marca-logo-selector' in css
+
+
+def test_busqueda_por_marca_deja_otras_marcas_al_final_del_selector():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+
+    inicio = script.index("function todasLasMarcasDelCatalogo()")
+    fin = script.index("function pintarSelectorMarcas(el)", inicio)
+    orden = script[inicio:fin]
+
+    assert 'return [...sinOtrasMarcas, ...(presentes.has("Otras marcas") ? ["Otras marcas"] : [])];' in orden
+
+
+def test_carrito_fallout_mobile_permite_scroll_cuando_el_footer_es_mas_alto_que_el_panel():
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+    selector = 'html[data-modo="fallout"] #panel-carrito {'
+    inicio = css.index(selector)
+    regla = css[inicio : css.index("}", inicio)]
+
+    assert "@media (max-width: 900px)" in css
+    assert "left: 12px;" in regla
+    assert "right: 12px;" in regla
+    assert "width: auto;" in regla
+    assert "max-width: calc(100vw - 24px);" in regla
+    assert "min-width: 0;" in regla
+    assert "overflow-y: auto;" in regla
+    assert "overscroll-behavior: contain;" in regla
+
+
 def test_classic_css_mobile_no_desplaza_la_card_recomendada():
     css = (appmod.BASE / "static" / "classic.css").read_text()
 

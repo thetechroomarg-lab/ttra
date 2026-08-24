@@ -17,8 +17,13 @@ const TITULO_CAMBIAR_OBLIGATORIO = "Elegí tu contraseña nueva";
 const paramsPantalla = new URLSearchParams(location.search);
 const productoCompartido = paramsPantalla.get("producto");
 const forzarRegistro = paramsPantalla.get("registro") === "1";
+const modoFallout = paramsPantalla.get("modo") === "fallout";
 const volverTrasIngresar = paramsPantalla.get("volver");
-const destinoTrasIngresar = volverTrasIngresar || (productoCompartido ? `/${location.search}` : "/");
+const destinoTrasIngresar = volverTrasIngresar || (productoCompartido ? `/${location.search}` : (modoFallout ? "/?modo=fallout" : "/"));
+
+if (modoFallout) {
+  document.documentElement.setAttribute("data-modo", "fallout");
+}
 
 const btnVerLoginPassword = document.getElementById("btn-ver-login-password");
 const loginPasswordInput = document.getElementById("login-password");
@@ -234,7 +239,7 @@ formRegistro.addEventListener("submit", async (e) => {
     return;
   }
   const datos = await enviar(
-    "/registro",
+    modoFallout ? "/registro?modo=fallout" : "/registro",
     {
       nombre: document.getElementById("registro-nombre").value,
       apellido: document.getElementById("registro-apellido").value,

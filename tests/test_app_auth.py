@@ -50,6 +50,22 @@ def test_registro_pasa_redirect_publico_a_supabase(monkeypatch):
     )
 
 
+def test_registro_fallout_conserva_el_modo_en_el_mail_de_confirmacion(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://thetechroomarg.com")
+
+    r = c.post("/registro?modo=fallout", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
+    })
+
+    assert r.status_code == 200
+    assert fake.auth.last_sign_up_payload["options"]["email_redirect_to"] == (
+        "https://thetechroomarg.com/login.html?modo=fallout"
+    )
+
+
 def test_registro_usa_forwarded_host_si_base_url_interna(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)

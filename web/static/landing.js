@@ -1380,12 +1380,10 @@ function bloquePreciosHtml(p) {
 function tarjetaRecomendadoHtml(p) {
   const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
   const listaColores = tieneColores ? p.colores : ["Color único"];
-  const etiquetaRecomendacion = p.motivo_recomendacion || "✨ Recomendado para vos";
   // Mismo criterio que tarjetaProducto: siempre "Elegir color" sin nada
   // preseleccionado, Agregar inactivo hasta elegir explícitamente.
   return `
     <div class="tarjeta-recomendado" data-nombre="${escapeHtml(p.nombre)}">
-      <div class="tarjeta-recomendado-etiqueta">${escapeHtml(etiquetaRecomendacion)}</div>
       <h3>${marcaLogoHtml(p.marca, "marca-logo-card")}${escapeHtml(p.nombre)}</h3>
       <p class="tarjeta-recomendado-precio">
         ${bloquePreciosHtml(p)}
@@ -2023,7 +2021,9 @@ if (linkIrAPerfil) {
   linkIrAPerfil.addEventListener("click", (e) => {
     e.preventDefault();
     const destinoPerfil = modoVisual === "fallout" ? "/perfil?modo=fallout" : "/perfil";
-    const destinoLogin = `/login.html?volver=${encodeURIComponent(`${location.pathname}${location.search}`)}`;
+    const paramsLogin = new URLSearchParams({ volver: `${location.pathname}${location.search}` });
+    if (modoVisual === "fallout") paramsLogin.set("modo", "fallout");
+    const destinoLogin = `/login.html?${paramsLogin.toString()}`;
     window.location.href = estadoSesionCliente ? destinoPerfil : destinoLogin;
   });
 }
@@ -2407,6 +2407,7 @@ function urlLoginParaCarrito() {
   const params = new URLSearchParams();
   params.set("registro", "1");
   params.set("volver", `${location.pathname}${location.search}`);
+  if (modoVisual === "fallout") params.set("modo", "fallout");
   return `/login.html?${params.toString()}`;
 }
 
@@ -2575,13 +2576,18 @@ function todasLasMarcasDelCatalogo() {
   const presentes = new Set(productos.map((p) => p.marca || "Otras marcas"));
   const ordenadas = ORDEN_MARCAS.filter((m) => presentes.has(m));
   const resto = [...presentes].filter((m) => !ORDEN_MARCAS.includes(m)).sort();
-  return [...ordenadas, ...resto];
+  const sinOtrasMarcas = [...ordenadas, ...resto].filter((m) => m !== "Otras marcas");
+  return [...sinOtrasMarcas, ...(presentes.has("Otras marcas") ? ["Otras marcas"] : [])];
 }
 
 function pintarSelectorMarcas(el) {
   const marcas = todasLasMarcasDelCatalogo();
-  el.innerHTML = `<div class="rc-catalogo-surface"><div class="selector-marcas">${marcas.map(
-    (m) => `<button class="btn-categoria" data-marca="${escapeHtml(m)}" type="button">${escapeHtml(etiquetaMarca(m))}</button>`
+  const selectorLogosClase = modoVisual === "classic" ? " selector-marcas-logos" : "";
+  const botonMarcaHtml = (m) => modoVisual === "classic"
+    ? `<button class="btn-categoria btn-marca-logo" data-marca="${escapeHtml(m)}" type="button" aria-label="Ver productos de ${escapeHtml(etiquetaMarca(m))}" title="${escapeHtml(etiquetaMarca(m))}">${marcaLogoHtml(m, "marca-logo-selector")}</button>`
+    : `<button class="btn-categoria" data-marca="${escapeHtml(m)}" type="button">${escapeHtml(etiquetaMarca(m))}</button>`;
+  el.innerHTML = `<div class="rc-catalogo-surface"><div class="selector-marcas${selectorLogosClase}">${marcas.map(
+    botonMarcaHtml
   ).join("")}</div></div>`;
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {

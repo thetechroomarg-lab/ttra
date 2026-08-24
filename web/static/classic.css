@@ -57,7 +57,8 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
    sea cual sea su color original (brightness:0 los deja negro sólido,
    invert:1 lo pasa a blanco sólido). */
 html[data-modo="classic"] .marca-logo-carrousel,
-html[data-modo="classic"] .marca-logo-card {
+html[data-modo="classic"] .marca-logo-card,
+html[data-modo="classic"] .marca-logo-selector {
   filter: brightness(0) invert(1);
 }
 html[data-modo="classic"] .rc-logout-tarjeta {
@@ -345,6 +346,14 @@ html[data-modo="classic"] .btn-categoria:hover {
 html[data-modo="classic"] .btn-categoria:hover::after {
   transform: scaleX(1);
 }
+html[data-modo="classic"] .selector-marcas .btn-categoria.btn-marca-logo {
+  background: #202020;
+  border-color: #777;
+}
+html[data-modo="classic"] .selector-marcas .btn-categoria.btn-marca-logo:hover {
+  border-color: #e6e6e6;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+}
 html[data-modo="classic"] #categorias .btn-categoria {
   flex: 0 0 auto;
   min-height: 0;
@@ -531,6 +540,9 @@ html[data-modo="classic"] .rc-buscador input:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
+  html[data-modo="classic"] .selector-marcas.selector-marcas-logos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   html[data-modo="classic"] .card.expandida {
     transform: scale(1.08);
   }
@@ -597,6 +609,10 @@ html[data-modo="classic"] .rc-buscador input:focus {
   html[data-modo="classic"] .selector-marcas {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+  html[data-modo="classic"] .selector-marcas.selector-marcas-logos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
   html[data-modo="classic"] .grilla.lista .card {
     flex-direction: column;
