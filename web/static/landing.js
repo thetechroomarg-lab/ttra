@@ -1408,7 +1408,21 @@ function productosRecomendados(cantidad, personalizados = false) {
   const pool = personalizados && RECOMENDADOS_DATA.length
     ? barajar(RECOMENDADOS_DATA)
     : productosAlAzar(cantidad);
-  return pool.slice(0, cantidad);
+  const elegidos = pool.slice(0, cantidad);
+  // Mandatorio: la grilla siempre debe completar `cantidad` cards. Si el pool
+  // personalizado/al azar quedó corto (pocas recomendaciones para el
+  // visitante, o pocos productos sin repetir), se rellena con productos al
+  // azar del catálogo completo, sin repetir los ya elegidos.
+  if (elegidos.length < cantidad) {
+    const nombresElegidos = new Set(elegidos.map((p) => p.nombre));
+    const relleno = productosAlAzar(cantidad).filter((p) => !nombresElegidos.has(p.nombre));
+    for (const p of relleno) {
+      if (elegidos.length >= cantidad) break;
+      elegidos.push(p);
+      nombresElegidos.add(p.nombre);
+    }
+  }
+  return elegidos;
 }
 
 function tarjetasRecomendadosHtml(cantidad = 6, personalizados = false) {
@@ -1491,7 +1505,11 @@ function iniciarCicloRecomendados(el) {
     if (!grilla) return;
     grilla.classList.remove("visible");
     setTimeout(() => {
-      grilla.innerHTML = tarjetasRecomendadosHtml();
+      // Mismos cantidad/personalizados que la pintura inicial (ver
+      // pintarCarrouselRecomendados): si no, cada refresco de 12s volvía a
+      // una grilla de 6 sin personalizar y dejaba celdas vacías en la
+      // grilla de 8 columnas del modo Classic desktop.
+      grilla.innerHTML = tarjetasRecomendadosHtml(8, esClassicDesktopActivo());
       wireTarjetasRecomendadas(el);
       grilla.classList.add("visible");
     }, 250);
@@ -1616,7 +1634,8 @@ function pintarCarrouselRecomendados(el) {
     el.style.height = "";
   }
   const esClassicDesktop = esClassicDesktopActivo();
-  const cantidad = esClassicDesktop ? 8 : 6;
+  // Mandatorio: siempre 8 recomendados en la landing, sin importar el modo.
+  const cantidad = 8;
   const personalizados = esClassicDesktop;
   el.innerHTML = `
     <div class="carrousel-recomendados-wrap">
@@ -2166,6 +2185,18 @@ function reproducirTransicionTV(cambiarContenido) {
   const contenedor = document.querySelector(".fila-principal");
   if (!contenedor) {
     cambiarContenido();
+    return;
+  }
+  // Modo Classic: el glitch tipo CRT queda desactivado por CSS, así que en su
+  // lugar hacemos un fade-out/fade-in del contenido para suavizar el salto de
+  // layout entre el menú principal y una sub-sección.
+  if (modoVisual === "classic") {
+    contenedor.classList.add("rc-fade");
+    setTimeout(() => {
+      cambiarContenido();
+      void contenedor.offsetWidth;
+      contenedor.classList.remove("rc-fade");
+    }, 180);
     return;
   }
   contenedor.classList.remove("rc-deformando");
