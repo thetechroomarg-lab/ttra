@@ -285,6 +285,13 @@ html[data-modo="classic"] .rc-deformando {
   filter: none;
 }
 
+/* Transición suave (fade) al entrar/salir de una sección en modo Classic,
+   en vez del glitch tipo CRT que queda desactivado arriba. */
+html[data-modo="classic"] .fila-principal.rc-fade {
+  transition: opacity 0.18s ease;
+  opacity: 0;
+}
+
 /* Sin glow fosforescente en ningún texto */
 html[data-modo="classic"] body,
 html[data-modo="classic"] * {
@@ -397,6 +404,13 @@ html[data-modo="classic"] .rc-buscador input:focus {
     margin-left: 0;
     min-width: 0;
     padding-right: 96px;
+    /* .rc-logo usa line-height:0.68 para comprimir las 4 líneas del logo;
+       eso hace que el texto "flote" por encima de su caja de línea, así que
+       el padding-top del header (12px, igual al edge-padding izquierdo)
+       termina viéndose más chico arriba que a los costados. Este padding
+       extra compensa esa diferencia para que el aire visual arriba sea el
+       mismo que a la izquierda. */
+    padding-top: 7px;
   }
   html[data-modo="classic"] .rc-header-centro {
     grid-area: search;
@@ -876,7 +890,7 @@ html[data-modo="classic"] .rc-logout-tarjeta button:hover {
     min-height: 0;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio strong {
-    font-size: 15px;
+    font-size: 10px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio span {
     font-size: 10px;
