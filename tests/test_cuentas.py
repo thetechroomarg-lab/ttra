@@ -16,6 +16,11 @@ def test_normalizar_celular_no_toca_numeros_que_no_empiezan_con_54():
     assert cuentas.normalizar_celular("351 123-4567") == "3511234567"
 
 
+def test_capitalizar_nombre_y_apellido_normaliza_cada_palabra():
+    assert cuentas.capitalizar_nombre("  roDRIGO   martin ") == "Rodrigo Martin"
+    assert cuentas.capitalizar_nombre("pERez pelossi") == "Perez Pelossi"
+
+
 def test_registrar_cliente_exitoso():
     client = FakeSupabaseClient()
     cliente = cuentas.registrar_cliente(
@@ -27,6 +32,21 @@ def test_registrar_cliente_exitoso():
     assert cliente["email"] == "ana@x.com"
     assert cliente["id"]  # uuid propio asignado
     assert cliente["requiere_confirmacion_email"] is False
+
+
+def test_registrar_y_actualizar_cliente_capitalizan_nombre_y_apellido():
+    client = FakeSupabaseClient()
+    cliente = cuentas.registrar_cliente(
+        client, "roDRIGO martin", "pERez pelossi", "3511234567", "rodrigo@x.com", "clave1234"
+    )
+    assert cliente["nombre"] == "Rodrigo Martin"
+    assert cliente["apellido"] == "Perez Pelossi"
+
+    actualizado = cuentas.actualizar_cliente(
+        client, cliente["id"], "jULIETA", "isRAILEVICH", "3511234567"
+    )
+    assert actualizado["nombre"] == "Julieta"
+    assert actualizado["apellido"] == "Israilevich"
 
 
 def test_registrar_cliente_pasa_redirect_de_confirmacion_y_detecta_pendiente():

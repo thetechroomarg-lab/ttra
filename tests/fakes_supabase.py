@@ -84,6 +84,14 @@ class _FakeExecuteResult:
         self.data = data
 
 
+class _FakeRpcResult:
+    def __init__(self, data):
+        self.data = data
+
+    def execute(self):
+        return self
+
+
 class _FakeQuery:
     def __init__(self, tabla, operacion, payload=None):
         self._tabla = tabla
@@ -144,6 +152,12 @@ class FakeSupabaseClient:
 
     def table(self, nombre):
         return self._tablas.setdefault(nombre, _FakeTable())
+
+    def rpc(self, nombre):
+        if nombre != "siguiente_numero_recibo":
+            raise ValueError(nombre)
+        self._ultimo_recibo = getattr(self, "_ultimo_recibo", 1992) + 1
+        return _FakeRpcResult(f"0001-{self._ultimo_recibo}")
 
     def _eliminar_perfil_por_auth_id(self, auth_id):
         """Simula el trigger que borra el perfil y sus registros en cascada."""

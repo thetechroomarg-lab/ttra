@@ -32,9 +32,14 @@ def normalizar_celular(celular):
     return digitos
 
 
+def capitalizar_nombre(valor):
+    """Normaliza espacios y deja cada nombre o apellido con inicial mayúscula."""
+    return " ".join(parte.capitalize() for parte in (valor or "").split())
+
+
 def registrar_cliente(client, nombre, apellido, celular, email, password, provincia="Córdoba", email_redirect_to=None):
-    nombre = nombre.strip()
-    apellido = apellido.strip()
+    nombre = capitalizar_nombre(nombre)
+    apellido = capitalizar_nombre(apellido)
     celular_norm = normalizar_celular(celular)
     email = email.strip().lower()
     provincia = provincia.strip()
@@ -188,8 +193,8 @@ def obtener_cliente(client, cliente_id):
 
 
 def actualizar_cliente(client, cliente_id, nombre, apellido, celular):
-    nombre = nombre.strip()
-    apellido = apellido.strip()
+    nombre = capitalizar_nombre(nombre)
+    apellido = capitalizar_nombre(apellido)
     celular_norm = normalizar_celular(celular)
     if not celular_norm:
         raise ValueError("El celular ingresado no es válido")

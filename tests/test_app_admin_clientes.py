@@ -29,6 +29,190 @@ def test_admin_clientes_lista_nombre_y_link_a_historial(monkeypatch):
     assert "Productos consultados" not in r.text
 
 
+def test_admin_muestra_pedidos_programados_para_hoy(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "pedido-hoy", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-24",
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    r = c.get("/admin/clientes")
+
+    assert "Pedidos pendientes para hoy" in r.text
+    assert "iPhone 13" in r.text
+
+
+def test_admin_muestra_el_proveedor_solo_en_el_detalle_interno(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "pedido-proveedor", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "proveedor": "az"}],
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    r = c.get("/admin/clientes")
+
+    assert r.status_code == 200
+    assert "Proveedor: az" in r.text
+
+
+def test_admin_envia_recibo_y_marca_el_pedido(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "pedido-recibo", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{
+            "nombre": "iPhone 13", "color": "Negro", "cantidad": 1,
+            "usd_unitario": 500, "usd_subtotal": 500,
+        }],
+        "total_usd": 500,
+        "descuento_usd": 0,
+    }).execute()
+    enviados = []
+    monkeypatch.setattr(appmod, "enviar_email", lambda *args: enviados.append(args))
+
+    r = c.post("/admin/pedidos/pedido-recibo/recibo")
+
+    assert r.status_code == 200
+    assert enviados[0][0] == "juan@x.com"
+    pedido = fake.table("pedidos").select("*").eq("id", "pedido-recibo").execute().data[0]
+    assert pedido["recibo_id"] == "0001-1993"
+    assert pedido["recibo_enviado_en"]
+    assert enviados[0][3][0]["filename"] == "recibo-0001-1993.pdf"
+
+
+def test_admin_reenvia_recibo_y_conserva_la_fecha_original(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    original = "2026-08-20T15:00:00+00:00"
+    fake.table("pedidos").insert({
+        "id": "pedido-reenvio", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-24", "recibo_id": "TTRA-ORIGINAL",
+        "recibo_enviado_en": original,
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
+        "total_usd": 500,
+    }).execute()
+    monkeypatch.setattr(appmod, "enviar_email", lambda *args: None)
+
+    r = c.post("/admin/pedidos/pedido-reenvio/recibo")
+
+    assert r.status_code == 200
+    assert r.json()["reenviado"] is True
+    pedido = fake.table("pedidos").select("*").eq("id", "pedido-reenvio").execute().data[0]
+    assert pedido["recibo_emitido_en"] == original
+    assert pedido["recibo_enviado_en"] != original
+
+
+def test_pdf_recibo_requiere_admin_y_recibo_emitido(monkeypatch):
+    anon = TestClient(appmod.app, base_url="https://testserver")
+    assert anon.get("/admin/pedidos/cualquiera/recibo.pdf").status_code == 401
+
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "pendiente-pdf", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
+        "total_usd": 500,
+    }).execute()
+
+    assert c.get("/admin/pedidos/pendiente-pdf/recibo.pdf").status_code == 400
+
+
+def test_admin_muestra_solo_pedidos_hoy_pendientes_de_recibo(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    for pedido in (
+        {"id": "pendiente", "recibo_enviado_en": None, "productos": ["Galaxy A56"]},
+        {"id": "emitido", "recibo_enviado_en": "2026-08-24T12:00:00+00:00", "productos": ["iPhone 15"]},
+    ):
+        fake.table("pedidos").insert({
+            **pedido, "cliente_id": cliente["id"], "fecha_entrega": "2026-08-24",
+            "detalle": [{"nombre": pedido["productos"][0], "cantidad": 1, "usd_unitario": 300, "usd_subtotal": 300}],
+            "total_usd": 300,
+        }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    r = c.get("/admin/clientes")
+
+    assert "Pedidos pendientes para hoy (1)" in r.text
+    assert "Galaxy A56" in r.text
+    assert 'data-pedido-id="pendiente"' in r.text
+    assert 'data-pedido-id="emitido"' not in r.text
+
+
+def test_admin_muestra_historial_de_pedidos_para_la_fecha_elegida(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "historico", "cliente_id": cliente["id"], "productos": ["Notebook Lenovo"],
+        "fecha_entrega": "2026-08-20", "recibo_id": "TTRA-ABCD1234",
+        "recibo_enviado_en": "2026-08-20T15:00:00+00:00",
+        "detalle": [{"nombre": "Notebook Lenovo", "cantidad": 1, "usd_unitario": 700, "usd_subtotal": 700}],
+        "total_usd": 700,
+    }).execute()
+
+    r = c.get("/admin/clientes?fecha_pedidos=2026-08-20")
+
+    assert "Historial de pedidos" in r.text
+    assert 'value="2026-08-20"' in r.text
+    assert "Notebook Lenovo" in r.text
+    assert "Recibo enviado" in r.text
+    assert 'class="btn-ver-recibo-pdf"' in r.text
+    assert 'class="btn-reenviar-recibo"' in r.text
+
+
+def test_admin_puede_editar_y_eliminar_una_entrega_pendiente(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "editable", "cliente_id": cliente["id"], "productos": ["Galaxy A56"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{"nombre": "Galaxy A56", "cantidad": 1, "usd_unitario": 300, "usd_subtotal": 300}],
+        "total_usd": 300,
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    editar = c.put("/admin/pedidos/editable/fecha-entrega", json={"fecha_entrega": "2026-08-25"})
+
+    assert editar.status_code == 200
+    assert fake.table("pedidos").select("*").eq("id", "editable").execute().data[0]["fecha_entrega"] == "2026-08-25"
+    eliminar = c.delete("/admin/pedidos/editable")
+    assert eliminar.status_code == 200
+    assert fake.table("pedidos").select("*").eq("id", "editable").execute().data == []
+
+
+def test_admin_ubica_historial_arriba_y_muestra_controles_de_entrega(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "con-controles", "cliente_id": cliente["id"], "productos": ["Galaxy A56"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{"nombre": "Galaxy A56", "cantidad": 1, "usd_unitario": 300, "usd_subtotal": 300}],
+        "total_usd": 300,
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    r = c.get("/admin/clientes")
+
+    assert r.text.index("Historial de pedidos") < r.text.index("Pedidos pendientes para hoy")
+    assert 'class="btn-editar-entrega"' in r.text
+    assert 'class="btn-eliminar-entrega"' in r.text
+
+
 def test_admin_clientes_es_instalable_y_responsive_en_mobile(monkeypatch):
     c = _cliente_logueado(monkeypatch)
 

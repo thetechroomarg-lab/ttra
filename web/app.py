@@ -9,7 +9,7 @@ import secrets
 import string
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -17,13 +17,14 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse
+from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, interacciones, pedidos
+from web import buscador, catalogo, cuentas, entregas, interacciones, pedidos, recibos
 from web.email_util import EnvioEmailError, enviar_email
+from web.productos import resolver_proveedor
 from web.supabase_client import get_client
 from web.chat import responder
 from web.reglas import WHATSAPP
@@ -41,6 +42,9 @@ BASE = Path(__file__).parent
 # En producción (Railway) apunta a un volumen persistente vía la variable de
 # entorno PRODUCTOS_PATH; en local, cae al archivo de siempre junto al código.
 PRODUCTOS_PATH = Path(os.environ.get("PRODUCTOS_PATH", str(BASE / "productos.json")))
+# No se sirve al navegador: se genera junto al catálogo para enriquecer el
+# detalle administrativo de cada pedido sin exponer proveedores al público.
+PROVEEDORES_PATH = Path(os.environ.get("PROVEEDORES_PATH", str(BASE / "proveedores.json")))
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 ADMIN_CLIENTES_PASSWORD = os.environ.get("ADMIN_CLIENTES_PASSWORD")
 if not ADMIN_CLIENTES_PASSWORD:
@@ -192,6 +196,12 @@ def _cargar_productos():
     return json.loads(PRODUCTOS_PATH.read_text(encoding="utf-8"))
 
 
+def _cargar_proveedores():
+    if not PROVEEDORES_PATH.exists():
+        return {}
+    return json.loads(PROVEEDORES_PATH.read_text(encoding="utf-8"))
+
+
 def _cliente():
     import anthropic
     return anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
@@ -256,6 +266,10 @@ class ClientesSeleccionadosIn(BaseModel):
 
 class MailingMasivoIn(ClientesSeleccionadosIn):
     mensaje: str = Field(min_length=1, max_length=5000)
+
+
+def _nuevo_recibo_id(client):
+    return client.rpc("siguiente_numero_recibo").execute().data
 
 
 class DescuentoItemIn(BaseModel):
@@ -508,6 +522,70 @@ def admin_clientes_eliminar(cliente_id: str, request: Request):
     return {"ok": True}
 
 
+@app.post("/admin/pedidos/{pedido_id}/recibo")
+def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    filas_pedido = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas_pedido:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    pedido = filas_pedido[0]
+    if not pedido.get("detalle") or pedido.get("total_usd") is None:
+        return JSONResponse(
+            {"error": "Este pedido histórico no tiene el detalle necesario para emitir un recibo"},
+            status_code=400,
+        )
+    filas_cliente = client.table("clientes").select("*").eq("id", pedido.get("cliente_id")).execute().data
+    if not filas_cliente or not (filas_cliente[0].get("email") or "").strip():
+        return JSONResponse({"error": "El cliente no tiene un email disponible"}, status_code=400)
+    cliente = filas_cliente[0]
+    recibo_id = pedido.get("recibo_id") or _nuevo_recibo_id(client)
+    ahora_recibo = datetime.now(timezone.utc).isoformat()
+    emitido_en = pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en") or ahora_recibo
+    pedido_para_mail = {**pedido, "recibo_id": recibo_id, "recibo_emitido_en": emitido_en}
+    try:
+        pdf_adjunto = recibos.pdf_recibo(cliente, pedido_para_mail)
+        enviar_email(
+            cliente["email"],
+            f"Recibo {recibo_id} — The Tech Room Arg",
+            recibos.html_recibo(cliente, pedido_para_mail),
+            [{"filename": f"recibo-{recibo_id}.pdf", "content": pdf_adjunto}],
+        )
+    except EnvioEmailError as e:
+        return JSONResponse({"error": str(e)}, status_code=502)
+    client.table("pedidos").update({
+        "recibo_id": recibo_id,
+        "recibo_emitido_en": emitido_en,
+        "recibo_enviado_en": ahora_recibo,
+    }).eq("id", pedido_id).execute()
+    return {"ok": True, "recibo_id": recibo_id, "reenviado": bool(pedido.get("recibo_enviado_en"))}
+
+
+@app.get("/admin/pedidos/{pedido_id}/recibo.pdf")
+def admin_pedido_pdf_recibo(pedido_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    pedido = filas[0]
+    if not pedido.get("recibo_enviado_en"):
+        return JSONResponse({"error": "Este pedido todavía no tiene un recibo emitido"}, status_code=400)
+    if not pedido.get("detalle") or pedido.get("total_usd") is None:
+        return JSONResponse({"error": "Este pedido no tiene el detalle necesario para el recibo"}, status_code=400)
+    emitido_en = pedido.get("recibo_emitido_en") or pedido["recibo_enviado_en"]
+    if not pedido.get("recibo_emitido_en"):
+        client.table("pedidos").update({"recibo_emitido_en": emitido_en}).eq("id", pedido_id).execute()
+    clientes = client.table("clientes").select("*").eq("id", pedido.get("cliente_id")).execute().data
+    if not clientes:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    contenido = recibos.pdf_recibo(clientes[0], {**pedido, "recibo_emitido_en": emitido_en})
+    nombre = f"recibo-{pedido.get('recibo_id') or pedido_id}.pdf"
+    return Response(contenido, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{nombre}"'})
+
+
 @app.post("/admin/clientes/{cliente_id}/mailing-oferta")
 def admin_clientes_mailing_oferta(cliente_id: str, entrada: MailingOfertaIn, request: Request):
     if not _clientes_admin_activo(request):
@@ -714,6 +792,25 @@ _ADMIN_CLIENTES_ESTILO = """
   .filtros-clientes { display:flex; gap:8px; margin:0 0 14px; flex-wrap:wrap; }
   .filtros-clientes input, .filtros-clientes select { min-height:38px; box-sizing:border-box; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 10px; font:inherit; }
   #filtro-clientes { flex:1 1 240px; }
+  .pedidos-hoy { margin:0 0 20px; padding:14px; border:1px solid #4a5160; border-radius:10px; }
+  .pedidos-hoy h2 { margin:0 0 10px; color:#f2f4f8; font-size:17px; }
+  .pedido-hoy { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
+  .pedido-hoy strong { color:#f2f4f8; }
+  .pedido-hoy-detalle { min-width:0; }
+  .pedido-hoy-detalle span { color:#9aa0ab; }
+  .pedido-acciones { display:flex; align-items:center; gap:7px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
+  .btn-enviar-recibo { flex:0 0 auto; border:0; border-radius:8px; padding:9px 12px; background:#c8102e; color:#fff; cursor:pointer; font-weight:700; }
+  .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
+  .btn-editar-entrega, .btn-eliminar-entrega { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; }
+  .btn-eliminar-entrega { border-color:#8d1627; color:#ff9baa; }
+  .historial-pedidos { margin:0 0 20px; padding:14px; border:1px solid #4a5160; border-radius:10px; }
+  .historial-pedidos h2 { margin:0 0 10px; color:#f2f4f8; font-size:17px; }
+  .historial-pedidos label { color:#dfe2e8; font-size:13px; font-weight:700; }
+  .historial-pedidos input { margin-left:8px; min-height:34px; border:1px solid #4a5160; border-radius:8px; padding:0 8px; background:#12141a; color:#f2f4f8; font:inherit; }
+  .pedido-historico { padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
+  .estado-recibo { display:inline-block; margin-top:4px; color:#9aa0ab; font-size:12px; }
+  .acciones-recibo { display:inline-flex; gap:8px; margin-left:8px; vertical-align:middle; }
+  .btn-ver-recibo-pdf, .btn-reenviar-recibo { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid #4a5160; border-radius:7px; background:#252a33; color:#f2f4f8; cursor:pointer; text-decoration:none; }
   .ordenar-columna { appearance:none; border:0; background:transparent; color:#f2f4f8; font:inherit; font-weight:700; cursor:pointer; padding:0; }
   .ordenar-columna:hover { color:#fff; text-decoration:underline; }
   .modal-mail { position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
@@ -812,6 +909,78 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         for c in filas_clientes
     ]
     clientes.sort(key=lambda r: r.get("fecha", ""), reverse=True)
+    clientes_por_id = {cliente["id"]: cliente for cliente in clientes}
+    fecha_hoy = entregas.ahora_argentina().date().isoformat()
+    pedidos = client.table("pedidos").select("*").execute().data
+    pedidos_hoy = [
+        pedido for pedido in pedidos
+        if pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
+    ]
+    fecha_historial = request.query_params.get("fecha_pedidos") or fecha_hoy
+    try:
+        fecha_historial = date.fromisoformat(fecha_historial).isoformat()
+    except ValueError:
+        fecha_historial = fecha_hoy
+    pedidos_historial = [pedido for pedido in pedidos if pedido.get("fecha_entrega") == fecha_historial]
+
+    def _descripcion_pedido(pedido):
+        detalle = pedido.get("detalle") or []
+        if detalle:
+            return " | ".join(
+                f"{item.get('nombre', '')} x{item.get('cantidad', 0)}"
+                f" · Proveedor: {item.get('proveedor') or 'Proveedor no identificado'}"
+                for item in detalle
+            )
+        return " | ".join(pedido.get("productos") or [])
+
+    def _boton_recibo(pedido):
+        pedido_id = html.escape(pedido.get("id", ""))
+        if not pedido.get("detalle") or pedido.get("total_usd") is None:
+            return ('<button class="btn-enviar-recibo" type="button" '
+                    f'data-id="{pedido_id}" disabled title="Falta detalle histórico">Enviar recibo</button>')
+        return (f'<button class="btn-enviar-recibo" type="button" '
+                f'data-id="{pedido_id}">Enviar recibo</button>')
+
+    def _controles_entrega(pedido):
+        pedido_id = html.escape(pedido.get("id", ""))
+        fecha = html.escape(pedido.get("fecha_entrega", ""))
+        return (
+            '<div class="pedido-acciones">'
+            f'{_boton_recibo(pedido)}'
+            f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}">Editar fecha</button>'
+            f'<button class="btn-eliminar-entrega" type="button" data-id="{pedido_id}">Eliminar entrega</button>'
+            '</div>'
+        )
+
+    def _acciones_recibo_historial(pedido):
+        if not pedido.get("recibo_enviado_en"):
+            return ""
+        pedido_id = html.escape(pedido.get("id", ""))
+        ojo = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+               'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg>')
+        reenvio = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+                   'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12A9 9 0 0 1 18.5 5.8"/><path d="M3 17v-5h5"/><path d="M21 7v5h-5"/></svg>')
+        return (f'<span class="acciones-recibo"><a class="btn-ver-recibo-pdf" href="/admin/pedidos/{pedido_id}/recibo.pdf" target="_blank" title="Ver PDF" aria-label="Ver PDF del recibo">{ojo}</a>'
+                f'<button class="btn-reenviar-recibo" type="button" data-id="{pedido_id}" title="Reenviar recibo" aria-label="Reenviar recibo">{reenvio}</button></span>')
+
+    if pedidos_hoy:
+        pedidos_hoy_html = "".join(
+            f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}"><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
+            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
+            f'{_controles_entrega(pedido)}</div>'
+            for pedido in pedidos_hoy
+        )
+    else:
+        pedidos_hoy_html = '<p class="vacio">No hay pedidos pendientes para hoy.</p>'
+    if pedidos_historial:
+        pedidos_historial_html = "".join(
+            f'<div class="pedido-historico"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
+            f'{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}<br><span class="estado-recibo">'
+            f'{("Recibo enviado originalmente: " + html.escape(pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en", ""))) if pedido.get("recibo_enviado_en") else ("Pendiente de recibo" if pedido.get("detalle") and pedido.get("total_usd") is not None else "Sin detalle histórico")}</span>{_acciones_recibo_historial(pedido)}</div>'
+            for pedido in pedidos_historial
+        )
+    else:
+        pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'
     provincias = sorted({c["provincia"] for c in clientes}, key=str.casefold)
     opciones_provincia_html = "".join(
         f'<option value="{html.escape(provincia)}">{html.escape(provincia)}</option>'
@@ -850,6 +1019,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <h1>Clientes ({len(clientes)})</h1>
     <button id="salir">Cerrar sesión</button>
   </div>
+  <section class="historial-pedidos"><h2>Historial de pedidos</h2><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
+  <section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy)})</h2>{pedidos_hoy_html}</section>
   <div class="filtros-clientes">
     <input id="filtro-clientes" type="search" placeholder="Buscar por nombre, email, celular o provincia">
     <select id="filtro-provincia"><option value="">Todas las provincias</option>{opciones_provincia_html}</select>
@@ -907,6 +1078,55 @@ document.querySelectorAll(".btn-eliminar").forEach((btn) => {{
     btn.textContent = "Eliminar cuenta";
     btn.disabled = false;
   }});
+}});
+document.querySelectorAll(".btn-enviar-recibo").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Enviar el recibo por email a este cliente?")) return;
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/recibo`, {{ method: "POST" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo enviar el recibo."); btn.disabled = false; btn.textContent = "Enviar recibo"; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-reenviar-recibo").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Reenviar el recibo original por email?")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/recibo`, {{ method: "POST" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo reenviar el recibo."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-editar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const fecha = prompt("Nueva fecha de entrega (AAAA-MM-DD)", btn.dataset.fecha);
+    if (!fecha || fecha === btn.dataset.fecha) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/fecha-entrega`, {{
+      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{fecha_entrega: fecha}}),
+    }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo editar la fecha de entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-eliminar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta entrega? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}`, {{ method: "DELETE" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.getElementById("fecha-historial-pedidos").addEventListener("change", (e) => {{
+  const url = new URL(location.href);
+  url.searchParams.set("fecha_pedidos", e.target.value);
+  location.href = url.toString();
 }});
 const checksClientes = Array.from(document.querySelectorAll(".cliente-check"));
 const seleccionarTodos = document.getElementById("seleccionar-todos");
@@ -1437,8 +1657,24 @@ def pagina_perfil(request: Request):
     return FileResponse(str(BASE / "static" / "perfil.html"))
 
 
+class DetallePedidoIn(BaseModel):
+    nombre: str = Field(min_length=1, max_length=300)
+    color: str | None = Field(default=None, max_length=100)
+    cantidad: int = Field(ge=1, le=100)
+    usd_unitario: int = Field(ge=0)
+    usd_subtotal: int = Field(ge=0)
+
+
 class PedidoIn(BaseModel):
-    productos: list[str]
+    productos: list[str] = Field(min_length=1)
+    fecha_entrega: date | None = None
+    detalle: list[DetallePedidoIn] = Field(default_factory=list)
+    total_usd: int | None = Field(default=None, ge=0)
+    descuento_usd: int = Field(default=0, ge=0)
+
+
+class EditarFechaEntregaIn(BaseModel):
+    fecha_entrega: date
 
 
 class InteraccionIn(BaseModel):
@@ -1490,8 +1726,62 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     if _debe_cambiar_password(request):
         raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
-    pedidos.guardar_pedido(get_client(), cliente_id, entrada.productos)
+    if not entrada.fecha_entrega:
+        return JSONResponse({"error": "Elegí una fecha de entrega"}, status_code=400)
+    if not entregas.fecha_entrega_valida(entrada.fecha_entrega):
+        return JSONResponse({"error": "La fecha de entrega elegida ya no está disponible"}, status_code=400)
+    proveedores = _cargar_proveedores()
+    detalle = [
+        {**item.model_dump(), "proveedor": resolver_proveedor(proveedores, item.nombre)}
+        for item in entrada.detalle
+    ]
+    pedidos.guardar_pedido(
+        get_client(),
+        cliente_id,
+        entrada.productos,
+        entrada.fecha_entrega,
+        detalle=detalle,
+        total_usd=entrada.total_usd,
+        descuento_usd=entrada.descuento_usd,
+    )
     return {"ok": True}
+
+
+@app.put("/admin/pedidos/{pedido_id}/fecha-entrega")
+def admin_pedido_editar_fecha(pedido_id: str, entrada: EditarFechaEntregaIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    if not entregas.fecha_entrega_valida(entrada.fecha_entrega):
+        return JSONResponse({"error": "La fecha de entrega elegida no está disponible"}, status_code=400)
+    client = get_client()
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if filas[0].get("recibo_enviado_en"):
+        return JSONResponse({"error": "No se puede editar una entrega con recibo emitido"}, status_code=400)
+    pedido = pedidos.editar_fecha_entrega(client, pedido_id, entrada.fecha_entrega)
+    return {"ok": True, "pedido_id": pedido["id"], "fecha_entrega": pedido["fecha_entrega"]}
+
+
+@app.delete("/admin/pedidos/{pedido_id}")
+def admin_pedido_eliminar(pedido_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if filas[0].get("recibo_enviado_en"):
+        return JSONResponse({"error": "No se puede eliminar una entrega con recibo emitido"}, status_code=400)
+    pedidos.eliminar_pedido(client, pedido_id)
+    return {"ok": True}
+
+
+@app.get("/api/entregas-disponibles")
+def api_entregas_disponibles():
+    ahora = entregas.ahora_argentina()
+    opciones = entregas.opciones_entrega(ahora)
+    return {"opciones": [{**opcion, "etiqueta": entregas.etiqueta_entrega(opcion["fecha"], ahora)} for opcion in opciones]}
 
 
 @app.post("/api/descuentos/validar")

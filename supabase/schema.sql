@@ -26,9 +26,32 @@ create table if not exists pedidos (
   id uuid primary key default gen_random_uuid(),
   cliente_id uuid not null references clientes(id) on delete cascade,
   productos jsonb not null,
+  detalle jsonb,
+  total_usd numeric,
+  descuento_usd numeric,
+  recibo_id text,
+  recibo_emitido_en timestamptz,
+  recibo_enviado_en timestamptz,
+  fecha_entrega date,
   origen text not null default 'whatsapp',
   fecha timestamptz not null default now()
 );
+
+alter table pedidos add column if not exists fecha_entrega date;
+alter table pedidos add column if not exists detalle jsonb;
+alter table pedidos add column if not exists total_usd numeric;
+alter table pedidos add column if not exists descuento_usd numeric;
+alter table pedidos add column if not exists recibo_id text;
+alter table pedidos add column if not exists recibo_emitido_en timestamptz;
+alter table pedidos add column if not exists recibo_enviado_en timestamptz;
+create unique index if not exists pedidos_recibo_id_unico
+  on pedidos (recibo_id) where recibo_id is not null;
+
+create sequence if not exists public.recibos_numero_seq start with 1993;
+create or replace function public.siguiente_numero_recibo()
+returns text language sql security definer set search_path = public as $$
+  select '0001-' || nextval('public.recibos_numero_seq')::text;
+$$;
 
 create table if not exists interacciones_cliente (
   id uuid primary key default gen_random_uuid(),

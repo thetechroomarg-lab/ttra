@@ -1,5 +1,10 @@
 import json
-from web.productos import generar_productos, escribir_productos_json
+from web.productos import (
+    generar_productos,
+    generar_proveedores,
+    resolver_proveedor,
+    escribir_productos_json,
+)
 
 
 def test_genera_productos_sin_proveedor_y_con_3_precios():
@@ -18,6 +23,22 @@ def test_genera_productos_sin_proveedor_y_con_3_precios():
     assert p["categoria"]                       # tiene alguna categoría no vacía
 
 
+def test_genera_indice_privado_del_proveedor_elegido():
+    items = [
+        {"nombre": "iPhone 13 128GB", "costo": 630, "proveedor": "fr"},
+        {"nombre": "iphone 13 128gb", "costo": 610, "proveedor": "az"},
+    ]
+
+    assert generar_proveedores(items) == {"iphone 13 128gb": "az"}
+
+
+def test_resuelve_proveedor_con_la_misma_normalizacion_del_catalogo():
+    proveedores = {"Xiaomi Redmi Note 14 8GB 256GB": "az"}
+
+    assert resolver_proveedor(proveedores, "Xiaomi Redmi Note 14 8GB 256GB slim") == "az"
+    assert resolver_proveedor(proveedores, "Producto inexistente") == "Proveedor no identificado"
+
+
 def test_escribir_productos_json(tmp_path):
     items = [{"nombre": "Moto G15 128GB", "costo": 150, "proveedor": "va"}]
     ruta = tmp_path / "productos.json"
@@ -26,3 +47,5 @@ def test_escribir_productos_json(tmp_path):
     assert isinstance(data, list) and len(data) == 1
     assert "proveedor" not in data[0]
     assert data[0]["nombre"] == "Moto G15 128GB"
+    proveedores = json.loads((tmp_path / "proveedores.json").read_text(encoding="utf-8"))
+    assert proveedores == {"Moto G15 128GB": "va"}

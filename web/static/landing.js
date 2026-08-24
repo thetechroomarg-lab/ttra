@@ -118,6 +118,12 @@ const CLAVE_DESCUENTO_MAILING = "ttra_descuento_mailing";
 const CLAVE_ANON_ID = "ttra_anon_id";
 const WHATSAPP_NUMERO = "543512145217";
 
+// Un descuento de mailing solo es válido al entrar desde su enlace. Esto
+// elimina códigos viejos que quedaron persistidos en visitas normales.
+if (!new URLSearchParams(location.search).get("codigo")) {
+  localStorage.removeItem(CLAVE_DESCUENTO_MAILING);
+}
+
 let SECCIONES_DATA = {};
 let RECOMENDADOS_DATA = [];
 let cotizacionActual = null; // U$D actual, usado en el reloj del header y en el narrador de noticias
@@ -3365,6 +3371,7 @@ function sincronizarLimiteCarrito() {
 }
 
 function abrirCarrito() {
+  cargarOpcionesEntrega().catch(() => {});
   sincronizarLimiteCarrito();
   document.getElementById("panel-carrito").classList.remove("oculto");
   document.getElementById("overlay-carrito").classList.remove("oculto");
@@ -3375,7 +3382,7 @@ function cerrarCarrito() {
   document.getElementById("overlay-carrito").classList.add("oculto");
 }
 
-function armarMensajeWhatsapp(carrito) {
+function armarMensajeWhatsapp(carrito, fechaEntrega) {
   const lineas = carrito.map((it) => {
     const color = it.color ? ` (${it.color})` : "";
     return `- ${it.nombre}${color} x${it.cantidad} — U$D ${(it.usd || 0) * it.cantidad}`;
@@ -3393,7 +3400,18 @@ function armarMensajeWhatsapp(carrito) {
   const totalPesos = t.pesos - (descuento?.pesos || 0) - (descuentoMailing?.pesos || 0);
   const totalTransferencia = t.transferencia - (descuento?.transferencia || 0) - (descuentoMailing?.transferencia || 0);
   const total = `Total: U$D ${totalUsd} · $ ${formatearPesos(totalPesos)} contado · $ ${formatearPesos(totalTransferencia)} transferencia`;
-  return `Hola! Quiero encargar:\n${lineas.join("\n")}\n\n${total}`;
+  return `Hola! Quiero encargar:\n${lineas.join("\n")}\n\nEntrega solicitada: ${fechaEntrega}\n${total}`;
+}
+
+async function cargarOpcionesEntrega() {
+  const select = document.getElementById("fecha-entrega");
+  const nota = document.getElementById("nota-entrega");
+  const r = await fetch("/api/entregas-disponibles");
+  const datos = await r.json();
+  select.innerHTML = (datos.opciones || []).map((opcion) => {
+    return `<option value="${opcion.fecha}">${opcion.etiqueta}</option>`;
+  }).join("");
+  nota.textContent = datos.opciones?.[0]?.requiere_confirmacion ? "El pedido se entrega el lunes. Confirmá si querés continuar." : "Elegí tu fecha de entrega.";
 }
 
 async function consumirCodigoMailing(carrito) {
@@ -3465,8 +3483,15 @@ async function derivarCheckoutAWhatsapp(carrito) {
   });
   const consume = await consumirCodigoMailing(carrito);
   if (!consume.ok) return;
-  const mensaje = armarMensajeWhatsapp(carrito);
-  registrarPedidoEnClientes(carrito);
+  const fechaEntrega = document.getElementById("fecha-entrega").value;
+  const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
+  try {
+    await registrarPedidoEnClientes(carrito, fechaEntrega);
+  } catch (error) {
+    console.error("No se pudo guardar el pedido", error);
+    alert("No pudimos guardar tu pedido. Probá nuevamente antes de abrir WhatsApp.");
+    return;
+  }
   borrarCheckoutPendiente();
   vaciarCarrito();
   borrarDescuentoMailing();
@@ -3493,15 +3518,30 @@ document.getElementById("input-codigo-mailing").addEventListener("keydown", (e) 
 // cliente (mismo clientes.json/csv que ya alimentan el gate inicial y el
 // buscador por chat) — así el panel /admin/clientes también refleja los
 // pedidos hechos desde la web, no solo el alta inicial.
-function registrarPedidoEnClientes(carrito) {
+async function registrarPedidoEnClientes(carrito, fecha_entrega) {
   const productos = [...new Set(carrito.map((it) =>
     it.color && it.color !== "Color único" ? `${it.nombre} (${it.color})` : it.nombre
   ))];
-  fetch("/api/pedidos", {
+  const descuento = calcularDescuento(carrito);
+  const descuentoMailing = descuentoMailingAplicado(carrito);
+  const descuento_usd = (descuento?.usd || 0) + (descuentoMailing?.usd || 0);
+  const total_usd = Math.max(totales(carrito).usd - descuento_usd, 0);
+  const detalle = carrito.map((it) => ({
+    nombre: it.nombre,
+    color: it.color || null,
+    cantidad: it.cantidad,
+    usd_unitario: it.usd || 0,
+    usd_subtotal: (it.usd || 0) * it.cantidad,
+  }));
+  const respuesta = await fetch("/api/pedidos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ productos }),
-  }).catch(() => {});
+    body: JSON.stringify({ productos, fecha_entrega, detalle, total_usd, descuento_usd }),
+  });
+  if (!respuesta.ok) {
+    const body = await respuesta.json().catch(() => ({}));
+    throw new Error(body.error || "No se pudo guardar el pedido");
+  }
 }
 
 document.getElementById("btn-whatsapp").addEventListener("click", async () => {

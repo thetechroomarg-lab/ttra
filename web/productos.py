@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import re
 
 from consolidate import consolidar
@@ -7,6 +8,7 @@ from imagelink import google_image_link
 
 _SLIM = re.compile(r"(?i)\bslim\b")
 _MARCAS_SLIM = ("xiaomi", "poco", "redmi", "moto", "motorola", "samsung", "galaxy")
+_SIN_CARGADOR = re.compile(r"(?i)\bs/cargador\b|\bslim\b")
 
 
 def _sin_cargador(nombre):
@@ -149,8 +151,44 @@ def generar_productos(items, cotizacion):
     return productos
 
 
+def generar_proveedores(items):
+    """Devuelve el proveedor elegido por producto para uso interno."""
+    proveedores = {}
+    for fila in consolidar(items)["lista"]:
+        if _excluido(fila["nombre"]):
+            continue
+        nombre = _nombre_estandar_note(_sin_cargador(fila["nombre"]))
+        proveedores[nombre] = fila.get("proveedor") or "Proveedor no identificado"
+    return proveedores
+
+
+def resolver_proveedor(proveedores, nombre):
+    """Resuelve un proveedor aplicando la normalización del catálogo público."""
+    if not nombre:
+        return "Proveedor no identificado"
+    nombre_normalizado = _nombre_estandar_note(_sin_cargador(nombre))
+    proveedor = proveedores.get(nombre) or proveedores.get(nombre_normalizado)
+    if proveedor:
+        return proveedor
+
+    # Algunos pedidos históricos conservaron "slim" donde la lista actual
+    # dice "s/cargador". Solo aceptamos ese fallback cuando hay un único
+    # producto candidato, para no atribuir un proveedor equivocado.
+    def simplificar(valor):
+        return " ".join(_SIN_CARGADOR.sub("", valor).split()).casefold()
+
+    candidatos = {
+        proveedor for producto, proveedor in proveedores.items()
+        if simplificar(producto) == simplificar(nombre_normalizado)
+    }
+    return candidatos.pop() if len(candidatos) == 1 else "Proveedor no identificado"
+
+
 def escribir_productos_json(items, cotizacion, ruta):
     productos = generar_productos(items, cotizacion)
-    with open(ruta, "w", encoding="utf-8") as f:
+    ruta = Path(ruta)
+    with ruta.open("w", encoding="utf-8") as f:
         json.dump(productos, f, ensure_ascii=False, indent=2)
+    with ruta.with_name("proveedores.json").open("w", encoding="utf-8") as f:
+        json.dump(generar_proveedores(items), f, ensure_ascii=False, indent=2)
     return productos

@@ -4,6 +4,13 @@ import web.app as appmod
 from tests.fakes_supabase import FakeSupabaseClient
 
 
+def test_landing_descarta_descuento_mailing_persistido_fuera_de_un_link():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+
+    assert 'if (!new URLSearchParams(location.search).get("codigo")) {' in script
+    assert "localStorage.removeItem(CLAVE_DESCUENTO_MAILING);" in script
+
+
 def test_landing_mobile_muestra_una_sola_card_recomendada_completa():
     script = (appmod.BASE / "static" / "landing.js").read_text()
 
