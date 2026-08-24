@@ -1370,6 +1370,12 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 .item-controles { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .item-controles button { padding: 4px 10px; font-size: 13px; }
 .panel-carrito-footer { flex: 0 0 auto; border-top: 1px solid var(--rc-green-faint); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.panel-carrito-footer #fecha-entrega,
+.panel-carrito-footer #direccion-entrega {
+  box-sizing: border-box;
+  min-height: 50px;
+  padding: 0 12px;
+}
 .descuento-mailing {
   display: flex; flex-direction: column; gap: 8px;
   padding: 10px; border: 1px solid var(--rc-green-faint);

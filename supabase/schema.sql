@@ -46,6 +46,7 @@ alter table pedidos add column if not exists recibo_emitido_en timestamptz;
 alter table pedidos add column if not exists recibo_enviado_en timestamptz;
 alter table pedidos add column if not exists direccion_entrega text;
 alter table pedidos add column if not exists orden_entrega integer;
+alter table pedidos add column if not exists fotos_series jsonb not null default '[]'::jsonb;
 create unique index if not exists pedidos_recibo_id_unico
   on pedidos (recibo_id) where recibo_id is not null;
 create index if not exists pedidos_fecha_orden_entrega_idx
@@ -120,5 +121,11 @@ for each row execute function public.eliminar_cliente_al_borrar_auth();
 alter table clientes enable row level security;
 alter table pedidos enable row level security;
 alter table tareas_entrega enable row level security;
+
+-- Bucket privado: las fotos comprimidas de números de serie nunca se sirven
+-- públicamente y Railway no guarda archivos.
+insert into storage.buckets (id, name, public)
+values ('recibos-series', 'recibos-series', false)
+on conflict (id) do nothing;
 alter table interacciones_cliente enable row level security;
 alter table codigos_descuento enable row level security;

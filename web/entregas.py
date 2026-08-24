@@ -40,7 +40,8 @@ def opciones_entrega(ahora=None):
     inicio = fecha_hoy + timedelta(days=1) if despues_del_corte else fecha_hoy
     opciones = []
     candidata = inicio
-    while len(opciones) < 3:
+    cantidad_maxima = 2 if despues_del_corte else 3
+    while len(opciones) < cantidad_maxima:
         if candidata.weekday() != 6:
             opciones.append(_opcion(candidata))
         candidata += timedelta(days=1)

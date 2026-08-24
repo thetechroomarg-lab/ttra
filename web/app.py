@@ -8,6 +8,7 @@ import re
 import secrets
 import string
 import time
+import uuid
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -526,7 +527,7 @@ def admin_clientes_eliminar(cliente_id: str, request: Request):
 
 
 @app.post("/admin/pedidos/{pedido_id}/recibo")
-def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
+async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     if not _clientes_admin_activo(request):
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
     client = get_client()
@@ -549,11 +550,25 @@ def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     pedido_para_mail = {**pedido, "recibo_id": recibo_id, "recibo_emitido_en": emitido_en}
     try:
         pdf_adjunto = recibos.pdf_recibo(cliente, pedido_para_mail)
+        formulario = await request.form() if request.headers.get("content-type", "").startswith("multipart/") else {}
+        adjuntos_fotos = []
+        fotos_guardadas = list(pedido.get("fotos_series") or [])
+        for foto in formulario.getlist("fotos")[:10] if formulario else []:
+            if not getattr(foto, "filename", None):
+                continue
+            contenido = await foto.read()
+            if not contenido or len(contenido) > 2_500_000:
+                return JSONResponse({"error": "Cada foto comprimida debe pesar menos de 2,5 MB"}, status_code=400)
+            nombre = f"serie-{uuid.uuid4().hex}.jpg"
+            ruta = f"pedidos/{pedido_id}/{nombre}"
+            client.storage.from_("recibos-series").upload(ruta, contenido, {"content-type": "image/jpeg"})
+            fotos_guardadas.append(ruta)
+            adjuntos_fotos.append({"filename": nombre, "content": contenido})
         enviar_email(
             cliente["email"],
             f"Recibo {recibo_id} — The Tech Room Arg",
             recibos.html_recibo(cliente, pedido_para_mail),
-            [{"filename": f"recibo-{recibo_id}.pdf", "content": pdf_adjunto}],
+            [{"filename": f"recibo-{recibo_id}.pdf", "content": pdf_adjunto}, *adjuntos_fotos],
         )
     except EnvioEmailError as e:
         return JSONResponse({"error": str(e)}, status_code=502)
@@ -561,6 +576,7 @@ def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
         "recibo_id": recibo_id,
         "recibo_emitido_en": emitido_en,
         "recibo_enviado_en": ahora_recibo,
+        "fotos_series": fotos_guardadas,
     }).eq("id", pedido_id).execute()
     return {"ok": True, "recibo_id": recibo_id, "reenviado": bool(pedido.get("recibo_enviado_en"))}
 
@@ -828,6 +844,19 @@ _ADMIN_CLIENTES_ESTILO = """
   .ordenar-columna:hover { color:#fff; text-decoration:underline; }
   .modal-mail { position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
   .modal-mail[hidden] { display:none; }
+  .modal-series { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
+  .modal-series[hidden] { display:none; }
+  .modal-series-contenido { width:min(520px,100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
+  .modal-series h2 { color:#f2f4f8; font-size:18px; margin:0 0 8px; }
+  .modal-series p { color:#9aa0ab; font-size:13px; }
+  .series-fotos { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0; }
+  .serie-foto { position:relative; }
+  .serie-foto img { border-radius:8px; display:block; height:90px; object-fit:cover; width:100%; }
+  .serie-foto button { position:absolute; right:4px; top:4px; border:0; border-radius:50%; background:#c8102e; color:#fff; cursor:pointer; width:24px; height:24px; }
+  .series-acciones { display:flex; gap:8px; }
+  .series-acciones button { border:0; border-radius:8px; color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; }
+  #series-agregar, #series-cancelar { background:#3a3f4b; }
+  #series-enviar { background:#c8102e; margin-left:auto; }
   .modal-mail-contenido { width:min(520px, 100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
   .modal-mail h2 { margin:0 0 8px; color:#f2f4f8; font-size:18px; }
   .modal-mail p { margin:0 0 12px; color:#9aa0ab; font-size:13px; }
@@ -933,6 +962,7 @@ def _admin_clientes_pagina(request: Request, mostrar_clientes: bool):
   <input id="pass" type="password" placeholder="Contraseña" autofocus>
   <button id="btn">Ingresar</button>
 </div>
+<div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
 <script>
 document.getElementById("btn").addEventListener("click", async () => {{
   const r = await fetch("/admin/clientes/login", {{
@@ -1074,16 +1104,43 @@ document.getElementById("salir").addEventListener("click", async () => {{
   await fetch("/admin/clientes/logout", {{ method: "POST" }});
   location.reload();
 }});
+async function comprimirFotoSerie(archivo) {{
+  const imagen = await createImageBitmap(archivo);
+  const escala = Math.min(1, 1600 / Math.max(imagen.width, imagen.height));
+  const lienzo = document.createElement("canvas");
+  lienzo.width = Math.round(imagen.width * escala); lienzo.height = Math.round(imagen.height * escala);
+  lienzo.getContext("2d").drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+  const blob = await new Promise((ok) => lienzo.toBlob(ok, "image/jpeg", .75));
+  return new File([blob], "numero-serie.jpg", {{ type:"image/jpeg" }});
+}}
+let pedidoReciboActivo = null;
+let fotosSerie = [];
+const modalSeries = document.getElementById("modal-series");
+const vistaFotosSerie = document.getElementById("series-fotos");
+function renderFotosSerie() {{
+  vistaFotosSerie.innerHTML = fotosSerie.map((foto, indice) => `<div class="serie-foto"><img src="${{URL.createObjectURL(foto)}}" alt="Foto de número de serie ${{indice + 1}}"><button type="button" data-indice="${{indice}}" aria-label="Quitar foto">×</button></div>`).join("");
+  vistaFotosSerie.querySelectorAll("button").forEach((boton) => boton.addEventListener("click", () => {{ fotosSerie.splice(Number(boton.dataset.indice), 1); renderFotosSerie(); }}));
+}}
+function agregarFotoSerie() {{
+  const selector = Object.assign(document.createElement("input"), {{ type:"file", accept:"image/*", capture:"environment" }});
+  selector.addEventListener("change", async () => {{ if (selector.files?.[0]) {{ fotosSerie.push(await comprimirFotoSerie(selector.files[0])); renderFotosSerie(); }} }});
+  selector.click();
+}}
 document.querySelectorAll(".btn-enviar-recibo").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
-    if (!confirm("¿Enviar el recibo por email a este cliente?")) return;
-    btn.disabled = true;
-    btn.textContent = "Enviando...";
-    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/recibo`, {{ method: "POST" }});
-    const datos = await r.json().catch(() => ({{}}));
-    if (!r.ok) {{ alert(datos.error || "No se pudo enviar el recibo."); btn.disabled = false; btn.textContent = "Enviar recibo"; return; }}
-    location.reload();
+    pedidoReciboActivo = btn; fotosSerie = []; renderFotosSerie(); modalSeries.hidden = false;
   }});
+}});
+document.getElementById("series-agregar").addEventListener("click", agregarFotoSerie);
+document.getElementById("series-cancelar").addEventListener("click", () => {{ modalSeries.hidden = true; }});
+document.getElementById("series-enviar").addEventListener("click", async () => {{
+  if (!pedidoReciboActivo) return;
+  const boton = document.getElementById("series-enviar"); boton.disabled = true; boton.textContent = "Enviando...";
+  const adjuntos = new FormData(); fotosSerie.forEach((foto) => adjuntos.append("fotos", foto));
+  const r = await fetch(`/admin/pedidos/${{pedidoReciboActivo.dataset.id}}/recibo`, {{ method:"POST", body:adjuntos }});
+  const respuesta = await r.json().catch(() => ({{}}));
+  if (!r.ok) {{ alert(respuesta.error || "No se pudo enviar el recibo."); boton.disabled = false; boton.textContent = "Enviar recibo"; return; }}
+  location.reload();
 }});
 document.querySelectorAll(".btn-reenviar-recibo").forEach((btn) => {{
   btn.addEventListener("click", async () => {{

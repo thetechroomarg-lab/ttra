@@ -3181,6 +3181,9 @@ function setEstadoCodigoMailing(mensaje, tipo = "") {
 }
 
 function descuentoMailingAplicado(carrito) {
+  // Los códigos de mailing quedan temporalmente desactivados en el carrito.
+  return null;
+  /*
   const descuento = cargarDescuentoMailing();
   if (!descuento || !Array.isArray(descuento.productos) || !descuento.productos.length) return null;
 
@@ -3202,6 +3205,7 @@ function descuentoMailingAplicado(carrito) {
 
   if (!cantidad) return null;
   return { codigo: descuento.codigo, cantidad, usd, pesos, transferencia, productos: descuento.productos };
+  */
 }
 
 function mismoItemCarrito(it, nombre, color) {
@@ -3480,6 +3484,9 @@ async function cargarOpcionesEntrega() {
 }
 
 async function consumirCodigoMailing(carrito) {
+  borrarDescuentoMailing();
+  return { ok: true };
+  /*
   const descuento = cargarDescuentoMailing();
   if (!descuento?.codigo) return { ok: true };
   const r = await fetch("/api/descuentos/consumir", {
@@ -3493,6 +3500,7 @@ async function consumirCodigoMailing(carrito) {
     return { ok: false };
   }
   return { ok: true };
+  */
 }
 
 async function aplicarCodigoMailing() {
@@ -3573,13 +3581,6 @@ window.addEventListener("resize", sincronizarLimiteCarrito);
 document.getElementById("btn-vaciar-carrito").addEventListener("click", () => {
   vaciarCarrito();
   borrarDescuentoMailing();
-});
-document.getElementById("btn-aplicar-codigo").addEventListener("click", aplicarCodigoMailing);
-document.getElementById("input-codigo-mailing").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    aplicarCodigoMailing();
-  }
 });
 // Al cerrar un pedido, suma los productos encargados al registro del
 // cliente (mismo clientes.json/csv que ya alimentan el gate inicial y el

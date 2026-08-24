@@ -18,6 +18,12 @@ def test_lunes_antes_del_corte_ofrece_hoy_manana_y_pasado():
     assert _fechas(ahora) == ["2026-08-24", "2026-08-25", "2026-08-26"]
 
 
+def test_lunes_despues_del_corte_ofrece_solo_manana_y_pasado():
+    ahora = datetime(2026, 8, 24, 16, 31, tzinfo=TZ)
+
+    assert _fechas(ahora) == ["2026-08-25", "2026-08-26"]
+
+
 def test_viernes_despues_del_corte_programa_lunes_y_pide_confirmacion():
     ahora = datetime(2026, 8, 28, 16, 31, tzinfo=TZ)
 
