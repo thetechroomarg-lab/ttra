@@ -64,7 +64,12 @@ def test_admin_apila_controles_y_muestra_clientes_como_tarjetas_en_mobile(monkey
     assert "#filtro-clientes { flex:0 1 auto; min-height:38px; }" in r.text
     assert "#tabla-clientes .col-check { justify-content:flex-start; text-align:left; }" in r.text
     assert ".pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }" in r.text
-    assert ".pedido-acciones .btn-direcciones { align-items:center; display:flex; justify-content:center; }" in r.text
+    assert ".pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }" in r.text
+    assert ".pedido-acciones .btn-enviar-recibo { grid-area:recibo; }" in r.text
+    assert ".pedido-acciones .btn-direcciones { grid-area:direcciones; }" in r.text
+    assert ".pedido-acciones .btn-editar-entrega { grid-area:editar; }" in r.text
+    assert ".pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }" in r.text
+    assert 'grid-template-areas:"recibo direcciones" "editar eliminar"' in r.text
 
 
 def test_admin_muestra_pedidos_programados_para_hoy(monkeypatch):
@@ -252,6 +257,39 @@ def test_admin_puede_editar_y_eliminar_una_entrega_pendiente(monkeypatch):
     eliminar = c.delete("/admin/pedidos/editable")
     assert eliminar.status_code == 200
     assert fake.table("pedidos").select("*").eq("id", "editable").execute().data == []
+
+
+def test_admin_puede_agregar_direccion_a_una_entrega_pendiente(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "sin-direccion", "cliente_id": cliente["id"], "productos": ["Galaxy A56"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{"nombre": "Galaxy A56", "cantidad": 1, "usd_unitario": 300, "usd_subtotal": 300}],
+        "total_usd": 300,
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    panel = c.get("/admin/clientes")
+    guardar = c.put("/admin/pedidos/sin-direccion/direccion", json={"direccion_entrega": "Av. Colón 123, Córdoba"})
+
+    assert 'class="btn-agregar-direccion"' in panel.text
+    assert "Agregar dirección" in panel.text
+    assert 'id="modal-direccion"' in panel.text
+    assert 'id="direccion-entrega-admin"' in panel.text
+    assert 'id="modal-series"' in panel.text
+    assert guardar.status_code == 200
+    pedido = fake.table("pedidos").select("*").eq("id", "sin-direccion").execute().data[0]
+    assert pedido["direccion_entrega"] == "Av. Colón 123, Córdoba"
+
+
+def test_admin_centra_los_paneles_flotantes_en_todas_las_resoluciones(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+
+    panel = c.get("/admin/clientes")
+
+    assert ".modal-series, .modal-direccion { display:flex;" in panel.text
 
 
 def test_admin_ubica_historial_arriba_y_muestra_controles_de_entrega(monkeypatch):

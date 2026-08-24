@@ -826,7 +826,7 @@ _ADMIN_CLIENTES_ESTILO = """
   .pedido-hoy-detalle span { color:#9aa0ab; }
   .pedido-acciones { display:flex; align-items:center; gap:7px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
   .btn-enviar-recibo { flex:0 0 auto; border:0; border-radius:8px; padding:9px 12px; background:#c8102e; color:#fff; cursor:pointer; font-weight:700; }
-  .btn-direcciones { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; text-decoration:none; }
+  .btn-direcciones, .btn-agregar-direccion { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; text-decoration:none; }
   .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
   .btn-editar-entrega, .btn-eliminar-entrega { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; }
   .btn-eliminar-entrega { border-color:#8d1627; color:#ff9baa; }
@@ -857,6 +857,16 @@ _ADMIN_CLIENTES_ESTILO = """
   .series-acciones button { border:0; border-radius:8px; color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; }
   #series-agregar, #series-cancelar { background:#3a3f4b; }
   #series-enviar { background:#c8102e; margin-left:auto; }
+  .modal-direccion { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
+  .modal-direccion[hidden] { display:none; }
+  .modal-series, .modal-direccion { display:flex; }
+  .modal-direccion-contenido { width:min(520px,100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
+  .modal-direccion h2 { color:#f2f4f8; font-size:18px; margin:0 0 12px; }
+  .modal-direccion input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid #4a5160; border-radius:8px; padding:0 10px; background:#12141a; color:#f2f4f8; font:inherit; }
+  .direccion-acciones { display:flex; gap:8px; margin-top:12px; }
+  .direccion-acciones button { border:0; border-radius:8px; color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; }
+  #direccion-cancelar { background:#3a3f4b; }
+  #direccion-guardar { background:#c8102e; margin-left:auto; }
   .modal-mail-contenido { width:min(520px, 100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
   .modal-mail h2 { margin:0 0 8px; color:#f2f4f8; font-size:18px; }
   .modal-mail p { margin:0 0 12px; color:#9aa0ab; font-size:13px; }
@@ -893,9 +903,14 @@ _ADMIN_CLIENTES_ESTILO = """
     .form-tarea-entrega { grid-template-columns:1fr; }
     .form-tarea-entrega button { min-height:44px; }
     .pedido-hoy-detalle, .pedido-historico { overflow-wrap:anywhere; word-break:break-word; }
-    .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); justify-content:stretch; width:100%; }
+    .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-areas:"recibo direcciones" "editar eliminar"; justify-content:stretch; width:100%; }
     .pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }
-    .pedido-acciones .btn-direcciones { align-items:center; display:flex; justify-content:center; }
+    .pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }
+    .pedido-acciones .btn-enviar-recibo { grid-area:recibo; }
+    .pedido-acciones .btn-direcciones { grid-area:direcciones; }
+    .pedido-acciones .btn-agregar-direccion { grid-area:direcciones; }
+    .pedido-acciones .btn-editar-entrega { grid-area:editar; }
+    .pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }
     .acciones-recibo { margin:8px 0 0; }
     .tabla-scroll { overflow:visible; }
     #tabla-clientes { min-width:0; font-size:13px; }
@@ -1040,7 +1055,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         boton_direcciones = (
             f'<a class="btn-direcciones" target="_blank" rel="noopener" '
             f'href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Direcciones</a>'
-            if direccion else ""
+            if direccion else f'<button class="btn-agregar-direccion" type="button" data-id="{pedido_id}">Agregar dirección</button>'
         )
         return (
             '<div class="pedido-acciones">'
@@ -1111,6 +1126,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   {pendientes_hoy_seccion_html}
   {tareas_hoy_seccion_html}
 </div>
+<div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
+<div class="modal-direccion" id="modal-direccion" hidden><div class="modal-direccion-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-titulo"><h2 id="direccion-titulo">Dirección de entrega</h2><input id="direccion-entrega-admin" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba"><div class="direccion-acciones"><button id="direccion-cancelar" type="button">Cancelar</button><button id="direccion-guardar" type="button">Guardar dirección</button></div></div></div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
   await fetch("/admin/clientes/logout", {{ method: "POST" }});
@@ -1163,6 +1180,31 @@ document.querySelectorAll(".btn-reenviar-recibo").forEach((btn) => {{
     if (!r.ok) {{ alert(datos.error || "No se pudo reenviar el recibo."); btn.disabled = false; return; }}
     location.reload();
   }});
+}});
+let pedidoDireccionActivo = null;
+const modalDireccion = document.getElementById("modal-direccion");
+const campoDireccion = document.getElementById("direccion-entrega-admin");
+document.querySelectorAll(".btn-agregar-direccion").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    pedidoDireccionActivo = btn.dataset.id;
+    campoDireccion.value = "";
+    modalDireccion.hidden = false;
+    campoDireccion.focus();
+  }});
+}});
+document.getElementById("direccion-cancelar").addEventListener("click", () => {{ modalDireccion.hidden = true; }});
+document.getElementById("direccion-guardar").addEventListener("click", async () => {{
+  const direccion = campoDireccion.value.trim();
+  if (!direccion) {{ campoDireccion.focus(); return; }}
+  const boton = document.getElementById("direccion-guardar");
+  boton.disabled = true;
+  const r = await fetch(`/admin/pedidos/${{pedidoDireccionActivo}}/direccion`, {{
+    method: "PUT", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{direccion_entrega: direccion}}),
+  }});
+  const datos = await r.json().catch(() => ({{}}));
+  if (!r.ok) {{ alert(datos.error || "No se pudo guardar la dirección."); boton.disabled = false; return; }}
+  location.reload();
 }});
 document.querySelectorAll(".btn-editar-entrega").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
@@ -1892,6 +1934,10 @@ class EditarFechaEntregaIn(BaseModel):
     fecha_entrega: date
 
 
+class EditarDireccionEntregaIn(BaseModel):
+    direccion_entrega: str = Field(max_length=500)
+
+
 class TareaEntregaIn(BaseModel):
     fecha_entrega: date
     titulo: str = Field(min_length=1, max_length=200)
@@ -2000,6 +2046,23 @@ def admin_pedido_eliminar(pedido_id: str, request: Request):
         return JSONResponse({"error": "No se puede eliminar una entrega con recibo emitido"}, status_code=400)
     pedidos.eliminar_pedido(client, pedido_id)
     return {"ok": True}
+
+
+@app.put("/admin/pedidos/{pedido_id}/direccion")
+def admin_pedido_agregar_direccion(pedido_id: str, entrada: EditarDireccionEntregaIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    direccion = entrada.direccion_entrega.strip()
+    if not direccion:
+        return JSONResponse({"error": "Ingresá una dirección de entrega"}, status_code=400)
+    client = get_client()
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if filas[0].get("recibo_enviado_en"):
+        return JSONResponse({"error": "No se puede editar una entrega con recibo emitido"}, status_code=400)
+    client.table("pedidos").update({"direccion_entrega": direccion}).eq("id", pedido_id).execute()
+    return {"ok": True, "pedido_id": pedido_id, "direccion_entrega": direccion}
 
 
 @app.post("/admin/tareas-entrega")
