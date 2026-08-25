@@ -4,11 +4,62 @@ import web.app as appmod
 from tests.fakes_supabase import FakeSupabaseClient
 
 
+def test_todas_las_paginas_html_incluyen_una_unica_etiqueta_google_al_inicio_del_head():
+    for nombre in ("index.html", "login.html", "perfil.html", "catalogo.html"):
+        html = (appmod.BASE / "static" / nombre).read_text()
+        etiqueta = 'https://www.googletagmanager.com/gtag/js?id=G-ZPQR91G145'
+
+        assert html.count(etiqueta) == 1
+        assert html.index(etiqueta) < html.index("<meta charset")
+
+
 def test_landing_descarta_descuento_mailing_persistido_fuera_de_un_link():
     script = (appmod.BASE / "static" / "landing.js").read_text()
 
     assert 'if (!new URLSearchParams(location.search).get("codigo")) {' in script
     assert "localStorage.removeItem(CLAVE_DESCUENTO_MAILING);" in script
+
+
+def test_compartir_producto_abre_siempre_el_panel_compartible():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    inicio = script.index("async function compartirProducto(nombre)")
+    fin = script.index("let pipboyApagado", inicio)
+    compartir = script[inicio:fin]
+
+    assert "abrirPanelCompartir(url, nombre);" in compartir
+    assert "navigator.share" not in compartir
+    assert "navigator.clipboard" not in compartir
+    assert "catalogoPlano" not in compartir
+    assert "Object.values(SECCIONES_DATA).flat().find" in compartir
+
+
+def test_compartir_producto_abre_un_panel_visible_si_el_navegador_no_puede_compartir():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+
+    assert "function abrirPanelCompartir(url, nombre)" in script
+    assert 'panel.id = "rc-panel-compartir";' in script
+    assert "Compartir por WhatsApp" in script
+    assert "Copiar enlace" in script
+    assert "abrirPanelCompartir(url, nombre);" in script
+    assert "#rc-panel-compartir" in css
+
+
+def test_panel_compartir_usa_botones_iguales_y_redondeados_en_ambos_modos():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+    inicio = css.index(".rc-panel-compartir-acciones > * {")
+    fin = css.index(".rc-panel-compartir-cerrar", inicio)
+    botones = css[inicio:fin]
+
+    assert "border-radius: 9px;" in botones
+    assert "border: 1px solid var(--rc-green);" in botones
+    assert "background: transparent;" in botones
+    assert "appearance: none;" in botones
+    assert "box-sizing: border-box;" in botones
+    assert 'class="rc-panel-compartir-accion rc-panel-compartir-copiar"' in script
+    assert 'class="rc-panel-compartir-accion rc-panel-compartir-whatsapp"' in script
+    assert '<a class="rc-panel-compartir-whatsapp"' not in script
 
 
 def test_landing_mobile_muestra_una_sola_card_recomendada_completa():
@@ -223,9 +274,17 @@ def test_classic_mobile_aumenta_tipografia_y_abre_color_hacia_arriba():
         'html[data-modo="classic"] .carrousel-recomendados-mobile-card '
         ".tarjeta-recomendado-precio span {"
     )
+    bloque_precios = regla(
+        'html[data-modo="classic"] .carrousel-recomendados-mobile-card '
+        ".tarjeta-recomendado-precio {"
+    )
     acciones = regla(
         'html[data-modo="classic"] .carrousel-recomendados-mobile-card '
         ".tarjeta-recomendado-acciones .dropdown-color-boton,"
+    )
+    acciones_contenedor = regla(
+        'html[data-modo="classic"] .carrousel-recomendados-mobile-card '
+        ".tarjeta-recomendado-acciones {"
     )
     lista_color = regla(
         'html[data-modo="classic"] .carrousel-recomendados-mobile-card '
@@ -234,11 +293,25 @@ def test_classic_mobile_aumenta_tipografia_y_abre_color_hacia_arriba():
 
     assert "font-size: 14.4px;" in etiqueta
     assert "font-size: 20px;" in titulo
-    assert "font-size: 10px;" in precio_principal
-    assert "font-size: 10px;" in precio_secundario
+    assert "font-size: 28px;" in precio_principal
+    assert "line-height: 1.1;" in precio_principal
+    assert "font-size: 16px;" in precio_secundario
+    assert "line-height: 1.25;" in precio_secundario
+    assert "margin-top: 14px;" in bloque_precios
     assert "font-size: 12px;" in acciones
+    assert "margin-top: auto;" in acciones_contenedor
     assert "top: auto;" in lista_color
     assert "bottom: 100%;" in lista_color
+
+
+def test_classic_mobile_home_usa_el_viewport_sin_scroll_de_pagina():
+    css = (appmod.BASE / "static" / "classic.css").read_text()
+    selector = 'html[data-modo="classic"] body:not(.rc-vista-seccion) {'
+    inicio = css.index(selector)
+    regla = css[inicio : css.index("}", inicio)]
+
+    assert "\n    height: 100dvh;" in regla
+    assert "overflow: hidden;" in regla
 
 
 def test_classic_mobile_agranda_iconos_y_mantiene_espaciado_de_acciones():
@@ -381,7 +454,7 @@ def test_landing_sin_sesion_muestra_index(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     r = c.get("/")
     assert r.status_code == 200
-    assert "THE TECH ROOM ARG — Catálogo" in r.text
+    assert "THE TECH ROOM ARG — iPhones, celulares y notebooks en Córdoba" in r.text
 
 
 def test_landing_con_sesion_muestra_index(monkeypatch):
@@ -395,7 +468,7 @@ def test_landing_con_sesion_muestra_index(monkeypatch):
     })
     r = c.get("/")
     assert r.status_code == 200
-    assert "THE TECH ROOM ARG — Catálogo" in r.text
+    assert "THE TECH ROOM ARG — iPhones, celulares y notebooks en Córdoba" in r.text
 
 
 def test_index_html_directo_sin_sesion_sirve_la_landing(monkeypatch):
@@ -404,7 +477,7 @@ def test_index_html_directo_sin_sesion_sirve_la_landing(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     r = c.get("/index.html")
     assert r.status_code == 200
-    assert "THE TECH ROOM ARG — Catálogo" in r.text
+    assert "THE TECH ROOM ARG — iPhones, celulares y notebooks en Córdoba" in r.text
 
 
 def test_index_html_directo_con_sesion_sigue_funcionando(monkeypatch):
@@ -418,7 +491,7 @@ def test_index_html_directo_con_sesion_sigue_funcionando(monkeypatch):
     })
     r = c.get("/index.html")
     assert r.status_code == 200
-    assert "THE TECH ROOM ARG — Catálogo" in r.text
+    assert "THE TECH ROOM ARG — iPhones, celulares y notebooks en Córdoba" in r.text
 
 
 def test_doble_barra_sin_sesion_no_sirve_la_landing(monkeypatch):
@@ -449,7 +522,7 @@ def test_index_html_con_barra_final_sin_sesion_sirve_la_landing(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     r = c.get("/index.html/")
     assert r.status_code == 200
-    assert "THE TECH ROOM ARG — Catálogo" in r.text
+    assert "THE TECH ROOM ARG — iPhones, celulares y notebooks en Córdoba" in r.text
 
 
 def test_catalogo_html_mayusculas_sin_sesion_no_sirve_la_landing(monkeypatch):
@@ -483,7 +556,7 @@ def test_index_html_via_segmentos_punto_sin_sesion_sirve_la_landing(monkeypatch)
     c = TestClient(appmod.app, base_url="https://testserver")
     r = c.get("/foo/%2e%2e/index.html")
     assert r.status_code == 200
-    assert "THE TECH ROOM ARG — Catálogo" in r.text
+    assert "THE TECH ROOM ARG — iPhones, celulares y notebooks en Córdoba" in r.text
 
 
 def test_login_html_con_barra_final_sigue_siendo_publico(monkeypatch):

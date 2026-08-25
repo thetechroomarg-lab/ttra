@@ -276,6 +276,18 @@ def _nuevo_recibo_id(client):
     return client.rpc("siguiente_numero_recibo").execute().data
 
 
+def _descargar_fotos_series(client, pedido):
+    fotos = []
+    for ruta in pedido.get("fotos_series") or []:
+        try:
+            contenido = client.storage.from_("recibos-series").download(ruta)
+        except Exception:
+            continue
+        if contenido:
+            fotos.append(contenido)
+    return fotos
+
+
 class DescuentoItemIn(BaseModel):
     nombre: str
     cantidad: int = Field(ge=1)
@@ -549,9 +561,9 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     emitido_en = pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en") or ahora_recibo
     pedido_para_mail = {**pedido, "recibo_id": recibo_id, "recibo_emitido_en": emitido_en}
     try:
-        pdf_adjunto = recibos.pdf_recibo(cliente, pedido_para_mail)
         formulario = await request.form() if request.headers.get("content-type", "").startswith("multipart/") else {}
         adjuntos_fotos = []
+        fotos_pdf = []
         fotos_guardadas = list(pedido.get("fotos_series") or [])
         for foto in formulario.getlist("fotos")[:10] if formulario else []:
             if not getattr(foto, "filename", None):
@@ -563,7 +575,9 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             ruta = f"pedidos/{pedido_id}/{nombre}"
             client.storage.from_("recibos-series").upload(ruta, contenido, {"content-type": "image/jpeg"})
             fotos_guardadas.append(ruta)
+            fotos_pdf.append(contenido)
             adjuntos_fotos.append({"filename": nombre, "content": contenido})
+        pdf_adjunto = recibos.pdf_recibo(cliente, pedido_para_mail, fotos=fotos_pdf)
         enviar_email(
             cliente["email"],
             f"Recibo {recibo_id} — The Tech Room Arg",
@@ -600,7 +614,11 @@ def admin_pedido_pdf_recibo(pedido_id: str, request: Request):
     clientes = client.table("clientes").select("*").eq("id", pedido.get("cliente_id")).execute().data
     if not clientes:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    contenido = recibos.pdf_recibo(clientes[0], {**pedido, "recibo_emitido_en": emitido_en})
+    contenido = recibos.pdf_recibo(
+        clientes[0],
+        {**pedido, "recibo_emitido_en": emitido_en},
+        fotos=_descargar_fotos_series(client, pedido),
+    )
     nombre = f"recibo-{pedido.get('recibo_id') or pedido_id}.pdf"
     return Response(contenido, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{nombre}"'})
 
@@ -826,7 +844,7 @@ _ADMIN_CLIENTES_ESTILO = """
   .pedido-hoy-detalle span { color:#9aa0ab; }
   .pedido-acciones { display:flex; align-items:center; gap:7px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
   .btn-enviar-recibo { flex:0 0 auto; border:0; border-radius:8px; padding:9px 12px; background:#c8102e; color:#fff; cursor:pointer; font-weight:700; }
-  .btn-direcciones { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; text-decoration:none; }
+  .btn-direcciones, .btn-agregar-direccion { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; text-decoration:none; }
   .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
   .btn-editar-entrega, .btn-eliminar-entrega { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; }
   .btn-eliminar-entrega { border-color:#8d1627; color:#ff9baa; }
@@ -858,6 +876,16 @@ _ADMIN_CLIENTES_ESTILO = """
   .series-acciones button { border:0; border-radius:8px; color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; }
   #series-agregar, #series-cancelar { background:#3a3f4b; }
   #series-enviar { background:#c8102e; margin-left:auto; }
+  .modal-direccion { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
+  .modal-direccion[hidden] { display:none; }
+  .modal-series, .modal-direccion { display:flex; }
+  .modal-direccion-contenido { width:min(520px,100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
+  .modal-direccion h2 { color:#f2f4f8; font-size:18px; margin:0 0 12px; }
+  .modal-direccion input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid #4a5160; border-radius:8px; padding:0 10px; background:#12141a; color:#f2f4f8; font:inherit; }
+  .direccion-acciones { display:flex; gap:8px; margin-top:12px; }
+  .direccion-acciones button { border:0; border-radius:8px; color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; }
+  #direccion-cancelar { background:#3a3f4b; }
+  #direccion-guardar { background:#c8102e; margin-left:auto; }
   .modal-mail-contenido { width:min(520px, 100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
   .modal-mail h2 { margin:0 0 8px; color:#f2f4f8; font-size:18px; }
   .modal-mail p { margin:0 0 12px; color:#9aa0ab; font-size:13px; }
@@ -894,9 +922,14 @@ _ADMIN_CLIENTES_ESTILO = """
     .form-tarea-entrega { grid-template-columns:1fr; }
     .form-tarea-entrega button { min-height:44px; }
     .pedido-hoy-detalle, .pedido-historico { overflow-wrap:anywhere; word-break:break-word; }
-    .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); justify-content:stretch; width:100%; }
+    .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-areas:"recibo direcciones" "editar eliminar"; justify-content:stretch; width:100%; }
     .pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }
-    .pedido-acciones .btn-direcciones { align-items:center; display:flex; justify-content:center; }
+    .pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }
+    .pedido-acciones .btn-enviar-recibo { grid-area:recibo; }
+    .pedido-acciones .btn-direcciones { grid-area:direcciones; }
+    .pedido-acciones .btn-agregar-direccion { grid-area:direcciones; }
+    .pedido-acciones .btn-editar-entrega { grid-area:editar; }
+    .pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }
     .acciones-recibo { margin:8px 0 0; }
     .tabla-scroll { overflow:visible; }
     #tabla-clientes { min-width:0; font-size:13px; }
@@ -1001,6 +1034,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     fecha_hoy = entregas.ahora_argentina().date().isoformat()
     pedidos = client.table("pedidos").select("*").execute().data
     tareas_hoy = client.table("tareas_entrega").select("*").eq("fecha_entrega", fecha_hoy).execute().data
+    tareas_hoy = [tarea for tarea in tareas_hoy if not tarea.get("completada_en")]
     tareas_hoy.sort(key=lambda tarea: int(tarea.get("orden") or 0))
     pedidos_hoy = [
         pedido for pedido in pedidos
@@ -1011,7 +1045,10 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         fecha_historial = date.fromisoformat(fecha_historial).isoformat()
     except ValueError:
         fecha_historial = fecha_hoy
-    pedidos_historial = [pedido for pedido in pedidos if pedido.get("fecha_entrega") == fecha_historial]
+    pedidos_historial = [
+        pedido for pedido in pedidos
+        if pedido.get("fecha_entrega") == fecha_historial and pedido.get("recibo_enviado_en")
+    ]
 
     def _descripcion_pedido(pedido):
         detalle = pedido.get("detalle") or []
@@ -1038,7 +1075,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         boton_direcciones = (
             f'<a class="btn-direcciones" target="_blank" rel="noopener" '
             f'href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Direcciones</a>'
-            if direccion else ""
+            if direccion else f'<button class="btn-agregar-direccion" type="button" data-id="{pedido_id}">Agregar dirección</button>'
         )
         return (
             '<div class="pedido-acciones">'
@@ -1047,6 +1084,24 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}">Editar fecha</button>'
             f'<button class="btn-eliminar-entrega" type="button" data-id="{pedido_id}">Eliminar entrega</button>'
             '</div>'
+        )
+
+    def _tarjeta_tarea(tarea):
+        tarea_id = html.escape(tarea.get("id", ""))
+        direccion = (tarea.get("direccion") or "").strip()
+        boton_direcciones = (
+            f'<a class="btn-direcciones" target="_blank" rel="noopener" '
+            f'href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Direcciones</a>'
+            if direccion else ""
+        )
+        return (
+            f'<div class="pedido-hoy" data-tarea-id="{tarea_id}"><div class="pedido-hoy-detalle">'
+            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
+            f'<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
+            '<div class="pedido-acciones">'
+            f'{boton_direcciones}'
+            f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>'
+            '</div></div>'
         )
 
     def _acciones_recibo_historial(pedido):
@@ -1063,22 +1118,16 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                 f'<button class="btn-reenviar-recibo" type="button" data-id="{pedido_id}" title="Reenviar recibo" aria-label="Reenviar recibo">{reenvio}</button>'
                 f'<button class="btn-eliminar-historial" type="button" data-id="{pedido_id}" title="Eliminar del historial" aria-label="Eliminar del historial">{tacho}</button></span>')
 
-    if pedidos_hoy:
-        pedidos_hoy_html = "".join(
-            f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}"><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
-            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
-            f'{_controles_entrega(pedido)}</div>'
-            for pedido in pedidos_hoy
-        )
+    tarjetas_pendientes_hoy = [
+        f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}"><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
+        f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
+        f'{_controles_entrega(pedido)}</div>'
+        for pedido in pedidos_hoy
+    ] + [_tarjeta_tarea(tarea) for tarea in tareas_hoy]
+    if tarjetas_pendientes_hoy:
+        pedidos_hoy_html = "".join(tarjetas_pendientes_hoy)
     else:
         pedidos_hoy_html = '<p class="vacio">No hay pedidos pendientes para hoy.</p>'
-    tareas_hoy_html = "".join(
-        f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
-        f'<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
-        + (f'<a class="btn-direcciones" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": tarea.get("direccion")}))}">Direcciones</a>' if tarea.get("direccion") else "")
-        + '</div>'
-        for tarea in tareas_hoy
-    ) or '<p class="vacio">No hay tareas manuales para hoy.</p>'
     if pedidos_historial:
         pedidos_historial_html = "".join(
             f'<div class="pedido-historico"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
@@ -1089,6 +1138,13 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     else:
         pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'
 
+    pendientes_hoy_seccion_html = (
+        f'<section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2>'
+        '<form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea"><input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><input id="tarea-direccion" maxlength="500" placeholder="Dirección opcional"><button>Agregar tarea</button></form>'
+        f'{pedidos_hoy_html}</section>'
+        if fecha_historial == fecha_hoy else ""
+    )
+
     if not mostrar_clientes:
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
@@ -1098,11 +1154,10 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><button id="salir">Cerrar sesión</button></div>
   </div>
   <section class="historial-pedidos"><h2>Historial de pedidos</h2><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
-  <section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy)})</h2>{pedidos_hoy_html}</section>
-  <section class="pedidos-hoy"><h2>Tareas para hoy</h2>
-    <form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea"><input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><input id="tarea-direccion" maxlength="500" placeholder="Dirección opcional"><button>Agregar tarea</button></form>{tareas_hoy_html}
-  </section>
+  {pendientes_hoy_seccion_html}
 </div>
+<div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
+<div class="modal-direccion" id="modal-direccion" hidden><div class="modal-direccion-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-titulo"><h2 id="direccion-titulo">Dirección de entrega</h2><input id="direccion-entrega-admin" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba"><div class="direccion-acciones"><button id="direccion-cancelar" type="button">Cancelar</button><button id="direccion-guardar" type="button">Guardar dirección</button></div></div></div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
   await fetch("/admin/clientes/logout", {{ method: "POST" }});
@@ -1156,6 +1211,31 @@ document.querySelectorAll(".btn-reenviar-recibo").forEach((btn) => {{
     location.reload();
   }});
 }});
+let pedidoDireccionActivo = null;
+const modalDireccion = document.getElementById("modal-direccion");
+const campoDireccion = document.getElementById("direccion-entrega-admin");
+document.querySelectorAll(".btn-agregar-direccion").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    pedidoDireccionActivo = btn.dataset.id;
+    campoDireccion.value = "";
+    modalDireccion.hidden = false;
+    campoDireccion.focus();
+  }});
+}});
+document.getElementById("direccion-cancelar").addEventListener("click", () => {{ modalDireccion.hidden = true; }});
+document.getElementById("direccion-guardar").addEventListener("click", async () => {{
+  const direccion = campoDireccion.value.trim();
+  if (!direccion) {{ campoDireccion.focus(); return; }}
+  const boton = document.getElementById("direccion-guardar");
+  boton.disabled = true;
+  const r = await fetch(`/admin/pedidos/${{pedidoDireccionActivo}}/direccion`, {{
+    method: "PUT", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{direccion_entrega: direccion}}),
+  }});
+  const datos = await r.json().catch(() => ({{}}));
+  if (!r.ok) {{ alert(datos.error || "No se pudo guardar la dirección."); boton.disabled = false; return; }}
+  location.reload();
+}});
 document.querySelectorAll(".btn-editar-entrega").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
     const fecha = prompt("Nueva fecha de entrega (AAAA-MM-DD)", btn.dataset.fecha);
@@ -1194,11 +1274,19 @@ document.getElementById("fecha-historial-pedidos").addEventListener("change", (e
   url.searchParams.set("fecha_pedidos", e.target.value);
   location.href = url.toString();
 }});
-document.getElementById("form-tarea-entrega").addEventListener("submit", async (e) => {{
+document.getElementById("form-tarea-entrega")?.addEventListener("submit", async (e) => {{
   e.preventDefault();
   const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:"{fecha_hoy}", titulo:document.getElementById("tarea-titulo").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
   if (!r.ok) {{ alert("No se pudo crear la tarea."); return; }}
   location.reload();
+}});
+document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    btn.disabled = true;
+    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/completar`, {{ method:"POST" }});
+    if (!r.ok) {{ alert("No se pudo completar la tarea."); btn.disabled = false; return; }}
+    location.reload();
+  }});
 }});
 </script>
 {_ADMIN_CLIENTES_PWA_SCRIPT}
@@ -1894,6 +1982,10 @@ class EditarFechaEntregaIn(BaseModel):
     fecha_entrega: date
 
 
+class EditarDireccionEntregaIn(BaseModel):
+    direccion_entrega: str = Field(max_length=500)
+
+
 class TareaEntregaIn(BaseModel):
     fecha_entrega: date
     titulo: str = Field(min_length=1, max_length=200)
@@ -2002,6 +2094,23 @@ def admin_pedido_eliminar(pedido_id: str, request: Request):
     return {"ok": True}
 
 
+@app.put("/admin/pedidos/{pedido_id}/direccion")
+def admin_pedido_agregar_direccion(pedido_id: str, entrada: EditarDireccionEntregaIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    direccion = entrada.direccion_entrega.strip()
+    if not direccion:
+        return JSONResponse({"error": "Ingresá una dirección de entrega"}, status_code=400)
+    client = get_client()
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if filas[0].get("recibo_enviado_en"):
+        return JSONResponse({"error": "No se puede editar una entrega con recibo emitido"}, status_code=400)
+    client.table("pedidos").update({"direccion_entrega": direccion}).eq("id", pedido_id).execute()
+    return {"ok": True, "pedido_id": pedido_id, "direccion_entrega": direccion}
+
+
 @app.post("/admin/tareas-entrega")
 def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
     if not _clientes_admin_activo(request):
@@ -2012,6 +2121,7 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
     ).execute().data
     orden = max((int(t.get("orden") or 0) for t in existentes), default=0) + 1
     tarea = {
+        "id": str(uuid.uuid4()),
         "fecha_entrega": entrada.fecha_entrega.isoformat(),
         "titulo": entrada.titulo.strip(),
         "nota": (entrada.nota or "").strip() or None,
@@ -2020,6 +2130,19 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
     }
     client.table("tareas_entrega").insert(tarea).execute()
     return {"ok": True, "tarea": tarea}
+
+
+@app.post("/admin/tareas-entrega/{tarea_id}/completar")
+def admin_completar_tarea_entrega(tarea_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    completada_en = datetime.now(timezone.utc).isoformat()
+    client.table("tareas_entrega").update({"completada_en": completada_en}).eq("id", tarea_id).execute()
+    return {"ok": True, "tarea_id": tarea_id, "completada_en": completada_en}
 
 
 @app.get("/api/entregas-disponibles")

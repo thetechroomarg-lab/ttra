@@ -4,9 +4,9 @@ from datetime import datetime
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 def _formatear_usd(valor):
@@ -17,25 +17,52 @@ def _garantia_producto(nombre):
     producto = (nombre or "").lower()
     if any(palabra in producto for palabra in ("iphone", "ipad", "macbook", "imac", "airpods", "apple watch")):
         return (
-            "Apple nuevo: 12 meses desde la entrega. La garantía se gestiona directamente "
-            "en One Click (Córdoba Shopping) o MacStation (Nuevocentro Shopping)."
+            "Apple: 1 año de garantía oficial mundial desde la activación. Cubre fallas de fábrica o "
+            "funcionamiento interno; no cubre golpes, líquidos, mal uso ni desgaste. La gestión se realiza "
+            "directamente con Apple, por ejemplo en One Click (Córdoba Shopping) o MacStation. Apple define "
+            "reparación o reemplazo. Los equipos son nuevos y sellados; una preactivación excepcional puede "
+            "reducir la vigencia. Se recomienda usar cargadores originales."
         )
     if any(palabra in producto for palabra in ("notebook", "laptop")):
         return (
-            "Notebooks: 6 meses desde la entrega. Cubre solo fallas de fábrica; no cubre "
-            "caídas, rayones, humedad, mal uso ni software no confiable."
+            "Notebooks: 6 meses por fallas de funcionamiento. Requiere verificación técnica previa, de hasta "
+            "5 días hábiles; la resolución puede demorar hasta 30 días. No cubre golpes, líquidos, negligencia "
+            "ni software que afecte el rendimiento. Si corresponde, se repone el mismo modelo; sin stock se "
+            "coordina uno equivalente con ajuste de diferencia."
         )
     if "samsung" in producto:
-        marca = "Samsung"
+        return (
+            "Samsung: 3 meses desde la entrega por fallas de fábrica. No cubre caídas, rayones, humedad, apps "
+            "no confiables, mal uso, sobrecargas o cortocircuitos; tampoco hay reembolso por disconformidad. "
+            "Retirar films, etiquetas o números de serie anula la garantía. Display y accesorios: 7 días. "
+            "Presentar caja, accesorios, sin cuentas activas y nota con la falla. Diagnóstico: hasta 5 días hábiles; "
+            "resolución estimada: hasta 1 mes. Si falla dentro de 2 días de la revisión, corresponde cambio directo. "
+            "The Tech Room Arg intermedia con el importador."
+        )
     elif "motorola" in producto or producto.startswith("moto "):
-        marca = "Motorola"
+        return (
+            "Motorola: 3 meses desde la entrega por defectos de fábrica. No cubre golpes, rayaduras, humedad, "
+            "apps no seguras, mal manejo, variaciones de voltaje ni cortocircuitos; tampoco hay devolución por "
+            "disconformidad. Remover films, etiquetas de garantía o números de serie anula la garantía. Display y "
+            "accesorios: 7 días. Presentar caja, accesorios, sin cuentas activas y nota con la falla. Diagnóstico: "
+            "hasta 5 días hábiles; resolución estimada: hasta 1 mes. Si falla dentro de 2 días de la revisión, "
+            "corresponde cambio directo. The Tech Room Arg intermedia con el importador."
+        )
     elif any(palabra in producto for palabra in ("xiaomi", "redmi", "poco")):
-        marca = "Xiaomi"
-    else:
-        marca = "Productos electrónicos"
+        return (
+            "Xiaomi: 3 meses desde la entrega por desperfectos de fábrica. No cubre golpes, rayaduras, humedad, "
+            "apps inseguras, mal uso, variaciones eléctricas ni manipulación indebida; tampoco hay devolución por "
+            "disconformidad. Remover etiquetas, films o el número de serie anula la garantía. Display y accesorios: "
+            "7 días. Presentar caja, accesorios, sin cuentas activas y nota con la falla. Diagnóstico: hasta 5 días "
+            "hábiles; resolución estimada: hasta 1 mes. Si falla dentro de 2 días de la revisión, corresponde cambio "
+            "directo. The Tech Room Arg intermedia con el importador."
+        )
     return (
-        f"{marca}: 3 meses desde la entrega. Cubre solo fallas de fábrica; no cubre "
-        "caídas, rayones, humedad, mal uso ni software no confiable."
+        "Accesorios, consolas y parlantes no Apple: 1 mes desde la entrega. No cubre golpes, caídas, humedad, "
+        "mala conexión, sobrecargas, uso indebido, modificaciones, intentos de reparación ni fuentes no originales; "
+        "no hay devolución por disconformidad. Presentar embalaje, caja, accesorios y nota con la falla. Revisión: "
+        "hasta 5 días hábiles; reparación o reposición: hasta 1 mes. No hay cambios inmediatos sin revisión previa. "
+        "The Tech Room Arg intermedia con el importador."
     )
 
 
@@ -97,7 +124,30 @@ def html_recibo(cliente, pedido, logo_url=""):
 </main></body></html>"""
 
 
-def pdf_recibo(cliente, pedido):
+def _parrafo_celda(valor, estilo):
+    return Paragraph(html.escape(str(valor or "")), estilo)
+
+
+def _estilo_celda_encabezado():
+    return ParagraphStyle(
+        "EncabezadoRecibo", fontName="Helvetica-Bold", fontSize=8.5,
+        leading=11, textColor=colors.white, wordWrap="CJK",
+    )
+
+
+def _fotos_para_pdf(fotos):
+    imagenes = []
+    for foto in fotos or []:
+        try:
+            imagen = Image(BytesIO(foto))
+            imagen._restrictSize(8 * cm, 8 * cm)
+            imagenes.append(imagen)
+        except Exception:
+            continue
+    return imagenes
+
+
+def pdf_recibo(cliente, pedido, fotos=None):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1.5 * cm, leftMargin=1.5 * cm,
                             topMargin=1.5 * cm, bottomMargin=1.5 * cm)
@@ -107,6 +157,8 @@ def pdf_recibo(cliente, pedido):
     titulo.fontSize = 20
     normal = estilos["BodyText"]
     normal.leading = 16
+    celda = ParagraphStyle("CeldaRecibo", parent=normal, fontSize=8.5, leading=11, wordWrap="CJK")
+    encabezado = _estilo_celda_encabezado()
     nombre_cliente = html.escape(
         f"{cliente.get('nombre', '')} {cliente.get('apellido', '')}".strip() or "Cliente"
     )
@@ -118,13 +170,19 @@ def pdf_recibo(cliente, pedido):
         Paragraph(f"Cliente: {nombre_cliente}", normal),
         Spacer(1, 12),
     ]
-    filas = [["Producto", "Cant.", "Unitario", "Subtotal"]]
+    filas = [[_parrafo_celda("Producto", encabezado), _parrafo_celda("Cant.", encabezado),
+              _parrafo_celda("Unitario", encabezado), _parrafo_celda("Subtotal", encabezado)]]
     for item in pedido.get("detalle") or []:
         nombre = item.get("nombre") or ""
         if item.get("color"):
             nombre = f"{nombre} - {item['color']}"
-        filas.append([nombre, str(item.get("cantidad") or 0), _formatear_usd(item.get("usd_unitario")), _formatear_usd(item.get("usd_subtotal"))])
-    tabla = Table(filas, colWidths=[8.1 * cm, 1.4 * cm, 3.2 * cm, 3.2 * cm], repeatRows=1)
+        filas.append([
+            _parrafo_celda(nombre, celda),
+            _parrafo_celda(item.get("cantidad") or 0, celda),
+            _parrafo_celda(_formatear_usd(item.get("usd_unitario")), celda),
+            _parrafo_celda(_formatear_usd(item.get("usd_subtotal")), celda),
+        ])
+    tabla = Table(filas, colWidths=[8.0 * cm, 1.3 * cm, 3.25 * cm, 3.25 * cm], repeatRows=1)
     tabla.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#161616")),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
@@ -143,5 +201,10 @@ def pdf_recibo(cliente, pedido):
     elementos.extend([Spacer(1, 16), Paragraph("Garantía", estilos["Heading2"])])
     for garantia in garantias_para_detalle(pedido.get("detalle")):
         elementos.append(Paragraph(f"- {html.escape(garantia)}", normal))
+    imagenes = _fotos_para_pdf(fotos)
+    if imagenes:
+        elementos.extend([Spacer(1, 16), Paragraph("Fotos de entrega", estilos["Heading2"])])
+        filas_fotos = [imagenes[indice:indice + 2] for indice in range(0, len(imagenes), 2)]
+        elementos.append(Table(filas_fotos, colWidths=[8.0 * cm, 8.0 * cm], hAlign="LEFT"))
     doc.build(elementos)
     return buffer.getvalue()

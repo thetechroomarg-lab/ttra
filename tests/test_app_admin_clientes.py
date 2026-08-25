@@ -64,7 +64,12 @@ def test_admin_apila_controles_y_muestra_clientes_como_tarjetas_en_mobile(monkey
     assert "#filtro-clientes { flex:0 1 auto; min-height:38px; }" in r.text
     assert "#tabla-clientes .col-check { justify-content:flex-start; text-align:left; }" in r.text
     assert ".pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }" in r.text
-    assert ".pedido-acciones .btn-direcciones { align-items:center; display:flex; justify-content:center; }" in r.text
+    assert ".pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }" in r.text
+    assert ".pedido-acciones .btn-enviar-recibo { grid-area:recibo; }" in r.text
+    assert ".pedido-acciones .btn-direcciones { grid-area:direcciones; }" in r.text
+    assert ".pedido-acciones .btn-editar-entrega { grid-area:editar; }" in r.text
+    assert ".pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }" in r.text
+    assert 'grid-template-areas:"recibo direcciones" "editar eliminar"' in r.text
 
 
 def test_admin_muestra_pedidos_programados_para_hoy(monkeypatch):
@@ -127,6 +132,38 @@ def test_admin_envia_recibo_y_marca_el_pedido(monkeypatch):
     assert enviados[0][3][0]["filename"] == "recibo-0001-1993.pdf"
 
 
+def test_admin_incluye_fotos_de_serie_en_el_pdf_del_recibo(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "pedido-con-foto", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
+        "total_usd": 500,
+    }).execute()
+
+    class StorageFalso:
+        def from_(self, _bucket):
+            return self
+
+        def upload(self, _ruta, _contenido, _opciones):
+            return None
+
+    fake.storage = StorageFalso()
+    fotos_en_pdf = []
+    monkeypatch.setattr(appmod.recibos, "pdf_recibo", lambda _c, _p, fotos=None: fotos_en_pdf.append(fotos) or b"%PDF")
+    monkeypatch.setattr(appmod, "enviar_email", lambda *_args: None)
+
+    r = c.post(
+        "/admin/pedidos/pedido-con-foto/recibo",
+        files=[("fotos", ("serie.jpg", b"foto-comprimida", "image/jpeg"))],
+    )
+
+    assert r.status_code == 200
+    assert fotos_en_pdf == [[b"foto-comprimida"]]
+
+
 def test_admin_reenvia_recibo_y_conserva_la_fecha_original(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     fake = appmod.get_client()
@@ -164,6 +201,35 @@ def test_pdf_recibo_requiere_admin_y_recibo_emitido(monkeypatch):
     }).execute()
 
     assert c.get("/admin/pedidos/pendiente-pdf/recibo.pdf").status_code == 400
+
+
+def test_pdf_historico_recupera_fotos_de_serie_del_bucket_privado(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "pdf-con-fotos", "cliente_id": cliente["id"], "recibo_id": "0001-2000",
+        "recibo_enviado_en": "2026-08-24T15:00:00+00:00",
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
+        "total_usd": 500, "fotos_series": ["pedidos/pdf-con-fotos/serie.jpg"],
+    }).execute()
+
+    class StorageFalso:
+        def from_(self, _bucket):
+            return self
+
+        def download(self, ruta):
+            assert ruta == "pedidos/pdf-con-fotos/serie.jpg"
+            return b"foto-guardada"
+
+    fake.storage = StorageFalso()
+    fotos_en_pdf = []
+    monkeypatch.setattr(appmod.recibos, "pdf_recibo", lambda _c, _p, fotos=None: fotos_en_pdf.append(fotos) or b"%PDF")
+
+    r = c.get("/admin/pedidos/pdf-con-fotos/recibo.pdf")
+
+    assert r.status_code == 200
+    assert fotos_en_pdf == [[b"foto-guardada"]]
 
 
 def test_admin_muestra_solo_pedidos_hoy_pendientes_de_recibo(monkeypatch):
@@ -209,6 +275,28 @@ def test_admin_muestra_historial_de_pedidos_para_la_fecha_elegida(monkeypatch):
     assert "Recibo enviado" in r.text
     assert 'class="btn-ver-recibo-pdf"' in r.text
     assert 'class="btn-reenviar-recibo"' in r.text
+
+
+def test_admin_historial_oculta_pendientes_y_pedidos_de_otras_fechas(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "pendiente-hoy", "cliente_id": cliente["id"], "productos": ["Galaxy A56"],
+        "fecha_entrega": "2026-08-24", "detalle": [{"nombre": "Galaxy A56", "cantidad": 1}], "total_usd": 300,
+    }).execute()
+    fake.table("pedidos").insert({
+        "id": "emitido-ayer", "cliente_id": cliente["id"], "productos": ["iPhone 15"],
+        "fecha_entrega": "2026-08-23", "recibo_enviado_en": "2026-08-23T18:00:00+00:00",
+        "detalle": [{"nombre": "iPhone 15", "cantidad": 1}], "total_usd": 500,
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    r = c.get("/admin/clientes?fecha_pedidos=2026-08-23")
+
+    assert "iPhone 15" in r.text
+    assert "Galaxy A56" not in r.text
+    assert "Pedidos pendientes para hoy" not in r.text
 
 
 def test_admin_puede_editar_y_eliminar_una_entrega_pendiente(monkeypatch):
@@ -266,6 +354,39 @@ def test_historial_muestra_boton_para_eliminar_pedido_con_recibo(monkeypatch):
     r = c.get("/admin/clientes")
 
     assert '<button class="btn-eliminar-historial" type="button" data-id="con-recibo"' in r.text
+
+
+def test_admin_puede_agregar_direccion_a_una_entrega_pendiente(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "sin-direccion", "cliente_id": cliente["id"], "productos": ["Galaxy A56"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{"nombre": "Galaxy A56", "cantidad": 1, "usd_unitario": 300, "usd_subtotal": 300}],
+        "total_usd": 300,
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    panel = c.get("/admin/clientes")
+    guardar = c.put("/admin/pedidos/sin-direccion/direccion", json={"direccion_entrega": "Av. Colón 123, Córdoba"})
+
+    assert 'class="btn-agregar-direccion"' in panel.text
+    assert "Agregar dirección" in panel.text
+    assert 'id="modal-direccion"' in panel.text
+    assert 'id="direccion-entrega-admin"' in panel.text
+    assert 'id="modal-series"' in panel.text
+    assert guardar.status_code == 200
+    pedido = fake.table("pedidos").select("*").eq("id", "sin-direccion").execute().data[0]
+    assert pedido["direccion_entrega"] == "Av. Colón 123, Córdoba"
+
+
+def test_admin_centra_los_paneles_flotantes_en_todas_las_resoluciones(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+
+    panel = c.get("/admin/clientes")
+
+    assert ".modal-series, .modal-direccion { display:flex;" in panel.text
 
 
 def test_admin_ubica_historial_arriba_y_muestra_controles_de_entrega(monkeypatch):
