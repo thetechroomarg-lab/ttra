@@ -259,6 +259,42 @@ def test_admin_puede_editar_y_eliminar_una_entrega_pendiente(monkeypatch):
     assert fake.table("pedidos").select("*").eq("id", "editable").execute().data == []
 
 
+def test_admin_puede_eliminar_un_pedido_del_historial_con_recibo_enviado(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "con-recibo", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-20", "recibo_id": "0001-1993",
+        "recibo_enviado_en": "2026-08-20T15:00:00+00:00",
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
+        "total_usd": 500,
+    }).execute()
+
+    eliminar = c.delete("/admin/pedidos/con-recibo")
+
+    assert eliminar.status_code == 200
+    assert fake.table("pedidos").select("*").eq("id", "con-recibo").execute().data == []
+
+
+def test_historial_muestra_boton_para_eliminar_pedido_con_recibo(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "con-recibo", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-20", "recibo_id": "0001-1993",
+        "recibo_enviado_en": "2026-08-20T15:00:00+00:00",
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
+        "total_usd": 500,
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 20, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    r = c.get("/admin/clientes")
+
+    assert '<button class="btn-eliminar-historial" type="button" data-id="con-recibo"' in r.text
+
+
 def test_admin_puede_agregar_direccion_a_una_entrega_pendiente(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     fake = appmod.get_client()
