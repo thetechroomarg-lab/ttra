@@ -60,7 +60,8 @@ def test_panel_admin_muestra_selector_y_nombre_del_cliente_de_la_tarea(monkeypat
     respuesta = cliente.get("/admin/clientes")
 
     assert 'id="tarea-cliente"' in respuesta.text
-    assert '<option value="cliente-1" data-direccion="">Vladimir Ostapoff</option>' in respuesta.text
+    assert 'id="tarea-cliente-busqueda"' in respuesta.text
+    assert '{"id": "cliente-1", "nombre": "Vladimir Ostapoff", "direccion": ""}' in respuesta.text
     assert "Cliente: Vladimir Ostapoff" in respuesta.text
 
 
@@ -73,10 +74,10 @@ def test_selector_de_cliente_de_tarea_incluye_la_direccion_guardada(monkeypatch)
 
     respuesta = cliente.get("/admin/clientes")
 
-    assert 'data-direccion="Pardos y Morenos 1784, Cordoba"' in respuesta.text
+    assert '"direccion": "Pardos y Morenos 1784, Cordoba"' in respuesta.text
 
 
-def test_panel_admin_usa_selector_de_clientes_grande_y_scrolleable_en_mobile(monkeypatch):
+def test_panel_admin_busca_clientes_por_nombre_en_vez_de_listar_todos(monkeypatch):
     cliente, fake = _admin_con_fecha_fija(monkeypatch)
     fake.table("clientes").insert({
         "id": "cliente-1", "nombre": "Vladimir", "apellido": "Ostapoff",
@@ -85,11 +86,9 @@ def test_panel_admin_usa_selector_de_clientes_grande_y_scrolleable_en_mobile(mon
 
     respuesta = cliente.get("/admin/clientes")
 
-    assert 'id="tarea-cliente-movil"' in respuesta.text
-    assert 'id="tarea-clientes-movil"' in respuesta.text
-    assert "max-height:260px" in respuesta.text
-    assert "overflow-y:auto" in respuesta.text
-    assert 'document.getElementById("tarea-cliente").value = boton.dataset.value' in respuesta.text
+    assert 'id="tarea-cliente-sugerencias"' in respuesta.text
+    assert "const CLIENTES_TAREA = " in respuesta.text
+    assert 'CLIENTES_TAREA.filter((cliente) => cliente.nombre.toLowerCase().includes(texto))' in respuesta.text
 
 
 def test_panel_admin_estiliza_el_formulario_de_tareas(monkeypatch):

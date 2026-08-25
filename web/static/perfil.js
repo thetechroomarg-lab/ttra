@@ -1,7 +1,77 @@
 const linkVolver = document.getElementById("link-volver");
+const perfilDireccionInput = document.getElementById("perfil-direccion");
+const perfilSugerenciasDireccion = document.getElementById("perfil-sugerencias-direccion");
+let temporizadorPerfilDireccion;
+let apiPlacesPerfil;
 if (document.documentElement.getAttribute("data-modo") === "fallout") {
   linkVolver.href = "/?modo=fallout";
 }
+
+function ocultarSugerenciasPerfilDireccion() {
+  perfilSugerenciasDireccion.replaceChildren();
+  perfilSugerenciasDireccion.hidden = true;
+}
+
+async function cargarApiPlacesPerfil() {
+  if (apiPlacesPerfil !== undefined) return apiPlacesPerfil;
+  apiPlacesPerfil = fetch("/api/configuracion-publica")
+    .then((respuesta) => respuesta.ok ? respuesta.json() : {})
+    .then(async ({ google_maps_api_key: clave }) => {
+      if (!clave) return null;
+      await new Promise((resolver, rechazar) => {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(clave)}&libraries=places&v=weekly`;
+        script.async = true;
+        script.onload = resolver;
+        script.onerror = rechazar;
+        document.head.append(script);
+      });
+      return google.maps.importLibrary("places");
+    })
+    .catch(() => null);
+  return apiPlacesPerfil;
+}
+
+async function mostrarSugerenciasPerfilDireccion(texto) {
+  const places = await cargarApiPlacesPerfil();
+  if (!places || texto !== perfilDireccionInput.value.trim()) return;
+  const { AutocompleteSuggestion } = places;
+  const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+    input: texto,
+    includedRegionCodes: ["ar"],
+  });
+  if (texto !== perfilDireccionInput.value.trim() || !suggestions?.length) {
+    ocultarSugerenciasPerfilDireccion();
+    return;
+  }
+  perfilSugerenciasDireccion.replaceChildren(...suggestions.slice(0, 5).map(({ placePrediction }) => {
+    const item = document.createElement("li");
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = placePrediction.text.text;
+    boton.addEventListener("click", async () => {
+      const place = placePrediction.toPlace();
+      await place.fetchFields({ fields: ["formattedAddress"] });
+      perfilDireccionInput.value = place.formattedAddress || placePrediction.text.text;
+      ocultarSugerenciasPerfilDireccion();
+    });
+    item.append(boton);
+    return item;
+  }));
+  perfilSugerenciasDireccion.hidden = false;
+}
+
+perfilDireccionInput.addEventListener("input", () => {
+  clearTimeout(temporizadorPerfilDireccion);
+  const texto = perfilDireccionInput.value.trim();
+  if (texto.length < 3) {
+    ocultarSugerenciasPerfilDireccion();
+    return;
+  }
+  temporizadorPerfilDireccion = setTimeout(() => {
+    mostrarSugerenciasPerfilDireccion(texto).catch(ocultarSugerenciasPerfilDireccion);
+  }, 250);
+});
 
 async function cargarPerfil() {
   const errorEl = document.getElementById("perfil-error");
@@ -20,6 +90,7 @@ async function cargarPerfil() {
     document.getElementById("perfil-apellido").value = datos.apellido || "";
     document.getElementById("perfil-email").value = datos.email || "";
     document.getElementById("perfil-celular").value = datos.celular || "";
+    perfilDireccionInput.value = datos.direccion || "";
   } catch {
     errorEl.textContent = "No pudimos conectar, probá de nuevo en un momento";
   }
@@ -42,6 +113,7 @@ formPerfil.addEventListener("submit", async (e) => {
         nombre: document.getElementById("perfil-nombre").value,
         apellido: document.getElementById("perfil-apellido").value,
         celular: document.getElementById("perfil-celular").value,
+        direccion: perfilDireccionInput.value,
       }),
     });
     const datos = await r.json();

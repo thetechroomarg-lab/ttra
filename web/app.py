@@ -956,12 +956,11 @@ _ADMIN_CLIENTES_ESTILO = """
   .tarea-direccion-wrap input { width:100%; }
   .form-tarea-entrega input::placeholder { color:#9aa0ab; }
   .form-tarea-entrega button { border:0; border-radius:8px; background:#c8102e; color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:38px; padding:0 14px; }
-  .tarea-direccion-sugerencias { position:absolute; z-index:10; top:calc(100% + 4px); left:0; right:0; max-height:180px; overflow-y:auto; margin:0; padding:0; list-style:none; border:1px solid #4a5160; border-radius:8px; background:#12141a; box-shadow:0 8px 18px rgba(0,0,0,.28); }
+  .tarea-direccion-sugerencias { position:absolute; z-index:50; top:calc(100% + 4px); left:0; right:0; max-height:180px; overflow-y:auto; margin:0; padding:0; list-style:none; border:1px solid #4a5160; border-radius:8px; background:#12141a; box-shadow:0 8px 18px rgba(0,0,0,.28); }
   .tarea-direccion-sugerencias[hidden] { display:none; }
   .tarea-direccion-sugerencias button { display:block; width:100%; min-height:38px; padding:8px 10px; border:0; border-radius:0; border-bottom:1px solid #2a2e37; background:#12141a; color:#f2f4f8; text-align:left; font-weight:400; }
   .tarea-direccion-sugerencias li:last-child button { border-bottom:0; }
   .tarea-direccion-sugerencias button:hover, .tarea-direccion-sugerencias button:focus-visible { background:#272c36; outline:0; }
-  .selector-cliente-movil { display:none; }
   .pedido-hoy { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
   .pedido-hoy strong { color:#f2f4f8; }
   .pedido-hoy-detalle { min-width:0; }
@@ -1068,14 +1067,6 @@ _ADMIN_CLIENTES_ESTILO = """
     .arrastrar-entrega { align-self:flex-start; min-height:42px; width:44px; }
     .form-tarea-entrega { grid-template-columns:1fr; }
     .form-tarea-entrega button { min-height:44px; }
-    #tarea-cliente { display:none; }
-    .selector-cliente-movil { display:block; position:relative; }
-    #tarea-cliente-movil { box-sizing:border-box; width:100%; min-height:48px; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 12px; font:inherit; text-align:left; }
-    #tarea-clientes-movil { position:absolute; z-index:20; top:calc(100% + 4px); left:0; right:0; max-height:260px; overflow-y:auto; margin:0; padding:0; list-style:none; border:1px solid #4a5160; border-radius:8px; background:#12141a; box-shadow:0 8px 18px rgba(0,0,0,.32); }
-    #tarea-clientes-movil[hidden] { display:none; }
-    #tarea-clientes-movil button { display:block; width:100%; min-height:48px; padding:10px 12px; border:0; border-bottom:1px solid #2a2e37; border-radius:0; background:#12141a; color:#f2f4f8; font:inherit; text-align:left; font-weight:400; }
-    #tarea-clientes-movil li:last-child button { border-bottom:0; }
-    #tarea-clientes-movil button:active { background:#272c36; }
     .pedido-hoy-detalle, .pedido-historico { overflow-wrap:anywhere; word-break:break-word; }
     .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-areas:"recibo direcciones" "editar eliminar"; justify-content:stretch; width:100%; }
     .pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }
@@ -1348,17 +1339,18 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     else:
         pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'
 
-    opciones_cliente_tarea_html = "".join(
-        f'<option value="{html.escape(cliente["id"])}" data-direccion="{html.escape(cliente.get("direccion") or "")}">{html.escape(cliente["nombre"])}</option>'
-        for cliente in sorted(clientes, key=lambda cliente: cliente["nombre"].casefold())
-    )
-    botones_cliente_tarea_html = "".join(
-        f'<li><button type="button" data-value="{html.escape(cliente["id"])}" data-direccion="{html.escape(cliente.get("direccion") or "")}">{html.escape(cliente["nombre"])}</button></li>'
-        for cliente in sorted(clientes, key=lambda cliente: cliente["nombre"].casefold())
+    clientes_tarea_json = json.dumps(
+        [
+            {"id": cliente["id"], "nombre": cliente["nombre"], "direccion": cliente.get("direccion") or ""}
+            for cliente in sorted(clientes, key=lambda cliente: cliente["nombre"].casefold())
+        ],
+        ensure_ascii=False,
     )
     pendientes_hoy_seccion_html = (
         f'<section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2>'
-        f'<form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea"><select id="tarea-cliente" aria-label="Cliente de la tarea"><option value="">Cliente opcional</option>{opciones_cliente_tarea_html}</select><div class="selector-cliente-movil"><button id="tarea-cliente-movil" type="button" aria-expanded="false">Cliente opcional</button><ul id="tarea-clientes-movil" role="listbox" aria-label="Clientes" hidden>{botones_cliente_tarea_html}</ul></div><input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Dirección opcional" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><button>Agregar tarea</button></form>'
+        f'<form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea">'
+        f'<div class="tarea-direccion-wrap"><input id="tarea-cliente-busqueda" maxlength="200" placeholder="Cliente opcional" autocomplete="off"><input type="hidden" id="tarea-cliente"><ul id="tarea-cliente-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Clientes" hidden></ul></div>'
+        f'<input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Agregar dirección" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><button>Agregar tarea</button></form>'
         f'{pedidos_hoy_html}</section>'
         if fecha_historial == fecha_hoy else ""
     )
@@ -1573,7 +1565,7 @@ async function cargarApiPlacesAdmin() {{
       }});
       return google.maps.importLibrary("places");
     }})
-    .catch(() => null);
+    .catch((error) => {{ console.error("No se pudo cargar Google Places", error); return null; }});
   return apiPlacesAdmin;
 }}
 async function mostrarSugerenciasDireccionTarea(texto) {{
@@ -1583,7 +1575,7 @@ async function mostrarSugerenciasDireccionTarea(texto) {{
   const {{ suggestions }} = await AutocompleteSuggestion.fetchAutocompleteSuggestions({{
     input: texto,
     includedRegionCodes: ["ar"],
-  }});
+  }}).catch((error) => {{ console.error("Autocomplete de direccion fallo", error); return {{ suggestions: [] }}; }});
   if (texto !== inputDireccionTarea.value.trim() || !suggestions?.length) {{
     ocultarSugerenciasDireccionTarea();
     return;
@@ -1612,31 +1604,40 @@ inputDireccionTarea?.addEventListener("input", () => {{
     mostrarSugerenciasDireccionTarea(texto).catch(ocultarSugerenciasDireccionTarea);
   }}, 250);
 }});
-const selectorClienteTarea = document.getElementById("tarea-cliente");
-const botonClienteTareaMovil = document.getElementById("tarea-cliente-movil");
-const listaClientesTareaMovil = document.getElementById("tarea-clientes-movil");
-selectorClienteTarea?.addEventListener("change", () => {{
-  const direccion = selectorClienteTarea.selectedOptions[0]?.dataset.direccion;
-  if (direccion) document.getElementById("tarea-direccion").value = direccion;
-}});
-botonClienteTareaMovil?.addEventListener("click", () => {{
-  listaClientesTareaMovil.hidden = !listaClientesTareaMovil.hidden;
-  botonClienteTareaMovil.setAttribute("aria-expanded", String(!listaClientesTareaMovil.hidden));
-}});
-listaClientesTareaMovil?.querySelectorAll("button").forEach((boton) => {{
-  boton.addEventListener("click", () => {{
-    document.getElementById("tarea-cliente").value = boton.dataset.value;
-    botonClienteTareaMovil.textContent = boton.textContent;
-    if (boton.dataset.direccion) document.getElementById("tarea-direccion").value = boton.dataset.direccion;
-    listaClientesTareaMovil.hidden = true;
-    botonClienteTareaMovil.setAttribute("aria-expanded", "false");
-  }});
+const CLIENTES_TAREA = {clientes_tarea_json};
+const busquedaClienteTarea = document.getElementById("tarea-cliente-busqueda");
+const idClienteTarea = document.getElementById("tarea-cliente");
+const sugerenciasClienteTarea = document.getElementById("tarea-cliente-sugerencias");
+function ocultarSugerenciasClienteTarea() {{
+  sugerenciasClienteTarea.replaceChildren();
+  sugerenciasClienteTarea.hidden = true;
+}}
+busquedaClienteTarea?.addEventListener("input", () => {{
+  idClienteTarea.value = "";
+  const texto = busquedaClienteTarea.value.trim().toLowerCase();
+  if (!texto) {{ ocultarSugerenciasClienteTarea(); return; }}
+  const coincidencias = CLIENTES_TAREA.filter((cliente) => cliente.nombre.toLowerCase().includes(texto)).slice(0, 8);
+  if (!coincidencias.length) {{ ocultarSugerenciasClienteTarea(); return; }}
+  sugerenciasClienteTarea.replaceChildren(...coincidencias.map((cliente) => {{
+    const item = document.createElement("li");
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = cliente.nombre;
+    boton.addEventListener("click", () => {{
+      busquedaClienteTarea.value = cliente.nombre;
+      idClienteTarea.value = cliente.id;
+      if (cliente.direccion) document.getElementById("tarea-direccion").value = cliente.direccion;
+      ocultarSugerenciasClienteTarea();
+    }});
+    item.append(boton);
+    return item;
+  }}));
+  sugerenciasClienteTarea.hidden = false;
 }});
 document.addEventListener("pointerdown", (evento) => {{
-  if (!listaClientesTareaMovil || listaClientesTareaMovil.hidden) return;
-  if (evento.target.closest(".selector-cliente-movil")) return;
-  listaClientesTareaMovil.hidden = true;
-  botonClienteTareaMovil.setAttribute("aria-expanded", "false");
+  if (!sugerenciasClienteTarea || sugerenciasClienteTarea.hidden) return;
+  if (evento.target.closest("#tarea-cliente-busqueda, #tarea-cliente-sugerencias")) return;
+  ocultarSugerenciasClienteTarea();
 }});
 const listaEntregas = document.querySelector(".pedidos-hoy");
 async function guardarOrdenEntregas() {{
@@ -2181,6 +2182,7 @@ class RegistroIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     provincia: str = Field(min_length=2, max_length=80)
+    direccion: str | None = Field(default=None, max_length=500)
 
 
 class LoginIn(BaseModel):
@@ -2243,7 +2245,7 @@ def registro(entrada: RegistroIn, request: Request):
         client = get_client()
         cliente = cuentas.registrar_cliente(
             client, entrada.nombre, entrada.apellido, entrada.celular,
-            entrada.email, entrada.password, entrada.provincia,
+            entrada.email, entrada.password, entrada.provincia, entrada.direccion,
             email_redirect_to=_public_login_url(request),
         )
     except (cuentas.CelularDuplicadoError, cuentas.EmailDuplicadoError, ValueError) as e:
@@ -2358,6 +2360,12 @@ class ActualizarMeIn(BaseModel):
     nombre: str
     apellido: str
     celular: str
+    direccion: str | None = Field(default=None, max_length=500)
+
+
+class GuardarDireccionPerfilIn(BaseModel):
+    direccion: str = Field(min_length=3, max_length=500)
+    guardar_en_perfil: bool
 
 
 @app.put("/api/me")
@@ -2367,13 +2375,32 @@ def api_me_actualizar(entrada: ActualizarMeIn, request: Request):
     try:
         cliente = cuentas.actualizar_cliente(
             get_client(), request.session["cliente_id"],
-            entrada.nombre, entrada.apellido, entrada.celular,
+            entrada.nombre, entrada.apellido, entrada.celular, entrada.direccion,
         )
     except (cuentas.CelularDuplicadoError, ValueError) as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo actualizar el perfil del cliente")
         return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    return cliente
+
+
+@app.put("/api/me/direccion")
+def api_me_guardar_direccion(entrada: GuardarDireccionPerfilIn, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        client = get_client()
+        if entrada.guardar_en_perfil:
+            client.table("clientes").update({"direccion": entrada.direccion.strip()}).eq(
+                "id", request.session["cliente_id"]
+            ).execute()
+        cliente = cuentas.obtener_cliente(client, request.session["cliente_id"])
+    except Exception:
+        logger.exception("No se pudo guardar la preferencia de domicilio")
+        return JSONResponse({"error": "No pudimos guardar el domicilio, probá de nuevo en un momento"}, status_code=503)
+    if cliente is None:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
     return cliente
 
 

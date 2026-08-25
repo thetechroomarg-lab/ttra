@@ -32,6 +32,10 @@ const loginOkEl = document.getElementById("login-ok");
 const registroErrorEl = document.getElementById("registro-error");
 const registroOkEl = document.getElementById("registro-ok");
 const CLAVE_ANON_ID = "ttra_anon_id";
+const registroDireccionInput = document.getElementById("registro-direccion");
+const registroSugerenciasDireccion = document.getElementById("registro-sugerencias-direccion");
+let temporizadorRegistroDireccion;
+let apiPlacesRegistro;
 
 function generarIdLocal() {
   if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -174,6 +178,72 @@ linkIrALogin.addEventListener("click", (e) => {
   mostrarLogin();
 });
 
+function ocultarSugerenciasRegistroDireccion() {
+  registroSugerenciasDireccion.replaceChildren();
+  registroSugerenciasDireccion.hidden = true;
+}
+
+async function cargarApiPlacesRegistro() {
+  if (apiPlacesRegistro !== undefined) return apiPlacesRegistro;
+  apiPlacesRegistro = fetch("/api/configuracion-publica")
+    .then((respuesta) => respuesta.ok ? respuesta.json() : {})
+    .then(async ({ google_maps_api_key: clave }) => {
+      if (!clave) return null;
+      await new Promise((resolver, rechazar) => {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(clave)}&libraries=places&v=weekly`;
+        script.async = true;
+        script.onload = resolver;
+        script.onerror = rechazar;
+        document.head.append(script);
+      });
+      return google.maps.importLibrary("places");
+    })
+    .catch(() => null);
+  return apiPlacesRegistro;
+}
+
+async function mostrarSugerenciasRegistroDireccion(texto) {
+  const places = await cargarApiPlacesRegistro();
+  if (!places || texto !== registroDireccionInput.value.trim()) return;
+  const { AutocompleteSuggestion } = places;
+  const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+    input: texto,
+    includedRegionCodes: ["ar"],
+  });
+  if (texto !== registroDireccionInput.value.trim() || !suggestions?.length) {
+    ocultarSugerenciasRegistroDireccion();
+    return;
+  }
+  registroSugerenciasDireccion.replaceChildren(...suggestions.slice(0, 5).map(({ placePrediction }) => {
+    const item = document.createElement("li");
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = placePrediction.text.text;
+    boton.addEventListener("click", async () => {
+      const place = placePrediction.toPlace();
+      await place.fetchFields({ fields: ["formattedAddress"] });
+      registroDireccionInput.value = place.formattedAddress || placePrediction.text.text;
+      ocultarSugerenciasRegistroDireccion();
+    });
+    item.append(boton);
+    return item;
+  }));
+  registroSugerenciasDireccion.hidden = false;
+}
+
+registroDireccionInput.addEventListener("input", () => {
+  clearTimeout(temporizadorRegistroDireccion);
+  const texto = registroDireccionInput.value.trim();
+  if (texto.length < 3) {
+    ocultarSugerenciasRegistroDireccion();
+    return;
+  }
+  temporizadorRegistroDireccion = setTimeout(() => {
+    mostrarSugerenciasRegistroDireccion(texto).catch(ocultarSugerenciasRegistroDireccion);
+  }, 250);
+});
+
 async function enviar(url, body, errorEl) {
   limpiarMensajes();
   errorEl.textContent = "";
@@ -247,6 +317,7 @@ formRegistro.addEventListener("submit", async (e) => {
       email,
       password,
       provincia: document.getElementById("registro-provincia").value,
+      direccion: registroDireccionInput.value,
     },
     registroErrorEl,
   );

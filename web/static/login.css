@@ -16,6 +16,20 @@ h1 { margin: 0 0 20px; font-size: 20px; letter-spacing: .06em; text-transform: u
 input {
   padding: 12px 14px; font-size: 14px;
 }
+.registro-direccion-wrap { position: relative; }
+.registro-direccion-wrap input { width: 100%; }
+.registro-sugerencias-direccion {
+  position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; right: 0;
+  max-height: 180px; overflow-y: auto; margin: 0; padding: 0; list-style: none;
+  border: 1px solid var(--rc-green-dim); background: var(--rc-bg-panel);
+}
+.registro-sugerencias-direccion[hidden] { display: none; }
+.registro-sugerencias-direccion button {
+  display: block; width: 100%; border: 0; border-bottom: 1px solid var(--rc-green-faint);
+  border-radius: 0; padding: 10px 12px; background: transparent; color: var(--rc-green-bright);
+  font: inherit; text-align: left;
+}
+.registro-sugerencias-direccion li:last-child button { border-bottom: 0; }
 .rc-password-wrap { position: relative; display: flex; }
 .rc-password-wrap input { width: 100%; padding-right: 42px; }
 .rc-password-toggle {

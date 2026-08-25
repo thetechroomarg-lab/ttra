@@ -3628,6 +3628,7 @@ async function derivarCheckoutAWhatsapp(carrito) {
   const fechaEntrega = document.getElementById("fecha-entrega").value;
   const direccionEntrega = document.getElementById("direccion-entrega").value.trim();
   if (!direccionEntrega) { alert("Especificá dirección de entrega."); return; }
+  if (!await confirmarGuardadoDomicilioSiCorresponde(direccionEntrega)) return;
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
   try {
     await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega);
@@ -3655,9 +3656,12 @@ document.getElementById("btn-vaciar-carrito").addEventListener("click", () => {
 });
 
 const panelDireccionEntrega = document.getElementById("direccion-entrega-wrap");
+const panelOpcionesDireccion = document.getElementById("opciones-direccion-entrega");
 const panelCodigoPromocional = document.getElementById("modal-codigo");
 const inputDireccionEntrega = document.getElementById("direccion-entrega");
 const sugerenciasDireccion = document.getElementById("sugerencias-direccion");
+const botonUsarMiDireccion = document.getElementById("btn-usar-mi-direccion");
+const estadoDireccionGuardada = document.getElementById("estado-direccion-guardada");
 let temporizadorSugerenciasDireccion;
 let apiPlacesCargada;
 
@@ -3728,6 +3732,7 @@ inputDireccionEntrega.addEventListener("input", () => {
 });
 
 function abrirPanelSecundario(idPanel) {
+  panelOpcionesDireccion.classList.toggle("oculto", idPanel !== "opciones-direccion-entrega");
   const direccion = panelDireccionEntrega;
   const codigo = panelCodigoPromocional;
   direccion.classList.toggle("oculto", idPanel !== "direccion-entrega-wrap");
@@ -3735,15 +3740,62 @@ function abrirPanelSecundario(idPanel) {
 }
 
 function cerrarPanelSecundario() {
+  panelOpcionesDireccion.classList.add("oculto");
   panelDireccionEntrega.classList.add("oculto");
   panelCodigoPromocional.classList.add("oculto");
   ocultarSugerenciasDireccion();
 }
 
+async function mostrarOpcionesDireccion() {
+  const cliente = await obtenerEstadoSesionCliente(true);
+  const direccionGuardada = (cliente?.direccion || "").trim();
+  botonUsarMiDireccion.disabled = !direccionGuardada;
+  estadoDireccionGuardada.textContent = direccionGuardada
+    ? `Domicilio guardado: ${direccionGuardada}`
+    : "No tenés un domicilio guardado todavía.";
+  abrirPanelSecundario("opciones-direccion-entrega");
+}
+
+async function confirmarGuardadoDomicilioSiCorresponde(direccion) {
+  const cliente = await obtenerEstadoSesionCliente();
+  if (!cliente || cliente.direccion) return true;
+  const guardar = confirm("¿Querés guardar este domicilio en tu perfil para próximos pedidos?");
+  const respuesta = await fetch("/api/me/direccion", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ direccion, guardar_en_perfil: guardar }),
+  });
+  if (!respuesta.ok) {
+    alert("No pudimos guardar tu preferencia de domicilio. Probá nuevamente.");
+    return false;
+  }
+  estadoSesionCliente = await respuesta.json();
+  return true;
+}
+
 document.getElementById("btn-abrir-direccion").addEventListener("click", () => {
+  mostrarOpcionesDireccion().catch(() => abrirPanelSecundario("opciones-direccion-entrega"));
+});
+botonUsarMiDireccion.addEventListener("click", async () => {
+  const cliente = await obtenerEstadoSesionCliente(true);
+  const direccion = (cliente?.direccion || "").trim();
+  if (!direccion) {
+    abrirPanelSecundario("direccion-entrega-wrap");
+    return;
+  }
+  inputDireccionEntrega.value = direccion;
+  document.getElementById("btn-abrir-direccion").textContent = "Usando mi dirección";
+  cerrarPanelSecundario();
+});
+document.getElementById("btn-elegir-otra-direccion").addEventListener("click", () => {
   abrirPanelSecundario("direccion-entrega-wrap");
 });
 document.getElementById("btn-guardar-direccion").addEventListener("click", () => {
+  if (!inputDireccionEntrega.value.trim()) {
+    inputDireccionEntrega.focus();
+    return;
+  }
+  document.getElementById("btn-abrir-direccion").textContent = "Dirección alternativa";
   cerrarPanelSecundario();
 });
 
@@ -3751,7 +3803,7 @@ document.getElementById("btn-abrir-codigo").addEventListener("click", () => {
   abrirPanelSecundario("modal-codigo");
 });
 document.addEventListener("pointerdown", (evento) => {
-  const panelSecundarioAbierto = [panelDireccionEntrega, panelCodigoPromocional]
+  const panelSecundarioAbierto = [panelOpcionesDireccion, panelDireccionEntrega, panelCodigoPromocional]
     .find((panel) => !panel.classList.contains("oculto"));
   if (!panelSecundarioAbierto || panelSecundarioAbierto.contains(evento.target)) return;
   if (evento.target.closest("#btn-abrir-direccion, #btn-abrir-codigo")) return;

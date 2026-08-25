@@ -63,6 +63,50 @@ def test_autocomplete_de_direccion_se_comparte_con_el_carrito_fallout():
     assert 'html[data-modo="fallout"] #panel-carrito {' in css
 
 
+def test_registro_pide_domicilio_y_lo_autocompleta_con_google_maps():
+    login_html = (appmod.BASE / "static" / "login.html").read_text()
+    login_js = (appmod.BASE / "static" / "login.js").read_text()
+
+    assert 'id="registro-direccion"' in login_html
+    assert 'id="registro-sugerencias-direccion"' in login_html
+    assert "AutocompleteSuggestion.fetchAutocompleteSuggestions" in login_js
+    assert 'includedRegionCodes: ["ar"]' in login_js
+
+
+def test_checkout_ofrece_domicilio_guardado_y_alternativo():
+    index_html = (appmod.BASE / "static" / "index.html").read_text()
+    landing_js = (appmod.BASE / "static" / "landing.js").read_text()
+
+    assert 'id="btn-usar-mi-direccion"' in index_html
+    assert 'id="btn-elegir-otra-direccion"' in index_html
+    assert "guardar_en_perfil" in landing_js
+    assert '"/api/me/direccion"' in landing_js
+
+
+def test_domicilios_de_registro_y_checkout_tambien_funcionan_en_fallout():
+    login_js = (appmod.BASE / "static" / "login.js").read_text()
+    landing_js = (appmod.BASE / "static" / "landing.js").read_text()
+    inicio_registro = login_js.index("async function cargarApiPlacesRegistro")
+    fin_registro = login_js.index("registroDireccionInput.addEventListener", inicio_registro)
+    registro_autocomplete = login_js[inicio_registro:fin_registro]
+    inicio_checkout = landing_js.index("async function mostrarOpcionesDireccion")
+    fin_checkout = landing_js.index('document.getElementById("btn-abrir-codigo")', inicio_checkout)
+    checkout_domicilio = landing_js[inicio_checkout:fin_checkout]
+
+    assert "modoFallout" not in registro_autocomplete
+    assert "modoVisual" not in checkout_domicilio
+
+
+def test_perfil_permite_editar_domicilio_con_autocomplete():
+    perfil_html = (appmod.BASE / "static" / "perfil.html").read_text()
+    perfil_js = (appmod.BASE / "static" / "perfil.js").read_text()
+
+    assert 'id="perfil-direccion"' in perfil_html
+    assert 'id="perfil-sugerencias-direccion"' in perfil_html
+    assert "AutocompleteSuggestion.fetchAutocompleteSuggestions" in perfil_js
+    assert 'includedRegionCodes: ["ar"]' in perfil_js
+
+
 def test_compartir_producto_abre_siempre_el_panel_compartible():
     script = (appmod.BASE / "static" / "landing.js").read_text()
     inicio = script.index("async function compartirProducto(nombre)")

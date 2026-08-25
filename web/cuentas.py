@@ -37,12 +37,13 @@ def capitalizar_nombre(valor):
     return " ".join(parte.capitalize() for parte in (valor or "").split())
 
 
-def registrar_cliente(client, nombre, apellido, celular, email, password, provincia="Córdoba", email_redirect_to=None):
+def registrar_cliente(client, nombre, apellido, celular, email, password, provincia="Córdoba", direccion=None, email_redirect_to=None):
     nombre = capitalizar_nombre(nombre)
     apellido = capitalizar_nombre(apellido)
     celular_norm = normalizar_celular(celular)
     email = email.strip().lower()
     provincia = provincia.strip()
+    direccion = (direccion or "").strip() or None
     if not celular_norm:
         raise ValueError("El celular ingresado no es válido")
     if not provincia:
@@ -80,6 +81,7 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, provin
         "apellido": apellido,
         "email": email,
         "provincia": provincia,
+        "direccion": direccion,
     }
     if lead_invitado:
         propio_id = lead_invitado["id"]
@@ -189,10 +191,11 @@ def obtener_cliente(client, cliente_id):
     perfil = filas[0]
     return {"id": perfil["id"], "nombre": perfil["nombre"], "apellido": perfil["apellido"],
             "celular": perfil.get("celular"), "email": perfil.get("email"),
+            "direccion": perfil.get("direccion"),
             "debe_cambiar_password": bool(perfil.get("debe_cambiar_password"))}
 
 
-def actualizar_cliente(client, cliente_id, nombre, apellido, celular):
+def actualizar_cliente(client, cliente_id, nombre, apellido, celular, direccion=None):
     nombre = capitalizar_nombre(nombre)
     apellido = capitalizar_nombre(apellido)
     celular_norm = normalizar_celular(celular)
@@ -204,6 +207,8 @@ def actualizar_cliente(client, cliente_id, nombre, apellido, celular):
         raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}")
 
     datos = {"nombre": nombre, "apellido": apellido, "celular": celular_norm}
+    if direccion is not None:
+        datos["direccion"] = direccion.strip() or None
     client.table("clientes").update(datos).eq("id", cliente_id).execute()
     return obtener_cliente(client, cliente_id)
 

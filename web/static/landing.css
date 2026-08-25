@@ -1403,6 +1403,8 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 #btn-guardar-direccion,
 #btn-abrir-codigo,
 #btn-abrir-direccion,
+#btn-usar-mi-direccion,
+#btn-elegir-otra-direccion,
 #btn-vaciar-carrito,
 #btn-whatsapp {
   height: var(--carrito-boton-altura);
@@ -1410,6 +1412,7 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 }
 
 #direccion-entrega-wrap,
+#opciones-direccion-entrega,
 #modal-codigo {
   display: flex;
   flex-direction: column;
@@ -1419,6 +1422,7 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   background: rgba(15, 24, 18, .55);
 }
 #direccion-entrega-wrap.oculto,
+#opciones-direccion-entrega.oculto,
 #modal-codigo.oculto { display: none; }
 #direccion-entrega-wrap input {
   box-sizing: border-box;
@@ -1466,6 +1470,7 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 
 @media (max-width: 700px) {
   #direccion-entrega-wrap:not(.oculto),
+  #opciones-direccion-entrega:not(.oculto),
   #modal-codigo:not(.oculto) {
     position: fixed;
     top: 50%;
