@@ -22,8 +22,7 @@ def test_pedido_con_sesion_guarda_fecha_entrega_valida(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
-    })
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
     monkeypatch.setattr(
         appmod.entregas,
         "ahora_argentina",
@@ -47,8 +46,7 @@ def test_pedido_guarda_el_detalle_y_total_usd_del_checkout(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
-    })
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
 
     r = c.post("/api/pedidos", json={
         "productos": ["iPhone 13 (Negro)"],
@@ -84,8 +82,7 @@ def test_pedido_guarda_el_proveedor_solo_resuelto_en_el_servidor(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
-    })
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
 
     r = c.post("/api/pedidos", json={
         "productos": ["iPhone 13"], "fecha_entrega": "2026-08-24",
@@ -111,8 +108,7 @@ def test_pedido_normaliza_el_nombre_antes_de_resolver_proveedor(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
-    })
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
 
     r = c.post("/api/pedidos", json={
         "productos": ["Xiaomi Redmi Note 14 8GB 256GB slim"], "fecha_entrega": "2026-08-24",
@@ -137,8 +133,7 @@ def test_pedido_del_mismo_cliente_y_entrega_se_consolida(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
-    })
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
     pedido = {
         "productos": ["iPhone 13 (Negro)"], "fecha_entrega": "2026-08-24",
         "direccion_entrega": "Av. Colón 123, Córdoba",
@@ -171,8 +166,7 @@ def test_pedido_rechaza_fecha_fuera_de_las_opciones(monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver")
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
-    })
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
 
     r = c.post("/api/pedidos", json={"productos": ["iPhone 13"], "fecha_entrega": "2026-08-29"})
 

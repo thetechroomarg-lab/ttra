@@ -1403,8 +1403,6 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 #btn-guardar-direccion,
 #btn-abrir-codigo,
 #btn-abrir-direccion,
-#btn-usar-mi-direccion,
-#btn-elegir-otra-direccion,
 #btn-vaciar-carrito,
 #btn-whatsapp {
   height: var(--carrito-boton-altura);
@@ -1412,7 +1410,7 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 }
 
 #direccion-entrega-wrap,
-#opciones-direccion-entrega,
+#selector-domicilio-entrega,
 #modal-codigo {
   display: flex;
   flex-direction: column;
@@ -1422,12 +1420,21 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   background: rgba(15, 24, 18, .55);
 }
 #direccion-entrega-wrap.oculto,
-#opciones-direccion-entrega.oculto,
+#selector-domicilio-entrega.oculto,
 #modal-codigo.oculto { display: none; }
-#direccion-entrega-wrap input {
+#direccion-entrega-wrap input,
+#select-domicilio-entrega {
   box-sizing: border-box;
   min-height: 50px;
   padding: 0 12px;
+}
+#direccion-alias.oculto { display: none; }
+#select-domicilio-entrega {
+  background: #0b140f;
+  color: var(--rc-green-bright);
+  border: 1px solid var(--rc-green-faint);
+  font-family: var(--rc-font);
+  width: 100%;
 }
 #modal-codigo input {
   box-sizing: border-box;
@@ -1470,7 +1477,7 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 
 @media (max-width: 700px) {
   #direccion-entrega-wrap:not(.oculto),
-  #opciones-direccion-entrega:not(.oculto),
+  #selector-domicilio-entrega:not(.oculto),
   #modal-codigo:not(.oculto) {
     position: fixed;
     top: 50%;

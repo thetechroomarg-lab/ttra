@@ -73,34 +73,29 @@ def test_registro_pide_domicilio_y_lo_autocompleta_con_google_maps():
     assert 'includedRegionCodes: ["ar"]' in login_js
 
 
-def test_checkout_ofrece_domicilio_guardado_y_alternativo():
+def test_checkout_ofrece_domicilios_guardados_como_desplegable():
     index_html = (appmod.BASE / "static" / "index.html").read_text()
     landing_js = (appmod.BASE / "static" / "landing.js").read_text()
 
-    assert 'id="btn-usar-mi-direccion"' in index_html
-    assert 'id="btn-elegir-otra-direccion"' in index_html
-    assert "guardar_en_perfil" in landing_js
-    assert '"/api/me/direccion"' in landing_js
+    assert 'id="select-domicilio-entrega"' in index_html
+    assert "fetch(\"/api/domicilios\")" in landing_js
+    assert '"+ Agregar nueva dirección"' in landing_js
 
 
-def test_checkout_esconde_usar_mi_direccion_sin_domicilio_guardado_y_pregunta_al_aplicar():
+def test_checkout_va_directo_al_formulario_sin_domicilios_guardados():
     landing_js = (appmod.BASE / "static" / "landing.js").read_text()
 
-    inicio = landing_js.index("async function mostrarOpcionesDireccion")
-    fin = landing_js.index("async function confirmarGuardadoDomicilioSiCorresponde", inicio)
-    mostrar_opciones = landing_js[inicio:fin]
-    assert "botonUsarMiDireccion.hidden = !direccionGuardada;" in mostrar_opciones
-    assert '"Elegir dirección de entrega"' in mostrar_opciones
+    inicio = landing_js.index("async function abrirSelectorDireccion")
+    fin = landing_js.index("document.getElementById(\"btn-abrir-direccion\")", inicio)
+    abrir_selector = landing_js[inicio:fin]
+    assert "abrirFormularioNuevaDireccion();" in abrir_selector
+    assert "!domiciliosCliente.length" in abrir_selector
 
     inicio_guardar = landing_js.index('document.getElementById("btn-guardar-direccion")')
     fin_guardar = landing_js.index('document.getElementById("btn-abrir-codigo")', inicio_guardar)
     guardar_direccion = landing_js[inicio_guardar:fin_guardar]
-    assert "await confirmarGuardadoDomicilioSiCorresponde(direccion)" in guardar_direccion
-
-    inicio_checkout = landing_js.index("async function derivarCheckoutAWhatsapp")
-    fin_checkout = landing_js.index("async function", inicio_checkout + 1)
-    checkout = landing_js[inicio_checkout:fin_checkout]
-    assert "confirmarGuardadoDomicilioSiCorresponde" not in checkout
+    assert 'fetch("/api/domicilios", {' in guardar_direccion
+    assert 'method: "POST"' in guardar_direccion
 
 
 def test_domicilios_de_registro_y_checkout_tambien_funcionan_en_fallout():
@@ -109,7 +104,7 @@ def test_domicilios_de_registro_y_checkout_tambien_funcionan_en_fallout():
     inicio_registro = login_js.index("async function cargarApiPlacesRegistro")
     fin_registro = login_js.index("registroDireccionInput.addEventListener", inicio_registro)
     registro_autocomplete = login_js[inicio_registro:fin_registro]
-    inicio_checkout = landing_js.index("async function mostrarOpcionesDireccion")
+    inicio_checkout = landing_js.index("async function abrirSelectorDireccion")
     fin_checkout = landing_js.index('document.getElementById("btn-abrir-codigo")', inicio_checkout)
     checkout_domicilio = landing_js[inicio_checkout:fin_checkout]
 
@@ -117,14 +112,17 @@ def test_domicilios_de_registro_y_checkout_tambien_funcionan_en_fallout():
     assert "modoVisual" not in checkout_domicilio
 
 
-def test_perfil_permite_editar_domicilio_con_autocomplete():
+def test_perfil_permite_gestionar_hasta_cinco_domicilios_con_autocomplete():
     perfil_html = (appmod.BASE / "static" / "perfil.html").read_text()
     perfil_js = (appmod.BASE / "static" / "perfil.js").read_text()
 
-    assert 'id="perfil-direccion"' in perfil_html
+    assert 'id="lista-domicilios"' in perfil_html
+    assert 'id="domicilio-alias"' in perfil_html
+    assert 'id="domicilio-direccion"' in perfil_html
     assert 'id="perfil-sugerencias-direccion"' in perfil_html
     assert "AutocompleteSuggestion.fetchAutocompleteSuggestions" in perfil_js
     assert 'includedRegionCodes: ["ar"]' in perfil_js
+    assert "btnGuardarDomicilio.disabled = domicilios.length >= 5" in perfil_js
 
 
 def test_compartir_producto_abre_siempre_el_panel_compartible():
@@ -546,8 +544,8 @@ def test_carrito_muestra_un_solo_panel_secundario_y_cierra_al_tocar_afuera():
     script = (appmod.BASE / "static" / "landing.js").read_text()
 
     assert "function abrirPanelSecundario(idPanel)" in script
-    assert 'direccion.classList.toggle("oculto", idPanel !== "direccion-entrega-wrap")' in script
-    assert 'codigo.classList.toggle("oculto", idPanel !== "modal-codigo")' in script
+    assert 'panelDireccionEntrega.classList.toggle("oculto", idPanel !== "direccion-entrega-wrap")' in script
+    assert 'panelCodigoPromocional.classList.toggle("oculto", idPanel !== "modal-codigo")' in script
     assert 'document.addEventListener("pointerdown", (evento) =>' in script
     assert "panelSecundarioAbierto.contains(evento.target)" in script
 
@@ -628,8 +626,7 @@ def test_landing_con_sesion_muestra_index(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
-    })
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
     r = c.get("/")
     assert r.status_code == 200
     assert "THE TECH ROOM ARG — iPhones, celulares y notebooks en Córdoba" in r.text
@@ -651,8 +648,7 @@ def test_index_html_directo_con_sesion_sigue_funcionando(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
-    })
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
     r = c.get("/index.html")
     assert r.status_code == 200
     assert "THE TECH ROOM ARG — iPhones, celulares y notebooks en Córdoba" in r.text
@@ -760,8 +756,7 @@ def test_chat_con_sesion_sigue_funcionando(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
-    })
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
     r = c.post("/chat", json={"mensaje": "hola", "sesion": "s1"})
     assert r.status_code == 200
     assert "respuesta" in r.json()

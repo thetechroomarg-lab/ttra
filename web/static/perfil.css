@@ -24,3 +24,13 @@ input:disabled { opacity: .6; cursor: not-allowed; }
   font: inherit; text-align: left;
 }
 .perfil-sugerencias-direccion li:last-child button { border-bottom: 0; }
+.lista-domicilios { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.item-domicilio {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; border: 1px solid var(--rc-green-faint); background: var(--rc-bg-panel);
+}
+.item-domicilio p { margin: 0; font-size: 13px; color: var(--rc-green-bright); }
+.item-domicilio-acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+.item-domicilio-acciones button {
+  height: auto; min-height: 30px; padding: 0 10px; font-size: 11px;
+}

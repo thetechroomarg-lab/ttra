@@ -15,8 +15,7 @@ def _admin_con_clientes(monkeypatch):
     ):
         respuesta = cliente.post("/registro", json={
             "nombre": nombre, "apellido": "Cliente", "celular": celular,
-            "email": email, "password": "clave1234", "provincia": provincia,
-        })
+            "email": email, "password": "clave1234", "provincia": provincia, "direccion": "Av. Colón 123, Córdoba",})
         assert respuesta.status_code == 200
     cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
     filas = fake.table("clientes").select("*").execute().data

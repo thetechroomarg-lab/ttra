@@ -164,6 +164,6 @@ class FakeSupabaseClient:
         clientes = self.table("clientes")._filas
         cliente_ids = {fila["id"] for fila in clientes if fila.get("auth_id") == auth_id}
         self.table("clientes")._filas[:] = [fila for fila in clientes if fila.get("id") not in cliente_ids]
-        for nombre in ("pedidos", "interacciones_cliente", "codigos_descuento"):
+        for nombre in ("pedidos", "interacciones_cliente", "codigos_descuento", "domicilios_cliente"):
             tabla = self.table(nombre)
             tabla._filas[:] = [fila for fila in tabla._filas if fila.get("cliente_id") not in cliente_ids]

@@ -12,8 +12,7 @@ def _cliente_logueado(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
-    })
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
     c.post("/api/pedidos", json={"productos": ["iPhone 13"]})
     c.post("/logout")
     c.post("/admin/clientes/login", json={"password": "clave-admin"})

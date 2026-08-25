@@ -17,8 +17,7 @@ def _preparar(monkeypatch, costo):
     c.post("/registro", json={
         "nombre": "Test", "apellido": "Usuario", "celular": "3511234567",
         "email": "test@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
-    })
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
     return c
 
 

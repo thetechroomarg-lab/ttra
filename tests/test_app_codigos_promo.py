@@ -11,8 +11,7 @@ def _cliente_logueado(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-        "provincia": "Córdoba",
-    })
+        "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
     return c, fake
 
 

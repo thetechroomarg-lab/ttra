@@ -28,6 +28,30 @@ alter table clientes add column if not exists provincia text;
 alter table clientes alter column email drop not null;
 alter table clientes add column if not exists direccion text;
 
+-- Domicilios guardados por cliente para el checkout (hasta 5, uno
+-- predeterminado). La columna clientes.direccion se mantiene aparte: la
+-- sigue usando el panel admin para el "Vamos" de contactos-proveedor.
+create table if not exists domicilios_cliente (
+  id uuid primary key default gen_random_uuid(),
+  cliente_id uuid not null references clientes(id) on delete cascade,
+  alias text not null,
+  direccion text not null,
+  predeterminado boolean not null default false,
+  creado_en timestamptz not null default now()
+);
+create index if not exists domicilios_cliente_cliente_id_idx on domicilios_cliente (cliente_id);
+alter table domicilios_cliente enable row level security;
+
+-- Migra el domicilio único que ya tenían las cuentas de clientes reales
+-- (columna clientes.direccion) como su primer domicilio guardado,
+-- predeterminado. No toca a los contactos-proveedor (sin auth_id).
+insert into domicilios_cliente (cliente_id, alias, direccion, predeterminado)
+select id, 'Principal', direccion, true
+from clientes
+where auth_id is not null
+  and direccion is not null and trim(direccion) <> ''
+  and not exists (select 1 from domicilios_cliente d where d.cliente_id = clientes.id);
+
 create table if not exists pedidos (
   id uuid primary key default gen_random_uuid(),
   cliente_id uuid not null references clientes(id) on delete cascade,
