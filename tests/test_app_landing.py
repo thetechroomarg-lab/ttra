@@ -423,12 +423,29 @@ def test_classic_mobile_recomendados_no_renderiza_puntos_y_conserva_swipe():
 
 def test_classic_mobile_home_usa_el_viewport_sin_scroll_de_pagina():
     css = (appmod.BASE / "static" / "classic.css").read_text()
-    selector = 'html[data-modo="classic"] body:not(.rc-vista-seccion) {'
+    selector = 'html[data-modo="classic"] body#rc-body-landing:not(.rc-vista-seccion) {'
     inicio = css.index(selector)
     regla = css[inicio : css.index("}", inicio)]
 
     assert "\n    height: 100dvh;" in regla
     assert "overflow: hidden;" in regla
+
+
+def test_classic_mobile_sin_scroll_no_se_filtra_a_otras_paginas():
+    # El "home sin scroll" es exclusivo de index.html: el selector de
+    # classic.css exige el id de su body. Si alguna otra página lo usara
+    # (perfil, login, catálogo), les recortaría el contenido sin poder
+    # scrollear — regresión real que rompió el perfil en producción.
+    css = (appmod.BASE / "static" / "classic.css").read_text()
+    assert 'body:not(.rc-vista-seccion)' not in css
+    assert 'body#rc-body-landing:not(.rc-vista-seccion)' in css
+
+    index_html = (appmod.BASE / "static" / "index.html").read_text()
+    assert '<body id="rc-body-landing">' in index_html
+
+    for nombre in ("perfil.html", "login.html", "catalogo.html"):
+        html = (appmod.BASE / "static" / nombre).read_text()
+        assert 'id="rc-body-landing"' not in html
 
 
 def test_classic_mobile_card_recomendada_ocupa_el_alto_libre_sin_un_tope_fijo():
