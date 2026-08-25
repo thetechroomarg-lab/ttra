@@ -65,6 +65,7 @@ create table if not exists tareas_entrega (
 );
 create index if not exists tareas_entrega_fecha_orden_idx
   on tareas_entrega (fecha_entrega, orden);
+alter table tareas_entrega add column if not exists completada_en timestamptz;
 
 create sequence if not exists public.recibos_numero_seq start with 1993;
 create or replace function public.siguiente_numero_recibo()
