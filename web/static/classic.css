@@ -641,6 +641,7 @@ html[data-modo="classic"] .rc-buscador input:focus {
   }
   html[data-modo="classic"] .rc-logout-acciones {
     flex-direction: column;
+    align-items: center;
   }
 }
 
@@ -743,16 +744,30 @@ html[data-modo="classic"] .btn-modo.activo {
 html[data-modo="classic"] .rc-perfil-opcion {
   background: var(--cl-azul-francia);
   color: #fff;
+  /* Le gana en especificidad a "html[data-modo="classic"] button" (que deja
+     un border-width: 2px sin border-style propio y un font-weight: 700 que
+     "Ir a perfil" -un <a>, no un <button>- nunca recibe) para que las 3
+     opciones del menú de perfil queden idénticas: sin borde, sin sombra,
+     mismo grosor de letra. */
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  font-weight: 600;
 }
-html[data-modo="classic"] .rc-perfil-opcion:hover {
+html[data-modo="classic"] .rc-perfil-opcion:hover,
+html[data-modo="classic"] .rc-perfil-opcion:focus-visible,
+html[data-modo="classic"] .rc-perfil-opcion:active {
   background: #001835;
   color: #fff;
+  border: none;
+  box-shadow: none;
 }
-html[data-modo="classic"] #btn-logout-classic {
-  color: var(--cl-rojo);
-}
+/* Rojo fijo (no la variable --cl-rojo, que en modo oscuro se desatura a
+   gris junto con el resto de la paleta): "Cerrar sesión" tiene que leerse
+   rojo siempre, sea modo claro u oscuro. */
+html[data-modo="classic"] #btn-logout-classic,
 html[data-modo="classic"] #btn-logout-classic:hover {
-  color: var(--cl-rojo);
+  color: #c6283b;
 }
 
 /* Mensaje de confirmación de log out: mismo lenguaje visual del modo
@@ -776,12 +791,19 @@ html[data-modo="classic"] .rc-logout-tarjeta button {
   border-radius: 12px;
   font-weight: 800;
 }
-html[data-modo="classic"] #btn-logout-confirmar-si {
-  color: var(--cl-rojo);
+/* "Cancelar" y "Cerrar sesión" del diálogo de confirmación: mismo padding y
+   tamaño de letra que .btn-categoria (arriba) para que salgan del mismo
+   alto, en vez del height:42px fijo (pensado para el botón único del cartel
+   "Sesión cerrada") que no coincide con la altura real de esos botones. */
+html[data-modo="classic"] .rc-logout-acciones button {
+  height: auto;
+  padding: 12px 16px;
+  font-size: 14px;
 }
+html[data-modo="classic"] #btn-logout-confirmar-si,
 html[data-modo="classic"] #btn-logout-confirmar-si:hover,
 html[data-modo="classic"] #btn-logout-confirmar-si:focus-visible {
-  color: var(--cl-rojo);
+  color: #c6283b;
 }
 html[data-modo="classic"] .rc-logout-tarjeta button:hover {
   background: #000000;

@@ -209,7 +209,7 @@ function aplicarTemaClassic(tema, persistir = false) {
   const botonTema = document.getElementById("btn-classic-theme");
   if (botonTema) {
     const siguienteTema = temaNormalizado === "light" ? "dark" : "light";
-    botonTema.textContent = `Usar modo ${siguienteTema}`;
+    botonTema.textContent = siguienteTema === "light" ? "Modo Light ☼" : "Modo Oscuro ☾";
     botonTema.setAttribute("aria-label", `Cambiar a modo ${siguienteTema}`);
   }
 }
