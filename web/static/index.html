@@ -225,27 +225,15 @@
       <label for="fecha-entrega">Entrega</label><select id="fecha-entrega"></select><p id="nota-entrega" class="carrito-nota"></p>
       <button id="btn-abrir-direccion" type="button">Dirección de entrega</button>
       <div id="direccion-entrega-wrap" class="oculto">
-        <div class="rc-codigo-header">
-          <label for="direccion-entrega" class="rc-codigo-titulo">Especificá dirección de entrega</label>
-          <button id="btn-cerrar-direccion" type="button" aria-label="Cerrar">✕</button>
-        </div>
+        <label for="direccion-entrega" class="rc-codigo-titulo">Especificá dirección de entrega</label>
         <input id="direccion-entrega" type="text" maxlength="500" autocomplete="street-address" placeholder="Calle, número, barrio y ciudad">
         <button id="btn-guardar-direccion" type="button">APLICAR</button>
       </div>
       <button id="btn-vaciar-carrito" type="button">Vaciar carrito</button>
       <button id="btn-abrir-codigo" type="button">Aplicar código</button>
       <div id="modal-codigo" class="oculto">
-        <div class="rc-codigo-header">
-          <p class="rc-codigo-titulo">Aplicá tu código</p>
-          <button id="btn-cerrar-codigo" type="button" aria-label="Cerrar">✕</button>
-        </div>
-        <div class="descuento-mailing">
-          <label for="input-codigo-mailing">Código</label>
-          <div class="descuento-mailing-fila">
-            <input id="input-codigo-mailing" type="text" maxlength="40" placeholder="Ingresá o pegá tu código" autocomplete="off">
-          </div>
-          <p id="estado-codigo-mailing" class="descuento-mailing-estado"></p>
-        </div>
+        <p class="rc-codigo-titulo">Aplicá tu código</p>
+        <input id="input-codigo-mailing" type="text" maxlength="40" placeholder="Ingresá o pegá tu código" autocomplete="off">
         <button id="btn-aplicar-codigo" type="button">APLICAR</button>
       </div>
       <button id="btn-whatsapp" type="button">Cerrar pedido por WhatsApp</button>

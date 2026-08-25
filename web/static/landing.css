@@ -1400,6 +1400,7 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 .descuento-mailing-estado.error { color: #ff8b8b; }
 #total-carrito { margin: 0; font-size: 14px; color: var(--rc-green-bright); }
 #btn-aplicar-codigo,
+#btn-guardar-direccion,
 #btn-abrir-codigo,
 #btn-abrir-direccion,
 #btn-vaciar-carrito,
@@ -1423,6 +1424,16 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   box-sizing: border-box;
   min-height: 50px;
   padding: 0 12px;
+}
+#modal-codigo input {
+  box-sizing: border-box;
+  min-height: 50px;
+  padding: 0 12px;
+  background: #0b140f;
+  color: var(--rc-green-bright);
+  border: 1px solid var(--rc-green-faint);
+  font-family: var(--rc-font);
+  text-transform: uppercase;
 }
 
 @media (max-width: 700px) {

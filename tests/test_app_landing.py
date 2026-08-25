@@ -414,9 +414,44 @@ def test_carrito_muestra_disclaimer_y_alinea_altura_de_botones():
     assert "detalles finales se confirman por WhatsApp" in html
     assert "--carrito-boton-altura: 40px;" in css
     assert "#btn-aplicar-codigo," in css
+    assert "#btn-guardar-direccion," in css
     assert "#btn-vaciar-carrito," in css
     assert "#btn-whatsapp {" in css
     assert "height: var(--carrito-boton-altura);" in css
+
+
+def test_modal_codigo_es_solo_titulo_input_y_aplicar():
+    html = (appmod.BASE / "static" / "index.html").read_text()
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    modal = html[html.index('<div id="modal-codigo"'):html.index('<button id="btn-whatsapp"')]
+
+    assert "Aplicá tu código" in modal
+    assert 'id="input-codigo-mailing"' in modal
+    assert 'id="btn-aplicar-codigo"' in modal
+    assert "rc-codigo-header" not in modal
+    assert "descuento-mailing" not in modal
+    assert 'id="btn-cerrar-codigo"' not in modal
+    assert 'getElementById("btn-cerrar-codigo")' not in script
+    assert "#modal-codigo input {" in (appmod.BASE / "static" / "landing.css").read_text()
+
+
+def test_carrito_muestra_un_solo_panel_secundario_y_cierra_al_tocar_afuera():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+
+    assert "function abrirPanelSecundario(idPanel)" in script
+    assert 'direccion.classList.toggle("oculto", idPanel !== "direccion-entrega-wrap")' in script
+    assert 'codigo.classList.toggle("oculto", idPanel !== "modal-codigo")' in script
+    assert 'document.addEventListener("pointerdown", (evento) =>' in script
+    assert "panelSecundarioAbierto.contains(evento.target)" in script
+
+
+def test_direccion_entrega_cierra_sin_boton_x():
+    html = (appmod.BASE / "static" / "index.html").read_text()
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    direccion = html[html.index('<div id="direccion-entrega-wrap"'):html.index('<button id="btn-vaciar-carrito"')]
+
+    assert 'id="btn-cerrar-direccion"' not in direccion
+    assert 'getElementById("btn-cerrar-direccion")' not in script
 
 
 def test_carrito_y_whatsapp_muestran_los_cinco_precios_de_las_cards():

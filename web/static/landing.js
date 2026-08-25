@@ -3654,36 +3654,51 @@ document.getElementById("btn-vaciar-carrito").addEventListener("click", () => {
   borrarRegaloPromo();
 });
 
+const panelDireccionEntrega = document.getElementById("direccion-entrega-wrap");
+const panelCodigoPromocional = document.getElementById("modal-codigo");
+
+function abrirPanelSecundario(idPanel) {
+  const direccion = panelDireccionEntrega;
+  const codigo = panelCodigoPromocional;
+  direccion.classList.toggle("oculto", idPanel !== "direccion-entrega-wrap");
+  codigo.classList.toggle("oculto", idPanel !== "modal-codigo");
+}
+
+function cerrarPanelSecundario() {
+  panelDireccionEntrega.classList.add("oculto");
+  panelCodigoPromocional.classList.add("oculto");
+}
+
 document.getElementById("btn-abrir-direccion").addEventListener("click", () => {
-  document.getElementById("direccion-entrega-wrap").classList.remove("oculto");
-});
-document.getElementById("btn-cerrar-direccion").addEventListener("click", () => {
-  document.getElementById("direccion-entrega-wrap").classList.add("oculto");
+  abrirPanelSecundario("direccion-entrega-wrap");
 });
 document.getElementById("btn-guardar-direccion").addEventListener("click", () => {
-  document.getElementById("direccion-entrega-wrap").classList.add("oculto");
+  cerrarPanelSecundario();
 });
 
 document.getElementById("btn-abrir-codigo").addEventListener("click", () => {
-  document.getElementById("modal-codigo").classList.remove("oculto");
+  abrirPanelSecundario("modal-codigo");
 });
-document.getElementById("btn-cerrar-codigo").addEventListener("click", () => {
-  document.getElementById("modal-codigo").classList.add("oculto");
+document.addEventListener("pointerdown", (evento) => {
+  const panelSecundarioAbierto = [panelDireccionEntrega, panelCodigoPromocional]
+    .find((panel) => !panel.classList.contains("oculto"));
+  if (!panelSecundarioAbierto || panelSecundarioAbierto.contains(evento.target)) return;
+  if (evento.target.closest("#btn-abrir-direccion, #btn-abrir-codigo")) return;
+  cerrarPanelSecundario();
 });
 
 document.getElementById("btn-aplicar-codigo").addEventListener("click", async () => {
   const carrito = cargarCarrito();
   if (!carrito.length) {
-    setEstadoCodigoMailing("Agregá productos al carrito antes de aplicar un código.", "error");
+    alert("Agregá productos al carrito antes de aplicar un código.");
     return;
   }
   const input = document.getElementById("input-codigo-mailing");
   const codigo = (input?.value || "").trim().toUpperCase();
   if (!codigo) {
-    setEstadoCodigoMailing("Ingresá un código.", "error");
+    alert("Ingresá un código.");
     return;
   }
-  setEstadoCodigoMailing("Validando código...");
   const r = await fetch("/api/codigos-promo/validar", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -3691,11 +3706,12 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
   });
   const body = await r.json().catch(() => ({}));
   if (!r.ok) {
-    setEstadoCodigoMailing(body.error || "No se pudo validar el código.", "error");
+    alert(body.error || "No se pudo validar el código.");
     return;
   }
   guardarRegaloPromo(body);
-  setEstadoCodigoMailing(`¡Código aplicado! Sumamos ${body.producto_regalo} de regalo a tu pedido.`, "ok");
+  cerrarPanelSecundario();
+  alert(`¡Código aplicado! Sumamos ${body.producto_regalo} de regalo a tu pedido.`);
 });
 
 async function consumirCodigoPromo() {
