@@ -930,11 +930,11 @@ html[data-modo="classic"] .tarjeta-recomendado-acciones {
 }
 
 @media (max-width: 700px) {
-  html[data-modo="classic"] body:not(.rc-vista-seccion) {
+  html[data-modo="classic"] body#rc-body-landing:not(.rc-vista-seccion) {
     height: 100dvh;
     overflow: hidden;
   }
-  html[data-modo="classic"] body:not(.rc-vista-seccion) .fila-principal {
+  html[data-modo="classic"] body#rc-body-landing:not(.rc-vista-seccion) .fila-principal {
     flex: 1 1 auto;
     min-height: 0;
     padding-bottom: 12px;
@@ -942,14 +942,14 @@ html[data-modo="classic"] .tarjeta-recomendado-acciones {
   /* El home mobile sin scroll tiene que entrar completo en el viewport:
      categorías + recomendaciones compiten por la misma altura fija, así que
      los botones de categoría van más compactos acá (solo en el home). */
-  html[data-modo="classic"] body:not(.rc-vista-seccion) #categorias .btn-categoria {
+  html[data-modo="classic"] body#rc-body-landing:not(.rc-vista-seccion) #categorias .btn-categoria {
     padding: 9px 16px;
   }
-  html[data-modo="classic"] body:not(.rc-vista-seccion) .categorias-columna {
+  html[data-modo="classic"] body#rc-body-landing:not(.rc-vista-seccion) .categorias-columna {
     gap: 6px;
   }
   html[data-modo="classic"] .carrousel-recomendados-grid { grid-template-columns: 1fr; }
-  html[data-modo="classic"] body:not(.rc-vista-seccion) main#productos {
+  html[data-modo="classic"] body#rc-body-landing:not(.rc-vista-seccion) main#productos {
     flex: 1 1 auto;
     min-height: 0;
     margin-top: 12px;
