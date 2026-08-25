@@ -240,14 +240,14 @@ def test_classic_header_mobile_conserva_ancho_de_busqueda_propio():
     assert "width: var(--rc-mobile-classic-content-width);" in css_mobile
 
 
-def test_classic_mobile_fija_carrousel_recomendados_a_400_por_350():
+def test_classic_mobile_ajusta_carrousel_recomendados_al_alto_disponible():
     css = (appmod.BASE / "static" / "classic.css").read_text()
     selector = 'html[data-modo="classic"] .carrousel-recomendados-grid-mobile {'
     inicio = css.index(selector)
     regla = css[inicio : css.index("}", inicio)]
 
     assert "width: min(400px, 100%);" in regla
-    assert "height: 350px;" in regla
+    assert "height: 100%;" in regla
     assert "margin: 0 auto;" in regla
 
 
@@ -312,6 +312,16 @@ def test_classic_mobile_home_usa_el_viewport_sin_scroll_de_pagina():
 
     assert "\n    height: 100dvh;" in regla
     assert "overflow: hidden;" in regla
+
+
+def test_classic_mobile_card_recomendada_ocupa_el_alto_libre_sin_un_tope_fijo():
+    css = (appmod.BASE / "static" / "classic.css").read_text()
+    selector = 'html[data-modo="classic"] .carrousel-recomendados-grid-mobile {'
+    inicio = css.index(selector)
+    regla = css[inicio : css.index("}", inicio)]
+
+    assert "height: 100%;" in regla
+    assert "height: 350px;" not in regla
 
 
 def test_classic_mobile_agranda_iconos_y_mantiene_espaciado_de_acciones():
