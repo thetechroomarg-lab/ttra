@@ -16,7 +16,7 @@ def test_registro_exitoso_crea_sesion(monkeypatch):
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
     })
     assert r.status_code == 200
     assert r.json() == {"ok": True, "requiere_confirmacion_email": False}
@@ -33,7 +33,18 @@ def test_registro_requiere_provincia(monkeypatch):
     assert r.status_code == 422
 
 
-def test_registro_guarda_el_domicilio_del_cliente(monkeypatch):
+def test_registro_requiere_domicilio(monkeypatch):
+    c = _cliente(monkeypatch)
+
+    r = c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
+    })
+
+    assert r.status_code == 422
+
+
+def test_registro_guarda_el_domicilio_del_cliente_como_predeterminado(monkeypatch):
     c = _cliente(monkeypatch)
 
     r = c.post("/registro", json={
@@ -43,54 +54,55 @@ def test_registro_guarda_el_domicilio_del_cliente(monkeypatch):
     })
 
     assert r.status_code == 200
-    assert c.get("/api/me").json()["direccion"] == "Av. Colón 123, Córdoba"
+    domicilios = c.get("/api/domicilios").json()
+    assert len(domicilios) == 1
+    assert domicilios[0]["alias"] == "Principal"
+    assert domicilios[0]["direccion"] == "Av. Colón 123, Córdoba"
+    assert domicilios[0]["predeterminado"] is True
 
 
-def test_cliente_sin_domicilio_puede_guardarlo_desde_checkout(monkeypatch):
+def test_cliente_puede_agregar_hasta_cinco_domicilios_desde_su_perfil(monkeypatch):
     c = _cliente(monkeypatch)
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
+        "direccion": "Domicilio inicial 1, Córdoba",
     })
 
-    r = c.put("/api/me/direccion", json={
-        "direccion": "Av. Colón 123, Córdoba", "guardar_en_perfil": True,
-    })
+    for n in range(2, 6):
+        r = c.post("/api/domicilios", json={"alias": f"Domicilio {n}", "direccion": f"Calle {n}, Córdoba"})
+        assert r.status_code == 200
 
-    assert r.status_code == 200
-    assert r.json()["direccion"] == "Av. Colón 123, Córdoba"
+    assert len(c.get("/api/domicilios").json()) == 5
+
+    r = c.post("/api/domicilios", json={"alias": "Domicilio 6", "direccion": "Calle 6, Córdoba"})
+    assert r.status_code == 400
 
 
-def test_cliente_que_rechaza_guardar_domicilio_no_altera_su_perfil(monkeypatch):
+def test_cliente_puede_editar_eliminar_y_marcar_domicilio_predeterminado(monkeypatch):
     c = _cliente(monkeypatch)
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
+        "direccion": "Domicilio inicial, Córdoba",
     })
+    principal = c.get("/api/domicilios").json()[0]
+    nuevo = c.post("/api/domicilios", json={"alias": "Oficina", "direccion": "Calle Nueva 1, Córdoba"}).json()
+    assert nuevo["predeterminado"] is False
 
-    r = c.put("/api/me/direccion", json={
-        "direccion": "Av. Colón 123, Córdoba", "guardar_en_perfil": False,
-    })
-
+    r = c.put(f"/api/domicilios/{nuevo['id']}", json={"alias": "Oficina 2", "direccion": "Calle Nueva 2, Córdoba"})
     assert r.status_code == 200
-    assert r.json()["direccion"] is None
-    assert "direccion_consultada" not in r.json()
+    assert r.json()["alias"] == "Oficina 2"
 
-
-def test_cliente_puede_agregar_domicilio_desde_su_perfil(monkeypatch):
-    c = _cliente(monkeypatch)
-    c.post("/registro", json={
-        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
-    })
-
-    r = c.put("/api/me", json={
-        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
-        "direccion": "Av. Colón 123, Córdoba",
-    })
-
+    r = c.post(f"/api/domicilios/{nuevo['id']}/predeterminado")
     assert r.status_code == 200
-    assert r.json()["direccion"] == "Av. Colón 123, Córdoba"
+    domicilios_por_id = {d["id"]: d for d in c.get("/api/domicilios").json()}
+    assert domicilios_por_id[nuevo["id"]]["predeterminado"] is True
+    assert domicilios_por_id[principal["id"]]["predeterminado"] is False
+
+    r = c.delete(f"/api/domicilios/{principal['id']}")
+    assert r.status_code == 200
+    assert len(c.get("/api/domicilios").json()) == 1
 
 
 def test_registro_pasa_redirect_publico_a_supabase(monkeypatch):
@@ -101,7 +113,7 @@ def test_registro_pasa_redirect_publico_a_supabase(monkeypatch):
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
     })
 
     assert r.status_code == 200
@@ -118,6 +130,7 @@ def test_registro_fallout_conserva_el_modo_en_el_mail_de_confirmacion(monkeypatc
     r = c.post("/registro?modo=fallout", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
+        "direccion": "Av. Colón 123, Córdoba",
     })
 
     assert r.status_code == 200
@@ -136,7 +149,7 @@ def test_registro_usa_forwarded_host_si_base_url_interna(monkeypatch):
         json={
             "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
             "email": "juan@x.com", "password": "clave1234",
-        "provincia": "Córdoba",
+        "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
         },
         headers={
             "X-Forwarded-Host": "thetechroomarg.com",
@@ -159,7 +172,7 @@ def test_registro_pendiente_de_confirmacion_no_crea_sesion(monkeypatch):
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
     })
 
     assert r.status_code == 200
@@ -180,7 +193,7 @@ def test_completar_signup_con_access_token_crea_sesion_y_redirige_a_landing(monk
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
     })
     auth_id = fake.auth._usuarios_por_email["juan@x.com"].id
     fake.auth.get_user = lambda jwt=None: SimpleNamespace(user=SimpleNamespace(id=auth_id))
@@ -199,12 +212,12 @@ def test_registro_celular_duplicado_devuelve_400(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
     })
     r = c.post("/registro", json={
         "nombre": "Otro", "apellido": "Nombre", "celular": "3511234567",
         "email": "otro@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
     })
     assert r.status_code == 400
     assert "error" in r.json()
@@ -215,7 +228,7 @@ def test_login_correcto(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
     })
     r = c.post("/login", json={"email": "juan@x.com", "password": "clave1234"})
     assert r.status_code == 200
@@ -236,7 +249,7 @@ def test_password_temporal_fuerza_cambio_antes_de_usar_el_resto_de_la_app(monkey
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
     })
     fake = appmod.get_client()
     cliente_id = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]["id"]
@@ -266,7 +279,7 @@ def test_logout_limpia_sesion(monkeypatch):
     c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
     })
     r = c.post("/logout")
     assert r.status_code == 200
@@ -283,7 +296,7 @@ def test_registro_con_supabase_caido_da_mensaje_claro(monkeypatch):
     r = c.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
     })
     assert r.status_code == 503
     assert "error" in r.json()

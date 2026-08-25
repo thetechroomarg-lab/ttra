@@ -195,7 +195,7 @@ def obtener_cliente(client, cliente_id):
             "debe_cambiar_password": bool(perfil.get("debe_cambiar_password"))}
 
 
-def actualizar_cliente(client, cliente_id, nombre, apellido, celular, direccion=None):
+def actualizar_cliente(client, cliente_id, nombre, apellido, celular):
     nombre = capitalizar_nombre(nombre)
     apellido = capitalizar_nombre(apellido)
     celular_norm = normalizar_celular(celular)
@@ -207,8 +207,6 @@ def actualizar_cliente(client, cliente_id, nombre, apellido, celular, direccion=
         raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}")
 
     datos = {"nombre": nombre, "apellido": apellido, "celular": celular_norm}
-    if direccion is not None:
-        datos["direccion"] = direccion.strip() or None
     client.table("clientes").update(datos).eq("id", cliente_id).execute()
     return obtener_cliente(client, cliente_id)
 

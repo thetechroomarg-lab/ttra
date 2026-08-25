@@ -25,7 +25,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, entregas, interacciones, pedidos, recibos
+from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, pedidos, recibos
 from web.email_util import EnvioEmailError, enviar_email
 from web.productos import resolver_proveedor
 from web.supabase_client import get_client
@@ -2182,7 +2182,7 @@ class RegistroIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     provincia: str = Field(min_length=2, max_length=80)
-    direccion: str | None = Field(default=None, max_length=500)
+    direccion: str = Field(min_length=3, max_length=500)
 
 
 class LoginIn(BaseModel):
@@ -2253,6 +2253,10 @@ def registro(entrada: RegistroIn, request: Request):
     except Exception:
         logger.exception("No se pudo completar el registro (¿Supabase no disponible?)")
         return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    try:
+        domicilios.crear(client, cliente["id"], "Principal", entrada.direccion, predeterminado=True)
+    except Exception:
+        logger.exception("No se pudo guardar el domicilio inicial del registro")
     if cliente["requiere_confirmacion_email"]:
         _vincular_interacciones_anonimas(client, request, cliente["id"])
         request.session.clear()
@@ -2360,12 +2364,6 @@ class ActualizarMeIn(BaseModel):
     nombre: str
     apellido: str
     celular: str
-    direccion: str | None = Field(default=None, max_length=500)
-
-
-class GuardarDireccionPerfilIn(BaseModel):
-    direccion: str = Field(min_length=3, max_length=500)
-    guardar_en_perfil: bool
 
 
 @app.put("/api/me")
@@ -2375,7 +2373,7 @@ def api_me_actualizar(entrada: ActualizarMeIn, request: Request):
     try:
         cliente = cuentas.actualizar_cliente(
             get_client(), request.session["cliente_id"],
-            entrada.nombre, entrada.apellido, entrada.celular, entrada.direccion,
+            entrada.nombre, entrada.apellido, entrada.celular,
         )
     except (cuentas.CelularDuplicadoError, ValueError) as e:
         return JSONResponse({"error": str(e)}, status_code=400)
@@ -2385,23 +2383,80 @@ def api_me_actualizar(entrada: ActualizarMeIn, request: Request):
     return cliente
 
 
-@app.put("/api/me/direccion")
-def api_me_guardar_direccion(entrada: GuardarDireccionPerfilIn, request: Request):
+class DomicilioIn(BaseModel):
+    alias: str = Field(min_length=1, max_length=80)
+    direccion: str = Field(min_length=3, max_length=500)
+
+
+@app.get("/api/domicilios")
+def api_domicilios_listar(request: Request):
     if not _sesion_activa(request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     try:
-        client = get_client()
-        if entrada.guardar_en_perfil:
-            client.table("clientes").update({"direccion": entrada.direccion.strip()}).eq(
-                "id", request.session["cliente_id"]
-            ).execute()
-        cliente = cuentas.obtener_cliente(client, request.session["cliente_id"])
+        return domicilios.listar(get_client(), request.session["cliente_id"])
     except Exception:
-        logger.exception("No se pudo guardar la preferencia de domicilio")
-        return JSONResponse({"error": "No pudimos guardar el domicilio, probá de nuevo en un momento"}, status_code=503)
-    if cliente is None:
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    return cliente
+        logger.exception("No se pudieron obtener los domicilios")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+
+
+@app.post("/api/domicilios")
+def api_domicilios_crear(entrada: DomicilioIn, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        domicilio = domicilios.crear(
+            get_client(), request.session["cliente_id"], entrada.alias, entrada.direccion,
+        )
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo guardar el domicilio")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    return domicilio
+
+
+@app.put("/api/domicilios/{domicilio_id}")
+def api_domicilios_actualizar(domicilio_id: str, entrada: DomicilioIn, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        domicilio = domicilios.actualizar(
+            get_client(), request.session["cliente_id"], domicilio_id, entrada.alias, entrada.direccion,
+        )
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo actualizar el domicilio")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    return domicilio
+
+
+@app.delete("/api/domicilios/{domicilio_id}")
+def api_domicilios_eliminar(domicilio_id: str, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        domicilios.eliminar(get_client(), request.session["cliente_id"], domicilio_id)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo eliminar el domicilio")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    return {"ok": True}
+
+
+@app.post("/api/domicilios/{domicilio_id}/predeterminado")
+def api_domicilios_predeterminado(domicilio_id: str, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        domicilios.marcar_predeterminado(get_client(), request.session["cliente_id"], domicilio_id)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo marcar el domicilio como predeterminado")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    return {"ok": True}
 
 
 class CambiarPasswordPropioIn(BaseModel):

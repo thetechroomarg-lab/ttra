@@ -224,13 +224,12 @@
       <p id="total-carrito"></p>
       <label for="fecha-entrega">Entrega</label><select id="fecha-entrega"></select><p id="nota-entrega" class="carrito-nota"></p>
       <button id="btn-abrir-direccion" type="button">Dirección de entrega</button>
-      <div id="opciones-direccion-entrega" class="oculto">
-        <button id="btn-usar-mi-direccion" type="button">Usar mi dirección</button>
-        <button id="btn-elegir-otra-direccion" type="button">Elegir otra dirección</button>
-        <p id="estado-direccion-guardada" class="carrito-nota"></p>
+      <div id="selector-domicilio-entrega" class="oculto">
+        <select id="select-domicilio-entrega" aria-label="Domicilio de entrega"></select>
       </div>
       <div id="direccion-entrega-wrap" class="oculto">
         <label for="direccion-entrega" class="rc-codigo-titulo">Especificá dirección de entrega</label>
+        <input id="direccion-alias" type="text" maxlength="80" placeholder="Nombre para guardar (ej. Casa)" class="oculto">
         <input id="direccion-entrega" type="text" maxlength="500" autocomplete="street-address" placeholder="Calle, número, barrio y ciudad">
         <ul id="sugerencias-direccion" class="sugerencias-direccion oculto" role="listbox" aria-label="Sugerencias de dirección"></ul>
         <button id="btn-guardar-direccion" type="button">APLICAR</button>

@@ -44,13 +44,23 @@
       <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required>
       <input id="perfil-email" type="email" placeholder="Email" disabled>
       <input id="perfil-celular" type="tel" placeholder="Celular" autocomplete="tel" required>
-      <div class="perfil-direccion-wrap">
-        <input id="perfil-direccion" type="text" placeholder="Domicilio de entrega" autocomplete="street-address" maxlength="500">
-        <ul id="perfil-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
-      </div>
       <button type="submit">Guardar cambios</button>
       <p class="error" id="perfil-error"></p>
       <p class="ok" id="perfil-ok"></p>
+    </form>
+
+    <h2>Mis domicilios</h2>
+    <div id="lista-domicilios" class="lista-domicilios"></div>
+    <form id="form-domicilio" class="form">
+      <input id="domicilio-alias" type="text" placeholder="Nombre (ej. Casa, Oficina)" maxlength="80" required>
+      <div class="perfil-direccion-wrap">
+        <input id="domicilio-direccion" type="text" placeholder="Dirección" autocomplete="street-address" maxlength="500" required>
+        <ul id="perfil-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
+      </div>
+      <button type="submit" id="btn-guardar-domicilio">Agregar domicilio</button>
+      <button type="button" id="btn-cancelar-edicion-domicilio" class="oculto">Cancelar</button>
+      <p class="error" id="domicilio-error"></p>
+      <p class="ok" id="domicilio-ok"></p>
     </form>
 
     <h2>Cambiar contraseña</h2>

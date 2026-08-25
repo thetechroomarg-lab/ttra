@@ -12,8 +12,7 @@ def _admin_y_cliente(monkeypatch):
     cliente.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234",
-    "provincia": "Córdoba",
-    })
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
     cliente.post("/api/pedidos", json={"productos": ["iPhone 13"]})
     cliente.post("/logout")
     cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
@@ -38,8 +37,7 @@ def test_admin_elimina_cuenta_y_libera_datos_unicos(monkeypatch):
     registrado = nuevo.post("/registro", json={
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "otra-clave",
-    "provincia": "Córdoba",
-    })
+    "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
     assert registrado.status_code == 200
 
 
