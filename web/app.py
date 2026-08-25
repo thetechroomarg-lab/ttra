@@ -985,8 +985,8 @@ _ADMIN_CLIENTES_ESTILO = """
   .pedido-historico { padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
   .estado-recibo { display:inline-block; margin-top:4px; color:#9aa0ab; font-size:12px; }
   .acciones-recibo { display:inline-flex; gap:8px; margin-left:8px; vertical-align:middle; }
-  .btn-ver-recibo-pdf, .btn-reenviar-recibo, .btn-eliminar-historial { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid #4a5160; border-radius:7px; background:#252a33; color:#f2f4f8; cursor:pointer; text-decoration:none; }
-  .btn-eliminar-historial { border-color:#8d1627; color:#ff9baa; }
+  .btn-ver-recibo-pdf, .btn-reenviar-recibo, .btn-eliminar-historial, .btn-eliminar-historial-tarea { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid #4a5160; border-radius:7px; background:#252a33; color:#f2f4f8; cursor:pointer; text-decoration:none; }
+  .btn-eliminar-historial, .btn-eliminar-historial-tarea { border-color:#8d1627; color:#ff9baa; }
   .ordenar-columna { appearance:none; border:0; background:transparent; color:#f2f4f8; font:inherit; font-weight:700; cursor:pointer; padding:0; }
   .ordenar-columna:hover { color:#fff; text-decoration:underline; }
   .modal-mail { position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
@@ -1324,12 +1324,16 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             nombre_cliente = clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
             titulo = tarea.get("titulo") or "Tarea sin título"
             nota = tarea.get("nota") or ""
+            tarea_id = html.escape(tarea.get("id", ""))
             busqueda = html.escape(f"{nombre_cliente} {titulo} {nota}".lower())
             detalle_cliente = f" · {html.escape(nombre_cliente)}" if nombre_cliente else ""
             detalle_nota = f" · {html.escape(nota)}" if nota else ""
+            tacho = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+                     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>')
             return (
                 f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>Tarea completada: {html.escape(titulo)}</strong>'
-                f'{detalle_cliente}{detalle_nota}<br><span class="estado-recibo">Completada el {html.escape(tarea.get("completada_en") or "")}</span></div>'
+                f'{detalle_cliente}{detalle_nota}<br><span class="estado-recibo">Completada el {html.escape(tarea.get("completada_en") or "")}</span>'
+                f'<button class="btn-eliminar-historial-tarea" type="button" data-id="{tarea_id}" title="Eliminar del historial" aria-label="Eliminar del historial">{tacho}</button></div>'
             )
 
         pedidos_historial_html = "".join(
@@ -1525,6 +1529,16 @@ document.querySelectorAll(".btn-eliminar-historial").forEach((btn) => {{
     const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}`, {{ method: "DELETE" }});
     const datos = await r.json().catch(() => ({{}}));
     if (!r.ok) {{ alert(datos.error || "No se pudo eliminar el pedido."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-eliminar-historial-tarea").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta tarea del historial? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}`, {{ method: "DELETE" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la tarea."); btn.disabled = false; return; }}
     location.reload();
   }});
 }});

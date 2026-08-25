@@ -343,3 +343,31 @@ def test_tarea_manual_completada_aparece_en_el_historial_de_su_dia(monkeypatch):
 
     assert "Tarea completada: Visitar cliente" in respuesta.text
     assert "Llevar catálogo" in respuesta.text
+
+
+def test_historial_muestra_solo_el_icono_de_tacho_para_eliminar_una_tarea(monkeypatch):
+    cliente, fake = _admin_con_fecha_fija(monkeypatch)
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": "2026-08-24",
+        "titulo": "Visitar cliente", "orden": 1,
+        "completada_en": "2026-08-24T16:00:00+00:00",
+    }).execute()
+
+    respuesta = cliente.get("/admin/clientes?fecha_pedidos=2026-08-24")
+
+    assert '<button class="btn-eliminar-historial-tarea" type="button" data-id="tarea-1"' in respuesta.text
+    assert "Eliminar tarea</button>" not in respuesta.text.split("Tarea completada")[1].split("</div>")[0]
+
+
+def test_admin_puede_eliminar_una_tarea_completada_del_historial(monkeypatch):
+    cliente, fake = _admin_con_fecha_fija(monkeypatch)
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": "2026-08-24",
+        "titulo": "Visitar cliente", "orden": 1,
+        "completada_en": "2026-08-24T16:00:00+00:00",
+    }).execute()
+
+    eliminar = cliente.delete("/admin/tareas-entrega/tarea-1")
+
+    assert eliminar.status_code == 200
+    assert fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data == []
