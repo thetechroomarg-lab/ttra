@@ -20,6 +20,49 @@ def test_landing_descarta_descuento_mailing_persistido_fuera_de_un_link():
     assert "localStorage.removeItem(CLAVE_DESCUENTO_MAILING);" in script
 
 
+def test_configuracion_publica_expone_solo_la_clave_de_maps_configurada(monkeypatch):
+    monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "maps-key-de-prueba")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+
+    respuesta = cliente.get("/api/configuracion-publica")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json() == {"google_maps_api_key": "maps-key-de-prueba"}
+
+
+def test_configuracion_publica_no_inventa_una_clave_de_maps(monkeypatch):
+    monkeypatch.delenv("GOOGLE_MAPS_API_KEY", raising=False)
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+
+    respuesta = cliente.get("/api/configuracion-publica")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json() == {"google_maps_api_key": ""}
+
+
+def test_checkout_ofrece_sugerencias_de_direccion_de_google_maps_en_argentina():
+    html = (appmod.BASE / "static" / "index.html").read_text()
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+
+    assert 'id="sugerencias-direccion"' in html
+    assert 'fetch("/api/configuracion-publica")' in script
+    assert "AutocompleteSuggestion.fetchAutocompleteSuggestions" in script
+    assert 'includedRegionCodes: ["ar"]' in script
+    assert 'place.fetchFields({ fields: ["formattedAddress"] })' in script
+
+
+def test_autocomplete_de_direccion_se_comparte_con_el_carrito_fallout():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+    inicio = script.index("async function cargarApiPlaces()")
+    fin = script.index("function abrirPanelSecundario", inicio)
+    autocomplete = script[inicio:fin]
+
+    assert "modoVisual" not in autocomplete
+    assert ".sugerencias-direccion" in css
+    assert 'html[data-modo="fallout"] #panel-carrito {' in css
+
+
 def test_compartir_producto_abre_siempre_el_panel_compartible():
     script = (appmod.BASE / "static" / "landing.js").read_text()
     inicio = script.index("async function compartirProducto(nombre)")

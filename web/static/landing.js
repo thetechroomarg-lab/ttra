@@ -3656,6 +3656,76 @@ document.getElementById("btn-vaciar-carrito").addEventListener("click", () => {
 
 const panelDireccionEntrega = document.getElementById("direccion-entrega-wrap");
 const panelCodigoPromocional = document.getElementById("modal-codigo");
+const inputDireccionEntrega = document.getElementById("direccion-entrega");
+const sugerenciasDireccion = document.getElementById("sugerencias-direccion");
+let temporizadorSugerenciasDireccion;
+let apiPlacesCargada;
+
+function ocultarSugerenciasDireccion() {
+  sugerenciasDireccion.replaceChildren();
+  sugerenciasDireccion.classList.add("oculto");
+}
+
+async function cargarApiPlaces() {
+  if (apiPlacesCargada !== undefined) return apiPlacesCargada;
+  apiPlacesCargada = fetch("/api/configuracion-publica")
+    .then((respuesta) => respuesta.ok ? respuesta.json() : {})
+    .then(async ({ google_maps_api_key: clave }) => {
+      if (!clave) return null;
+      await new Promise((resolver, rechazar) => {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(clave)}&libraries=places&v=weekly`;
+        script.async = true;
+        script.onload = resolver;
+        script.onerror = rechazar;
+        document.head.append(script);
+      });
+      return google.maps.importLibrary("places");
+    })
+    .catch(() => null);
+  return apiPlacesCargada;
+}
+
+async function mostrarSugerenciasDireccion(texto) {
+  const places = await cargarApiPlaces();
+  if (!places || texto !== inputDireccionEntrega.value.trim()) return;
+  const { AutocompleteSuggestion } = places;
+  const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+    input: texto,
+    includedRegionCodes: ["ar"],
+  });
+  if (texto !== inputDireccionEntrega.value.trim() || !suggestions?.length) {
+    ocultarSugerenciasDireccion();
+    return;
+  }
+  sugerenciasDireccion.replaceChildren(...suggestions.slice(0, 5).map(({ placePrediction }) => {
+    const item = document.createElement("li");
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = placePrediction.text.text;
+    boton.addEventListener("click", async () => {
+      const place = placePrediction.toPlace();
+      await place.fetchFields({ fields: ["formattedAddress"] });
+      inputDireccionEntrega.value = place.formattedAddress || placePrediction.text.text;
+      ocultarSugerenciasDireccion();
+    });
+    item.append(boton);
+    return item;
+  }));
+  sugerenciasDireccion.classList.remove("oculto");
+}
+
+inputDireccionEntrega.addEventListener("input", () => {
+  clearTimeout(temporizadorSugerenciasDireccion);
+  const texto = inputDireccionEntrega.value.trim();
+  if (texto.length < 3) {
+    ocultarSugerenciasDireccion();
+    return;
+  }
+  temporizadorSugerenciasDireccion = setTimeout(() => {
+    mostrarSugerenciasDireccion(texto).catch(ocultarSugerenciasDireccion);
+  }, 250);
+});
 
 function abrirPanelSecundario(idPanel) {
   const direccion = panelDireccionEntrega;
@@ -3667,6 +3737,7 @@ function abrirPanelSecundario(idPanel) {
 function cerrarPanelSecundario() {
   panelDireccionEntrega.classList.add("oculto");
   panelCodigoPromocional.classList.add("oculto");
+  ocultarSugerenciasDireccion();
 }
 
 document.getElementById("btn-abrir-direccion").addEventListener("click", () => {

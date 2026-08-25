@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlencode, urlparse
 
 import httpx
@@ -61,6 +62,17 @@ LIMITE_USD = 0.25
 _gasto = {}  # sesion -> USD acumulado
 
 app = FastAPI()
+
+
+@app.get("/api/configuracion-publica")
+async def configuracion_publica():
+    """Configuración que el navegador necesita para servicios públicos.
+
+    La clave de Maps se entrega al navegador porque la API de JavaScript la
+    requiere allí. Su seguridad depende de las restricciones configuradas en
+    Google Cloud, no de ocultarla en el código cliente.
+    """
+    return {"google_maps_api_key": os.environ.get("GOOGLE_MAPS_API_KEY", "").strip()}
 
 
 @app.exception_handler(RequestValidationError)
@@ -938,20 +950,32 @@ _ADMIN_CLIENTES_ESTILO = """
   #filtro-clientes { flex:1 1 240px; }
   .pedidos-hoy { margin:0 0 20px; padding:14px; border:1px solid #4a5160; border-radius:10px; }
   .pedidos-hoy h2 { margin:0 0 10px; color:#f2f4f8; font-size:17px; }
-  .form-tarea-entrega { display:grid; gap:8px; grid-template-columns:1.2fr 1.5fr 1.5fr auto; margin:0 0 12px; }
-  .form-tarea-entrega input { box-sizing:border-box; min-width:0; min-height:38px; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 10px; font:inherit; }
+  .form-tarea-entrega { display:grid; gap:8px; grid-template-columns:1.2fr 1.2fr 1.5fr 1.5fr auto; margin:0 0 12px; }
+  .tarea-direccion-wrap { position:relative; min-width:0; }
+  .form-tarea-entrega input, .form-tarea-entrega select { box-sizing:border-box; min-width:0; min-height:38px; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 10px; font:inherit; }
+  .tarea-direccion-wrap input { width:100%; }
   .form-tarea-entrega input::placeholder { color:#9aa0ab; }
   .form-tarea-entrega button { border:0; border-radius:8px; background:#c8102e; color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:38px; padding:0 14px; }
+  .tarea-direccion-sugerencias { position:absolute; z-index:10; top:calc(100% + 4px); left:0; right:0; max-height:180px; overflow-y:auto; margin:0; padding:0; list-style:none; border:1px solid #4a5160; border-radius:8px; background:#12141a; box-shadow:0 8px 18px rgba(0,0,0,.28); }
+  .tarea-direccion-sugerencias[hidden] { display:none; }
+  .tarea-direccion-sugerencias button { display:block; width:100%; min-height:38px; padding:8px 10px; border:0; border-radius:0; border-bottom:1px solid #2a2e37; background:#12141a; color:#f2f4f8; text-align:left; font-weight:400; }
+  .tarea-direccion-sugerencias li:last-child button { border-bottom:0; }
+  .tarea-direccion-sugerencias button:hover, .tarea-direccion-sugerencias button:focus-visible { background:#272c36; outline:0; }
+  .selector-cliente-movil { display:none; }
   .pedido-hoy { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
   .pedido-hoy strong { color:#f2f4f8; }
   .pedido-hoy-detalle { min-width:0; }
+  .pedido-hoy.arrastrando { opacity:.5; }
+  .arrastrar-entrega { flex:0 0 auto; width:32px; min-height:36px; border:1px solid #4a5160; border-radius:8px; background:#252a33; color:#f2f4f8; cursor:grab; font:700 20px/1 sans-serif; touch-action:none; }
+  .arrastrar-entrega:active { cursor:grabbing; }
   .pedido-hoy-detalle span { color:#9aa0ab; }
   .pedido-acciones { display:flex; align-items:center; gap:7px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
   .btn-enviar-recibo { flex:0 0 auto; border:0; border-radius:8px; padding:9px 12px; background:#c8102e; color:#fff; cursor:pointer; font-weight:700; }
-  .btn-direcciones, .btn-agregar-direccion { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; text-decoration:none; }
+  .btn-direcciones, .btn-agregar-direccion, .btn-agregar-direccion-tarea { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; text-decoration:none; }
   .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
-  .btn-editar-entrega, .btn-eliminar-entrega { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; }
-  .btn-eliminar-entrega { border-color:#8d1627; color:#ff9baa; }
+  .btn-editar-entrega, .btn-eliminar-entrega, .btn-completar-tarea, .btn-editar-tarea, .btn-eliminar-tarea { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; }
+  .btn-completar-tarea { background:#c8102e; border:0; color:#fff; }
+  .btn-eliminar-entrega, .btn-eliminar-tarea { border-color:#8d1627; color:#ff9baa; }
   .historial-pedidos { margin:0 0 20px; padding:14px; border:1px solid #4a5160; border-radius:10px; }
   .historial-pedidos h2 { margin:0 0 10px; color:#f2f4f8; font-size:17px; }
   .historial-pedidos label { color:#dfe2e8; font-size:13px; font-weight:700; }
@@ -983,14 +1007,24 @@ _ADMIN_CLIENTES_ESTILO = """
   #series-enviar { background:#c8102e; margin-left:auto; }
   .modal-direccion { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
   .modal-direccion[hidden] { display:none; }
+  .modal-fecha-entrega { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
+  .modal-fecha-entrega[hidden] { display:none; }
   .modal-series, .modal-direccion { display:flex; }
+  .modal-fecha-entrega { display:flex; }
   .modal-direccion-contenido { width:min(520px,100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
+  .modal-fecha-contenido { width:min(420px,100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
   .modal-direccion h2 { color:#f2f4f8; font-size:18px; margin:0 0 12px; }
+  .modal-fecha-entrega h2 { color:#f2f4f8; font-size:18px; margin:0 0 12px; }
   .modal-direccion input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid #4a5160; border-radius:8px; padding:0 10px; background:#12141a; color:#f2f4f8; font:inherit; }
+  .modal-fecha-entrega input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid #4a5160; border-radius:8px; padding:0 10px; background:#12141a; color:#f2f4f8; color-scheme:dark; font:inherit; }
   .direccion-acciones { display:flex; gap:8px; margin-top:12px; }
+  .fecha-entrega-acciones { display:flex; gap:8px; margin-top:12px; }
   .direccion-acciones button { border:0; border-radius:8px; color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; }
+  .fecha-entrega-acciones button { border:0; border-radius:8px; color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; }
   #direccion-cancelar { background:#3a3f4b; }
   #direccion-guardar { background:#c8102e; margin-left:auto; }
+  #fecha-entrega-cancelar { background:#3a3f4b; }
+  #fecha-entrega-guardar { background:#c8102e; margin-left:auto; }
   .modal-mail-contenido { width:min(520px, 100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
   .modal-mail h2 { margin:0 0 8px; color:#f2f4f8; font-size:18px; }
   .modal-mail p { margin:0 0 12px; color:#9aa0ab; font-size:13px; }
@@ -1031,17 +1065,31 @@ _ADMIN_CLIENTES_ESTILO = """
     .filtros-clientes input, .filtros-clientes select { min-width:0; width:100%; }
     #filtro-clientes { flex:0 1 auto; min-height:38px; }
     .pedido-hoy { align-items:stretch; flex-direction:column; }
+    .arrastrar-entrega { align-self:flex-start; min-height:42px; width:44px; }
     .form-tarea-entrega { grid-template-columns:1fr; }
     .form-tarea-entrega button { min-height:44px; }
+    #tarea-cliente { display:none; }
+    .selector-cliente-movil { display:block; position:relative; }
+    #tarea-cliente-movil { box-sizing:border-box; width:100%; min-height:48px; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 12px; font:inherit; text-align:left; }
+    #tarea-clientes-movil { position:absolute; z-index:20; top:calc(100% + 4px); left:0; right:0; max-height:260px; overflow-y:auto; margin:0; padding:0; list-style:none; border:1px solid #4a5160; border-radius:8px; background:#12141a; box-shadow:0 8px 18px rgba(0,0,0,.32); }
+    #tarea-clientes-movil[hidden] { display:none; }
+    #tarea-clientes-movil button { display:block; width:100%; min-height:48px; padding:10px 12px; border:0; border-bottom:1px solid #2a2e37; border-radius:0; background:#12141a; color:#f2f4f8; font:inherit; text-align:left; font-weight:400; }
+    #tarea-clientes-movil li:last-child button { border-bottom:0; }
+    #tarea-clientes-movil button:active { background:#272c36; }
     .pedido-hoy-detalle, .pedido-historico { overflow-wrap:anywhere; word-break:break-word; }
     .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-areas:"recibo direcciones" "editar eliminar"; justify-content:stretch; width:100%; }
     .pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }
     .pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }
+    .pedido-acciones .btn-agregar-direccion-tarea { align-items:center; display:flex; justify-content:center; }
     .pedido-acciones .btn-enviar-recibo { grid-area:recibo; }
+    .pedido-acciones .btn-completar-tarea { grid-area:recibo; }
     .pedido-acciones .btn-direcciones { grid-area:direcciones; }
     .pedido-acciones .btn-agregar-direccion { grid-area:direcciones; }
+    .pedido-acciones .btn-agregar-direccion-tarea { grid-area:direcciones; }
     .pedido-acciones .btn-editar-entrega { grid-area:editar; }
+    .pedido-acciones .btn-editar-tarea { grid-area:editar; }
     .pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }
+    .pedido-acciones .btn-eliminar-tarea { grid-area:eliminar; }
     .acciones-recibo { margin:8px 0 0; }
     .tabla-scroll { overflow:visible; }
     #tabla-clientes { min-width:0; font-size:13px; }
@@ -1139,6 +1187,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             "provincia": c.get("provincia") or "Sin especificar",
             "fecha": c.get("creado_en", ""),
             "tiene_cuenta": bool(c.get("auth_id")),
+            "direccion": c.get("direccion"),
         }
         for c in filas_clientes
     ]
@@ -1146,8 +1195,11 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     clientes_por_id = {cliente["id"]: cliente for cliente in clientes}
     fecha_hoy = entregas.ahora_argentina().date().isoformat()
     pedidos = client.table("pedidos").select("*").execute().data
-    tareas_hoy = client.table("tareas_entrega").select("*").eq("fecha_entrega", fecha_hoy).execute().data
-    tareas_hoy = [tarea for tarea in tareas_hoy if not tarea.get("completada_en")]
+    tareas = client.table("tareas_entrega").select("*").execute().data
+    tareas_hoy = [
+        tarea for tarea in tareas
+        if tarea.get("fecha_entrega") == fecha_hoy and not tarea.get("completada_en")
+    ]
     tareas_hoy.sort(key=lambda tarea: int(tarea.get("orden") or 0))
     pedidos_hoy = [
         pedido for pedido in pedidos
@@ -1161,6 +1213,10 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     pedidos_historial = [
         pedido for pedido in pedidos
         if pedido.get("fecha_entrega") == fecha_historial and pedido.get("recibo_enviado_en")
+    ]
+    tareas_historial = [
+        tarea for tarea in tareas
+        if tarea.get("fecha_entrega") == fecha_historial and tarea.get("completada_en")
     ]
 
     def _descripcion_pedido(pedido):
@@ -1187,33 +1243,38 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         direccion = (pedido.get("direccion_entrega") or "").strip()
         boton_direcciones = (
             f'<a class="btn-direcciones" target="_blank" rel="noopener" '
-            f'href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Direcciones</a>'
+            f'href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Vamos</a>'
             if direccion else f'<button class="btn-agregar-direccion" type="button" data-id="{pedido_id}">Agregar dirección</button>'
         )
         return (
             '<div class="pedido-acciones">'
             f'{boton_direcciones}'
             f'{_boton_recibo(pedido)}'
-            f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}">Editar fecha</button>'
+            f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}" data-tipo="pedido">Editar fecha</button>'
             f'<button class="btn-eliminar-entrega" type="button" data-id="{pedido_id}">Eliminar entrega</button>'
             '</div>'
         )
 
     def _tarjeta_tarea(tarea):
         tarea_id = html.escape(tarea.get("id", ""))
+        fecha = html.escape(tarea.get("fecha_entrega", ""))
         direccion = (tarea.get("direccion") or "").strip()
+        nombre_cliente = clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
+        detalle_cliente = f'<br><span>Cliente: {html.escape(nombre_cliente)}</span>' if nombre_cliente else ""
         boton_direcciones = (
             f'<a class="btn-direcciones" target="_blank" rel="noopener" '
-            f'href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Direcciones</a>'
-            if direccion else ""
+            f'href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Vamos</a>'
+            if direccion else f'<button class="btn-agregar-direccion-tarea" type="button" data-id="{tarea_id}">Agregar dirección</button>'
         )
         return (
-            f'<div class="pedido-hoy" data-tarea-id="{tarea_id}"><div class="pedido-hoy-detalle">'
+            f'<div class="pedido-hoy" data-tipo-entrega="tarea" data-entrega-id="{tarea_id}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar tarea">≡</button><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
-            f'<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
+            f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
             '<div class="pedido-acciones">'
             f'{boton_direcciones}'
             f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>'
+            f'<button class="btn-editar-tarea" type="button" data-id="{tarea_id}" data-fecha="{fecha}" data-tipo="tarea">Editar fecha</button>'
+            f'<button class="btn-eliminar-tarea" type="button" data-id="{tarea_id}">Eliminar tarea</button>'
             '</div></div>'
         )
 
@@ -1231,17 +1292,29 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                 f'<button class="btn-reenviar-recibo" type="button" data-id="{pedido_id}" title="Reenviar recibo" aria-label="Reenviar recibo">{reenvio}</button>'
                 f'<button class="btn-eliminar-historial" type="button" data-id="{pedido_id}" title="Eliminar del historial" aria-label="Eliminar del historial">{tacho}</button></span>')
 
+    def _tarjeta_pedido(pedido):
+        return (
+            f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}" data-tipo-entrega="pedido" data-entrega-id="{html.escape(pedido.get("id", ""))}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar pedido">≡</button><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
+            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
+            f'{_controles_entrega(pedido)}</div>'
+        )
+
+    entregas_pendientes = [
+        ("pedido", pedido, pedido.get("orden_entrega")) for pedido in pedidos_hoy
+    ] + [
+        ("tarea", tarea, tarea.get("orden")) for tarea in tareas_hoy
+    ]
+    if entregas_pendientes and all(orden is not None for _, _, orden in entregas_pendientes):
+        entregas_pendientes.sort(key=lambda entrega: int(entrega[2]))
     tarjetas_pendientes_hoy = [
-        f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}"><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
-        f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
-        f'{_controles_entrega(pedido)}</div>'
-        for pedido in pedidos_hoy
-    ] + [_tarjeta_tarea(tarea) for tarea in tareas_hoy]
+        _tarjeta_pedido(entrega) if tipo == "pedido" else _tarjeta_tarea(entrega)
+        for tipo, entrega, _ in entregas_pendientes
+    ]
     if tarjetas_pendientes_hoy:
         pedidos_hoy_html = "".join(tarjetas_pendientes_hoy)
     else:
         pedidos_hoy_html = '<p class="vacio">No hay pedidos pendientes para hoy.</p>'
-    if pedidos_historial:
+    if pedidos_historial or tareas_historial:
         def _pedido_historial_html(pedido):
             cliente_pedido = clientes_por_id.get(pedido.get("cliente_id"), {})
             nombre_cliente = (
@@ -1255,16 +1328,37 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                 f'{html.escape(descripcion)} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}<br><span class="estado-recibo">'
                 f'{("Recibo enviado originalmente: " + html.escape(pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en", ""))) if pedido.get("recibo_enviado_en") else ("Pendiente de recibo" if pedido.get("detalle") and pedido.get("total_usd") is not None else "Sin detalle histórico")}</span>{_acciones_recibo_historial(pedido)}</div>'
             )
+
+        def _tarea_historial_html(tarea):
+            nombre_cliente = clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
+            titulo = tarea.get("titulo") or "Tarea sin título"
+            nota = tarea.get("nota") or ""
+            busqueda = html.escape(f"{nombre_cliente} {titulo} {nota}".lower())
+            detalle_cliente = f" · {html.escape(nombre_cliente)}" if nombre_cliente else ""
+            detalle_nota = f" · {html.escape(nota)}" if nota else ""
+            return (
+                f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>Tarea completada: {html.escape(titulo)}</strong>'
+                f'{detalle_cliente}{detalle_nota}<br><span class="estado-recibo">Completada el {html.escape(tarea.get("completada_en") or "")}</span></div>'
+            )
+
         pedidos_historial_html = "".join(
-            _pedido_historial_html(pedido)
-            for pedido in pedidos_historial
+            [_pedido_historial_html(pedido) for pedido in pedidos_historial]
+            + [_tarea_historial_html(tarea) for tarea in tareas_historial]
         )
     else:
         pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'
 
+    opciones_cliente_tarea_html = "".join(
+        f'<option value="{html.escape(cliente["id"])}" data-direccion="{html.escape(cliente.get("direccion") or "")}">{html.escape(cliente["nombre"])}</option>'
+        for cliente in sorted(clientes, key=lambda cliente: cliente["nombre"].casefold())
+    )
+    botones_cliente_tarea_html = "".join(
+        f'<li><button type="button" data-value="{html.escape(cliente["id"])}" data-direccion="{html.escape(cliente.get("direccion") or "")}">{html.escape(cliente["nombre"])}</button></li>'
+        for cliente in sorted(clientes, key=lambda cliente: cliente["nombre"].casefold())
+    )
     pendientes_hoy_seccion_html = (
         f'<section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2>'
-        '<form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea"><input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><input id="tarea-direccion" maxlength="500" placeholder="Dirección opcional"><button>Agregar tarea</button></form>'
+        f'<form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea"><select id="tarea-cliente" aria-label="Cliente de la tarea"><option value="">Cliente opcional</option>{opciones_cliente_tarea_html}</select><div class="selector-cliente-movil"><button id="tarea-cliente-movil" type="button" aria-expanded="false">Cliente opcional</button><ul id="tarea-clientes-movil" role="listbox" aria-label="Clientes" hidden>{botones_cliente_tarea_html}</ul></div><input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Dirección opcional" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><button>Agregar tarea</button></form>'
         f'{pedidos_hoy_html}</section>'
         if fecha_historial == fecha_hoy else ""
     )
@@ -1282,6 +1376,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 </div>
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
 <div class="modal-direccion" id="modal-direccion" hidden><div class="modal-direccion-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-titulo"><h2 id="direccion-titulo">Dirección de entrega</h2><input id="direccion-entrega-admin" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba"><div class="direccion-acciones"><button id="direccion-cancelar" type="button">Cancelar</button><button id="direccion-guardar" type="button">Guardar dirección</button></div></div></div>
+<div class="modal-fecha-entrega" id="modal-fecha-entrega" hidden><div class="modal-fecha-contenido" role="dialog" aria-modal="true" aria-labelledby="fecha-entrega-titulo"><h2 id="fecha-entrega-titulo">Editar fecha de entrega</h2><input id="fecha-entrega-admin" type="date"><div class="fecha-entrega-acciones"><button id="fecha-entrega-cancelar" type="button">Cancelar</button><button id="fecha-entrega-guardar" type="button">Guardar fecha</button></div></div></div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
   await fetch("/admin/clientes/logout", {{ method: "POST" }});
@@ -1336,23 +1431,41 @@ document.querySelectorAll(".btn-reenviar-recibo").forEach((btn) => {{
   }});
 }});
 let pedidoDireccionActivo = null;
+let tareaDireccionActiva = null;
 const modalDireccion = document.getElementById("modal-direccion");
 const campoDireccion = document.getElementById("direccion-entrega-admin");
 document.querySelectorAll(".btn-agregar-direccion").forEach((btn) => {{
   btn.addEventListener("click", () => {{
     pedidoDireccionActivo = btn.dataset.id;
+    tareaDireccionActiva = null;
     campoDireccion.value = "";
     modalDireccion.hidden = false;
     campoDireccion.focus();
   }});
 }});
-document.getElementById("direccion-cancelar").addEventListener("click", () => {{ modalDireccion.hidden = true; }});
+document.querySelectorAll(".btn-agregar-direccion-tarea").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    tareaDireccionActiva = btn.dataset.id;
+    pedidoDireccionActivo = null;
+    campoDireccion.value = "";
+    modalDireccion.hidden = false;
+    campoDireccion.focus();
+  }});
+}});
+document.getElementById("direccion-cancelar").addEventListener("click", () => {{
+  pedidoDireccionActivo = null;
+  tareaDireccionActiva = null;
+  modalDireccion.hidden = true;
+}});
 document.getElementById("direccion-guardar").addEventListener("click", async () => {{
   const direccion = campoDireccion.value.trim();
   if (!direccion) {{ campoDireccion.focus(); return; }}
   const boton = document.getElementById("direccion-guardar");
   boton.disabled = true;
-  const r = await fetch(`/admin/pedidos/${{pedidoDireccionActivo}}/direccion`, {{
+  const destino = tareaDireccionActiva
+    ? `/admin/tareas-entrega/${{tareaDireccionActiva}}/direccion`
+    : `/admin/pedidos/${{pedidoDireccionActivo}}/direccion`;
+  const r = await fetch(destino, {{
     method: "PUT", headers: {{"Content-Type": "application/json"}},
     body: JSON.stringify({{direccion_entrega: direccion}}),
   }});
@@ -1360,18 +1473,38 @@ document.getElementById("direccion-guardar").addEventListener("click", async () 
   if (!r.ok) {{ alert(datos.error || "No se pudo guardar la dirección."); boton.disabled = false; return; }}
   location.reload();
 }});
-document.querySelectorAll(".btn-editar-entrega").forEach((btn) => {{
-  btn.addEventListener("click", async () => {{
-    const fecha = prompt("Nueva fecha de entrega (AAAA-MM-DD)", btn.dataset.fecha);
-    if (!fecha || fecha === btn.dataset.fecha) return;
-    btn.disabled = true;
-    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/fecha-entrega`, {{
-      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{fecha_entrega: fecha}}),
-    }});
-    const datos = await r.json().catch(() => ({{}}));
-    if (!r.ok) {{ alert(datos.error || "No se pudo editar la fecha de entrega."); btn.disabled = false; return; }}
-    location.reload();
+let fechaEntregaActiva = null;
+const modalFechaEntrega = document.getElementById("modal-fecha-entrega");
+const campoFechaEntrega = document.getElementById("fecha-entrega-admin");
+document.querySelectorAll(".btn-editar-entrega, .btn-editar-tarea").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    fechaEntregaActiva = {{ tipo: btn.dataset.tipo, id: btn.dataset.id, fecha: btn.dataset.fecha }};
+    campoFechaEntrega.value = btn.dataset.fecha;
+    modalFechaEntrega.hidden = false;
+    campoFechaEntrega.focus();
   }});
+}});
+document.getElementById("fecha-entrega-cancelar").addEventListener("click", () => {{
+  fechaEntregaActiva = null;
+  modalFechaEntrega.hidden = true;
+}});
+document.getElementById("fecha-entrega-guardar").addEventListener("click", async () => {{
+  const fecha = campoFechaEntrega.value;
+  if (!fecha) {{ campoFechaEntrega.focus(); return; }}
+  if (!fechaEntregaActiva || fecha === fechaEntregaActiva.fecha) {{ modalFechaEntrega.hidden = true; return; }}
+  const boton = document.getElementById("fecha-entrega-guardar");
+  boton.disabled = true;
+  const tabla = fechaEntregaActiva.tipo === "tarea" ? "tareas-entrega" : "pedidos";
+  const r = await fetch(`/admin/${{tabla}}/${{fechaEntregaActiva.id}}/fecha-entrega`, {{
+    method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{fecha_entrega: fecha}}),
+  }});
+  const datos = await r.json().catch(() => ({{}}));
+  if (!r.ok) {{
+    alert(datos.error || "No se pudo editar la fecha de entrega.");
+    boton.disabled = false;
+    return;
+  }}
+  location.reload();
 }});
 document.querySelectorAll(".btn-eliminar-entrega").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
@@ -1380,6 +1513,16 @@ document.querySelectorAll(".btn-eliminar-entrega").forEach((btn) => {{
     const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}`, {{ method: "DELETE" }});
     const datos = await r.json().catch(() => ({{}}));
     if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-eliminar-tarea").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta tarea? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}`, {{ method: "DELETE" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la tarea."); btn.disabled = false; return; }}
     location.reload();
   }});
 }});
@@ -1406,9 +1549,163 @@ function filtrarHistorialPedidos() {{
   }});
 }}
 filtroHistorialPedidos.addEventListener("input", filtrarHistorialPedidos);
+const inputDireccionTarea = document.getElementById("tarea-direccion");
+const sugerenciasDireccionTarea = document.getElementById("tarea-direccion-sugerencias");
+let temporizadorDireccionTarea;
+let apiPlacesAdmin;
+function ocultarSugerenciasDireccionTarea() {{
+  sugerenciasDireccionTarea.replaceChildren();
+  sugerenciasDireccionTarea.hidden = true;
+}}
+async function cargarApiPlacesAdmin() {{
+  if (apiPlacesAdmin !== undefined) return apiPlacesAdmin;
+  apiPlacesAdmin = fetch("/api/configuracion-publica")
+    .then((respuesta) => respuesta.ok ? respuesta.json() : {{}})
+    .then(async (configuracion) => {{
+      if (!configuracion.google_maps_api_key) return null;
+      await new Promise((resolver, rechazar) => {{
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${{encodeURIComponent(configuracion.google_maps_api_key)}}&libraries=places&v=weekly`;
+        script.async = true;
+        script.onload = resolver;
+        script.onerror = rechazar;
+        document.head.append(script);
+      }});
+      return google.maps.importLibrary("places");
+    }})
+    .catch(() => null);
+  return apiPlacesAdmin;
+}}
+async function mostrarSugerenciasDireccionTarea(texto) {{
+  const places = await cargarApiPlacesAdmin();
+  if (!places || texto !== inputDireccionTarea.value.trim()) return;
+  const {{ AutocompleteSuggestion }} = places;
+  const {{ suggestions }} = await AutocompleteSuggestion.fetchAutocompleteSuggestions({{
+    input: texto,
+    includedRegionCodes: ["ar"],
+  }});
+  if (texto !== inputDireccionTarea.value.trim() || !suggestions?.length) {{
+    ocultarSugerenciasDireccionTarea();
+    return;
+  }}
+  sugerenciasDireccionTarea.replaceChildren(...suggestions.slice(0, 5).map(({{ placePrediction }}) => {{
+    const item = document.createElement("li");
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = placePrediction.text.text;
+    boton.addEventListener("click", async () => {{
+      const place = placePrediction.toPlace();
+      await place.fetchFields({{ fields: ["formattedAddress"] }});
+      inputDireccionTarea.value = place.formattedAddress || placePrediction.text.text;
+      ocultarSugerenciasDireccionTarea();
+    }});
+    item.append(boton);
+    return item;
+  }}));
+  sugerenciasDireccionTarea.hidden = false;
+}}
+inputDireccionTarea?.addEventListener("input", () => {{
+  clearTimeout(temporizadorDireccionTarea);
+  const texto = inputDireccionTarea.value.trim();
+  if (texto.length < 3) {{ ocultarSugerenciasDireccionTarea(); return; }}
+  temporizadorDireccionTarea = setTimeout(() => {{
+    mostrarSugerenciasDireccionTarea(texto).catch(ocultarSugerenciasDireccionTarea);
+  }}, 250);
+}});
+const selectorClienteTarea = document.getElementById("tarea-cliente");
+const botonClienteTareaMovil = document.getElementById("tarea-cliente-movil");
+const listaClientesTareaMovil = document.getElementById("tarea-clientes-movil");
+selectorClienteTarea?.addEventListener("change", () => {{
+  const direccion = selectorClienteTarea.selectedOptions[0]?.dataset.direccion;
+  if (direccion) document.getElementById("tarea-direccion").value = direccion;
+}});
+botonClienteTareaMovil?.addEventListener("click", () => {{
+  listaClientesTareaMovil.hidden = !listaClientesTareaMovil.hidden;
+  botonClienteTareaMovil.setAttribute("aria-expanded", String(!listaClientesTareaMovil.hidden));
+}});
+listaClientesTareaMovil?.querySelectorAll("button").forEach((boton) => {{
+  boton.addEventListener("click", () => {{
+    document.getElementById("tarea-cliente").value = boton.dataset.value;
+    botonClienteTareaMovil.textContent = boton.textContent;
+    if (boton.dataset.direccion) document.getElementById("tarea-direccion").value = boton.dataset.direccion;
+    listaClientesTareaMovil.hidden = true;
+    botonClienteTareaMovil.setAttribute("aria-expanded", "false");
+  }});
+}});
+document.addEventListener("pointerdown", (evento) => {{
+  if (!listaClientesTareaMovil || listaClientesTareaMovil.hidden) return;
+  if (evento.target.closest(".selector-cliente-movil")) return;
+  listaClientesTareaMovil.hidden = true;
+  botonClienteTareaMovil.setAttribute("aria-expanded", "false");
+}});
+const listaEntregas = document.querySelector(".pedidos-hoy");
+async function guardarOrdenEntregas() {{
+  const items = Array.from(listaEntregas.querySelectorAll(".pedido-hoy[data-tipo-entrega]")).map((entrega) => ({{
+    tipo: entrega.dataset.tipoEntrega,
+    id: entrega.dataset.entregaId,
+  }}));
+  const respuesta = await fetch("/admin/entregas/orden", {{
+    method: "PUT", headers: {{ "Content-Type": "application/json" }}, body: JSON.stringify({{ items }}),
+  }});
+  if (!respuesta.ok) {{ alert("No se pudo guardar el orden. Recargá la página e intentá nuevamente."); }}
+}}
+document.querySelectorAll(".arrastrar-entrega").forEach((tirador) => {{
+  tirador.addEventListener("pointerdown", (evento) => {{
+    if (evento.pointerType === "mouse") return;
+    const entrega = tirador.closest(".pedido-hoy[data-tipo-entrega]");
+    if (!entrega || !listaEntregas) return;
+    evento.preventDefault();
+    entrega.classList.add("arrastrando");
+    tirador.setPointerCapture(evento.pointerId);
+    const mover = (movimiento) => {{
+      const destino = document.elementFromPoint(movimiento.clientX, movimiento.clientY)?.closest(".pedido-hoy[data-tipo-entrega]");
+      if (!destino || destino === entrega || !listaEntregas.contains(destino)) return;
+      const mitad = destino.getBoundingClientRect().top + destino.offsetHeight / 2;
+      listaEntregas.insertBefore(entrega, movimiento.clientY < mitad ? destino : destino.nextSibling);
+    }};
+    const soltar = async () => {{
+      entrega.classList.remove("arrastrando");
+      document.removeEventListener("pointermove", mover);
+      document.removeEventListener("pointerup", soltar);
+      document.removeEventListener("pointercancel", soltar);
+      await guardarOrdenEntregas();
+    }};
+      document.addEventListener("pointermove", mover);
+      document.addEventListener("pointerup", soltar);
+      document.addEventListener("pointercancel", soltar);
+    }});
+}});
+let entregaNativaArrastrada = null;
+document.querySelectorAll(".arrastrar-entrega").forEach((tirador) => {{
+  tirador.addEventListener("dragstart", (evento) => {{
+    entregaNativaArrastrada = tirador.closest(".pedido-hoy[data-tipo-entrega]");
+    if (!entregaNativaArrastrada) return;
+    entregaNativaArrastrada.classList.add("arrastrando");
+    evento.dataTransfer.effectAllowed = "move";
+  }});
+  tirador.addEventListener("dragend", () => {{
+    entregaNativaArrastrada?.classList.remove("arrastrando");
+    entregaNativaArrastrada = null;
+  }});
+}});
+document.querySelectorAll(".pedido-hoy[data-tipo-entrega]").forEach((destino) => {{
+  destino.addEventListener("dragover", (evento) => {{
+    if (!entregaNativaArrastrada || entregaNativaArrastrada === destino) return;
+    evento.preventDefault();
+    const mitad = destino.getBoundingClientRect().top + destino.offsetHeight / 2;
+    listaEntregas.insertBefore(entregaNativaArrastrada, evento.clientY < mitad ? destino : destino.nextSibling);
+  }});
+  destino.addEventListener("drop", async (evento) => {{
+    if (!entregaNativaArrastrada) return;
+    evento.preventDefault();
+    entregaNativaArrastrada.classList.remove("arrastrando");
+    entregaNativaArrastrada = null;
+    await guardarOrdenEntregas();
+  }});
+}});
 document.getElementById("form-tarea-entrega")?.addEventListener("submit", async (e) => {{
   e.preventDefault();
-  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:"{fecha_hoy}", titulo:document.getElementById("tarea-titulo").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
+  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:"{fecha_hoy}", titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
   if (!r.ok) {{ alert("No se pudo crear la tarea."); return; }}
   location.reload();
 }});
@@ -2139,8 +2436,18 @@ class EditarDireccionEntregaIn(BaseModel):
 class TareaEntregaIn(BaseModel):
     fecha_entrega: date
     titulo: str = Field(min_length=1, max_length=200)
+    cliente_id: str | None = Field(default=None, max_length=36)
     nota: str | None = Field(default=None, max_length=1000)
     direccion: str | None = Field(default=None, max_length=500)
+
+
+class OrdenEntregaItemIn(BaseModel):
+    tipo: Literal["pedido", "tarea"]
+    id: str = Field(min_length=1, max_length=100)
+
+
+class ReordenarEntregasIn(BaseModel):
+    items: list[OrdenEntregaItemIn]
 
 
 class InteraccionIn(BaseModel):
@@ -2261,6 +2568,30 @@ def admin_pedido_agregar_direccion(pedido_id: str, entrada: EditarDireccionEntre
     return {"ok": True, "pedido_id": pedido_id, "direccion_entrega": direccion}
 
 
+@app.put("/admin/entregas/orden")
+def admin_reordenar_entregas(entrada: ReordenarEntregasIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    fecha_hoy = entregas.ahora_argentina().date().isoformat()
+    pedidos_hoy = [
+        pedido for pedido in client.table("pedidos").select("*").execute().data
+        if pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
+    ]
+    tareas_hoy = [
+        tarea for tarea in client.table("tareas_entrega").select("*").eq("fecha_entrega", fecha_hoy).execute().data
+        if not tarea.get("completada_en")
+    ]
+    esperados = {("pedido", pedido["id"]) for pedido in pedidos_hoy} | {("tarea", tarea["id"]) for tarea in tareas_hoy}
+    recibidos = [(item.tipo, item.id) for item in entrada.items]
+    if len(recibidos) != len(set(recibidos)) or set(recibidos) != esperados:
+        return JSONResponse({"error": "Las entregas cambiaron. Recargá el listado."}, status_code=409)
+    for orden, (tipo, entrega_id) in enumerate(recibidos, start=1):
+        tabla, campo = ("pedidos", "orden_entrega") if tipo == "pedido" else ("tareas_entrega", "orden")
+        client.table(tabla).update({campo: orden}).eq("id", entrega_id).execute()
+    return {"ok": True}
+
+
 @app.post("/admin/tareas-entrega")
 def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
     if not _clientes_admin_activo(request):
@@ -2274,6 +2605,7 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
         "id": str(uuid.uuid4()),
         "fecha_entrega": entrada.fecha_entrega.isoformat(),
         "titulo": entrada.titulo.strip(),
+        "cliente_id": (entrada.cliente_id or "").strip() or None,
         "nota": (entrada.nota or "").strip() or None,
         "direccion": (entrada.direccion or "").strip() or None,
         "orden": orden,
@@ -2293,6 +2625,53 @@ def admin_completar_tarea_entrega(tarea_id: str, request: Request):
     completada_en = datetime.now(timezone.utc).isoformat()
     client.table("tareas_entrega").update({"completada_en": completada_en}).eq("id", tarea_id).execute()
     return {"ok": True, "tarea_id": tarea_id, "completada_en": completada_en}
+
+
+@app.put("/admin/tareas-entrega/{tarea_id}/direccion")
+def admin_tarea_agregar_direccion(tarea_id: str, entrada: EditarDireccionEntregaIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    direccion = entrada.direccion_entrega.strip()
+    if not direccion:
+        return JSONResponse({"error": "Ingresá una dirección de entrega"}, status_code=400)
+    client = get_client()
+    filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    client.table("tareas_entrega").update({"direccion": direccion}).eq("id", tarea_id).execute()
+    return {"ok": True, "tarea_id": tarea_id, "direccion": direccion}
+
+
+@app.put("/admin/tareas-entrega/{tarea_id}/fecha-entrega")
+def admin_tarea_editar_fecha(tarea_id: str, entrada: EditarFechaEntregaIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    if not entregas.fecha_entrega_valida(entrada.fecha_entrega):
+        return JSONResponse({"error": "La fecha de entrega elegida no está disponible"}, status_code=400)
+    client = get_client()
+    filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    fecha_entrega = entrada.fecha_entrega.isoformat()
+    existentes = client.table("tareas_entrega").select("orden").eq("fecha_entrega", fecha_entrega).execute().data
+    orden = max((int(tarea.get("orden") or 0) for tarea in existentes), default=0) + 1
+    client.table("tareas_entrega").update({
+        "fecha_entrega": fecha_entrega,
+        "orden": orden,
+    }).eq("id", tarea_id).execute()
+    return {"ok": True, "tarea_id": tarea_id, "fecha_entrega": fecha_entrega}
+
+
+@app.delete("/admin/tareas-entrega/{tarea_id}")
+def admin_tarea_eliminar(tarea_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    client.table("tareas_entrega").delete().eq("id", tarea_id).execute()
+    return {"ok": True, "tarea_id": tarea_id}
 
 
 @app.get("/api/entregas-disponibles")

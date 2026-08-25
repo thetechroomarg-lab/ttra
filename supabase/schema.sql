@@ -22,6 +22,12 @@ create table if not exists clientes (
 -- completan obligatoriamente desde la aplicación.
 alter table clientes add column if not exists provincia text;
 
+-- Contactos tipo "proveedor" (sin cuenta web, sin mail) pueden quedar
+-- cargados solo con dirección, para autocompletar el botón "Vamos" del
+-- panel de entregas sin tener que tipearla cada vez.
+alter table clientes alter column email drop not null;
+alter table clientes add column if not exists direccion text;
+
 create table if not exists pedidos (
   id uuid primary key default gen_random_uuid(),
   cliente_id uuid not null references clientes(id) on delete cascade,
@@ -58,6 +64,7 @@ create table if not exists tareas_entrega (
   id uuid primary key default gen_random_uuid(),
   fecha_entrega date not null,
   titulo text not null,
+  cliente_id uuid references clientes(id) on delete set null,
   nota text,
   direccion text,
   orden integer not null default 0,
@@ -66,6 +73,7 @@ create table if not exists tareas_entrega (
 create index if not exists tareas_entrega_fecha_orden_idx
   on tareas_entrega (fecha_entrega, orden);
 alter table tareas_entrega add column if not exists completada_en timestamptz;
+alter table tareas_entrega add column if not exists cliente_id uuid references clientes(id) on delete set null;
 
 create sequence if not exists public.recibos_numero_seq start with 1993;
 create or replace function public.siguiente_numero_recibo()
