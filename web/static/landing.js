@@ -3660,7 +3660,7 @@ const panelCodigoPromocional = document.getElementById("modal-codigo");
 const inputDireccionEntrega = document.getElementById("direccion-entrega");
 const inputDireccionAlias = document.getElementById("direccion-alias");
 const sugerenciasDireccion = document.getElementById("sugerencias-direccion");
-const selectDomicilioEntrega = document.getElementById("select-domicilio-entrega");
+const listaDomiciliosEntrega = document.getElementById("lista-domicilios-entrega");
 let temporizadorSugerenciasDireccion;
 let apiPlacesCargada;
 let domiciliosCliente = [];
@@ -3764,31 +3764,28 @@ async function abrirSelectorDireccion() {
     abrirFormularioNuevaDireccion();
     return;
   }
-  const opcionNueva = document.createElement("option");
-  opcionNueva.value = "__nueva__";
-  opcionNueva.textContent = "+ Agregar nueva dirección";
-  selectDomicilioEntrega.replaceChildren(...domiciliosCliente.map((domicilio) => {
-    const opcion = document.createElement("option");
-    opcion.value = domicilio.id;
-    opcion.textContent = `${domicilio.alias} — ${domicilio.direccion}`;
-    return opcion;
-  }), opcionNueva);
+  function itemDomicilioEntregaHtml(texto, alClickear) {
+    const item = document.createElement("li");
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = texto;
+    boton.addEventListener("click", alClickear);
+    item.append(boton);
+    return item;
+  }
+  listaDomiciliosEntrega.replaceChildren(
+    ...domiciliosCliente.map((domicilio) => itemDomicilioEntregaHtml(`${domicilio.alias} — ${domicilio.direccion}`, () => {
+      inputDireccionEntrega.value = domicilio.direccion;
+      document.getElementById("btn-abrir-direccion").textContent = `Entrega: ${domicilio.alias}`;
+      cerrarPanelSecundario();
+    })),
+    itemDomicilioEntregaHtml("+ Agregar nueva dirección", abrirFormularioNuevaDireccion),
+  );
   abrirPanelSecundario("selector-domicilio-entrega");
 }
 
 document.getElementById("btn-abrir-direccion").addEventListener("click", () => {
   abrirSelectorDireccion().catch(abrirFormularioNuevaDireccion);
-});
-selectDomicilioEntrega.addEventListener("change", () => {
-  if (selectDomicilioEntrega.value === "__nueva__") {
-    abrirFormularioNuevaDireccion();
-    return;
-  }
-  const domicilio = domiciliosCliente.find((d) => d.id === selectDomicilioEntrega.value);
-  if (!domicilio) return;
-  inputDireccionEntrega.value = domicilio.direccion;
-  document.getElementById("btn-abrir-direccion").textContent = `Entrega: ${domicilio.alias}`;
-  cerrarPanelSecundario();
 });
 document.getElementById("btn-guardar-direccion").addEventListener("click", async () => {
   const direccion = inputDireccionEntrega.value.trim();
