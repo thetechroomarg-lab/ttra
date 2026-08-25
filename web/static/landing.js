@@ -3654,11 +3654,21 @@ document.getElementById("btn-vaciar-carrito").addEventListener("click", () => {
   borrarRegaloPromo();
 });
 
+document.getElementById("btn-abrir-direccion").addEventListener("click", () => {
+  document.getElementById("direccion-entrega-wrap").classList.remove("oculto");
+});
+document.getElementById("btn-cerrar-direccion").addEventListener("click", () => {
+  document.getElementById("direccion-entrega-wrap").classList.add("oculto");
+});
+document.getElementById("btn-guardar-direccion").addEventListener("click", () => {
+  document.getElementById("direccion-entrega-wrap").classList.add("oculto");
+});
+
 document.getElementById("btn-abrir-codigo").addEventListener("click", () => {
-  document.getElementById("modal-codigo").classList.add("visible");
+  document.getElementById("modal-codigo").classList.remove("oculto");
 });
 document.getElementById("btn-cerrar-codigo").addEventListener("click", () => {
-  document.getElementById("modal-codigo").classList.remove("visible");
+  document.getElementById("modal-codigo").classList.add("oculto");
 });
 
 document.getElementById("btn-aplicar-codigo").addEventListener("click", async () => {

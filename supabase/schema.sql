@@ -97,6 +97,23 @@ create table if not exists codigos_descuento (
   creado_en timestamptz not null default now()
 );
 
+-- Códigos promo genéricos (no atados a un cliente): al aplicarse suman un
+-- producto de regalo a $0 al carrito, hasta agotar usos_maximos usos totales.
+create table if not exists codigos_promo (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,
+  producto_regalo text not null,
+  usos_maximos integer not null default 20,
+  usos_actuales integer not null default 0,
+  activo boolean not null default true,
+  creado_en timestamptz not null default now()
+);
+alter table codigos_promo enable row level security;
+
+insert into codigos_promo (code, producto_regalo, usos_maximos)
+values ('QUIEROMISPLAY6', 'Auriculares Redmi 6 Play', 20)
+on conflict (code) do nothing;
+
 -- Al borrar auth.users se borra su perfil y, por las foreign keys en
 -- cascada, pedidos, historial de vistas y códigos de descuento asociados.
 create or replace function public.eliminar_cliente_al_borrar_auth()

@@ -298,6 +298,10 @@ class DescuentoCodigoIn(BaseModel):
     items: list[DescuentoItemIn]
 
 
+class CodigoPromoIn(BaseModel):
+    codigo: str
+
+
 _DESCUENTO_MAILING_USD = 5
 
 
@@ -422,6 +426,21 @@ def _validar_descuento_codigo(cliente_id, entrada: DescuentoCodigoIn):
     if not fila:
         return None
     return _resolver_descuento_codigo(_cargar_productos(), fila, entrada.items)
+
+
+def _codigo_promo_row(client, codigo):
+    codigo = (codigo or "").strip().upper()
+    if not codigo:
+        return None
+    filas = client.table("codigos_promo").select("*").eq("code", codigo).execute().data
+    if not filas:
+        return None
+    fila = filas[0]
+    if not fila.get("activo"):
+        return None
+    if int(fila.get("usos_actuales") or 0) >= int(fila.get("usos_maximos") or 0):
+        return None
+    return fila
 
 
 def _mensaje_error_codigos_descuento(exc: Exception):
@@ -2181,6 +2200,34 @@ def api_descuentos_consumir(entrada: DescuentoCodigoIn, request: Request):
         return JSONResponse({"error": "El código no aplica a los productos actuales del carrito"}, status_code=400)
     client.table("codigos_descuento").update({"usado_en": datetime.utcnow().isoformat()}).eq("code", fila["code"]).execute()
     return {"ok": True, **descuento}
+
+
+@app.post("/api/codigos-promo/validar")
+def api_codigos_promo_validar(entrada: CodigoPromoIn, request: Request):
+    cliente_id = request.session.get("cliente_id")
+    if not cliente_id:
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    if _debe_cambiar_password(request):
+        raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
+    fila = _codigo_promo_row(get_client(), entrada.codigo)
+    if not fila:
+        return JSONResponse({"error": "Código inválido o ya alcanzó el límite de usos"}, status_code=400)
+    return {"ok": True, "codigo": fila["code"], "producto_regalo": fila["producto_regalo"]}
+
+
+@app.post("/api/codigos-promo/consumir")
+def api_codigos_promo_consumir(entrada: CodigoPromoIn, request: Request):
+    cliente_id = request.session.get("cliente_id")
+    if not cliente_id:
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    if _debe_cambiar_password(request):
+        raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
+    client = get_client()
+    fila = _codigo_promo_row(client, entrada.codigo)
+    if not fila:
+        return JSONResponse({"error": "Código inválido o ya alcanzó el límite de usos"}, status_code=400)
+    client.table("codigos_promo").update({"usos_actuales": int(fila.get("usos_actuales") or 0) + 1}).eq("code", fila["code"]).execute()
+    return {"ok": True, "codigo": fila["code"], "producto_regalo": fila["producto_regalo"]}
 
 
 @app.get("/catalogo")

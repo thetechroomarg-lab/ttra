@@ -345,6 +345,12 @@ html[data-modo="classic"] #btn-classic-theme { display: block; }
 .rc-logout-acciones { display: flex; gap: 10px; }
 .rc-logout-acciones button { width: auto; flex: 1; }
 
+/* Encabezado compartido por las cajas "Aplicá tu código" y "Dirección de
+   entrega": título + botón de cerrar, mismo formato que el resto del carrito. */
+.rc-codigo-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.rc-codigo-titulo { margin: 0; font-size: 12px; color: var(--rc-green-dim); text-transform: uppercase; letter-spacing: .04em; }
+.rc-codigo-header button { width: auto; height: auto; padding: 4px 10px; }
+
 /* Reproductor de Spotify embebido (botón "Play Music" del Pip-Boy): sin
    panel visible. Controlado por la IFrame API de Spotify (.play()/.pause()
    reales). Importante: sacarlo de pantalla con coordenadas negativas (ej.
@@ -1394,10 +1400,45 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 .descuento-mailing-estado.error { color: #ff8b8b; }
 #total-carrito { margin: 0; font-size: 14px; color: var(--rc-green-bright); }
 #btn-aplicar-codigo,
+#btn-abrir-codigo,
+#btn-abrir-direccion,
 #btn-vaciar-carrito,
 #btn-whatsapp {
   height: var(--carrito-boton-altura);
   box-sizing: border-box;
+}
+
+#direccion-entrega-wrap,
+#modal-codigo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--rc-green-faint);
+  background: rgba(15, 24, 18, .55);
+}
+#direccion-entrega-wrap.oculto,
+#modal-codigo.oculto { display: none; }
+#direccion-entrega-wrap input {
+  box-sizing: border-box;
+  min-height: 50px;
+  padding: 0 12px;
+}
+
+@media (max-width: 700px) {
+  #direccion-entrega-wrap:not(.oculto),
+  #modal-codigo:not(.oculto) {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10021;
+    width: min(320px, calc(100vw - 32px));
+    background: #010601;
+    border: 3px solid var(--rc-green-dim);
+    box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
+    padding: 20px;
+  }
 }
 .carrito-disclaimer {
   margin: 0;
