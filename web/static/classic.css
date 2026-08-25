@@ -939,6 +939,15 @@ html[data-modo="classic"] .tarjeta-recomendado-acciones {
     min-height: 0;
     padding-bottom: 12px;
   }
+  /* El home mobile sin scroll tiene que entrar completo en el viewport:
+     categorías + recomendaciones compiten por la misma altura fija, así que
+     los botones de categoría van más compactos acá (solo en el home). */
+  html[data-modo="classic"] body:not(.rc-vista-seccion) #categorias .btn-categoria {
+    padding: 9px 16px;
+  }
+  html[data-modo="classic"] body:not(.rc-vista-seccion) .categorias-columna {
+    gap: 6px;
+  }
   html[data-modo="classic"] .carrousel-recomendados-grid { grid-template-columns: 1fr; }
   html[data-modo="classic"] body:not(.rc-vista-seccion) main#productos {
     flex: 1 1 auto;
@@ -989,16 +998,16 @@ html[data-modo="classic"] .tarjeta-recomendado-acciones {
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    padding: 12px 12px 10px;
+    gap: 3px;
+    padding: 8px 12px 6px;
     overflow: hidden;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-etiqueta {
-    font-size: 14.4px;
+    font-size: 12.6px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado h3 {
     margin: 0;
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1.12;
     padding-right: 42px;
     display: -webkit-box;
@@ -1009,41 +1018,41 @@ html[data-modo="classic"] .tarjeta-recomendado-acciones {
     min-height: calc(1.12em * 2);
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio {
-    gap: 2px;
+    gap: 1px;
     flex: 0 0 auto;
     min-height: 0;
-    margin-top: 10px;
+    margin-top: 4px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio strong {
-    font-size: 26px;
-    line-height: 1.1;
+    font-size: 18px;
+    line-height: 1.05;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio span {
-    font-size: 14px;
-    line-height: 1.2;
+    font-size: 11px;
+    line-height: 1.1;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado .tarjeta-recomendado-iconos {
     gap: 2px;
-    margin: 4px 0;
+    margin: 2px 0;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado .btn-foto + .btn-foto {
     margin-left: 4px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado .btn-foto svg {
-    width: 24.2px;
-    height: 24.2px;
+    width: 20px;
+    height: 20px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones {
     opacity: 1;
     pointer-events: auto;
     margin-top: auto;
-    gap: 5px;
+    gap: 4px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones .dropdown-color-boton,
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones .btn-agregar {
-    font-size: 12px;
-    padding: 4.8px 8.4px;
-    min-height: 36px;
+    font-size: 11px;
+    padding: 4px 8px;
+    min-height: 32px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .dropdown-color-lista {
     top: auto;

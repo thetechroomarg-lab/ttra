@@ -251,7 +251,7 @@ def test_classic_mobile_ajusta_carrousel_recomendados_al_alto_disponible():
     assert "margin: 0 auto;" in regla
 
 
-def test_classic_mobile_aumenta_tipografia_y_abre_color_hacia_arriba():
+def test_classic_mobile_ajusta_tipografia_para_entrar_sin_scroll_y_abre_color_hacia_arriba():
     css = (appmod.BASE / "static" / "classic.css").read_text()
 
     def regla(selector):
@@ -291,14 +291,14 @@ def test_classic_mobile_aumenta_tipografia_y_abre_color_hacia_arriba():
         ".dropdown-color-lista {"
     )
 
-    assert "font-size: 14.4px;" in etiqueta
-    assert "font-size: 20px;" in titulo
-    assert "font-size: 26px;" in precio_principal
-    assert "line-height: 1.1;" in precio_principal
-    assert "font-size: 14px;" in precio_secundario
-    assert "line-height: 1.2;" in precio_secundario
-    assert "margin-top: 10px;" in bloque_precios
-    assert "font-size: 12px;" in acciones
+    assert "font-size: 12.6px;" in etiqueta
+    assert "font-size: 18px;" in titulo
+    assert "font-size: 18px;" in precio_principal
+    assert "line-height: 1.05;" in precio_principal
+    assert "font-size: 11px;" in precio_secundario
+    assert "line-height: 1.1;" in precio_secundario
+    assert "margin-top: 4px;" in bloque_precios
+    assert "font-size: 11px;" in acciones
     assert "margin-top: auto;" in acciones_contenedor
     assert "top: auto;" in lista_color
     assert "bottom: 100%;" in lista_color
@@ -336,7 +336,7 @@ def test_classic_mobile_card_recomendada_ocupa_el_alto_libre_sin_un_tope_fijo():
     assert "height: 350px;" not in regla
 
 
-def test_classic_mobile_agranda_iconos_y_mantiene_espaciado_de_acciones():
+def test_classic_mobile_mantiene_iconos_y_espaciado_de_acciones_compactos():
     css = (appmod.BASE / "static" / "classic.css").read_text()
     script = (appmod.BASE / "static" / "landing.js").read_text()
 
@@ -358,9 +358,9 @@ def test_classic_mobile_agranda_iconos_y_mantiene_espaciado_de_acciones():
     )
 
     assert "flex: 0 0 auto;" in precio
-    assert "margin: 4px 0;" in iconos
-    assert "width: 24.2px;" in svg
-    assert "height: 24.2px;" in svg
+    assert "margin: 2px 0;" in iconos
+    assert "width: 20px;" in svg
+    assert "height: 20px;" in svg
     assert 'class="btn-agregar" type="button" data-color="" disabled' in script
     assert "btnAgregar.disabled = false;" in script
 
