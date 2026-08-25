@@ -1116,7 +1116,7 @@ _ADMIN_CLIENTES_PWA_HEAD = """
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="/admin-clientes.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#111318">
+<meta name="theme-color" content="#253cd6">
 """
 
 _ADMIN_CLIENTES_PWA_SCRIPT = """
