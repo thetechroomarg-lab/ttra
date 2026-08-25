@@ -4,6 +4,15 @@ import web.app as appmod
 from tests.fakes_supabase import FakeSupabaseClient
 
 
+def test_todas_las_paginas_html_incluyen_una_unica_etiqueta_google_al_inicio_del_head():
+    for nombre in ("index.html", "login.html", "perfil.html", "catalogo.html"):
+        html = (appmod.BASE / "static" / nombre).read_text()
+        etiqueta = 'https://www.googletagmanager.com/gtag/js?id=G-ZPQR91G145'
+
+        assert html.count(etiqueta) == 1
+        assert html.index(etiqueta) < html.index("<meta charset")
+
+
 def test_landing_descarta_descuento_mailing_persistido_fuera_de_un_link():
     script = (appmod.BASE / "static" / "landing.js").read_text()
 
