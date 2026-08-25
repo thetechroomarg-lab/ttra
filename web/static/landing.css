@@ -1410,7 +1410,6 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 }
 
 #direccion-entrega-wrap,
-#selector-domicilio-entrega,
 #modal-codigo {
   display: flex;
   flex-direction: column;
@@ -1419,22 +1418,43 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   border: 1px solid var(--rc-green-faint);
   background: rgba(15, 24, 18, .55);
 }
+#selector-domicilio-entrega { display: block; }
 #direccion-entrega-wrap.oculto,
 #selector-domicilio-entrega.oculto,
 #modal-codigo.oculto { display: none; }
-#direccion-entrega-wrap input,
-#select-domicilio-entrega {
+#direccion-entrega-wrap input {
   box-sizing: border-box;
   min-height: 50px;
   padding: 0 12px;
 }
 #direccion-alias.oculto { display: none; }
-#select-domicilio-entrega {
-  background: #0b140f;
-  color: var(--rc-green-bright);
+.lista-domicilios-entrega {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
   border: 1px solid var(--rc-green-faint);
-  font-family: var(--rc-font);
+  background: var(--rc-bg-panel);
+}
+.lista-domicilios-entrega button {
+  display: block;
   width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--rc-green-faint);
+  background: transparent;
+  color: var(--rc-green-bright);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.lista-domicilios-entrega li:last-child button { border-bottom: 0; }
+.lista-domicilios-entrega button:hover,
+.lista-domicilios-entrega button:focus-visible {
+  background: rgba(50, 255, 130, .12);
+  outline: none;
 }
 #modal-codigo input {
   box-sizing: border-box;
@@ -1485,10 +1505,19 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
     transform: translate(-50%, -50%);
     z-index: 10021;
     width: min(320px, calc(100vw - 32px));
+  }
+  #direccion-entrega-wrap:not(.oculto),
+  #modal-codigo:not(.oculto) {
     background: #010601;
     border: 3px solid var(--rc-green-dim);
     box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
     padding: 20px;
+  }
+  #selector-domicilio-entrega:not(.oculto) .lista-domicilios-entrega {
+    background: #010601;
+    border: 3px solid var(--rc-green-dim);
+    box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
+    max-height: min(320px, 60vh);
   }
 }
 .carrito-disclaimer {

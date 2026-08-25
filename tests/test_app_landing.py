@@ -77,7 +77,7 @@ def test_checkout_ofrece_domicilios_guardados_como_desplegable():
     index_html = (appmod.BASE / "static" / "index.html").read_text()
     landing_js = (appmod.BASE / "static" / "landing.js").read_text()
 
-    assert 'id="select-domicilio-entrega"' in index_html
+    assert 'id="lista-domicilios-entrega"' in index_html
     assert "fetch(\"/api/domicilios\")" in landing_js
     assert '"+ Agregar nueva dirección"' in landing_js
 
