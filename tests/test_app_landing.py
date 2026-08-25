@@ -293,15 +293,27 @@ def test_classic_mobile_aumenta_tipografia_y_abre_color_hacia_arriba():
 
     assert "font-size: 14.4px;" in etiqueta
     assert "font-size: 20px;" in titulo
-    assert "font-size: 28px;" in precio_principal
+    assert "font-size: 26px;" in precio_principal
     assert "line-height: 1.1;" in precio_principal
-    assert "font-size: 16px;" in precio_secundario
-    assert "line-height: 1.25;" in precio_secundario
-    assert "margin-top: 14px;" in bloque_precios
+    assert "font-size: 14px;" in precio_secundario
+    assert "line-height: 1.2;" in precio_secundario
+    assert "margin-top: 10px;" in bloque_precios
     assert "font-size: 12px;" in acciones
     assert "margin-top: auto;" in acciones_contenedor
     assert "top: auto;" in lista_color
     assert "bottom: 100%;" in lista_color
+
+
+def test_classic_mobile_recomendados_no_renderiza_puntos_y_conserva_swipe():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    inicio = script.index("function pintarCarrouselRecomendadosMobile(el)")
+    fin = script.index("function pintarCarrouselRecomendados(el)", inicio)
+    pintar = script[inicio:fin]
+
+    assert "carrousel-recomendados-mobile-puntos" not in pintar
+    assert "data-indice" not in pintar
+    assert 'viewport.addEventListener("touchend"' in pintar
+    assert "iniciarCicloRecomendadosMobile(el);" in pintar
 
 
 def test_classic_mobile_home_usa_el_viewport_sin_scroll_de_pagina():
@@ -346,7 +358,7 @@ def test_classic_mobile_agranda_iconos_y_mantiene_espaciado_de_acciones():
     )
 
     assert "flex: 0 0 auto;" in precio
-    assert "margin: 6px 0;" in iconos
+    assert "margin: 4px 0;" in iconos
     assert "width: 24.2px;" in svg
     assert "height: 24.2px;" in svg
     assert 'class="btn-agregar" type="button" data-color="" disabled' in script
