@@ -11,8 +11,9 @@ import time
 import uuid
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
+from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import httpx
 from dotenv import load_dotenv
@@ -452,6 +453,84 @@ def _mensaje_error_codigos_descuento(exc: Exception):
     return "No se pudo guardar el código de descuento del mailing."
 
 
+class _SanitizadorHtmlMailing(HTMLParser):
+    """Conserva solo el formato seguro que puede escribirse desde el admin."""
+
+    _ETIQUETAS = {"p", "div", "br", "strong", "b", "em", "i", "ul", "ol", "li", "a"}
+    _PELIGROSAS = {"script", "style", "iframe", "object", "embed"}
+    _NORMALIZADAS = {"b": "strong", "i": "em", "div": "p"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.partes = []
+        self.abiertas = []
+        self._bloqueadas = 0
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if tag in self._PELIGROSAS:
+            self._bloqueadas += 1
+            return
+        if self._bloqueadas or tag not in self._ETIQUETAS:
+            return
+        tag = self._NORMALIZADAS.get(tag, tag)
+        if tag == "br":
+            self.partes.append("<br>")
+            return
+        if tag == "a":
+            href = dict(attrs).get("href", "").strip()
+            esquema = urlparse(href).scheme.lower()
+            if esquema not in {"http", "https", "mailto"}:
+                self.partes.append("<a>")
+            else:
+                self.partes.append(f'<a href="{html.escape(href, quote=True)}">')
+        else:
+            self.partes.append(f"<{tag}>")
+        self.abiertas.append(tag)
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag in self._PELIGROSAS:
+            self._bloqueadas = max(0, self._bloqueadas - 1)
+            return
+        if self._bloqueadas or tag not in self._ETIQUETAS or tag == "br":
+            return
+        tag = self._NORMALIZADAS.get(tag, tag)
+        if tag in self.abiertas:
+            while self.abiertas:
+                abierta = self.abiertas.pop()
+                self.partes.append(f"</{abierta}>")
+                if abierta == tag:
+                    break
+
+    def handle_data(self, data):
+        if not self._bloqueadas:
+            self.partes.append(html.escape(data))
+
+    def resultado(self):
+        while self.abiertas:
+            self.partes.append(f"</{self.abiertas.pop()}>")
+        return "".join(self.partes).strip()
+
+
+def _sanitizar_html_mailing(mensaje: str):
+    sanitizador = _SanitizadorHtmlMailing()
+    sanitizador.feed(mensaje)
+    sanitizador.close()
+    return sanitizador.resultado()
+
+
+def _primer_nombre_cliente(cliente):
+    nombre = str(cliente.get("nombre") or "").strip().split()
+    return nombre[0] if nombre else "cliente"
+
+
+def _html_mailing_para_cliente(mensaje_html: str, cliente):
+    primer_nombre = html.escape(_primer_nombre_cliente(cliente))
+    contenido = mensaje_html.replace("{primer nombre}", primer_nombre)
+    return f"<p>Hola {primer_nombre},</p>{contenido}<p>Saludos,<br>Vlad.</p>"
+
+
 @app.post("/admin/clientes/login")
 def admin_clientes_login(entrada: ClientesLoginIn, request: Request):
     if entrada.password != ADMIN_CLIENTES_PASSWORD:
@@ -486,12 +565,18 @@ def admin_clientes_enviar_mail_masivo(entrada: MailingMasivoIn, request: Request
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
-    mensaje_html = html.escape(entrada.mensaje.strip()).replace("\n", "<br>")
+    mensaje_html = _sanitizar_html_mailing(entrada.mensaje)
+    if not re.sub(r"<[^>]+>", "", mensaje_html).strip():
+        raise HTTPException(status_code=422, detail="El mensaje no puede estar vacío")
     enviados = 0
     fallidos = 0
     for cliente in clientes:
         try:
-            enviar_email(cliente["email"], "Novedades de The Tech Room Arg", f"<p>{mensaje_html}</p>")
+            enviar_email(
+                cliente["email"],
+                "Novedades de The Tech Room Arg",
+                _html_mailing_para_cliente(mensaje_html, cliente),
+            )
             enviados += 1
         except EnvioEmailError:
             logger.exception("No se pudo enviar mail masivo a %s", cliente.get("id"))
@@ -908,7 +993,14 @@ _ADMIN_CLIENTES_ESTILO = """
   .modal-mail-contenido { width:min(520px, 100%); background:#1b1e24; border:1px solid #333844; border-radius:12px; padding:20px; box-sizing:border-box; }
   .modal-mail h2 { margin:0 0 8px; color:#f2f4f8; font-size:18px; }
   .modal-mail p { margin:0 0 12px; color:#9aa0ab; font-size:13px; }
-  .modal-mail textarea { width:100%; min-height:160px; resize:vertical; box-sizing:border-box; border:1px solid #4a5160; border-radius:8px; padding:10px; color:#f2f4f8; background:#12141a; font:inherit; }
+  .mail-editor-toolbar { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 8px; }
+  .mail-editor-toolbar button { align-items:center; background:#252a33; border:1px solid #4a5160; border-radius:6px; color:#f2f4f8; cursor:pointer; display:inline-flex; font:inherit; font-weight:700; justify-content:center; min-height:32px; padding:4px 9px; }
+  .mail-editor-toolbar button:hover { border-color:#dfe2e8; }
+  .mail-editor { width:100%; min-height:160px; resize:vertical; overflow:auto; box-sizing:border-box; border:1px solid #4a5160; border-radius:8px; padding:10px; color:#f2f4f8; background:#12141a; font:inherit; line-height:1.45; }
+  .mail-editor:empty::before { color:#7d8491; content:attr(data-placeholder); pointer-events:none; }
+  .mail-editor:focus { border-color:#dfe2e8; outline:0; }
+  .mail-editor p { color:inherit; font-size:inherit; margin:0 0 10px; }
+  .mail-editor ul, .mail-editor ol { margin:0 0 10px; padding-left:22px; }
   .modal-mail-acciones { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
   .modal-mail-acciones button { border:0; border-radius:8px; padding:9px 12px; cursor:pointer; font-weight:700; }
   #mail-cancelar { background:#3a3f4b; color:#fff; }
@@ -1368,7 +1460,13 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
   <div class="modal-mail-contenido" role="dialog" aria-modal="true" aria-labelledby="modal-mail-titulo">
     <h2 id="modal-mail-titulo">Enviar mail</h2>
     <p id="modal-mail-ayuda"></p>
-    <textarea id="mail-mensaje" placeholder="Escribí el mensaje para los clientes seleccionados"></textarea>
+    <div class="mail-editor-toolbar" aria-label="Formato del mensaje">
+      <button type="button" data-mail-formato="bold" aria-label="Negrita"><strong>B</strong></button>
+      <button type="button" data-mail-formato="italic" aria-label="Cursiva"><em>I</em></button>
+      <button type="button" data-mail-formato="insertUnorderedList" aria-label="Lista">Lista</button>
+      <button type="button" id="mail-agregar-link">Enlace</button>
+    </div>
+    <div id="mail-mensaje" class="mail-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Escribí el mensaje para los clientes seleccionados"></div>
     <div class="modal-mail-acciones"><button id="mail-cancelar" type="button">Cancelar</button><button id="mail-enviar" type="button">Enviar</button></div>
   </div>
 </div>
@@ -1508,15 +1606,27 @@ document.querySelectorAll(".ordenar-columna").forEach((btn) => {{
 }});
 
 document.getElementById("btn-mail-masivo").addEventListener("click", () => {{
-  document.getElementById("modal-mail-ayuda").textContent = `El asunto será: Novedades de The Tech Room Arg. Se enviará a ${{idsSeleccionados().length}} cliente(s).`;
-  mailMensaje.value = "";
+  document.getElementById("modal-mail-ayuda").textContent = `El asunto será: Novedades de The Tech Room Arg. Se enviará a ${{idsSeleccionados().length}} cliente(s). Cada email comenzará con el nombre del cliente y terminará con “Saludos, Vlad.”.`;
+  mailMensaje.innerHTML = "";
   modalMail.hidden = false;
   mailMensaje.focus();
 }});
+document.querySelectorAll("[data-mail-formato]").forEach((boton) => {{
+  boton.addEventListener("click", () => {{
+    mailMensaje.focus();
+    document.execCommand(boton.dataset.mailFormato, false);
+  }});
+}});
+document.getElementById("mail-agregar-link").addEventListener("click", () => {{
+  const url = prompt("Pegá el enlace (https://...)");
+  if (!url) return;
+  mailMensaje.focus();
+  document.execCommand("createLink", false, url);
+}});
 document.getElementById("mail-cancelar").addEventListener("click", () => {{ modalMail.hidden = true; }});
 document.getElementById("mail-enviar").addEventListener("click", async () => {{
-  const mensaje = mailMensaje.value.trim();
-  if (!mensaje) {{ alert("Escribí un mensaje antes de enviar."); return; }}
+  const mensaje = mailMensaje.innerHTML.trim();
+  if (!mailMensaje.textContent.trim()) {{ alert("Escribí un mensaje antes de enviar."); return; }}
   const boton = document.getElementById("mail-enviar");
   boton.disabled = true;
   const r = await fetch("/admin/clientes/acciones/enviar-mail", {{
