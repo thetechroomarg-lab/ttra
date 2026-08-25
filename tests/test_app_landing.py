@@ -83,6 +83,26 @@ def test_checkout_ofrece_domicilio_guardado_y_alternativo():
     assert '"/api/me/direccion"' in landing_js
 
 
+def test_checkout_esconde_usar_mi_direccion_sin_domicilio_guardado_y_pregunta_al_aplicar():
+    landing_js = (appmod.BASE / "static" / "landing.js").read_text()
+
+    inicio = landing_js.index("async function mostrarOpcionesDireccion")
+    fin = landing_js.index("async function confirmarGuardadoDomicilioSiCorresponde", inicio)
+    mostrar_opciones = landing_js[inicio:fin]
+    assert "botonUsarMiDireccion.hidden = !direccionGuardada;" in mostrar_opciones
+    assert '"Elegir dirección de entrega"' in mostrar_opciones
+
+    inicio_guardar = landing_js.index('document.getElementById("btn-guardar-direccion")')
+    fin_guardar = landing_js.index('document.getElementById("btn-abrir-codigo")', inicio_guardar)
+    guardar_direccion = landing_js[inicio_guardar:fin_guardar]
+    assert "await confirmarGuardadoDomicilioSiCorresponde(direccion)" in guardar_direccion
+
+    inicio_checkout = landing_js.index("async function derivarCheckoutAWhatsapp")
+    fin_checkout = landing_js.index("async function", inicio_checkout + 1)
+    checkout = landing_js[inicio_checkout:fin_checkout]
+    assert "confirmarGuardadoDomicilioSiCorresponde" not in checkout
+
+
 def test_domicilios_de_registro_y_checkout_tambien_funcionan_en_fallout():
     login_js = (appmod.BASE / "static" / "login.js").read_text()
     landing_js = (appmod.BASE / "static" / "landing.js").read_text()
