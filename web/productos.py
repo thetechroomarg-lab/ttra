@@ -34,6 +34,24 @@ def _nombre_estandar_note(nombre):
 _SAMSUNG_MODELO = re.compile(r"(?i)\ba\d{2}\b|\bs2[0-9]\b|\bf1[0-9]\b|\bz\s*(flip|fold)\b")
 _XIAOMI_NOTE = re.compile(r"(?i)\bnote\s*1[0-9]\b")
 
+# Modelos Redmi/POCO/Mi que algunos proveedores mandan sin la marca en el
+# nombre (ej. "C71 3GB 64GB", "F7 5G 12GB 256GB", "NOTE 70 4GB 128GB"). Van
+# anclados al inicio del nombre porque son justo el primer token de estas
+# filas — así no confunden specs sueltas de otros productos (ej. una
+# notebook con pantalla de "15.6"").
+_XIAOMI_MODELO = re.compile(
+    r"(?i)^(?:"
+    r"c7[15]x?|c8[15](?:\s*pro)?|"           # Redmi C: C71, C75X, C81(-PRO), C85
+    r"f[678](?:\s*(?:pro|ultra))?|"          # POCO F: F6/F7/F8 (PRO/ULTRA)
+    r"m[78](?:\s*pro)?|"                     # POCO M: M7/M8 (PRO)
+    r"x[78](?:\s*(?:pro|ultra))?(?:\s*max)?|"  # POCO X: X7/X8 (PRO/ULTRA/MAX)
+    r"a[457](?:\s*pro)?|"                    # Redmi A: A4/A5/A7 (PRO)
+    r"note\s*\d+[a-z]?x?|"                   # Redmi Note: NOTE 14S/60X/70
+    r"mi\s+(?:band|buds|\d+[a-z]?)|"         # Mi-branded: MI BAND, MI BUDS, Mi 17/17T...
+    r"1[4-7]c?t?(?:\s*ultra)?"               # Redmi numerado: 14C, 15(C/T), 17(T/ULTRA)
+    r")(?=\s|$)"
+)
+
 # Marcas de PC (HP/Dell/Lenovo/Asus/Acer/MSI/Gigabyte) suelen mandarse sin la palabra
 # "notebook"/"laptop" en el nombre (ej. "HP 15-EF0022 Ryzen 7 ... SSD ..."). Si el nombre
 # tiene la marca de PC Y una spec típica de notebook, es notebook.
@@ -59,7 +77,7 @@ def _categoria(nombre):
         return "Notebook"
     if "samsung" in l or "galaxy" in l or _SAMSUNG_MODELO.search(l):
         return "Samsung"
-    if any(b in l for b in ("xiaomi", "poco", "redmi")) or _XIAOMI_NOTE.search(l):
+    if any(b in l for b in ("xiaomi", "poco", "redmi")) or _XIAOMI_NOTE.search(l) or _XIAOMI_MODELO.search(l):
         return "Xiaomi"
     if l.startswith("moto") or "motorola" in l:
         return "Motorola"
