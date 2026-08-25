@@ -931,7 +931,8 @@ html[data-modo="classic"] .tarjeta-recomendado-acciones {
 
 @media (max-width: 700px) {
   html[data-modo="classic"] body:not(.rc-vista-seccion) {
-    min-height: 100dvh;
+    height: 100dvh;
+    overflow: hidden;
   }
   html[data-modo="classic"] body:not(.rc-vista-seccion) .fila-principal {
     flex: 1 1 auto;
@@ -1012,13 +1013,15 @@ html[data-modo="classic"] .tarjeta-recomendado-acciones {
     gap: 2px;
     flex: 0 0 auto;
     min-height: 0;
+    margin-top: 14px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio strong {
-    font-size: 10px;
+    font-size: 28px;
+    line-height: 1.1;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-precio span {
-    font-size: 10px;
-    line-height: 1.15;
+    font-size: 16px;
+    line-height: 1.25;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado .tarjeta-recomendado-iconos {
     gap: 2px;
@@ -1034,7 +1037,7 @@ html[data-modo="classic"] .tarjeta-recomendado-acciones {
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones {
     opacity: 1;
     pointer-events: auto;
-    margin-top: 0;
+    margin-top: auto;
     gap: 5px;
   }
   html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado-acciones .dropdown-color-boton,

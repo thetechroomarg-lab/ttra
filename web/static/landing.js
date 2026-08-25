@@ -2516,14 +2516,58 @@ function mostrarAvisoFlotante(mensaje) {
   avisoFlotanteTimeout = setTimeout(() => aviso.classList.remove("visible"), 2600);
 }
 
+function abrirPanelCompartir(url, nombre) {
+  let panel = document.getElementById("rc-panel-compartir");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "rc-panel-compartir";
+    panel.hidden = true;
+    panel.innerHTML = `
+      <section class="rc-panel-compartir-contenido" role="dialog" aria-modal="true" aria-labelledby="rc-panel-compartir-titulo">
+        <button type="button" class="rc-panel-compartir-cerrar" aria-label="Cerrar">×</button>
+        <h2 id="rc-panel-compartir-titulo">Compartir producto</h2>
+        <p class="rc-panel-compartir-nombre"></p>
+        <input class="rc-panel-compartir-url" type="text" readonly aria-label="Link del producto">
+        <div class="rc-panel-compartir-acciones">
+          <button type="button" class="rc-panel-compartir-copiar">Copiar enlace</button>
+          <a class="rc-panel-compartir-whatsapp" target="_blank" rel="noopener">Compartir por WhatsApp</a>
+        </div>
+      </section>`;
+    document.body.appendChild(panel);
+    const cerrar = () => { panel.hidden = true; };
+    panel.querySelector(".rc-panel-compartir-cerrar").addEventListener("click", cerrar);
+    panel.addEventListener("click", (e) => { if (e.target === panel) cerrar(); });
+    panel.querySelector(".rc-panel-compartir-copiar").addEventListener("click", async () => {
+      const campo = panel.querySelector(".rc-panel-compartir-url");
+      campo.focus();
+      campo.select();
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+        await navigator.clipboard.writeText(campo.value);
+        mostrarAvisoFlotante("¡Link copiado!");
+      } catch {
+        document.execCommand("copy");
+        mostrarAvisoFlotante("Link seleccionado: podés copiarlo manualmente.");
+      }
+    });
+  }
+  const campo = panel.querySelector(".rc-panel-compartir-url");
+  panel.querySelector(".rc-panel-compartir-nombre").textContent = nombre;
+  campo.value = url;
+  panel.querySelector(".rc-panel-compartir-whatsapp").href = `https://wa.me/?text=${encodeURIComponent(`${nombre}\n${url}`)}`;
+  panel.hidden = false;
+  campo.focus();
+  campo.select();
+}
+
 // Arma el link directo al producto (?producto=<nombre>, preserva el modo
-// Fallout si corresponde) y lo copia al portapapeles. Quien lo abra: si
+// Fallout si corresponde) y abre el selector nativo de compartir. Quien lo abra: si
 // está logueado, landing.js lo lleva directo a la sección y abre la card
 // (ver abrirProductoCompartido); si no tiene cuenta, cae en login.html que
 // lo manda al registro y, ya creada la cuenta, lo redirige acá mismo (ver
 // login.js).
 async function compartirProducto(nombre) {
-  const producto = catalogoPlano.find((p) => p.nombre === nombre);
+  const producto = Object.values(SECCIONES_DATA).flat().find((p) => p.nombre === nombre);
   registrarInteraccion("share_product", {
     producto_nombre: nombre,
     categoria: producto ? productoSeccion(producto) : null,
@@ -2533,13 +2577,7 @@ async function compartirProducto(nombre) {
   params.set("producto", nombre);
   if (modoVisual === "fallout") params.set("modo", "fallout");
   const url = `${location.origin}/?${params.toString()}`;
-  try {
-    await navigator.clipboard.writeText(url);
-  } catch {
-    // Sin permiso/soporte de portapapeles no hay forma de copiarlo solo,
-    // pero el aviso es el mismo: no es crítico bloquear por esto.
-  }
-  mostrarAvisoFlotante("¡Link copiado! Enviáselo a tus amigos así pueden verlo!");
+  abrirPanelCompartir(url, nombre);
 }
 
 // true mientras el usuario apagó el Pip-Boy manualmente (ver Main Switch,
