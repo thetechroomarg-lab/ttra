@@ -2529,8 +2529,8 @@ function abrirPanelCompartir(url, nombre) {
         <p class="rc-panel-compartir-nombre"></p>
         <input class="rc-panel-compartir-url" type="text" readonly aria-label="Link del producto">
         <div class="rc-panel-compartir-acciones">
-          <button type="button" class="rc-panel-compartir-copiar">Copiar enlace</button>
-          <a class="rc-panel-compartir-whatsapp" target="_blank" rel="noopener">Compartir por WhatsApp</a>
+          <button type="button" class="rc-panel-compartir-accion rc-panel-compartir-copiar">Copiar enlace</button>
+          <button type="button" class="rc-panel-compartir-accion rc-panel-compartir-whatsapp">Compartir por WhatsApp</button>
         </div>
       </section>`;
     document.body.appendChild(panel);
@@ -2550,11 +2550,14 @@ function abrirPanelCompartir(url, nombre) {
         mostrarAvisoFlotante("Link seleccionado: podés copiarlo manualmente.");
       }
     });
+    panel.querySelector(".rc-panel-compartir-whatsapp").addEventListener("click", () => {
+      window.open(panel.dataset.whatsappUrl, "_blank", "noopener,noreferrer");
+    });
   }
   const campo = panel.querySelector(".rc-panel-compartir-url");
   panel.querySelector(".rc-panel-compartir-nombre").textContent = nombre;
   campo.value = url;
-  panel.querySelector(".rc-panel-compartir-whatsapp").href = `https://wa.me/?text=${encodeURIComponent(`${nombre}\n${url}`)}`;
+  panel.dataset.whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${nombre}\n${url}`)}`;
   panel.hidden = false;
   campo.focus();
   campo.select();

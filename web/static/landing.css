@@ -1522,7 +1522,9 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 .rc-panel-compartir-acciones { display: flex; gap: 8px; margin-top: 12px; }
 .rc-panel-compartir-acciones > * {
   flex: 1; min-height: 42px; display: inline-flex; align-items: center; justify-content: center;
+  box-sizing: border-box; appearance: none;
   border: 1px solid var(--rc-green); color: var(--rc-green-bright); background: transparent;
+  border-radius: 9px;
   font: inherit; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer;
 }
 .rc-panel-compartir-cerrar {

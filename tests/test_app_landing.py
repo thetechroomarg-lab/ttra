@@ -36,6 +36,23 @@ def test_compartir_producto_abre_un_panel_visible_si_el_navegador_no_puede_compa
     assert "#rc-panel-compartir" in css
 
 
+def test_panel_compartir_usa_botones_iguales_y_redondeados_en_ambos_modos():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+    inicio = css.index(".rc-panel-compartir-acciones > * {")
+    fin = css.index(".rc-panel-compartir-cerrar", inicio)
+    botones = css[inicio:fin]
+
+    assert "border-radius: 9px;" in botones
+    assert "border: 1px solid var(--rc-green);" in botones
+    assert "background: transparent;" in botones
+    assert "appearance: none;" in botones
+    assert "box-sizing: border-box;" in botones
+    assert 'class="rc-panel-compartir-accion rc-panel-compartir-copiar"' in script
+    assert 'class="rc-panel-compartir-accion rc-panel-compartir-whatsapp"' in script
+    assert '<a class="rc-panel-compartir-whatsapp"' not in script
+
+
 def test_landing_mobile_muestra_una_sola_card_recomendada_completa():
     script = (appmod.BASE / "static" / "landing.js").read_text()
 
