@@ -276,6 +276,18 @@ def _nuevo_recibo_id(client):
     return client.rpc("siguiente_numero_recibo").execute().data
 
 
+def _descargar_fotos_series(client, pedido):
+    fotos = []
+    for ruta in pedido.get("fotos_series") or []:
+        try:
+            contenido = client.storage.from_("recibos-series").download(ruta)
+        except Exception:
+            continue
+        if contenido:
+            fotos.append(contenido)
+    return fotos
+
+
 class DescuentoItemIn(BaseModel):
     nombre: str
     cantidad: int = Field(ge=1)
@@ -549,9 +561,9 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     emitido_en = pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en") or ahora_recibo
     pedido_para_mail = {**pedido, "recibo_id": recibo_id, "recibo_emitido_en": emitido_en}
     try:
-        pdf_adjunto = recibos.pdf_recibo(cliente, pedido_para_mail)
         formulario = await request.form() if request.headers.get("content-type", "").startswith("multipart/") else {}
         adjuntos_fotos = []
+        fotos_pdf = []
         fotos_guardadas = list(pedido.get("fotos_series") or [])
         for foto in formulario.getlist("fotos")[:10] if formulario else []:
             if not getattr(foto, "filename", None):
@@ -563,7 +575,9 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             ruta = f"pedidos/{pedido_id}/{nombre}"
             client.storage.from_("recibos-series").upload(ruta, contenido, {"content-type": "image/jpeg"})
             fotos_guardadas.append(ruta)
+            fotos_pdf.append(contenido)
             adjuntos_fotos.append({"filename": nombre, "content": contenido})
+        pdf_adjunto = recibos.pdf_recibo(cliente, pedido_para_mail, fotos=fotos_pdf)
         enviar_email(
             cliente["email"],
             f"Recibo {recibo_id} — The Tech Room Arg",
@@ -600,7 +614,11 @@ def admin_pedido_pdf_recibo(pedido_id: str, request: Request):
     clientes = client.table("clientes").select("*").eq("id", pedido.get("cliente_id")).execute().data
     if not clientes:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    contenido = recibos.pdf_recibo(clientes[0], {**pedido, "recibo_emitido_en": emitido_en})
+    contenido = recibos.pdf_recibo(
+        clientes[0],
+        {**pedido, "recibo_emitido_en": emitido_en},
+        fotos=_descargar_fotos_series(client, pedido),
+    )
     nombre = f"recibo-{pedido.get('recibo_id') or pedido_id}.pdf"
     return Response(contenido, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{nombre}"'})
 
