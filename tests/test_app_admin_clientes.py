@@ -62,6 +62,8 @@ def test_admin_apila_controles_y_muestra_clientes_como_tarjetas_en_mobile(monkey
     assert '#tabla-clientes td:nth-child(2)::before { content:"Nombre"; }' in r.text
     assert "#tabla-clientes, #tabla-clientes tbody, #tabla-clientes tr, #tabla-clientes td" in r.text
     assert "#filtro-clientes { flex:0 1 auto; min-height:38px; }" in r.text
+    assert "#filtro-historial-pedidos { box-sizing:border-box; display:block; margin:0 0 10px; min-height:38px; width:100%; }" in r.text
+    assert "#tabla-clientes tr[hidden] { display:none !important; }" in r.text
     assert "#tabla-clientes .col-check { justify-content:flex-start; text-align:left; }" in r.text
     assert ".pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }" in r.text
     assert ".pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }" in r.text
@@ -271,6 +273,10 @@ def test_admin_muestra_historial_de_pedidos_para_la_fecha_elegida(monkeypatch):
 
     assert "Historial de pedidos" in r.text
     assert 'value="2026-08-20"' in r.text
+    assert 'id="filtro-historial-pedidos"' in r.text
+    assert 'data-busqueda-historial="juan pérez notebook lenovo' in r.text
+    assert "function filtrarHistorialPedidos()" in r.text
+    assert 'filtroHistorialPedidos.addEventListener("input", filtrarHistorialPedidos);' in r.text
     assert "Notebook Lenovo" in r.text
     assert "Recibo enviado" in r.text
     assert 'class="btn-ver-recibo-pdf"' in r.text

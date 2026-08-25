@@ -956,6 +956,7 @@ _ADMIN_CLIENTES_ESTILO = """
   .historial-pedidos h2 { margin:0 0 10px; color:#f2f4f8; font-size:17px; }
   .historial-pedidos label { color:#dfe2e8; font-size:13px; font-weight:700; }
   .historial-pedidos input { margin-left:8px; min-height:34px; border:1px solid #4a5160; border-radius:8px; padding:0 8px; background:#12141a; color:#f2f4f8; font:inherit; }
+  #filtro-historial-pedidos { box-sizing:border-box; display:block; margin:0 0 10px; min-height:38px; width:100%; }
   #fecha-historial-pedidos { color-scheme:dark; }
   #fecha-historial-pedidos::-webkit-calendar-picker-indicator { filter:none; opacity:.9; cursor:pointer; }
   .pedido-historico { padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
@@ -1046,6 +1047,7 @@ _ADMIN_CLIENTES_ESTILO = """
     #tabla-clientes { min-width:0; font-size:13px; }
     #tabla-clientes thead { display:none; }
     #tabla-clientes, #tabla-clientes tbody, #tabla-clientes tr, #tabla-clientes td { box-sizing:border-box; display:block; width:100%; }
+    #tabla-clientes tr[hidden] { display:none !important; }
     #tabla-clientes tbody { display:grid; gap:12px; }
     #tabla-clientes tr { background:#12141a; border:1px solid #2a2e37; border-radius:10px; padding:4px 12px; }
     #tabla-clientes td { align-items:flex-start; border-bottom:1px solid #2a2e37; display:flex; gap:12px; justify-content:space-between; min-height:42px; padding:10px 0; white-space:normal; overflow-wrap:anywhere; vertical-align:top; }
@@ -1240,10 +1242,21 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     else:
         pedidos_hoy_html = '<p class="vacio">No hay pedidos pendientes para hoy.</p>'
     if pedidos_historial:
+        def _pedido_historial_html(pedido):
+            cliente_pedido = clientes_por_id.get(pedido.get("cliente_id"), {})
+            nombre_cliente = (
+                f"{cliente_pedido.get('nombre', '')} {cliente_pedido.get('apellido', '')}".strip()
+                or "Cliente"
+            )
+            descripcion = _descripcion_pedido(pedido)
+            busqueda = html.escape(f"{nombre_cliente} {descripcion}".lower())
+            return (
+                f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{html.escape(nombre_cliente)}</strong> · '
+                f'{html.escape(descripcion)} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}<br><span class="estado-recibo">'
+                f'{("Recibo enviado originalmente: " + html.escape(pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en", ""))) if pedido.get("recibo_enviado_en") else ("Pendiente de recibo" if pedido.get("detalle") and pedido.get("total_usd") is not None else "Sin detalle histórico")}</span>{_acciones_recibo_historial(pedido)}</div>'
+            )
         pedidos_historial_html = "".join(
-            f'<div class="pedido-historico"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
-            f'{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}<br><span class="estado-recibo">'
-            f'{("Recibo enviado originalmente: " + html.escape(pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en", ""))) if pedido.get("recibo_enviado_en") else ("Pendiente de recibo" if pedido.get("detalle") and pedido.get("total_usd") is not None else "Sin detalle histórico")}</span>{_acciones_recibo_historial(pedido)}</div>'
+            _pedido_historial_html(pedido)
             for pedido in pedidos_historial
         )
     else:
@@ -1264,7 +1277,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <h1>Pedidos y recibos</h1>
     <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><button id="salir">Cerrar sesión</button></div>
   </div>
-  <section class="historial-pedidos"><h2>Historial de pedidos</h2><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
+  <section class="historial-pedidos"><h2>Historial de pedidos</h2><input id="filtro-historial-pedidos" type="search" placeholder="Buscar por cliente o producto"><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
   {pendientes_hoy_seccion_html}
 </div>
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
@@ -1385,6 +1398,14 @@ document.getElementById("fecha-historial-pedidos").addEventListener("change", (e
   url.searchParams.set("fecha_pedidos", e.target.value);
   location.href = url.toString();
 }});
+const filtroHistorialPedidos = document.getElementById("filtro-historial-pedidos");
+function filtrarHistorialPedidos() {{
+  const texto = filtroHistorialPedidos.value.trim().toLowerCase();
+  document.querySelectorAll("[data-busqueda-historial]").forEach((pedido) => {{
+    pedido.hidden = Boolean(texto && !pedido.dataset.busquedaHistorial.includes(texto));
+  }});
+}}
+filtroHistorialPedidos.addEventListener("input", filtrarHistorialPedidos);
 document.getElementById("form-tarea-entrega")?.addEventListener("submit", async (e) => {{
   e.preventDefault();
   const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:"{fecha_hoy}", titulo:document.getElementById("tarea-titulo").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
