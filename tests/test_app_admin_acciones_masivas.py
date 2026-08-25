@@ -41,6 +41,9 @@ def test_admin_lista_checkboxes_provincia_y_columnas_ordenables(monkeypatch):
     assert 'id="filtro-provincia"' in respuesta.text
     assert 'id="ordenar-clientes"' in respuesta.text
     assert "Santa Fe" in respuesta.text
+    assert 'id="mail-mensaje" class="mail-editor" contenteditable="true"' in respuesta.text
+    assert 'id="mail-insertar-nombre"' not in respuesta.text
+    assert 'mailMensaje.innerHTML.trim()' in respuesta.text
 
 
 def test_admin_envia_mail_a_clientes_seleccionados(monkeypatch):
@@ -62,6 +65,40 @@ def test_admin_envia_mail_a_clientes_seleccionados(monkeypatch):
     assert [mail[0] for mail in enviados] == ["ana@x.com", "bruno@x.com"]
     assert all(mail[1] == "Novedades de The Tech Room Arg" for mail in enviados)
     assert all("Tenemos novedades para vos." in mail[2] for mail in enviados)
+
+
+def test_admin_envia_mail_rich_text_personalizado_y_seguro(monkeypatch):
+    cliente, _fake, ids = _admin_con_clientes(monkeypatch)
+    enviados = []
+    monkeypatch.setattr(
+        appmod,
+        "enviar_email",
+        lambda destinatario, asunto, cuerpo: enviados.append((destinatario, asunto, cuerpo)),
+    )
+
+    respuesta = cliente.post(
+        "/admin/clientes/acciones/enviar-mail",
+        json={
+            "cliente_ids": ids,
+            "mensaje": (
+                "<p><strong>Oferta especial</strong></p>"
+                "<div>Texto en otro párrafo</div><ul><li>Un beneficio</li></ul>"
+                "<script>alert('no')</script>"
+            ),
+        },
+    )
+
+    assert respuesta.status_code == 200
+    cuerpo_ana = next(cuerpo for email, _asunto, cuerpo in enviados if email == "ana@x.com")
+    cuerpo_bruno = next(cuerpo for email, _asunto, cuerpo in enviados if email == "bruno@x.com")
+    assert cuerpo_ana.startswith("<p>Hola Ana,</p>")
+    assert cuerpo_bruno.startswith("<p>Hola Bruno,</p>")
+    assert "<strong>Oferta especial</strong>" in cuerpo_ana
+    assert "<p>Texto en otro párrafo</p>" in cuerpo_ana
+    assert "<ul><li>Un beneficio</li></ul>" in cuerpo_ana
+    assert "<script" not in cuerpo_ana
+    assert "alert('no')" not in cuerpo_ana
+    assert cuerpo_ana.endswith("<p>Saludos,<br>Vlad.</p>")
 
 
 def test_admin_elimina_varias_cuentas_seleccionadas(monkeypatch):

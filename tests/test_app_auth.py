@@ -33,6 +33,66 @@ def test_registro_requiere_provincia(monkeypatch):
     assert r.status_code == 422
 
 
+def test_registro_guarda_el_domicilio_del_cliente(monkeypatch):
+    c = _cliente(monkeypatch)
+
+    r = c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
+        "direccion": "Av. Colón 123, Córdoba",
+    })
+
+    assert r.status_code == 200
+    assert c.get("/api/me").json()["direccion"] == "Av. Colón 123, Córdoba"
+
+
+def test_cliente_sin_domicilio_puede_guardarlo_desde_checkout(monkeypatch):
+    c = _cliente(monkeypatch)
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
+    })
+
+    r = c.put("/api/me/direccion", json={
+        "direccion": "Av. Colón 123, Córdoba", "guardar_en_perfil": True,
+    })
+
+    assert r.status_code == 200
+    assert r.json()["direccion"] == "Av. Colón 123, Córdoba"
+
+
+def test_cliente_que_rechaza_guardar_domicilio_no_altera_su_perfil(monkeypatch):
+    c = _cliente(monkeypatch)
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
+    })
+
+    r = c.put("/api/me/direccion", json={
+        "direccion": "Av. Colón 123, Córdoba", "guardar_en_perfil": False,
+    })
+
+    assert r.status_code == 200
+    assert r.json()["direccion"] is None
+    assert "direccion_consultada" not in r.json()
+
+
+def test_cliente_puede_agregar_domicilio_desde_su_perfil(monkeypatch):
+    c = _cliente(monkeypatch)
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
+    })
+
+    r = c.put("/api/me", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "direccion": "Av. Colón 123, Córdoba",
+    })
+
+    assert r.status_code == 200
+    assert r.json()["direccion"] == "Av. Colón 123, Córdoba"
+
+
 def test_registro_pasa_redirect_publico_a_supabase(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)

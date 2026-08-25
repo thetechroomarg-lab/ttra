@@ -3628,6 +3628,7 @@ async function derivarCheckoutAWhatsapp(carrito) {
   const fechaEntrega = document.getElementById("fecha-entrega").value;
   const direccionEntrega = document.getElementById("direccion-entrega").value.trim();
   if (!direccionEntrega) { alert("Especificá dirección de entrega."); return; }
+  if (!await confirmarGuardadoDomicilioSiCorresponde(direccionEntrega)) return;
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
   try {
     await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega);
@@ -3654,36 +3655,173 @@ document.getElementById("btn-vaciar-carrito").addEventListener("click", () => {
   borrarRegaloPromo();
 });
 
-document.getElementById("btn-abrir-direccion").addEventListener("click", () => {
-  document.getElementById("direccion-entrega-wrap").classList.remove("oculto");
+const panelDireccionEntrega = document.getElementById("direccion-entrega-wrap");
+const panelOpcionesDireccion = document.getElementById("opciones-direccion-entrega");
+const panelCodigoPromocional = document.getElementById("modal-codigo");
+const inputDireccionEntrega = document.getElementById("direccion-entrega");
+const sugerenciasDireccion = document.getElementById("sugerencias-direccion");
+const botonUsarMiDireccion = document.getElementById("btn-usar-mi-direccion");
+const estadoDireccionGuardada = document.getElementById("estado-direccion-guardada");
+let temporizadorSugerenciasDireccion;
+let apiPlacesCargada;
+
+function ocultarSugerenciasDireccion() {
+  sugerenciasDireccion.replaceChildren();
+  sugerenciasDireccion.classList.add("oculto");
+}
+
+async function cargarApiPlaces() {
+  if (apiPlacesCargada !== undefined) return apiPlacesCargada;
+  apiPlacesCargada = fetch("/api/configuracion-publica")
+    .then((respuesta) => respuesta.ok ? respuesta.json() : {})
+    .then(async ({ google_maps_api_key: clave }) => {
+      if (!clave) return null;
+      await new Promise((resolver, rechazar) => {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(clave)}&libraries=places&v=weekly`;
+        script.async = true;
+        script.onload = resolver;
+        script.onerror = rechazar;
+        document.head.append(script);
+      });
+      return google.maps.importLibrary("places");
+    })
+    .catch(() => null);
+  return apiPlacesCargada;
+}
+
+async function mostrarSugerenciasDireccion(texto) {
+  const places = await cargarApiPlaces();
+  if (!places || texto !== inputDireccionEntrega.value.trim()) return;
+  const { AutocompleteSuggestion } = places;
+  const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+    input: texto,
+    includedRegionCodes: ["ar"],
+  });
+  if (texto !== inputDireccionEntrega.value.trim() || !suggestions?.length) {
+    ocultarSugerenciasDireccion();
+    return;
+  }
+  sugerenciasDireccion.replaceChildren(...suggestions.slice(0, 5).map(({ placePrediction }) => {
+    const item = document.createElement("li");
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = placePrediction.text.text;
+    boton.addEventListener("click", async () => {
+      const place = placePrediction.toPlace();
+      await place.fetchFields({ fields: ["formattedAddress"] });
+      inputDireccionEntrega.value = place.formattedAddress || placePrediction.text.text;
+      ocultarSugerenciasDireccion();
+    });
+    item.append(boton);
+    return item;
+  }));
+  sugerenciasDireccion.classList.remove("oculto");
+}
+
+inputDireccionEntrega.addEventListener("input", () => {
+  clearTimeout(temporizadorSugerenciasDireccion);
+  const texto = inputDireccionEntrega.value.trim();
+  if (texto.length < 3) {
+    ocultarSugerenciasDireccion();
+    return;
+  }
+  temporizadorSugerenciasDireccion = setTimeout(() => {
+    mostrarSugerenciasDireccion(texto).catch(ocultarSugerenciasDireccion);
+  }, 250);
 });
-document.getElementById("btn-cerrar-direccion").addEventListener("click", () => {
-  document.getElementById("direccion-entrega-wrap").classList.add("oculto");
+
+function abrirPanelSecundario(idPanel) {
+  panelOpcionesDireccion.classList.toggle("oculto", idPanel !== "opciones-direccion-entrega");
+  const direccion = panelDireccionEntrega;
+  const codigo = panelCodigoPromocional;
+  direccion.classList.toggle("oculto", idPanel !== "direccion-entrega-wrap");
+  codigo.classList.toggle("oculto", idPanel !== "modal-codigo");
+}
+
+function cerrarPanelSecundario() {
+  panelOpcionesDireccion.classList.add("oculto");
+  panelDireccionEntrega.classList.add("oculto");
+  panelCodigoPromocional.classList.add("oculto");
+  ocultarSugerenciasDireccion();
+}
+
+async function mostrarOpcionesDireccion() {
+  const cliente = await obtenerEstadoSesionCliente(true);
+  const direccionGuardada = (cliente?.direccion || "").trim();
+  botonUsarMiDireccion.disabled = !direccionGuardada;
+  estadoDireccionGuardada.textContent = direccionGuardada
+    ? `Domicilio guardado: ${direccionGuardada}`
+    : "No tenés un domicilio guardado todavía.";
+  abrirPanelSecundario("opciones-direccion-entrega");
+}
+
+async function confirmarGuardadoDomicilioSiCorresponde(direccion) {
+  const cliente = await obtenerEstadoSesionCliente();
+  if (!cliente || cliente.direccion) return true;
+  const guardar = confirm("¿Querés guardar este domicilio en tu perfil para próximos pedidos?");
+  const respuesta = await fetch("/api/me/direccion", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ direccion, guardar_en_perfil: guardar }),
+  });
+  if (!respuesta.ok) {
+    alert("No pudimos guardar tu preferencia de domicilio. Probá nuevamente.");
+    return false;
+  }
+  estadoSesionCliente = await respuesta.json();
+  return true;
+}
+
+document.getElementById("btn-abrir-direccion").addEventListener("click", () => {
+  mostrarOpcionesDireccion().catch(() => abrirPanelSecundario("opciones-direccion-entrega"));
+});
+botonUsarMiDireccion.addEventListener("click", async () => {
+  const cliente = await obtenerEstadoSesionCliente(true);
+  const direccion = (cliente?.direccion || "").trim();
+  if (!direccion) {
+    abrirPanelSecundario("direccion-entrega-wrap");
+    return;
+  }
+  inputDireccionEntrega.value = direccion;
+  document.getElementById("btn-abrir-direccion").textContent = "Usando mi dirección";
+  cerrarPanelSecundario();
+});
+document.getElementById("btn-elegir-otra-direccion").addEventListener("click", () => {
+  abrirPanelSecundario("direccion-entrega-wrap");
 });
 document.getElementById("btn-guardar-direccion").addEventListener("click", () => {
-  document.getElementById("direccion-entrega-wrap").classList.add("oculto");
+  if (!inputDireccionEntrega.value.trim()) {
+    inputDireccionEntrega.focus();
+    return;
+  }
+  document.getElementById("btn-abrir-direccion").textContent = "Dirección alternativa";
+  cerrarPanelSecundario();
 });
 
 document.getElementById("btn-abrir-codigo").addEventListener("click", () => {
-  document.getElementById("modal-codigo").classList.remove("oculto");
+  abrirPanelSecundario("modal-codigo");
 });
-document.getElementById("btn-cerrar-codigo").addEventListener("click", () => {
-  document.getElementById("modal-codigo").classList.add("oculto");
+document.addEventListener("pointerdown", (evento) => {
+  const panelSecundarioAbierto = [panelOpcionesDireccion, panelDireccionEntrega, panelCodigoPromocional]
+    .find((panel) => !panel.classList.contains("oculto"));
+  if (!panelSecundarioAbierto || panelSecundarioAbierto.contains(evento.target)) return;
+  if (evento.target.closest("#btn-abrir-direccion, #btn-abrir-codigo")) return;
+  cerrarPanelSecundario();
 });
 
 document.getElementById("btn-aplicar-codigo").addEventListener("click", async () => {
   const carrito = cargarCarrito();
   if (!carrito.length) {
-    setEstadoCodigoMailing("Agregá productos al carrito antes de aplicar un código.", "error");
+    alert("Agregá productos al carrito antes de aplicar un código.");
     return;
   }
   const input = document.getElementById("input-codigo-mailing");
   const codigo = (input?.value || "").trim().toUpperCase();
   if (!codigo) {
-    setEstadoCodigoMailing("Ingresá un código.", "error");
+    alert("Ingresá un código.");
     return;
   }
-  setEstadoCodigoMailing("Validando código...");
   const r = await fetch("/api/codigos-promo/validar", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -3691,11 +3829,12 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
   });
   const body = await r.json().catch(() => ({}));
   if (!r.ok) {
-    setEstadoCodigoMailing(body.error || "No se pudo validar el código.", "error");
+    alert(body.error || "No se pudo validar el código.");
     return;
   }
   guardarRegaloPromo(body);
-  setEstadoCodigoMailing(`¡Código aplicado! Sumamos ${body.producto_regalo} de regalo a tu pedido.`, "ok");
+  cerrarPanelSecundario();
+  alert(`¡Código aplicado! Sumamos ${body.producto_regalo} de regalo a tu pedido.`);
 });
 
 async function consumirCodigoPromo() {

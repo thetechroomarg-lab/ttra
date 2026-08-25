@@ -75,6 +75,10 @@
         <option>Santiago del Estero</option><option>Tierra del Fuego</option><option>Tucumán</option>
         <option>Ciudad Autónoma de Buenos Aires</option>
       </select>
+      <div class="registro-direccion-wrap">
+        <input type="text" id="registro-direccion" placeholder="Domicilio de entrega" autocomplete="street-address" maxlength="500" required>
+        <ul id="registro-sugerencias-direccion" class="registro-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
+      </div>
       <button type="submit">Crear cuenta</button>
       <p class="error" id="registro-error"></p>
       <p class="ok" id="registro-ok"></p>

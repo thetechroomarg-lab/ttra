@@ -20,6 +20,93 @@ def test_landing_descarta_descuento_mailing_persistido_fuera_de_un_link():
     assert "localStorage.removeItem(CLAVE_DESCUENTO_MAILING);" in script
 
 
+def test_configuracion_publica_expone_solo_la_clave_de_maps_configurada(monkeypatch):
+    monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "maps-key-de-prueba")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+
+    respuesta = cliente.get("/api/configuracion-publica")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json() == {"google_maps_api_key": "maps-key-de-prueba"}
+
+
+def test_configuracion_publica_no_inventa_una_clave_de_maps(monkeypatch):
+    monkeypatch.delenv("GOOGLE_MAPS_API_KEY", raising=False)
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+
+    respuesta = cliente.get("/api/configuracion-publica")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json() == {"google_maps_api_key": ""}
+
+
+def test_checkout_ofrece_sugerencias_de_direccion_de_google_maps_en_argentina():
+    html = (appmod.BASE / "static" / "index.html").read_text()
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+
+    assert 'id="sugerencias-direccion"' in html
+    assert 'fetch("/api/configuracion-publica")' in script
+    assert "AutocompleteSuggestion.fetchAutocompleteSuggestions" in script
+    assert 'includedRegionCodes: ["ar"]' in script
+    assert 'place.fetchFields({ fields: ["formattedAddress"] })' in script
+
+
+def test_autocomplete_de_direccion_se_comparte_con_el_carrito_fallout():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    css = (appmod.BASE / "static" / "landing.css").read_text()
+    inicio = script.index("async function cargarApiPlaces()")
+    fin = script.index("function abrirPanelSecundario", inicio)
+    autocomplete = script[inicio:fin]
+
+    assert "modoVisual" not in autocomplete
+    assert ".sugerencias-direccion" in css
+    assert 'html[data-modo="fallout"] #panel-carrito {' in css
+
+
+def test_registro_pide_domicilio_y_lo_autocompleta_con_google_maps():
+    login_html = (appmod.BASE / "static" / "login.html").read_text()
+    login_js = (appmod.BASE / "static" / "login.js").read_text()
+
+    assert 'id="registro-direccion"' in login_html
+    assert 'id="registro-sugerencias-direccion"' in login_html
+    assert "AutocompleteSuggestion.fetchAutocompleteSuggestions" in login_js
+    assert 'includedRegionCodes: ["ar"]' in login_js
+
+
+def test_checkout_ofrece_domicilio_guardado_y_alternativo():
+    index_html = (appmod.BASE / "static" / "index.html").read_text()
+    landing_js = (appmod.BASE / "static" / "landing.js").read_text()
+
+    assert 'id="btn-usar-mi-direccion"' in index_html
+    assert 'id="btn-elegir-otra-direccion"' in index_html
+    assert "guardar_en_perfil" in landing_js
+    assert '"/api/me/direccion"' in landing_js
+
+
+def test_domicilios_de_registro_y_checkout_tambien_funcionan_en_fallout():
+    login_js = (appmod.BASE / "static" / "login.js").read_text()
+    landing_js = (appmod.BASE / "static" / "landing.js").read_text()
+    inicio_registro = login_js.index("async function cargarApiPlacesRegistro")
+    fin_registro = login_js.index("registroDireccionInput.addEventListener", inicio_registro)
+    registro_autocomplete = login_js[inicio_registro:fin_registro]
+    inicio_checkout = landing_js.index("async function mostrarOpcionesDireccion")
+    fin_checkout = landing_js.index('document.getElementById("btn-abrir-codigo")', inicio_checkout)
+    checkout_domicilio = landing_js[inicio_checkout:fin_checkout]
+
+    assert "modoFallout" not in registro_autocomplete
+    assert "modoVisual" not in checkout_domicilio
+
+
+def test_perfil_permite_editar_domicilio_con_autocomplete():
+    perfil_html = (appmod.BASE / "static" / "perfil.html").read_text()
+    perfil_js = (appmod.BASE / "static" / "perfil.js").read_text()
+
+    assert 'id="perfil-direccion"' in perfil_html
+    assert 'id="perfil-sugerencias-direccion"' in perfil_html
+    assert "AutocompleteSuggestion.fetchAutocompleteSuggestions" in perfil_js
+    assert 'includedRegionCodes: ["ar"]' in perfil_js
+
+
 def test_compartir_producto_abre_siempre_el_panel_compartible():
     script = (appmod.BASE / "static" / "landing.js").read_text()
     inicio = script.index("async function compartirProducto(nombre)")
@@ -414,9 +501,44 @@ def test_carrito_muestra_disclaimer_y_alinea_altura_de_botones():
     assert "detalles finales se confirman por WhatsApp" in html
     assert "--carrito-boton-altura: 40px;" in css
     assert "#btn-aplicar-codigo," in css
+    assert "#btn-guardar-direccion," in css
     assert "#btn-vaciar-carrito," in css
     assert "#btn-whatsapp {" in css
     assert "height: var(--carrito-boton-altura);" in css
+
+
+def test_modal_codigo_es_solo_titulo_input_y_aplicar():
+    html = (appmod.BASE / "static" / "index.html").read_text()
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    modal = html[html.index('<div id="modal-codigo"'):html.index('<button id="btn-whatsapp"')]
+
+    assert "Aplicá tu código" in modal
+    assert 'id="input-codigo-mailing"' in modal
+    assert 'id="btn-aplicar-codigo"' in modal
+    assert "rc-codigo-header" not in modal
+    assert "descuento-mailing" not in modal
+    assert 'id="btn-cerrar-codigo"' not in modal
+    assert 'getElementById("btn-cerrar-codigo")' not in script
+    assert "#modal-codigo input {" in (appmod.BASE / "static" / "landing.css").read_text()
+
+
+def test_carrito_muestra_un_solo_panel_secundario_y_cierra_al_tocar_afuera():
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+
+    assert "function abrirPanelSecundario(idPanel)" in script
+    assert 'direccion.classList.toggle("oculto", idPanel !== "direccion-entrega-wrap")' in script
+    assert 'codigo.classList.toggle("oculto", idPanel !== "modal-codigo")' in script
+    assert 'document.addEventListener("pointerdown", (evento) =>' in script
+    assert "panelSecundarioAbierto.contains(evento.target)" in script
+
+
+def test_direccion_entrega_cierra_sin_boton_x():
+    html = (appmod.BASE / "static" / "index.html").read_text()
+    script = (appmod.BASE / "static" / "landing.js").read_text()
+    direccion = html[html.index('<div id="direccion-entrega-wrap"'):html.index('<button id="btn-vaciar-carrito"')]
+
+    assert 'id="btn-cerrar-direccion"' not in direccion
+    assert 'getElementById("btn-cerrar-direccion")' not in script
 
 
 def test_carrito_y_whatsapp_muestran_los_cinco_precios_de_las_cards():

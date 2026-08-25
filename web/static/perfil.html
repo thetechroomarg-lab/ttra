@@ -44,6 +44,10 @@
       <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required>
       <input id="perfil-email" type="email" placeholder="Email" disabled>
       <input id="perfil-celular" type="tel" placeholder="Celular" autocomplete="tel" required>
+      <div class="perfil-direccion-wrap">
+        <input id="perfil-direccion" type="text" placeholder="Domicilio de entrega" autocomplete="street-address" maxlength="500">
+        <ul id="perfil-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
+      </div>
       <button type="submit">Guardar cambios</button>
       <p class="error" id="perfil-error"></p>
       <p class="ok" id="perfil-ok"></p>

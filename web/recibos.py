@@ -101,7 +101,8 @@ def html_recibo(cliente, pedido, logo_url=""):
         if descuento else ""
     )
     garantias = "".join(f"<li>{html.escape(garantia)}</li>" for garantia in garantias_para_detalle(detalle))
-    nombre_cliente = html.escape(f"{cliente.get('nombre', '')} {cliente.get('apellido', '')}".strip() or "Cliente")
+    nombres = str(cliente.get("nombre") or "").strip().split()
+    primer_nombre = html.escape(nombres[0] if nombres else "Cliente")
     recibo_id = html.escape(pedido.get("recibo_id") or "")
     fecha_emision = html.escape(_formatear_fecha_emision(pedido.get("recibo_emitido_en")))
     return f"""<!doctype html><html lang='es'><body style='margin:0;background:#f2f2f2;font-family:Arial,sans-serif;color:#161616'>
@@ -110,7 +111,7 @@ def html_recibo(cliente, pedido, logo_url=""):
     <strong style='font-size:22px;letter-spacing:-1px'>THE TECH ROOM ARG<span style='color:#c8102e'>.</span></strong>
     <p style='margin:14px 0 0;color:#555'>Recibo interno {recibo_id}<br>Emitido el {fecha_emision}</p>
   </header>
-  <p>Hola {nombre_cliente},</p><p>Este comprobante resume tu compra.</p>
+  <p>Hola {primer_nombre},</p><p>Este comprobante resume tu compra.</p>
   <table role='presentation' style='width:100%;border-collapse:collapse;table-layout:fixed;margin:20px 0'>
     <colgroup><col style='width:52%'><col style='width:10%'><col style='width:19%'><col style='width:19%'></colgroup>
     <thead><tr style='background:#161616;color:#fff'><th style='text-align:left;padding:10px 8px'>Producto</th><th style='padding:10px 6px'>Cant.</th><th style='text-align:right;padding:10px 6px'>Unitario</th><th style='text-align:right;padding:10px 6px'>Subtotal</th></tr></thead>

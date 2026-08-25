@@ -1400,8 +1400,11 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 .descuento-mailing-estado.error { color: #ff8b8b; }
 #total-carrito { margin: 0; font-size: 14px; color: var(--rc-green-bright); }
 #btn-aplicar-codigo,
+#btn-guardar-direccion,
 #btn-abrir-codigo,
 #btn-abrir-direccion,
+#btn-usar-mi-direccion,
+#btn-elegir-otra-direccion,
 #btn-vaciar-carrito,
 #btn-whatsapp {
   height: var(--carrito-boton-altura);
@@ -1409,6 +1412,7 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 }
 
 #direccion-entrega-wrap,
+#opciones-direccion-entrega,
 #modal-codigo {
   display: flex;
   flex-direction: column;
@@ -1418,15 +1422,55 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
   background: rgba(15, 24, 18, .55);
 }
 #direccion-entrega-wrap.oculto,
+#opciones-direccion-entrega.oculto,
 #modal-codigo.oculto { display: none; }
 #direccion-entrega-wrap input {
   box-sizing: border-box;
   min-height: 50px;
   padding: 0 12px;
 }
+#modal-codigo input {
+  box-sizing: border-box;
+  min-height: 50px;
+  padding: 0 12px;
+  background: #0b140f;
+  color: var(--rc-green-bright);
+  border: 1px solid var(--rc-green-faint);
+  font-family: var(--rc-font);
+  text-transform: uppercase;
+}
+.sugerencias-direccion {
+  list-style: none;
+  margin: -2px 0 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--rc-green-faint);
+  background: var(--rc-bg-panel);
+}
+.sugerencias-direccion.oculto { display: none; }
+.sugerencias-direccion button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--rc-green-faint);
+  background: transparent;
+  color: var(--rc-green-bright);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sugerencias-direccion li:last-child button { border-bottom: 0; }
+.sugerencias-direccion button:hover,
+.sugerencias-direccion button:focus-visible {
+  background: rgba(50, 255, 130, .12);
+  outline: none;
+}
 
 @media (max-width: 700px) {
   #direccion-entrega-wrap:not(.oculto),
+  #opciones-direccion-entrega:not(.oculto),
   #modal-codigo:not(.oculto) {
     position: fixed;
     top: 50%;

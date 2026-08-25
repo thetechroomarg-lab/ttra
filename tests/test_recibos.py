@@ -36,6 +36,8 @@ def test_html_recibo_usa_snapshot_y_garantias_del_producto():
     assert "iPhone 15" in contenido
     assert "1 año" in contenido
     assert "6 meses" in contenido
+    assert "Hola Ana," in contenido
+    assert "Hola Ana Pérez," not in contenido
 
 
 def test_html_recibo_no_depende_de_imagenes_externas_para_el_logo():
