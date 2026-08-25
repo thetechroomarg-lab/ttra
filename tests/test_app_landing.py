@@ -601,8 +601,8 @@ def test_carrito_es_modal_flotante_y_respeta_el_footer():
     assert "transform: translateX(-50%);" in regla_modal
     assert "border: 2px solid var(--rc-green-dim);" in regla_modal
     assert "bottom: var(--rc-carrito-separacion-footer);" in regla_modal
-    assert "overflow: hidden;" in regla_modal
-    assert "overflow-y: auto;" in regla_items
+    assert "overflow-y: auto;" in regla_modal
+    assert "flex: 0 0 auto;" in regla_items
     assert "function sincronizarLimiteCarrito()" in script
     assert '"--rc-carrito-separacion-footer"' in script
     assert "sincronizarLimiteCarrito();" in script
