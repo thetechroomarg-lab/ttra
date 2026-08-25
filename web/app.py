@@ -839,7 +839,8 @@ _ADMIN_CLIENTES_ESTILO = """
   .pedido-historico { padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
   .estado-recibo { display:inline-block; margin-top:4px; color:#9aa0ab; font-size:12px; }
   .acciones-recibo { display:inline-flex; gap:8px; margin-left:8px; vertical-align:middle; }
-  .btn-ver-recibo-pdf, .btn-reenviar-recibo { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid #4a5160; border-radius:7px; background:#252a33; color:#f2f4f8; cursor:pointer; text-decoration:none; }
+  .btn-ver-recibo-pdf, .btn-reenviar-recibo, .btn-eliminar-historial { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid #4a5160; border-radius:7px; background:#252a33; color:#f2f4f8; cursor:pointer; text-decoration:none; }
+  .btn-eliminar-historial { border-color:#8d1627; color:#ff9baa; }
   .ordenar-columna { appearance:none; border:0; background:transparent; color:#f2f4f8; font:inherit; font-weight:700; cursor:pointer; padding:0; }
   .ordenar-columna:hover { color:#fff; text-decoration:underline; }
   .modal-mail { position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
@@ -1056,8 +1057,11 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg>')
         reenvio = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
                    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12A9 9 0 0 1 18.5 5.8"/><path d="M3 17v-5h5"/><path d="M21 7v5h-5"/></svg>')
+        tacho = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+                 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>')
         return (f'<span class="acciones-recibo"><a class="btn-ver-recibo-pdf" href="/admin/pedidos/{pedido_id}/recibo.pdf" target="_blank" title="Ver PDF" aria-label="Ver PDF del recibo">{ojo}</a>'
-                f'<button class="btn-reenviar-recibo" type="button" data-id="{pedido_id}" title="Reenviar recibo" aria-label="Reenviar recibo">{reenvio}</button></span>')
+                f'<button class="btn-reenviar-recibo" type="button" data-id="{pedido_id}" title="Reenviar recibo" aria-label="Reenviar recibo">{reenvio}</button>'
+                f'<button class="btn-eliminar-historial" type="button" data-id="{pedido_id}" title="Eliminar del historial" aria-label="Eliminar del historial">{tacho}</button></span>')
 
     if pedidos_hoy:
         pedidos_hoy_html = "".join(
@@ -1172,6 +1176,16 @@ document.querySelectorAll(".btn-eliminar-entrega").forEach((btn) => {{
     const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}`, {{ method: "DELETE" }});
     const datos = await r.json().catch(() => ({{}}));
     if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-eliminar-historial").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("Este pedido ya tiene un recibo emitido y enviado al cliente. ¿Eliminarlo del historial de todas formas? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}`, {{ method: "DELETE" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar el pedido."); btn.disabled = false; return; }}
     location.reload();
   }});
 }});
@@ -1984,8 +1998,6 @@ def admin_pedido_eliminar(pedido_id: str, request: Request):
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
     if not filas:
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
-    if filas[0].get("recibo_enviado_en"):
-        return JSONResponse({"error": "No se puede eliminar una entrega con recibo emitido"}, status_code=400)
     pedidos.eliminar_pedido(client, pedido_id)
     return {"ok": True}
 
