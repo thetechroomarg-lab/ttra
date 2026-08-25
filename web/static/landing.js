@@ -3628,7 +3628,6 @@ async function derivarCheckoutAWhatsapp(carrito) {
   const fechaEntrega = document.getElementById("fecha-entrega").value;
   const direccionEntrega = document.getElementById("direccion-entrega").value.trim();
   if (!direccionEntrega) { alert("Especificá dirección de entrega."); return; }
-  if (!await confirmarGuardadoDomicilioSiCorresponde(direccionEntrega)) return;
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
   try {
     await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega);
@@ -3749,7 +3748,10 @@ function cerrarPanelSecundario() {
 async function mostrarOpcionesDireccion() {
   const cliente = await obtenerEstadoSesionCliente(true);
   const direccionGuardada = (cliente?.direccion || "").trim();
-  botonUsarMiDireccion.disabled = !direccionGuardada;
+  botonUsarMiDireccion.hidden = !direccionGuardada;
+  document.getElementById("btn-elegir-otra-direccion").textContent = direccionGuardada
+    ? "Elegir otra dirección"
+    : "Elegir dirección de entrega";
   estadoDireccionGuardada.textContent = direccionGuardada
     ? `Domicilio guardado: ${direccionGuardada}`
     : "No tenés un domicilio guardado todavía.";
@@ -3790,11 +3792,13 @@ botonUsarMiDireccion.addEventListener("click", async () => {
 document.getElementById("btn-elegir-otra-direccion").addEventListener("click", () => {
   abrirPanelSecundario("direccion-entrega-wrap");
 });
-document.getElementById("btn-guardar-direccion").addEventListener("click", () => {
-  if (!inputDireccionEntrega.value.trim()) {
+document.getElementById("btn-guardar-direccion").addEventListener("click", async () => {
+  const direccion = inputDireccionEntrega.value.trim();
+  if (!direccion) {
     inputDireccionEntrega.focus();
     return;
   }
+  if (!await confirmarGuardadoDomicilioSiCorresponde(direccion)) return;
   document.getElementById("btn-abrir-direccion").textContent = "Dirección alternativa";
   cerrarPanelSecundario();
 });
