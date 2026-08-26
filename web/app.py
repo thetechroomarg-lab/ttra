@@ -1171,14 +1171,14 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     filas_clientes = client.table("clientes").select("*").execute().data
     clientes = [
         {
-            "id": c.get("id", ""),
-            "nombre": f"{c.get('nombre', '')} {c.get('apellido', '')}".strip(),
-            "celular": c.get("celular", ""),
-            "email": c.get("email", ""),
+            "id": c.get("id") or "",
+            "nombre": f"{c.get('nombre') or ''} {c.get('apellido') or ''}".strip(),
+            "celular": c.get("celular") or "",
+            "email": c.get("email") or "",
             "provincia": c.get("provincia") or "Sin especificar",
-            "fecha": c.get("creado_en", ""),
+            "fecha": c.get("creado_en") or "",
             "tiene_cuenta": bool(c.get("auth_id")),
-            "direccion": c.get("direccion"),
+            "direccion": c.get("direccion") or "",
         }
         for c in filas_clientes
     ]

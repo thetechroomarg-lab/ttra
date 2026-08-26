@@ -46,6 +46,28 @@ def test_admin_clientes_lista_no_depende_de_tablas_del_panel_de_pedidos(monkeypa
     assert "Juan" in r.text
 
 
+def test_admin_clientes_lista_admite_campos_nulos_de_clientes_legados(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    fake.table("clientes").insert({
+        "id": "cliente-legado",
+        "nombre": "Cliente legado",
+        "apellido": None,
+        "celular": None,
+        "email": None,
+        "provincia": None,
+        "creado_en": None,
+        "auth_id": None,
+        "direccion": None,
+    }).execute()
+
+    r = c.get("/admin/clientes/lista")
+
+    assert r.status_code == 200
+    assert "Cliente legado" in r.text
+    assert "Sin especificar" in r.text
+
+
 def test_landing_admin_separa_clientes_en_una_vista_accesible(monkeypatch):
     c = _cliente_logueado(monkeypatch)
 
