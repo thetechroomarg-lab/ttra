@@ -128,6 +128,7 @@ if (!new URLSearchParams(location.search).get("codigo")) {
 let SECCIONES_DATA = {};
 let RECOMENDADOS_DATA = [];
 let modoPrecioActual = "minorista";
+let catalogoListo = false;
 let cotizacionActual = null; // U$D actual, usado en el reloj del header y en el narrador de noticias
 let pronosticoManana = null; // texto del pronóstico del día siguiente, para el narrador
 let pronosticoConsejo = null; // consejo práctico según ese pronóstico (paraguas, abrigo, etc.)
@@ -3116,6 +3117,7 @@ function ocultarNavegacionCatalogo() {
 }
 
 async function cargarCatalogo() {
+  catalogoListo = false;
   let datos;
   try {
     const anonId = obtenerAnonId();
@@ -3143,6 +3145,8 @@ async function cargarCatalogo() {
     .filter((p) => p && p.nombre);
   actualizarModoPrecio();
   refrescarPreciosCarrito();
+  catalogoListo = true;
+  renderCarrito();
   if (datos.mensaje) {
     ocultarNavegacionCatalogo();
     document.getElementById("productos").innerHTML = `<p class="mensaje-vacio">${datos.mensaje}</p>`;
@@ -3251,6 +3255,7 @@ function setEstadoCodigoMailing(mensaje, tipo = "") {
 }
 
 function descuentoMailingAplicado(carrito) {
+  if (!catalogoListo) return null;
   if (modoPrecioActual === "mayorista") return null;
   // Los códigos de mailing quedan temporalmente desactivados en el carrito.
   return null;
@@ -3331,6 +3336,7 @@ async function procesarPendienteCarrito() {
 }
 
 async function procesarCheckoutPendiente() {
+  if (!catalogoListo) return false;
   if (!hayCheckoutPendiente()) return false;
   const sesion = await obtenerEstadoSesionCliente(true);
   if (!sesion || sesion.debe_cambiar_password) return false;
@@ -3344,6 +3350,7 @@ async function procesarCheckoutPendiente() {
 }
 
 async function asegurarSesionParaCheckout() {
+  if (!catalogoListo) return false;
   const sesion = await obtenerEstadoSesionCliente(true);
   if (sesion && !sesion.debe_cambiar_password) return true;
   guardarPendienteCheckout();
@@ -3402,6 +3409,7 @@ function descuentoPorUnidad(cantidadTotal) {
 }
 
 function calcularDescuento(carrito) {
+  if (!catalogoListo) return null;
   return modoPrecioActual === "mayorista" ? null : calcularDescuentoMinorista(carrito);
 }
 
@@ -3525,6 +3533,7 @@ function sincronizarLimiteCarrito() {
 }
 
 function abrirCarrito() {
+  if (!catalogoListo) return;
   cargarOpcionesEntrega().catch(() => {});
   sincronizarLimiteCarrito();
   document.getElementById("panel-carrito").classList.remove("oculto");
@@ -3537,6 +3546,7 @@ function cerrarCarrito() {
 }
 
 function armarMensajeWhatsapp(carrito, fechaEntrega) {
+  if (!catalogoListo) return null;
   const lineas = carrito.map((it) => {
     const color = it.color ? ` (${it.color})` : "";
     const totalUsd = (it.usd || 0) * it.cantidad;
@@ -3574,6 +3584,7 @@ async function cargarOpcionesEntrega() {
 }
 
 async function consumirCodigoMailing(carrito) {
+  if (!catalogoListo) return { ok: false };
   borrarDescuentoMailing();
   return { ok: true };
   /*
@@ -3594,6 +3605,7 @@ async function consumirCodigoMailing(carrito) {
 }
 
 async function aplicarCodigoMailing() {
+  if (!catalogoListo) return;
   if (modoPrecioActual === "mayorista") {
     borrarDescuentoMailing();
     return;
@@ -3625,6 +3637,7 @@ async function aplicarCodigoMailing() {
 }
 
 async function aplicarCodigoMailingPorValor(codigo) {
+  if (!catalogoListo) return false;
   if (modoPrecioActual === "mayorista") {
     borrarDescuentoMailing();
     return false;
@@ -3649,6 +3662,7 @@ async function aplicarCodigoMailingPorValor(codigo) {
 }
 
 async function derivarCheckoutAWhatsapp(carrito) {
+  if (!catalogoListo) return false;
   registrarInteraccion("complete_checkout", {
     metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
   });
@@ -3660,8 +3674,9 @@ async function derivarCheckoutAWhatsapp(carrito) {
   const direccionEntrega = document.getElementById("direccion-entrega").value.trim();
   if (!direccionEntrega) { alert("Especificá dirección de entrega."); return; }
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
+  if (!mensaje) return false;
   try {
-    await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega);
+    if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega))) return false;
   } catch (error) {
     console.error("No se pudo guardar el pedido", error);
     alert("No pudimos guardar tu pedido. Probá nuevamente antes de abrir WhatsApp.");
@@ -3673,6 +3688,7 @@ async function derivarCheckoutAWhatsapp(carrito) {
   borrarRegaloPromo();
   cerrarCarrito();
   window.location.href = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
+  return true;
 }
 
 document.getElementById("btn-carrito").addEventListener("click", abrirCarrito);
@@ -3855,6 +3871,7 @@ document.addEventListener("pointerdown", (evento) => {
 });
 
 document.getElementById("btn-aplicar-codigo").addEventListener("click", async () => {
+  if (!catalogoListo) return;
   if (modoPrecioActual === "mayorista") {
     borrarDescuentoMailing();
     return;
@@ -3886,6 +3903,7 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
 });
 
 async function consumirCodigoPromo() {
+  if (!catalogoListo) return { ok: false };
   const regalo = cargarRegaloPromo();
   if (!regalo?.codigo) return { ok: true };
   const r = await fetch("/api/codigos-promo/consumir", {
@@ -3906,6 +3924,7 @@ async function consumirCodigoPromo() {
 // buscador por chat) — así el panel /admin/clientes también refleja los
 // pedidos hechos desde la web, no solo el alta inicial.
 async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega) {
+  if (!catalogoListo) return false;
   const regaloPromo = cargarRegaloPromo();
   const productos = [...new Set(carrito.map((it) =>
     it.color && it.color !== "Color único" ? `${it.nombre} (${it.color})` : it.nombre
@@ -3940,9 +3959,11 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
     const body = await respuesta.json().catch(() => ({}));
     throw new Error(body.error || "No se pudo guardar el pedido");
   }
+  return true;
 }
 
 document.getElementById("btn-whatsapp").addEventListener("click", async () => {
+  if (!catalogoListo) return;
   const carrito = cargarCarrito();
   if (carrito.length === 0) return;
   registrarInteraccion("begin_checkout", {

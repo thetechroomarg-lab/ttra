@@ -30,6 +30,49 @@ def test_modo_mayorista_muestra_insignia_y_anula_descuentos_minoristas():
     assert 'return modoPrecioActual === "mayorista" ? null' in js
 
 
+def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
+    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+
+    assert "let catalogoListo = false;" in js
+    inicio_carga = js.index("async function cargarCatalogo()")
+    fin_carga = js.index("function refrescarPreciosCarrito()", inicio_carga)
+    carga_catalogo = js[inicio_carga:fin_carga]
+    assert carga_catalogo.index('modoPrecioActual = datos.modo_precio === "mayorista"') < carga_catalogo.index("refrescarPreciosCarrito();") < carga_catalogo.index("catalogoListo = true;")
+
+    def cuerpo_de(funcion):
+        inicio = js.index(funcion)
+        siguientes = [
+            js.find("\nfunction ", inicio + len(funcion)),
+            js.find("\nasync function ", inicio + len(funcion)),
+        ]
+        fin = min((posicion for posicion in siguientes if posicion != -1), default=len(js))
+        return js[inicio:fin]
+
+    for funcion in (
+        "function calcularDescuento(carrito)",
+        "function descuentoMailingAplicado(carrito)",
+        "function abrirCarrito()",
+        "function armarMensajeWhatsapp(carrito, fechaEntrega)",
+        "async function consumirCodigoMailing(carrito)",
+        "async function aplicarCodigoMailing()",
+        "async function aplicarCodigoMailingPorValor(codigo)",
+        "async function consumirCodigoPromo()",
+        "async function procesarCheckoutPendiente()",
+        "async function asegurarSesionParaCheckout()",
+        "async function derivarCheckoutAWhatsapp(carrito)",
+        "async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega)",
+    ):
+        assert "if (!catalogoListo)" in cuerpo_de(funcion)
+
+    inicio_codigo = js.index('document.getElementById("btn-aplicar-codigo").addEventListener')
+    fin_codigo = js.index("async function consumirCodigoPromo()", inicio_codigo)
+    assert "if (!catalogoListo) return;" in js[inicio_codigo:fin_codigo]
+    inicio_checkout = js.index('document.getElementById("btn-whatsapp").addEventListener')
+    fin_checkout = js.index('document.getElementById("btn-volver")', inicio_checkout)
+    assert "if (!catalogoListo) return;" in js[inicio_checkout:fin_checkout]
+    assert "if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega))) return false;" in cuerpo_de("async function derivarCheckoutAWhatsapp(carrito)")
+
+
 def test_configuracion_publica_expone_solo_la_clave_de_maps_configurada(monkeypatch):
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "maps-key-de-prueba")
     cliente = TestClient(appmod.app, base_url="https://testserver")
