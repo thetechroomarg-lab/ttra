@@ -3257,9 +3257,6 @@ function setEstadoCodigoMailing(mensaje, tipo = "") {
 function descuentoMailingAplicado(carrito) {
   if (!catalogoListo) return null;
   if (modoPrecioActual === "mayorista") return null;
-  // Los códigos de mailing quedan temporalmente desactivados en el carrito.
-  return null;
-  /*
   const descuento = cargarDescuentoMailing();
   if (!descuento || !Array.isArray(descuento.productos) || !descuento.productos.length) return null;
 
@@ -3281,7 +3278,6 @@ function descuentoMailingAplicado(carrito) {
 
   if (!cantidad) return null;
   return { codigo: descuento.codigo, cantidad, usd, pesos, transferencia, productos: descuento.productos };
-  */
 }
 
 function mismoItemCarrito(it, nombre, color) {
@@ -3594,27 +3590,6 @@ async function cargarOpcionesEntrega() {
   nota.textContent = datos.opciones?.[0]?.requiere_confirmacion ? "El pedido se entrega el lunes. Confirmá si querés continuar." : "Elegí tu fecha de entrega.";
 }
 
-async function consumirCodigoMailing(carrito) {
-  if (!catalogoListo) return { ok: false };
-  borrarDescuentoMailing();
-  return { ok: true };
-  /*
-  const descuento = cargarDescuentoMailing();
-  if (!descuento?.codigo) return { ok: true };
-  const r = await fetch("/api/descuentos/consumir", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ codigo: descuento.codigo, items: itemsCarritoParaDescuento(carrito) }),
-  });
-  const body = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    setEstadoCodigoMailing(body.error || "No se pudo aplicar el código en este checkout.", "error");
-    return { ok: false };
-  }
-  return { ok: true };
-  */
-}
-
 async function aplicarCodigoMailing() {
   if (!catalogoListo) return;
   if (modoPrecioActual === "mayorista") {
@@ -3677,8 +3652,6 @@ async function derivarCheckoutAWhatsapp(carrito) {
   registrarInteraccion("complete_checkout", {
     metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
   });
-  const consume = await consumirCodigoMailing(carrito);
-  if (!consume.ok) return;
   const consumePromo = await consumirCodigoPromo();
   if (!consumePromo.ok) return;
   const fechaEntrega = document.getElementById("fecha-entrega").value;
@@ -3943,8 +3916,11 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
   if (regaloPromo) productos.push(`${regaloPromo.producto_regalo} (regalo código ${regaloPromo.codigo})`);
   const descuento = calcularDescuento(carrito);
   const descuentoMailing = descuentoMailingAplicado(carrito);
-  const descuento_usd = (descuento?.usd || 0) + (descuentoMailing?.usd || 0);
-  const total_usd = Math.max(totales(carrito).usd - descuento_usd, 0);
+  const total_usd = Math.max(
+    totales(carrito).usd - (descuento?.usd || 0) - (descuentoMailing?.usd || 0),
+    0,
+  );
+  const codigo_descuento = descuentoMailing?.codigo || null;
   const detalle = carrito.map((it) => ({
     nombre: it.nombre,
     color: it.color || null,
@@ -3964,7 +3940,9 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
   const respuesta = await fetch("/api/pedidos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ productos, fecha_entrega, direccion_entrega, detalle, total_usd, descuento_usd }),
+    body: JSON.stringify({
+      productos, fecha_entrega, direccion_entrega, detalle, total_usd, codigo_descuento,
+    }),
   });
   if (!respuesta.ok) {
     const body = await respuesta.json().catch(() => ({}));

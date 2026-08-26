@@ -20,6 +20,16 @@ def test_landing_descarta_descuento_mailing_persistido_fuera_de_un_link():
     assert "localStorage.removeItem(CLAVE_DESCUENTO_MAILING);" in script
 
 
+def test_checkout_envia_codigo_mailing_y_no_lo_preconsume():
+    script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    inicio = script.index("async function registrarPedidoEnClientes")
+    fin = script.index('document.getElementById("btn-whatsapp")', inicio)
+    checkout = script[inicio:fin]
+
+    assert "codigo_descuento" in checkout
+    assert 'fetch("/api/descuentos/consumir"' not in script
+
+
 def test_modo_mayorista_muestra_insignia_y_anula_descuentos_minoristas():
     html = (appmod.BASE / "static" / "index.html").read_text(encoding="utf-8")
     js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
@@ -53,7 +63,6 @@ def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
         "function descuentoMailingAplicado(carrito)",
         "function abrirCarrito()",
         "function armarMensajeWhatsapp(carrito, fechaEntrega)",
-        "async function consumirCodigoMailing(carrito)",
         "async function aplicarCodigoMailing()",
         "async function aplicarCodigoMailingPorValor(codigo)",
         "async function consumirCodigoPromo()",

@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 from tests.fakes_supabase import FakeSupabaseClient
 from web import pedidos
@@ -76,3 +77,84 @@ def test_editar_fecha_no_consolida_modos_de_precio_distintos():
     assert len(filas) == 2
     assert next(f for f in filas if f["id"] == minorista["id"])["total_usd"] == 180
     assert next(f for f in filas if f["id"] == mayorista["id"])["fecha_entrega"] == "2026-08-24"
+
+
+def test_guardar_pedido_no_consolida_direcciones_distintas():
+    client = FakeSupabaseClient()
+    detalle = [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}]
+
+    pedidos.guardar_pedido(
+        client, "cliente-1", ["Elegible"], date(2026, 8, 24),
+        direccion_entrega="Av. Colón 123", detalle=detalle, total_usd=180,
+    )
+    pedidos.guardar_pedido(
+        client, "cliente-1", ["Elegible"], date(2026, 8, 24),
+        direccion_entrega="San Martín 456", detalle=detalle, total_usd=180,
+    )
+
+    filas = client.table("pedidos").select("*").execute().data
+    assert len(filas) == 2
+    assert {fila["direccion_entrega"] for fila in filas} == {"Av. Colón 123", "San Martín 456"}
+
+
+def test_editar_fecha_no_consolida_direcciones_distintas():
+    client = FakeSupabaseClient()
+    detalle = [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}]
+    destino = pedidos.guardar_pedido(
+        client, "cliente-1", ["Elegible"], date(2026, 8, 24),
+        direccion_entrega="Av. Colón 123", detalle=detalle, total_usd=180,
+    )
+    movido = pedidos.guardar_pedido(
+        client, "cliente-1", ["Elegible"], date(2026, 8, 25),
+        direccion_entrega="San Martín 456", detalle=detalle, total_usd=180,
+    )
+
+    pedidos.editar_fecha_entrega(client, movido["id"], date(2026, 8, 24))
+
+    filas = client.table("pedidos").select("*").execute().data
+    assert len(filas) == 2
+    assert next(f for f in filas if f["id"] == destino["id"])["total_usd"] == 180
+    assert next(f for f in filas if f["id"] == movido["id"])["fecha_entrega"] == "2026-08-24"
+
+
+def test_consolidacion_preserva_decimales_sin_truncar():
+    client = FakeSupabaseClient()
+    detalle = [{"nombre": "Decimal", "cantidad": 3, "usd_unitario": 0.1, "usd_subtotal": 0.3}]
+
+    pedidos.guardar_pedido(
+        client, "cliente-1", ["Decimal"], date(2026, 8, 24),
+        direccion_entrega="Av. Colón 123", detalle=detalle,
+        total_usd=130.5, descuento_usd=0.1,
+    )
+    pedidos.guardar_pedido(
+        client, "cliente-1", ["Decimal"], date(2026, 8, 24),
+        direccion_entrega="Av. Colón 123", detalle=detalle,
+        total_usd=130.5, descuento_usd=0.1,
+    )
+
+    pedido = client.table("pedidos").select("*").execute().data[0]
+    assert pedido["total_usd"] == 261
+    assert pedido["descuento_usd"] == 0.2
+    assert pedido["detalle"][0]["usd_subtotal"] == 0.6
+
+
+def test_guardar_pedido_serializa_decimal_a_numero_db():
+    client = FakeSupabaseClient()
+
+    pedido = pedidos.guardar_pedido(
+        client, "cliente-1", ["Decimal"], date(2026, 8, 24),
+        direccion_entrega="Av. Colón 123",
+        detalle=[{
+            "nombre": "Decimal", "cantidad": 3,
+            "usd_unitario": Decimal("0.1"),
+            "usd_subtotal": Decimal("0.3"),
+        }],
+        total_usd=Decimal("130.50"),
+        descuento_usd=Decimal("0.1"),
+    )
+
+    assert pedido["total_usd"] == 130.5
+    assert isinstance(pedido["total_usd"], float)
+    assert pedido["descuento_usd"] == 0.1
+    assert pedido["detalle"][0]["usd_unitario"] == 0.1
+    assert pedido["detalle"][0]["usd_subtotal"] == 0.3

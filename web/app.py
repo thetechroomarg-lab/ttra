@@ -11,6 +11,7 @@ import time
 import uuid
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Literal
@@ -424,20 +425,31 @@ def _resolver_descuento_codigo(productos_catalogo, descuento_row, items):
     if not productos_aplicables:
         return None
 
-    descuento_total = {"usd": 0, "pesos": 0, "transferencia": 0}
+    descuento_total = {"usd": Decimal("0"), "pesos": Decimal("0"), "transferencia": Decimal("0")}
     cantidad_total = 0
     for item in items_norm:
         if item["nombre"] not in productos_aplicables:
             continue
         producto = disponibles[item["nombre"]]
-        usd = int(producto.get("usd") or 0)
-        pesos = int(producto.get("pesos") or 0)
-        transferencia = int(producto.get("transferencia") or 0)
+        try:
+            usd = pedidos.decimal_monetario(producto.get("usd"))
+            pesos = pedidos.decimal_monetario(producto.get("pesos"))
+            transferencia = pedidos.decimal_monetario(producto.get("transferencia"))
+        except ValueError:
+            continue
         if usd <= 0:
             continue
         qty = item["cantidad"]
         cantidad_total += qty
-        descuento_usd_unit = min(int(descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD), usd)
+        try:
+            descuento_usd_unit = min(
+                pedidos.decimal_monetario(
+                    descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD
+                ),
+                usd,
+            )
+        except ValueError:
+            continue
         descuento_total["usd"] += descuento_usd_unit * qty
         descuento_total["pesos"] += round(descuento_usd_unit * (pesos / usd)) * qty
         descuento_total["transferencia"] += round(descuento_usd_unit * (transferencia / usd)) * qty
@@ -449,8 +461,13 @@ def _resolver_descuento_codigo(productos_catalogo, descuento_row, items):
         "codigo": descuento_row["code"],
         "productos": sorted(productos_aplicables),
         "cantidad": cantidad_total,
-        "descuento_usd_por_item": int(descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD),
-        "descuento": descuento_total,
+        "descuento_usd_por_item": pedidos.numero_monetario_db(
+            descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD
+        ),
+        "descuento": {
+            moneda: pedidos.numero_monetario_db(valor)
+            for moneda, valor in descuento_total.items()
+        },
     }
 
 
@@ -2611,8 +2628,8 @@ class DetallePedidoIn(BaseModel):
     nombre: str = Field(min_length=1, max_length=300)
     color: str | None = Field(default=None, max_length=100)
     cantidad: int = Field(ge=1, le=100)
-    usd_unitario: int = Field(ge=0)
-    usd_subtotal: int = Field(ge=0)
+    usd_unitario: Decimal = Field(ge=0)
+    usd_subtotal: Decimal = Field(ge=0)
 
 
 class PedidoIn(BaseModel):
@@ -2620,8 +2637,9 @@ class PedidoIn(BaseModel):
     fecha_entrega: date | None = None
     direccion_entrega: str | None = Field(default=None, max_length=500)
     detalle: list[DetallePedidoIn] = Field(default_factory=list)
-    total_usd: int | None = Field(default=None, ge=0)
-    descuento_usd: int = Field(default=0, ge=0)
+    total_usd: Decimal | None = Field(default=None, ge=0)
+    descuento_usd: Decimal = Field(default=0, ge=0)
+    codigo_descuento: str | None = Field(default=None, max_length=100)
 
 
 class EditarFechaEntregaIn(BaseModel):
@@ -2702,6 +2720,7 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         return JSONResponse({"error": "Elegí una fecha de entrega"}, status_code=400)
     if not entregas.fecha_entrega_valida(entrada.fecha_entrega):
         return JSONResponse({"error": "La fecha de entrega elegida ya no está disponible"}, status_code=400)
+    client = get_client()
     catalogo_autorizado, modo_precio = _catalogo_autorizado(request)
     if not entrada.detalle:
         if modo_precio == "mayorista":
@@ -2710,7 +2729,7 @@ def api_pedidos(entrada: PedidoIn, request: Request):
                 status_code=409,
             )
         pedidos.guardar_pedido(
-            get_client(),
+            client,
             cliente_id,
             entrada.productos,
             entrada.fecha_entrega,
@@ -2721,6 +2740,26 @@ def api_pedidos(entrada: PedidoIn, request: Request):
     if entrada.detalle and not (entrada.direccion_entrega or "").strip():
         return JSONResponse({"error": "Especificá dirección de entrega"}, status_code=400)
 
+    error_precios = JSONResponse(
+        {"error": "Los precios cambiaron. Recargá el catálogo e intentá de nuevo."},
+        status_code=409,
+    )
+    nombres_autorizados = [
+        producto.get("nombre")
+        for producto in catalogo_autorizado
+        if producto.get("nombre")
+    ]
+    productos_publicos = _cargar_productos()
+    nombres_publicos = [
+        producto.get("nombre")
+        for producto in productos_publicos
+        if producto.get("nombre")
+    ]
+    if (
+        len(nombres_autorizados) != len(set(nombres_autorizados))
+        or len(nombres_publicos) != len(set(nombres_publicos))
+    ):
+        return error_precios
     por_nombre = {
         producto.get("nombre"): producto
         for producto in catalogo_autorizado
@@ -2728,67 +2767,119 @@ def api_pedidos(entrada: PedidoIn, request: Request):
     }
     publicos_por_nombre = {
         producto.get("nombre"): producto
-        for producto in _cargar_productos()
+        for producto in productos_publicos
         if producto.get("nombre")
     }
-    error_precios = JSONResponse(
-        {"error": "Los precios cambiaron. Recargá el catálogo e intentá de nuevo."},
-        status_code=409,
-    )
     proveedores = _cargar_proveedores()
     detalle = []
-    total_bruto_usd = 0
-    descuento_mayorista_usd = 0
+    productos_pedido = []
+    total_bruto_usd = Decimal("0")
+    descuento_mayorista_usd = Decimal("0")
+    cantidad_total = 0
     for item in entrada.detalle:
         producto = por_nombre.get(item.nombre)
-        precio_autorizado = producto.get("usd") if producto else None
-        if (
-            isinstance(precio_autorizado, bool)
-            or not isinstance(precio_autorizado, (int, float))
-            or not math.isfinite(precio_autorizado)
-            or precio_autorizado < 0
-            or item.usd_unitario != precio_autorizado
-        ):
+        if not producto or producto.get("usd") is None:
             return error_precios
+        try:
+            precio_autorizado = pedidos.decimal_monetario(producto.get("usd"))
+        except ValueError:
+            return error_precios
+        if precio_autorizado < 0 or item.usd_unitario != precio_autorizado:
+            return error_precios
+
+        colores = producto.get("colores")
+        if isinstance(colores, list) and colores:
+            if item.color not in colores:
+                return error_precios
+            color = item.color
+        else:
+            if item.color not in (None, "Color único"):
+                return error_precios
+            color = None
+
         subtotal_autorizado = precio_autorizado * item.cantidad
         if item.usd_subtotal != subtotal_autorizado:
             return error_precios
         total_bruto_usd += subtotal_autorizado
+        cantidad_total += item.cantidad
         if modo_precio == "mayorista":
-            precio_publico = publicos_por_nombre.get(item.nombre, {}).get("usd")
-            if (
-                isinstance(precio_publico, bool)
-                or not isinstance(precio_publico, (int, float))
-                or not math.isfinite(precio_publico)
-                or precio_publico < precio_autorizado
-            ):
+            producto_publico = publicos_por_nombre.get(item.nombre)
+            if not producto_publico or producto_publico.get("usd") is None:
+                return error_precios
+            try:
+                precio_publico = pedidos.decimal_monetario(
+                    producto_publico.get("usd")
+                )
+            except ValueError:
+                return error_precios
+            if precio_publico < precio_autorizado:
                 return error_precios
             descuento_mayorista_usd += (
                 precio_publico - precio_autorizado
             ) * item.cantidad
         detalle.append({
-            **item.model_dump(),
-            "usd_unitario": precio_autorizado,
-            "usd_subtotal": subtotal_autorizado,
+            "nombre": item.nombre,
+            "color": color,
+            "cantidad": item.cantidad,
+            "usd_unitario": pedidos.numero_monetario_db(precio_autorizado),
+            "usd_subtotal": pedidos.numero_monetario_db(subtotal_autorizado),
             "proveedor": resolver_proveedor(proveedores, item.nombre),
         })
+        etiqueta = f"{item.nombre} ({color})" if color else item.nombre
+        if etiqueta not in productos_pedido:
+            productos_pedido.append(etiqueta)
 
-    descuento_usd = min(entrada.descuento_usd, total_bruto_usd)
+    descuento_cantidad_usd = Decimal("0")
+    if modo_precio == "minorista":
+        if cantidad_total > 5:
+            descuento_cantidad_usd = Decimal("7.5") * cantidad_total
+        elif cantidad_total > 1:
+            descuento_cantidad_usd = Decimal("5") * cantidad_total
+
+    fila_descuento = None
+    descuento_mailing_usd = Decimal("0")
+    codigo_descuento = (entrada.codigo_descuento or "").strip().upper()
+    if codigo_descuento and modo_precio == "minorista":
+        fila_descuento = _descuento_codigo_row(client, cliente_id, codigo_descuento)
+        descuento = (
+            _resolver_descuento_codigo(catalogo_autorizado, fila_descuento, entrada.detalle)
+            if fila_descuento
+            else None
+        )
+        if not descuento:
+            return JSONResponse(
+                {"error": "El código de descuento ya no es válido para este pedido."},
+                status_code=409,
+            )
+        descuento_mailing_usd = pedidos.decimal_monetario(
+            descuento["descuento"]["usd"]
+        )
+
+    descuento_usd = min(
+        descuento_cantidad_usd + descuento_mailing_usd,
+        total_bruto_usd,
+    )
     total_usd = total_bruto_usd - descuento_usd
     if entrada.total_usd != total_usd:
         return error_precios
     pedidos.guardar_pedido(
-        get_client(),
+        client,
         cliente_id,
-        entrada.productos,
+        productos_pedido,
         entrada.fecha_entrega,
         direccion_entrega=(entrada.direccion_entrega or "").strip() or None,
         detalle=detalle,
-        total_usd=total_usd,
-        descuento_usd=descuento_usd,
+        total_usd=pedidos.numero_monetario_db(total_usd),
+        descuento_usd=pedidos.numero_monetario_db(descuento_usd),
         modo_precio=modo_precio,
-        descuento_mayorista_usd=descuento_mayorista_usd,
+        descuento_mayorista_usd=pedidos.numero_monetario_db(
+            descuento_mayorista_usd
+        ),
     )
+    if fila_descuento:
+        client.table("codigos_descuento").update({
+            "usado_en": datetime.now(timezone.utc).isoformat(),
+        }).eq("cliente_id", cliente_id).eq("code", fila_descuento["code"]).execute()
     return {"ok": True}
 
 
