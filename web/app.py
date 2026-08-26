@@ -48,6 +48,9 @@ PRODUCTOS_PATH = Path(os.environ.get("PRODUCTOS_PATH", str(BASE / "productos.jso
 # No se sirve al navegador: se genera junto al catálogo para enriquecer el
 # detalle administrativo de cada pedido sin exponer proveedores al público.
 PROVEEDORES_PATH = Path(os.environ.get("PROVEEDORES_PATH", str(BASE / "proveedores.json")))
+COSTOS_PATH = Path(os.environ.get(
+    "COSTOS_PATH", str(PRODUCTOS_PATH.with_name("costos.json"))
+))
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 ADMIN_CLIENTES_PASSWORD = os.environ.get("ADMIN_CLIENTES_PASSWORD")
 if not ADMIN_CLIENTES_PASSWORD:

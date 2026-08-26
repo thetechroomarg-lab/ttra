@@ -1,10 +1,19 @@
 import json
 from web.productos import (
+    generar_costos,
     generar_productos,
     generar_proveedores,
     resolver_proveedor,
     escribir_productos_json,
 )
+
+
+def test_genera_indice_privado_del_costo_consolidado():
+    items = [
+        {"nombre": "iPhone 13 128GB", "costo": 630, "proveedor": "fr"},
+        {"nombre": "iphone 13 128gb", "costo": 610, "proveedor": "az"},
+    ]
+    assert generar_costos(items) == {"iphone 13 128gb": 610}
 
 
 def test_genera_productos_sin_proveedor_y_con_3_precios():
@@ -87,3 +96,16 @@ def test_escribir_productos_json(tmp_path):
     assert data[0]["nombre"] == "Moto G15 128GB"
     proveedores = json.loads((tmp_path / "proveedores.json").read_text(encoding="utf-8"))
     assert proveedores == {"Moto G15 128GB": "va"}
+
+
+def test_escribir_productos_json_escribe_costos_sin_exponerlos(tmp_path):
+    ruta = tmp_path / "productos.json"
+    escribir_productos_json(
+        [{"nombre": "Moto G15 128GB", "costo": 150, "proveedor": "va"}],
+        1540,
+        ruta,
+    )
+    publico = json.loads(ruta.read_text(encoding="utf-8"))
+    costos = json.loads((tmp_path / "costos.json").read_text(encoding="utf-8"))
+    assert "costo" not in publico[0]
+    assert costos == {"Moto G15 128GB": 150}

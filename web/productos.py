@@ -180,6 +180,15 @@ def generar_proveedores(items):
     return proveedores
 
 
+def generar_costos(items):
+    """Devuelve el costo consolidado por producto para uso privado."""
+    return {
+        _nombre_estandar_note(_sin_cargador(fila["nombre"])): fila["costo"]
+        for fila in consolidar(items)["lista"]
+        if not _excluido(fila["nombre"])
+    }
+
+
 def resolver_proveedor(proveedores, nombre):
     """Resuelve un proveedor aplicando la normalización del catálogo público."""
     if not nombre:
@@ -209,4 +218,6 @@ def escribir_productos_json(items, cotizacion, ruta):
         json.dump(productos, f, ensure_ascii=False, indent=2)
     with ruta.with_name("proveedores.json").open("w", encoding="utf-8") as f:
         json.dump(generar_proveedores(items), f, ensure_ascii=False, indent=2)
+    with ruta.with_name("costos.json").open("w", encoding="utf-8") as f:
+        json.dump(generar_costos(items), f, ensure_ascii=False, indent=2)
     return productos
