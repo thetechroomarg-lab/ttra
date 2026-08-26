@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from web.mayoristas import catalogo_mayorista, descuento_por_margen
@@ -23,3 +25,34 @@ def test_catalogo_mayorista_filtra_sin_costo_y_recalcula_monedas():
     assert resultado[0]["pesos"] == round(130 * (280800 / 180))
     assert resultado[0]["transferencia"] == round(130 * (289485 / 180))
     assert resultado[0]["usd"] >= 100 + 27
+
+
+def test_catalogo_mayorista_omite_campos_privados():
+    producto = {
+        "nombre": "Elegible",
+        "usd": 180,
+        "pesos": 280800,
+        "transferencia": 289485,
+        "costo": 100,
+        "margen": 80,
+        "proveedor": "interno",
+        "capacidad": "privada",
+        "imagen": "publica",
+    }
+
+    resultado = catalogo_mayorista([producto], {"Elegible": 100})
+
+    assert resultado == [{
+        "nombre": "Elegible",
+        "usd": 130,
+        "pesos": round(130 * (280800 / 180)),
+        "transferencia": round(130 * (289485 / 180)),
+        "imagen": "publica",
+    }]
+
+
+@pytest.mark.parametrize("costo", [None, "100", math.nan, math.inf, -1, 0])
+def test_catalogo_mayorista_excluye_costos_invalidos(costo):
+    producto = {"nombre": "Producto", "usd": 180, "pesos": 280800}
+
+    assert catalogo_mayorista([producto], {"Producto": costo}) == []

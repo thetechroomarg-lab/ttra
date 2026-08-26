@@ -41,3 +41,43 @@ Resultado: `287 passed, 2 warnings in 26.41s`.
 
 Las advertencias son preexistentes: `reportlab` usa `ast.NameConstant`
 deprecado y `web/app.py` usa `datetime.utcnow()` deprecado.
+
+## Fix round 1
+
+Se atendieron los hallazgos de revisión:
+
+- La salida elimina explícitamente `costo`, `margen`, `proveedor` y
+  `capacidad`, conservando los demás campos públicos.
+- Los costos deben ser numéricos reales, finitos y estrictamente positivos;
+  valores nulos, texto, no finitos y no positivos excluyen el producto sin
+  excepción.
+
+### RED
+
+Comando:
+
+```powershell
+$env:PYTHONUTF8='1'; & 'D:\Git\TTRA\.venv\Scripts\python.exe' -m pytest tests/test_mayoristas.py -q
+```
+
+Resultado: `5 failed, 15 passed in 0.56s`; falló el nuevo caso de campos
+privados y los casos de costos inválidos (incluyendo la excepción para texto y
+NaN), confirmando que las pruebas cubrían el defecto.
+
+### GREEN
+
+Comando:
+
+```powershell
+$env:PYTHONUTF8='1'; & 'D:\Git\TTRA\.venv\Scripts\python.exe' -m pytest tests/test_mayoristas.py -q
+```
+
+Resultado: `20 passed in 0.06s`.
+
+Suite completa:
+
+```powershell
+$env:PYTHONUTF8='1'; $env:ADMIN_CLIENTES_PASSWORD='local-dev-only'; $env:SESSION_SECRET='local-session-secret'; & 'D:\Git\TTRA\.venv\Scripts\python.exe' -m pytest -q
+```
+
+Resultado: `294 passed, 2 warnings` (las mismas advertencias preexistentes).

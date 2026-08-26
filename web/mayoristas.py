@@ -1,12 +1,14 @@
 """Pure pricing helpers for the wholesale product catalogue."""
 
 import math
+from numbers import Real
 
 
 GASTO_USD = 7
 GANANCIA_LIMPIA_MINIMA_USD = 20
 MARGEN_MINIMO_ELEGIBLE_USD = 35
 DESCUENTO_MAXIMO_USD = 50
+_CAMPOS_PRIVADOS = frozenset({"costo", "margen", "proveedor", "capacidad"})
 
 
 def descuento_por_margen(precio_publico: float, costo: float) -> float | None:
@@ -24,7 +26,12 @@ def catalogo_mayorista(productos: list[dict], costos: dict[str, float]) -> list[
     for producto in productos:
         nombre = producto.get("nombre")
         costo = costos.get(nombre)
-        if costo is None:
+        if (
+            isinstance(costo, bool)
+            or not isinstance(costo, Real)
+            or not math.isfinite(costo)
+            or costo <= 0
+        ):
             continue
 
         precio_publico = producto.get("usd")
@@ -34,7 +41,11 @@ def catalogo_mayorista(productos: list[dict], costos: dict[str, float]) -> list[
         if descuento is None:
             continue
 
-        copia = producto.copy()
+        copia = {
+            campo: valor
+            for campo, valor in producto.items()
+            if campo not in _CAMPOS_PRIVADOS
+        }
         precio_usd = precio_publico - descuento
         copia["usd"] = precio_usd
         for campo in ("pesos", "transferencia"):
