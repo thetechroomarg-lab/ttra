@@ -1204,7 +1204,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         fecha_historial = fecha_hoy
     pedidos_historial = [
         pedido for pedido in pedidos
-        if pedido.get("fecha_entrega") == fecha_historial and pedido.get("recibo_enviado_en")
+        if pedido.get("fecha_entrega") == fecha_historial
+        and (pedido.get("recibo_enviado_en") or fecha_historial != fecha_hoy)
     ]
     tareas_historial = [
         tarea for tarea in tareas
