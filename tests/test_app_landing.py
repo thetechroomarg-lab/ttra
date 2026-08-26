@@ -73,6 +73,32 @@ def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
     assert "if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega))) return false;" in cuerpo_de("async function derivarCheckoutAWhatsapp(carrito)")
 
 
+def test_render_y_mutaciones_del_carrito_esperan_catalogo_listo():
+    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+
+    inicio_render = js.index("function renderCarrito()")
+    fin_render = js.index("function sincronizarLimiteCarrito()", inicio_render)
+    render = js[inicio_render:fin_render]
+    barrera = render.index("if (!catalogoListo)")
+    lectura_carrito = render.index("const carrito = cargarCarrito();")
+    tramo_previo = render[barrera:lectura_carrito]
+
+    assert 'el.innerHTML = \'<p class="mensaje-vacio">Actualizando carrito...</p>\';' in tramo_previo
+    assert 'totalEl.textContent = "";' in tramo_previo
+    assert "totales(" not in tramo_previo
+    assert "itemCarritoHtml" not in tramo_previo
+    assert "querySelectorAll" not in tramo_previo
+
+    for funcion in (
+        "function cambiarCantidad(nombre, color, delta)",
+        "function quitarDelCarrito(nombre, color)",
+        "function vaciarCarrito()",
+    ):
+        inicio = js.index(funcion)
+        fin = js.find("\nfunction ", inicio + len(funcion))
+        assert "if (!catalogoListo) return;" in js[inicio:fin]
+
+
 def test_configuracion_publica_expone_solo_la_clave_de_maps_configurada(monkeypatch):
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "maps-key-de-prueba")
     cliente = TestClient(appmod.app, base_url="https://testserver")

@@ -3359,6 +3359,7 @@ async function asegurarSesionParaCheckout() {
 }
 
 function cambiarCantidad(nombre, color, delta) {
+  if (!catalogoListo) return;
   const carrito = cargarCarrito();
   const item = carrito.find((it) => mismoItemCarrito(it, nombre, color));
   if (!item) return;
@@ -3368,6 +3369,7 @@ function cambiarCantidad(nombre, color, delta) {
 }
 
 function quitarDelCarrito(nombre, color) {
+  if (!catalogoListo) return;
   const catalogoPlano = {};
   Object.values(SECCIONES_DATA).forEach((productos) => {
     (productos || []).forEach((p) => {
@@ -3385,6 +3387,7 @@ function quitarDelCarrito(nombre, color) {
 }
 
 function vaciarCarrito() {
+  if (!catalogoListo) return;
   guardarCarrito([]);
 }
 
@@ -3473,14 +3476,23 @@ function itemRegaloPromoHtml(regalo) {
 }
 
 function renderCarrito() {
+  const contadorEl = document.getElementById("carrito-contador");
+  const el = document.getElementById("items-carrito");
+  const totalEl = document.getElementById("total-carrito");
+  if (!catalogoListo) {
+    contadorEl.textContent = "0";
+    el.innerHTML = '<p class="mensaje-vacio">Actualizando carrito...</p>';
+    totalEl.textContent = "";
+    return;
+  }
+
   const carrito = cargarCarrito();
   const cantidadTotal = carrito.reduce((n, it) => n + it.cantidad, 0);
-  document.getElementById("carrito-contador").textContent = cantidadTotal;
+  contadorEl.textContent = cantidadTotal;
 
   const descuento = calcularDescuento(carrito);
   const descuentoMailing = descuentoMailingAplicado(carrito);
   const regaloPromo = carrito.length ? cargarRegaloPromo() : null;
-  const el = document.getElementById("items-carrito");
   el.innerHTML = carrito.length === 0
     ? '<p class="mensaje-vacio">Tu carrito está vacío.</p>'
     : carrito.map(itemCarritoHtml).join("")
@@ -3499,7 +3511,6 @@ function renderCarrito() {
   });
 
   const t = totales(carrito);
-  const totalEl = document.getElementById("total-carrito");
   const inputCodigo = document.getElementById("input-codigo-mailing");
   const descuentoGuardado = cargarDescuentoMailing();
   if (inputCodigo && document.activeElement !== inputCodigo) {
