@@ -1185,8 +1185,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     clientes.sort(key=lambda r: r.get("fecha", ""), reverse=True)
     clientes_por_id = {cliente["id"]: cliente for cliente in clientes}
     fecha_hoy = entregas.ahora_argentina().date().isoformat()
-    pedidos = client.table("pedidos").select("*").execute().data
-    tareas = client.table("tareas_entrega").select("*").execute().data
+    pedidos = [] if mostrar_clientes else client.table("pedidos").select("*").execute().data
+    tareas = [] if mostrar_clientes else client.table("tareas_entrega").select("*").execute().data
     tareas_hoy = [
         tarea for tarea in tareas
         if tarea.get("fecha_entrega") == fecha_hoy and not tarea.get("completada_en")

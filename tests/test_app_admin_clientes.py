@@ -28,6 +28,24 @@ def test_admin_clientes_lista_nombre_y_link_a_historial(monkeypatch):
     assert "Productos consultados" not in r.text
 
 
+def test_admin_clientes_lista_no_depende_de_tablas_del_panel_de_pedidos(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+
+    class SoloClientes:
+        def table(self, nombre):
+            if nombre != "clientes":
+                raise Exception(f'La tabla "{nombre}" no esta disponible')
+            return fake.table(nombre)
+
+    monkeypatch.setattr(appmod, "get_client", lambda: SoloClientes())
+
+    r = c.get("/admin/clientes/lista")
+
+    assert r.status_code == 200
+    assert "Juan" in r.text
+
+
 def test_landing_admin_separa_clientes_en_una_vista_accesible(monkeypatch):
     c = _cliente_logueado(monkeypatch)
 
