@@ -212,6 +212,16 @@ header {
 .rc-modo-y-carrito {
   display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 150px;
 }
+.indicador-mayorista {
+  display: block;
+  padding: 4px 6px;
+  border: 1px solid var(--rc-green-faint);
+  color: var(--rc-green-dim);
+  font-size: 10px;
+  line-height: 1.25;
+  letter-spacing: .02em;
+  text-align: center;
+}
 .rc-modo-y-carrito button {
   width: 100%; text-align: center;
   padding: 8px 14px; font-size: clamp(13px, 3.5vw, 15px);

@@ -127,6 +127,7 @@ if (!new URLSearchParams(location.search).get("codigo")) {
 
 let SECCIONES_DATA = {};
 let RECOMENDADOS_DATA = [];
+let modoPrecioActual = "minorista";
 let cotizacionActual = null; // U$D actual, usado en el reloj del header y en el narrador de noticias
 let pronosticoManana = null; // texto del pronóstico del día siguiente, para el narrador
 let pronosticoConsejo = null; // consejo práctico según ese pronóstico (paraguas, abrigo, etc.)
@@ -3135,10 +3136,12 @@ async function cargarCatalogo() {
       '<a href="https://wa.me/543512145217" target="_blank" rel="noopener">wa.me/543512145217</a></p>';
     return;
   }
+  modoPrecioActual = datos.modo_precio === "mayorista" ? "mayorista" : "minorista";
   SECCIONES_DATA = datos.secciones || {};
   RECOMENDADOS_DATA = RECOMENDADOS_DATA
     .map((p) => ({ ...p, marca: p.marca || "Otras marcas" }))
     .filter((p) => p && p.nombre);
+  actualizarModoPrecio();
   refrescarPreciosCarrito();
   if (datos.mensaje) {
     ocultarNavegacionCatalogo();
@@ -3201,6 +3204,21 @@ function borrarDescuentoMailing() {
   renderCarrito();
 }
 
+function actualizarModoPrecio() {
+  const esMayorista = modoPrecioActual === "mayorista";
+  const indicador = document.getElementById("indicador-mayorista");
+  const botonCodigo = document.getElementById("btn-abrir-codigo");
+  const panelCodigo = document.getElementById("modal-codigo");
+
+  if (indicador) indicador.hidden = !esMayorista;
+  if (botonCodigo) botonCodigo.hidden = esMayorista;
+  if (panelCodigo) {
+    panelCodigo.hidden = esMayorista;
+    if (esMayorista) panelCodigo.classList.add("oculto");
+  }
+  if (esMayorista) borrarDescuentoMailing();
+}
+
 function itemsCarritoParaDescuento(carrito) {
   return carrito.map((it) => ({ nombre: it.nombre, cantidad: it.cantidad }));
 }
@@ -3233,6 +3251,7 @@ function setEstadoCodigoMailing(mensaje, tipo = "") {
 }
 
 function descuentoMailingAplicado(carrito) {
+  if (modoPrecioActual === "mayorista") return null;
   // Los códigos de mailing quedan temporalmente desactivados en el carrito.
   return null;
   /*
@@ -3383,6 +3402,10 @@ function descuentoPorUnidad(cantidadTotal) {
 }
 
 function calcularDescuento(carrito) {
+  return modoPrecioActual === "mayorista" ? null : calcularDescuentoMinorista(carrito);
+}
+
+function calcularDescuentoMinorista(carrito) {
   const cantidadTotal = carrito.reduce((n, it) => n + it.cantidad, 0);
   const porUnidad = descuentoPorUnidad(cantidadTotal);
   if (porUnidad === 0) return null;
@@ -3571,6 +3594,10 @@ async function consumirCodigoMailing(carrito) {
 }
 
 async function aplicarCodigoMailing() {
+  if (modoPrecioActual === "mayorista") {
+    borrarDescuentoMailing();
+    return;
+  }
   const carrito = cargarCarrito();
   if (!carrito.length) {
     setEstadoCodigoMailing("Agregá productos al carrito antes de aplicar un código.", "error");
@@ -3598,6 +3625,10 @@ async function aplicarCodigoMailing() {
 }
 
 async function aplicarCodigoMailingPorValor(codigo) {
+  if (modoPrecioActual === "mayorista") {
+    borrarDescuentoMailing();
+    return false;
+  }
   const input = document.getElementById("input-codigo-mailing");
   if (input) input.value = codigo;
   const carrito = cargarCarrito();
@@ -3812,6 +3843,7 @@ document.getElementById("btn-guardar-direccion").addEventListener("click", async
 });
 
 document.getElementById("btn-abrir-codigo").addEventListener("click", () => {
+  if (modoPrecioActual === "mayorista") return;
   abrirPanelSecundario("modal-codigo");
 });
 document.addEventListener("pointerdown", (evento) => {
@@ -3823,6 +3855,10 @@ document.addEventListener("pointerdown", (evento) => {
 });
 
 document.getElementById("btn-aplicar-codigo").addEventListener("click", async () => {
+  if (modoPrecioActual === "mayorista") {
+    borrarDescuentoMailing();
+    return;
+  }
   const carrito = cargarCarrito();
   if (!carrito.length) {
     alert("Agregá productos al carrito antes de aplicar un código.");

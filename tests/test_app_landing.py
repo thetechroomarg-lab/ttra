@@ -20,6 +20,16 @@ def test_landing_descarta_descuento_mailing_persistido_fuera_de_un_link():
     assert "localStorage.removeItem(CLAVE_DESCUENTO_MAILING);" in script
 
 
+def test_modo_mayorista_muestra_insignia_y_anula_descuentos_minoristas():
+    html = (appmod.BASE / "static" / "index.html").read_text(encoding="utf-8")
+    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+
+    assert 'id="indicador-mayorista"' in html
+    assert 'modoPrecioActual === "mayorista"' in js
+    assert "borrarDescuentoMailing()" in js
+    assert 'return modoPrecioActual === "mayorista" ? null' in js
+
+
 def test_configuracion_publica_expone_solo_la_clave_de_maps_configurada(monkeypatch):
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "maps-key-de-prueba")
     cliente = TestClient(appmod.app, base_url="https://testserver")
