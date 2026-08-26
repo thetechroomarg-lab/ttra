@@ -25,7 +25,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, pedidos, recibos
+from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, recibos
 from web.email_util import EnvioEmailError, enviar_email
 from web.productos import resolver_proveedor
 from web.supabase_client import get_client
@@ -51,6 +51,7 @@ PROVEEDORES_PATH = Path(os.environ.get("PROVEEDORES_PATH", str(BASE / "proveedor
 COSTOS_PATH = Path(os.environ.get(
     "COSTOS_PATH", str(PRODUCTOS_PATH.with_name("costos.json"))
 ))
+_CAMPOS_PRIVADOS_CATALOGO = frozenset({"costo", "margen", "proveedor", "capacidad"})
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 ADMIN_CLIENTES_PASSWORD = os.environ.get("ADMIN_CLIENTES_PASSWORD")
 if not ADMIN_CLIENTES_PASSWORD:
@@ -220,6 +221,18 @@ def _cargar_proveedores():
     if not PROVEEDORES_PATH.exists():
         return {}
     return json.loads(PROVEEDORES_PATH.read_text(encoding="utf-8"))
+
+
+def _cargar_costos():
+    """Load the private wholesale cost index without exposing its failures."""
+    try:
+        if not COSTOS_PATH.exists():
+            return {}
+        costos = json.loads(COSTOS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        logger.exception("No se pudo cargar el índice privado de costos")
+        return {}
+    return costos if isinstance(costos, dict) else {}
 
 
 def _cliente():
@@ -2275,6 +2288,34 @@ def _sesion_activa(request: Request):
     return bool(request.session.get("cliente_id"))
 
 
+def _tipo_cliente_sesion(request: Request) -> str:
+    """Resolve the persisted price tier; anonymous and failed lookups are retail."""
+    if not _sesion_activa(request):
+        return "minorista"
+    try:
+        filas = (get_client().table("clientes").select("tipo_cliente")
+                 .eq("id", request.session["cliente_id"]).execute().data)
+    except Exception:
+        logger.exception("No se pudo resolver el tipo de cliente de la sesión")
+        return "minorista"
+    if filas and filas[0].get("tipo_cliente") == "mayorista":
+        return "mayorista"
+    return "minorista"
+
+
+def _catalogo_autorizado(request: Request) -> tuple[list[dict], str]:
+    """Return the product list and price tier authorized for this request."""
+    tipo_cliente = _tipo_cliente_sesion(request)
+    productos = [
+        {campo: valor for campo, valor in producto.items()
+         if campo not in _CAMPOS_PRIVADOS_CATALOGO}
+        for producto in _cargar_productos()
+    ]
+    if tipo_cliente == "mayorista":
+        return mayoristas.catalogo_mayorista(productos, _cargar_costos()), tipo_cliente
+    return productos, tipo_cliente
+
+
 def _debe_cambiar_password(request: Request):
     return bool(request.session.get("debe_cambiar_password"))
 
@@ -2432,7 +2473,8 @@ def api_me(request: Request):
         return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
     if cliente is None:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    return cliente
+    tipo_cliente = _tipo_cliente_sesion(request)
+    return {**cliente, "tipo_cliente": tipo_cliente, "modo_precio": tipo_cliente}
 
 
 class ActualizarMeIn(BaseModel):
@@ -2905,12 +2947,13 @@ def pagina_catalogo(request: Request):
 
 
 @app.get("/api/catalogo")
-def api_catalogo():
-    productos = _cargar_productos()
+def api_catalogo(request: Request):
+    productos, modo_precio = _catalogo_autorizado(request)
     if not productos:
         return {"secciones": {s: [] for s in catalogo.SECCIONES},
-                "mensaje": "Estamos actualizando los precios"}
-    return {"secciones": catalogo.secciones_catalogo(productos)}
+                "mensaje": "Estamos actualizando los precios",
+                "modo_precio": modo_precio}
+    return {"secciones": catalogo.secciones_catalogo(productos), "modo_precio": modo_precio}
 
 
 @app.get("/api/recomendados")

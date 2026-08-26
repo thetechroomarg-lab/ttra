@@ -50,6 +50,93 @@ def test_api_catalogo_con_productos(tmp_path, monkeypatch):
     assert secciones["Gaming"] == []
 
 
+def test_catalogo_publico_permanece_minorista(tmp_path, monkeypatch):
+    """Catches a public catalog accidentally adopting wholesale prices."""
+    monkeypatch.setattr(
+        appmod,
+        "_cargar_productos",
+        lambda: [{"nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 180}],
+    )
+
+    r = TestClient(appmod.app, base_url="https://testserver").get("/api/catalogo")
+
+    assert r.status_code == 200
+    assert r.json()["modo_precio"] == "minorista"
+    assert r.json()["secciones"]["Celulares"][0]["usd"] == 180
+
+
+def test_catalogo_minorista_no_expone_campos_privados(tmp_path, monkeypatch):
+    """Catches a contaminated public file leaking supplier-side calculations."""
+    monkeypatch.setattr(
+        appmod,
+        "_cargar_productos",
+        lambda: [{
+            "nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 180,
+            "costo": 100, "margen": 80, "proveedor": "privado",
+        }],
+    )
+
+    r = TestClient(appmod.app, base_url="https://testserver").get("/api/catalogo")
+
+    assert r.status_code == 200
+    producto = r.json()["secciones"]["Celulares"][0]
+    assert "costo" not in producto
+    assert "margen" not in producto
+    assert "proveedor" not in producto
+
+
+def test_catalogo_mayorista_filtra_y_descuenta_por_sesion(tmp_path, monkeypatch):
+    """Catches ignoring the current client's wholesale status or private costs."""
+    c = _cliente_autenticado(tmp_path, monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").execute().data[0]
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", cliente["id"]).execute()
+    monkeypatch.setattr(
+        appmod,
+        "_cargar_productos",
+        lambda: [
+            {
+                "nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 180,
+                "costo": 100, "margen": 80, "proveedor": "privado",
+            },
+            {"nombre": "Sin costo", "categoria": "Apple - iPhone", "usd": 180},
+        ],
+    )
+    monkeypatch.setattr(appmod, "COSTOS_PATH", tmp_path / "costos.json")
+    (tmp_path / "costos.json").write_text('{"Elegible": 100}', encoding="utf-8")
+
+    r = c.get("/api/catalogo")
+
+    assert r.status_code == 200
+    assert r.json()["modo_precio"] == "mayorista"
+    assert r.json()["secciones"]["Celulares"] == [
+        {"nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 130, "marca": "Apple"}
+    ]
+    assert "costo" not in r.text
+    assert "margen" not in r.text
+    assert "proveedor" not in r.text
+
+
+def test_catalogo_mayorista_con_costos_invalidos_devuelve_actualizacion(tmp_path, monkeypatch):
+    """Catches a corrupt private cost file breaking the public catalog route."""
+    c = _cliente_autenticado(tmp_path, monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").execute().data[0]
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", cliente["id"]).execute()
+    monkeypatch.setattr(appmod, "_cargar_productos", lambda: [{"nombre": "Elegible", "usd": 180}])
+    monkeypatch.setattr(appmod, "COSTOS_PATH", tmp_path / "costos.json")
+    (tmp_path / "costos.json").write_text("{no es json}", encoding="utf-8")
+
+    r = c.get("/api/catalogo")
+
+    assert r.status_code == 200
+    assert r.json() == {
+        "secciones": {s: [] for s in appmod.catalogo.SECCIONES},
+        "mensaje": "Estamos actualizando los precios",
+        "modo_precio": "mayorista",
+    }
+
+
 def test_flujo_completo_registro_logout_login_catalogo(tmp_path, monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
