@@ -1094,10 +1094,11 @@ _ADMIN_CLIENTES_ESTILO = """
     #tabla-clientes td:nth-child(1)::before { content:"Seleccionar"; }
     #tabla-clientes td:nth-child(2)::before { content:"Nombre"; }
     #tabla-clientes td:nth-child(3)::before { content:"Celular"; }
-    #tabla-clientes td:nth-child(4)::before { content:"Provincia"; }
-    #tabla-clientes td:nth-child(5)::before { content:"Historial"; }
-    #tabla-clientes td:nth-child(6)::before { content:"Cuenta"; }
-    #tabla-clientes td:nth-child(7)::before { content:"Acciones"; }
+    #tabla-clientes td:nth-child(4)::before { content:"Email"; }
+    #tabla-clientes td:nth-child(5)::before { content:"Provincia"; }
+    #tabla-clientes td:nth-child(6)::before { content:"Historial"; }
+    #tabla-clientes td:nth-child(7)::before { content:"Cuenta"; }
+    #tabla-clientes td:nth-child(8)::before { content:"Acciones"; }
     #tabla-clientes td:last-child { border-bottom:0; }
     #tabla-clientes .col-check { justify-content:flex-start; text-align:left; }
     #tabla-clientes .col-check::before { display:none; }
@@ -1742,7 +1743,7 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
         for provincia in provincias
     )
     if not clientes:
-        filas_html = '<tr><td colspan="7" class="vacio">Todavía no hay clientes registrados.</td></tr>'
+        filas_html = '<tr><td colspan="8" class="vacio">Todavía no hay clientes registrados.</td></tr>'
     else:
         def _celda_cuenta(c):
             if not c.get("tiene_cuenta"):
@@ -1761,6 +1762,7 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
             f'value="{html.escape(c.get("id", ""))}" aria-label="Seleccionar cliente"></td>'
             f"<td>{html.escape(c.get('nombre', ''))}</td>"
             f"<td>{html.escape(c.get('celular', ''))}</td>"
+            f"<td>{html.escape(c.get('email', '')) or '—'}</td>"
             f"<td>{html.escape(c.get('provincia', ''))}</td>"
             f'<td><a class="btn-historial" href="/admin/clientes/{html.escape(c.get("id", ""))}/historial" '
             f'title="Ver historial de pedidos" aria-label="Ver historial de pedidos">{_ICONO_OJO}</a></td>'
@@ -1785,7 +1787,7 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
     <button id="btn-eliminar-masivo" type="button">Eliminar seleccionados</button>
   </div>
   <div class="tabla-scroll"><table id="tabla-clientes">
-    <thead><tr><th class="col-check"><input id="seleccionar-todos" type="checkbox" aria-label="Seleccionar todos"></th><th><button class="ordenar-columna" data-sort="nombre" data-sort-index="1">Nombre</button></th><th><button class="ordenar-columna" data-sort="celular" data-sort-index="2">Celular</button></th><th><button class="ordenar-columna" data-sort="provincia" data-sort-index="3">Provincia</button></th><th>Historial</th><th>Cuenta</th><th>Acciones</th></tr></thead>
+    <thead><tr><th class="col-check"><input id="seleccionar-todos" type="checkbox" aria-label="Seleccionar todos"></th><th><button class="ordenar-columna" data-sort="nombre" data-sort-index="1">Nombre</button></th><th><button class="ordenar-columna" data-sort="celular" data-sort-index="2">Celular</button></th><th><button class="ordenar-columna" data-sort="email" data-sort-index="3">Email</button></th><th><button class="ordenar-columna" data-sort="provincia" data-sort-index="4">Provincia</button></th><th>Historial</th><th>Cuenta</th><th>Acciones</th></tr></thead>
     <tbody>{filas_html}</tbody>
   </table></div>
 </div>
@@ -1913,7 +1915,7 @@ function filtrarClientes() {{
 filtroClientes.addEventListener("input", filtrarClientes);
 filtroProvincia.addEventListener("change", filtrarClientes);
 
-const columnasOrden = {{ nombre: 1, celular: 2, provincia: 3 }};
+const columnasOrden = {{ nombre: 1, celular: 2, email: 3, provincia: 4 }};
 function ordenarFilasClientes(campo, ascendente) {{
   const indice = columnasOrden[campo];
   const filas = Array.from(document.querySelectorAll("#tabla-clientes tbody .cliente-fila"));
