@@ -68,6 +68,31 @@ def test_admin_clientes_lista_admite_campos_nulos_de_clientes_legados(monkeypatc
     assert "Sin especificar" in r.text
 
 
+def test_admin_habilita_y_revoca_acceso_mayorista(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").execute().data[0]
+
+    habilitar = c.post(f'/admin/clientes/{cliente["id"]}/mayorista', json={"habilitado": True})
+    assert habilitar.status_code == 200
+    assert fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]["tipo_cliente"] == "mayorista"
+    assert "Quitar mayorista" in c.get("/admin/clientes/lista").text
+
+    revocar = c.post(f'/admin/clientes/{cliente["id"]}/mayorista', json={"habilitado": False})
+    assert revocar.status_code == 200
+    assert fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]["tipo_cliente"] == "minorista"
+
+
+def test_admin_no_habilita_contacto_sin_cuenta(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    fake.table("clientes").insert({"id": "lead", "nombre": "Lead", "auth_id": None}).execute()
+
+    r = c.post("/admin/clientes/lead/mayorista", json={"habilitado": True})
+
+    assert r.status_code == 400
+
+
 def test_landing_admin_separa_clientes_en_una_vista_accesible(monkeypatch):
     c = _cliente_logueado(monkeypatch)
 

@@ -276,6 +276,10 @@ class ClientesLoginIn(BaseModel):
     password: str
 
 
+class ClienteMayoristaIn(BaseModel):
+    habilitado: bool
+
+
 class MailingOfertaIn(BaseModel):
     productos: list[str]
 
@@ -657,6 +661,23 @@ def admin_clientes_eliminar(cliente_id: str, request: Request):
     return {"ok": True}
 
 
+@app.post("/admin/clientes/{cliente_id}/mayorista")
+def admin_clientes_actualizar_mayorista(
+    cliente_id: str, entrada: ClienteMayoristaIn, request: Request,
+):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    filas_cliente = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas_cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    if entrada.habilitado and not filas_cliente[0].get("auth_id"):
+        raise HTTPException(status_code=400, detail="El contacto no tiene una cuenta habilitable")
+    tipo_cliente = "mayorista" if entrada.habilitado else "minorista"
+    client.table("clientes").update({"tipo_cliente": tipo_cliente}).eq("id", cliente_id).execute()
+    return {"ok": True, "tipo_cliente": tipo_cliente}
+
+
 @app.post("/admin/pedidos/{pedido_id}/recibo")
 async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     if not _clientes_admin_activo(request):
@@ -942,6 +963,11 @@ _ADMIN_CLIENTES_ESTILO = """
   .btn-historial:hover { color:#fff; }
   .btn-eliminar { background:#8d1627; border:1px solid #c8102e; color:#fff; }
   .btn-eliminar:hover { background:#c8102e; }
+  .tipo-cliente { display:inline-block; border-radius:999px; font-size:12px; font-weight:700; margin:0 0 6px; padding:3px 7px; }
+  .tipo-cliente-mayorista { background:#184d3b; color:#b9f5d0; }
+  .tipo-cliente-minorista { background:#303640; color:#dfe2e8; }
+  .btn-mayorista { border:1px solid #4a5160; border-radius:8px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; padding:8px 10px; }
+  .btn-mayorista-activo { border-color:#8d1627; color:#ffb3bd; }
   .acciones-masivas { display:none; align-items:center; gap:10px; margin:0 0 14px; flex-wrap:wrap; }
   .acciones-masivas.visible { display:flex; }
   .acciones-masivas span { color:#9aa0ab; font-size:13px; }
@@ -1104,7 +1130,7 @@ _ADMIN_CLIENTES_ESTILO = """
     #tabla-clientes td:last-child { border-bottom:0; }
     #tabla-clientes .col-check { justify-content:flex-start; text-align:left; }
     #tabla-clientes .col-check::before { display:none; }
-    #tabla-clientes .btn-reset, #tabla-clientes .btn-eliminar { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
+    #tabla-clientes .btn-reset, #tabla-clientes .btn-eliminar, #tabla-clientes .btn-mayorista { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
     .acciones-mailing { align-items:stretch; flex-direction:column; }
     .acciones-mailing button { width:100%; min-height:44px; }
     .modal-mail { align-items:flex-end; padding:12px; }
@@ -1181,6 +1207,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             "provincia": c.get("provincia") or "Sin especificar",
             "fecha": c.get("creado_en") or "",
             "tiene_cuenta": bool(c.get("auth_id")),
+            "tipo_cliente": "mayorista" if c.get("tipo_cliente") == "mayorista" else "minorista",
             "direccion": c.get("direccion") or "",
         }
         for c in filas_clientes
@@ -1751,7 +1778,17 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
             if not c.get("tiene_cuenta"):
                 return "—"
             id_seguro = html.escape(c.get("id", ""))
-            return f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
+            mayorista = c.get("tipo_cliente") == "mayorista"
+            etiqueta = "Mayorista" if mayorista else "Minorista"
+            clase_etiqueta = "tipo-cliente-mayorista" if mayorista else "tipo-cliente-minorista"
+            texto_boton = "Quitar mayorista" if mayorista else "Habilitar mayorista"
+            clase_boton = "btn-mayorista-activo" if mayorista else ""
+            return (
+                f'<span class="tipo-cliente {clase_etiqueta}">{etiqueta}</span><br>'
+                f'<button class="btn-mayorista {clase_boton}" data-id="{id_seguro}" '
+                f'data-habilitado="{str(not mayorista).lower()}">{texto_boton}</button><br>'
+                f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
+            )
 
         def _celda_eliminar(c):
             if not c.get("tiene_cuenta"):
@@ -1839,6 +1876,21 @@ document.querySelectorAll(".btn-eliminar").forEach((btn) => {{
     alert(datos.error || "No se pudo eliminar la cuenta");
     btn.textContent = "Eliminar cuenta";
     btn.disabled = false;
+  }});
+}});
+document.querySelectorAll(".btn-mayorista").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const habilitado = btn.dataset.habilitado === "true";
+    const accion = habilitado ? "habilitar" : "quitar";
+    if (!confirm(`¿${{accion.charAt(0).toUpperCase() + accion.slice(1)}} acceso mayorista a este cliente?`)) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/clientes/${{btn.dataset.id}}/mayorista`, {{
+      method: "POST", headers: {{"Content-Type": "application/json"}},
+      body: JSON.stringify({{habilitado}}),
+    }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || datos.detail || "No se pudo actualizar el acceso mayorista."); btn.disabled = false; return; }}
+    location.reload();
   }});
 }});
 document.querySelectorAll(".btn-enviar-recibo").forEach((btn) => {{
