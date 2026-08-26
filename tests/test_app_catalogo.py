@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 import web.app as appmod
@@ -135,6 +137,57 @@ def test_catalogo_mayorista_con_costos_invalidos_devuelve_actualizacion(tmp_path
         "mensaje": "Estamos actualizando los precios",
         "modo_precio": "mayorista",
     }
+
+
+def test_admin_habilita_y_revoca_catalogo_mayorista_por_rutas_reales(tmp_path, monkeypatch):
+    """Catches an admin access change that does not reach the catalog session."""
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    productos_path = tmp_path / "productos.json"
+    costos_path = tmp_path / "costos.json"
+    productos_path.write_text(json.dumps([
+        {"nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 180},
+        {"nombre": "Sin costo", "categoria": "Apple - iPhone", "usd": 180},
+    ]), encoding="utf-8")
+    costos_path.write_text(json.dumps({"Elegible": 100}), encoding="utf-8")
+    monkeypatch.setattr(appmod, "PRODUCTOS_PATH", productos_path)
+    monkeypatch.setattr(appmod, "COSTOS_PATH", costos_path)
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+
+    registro = cliente.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234",
+        "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
+    })
+    assert registro.status_code == 200
+    cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
+
+    admin = TestClient(appmod.app, base_url="https://testserver")
+    acceso_admin = admin.post("/admin/clientes/login", json={"password": "clave-admin"})
+    habilitar = admin.post(f"/admin/clientes/{cliente_id}/mayorista", json={"habilitado": True})
+    assert acceso_admin.status_code == 200
+    assert habilitar.status_code == 200
+    assert habilitar.json() == {"ok": True, "tipo_cliente": "mayorista"}
+
+    catalogo_mayorista = cliente.get("/api/catalogo")
+    assert catalogo_mayorista.status_code == 200
+    assert catalogo_mayorista.json()["modo_precio"] == "mayorista"
+    assert catalogo_mayorista.json()["secciones"]["Celulares"] == [
+        {"nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 130, "marca": "Apple"},
+    ]
+
+    revocar = admin.post(f"/admin/clientes/{cliente_id}/mayorista", json={"habilitado": False})
+    assert revocar.status_code == 200
+    assert revocar.json() == {"ok": True, "tipo_cliente": "minorista"}
+
+    catalogo_minorista = cliente.get("/api/catalogo")
+    assert catalogo_minorista.status_code == 200
+    assert catalogo_minorista.json()["modo_precio"] == "minorista"
+    assert catalogo_minorista.json()["secciones"]["Celulares"] == [
+        {"nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 180, "marca": "Apple"},
+        {"nombre": "Sin costo", "categoria": "Apple - iPhone", "usd": 180, "marca": "Apple"},
+    ]
 
 
 def test_flujo_completo_registro_logout_login_catalogo(tmp_path, monkeypatch):
