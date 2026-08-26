@@ -1209,7 +1209,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     ]
     tareas_historial = [
         tarea for tarea in tareas
-        if tarea.get("fecha_entrega") == fecha_historial and tarea.get("completada_en")
+        if tarea.get("fecha_entrega") == fecha_historial
+        and (tarea.get("completada_en") or fecha_historial != fecha_hoy)
     ]
 
     def _descripcion_pedido(pedido):
@@ -1332,9 +1333,14 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             detalle_nota = f" · {html.escape(nota)}" if nota else ""
             tacho = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
                      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>')
+            estado = (
+                f'Completada el {html.escape(tarea.get("completada_en"))}'
+                if tarea.get("completada_en") else "Pendiente"
+            )
+            titulo_tarjeta = "Tarea completada" if tarea.get("completada_en") else "Tarea"
             return (
-                f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>Tarea completada: {html.escape(titulo)}</strong>'
-                f'{detalle_cliente}{detalle_nota}<br><span class="estado-recibo">Completada el {html.escape(tarea.get("completada_en") or "")}</span>'
+                f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{titulo_tarjeta}: {html.escape(titulo)}</strong>'
+                f'{detalle_cliente}{detalle_nota}<br><span class="estado-recibo">{estado}</span>'
                 f'<button class="btn-eliminar-historial-tarea" type="button" data-id="{tarea_id}" title="Eliminar del historial" aria-label="Eliminar del historial">{tacho}</button></div>'
             )
 
@@ -1355,6 +1361,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     pendientes_hoy_seccion_html = (
         f'<section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2>'
         f'<form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea">'
+        f'<input id="tarea-fecha" type="date" required value="{fecha_hoy}" title="Fecha de la tarea">'
         f'<div class="tarea-direccion-wrap"><input id="tarea-cliente-busqueda" maxlength="200" placeholder="Cliente opcional" autocomplete="off"><input type="hidden" id="tarea-cliente"><ul id="tarea-cliente-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Clientes" hidden></ul></div>'
         f'<input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Agregar dirección" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><button>Agregar tarea</button></form>'
         f'{pedidos_hoy_html}</section>'
@@ -1722,9 +1729,9 @@ document.querySelectorAll(".pedido-hoy[data-tipo-entrega]").forEach((destino) =>
 }});
 document.getElementById("form-tarea-entrega")?.addEventListener("submit", async (e) => {{
   e.preventDefault();
-  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:"{fecha_hoy}", titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
+  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:document.getElementById("tarea-fecha").value, titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
   if (!r.ok) {{ alert("No se pudo crear la tarea."); return; }}
-  location.reload();
+  location.href = `/admin/clientes?fecha_pedidos=${{document.getElementById("tarea-fecha").value}}`;
 }});
 document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
