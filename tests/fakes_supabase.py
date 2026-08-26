@@ -128,13 +128,20 @@ class _FakeQuery:
 
 
 class _FakeTable:
-    def __init__(self):
+    def __init__(self, nombre):
+        self._nombre = nombre
         self._filas = []
 
     def select(self, *_args, **_kwargs):
         return _FakeQuery(self, "select")
 
     def insert(self, payload):
+        if self._nombre == "pedidos":
+            payload = {
+                "modo_precio": "minorista",
+                "descuento_mayorista_usd": 0,
+                **payload,
+            }
         return _FakeQuery(self, "insert", payload)
 
     def update(self, payload):
@@ -151,7 +158,7 @@ class FakeSupabaseClient:
         self.auth.admin._on_delete_user = self._eliminar_perfil_por_auth_id
 
     def table(self, nombre):
-        return self._tablas.setdefault(nombre, _FakeTable())
+        return self._tablas.setdefault(nombre, _FakeTable(nombre))
 
     def rpc(self, nombre):
         if nombre != "siguiente_numero_recibo":

@@ -59,6 +59,8 @@ create table if not exists pedidos (
   detalle jsonb,
   total_usd numeric,
   descuento_usd numeric,
+  modo_precio text not null default 'minorista',
+  descuento_mayorista_usd numeric not null default 0,
   recibo_id text,
   recibo_emitido_en timestamptz,
   recibo_enviado_en timestamptz,
@@ -71,6 +73,8 @@ alter table pedidos add column if not exists fecha_entrega date;
 alter table pedidos add column if not exists detalle jsonb;
 alter table pedidos add column if not exists total_usd numeric;
 alter table pedidos add column if not exists descuento_usd numeric;
+alter table pedidos add column if not exists modo_precio text not null default 'minorista';
+alter table pedidos add column if not exists descuento_mayorista_usd numeric not null default 0;
 alter table pedidos add column if not exists recibo_id text;
 alter table pedidos add column if not exists recibo_emitido_en timestamptz;
 alter table pedidos add column if not exists recibo_enviado_en timestamptz;

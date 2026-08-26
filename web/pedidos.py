@@ -33,6 +33,8 @@ def guardar_pedido(
     detalle=None,
     total_usd=None,
     descuento_usd=0,
+    modo_precio="minorista",
+    descuento_mayorista_usd=0,
     origen="whatsapp",
 ):
     fecha_iso = fecha_entrega.isoformat() if fecha_entrega else None
@@ -45,6 +47,7 @@ def guardar_pedido(
                 and not pedido.get("recibo_enviado_en")
                 and pedido.get("detalle")
                 and pedido.get("total_usd") is not None
+                and pedido.get("modo_precio", "minorista") == modo_precio
             ),
             None,
         )
@@ -54,6 +57,10 @@ def guardar_pedido(
                 "detalle": _combinar_detalles(pendiente.get("detalle"), detalle),
                 "total_usd": int(pendiente.get("total_usd") or 0) + int(total_usd),
                 "descuento_usd": int(pendiente.get("descuento_usd") or 0) + int(descuento_usd or 0),
+                "descuento_mayorista_usd": (
+                    int(pendiente.get("descuento_mayorista_usd") or 0)
+                    + int(descuento_mayorista_usd or 0)
+                ),
                 "direccion_entrega": direccion_entrega or pendiente.get("direccion_entrega"),
             }
             client.table("pedidos").update(actualizado).eq("id", pendiente["id"]).execute()
@@ -66,6 +73,8 @@ def guardar_pedido(
         "detalle": detalle or None,
         "total_usd": total_usd,
         "descuento_usd": descuento_usd,
+        "modo_precio": modo_precio,
+        "descuento_mayorista_usd": descuento_mayorista_usd,
         "fecha_entrega": fecha_iso,
         "direccion_entrega": direccion_entrega,
         "origen": origen,
@@ -94,6 +103,7 @@ def editar_fecha_entrega(client, pedido_id, fecha_entrega):
             and pedido.get("detalle")
             and otro.get("total_usd") is not None
             and pedido.get("total_usd") is not None
+            and otro.get("modo_precio", "minorista") == pedido.get("modo_precio", "minorista")
         ),
         None,
     )
@@ -103,6 +113,10 @@ def editar_fecha_entrega(client, pedido_id, fecha_entrega):
             "detalle": _combinar_detalles(destino.get("detalle"), pedido.get("detalle")),
             "total_usd": int(destino.get("total_usd") or 0) + int(pedido.get("total_usd") or 0),
             "descuento_usd": int(destino.get("descuento_usd") or 0) + int(pedido.get("descuento_usd") or 0),
+            "descuento_mayorista_usd": (
+                int(destino.get("descuento_mayorista_usd") or 0)
+                + int(pedido.get("descuento_mayorista_usd") or 0)
+            ),
         }
         client.table("pedidos").update(actualizado).eq("id", destino["id"]).execute()
         client.table("pedidos").delete().eq("id", pedido_id).execute()

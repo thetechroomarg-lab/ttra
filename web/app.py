@@ -2702,13 +2702,81 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         return JSONResponse({"error": "Elegí una fecha de entrega"}, status_code=400)
     if not entregas.fecha_entrega_valida(entrada.fecha_entrega):
         return JSONResponse({"error": "La fecha de entrega elegida ya no está disponible"}, status_code=400)
+    catalogo_autorizado, modo_precio = _catalogo_autorizado(request)
+    if not entrada.detalle:
+        if modo_precio == "mayorista":
+            return JSONResponse(
+                {"error": "Los precios cambiaron. Recargá el catálogo e intentá de nuevo."},
+                status_code=409,
+            )
+        pedidos.guardar_pedido(
+            get_client(),
+            cliente_id,
+            entrada.productos,
+            entrada.fecha_entrega,
+            modo_precio=modo_precio,
+            descuento_mayorista_usd=0,
+        )
+        return {"ok": True}
     if entrada.detalle and not (entrada.direccion_entrega or "").strip():
         return JSONResponse({"error": "Especificá dirección de entrega"}, status_code=400)
+
+    por_nombre = {
+        producto.get("nombre"): producto
+        for producto in catalogo_autorizado
+        if producto.get("nombre")
+    }
+    publicos_por_nombre = {
+        producto.get("nombre"): producto
+        for producto in _cargar_productos()
+        if producto.get("nombre")
+    }
+    error_precios = JSONResponse(
+        {"error": "Los precios cambiaron. Recargá el catálogo e intentá de nuevo."},
+        status_code=409,
+    )
     proveedores = _cargar_proveedores()
-    detalle = [
-        {**item.model_dump(), "proveedor": resolver_proveedor(proveedores, item.nombre)}
-        for item in entrada.detalle
-    ]
+    detalle = []
+    total_bruto_usd = 0
+    descuento_mayorista_usd = 0
+    for item in entrada.detalle:
+        producto = por_nombre.get(item.nombre)
+        precio_autorizado = producto.get("usd") if producto else None
+        if (
+            isinstance(precio_autorizado, bool)
+            or not isinstance(precio_autorizado, (int, float))
+            or not math.isfinite(precio_autorizado)
+            or precio_autorizado < 0
+            or item.usd_unitario != precio_autorizado
+        ):
+            return error_precios
+        subtotal_autorizado = precio_autorizado * item.cantidad
+        if item.usd_subtotal != subtotal_autorizado:
+            return error_precios
+        total_bruto_usd += subtotal_autorizado
+        if modo_precio == "mayorista":
+            precio_publico = publicos_por_nombre.get(item.nombre, {}).get("usd")
+            if (
+                isinstance(precio_publico, bool)
+                or not isinstance(precio_publico, (int, float))
+                or not math.isfinite(precio_publico)
+                or precio_publico < precio_autorizado
+            ):
+                return error_precios
+            descuento_mayorista_usd += (
+                precio_publico - precio_autorizado
+            ) * item.cantidad
+        detalle.append({
+            **item.model_dump(),
+            "usd_unitario": precio_autorizado,
+            "usd_subtotal": subtotal_autorizado,
+            "proveedor": resolver_proveedor(proveedores, item.nombre),
+        })
+
+    descuento_usd = min(entrada.descuento_usd, total_bruto_usd)
+    total_usd = total_bruto_usd - descuento_usd
+    if entrada.total_usd != total_usd:
+        return error_precios
     pedidos.guardar_pedido(
         get_client(),
         cliente_id,
@@ -2716,8 +2784,10 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         entrada.fecha_entrega,
         direccion_entrega=(entrada.direccion_entrega or "").strip() or None,
         detalle=detalle,
-        total_usd=entrada.total_usd,
-        descuento_usd=entrada.descuento_usd,
+        total_usd=total_usd,
+        descuento_usd=descuento_usd,
+        modo_precio=modo_precio,
+        descuento_mayorista_usd=descuento_mayorista_usd,
     )
     return {"ok": True}
 
