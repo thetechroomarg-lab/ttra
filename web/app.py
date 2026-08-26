@@ -949,13 +949,19 @@ _ADMIN_CLIENTES_ESTILO = """
   .filtros-clientes input, .filtros-clientes select { min-height:38px; box-sizing:border-box; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 10px; font:inherit; }
   #filtro-clientes { flex:1 1 240px; }
   .pedidos-hoy { margin:0 0 20px; padding:14px; border:1px solid #4a5160; border-radius:10px; }
+  .pedidos-hoy-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .pedidos-hoy h2 { margin:0 0 10px; color:#f2f4f8; font-size:17px; }
-  .form-tarea-entrega { display:grid; gap:8px; grid-template-columns:1.2fr 1.2fr 1.5fr 1.5fr auto; margin:0 0 12px; }
+  .tarea-cerrar { border:0; background:transparent; color:#9aa0ab; font-size:20px; line-height:1; cursor:pointer; padding:4px 8px; margin:0 0 10px; }
+  .tarea-cerrar:hover, .tarea-cerrar:focus-visible { color:#f2f4f8; }
+  .form-tarea-entrega { margin:0 0 12px; }
+  .tarea-toggle { border:0; border-radius:8px; background:#c8102e; color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:38px; padding:0 14px; }
+  .tarea-campos { display:grid; gap:8px; grid-template-columns:1.2fr 1.2fr 1.5fr 1.5fr auto; margin-top:8px; }
+  .tarea-campos[hidden] { display:none; }
   .tarea-direccion-wrap { position:relative; min-width:0; }
-  .form-tarea-entrega input, .form-tarea-entrega select { box-sizing:border-box; min-width:0; min-height:38px; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 10px; font:inherit; }
+  .tarea-campos input, .tarea-campos select { box-sizing:border-box; min-width:0; min-height:38px; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 10px; font:inherit; }
   .tarea-direccion-wrap input { width:100%; }
-  .form-tarea-entrega input::placeholder { color:#9aa0ab; }
-  .form-tarea-entrega button { border:0; border-radius:8px; background:#c8102e; color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:38px; padding:0 14px; }
+  .tarea-campos input::placeholder { color:#9aa0ab; }
+  .tarea-campos button { border:0; border-radius:8px; background:#c8102e; color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:38px; padding:0 14px; }
   .tarea-direccion-sugerencias { position:absolute; z-index:50; top:calc(100% + 4px); left:0; right:0; max-height:180px; overflow-y:auto; margin:0; padding:0; list-style:none; border:1px solid #4a5160; border-radius:8px; background:#12141a; box-shadow:0 8px 18px rgba(0,0,0,.28); }
   .tarea-direccion-sugerencias[hidden] { display:none; }
   .tarea-direccion-sugerencias button { display:block; width:100%; min-height:38px; padding:8px 10px; border:0; border-radius:0; border-bottom:1px solid #2a2e37; background:#12141a; color:#f2f4f8; text-align:left; font-weight:400; }
@@ -963,15 +969,15 @@ _ADMIN_CLIENTES_ESTILO = """
   .tarea-direccion-sugerencias button:hover, .tarea-direccion-sugerencias button:focus-visible { background:#272c36; outline:0; }
   .pedido-hoy { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
   .pedido-hoy strong { color:#f2f4f8; }
-  .pedido-hoy-detalle { min-width:0; }
+  .pedido-hoy-detalle { min-width:0; flex:1 1 auto; }
   .pedido-hoy.arrastrando { opacity:.5; }
   .arrastrar-entrega { flex:0 0 auto; width:32px; min-height:36px; border:1px solid #4a5160; border-radius:8px; background:#252a33; color:#f2f4f8; cursor:grab; font:700 20px/1 sans-serif; touch-action:none; }
   .arrastrar-entrega:active { cursor:grabbing; }
   .pedido-hoy-detalle span { color:#9aa0ab; }
   .pedido-acciones { display:flex; align-items:center; gap:7px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
   .btn-enviar-recibo { flex:0 0 auto; border:0; border-radius:8px; padding:9px 12px; background:#c8102e; color:#fff; cursor:pointer; font-weight:700; }
-  .btn-direcciones, .btn-agregar-direccion, .btn-agregar-direccion-tarea { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; text-decoration:none; }
   .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
+  .btn-direcciones, .btn-agregar-direccion, .btn-agregar-direccion-tarea, .btn-editar-direccion, .btn-editar-direccion-tarea,
   .btn-editar-entrega, .btn-eliminar-entrega, .btn-completar-tarea, .btn-editar-tarea, .btn-eliminar-tarea { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; }
   .btn-completar-tarea { background:#c8102e; border:0; color:#fff; }
   .btn-eliminar-entrega, .btn-eliminar-tarea { border-color:#8d1627; color:#ff9baa; }
@@ -980,8 +986,8 @@ _ADMIN_CLIENTES_ESTILO = """
   .historial-pedidos label { color:#dfe2e8; font-size:13px; font-weight:700; }
   .historial-pedidos input { margin-left:8px; min-height:34px; border:1px solid #4a5160; border-radius:8px; padding:0 8px; background:#12141a; color:#f2f4f8; font:inherit; }
   #filtro-historial-pedidos { box-sizing:border-box; display:block; margin:0 0 10px; min-height:38px; width:100%; }
-  #fecha-historial-pedidos { color-scheme:dark; }
-  #fecha-historial-pedidos::-webkit-calendar-picker-indicator { filter:none; opacity:.9; cursor:pointer; }
+  #fecha-historial-pedidos, #tarea-fecha { color-scheme:dark; }
+  #fecha-historial-pedidos::-webkit-calendar-picker-indicator, #tarea-fecha::-webkit-calendar-picker-indicator { filter:none; opacity:.9; cursor:pointer; }
   .pedido-historico { padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
   .estado-recibo { display:inline-block; margin-top:4px; color:#9aa0ab; font-size:12px; }
   .acciones-recibo { display:inline-flex; gap:8px; margin-left:8px; vertical-align:middle; }
@@ -1065,18 +1071,18 @@ _ADMIN_CLIENTES_ESTILO = """
     #filtro-clientes { flex:0 1 auto; min-height:38px; }
     .pedido-hoy { align-items:stretch; flex-direction:column; }
     .arrastrar-entrega { align-self:flex-start; min-height:42px; width:44px; }
-    .form-tarea-entrega { grid-template-columns:1fr; }
-    .form-tarea-entrega button { min-height:44px; }
+    .tarea-campos { grid-template-columns:1fr; }
+    .tarea-campos button, .tarea-toggle { min-height:44px; }
     .pedido-hoy-detalle, .pedido-historico { overflow-wrap:anywhere; word-break:break-word; }
-    .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-areas:"recibo direcciones" "editar eliminar"; justify-content:stretch; width:100%; }
+    .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-areas:"recibo direcciones" "editardir editar" "eliminar eliminar"; justify-content:stretch; width:100%; }
     .pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }
-    .pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }
-    .pedido-acciones .btn-agregar-direccion-tarea { align-items:center; display:flex; justify-content:center; }
     .pedido-acciones .btn-enviar-recibo { grid-area:recibo; }
     .pedido-acciones .btn-completar-tarea { grid-area:recibo; }
     .pedido-acciones .btn-direcciones { grid-area:direcciones; }
     .pedido-acciones .btn-agregar-direccion { grid-area:direcciones; }
     .pedido-acciones .btn-agregar-direccion-tarea { grid-area:direcciones; }
+    .pedido-acciones .btn-editar-direccion { grid-area:editardir; }
+    .pedido-acciones .btn-editar-direccion-tarea { grid-area:editardir; }
     .pedido-acciones .btn-editar-entrega { grid-area:editar; }
     .pedido-acciones .btn-editar-tarea { grid-area:editar; }
     .pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }
@@ -1236,8 +1242,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         fecha = html.escape(pedido.get("fecha_entrega", ""))
         direccion = (pedido.get("direccion_entrega") or "").strip()
         boton_direcciones = (
-            f'<a class="btn-direcciones" target="_blank" rel="noopener" '
-            f'href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Vamos</a>'
+            f'<button class="btn-direcciones" type="button" '
+            f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Vamos</button>'
+            f'<button class="btn-editar-direccion" type="button" data-id="{pedido_id}" data-direccion="{html.escape(direccion)}">Editar dirección</button>'
             if direccion else f'<button class="btn-agregar-direccion" type="button" data-id="{pedido_id}">Agregar dirección</button>'
         )
         return (
@@ -1253,11 +1260,12 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         tarea_id = html.escape(tarea.get("id", ""))
         fecha = html.escape(tarea.get("fecha_entrega", ""))
         direccion = (tarea.get("direccion") or "").strip()
-        nombre_cliente = clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
+        nombre_cliente = tarea.get("cliente_nombre") or clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
         detalle_cliente = f'<br><span>Cliente: {html.escape(nombre_cliente)}</span>' if nombre_cliente else ""
         boton_direcciones = (
-            f'<a class="btn-direcciones" target="_blank" rel="noopener" '
-            f'href="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Vamos</a>'
+            f'<button class="btn-direcciones" type="button" '
+            f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Vamos</button>'
+            f'<button class="btn-editar-direccion-tarea" type="button" data-id="{tarea_id}" data-direccion="{html.escape(direccion)}">Editar dirección</button>'
             if direccion else f'<button class="btn-agregar-direccion-tarea" type="button" data-id="{tarea_id}">Agregar dirección</button>'
         )
         return (
@@ -1324,7 +1332,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             )
 
         def _tarea_historial_html(tarea):
-            nombre_cliente = clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
+            nombre_cliente = tarea.get("cliente_nombre") or clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
             titulo = tarea.get("titulo") or "Tarea sin título"
             nota = tarea.get("nota") or ""
             tarea_id = html.escape(tarea.get("id", ""))
@@ -1359,11 +1367,13 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         ensure_ascii=False,
     )
     pendientes_hoy_seccion_html = (
-        f'<section class="pedidos-hoy"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2>'
-        f'<form id="form-tarea-entrega" class="form-tarea-entrega"><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea">'
+        f'<section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2>'
+        f'<button id="tarea-cerrar" class="tarea-cerrar" type="button" hidden aria-label="Cerrar formulario de tarea" title="Cerrar">✕</button></div>'
+        f'<form id="form-tarea-entrega" class="form-tarea-entrega"><button id="tarea-toggle" class="tarea-toggle" type="button">+ Nueva tarea</button>'
+        f'<div id="tarea-campos" class="tarea-campos" hidden><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea">'
         f'<input id="tarea-fecha" type="date" required value="{fecha_hoy}" title="Fecha de la tarea">'
-        f'<div class="tarea-direccion-wrap"><input id="tarea-cliente-busqueda" maxlength="200" placeholder="Cliente opcional" autocomplete="off"><input type="hidden" id="tarea-cliente"><ul id="tarea-cliente-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Clientes" hidden></ul></div>'
-        f'<input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Agregar dirección" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><button>Agregar tarea</button></form>'
+        f'<div class="tarea-direccion-wrap"><input id="tarea-cliente-busqueda" required maxlength="200" placeholder="Cliente" autocomplete="off"><input type="hidden" id="tarea-cliente"><ul id="tarea-cliente-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Clientes" hidden></ul></div>'
+        f'<input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Agregar dirección" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><button type="submit">Agregar tarea</button></div></form>'
         f'{pedidos_hoy_html}</section>'
         if fecha_historial == fecha_hoy else ""
     )
@@ -1380,7 +1390,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   {pendientes_hoy_seccion_html}
 </div>
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
-<div class="modal-direccion" id="modal-direccion" hidden><div class="modal-direccion-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-titulo"><h2 id="direccion-titulo">Dirección de entrega</h2><input id="direccion-entrega-admin" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba"><div class="direccion-acciones"><button id="direccion-cancelar" type="button">Cancelar</button><button id="direccion-guardar" type="button">Guardar dirección</button></div></div></div>
+<div class="modal-direccion" id="modal-direccion" hidden><div class="modal-direccion-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-titulo"><h2 id="direccion-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-entrega-admin" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-entrega-admin-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="direccion-acciones"><button id="direccion-cancelar" type="button">Cancelar</button><button id="direccion-guardar" type="button">Guardar dirección</button></div></div></div>
 <div class="modal-fecha-entrega" id="modal-fecha-entrega" hidden><div class="modal-fecha-contenido" role="dialog" aria-modal="true" aria-labelledby="fecha-entrega-titulo"><h2 id="fecha-entrega-titulo">Editar fecha de entrega</h2><input id="fecha-entrega-admin" type="date"><div class="fecha-entrega-acciones"><button id="fecha-entrega-cancelar" type="button">Cancelar</button><button id="fecha-entrega-guardar" type="button">Guardar fecha</button></div></div></div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
@@ -1445,6 +1455,7 @@ document.querySelectorAll(".btn-agregar-direccion").forEach((btn) => {{
     tareaDireccionActiva = null;
     campoDireccion.value = "";
     modalDireccion.hidden = false;
+    document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
     campoDireccion.focus();
   }});
 }});
@@ -1454,6 +1465,30 @@ document.querySelectorAll(".btn-agregar-direccion-tarea").forEach((btn) => {{
     pedidoDireccionActivo = null;
     campoDireccion.value = "";
     modalDireccion.hidden = false;
+    document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
+    campoDireccion.focus();
+  }});
+}});
+document.querySelectorAll(".btn-direcciones").forEach((btn) => {{
+  btn.addEventListener("click", () => {{ window.open(btn.dataset.maps, "_blank", "noopener"); }});
+}});
+document.querySelectorAll(".btn-editar-direccion").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    pedidoDireccionActivo = btn.dataset.id;
+    tareaDireccionActiva = null;
+    campoDireccion.value = btn.dataset.direccion || "";
+    modalDireccion.hidden = false;
+    document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
+    campoDireccion.focus();
+  }});
+}});
+document.querySelectorAll(".btn-editar-direccion-tarea").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    tareaDireccionActiva = btn.dataset.id;
+    pedidoDireccionActivo = null;
+    campoDireccion.value = btn.dataset.direccion || "";
+    modalDireccion.hidden = false;
+    document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
     campoDireccion.focus();
   }});
 }});
@@ -1564,14 +1599,7 @@ function filtrarHistorialPedidos() {{
   }});
 }}
 filtroHistorialPedidos.addEventListener("input", filtrarHistorialPedidos);
-const inputDireccionTarea = document.getElementById("tarea-direccion");
-const sugerenciasDireccionTarea = document.getElementById("tarea-direccion-sugerencias");
-let temporizadorDireccionTarea;
 let apiPlacesAdmin;
-function ocultarSugerenciasDireccionTarea() {{
-  sugerenciasDireccionTarea.replaceChildren();
-  sugerenciasDireccionTarea.hidden = true;
-}}
 async function cargarApiPlacesAdmin() {{
   if (apiPlacesAdmin !== undefined) return apiPlacesAdmin;
   apiPlacesAdmin = fetch("/api/configuracion-publica")
@@ -1591,42 +1619,49 @@ async function cargarApiPlacesAdmin() {{
     .catch((error) => {{ console.error("No se pudo cargar Google Places", error); return null; }});
   return apiPlacesAdmin;
 }}
-async function mostrarSugerenciasDireccionTarea(texto) {{
-  const places = await cargarApiPlacesAdmin();
-  if (!places || texto !== inputDireccionTarea.value.trim()) return;
-  const {{ AutocompleteSuggestion }} = places;
-  const {{ suggestions }} = await AutocompleteSuggestion.fetchAutocompleteSuggestions({{
-    input: texto,
-    includedRegionCodes: ["ar"],
-  }}).catch((error) => {{ console.error("Autocomplete de direccion fallo", error); return {{ suggestions: [] }}; }});
-  if (texto !== inputDireccionTarea.value.trim() || !suggestions?.length) {{
-    ocultarSugerenciasDireccionTarea();
-    return;
+function activarAutocompleteDireccion(input, lista) {{
+  if (!input || !lista) return;
+  let temporizador;
+  function ocultar() {{ lista.replaceChildren(); lista.hidden = true; }}
+  async function mostrar(texto) {{
+    const places = await cargarApiPlacesAdmin();
+    if (!places || texto !== input.value.trim()) return;
+    const {{ AutocompleteSuggestion }} = places;
+    const {{ suggestions }} = await AutocompleteSuggestion.fetchAutocompleteSuggestions({{
+      input: texto,
+      includedRegionCodes: ["ar"],
+    }}).catch((error) => {{ console.error("Autocomplete de direccion fallo", error); return {{ suggestions: [] }}; }});
+    if (texto !== input.value.trim() || !suggestions?.length) {{ ocultar(); return; }}
+    lista.replaceChildren(...suggestions.slice(0, 5).map(({{ placePrediction }}) => {{
+      const item = document.createElement("li");
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.textContent = placePrediction.text.text;
+      boton.addEventListener("click", async () => {{
+        const place = placePrediction.toPlace();
+        await place.fetchFields({{ fields: ["formattedAddress"] }});
+        input.value = place.formattedAddress || placePrediction.text.text;
+        ocultar();
+      }});
+      item.append(boton);
+      return item;
+    }}));
+    lista.hidden = false;
   }}
-  sugerenciasDireccionTarea.replaceChildren(...suggestions.slice(0, 5).map(({{ placePrediction }}) => {{
-    const item = document.createElement("li");
-    const boton = document.createElement("button");
-    boton.type = "button";
-    boton.textContent = placePrediction.text.text;
-    boton.addEventListener("click", async () => {{
-      const place = placePrediction.toPlace();
-      await place.fetchFields({{ fields: ["formattedAddress"] }});
-      inputDireccionTarea.value = place.formattedAddress || placePrediction.text.text;
-      ocultarSugerenciasDireccionTarea();
-    }});
-    item.append(boton);
-    return item;
-  }}));
-  sugerenciasDireccionTarea.hidden = false;
+  input.addEventListener("input", () => {{
+    clearTimeout(temporizador);
+    const texto = input.value.trim();
+    if (texto.length < 3) {{ ocultar(); return; }}
+    temporizador = setTimeout(() => {{ mostrar(texto).catch(ocultar); }}, 250);
+  }});
+  document.addEventListener("pointerdown", (evento) => {{
+    if (lista.hidden) return;
+    if (evento.target === input || lista.contains(evento.target)) return;
+    ocultar();
+  }});
 }}
-inputDireccionTarea?.addEventListener("input", () => {{
-  clearTimeout(temporizadorDireccionTarea);
-  const texto = inputDireccionTarea.value.trim();
-  if (texto.length < 3) {{ ocultarSugerenciasDireccionTarea(); return; }}
-  temporizadorDireccionTarea = setTimeout(() => {{
-    mostrarSugerenciasDireccionTarea(texto).catch(ocultarSugerenciasDireccionTarea);
-  }}, 250);
-}});
+activarAutocompleteDireccion(document.getElementById("tarea-direccion"), document.getElementById("tarea-direccion-sugerencias"));
+activarAutocompleteDireccion(document.getElementById("direccion-entrega-admin"), document.getElementById("direccion-entrega-admin-sugerencias"));
 const CLIENTES_TAREA = {clientes_tarea_json};
 const busquedaClienteTarea = document.getElementById("tarea-cliente-busqueda");
 const idClienteTarea = document.getElementById("tarea-cliente");
@@ -1727,9 +1762,22 @@ document.querySelectorAll(".pedido-hoy[data-tipo-entrega]").forEach((destino) =>
     await guardarOrdenEntregas();
   }});
 }});
+document.getElementById("tarea-toggle")?.addEventListener("click", (e) => {{
+  e.currentTarget.hidden = true;
+  document.getElementById("tarea-campos").hidden = false;
+  document.getElementById("tarea-cerrar").hidden = false;
+  document.getElementById("tarea-titulo").focus();
+}});
+document.getElementById("tarea-cerrar")?.addEventListener("click", () => {{
+  document.getElementById("form-tarea-entrega").reset();
+  document.getElementById("tarea-cliente").value = "";
+  document.getElementById("tarea-campos").hidden = true;
+  document.getElementById("tarea-cerrar").hidden = true;
+  document.getElementById("tarea-toggle").hidden = false;
+}});
 document.getElementById("form-tarea-entrega")?.addEventListener("submit", async (e) => {{
   e.preventDefault();
-  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:document.getElementById("tarea-fecha").value, titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
+  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:document.getElementById("tarea-fecha").value, titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, cliente_nombre:document.getElementById("tarea-cliente-busqueda").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
   if (!r.ok) {{ alert("No se pudo crear la tarea."); return; }}
   location.href = `/admin/clientes?fecha_pedidos=${{document.getElementById("tarea-fecha").value}}`;
 }});
@@ -2543,6 +2591,7 @@ class TareaEntregaIn(BaseModel):
     fecha_entrega: date
     titulo: str = Field(min_length=1, max_length=200)
     cliente_id: str | None = Field(default=None, max_length=36)
+    cliente_nombre: str = Field(min_length=1, max_length=200)
     nota: str | None = Field(default=None, max_length=1000)
     direccion: str | None = Field(default=None, max_length=500)
 
@@ -2712,6 +2761,7 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
         "fecha_entrega": entrada.fecha_entrega.isoformat(),
         "titulo": entrada.titulo.strip(),
         "cliente_id": (entrada.cliente_id or "").strip() or None,
+        "cliente_nombre": entrada.cliente_nombre.strip(),
         "nota": (entrada.nota or "").strip() or None,
         "direccion": (entrada.direccion or "").strip() or None,
         "orden": orden,
