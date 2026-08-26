@@ -966,7 +966,9 @@ _ADMIN_CLIENTES_ESTILO = """
   .tipo-cliente { display:inline-block; border-radius:999px; font-size:12px; font-weight:700; margin:0 0 6px; padding:3px 7px; }
   .tipo-cliente-mayorista { background:#184d3b; color:#b9f5d0; }
   .tipo-cliente-minorista { background:#303640; color:#dfe2e8; }
+  .tipo-cliente-sin-cuenta { background:#303640; color:#dfe2e8; }
   .btn-mayorista { border:1px solid #4a5160; border-radius:8px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; padding:8px 10px; }
+  .btn-mayorista:disabled { cursor:not-allowed; opacity:.55; }
   .btn-mayorista-activo { border-color:#8d1627; color:#ffb3bd; }
   .acciones-masivas { display:none; align-items:center; gap:10px; margin:0 0 14px; flex-wrap:wrap; }
   .acciones-masivas.visible { display:flex; }
@@ -1776,7 +1778,11 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
     else:
         def _celda_cuenta(c):
             if not c.get("tiene_cuenta"):
-                return "—"
+                return (
+                    '<span class="tipo-cliente tipo-cliente-sin-cuenta">'
+                    'El cliente todavía no tiene una cuenta</span><br>'
+                    '<button class="btn-mayorista" disabled>Habilitar mayorista</button>'
+                )
             id_seguro = html.escape(c.get("id", ""))
             mayorista = c.get("tipo_cliente") == "mayorista"
             etiqueta = "Mayorista" if mayorista else "Minorista"

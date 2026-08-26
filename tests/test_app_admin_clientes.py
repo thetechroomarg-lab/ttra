@@ -93,6 +93,17 @@ def test_admin_no_habilita_contacto_sin_cuenta(monkeypatch):
     assert r.status_code == 400
 
 
+def test_admin_lista_explica_que_no_habilita_mayorista_sin_cuenta(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    fake.table("clientes").insert({"id": "lead", "nombre": "Lead", "auth_id": None}).execute()
+
+    r = c.get("/admin/clientes/lista")
+
+    assert 'class="btn-mayorista" disabled' in r.text
+    assert "El cliente todavía no tiene una cuenta" in r.text
+
+
 def test_landing_admin_separa_clientes_en_una_vista_accesible(monkeypatch):
     c = _cliente_logueado(monkeypatch)
 
