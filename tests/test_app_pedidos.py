@@ -399,6 +399,7 @@ def test_pedido_aplica_y_consume_codigo_mailing_despues_de_guardar(monkeypatch):
     assert pedido["descuento_usd"] == 5
     codigo = fake.table("codigos_descuento").select("*").execute().data[0]
     assert codigo["usado_en"]
+    assert fake.rpc_calls[-1][0] == "guardar_pedido_con_descuento_mailing"
 
 
 def test_pedido_fallido_no_consume_codigo_mailing(monkeypatch):
@@ -428,7 +429,7 @@ def test_pedido_fallido_no_consume_codigo_mailing(monkeypatch):
     assert not codigo.get("usado_en")
 
 
-def test_pedido_no_consume_codigo_si_falla_el_guardado(monkeypatch):
+def test_pedido_atomico_no_persiste_si_rpc_falla_antes_de_guardar(monkeypatch):
     c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
     cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
     fake.table("codigos_descuento").insert({
@@ -439,24 +440,127 @@ def test_pedido_no_consume_codigo_si_falla_el_guardado(monkeypatch):
         "activo": True,
     }).execute()
 
-    def falla_guardado(*_args, **_kwargs):
-        raise RuntimeError("fallo simulado de persistencia")
+    fake.atomic_order_failure_stage = "before_order"
+    r = c.post("/api/pedidos", json={
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{
+            "nombre": "Elegible", "cantidad": 1,
+            "usd_unitario": 180, "usd_subtotal": 180,
+        }],
+        "total_usd": 175,
+        "codigo_descuento": "TTRA-TEST1234",
+    })
 
-    monkeypatch.setattr(appmod.pedidos, "guardar_pedido", falla_guardado)
-    with pytest.raises(RuntimeError, match="fallo simulado"):
-        c.post("/api/pedidos", json={
-            "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
-            "direccion_entrega": "Av. Colón 123",
-            "detalle": [{
-                "nombre": "Elegible", "cantidad": 1,
-                "usd_unitario": 180, "usd_subtotal": 180,
-            }],
-            "total_usd": 175,
-            "codigo_descuento": "TTRA-TEST1234",
-        })
-
+    assert r.status_code == 503
+    assert fake.table("pedidos").select("*").execute().data == []
     codigo = fake.table("codigos_descuento").select("*").execute().data[0]
     assert not codigo.get("usado_en")
+
+
+@pytest.mark.parametrize("etapa_fallo", ["after_order", "after_consume"])
+def test_pedido_atomico_revierte_transaccion_si_falla_consumo(
+    monkeypatch, etapa_fallo
+):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
+    fake.table("codigos_descuento").insert({
+        "cliente_id": cliente_id,
+        "code": "TTRA-TEST1234",
+        "productos": ["Elegible"],
+        "descuento_usd": 5,
+        "activo": True,
+    }).execute()
+    fake.atomic_order_failure_stage = etapa_fallo
+
+    r = c.post("/api/pedidos", json={
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{
+            "nombre": "Elegible", "cantidad": 1,
+            "usd_unitario": 180, "usd_subtotal": 180,
+        }],
+        "total_usd": 175,
+        "codigo_descuento": "TTRA-TEST1234",
+    })
+
+    assert r.status_code == 503
+    assert fake.table("pedidos").select("*").execute().data == []
+    codigo = fake.table("codigos_descuento").select("*").execute().data[0]
+    assert not codigo.get("usado_en")
+
+
+def test_pedido_atomico_verifica_resultado_rpc(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
+    fake.table("codigos_descuento").insert({
+        "cliente_id": cliente_id,
+        "code": "TTRA-TEST1234",
+        "productos": ["Elegible"],
+        "descuento_usd": 5,
+        "activo": True,
+    }).execute()
+
+    class ResultadoInvalido:
+        data = None
+
+        def execute(self):
+            return self
+
+    monkeypatch.setattr(fake, "rpc", lambda *_args, **_kwargs: ResultadoInvalido())
+    r = c.post("/api/pedidos", json={
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{
+            "nombre": "Elegible", "cantidad": 1,
+            "usd_unitario": 180, "usd_subtotal": 180,
+        }],
+        "total_usd": 175,
+        "codigo_descuento": "TTRA-TEST1234",
+    })
+
+    assert r.status_code == 503
+    assert fake.table("pedidos").select("*").execute().data == []
+    codigo = fake.table("codigos_descuento").select("*").execute().data[0]
+    assert not codigo.get("usado_en")
+
+
+def test_dos_intentos_con_lectura_obsoleta_consumen_codigo_una_sola_vez(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
+    codigo_original = {
+        "cliente_id": cliente_id,
+        "code": "TTRA-TEST1234",
+        "productos": ["Elegible"],
+        "descuento_usd": 5,
+        "activo": True,
+    }
+    fake.table("codigos_descuento").insert(codigo_original).execute()
+    monkeypatch.setattr(
+        appmod,
+        "_descuento_codigo_row",
+        lambda *_args, **_kwargs: dict(codigo_original),
+    )
+    payload = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{
+            "nombre": "Elegible", "cantidad": 1,
+            "usd_unitario": 180, "usd_subtotal": 180,
+        }],
+        "total_usd": 175,
+        "codigo_descuento": "TTRA-TEST1234",
+    }
+
+    primero = c.post("/api/pedidos", json=payload)
+    segundo = c.post("/api/pedidos", json=payload)
+
+    assert primero.status_code == 200
+    assert segundo.status_code == 409
+    pedidos_guardados = fake.table("pedidos").select("*").execute().data
+    assert len(pedidos_guardados) == 1
+    assert pedidos_guardados[0]["total_usd"] == 175
+    assert pedidos_guardados[0]["detalle"][0]["cantidad"] == 1
 
 
 def test_pedido_rechaza_color_no_disponible(monkeypatch):

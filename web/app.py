@@ -2862,24 +2862,69 @@ def api_pedidos(entrada: PedidoIn, request: Request):
     total_usd = total_bruto_usd - descuento_usd
     if entrada.total_usd != total_usd:
         return error_precios
-    pedidos.guardar_pedido(
-        client,
-        cliente_id,
-        productos_pedido,
-        entrada.fecha_entrega,
-        direccion_entrega=(entrada.direccion_entrega or "").strip() or None,
-        detalle=detalle,
-        total_usd=pedidos.numero_monetario_db(total_usd),
-        descuento_usd=pedidos.numero_monetario_db(descuento_usd),
-        modo_precio=modo_precio,
-        descuento_mayorista_usd=pedidos.numero_monetario_db(
-            descuento_mayorista_usd
-        ),
-    )
     if fila_descuento:
-        client.table("codigos_descuento").update({
-            "usado_en": datetime.now(timezone.utc).isoformat(),
-        }).eq("cliente_id", cliente_id).eq("code", fila_descuento["code"]).execute()
+        parametros = {
+            "p_cliente_id": cliente_id,
+            "p_codigo": fila_descuento["code"],
+            "p_productos": productos_pedido,
+            "p_detalle": detalle,
+            "p_total_usd": pedidos.numero_monetario_db(total_usd),
+            "p_descuento_usd": pedidos.numero_monetario_db(descuento_usd),
+            "p_descuento_mailing_usd": pedidos.numero_monetario_db(
+                descuento_mailing_usd
+            ),
+            "p_fecha_entrega": entrada.fecha_entrega.isoformat(),
+            "p_direccion_entrega": (
+                (entrada.direccion_entrega or "").strip() or None
+            ),
+            "p_modo_precio": modo_precio,
+            "p_descuento_mayorista_usd": pedidos.numero_monetario_db(
+                descuento_mayorista_usd
+            ),
+            "p_origen": "whatsapp",
+        }
+        try:
+            resultado = client.rpc(
+                "guardar_pedido_con_descuento_mailing", parametros
+            ).execute().data
+        except Exception:
+            logger.exception(
+                "No se pudo guardar atomicamente el pedido con descuento mailing"
+            )
+            return JSONResponse(
+                {"error": "No pudimos confirmar el descuento y guardar el pedido."},
+                status_code=503,
+            )
+        if not isinstance(resultado, dict):
+            return JSONResponse(
+                {"error": "No pudimos confirmar el descuento y guardar el pedido."},
+                status_code=503,
+            )
+        if not resultado.get("ok"):
+            return JSONResponse(
+                {"error": "El codigo de descuento ya no es valido para este pedido."},
+                status_code=409,
+            )
+        if not isinstance(resultado.get("pedido"), dict):
+            return JSONResponse(
+                {"error": "No pudimos confirmar el descuento y guardar el pedido."},
+                status_code=503,
+            )
+    else:
+        pedidos.guardar_pedido(
+            client,
+            cliente_id,
+            productos_pedido,
+            entrada.fecha_entrega,
+            direccion_entrega=(entrada.direccion_entrega or "").strip() or None,
+            detalle=detalle,
+            total_usd=pedidos.numero_monetario_db(total_usd),
+            descuento_usd=pedidos.numero_monetario_db(descuento_usd),
+            modo_precio=modo_precio,
+            descuento_mayorista_usd=pedidos.numero_monetario_db(
+                descuento_mayorista_usd
+            ),
+        )
     return {"ok": True}
 
 
@@ -3061,15 +3106,10 @@ def api_descuentos_consumir(entrada: DescuentoCodigoIn, request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     if _debe_cambiar_password(request):
         raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
-    client = get_client()
-    fila = _descuento_codigo_row(client, cliente_id, entrada.codigo)
-    if not fila:
-        return JSONResponse({"error": "Código inválido o ya utilizado"}, status_code=400)
-    descuento = _resolver_descuento_codigo(_cargar_productos(), fila, entrada.items)
-    if not descuento:
-        return JSONResponse({"error": "El código no aplica a los productos actuales del carrito"}, status_code=400)
-    client.table("codigos_descuento").update({"usado_en": datetime.utcnow().isoformat()}).eq("code", fila["code"]).execute()
-    return {"ok": True, **descuento}
+    return JSONResponse(
+        {"error": "Este endpoint fue retirado; el código se consume al guardar el pedido."},
+        status_code=410,
+    )
 
 
 @app.post("/api/codigos-promo/validar")
