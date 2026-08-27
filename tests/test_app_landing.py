@@ -81,6 +81,24 @@ def test_modo_mayorista_muestra_insignia_y_anula_descuentos_minoristas():
     assert 'return modoPrecioActual === "mayorista" ? null' in js
 
 
+def test_cuenta_mayorista_no_puede_usar_modo_fallout():
+    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    perfil_js = (appmod.BASE / "static" / "perfil.js").read_text(encoding="utf-8")
+
+    assert "function restringirFalloutSegunSesion(sesion)" in js
+    inicio = js.index("function restringirFalloutSegunSesion(sesion)")
+    fin = js.index("\n}", inicio)
+    cuerpo = js[inicio:fin]
+    assert 'sesion.tipo_cliente === "mayorista"' in cuerpo
+    assert "btnLogoFallout.disabled = esMayorista;" in cuerpo
+    assert 'aplicarModoVisual("classic");' in cuerpo
+    assert "restringirFalloutSegunSesion(sesion);" in js
+    assert js.count("restringirFalloutSegunSesion(sesion)") >= 3
+
+    assert 'datos.tipo_cliente === "mayorista"' in perfil_js
+    assert 'document.documentElement.setAttribute("data-modo", "classic");' in perfil_js
+
+
 def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
     js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
 

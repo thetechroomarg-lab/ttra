@@ -95,6 +95,12 @@ function mostrarSeccionCondicionesMayorista(datos) {
       ? `Aceptadas el ${new Date(datos.condiciones_mayorista_aceptadas_en).toLocaleString("es-AR")}`
       : "";
   }
+  // El modo Fallout no está disponible para cuentas mayoristas — si llegó
+  // acá con ?modo=fallout en la URL (ej. un link viejo guardado), se lo
+  // saca a Classic apenas se sabe que la cuenta es mayorista.
+  if (esMayorista && document.documentElement.getAttribute("data-modo") === "fallout") {
+    document.documentElement.setAttribute("data-modo", "classic");
+  }
 }
 
 async function cargarFragmentoTerminosMayorista() {

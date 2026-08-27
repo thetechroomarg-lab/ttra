@@ -2075,6 +2075,22 @@ function verificarCondicionesMayoristaPendientes(sesion) {
   mostrarModalTerminosMayorista("aceptar");
 }
 
+// --- El modo Fallout es un "easter egg" visual, no algo que tenga sentido
+// para una cuenta mayorista comprando al por mayor — se le desactiva el
+// botón de entrada y, si ya estaba adentro (por ejemplo por un link viejo
+// con ?modo=fallout, o porque un admin le dio mayorista mientras estaba en
+// Fallout), se lo saca a Classic apenas se conoce el tipo de cuenta. ---
+function restringirFalloutSegunSesion(sesion) {
+  const esMayorista = Boolean(sesion && sesion.tipo_cliente === "mayorista");
+  if (btnLogoFallout) {
+    btnLogoFallout.disabled = esMayorista;
+    btnLogoFallout.title = esMayorista ? "No disponible para cuentas mayoristas" : "";
+  }
+  if (esMayorista && modoVisual === "fallout") {
+    aplicarModoVisual("classic");
+  }
+}
+
 async function cerrarSesionCliente() {
   try {
     localStorage.removeItem("ttra_cliente");
@@ -2179,7 +2195,10 @@ async function sincronizarMenuPerfilSegunSesion(force = false) {
   }
   return sesion;
 }
-sincronizarMenuPerfilSegunSesion(true).then(verificarCondicionesMayoristaPendientes);
+sincronizarMenuPerfilSegunSesion(true).then((sesion) => {
+  verificarCondicionesMayoristaPendientes(sesion);
+  restringirFalloutSegunSesion(sesion);
+});
 
 // --- Resincronizar sesión/precio al volver a una pestaña ya abierta:
 // /api/me y /api/catalogo solo se piden una vez al cargar la página, así
@@ -2199,6 +2218,7 @@ async function resincronizarSesionAlVolver() {
   }
   await sincronizarMenuPerfilSegunSesion(true);
   verificarCondicionesMayoristaPendientes(sesion);
+  restringirFalloutSegunSesion(sesion);
 }
 window.addEventListener("pageshow", (e) => {
   if (e.persisted) resincronizarSesionAlVolver();
