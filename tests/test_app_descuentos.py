@@ -67,7 +67,7 @@ def test_validar_descuento_mail_falla_si_no_aplica(monkeypatch):
     assert "sin productos aplicables" in r.json()["error"].lower()
 
 
-def test_consumir_descuento_mail_lo_marca_como_usado(monkeypatch):
+def test_endpoint_legado_no_consume_descuento_mail(monkeypatch):
     c, fake, _cliente_id = _cliente_con_codigo(monkeypatch)
 
     r = c.post("/api/descuentos/consumir", json={
@@ -75,16 +75,13 @@ def test_consumir_descuento_mail_lo_marca_como_usado(monkeypatch):
         "items": [{"nombre": "Galaxy A56", "cantidad": 3}],
     })
 
-    assert r.status_code == 200
-    body = r.json()
-    assert body["ok"] is True
-    assert body["productos"] == ["Galaxy A56"]
+    assert r.status_code == 410
     filas = fake.table("codigos_descuento").select("*").eq("code", "TTRA-TEST1234").execute().data
     assert len(filas) == 1
-    assert filas[0]["usado_en"]
+    assert not filas[0].get("usado_en")
 
     r2 = c.post("/api/descuentos/validar", json={
         "codigo": "TTRA-TEST1234",
         "items": [{"nombre": "Galaxy A56", "cantidad": 1}],
     })
-    assert r2.status_code == 400
+    assert r2.status_code == 200

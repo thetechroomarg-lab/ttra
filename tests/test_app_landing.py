@@ -20,6 +20,134 @@ def test_landing_descarta_descuento_mailing_persistido_fuera_de_un_link():
     assert "localStorage.removeItem(CLAVE_DESCUENTO_MAILING);" in script
 
 
+def test_checkout_envia_codigo_mailing_y_no_lo_preconsume():
+    script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    inicio = script.index("async function registrarPedidoEnClientes")
+    fin = script.index('document.getElementById("btn-whatsapp")', inicio)
+    checkout = script[inicio:fin]
+
+    assert "codigo_descuento" in checkout
+    assert 'fetch("/api/descuentos/consumir"' not in script
+
+
+def test_checkout_envia_codigo_regalo_y_no_lo_preconsume():
+    """Catches consuming a gift before the order transaction commits."""
+    script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    inicio = script.index("async function registrarPedidoEnClientes")
+    fin = script.index('document.getElementById("btn-whatsapp")', inicio)
+    checkout = script[inicio:fin]
+
+    assert "codigo_promo" in checkout
+    assert 'fetch("/api/codigos-promo/consumir"' not in script
+    assert "async function consumirCodigoPromo()" not in script
+    assert 'tipo: "regalo_promocional"' not in checkout
+
+
+def test_checkout_409_muestra_mensaje_recarga_y_exige_confirmacion_nueva():
+    """Catches stale-value retry or WhatsApp continuation after a price conflict."""
+    script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    inicio = script.index("async function registrarPedidoEnClientes")
+    fin = script.index('document.getElementById("btn-whatsapp")', inicio)
+    checkout = script[inicio:fin]
+
+    conflicto = checkout.index("if (respuesta.status === 409)")
+    mostrar = checkout.index("alert(body.error", conflicto)
+    recargar = checkout.index("await cargarCatalogo()", mostrar)
+    reabrir = checkout.index("abrirCarrito()", recargar)
+    detener = checkout.index("return false", reabrir)
+    assert conflicto < mostrar < recargar < reabrir < detener
+    assert checkout.count("registrarPedidoEnClientes(") == 1
+    assert "Revisá el carrito y confirmá nuevamente" in checkout
+
+
+def test_recarga_por_conflicto_reconcilia_carrito_antes_de_habilitar_checkout():
+    script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    inicio = script.index("async function cargarCatalogo()")
+    fin = script.index("function refrescarPreciosCarrito()", inicio)
+    carga = script[inicio:fin]
+
+    assert "return false;" in carga
+    assert "return true;" in carga
+    assert carga.index("refrescarPreciosCarrito();") < carga.index("catalogoListo = true;")
+
+
+def test_modo_mayorista_muestra_insignia_y_anula_descuentos_minoristas():
+    html = (appmod.BASE / "static" / "index.html").read_text(encoding="utf-8")
+    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+
+    assert 'id="indicador-mayorista"' in html
+    assert 'modoPrecioActual === "mayorista"' in js
+    assert "borrarDescuentoMailing()" in js
+    assert 'return modoPrecioActual === "mayorista" ? null' in js
+
+
+def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
+    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+
+    assert "let catalogoListo = false;" in js
+    inicio_carga = js.index("async function cargarCatalogo()")
+    fin_carga = js.index("function refrescarPreciosCarrito()", inicio_carga)
+    carga_catalogo = js[inicio_carga:fin_carga]
+    assert carga_catalogo.index('modoPrecioActual = datos.modo_precio === "mayorista"') < carga_catalogo.index("refrescarPreciosCarrito();") < carga_catalogo.index("catalogoListo = true;")
+
+    def cuerpo_de(funcion):
+        inicio = js.index(funcion)
+        siguientes = [
+            js.find("\nfunction ", inicio + len(funcion)),
+            js.find("\nasync function ", inicio + len(funcion)),
+        ]
+        fin = min((posicion for posicion in siguientes if posicion != -1), default=len(js))
+        return js[inicio:fin]
+
+    for funcion in (
+        "function calcularDescuento(carrito)",
+        "function descuentoMailingAplicado(carrito)",
+        "function abrirCarrito()",
+        "function armarMensajeWhatsapp(carrito, fechaEntrega)",
+        "async function aplicarCodigoMailing()",
+        "async function aplicarCodigoMailingPorValor(codigo)",
+        "async function procesarCheckoutPendiente()",
+        "async function asegurarSesionParaCheckout()",
+        "async function derivarCheckoutAWhatsapp(carrito)",
+        "async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega)",
+    ):
+        assert "if (!catalogoListo)" in cuerpo_de(funcion)
+
+    inicio_codigo = js.index('document.getElementById("btn-aplicar-codigo").addEventListener')
+    fin_codigo = js.index("async function registrarPedidoEnClientes", inicio_codigo)
+    assert "if (!catalogoListo) return;" in js[inicio_codigo:fin_codigo]
+    inicio_checkout = js.index('document.getElementById("btn-whatsapp").addEventListener')
+    fin_checkout = js.index('document.getElementById("btn-volver")', inicio_checkout)
+    assert "if (!catalogoListo) return;" in js[inicio_checkout:fin_checkout]
+    assert "if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega))) return false;" in cuerpo_de("async function derivarCheckoutAWhatsapp(carrito)")
+
+
+def test_render_y_mutaciones_del_carrito_esperan_catalogo_listo():
+    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+
+    inicio_render = js.index("function renderCarrito()")
+    fin_render = js.index("function sincronizarLimiteCarrito()", inicio_render)
+    render = js[inicio_render:fin_render]
+    barrera = render.index("if (!catalogoListo)")
+    lectura_carrito = render.index("const carrito = cargarCarrito();")
+    tramo_previo = render[barrera:lectura_carrito]
+
+    assert 'el.innerHTML = \'<p class="mensaje-vacio">Actualizando carrito...</p>\';' in tramo_previo
+    assert 'totalEl.textContent = "";' in tramo_previo
+    assert "totales(" not in tramo_previo
+    assert "itemCarritoHtml" not in tramo_previo
+    assert "querySelectorAll" not in tramo_previo
+
+    for funcion in (
+        "function cambiarCantidad(nombre, color, delta)",
+        "function quitarDelCarrito(nombre, color)",
+        "function vaciarCarrito()",
+    ):
+        inicio = js.index(funcion)
+        fin = js.find("\nfunction ", inicio + len(funcion))
+        assert "if (!catalogoListo) return;" in js[inicio:fin]
+
+
 def test_configuracion_publica_expone_solo_la_clave_de_maps_configurada(monkeypatch):
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "maps-key-de-prueba")
     cliente = TestClient(appmod.app, base_url="https://testserver")

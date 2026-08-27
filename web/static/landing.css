@@ -212,6 +212,16 @@ header {
 .rc-modo-y-carrito {
   display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 150px;
 }
+.indicador-mayorista {
+  display: block;
+  padding: 4px 6px;
+  border: 1px solid var(--rc-green-faint);
+  color: var(--rc-green-dim);
+  font-size: 10px;
+  line-height: 1.25;
+  letter-spacing: .02em;
+  text-align: center;
+}
 .rc-modo-y-carrito button {
   width: 100%; text-align: center;
   padding: 8px 14px; font-size: clamp(13px, 3.5vw, 15px);
@@ -365,6 +375,32 @@ html[data-modo="classic"] #btn-classic-theme { display: block; }
    ventana de confirmación. */
 .rc-logout-acciones { display: flex; gap: 10px; justify-content: center; }
 .rc-logout-acciones button { flex: 0 0 auto; width: 130px; }
+
+/* Popup de condiciones mayoristas: misma base que rc-logout-overlay/tarjeta,
+   pero más ancho y alto (es texto largo, scrolleable) en vez de un mensaje
+   corto centrado. El botón "Acepto" arranca deshabilitado y se habilita
+   recién cuando el usuario llega al final del scroll (ver landing.js). */
+.rc-terminos-tarjeta {
+  max-width: 640px; max-height: 85vh;
+  display: flex; flex-direction: column; text-align: left;
+}
+.rc-terminos-contenido {
+  overflow-y: auto; margin-bottom: 18px; padding-right: 8px;
+  color: var(--rc-green-bright); font-size: 14px; line-height: 1.55;
+}
+.rc-terminos-contenido h1 {
+  margin: 0 0 14px; font-size: 17px; text-transform: uppercase; letter-spacing: .04em;
+  text-shadow: 0 0 6px var(--rc-glow);
+}
+.rc-terminos-contenido h2 {
+  margin: 22px 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--rc-green-bright);
+}
+.rc-terminos-contenido h3 { margin: 16px 0 8px; font-size: 13.5px; color: var(--rc-green-dim); }
+.rc-terminos-contenido p { margin: 0 0 10px; }
+.rc-terminos-contenido ul { margin: 0 0 10px; padding-left: 20px; }
+.rc-terminos-contenido li { margin-bottom: 6px; }
+.rc-terminos-tarjeta .rc-logout-acciones button.oculto { display: none; }
 
 /* Encabezado compartido por las cajas "Aplicá tu código" y "Dirección de
    entrega": título + botón de cerrar, mismo formato que el resto del carrito. */
