@@ -1068,6 +1068,10 @@ _ADMIN_CLIENTES_ESTILO = """
   .filtros-clientes { display:flex; gap:8px; margin:0 0 14px; flex-wrap:wrap; }
   .filtros-clientes input, .filtros-clientes select { min-height:38px; box-sizing:border-box; border:1px solid #4a5160; border-radius:8px; background:#12141a; color:#f2f4f8; padding:0 10px; font:inherit; }
   #filtro-clientes { flex:1 1 240px; }
+  .paginacion-clientes { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:14px; }
+  .paginacion-clientes span { color:#9aa0ab; font-size:13px; }
+  .paginacion-clientes button { border:1px solid #4a5160; border-radius:8px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; padding:8px 14px; }
+  .paginacion-clientes button:disabled { cursor:not-allowed; opacity:.45; }
   .pedidos-hoy { margin:0 0 20px; padding:14px; border:1px solid #4a5160; border-radius:10px; }
   .pedidos-hoy-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .pedidos-hoy h2 { margin:0 0 10px; color:#f2f4f8; font-size:17px; }
@@ -1998,6 +2002,7 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
     <thead><tr><th class="col-check"><input id="seleccionar-todos" type="checkbox" aria-label="Seleccionar todos"></th><th><button class="ordenar-columna" data-sort="nombre" data-sort-index="1">Nombre</button></th><th><button class="ordenar-columna" data-sort="celular" data-sort-index="2">Celular</button></th><th><button class="ordenar-columna" data-sort="email" data-sort-index="3">Email</button></th><th><button class="ordenar-columna" data-sort="provincia" data-sort-index="4">Provincia</button></th><th>Historial</th><th>Cuenta</th></tr></thead>
     <tbody>{filas_html}</tbody>
   </table></div>
+  <div class="paginacion-clientes" id="paginacion-clientes" hidden></div>
 </div>
 <div class="modal-mail" id="modal-mail" hidden>
   <div class="modal-mail-contenido" role="dialog" aria-modal="true" aria-labelledby="modal-mail-titulo">
@@ -2126,12 +2131,58 @@ function actualizarSeleccion() {{
 checksClientes.forEach((chk) => chk.addEventListener("change", actualizarSeleccion));
 seleccionarTodos.addEventListener("change", () => {{ checksClientes.forEach((chk) => {{ chk.checked = seleccionarTodos.checked; }}); actualizarSeleccion(); }});
 
-function filtrarClientes() {{
+const CLIENTES_POR_PAGINA = 50;
+let paginaClientesActual = 1;
+const contenedorPaginacionClientes = document.getElementById("paginacion-clientes");
+
+function filasClientesQueCoincidenConFiltro() {{
   const texto = filtroClientes.value.trim().toLowerCase();
   const provincia = filtroProvincia.value;
-  document.querySelectorAll("#tabla-clientes tbody .cliente-fila").forEach((fila) => {{
-    fila.hidden = Boolean((texto && !fila.dataset.busqueda.includes(texto)) || (provincia && fila.dataset.provincia !== provincia));
+  return Array.from(document.querySelectorAll("#tabla-clientes tbody .cliente-fila")).filter((fila) =>
+    !((texto && !fila.dataset.busqueda.includes(texto)) || (provincia && fila.dataset.provincia !== provincia))
+  );
+}}
+
+function renderizarPaginacionClientes(total, totalPaginas) {{
+  if (!contenedorPaginacionClientes) return;
+  if (totalPaginas <= 1) {{ contenedorPaginacionClientes.innerHTML = ""; contenedorPaginacionClientes.hidden = true; return; }}
+  contenedorPaginacionClientes.hidden = false;
+  const desde = (paginaClientesActual - 1) * CLIENTES_POR_PAGINA + 1;
+  const hasta = Math.min(paginaClientesActual * CLIENTES_POR_PAGINA, total);
+  contenedorPaginacionClientes.innerHTML =
+    `<button type="button" id="pagina-clientes-anterior" ${{paginaClientesActual === 1 ? "disabled" : ""}}>Anterior</button>` +
+    `<span>${{desde}}–${{hasta}} de ${{total}} · página ${{paginaClientesActual}} de ${{totalPaginas}}</span>` +
+    `<button type="button" id="pagina-clientes-siguiente" ${{paginaClientesActual === totalPaginas ? "disabled" : ""}}>Siguiente</button>`;
+  document.getElementById("pagina-clientes-anterior").addEventListener("click", () => {{
+    if (paginaClientesActual <= 1) return;
+    paginaClientesActual -= 1;
+    actualizarVistaClientes();
+    document.getElementById("tabla-clientes").scrollIntoView({{ behavior: "smooth", block: "start" }});
   }});
+  document.getElementById("pagina-clientes-siguiente").addEventListener("click", () => {{
+    if (paginaClientesActual >= totalPaginas) return;
+    paginaClientesActual += 1;
+    actualizarVistaClientes();
+    document.getElementById("tabla-clientes").scrollIntoView({{ behavior: "smooth", block: "start" }});
+  }});
+}}
+
+function actualizarVistaClientes() {{
+  const coincidentes = filasClientesQueCoincidenConFiltro();
+  const totalPaginas = Math.max(1, Math.ceil(coincidentes.length / CLIENTES_POR_PAGINA));
+  if (paginaClientesActual > totalPaginas) paginaClientesActual = totalPaginas;
+  const inicio = (paginaClientesActual - 1) * CLIENTES_POR_PAGINA;
+  const fin = inicio + CLIENTES_POR_PAGINA;
+  const coincidentesEnPagina = new Set(coincidentes.slice(inicio, fin));
+  document.querySelectorAll("#tabla-clientes tbody .cliente-fila").forEach((fila) => {{
+    fila.hidden = !coincidentesEnPagina.has(fila);
+  }});
+  renderizarPaginacionClientes(coincidentes.length, totalPaginas);
+}}
+
+function filtrarClientes() {{
+  paginaClientesActual = 1;
+  actualizarVistaClientes();
 }}
 filtroClientes.addEventListener("input", filtrarClientes);
 filtroProvincia.addEventListener("change", filtrarClientes);
@@ -2145,6 +2196,8 @@ function ordenarFilasClientes(campo, ascendente) {{
   ) * (ascendente ? 1 : -1));
   const cuerpo = document.querySelector("#tabla-clientes tbody");
   filas.forEach((fila) => cuerpo.appendChild(fila));
+  paginaClientesActual = 1;
+  actualizarVistaClientes();
 }}
 ordenarClientesSelect.addEventListener("change", () => {{
   const [campo, direccion] = ordenarClientesSelect.value.split("-");
@@ -2160,6 +2213,7 @@ document.querySelectorAll(".ordenar-columna").forEach((btn) => {{
     ordenarFilasClientes(btn.dataset.sort, ascendente);
   }});
 }});
+actualizarVistaClientes();
 
 document.getElementById("btn-mail-masivo").addEventListener("click", () => {{
   document.getElementById("modal-mail-ayuda").textContent = `El asunto será: Novedades de The Tech Room Arg. Se enviará a ${{idsSeleccionados().length}} cliente(s). Cada email comenzará con el nombre del cliente y terminará con “Saludos, Vlad.”.`;

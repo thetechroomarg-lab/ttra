@@ -28,6 +28,24 @@ def test_admin_clientes_lista_nombre_y_link_a_historial(monkeypatch):
     assert "Productos consultados" not in r.text
 
 
+def test_admin_clientes_lista_pagina_de_a_50(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    for n in range(60):
+        fake.table("clientes").insert({
+            "id": f"cliente-{n}", "nombre": f"Cliente{n}", "apellido": "Prueba",
+            "celular": f"351000{n:04d}", "email": f"cliente{n}@x.com", "provincia": "Córdoba",
+        }).execute()
+
+    r = c.get("/admin/clientes/lista")
+
+    assert r.status_code == 200
+    assert 'id="paginacion-clientes"' in r.text
+    assert "const CLIENTES_POR_PAGINA = 50;" in r.text
+    assert "function actualizarVistaClientes()" in r.text
+    assert r.text.count('class="cliente-fila"') == 61
+
+
 def test_admin_clientes_lista_no_depende_de_tablas_del_panel_de_pedidos(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     fake = appmod.get_client()
