@@ -1215,8 +1215,8 @@ _ADMIN_CLIENTES_ESTILO = """
     #tabla-clientes td:nth-child(5)::before { content:"Provincia"; }
     #tabla-clientes td:nth-child(6)::before { content:"Historial"; }
     #tabla-clientes td:nth-child(7)::before { content:"Cuenta"; }
-    #tabla-clientes td:nth-child(8)::before { content:"Acciones"; }
     #tabla-clientes td:last-child { border-bottom:0; }
+    #tabla-clientes td:empty { display:none; }
     #tabla-clientes .col-check { justify-content:flex-start; text-align:left; }
     #tabla-clientes .col-check::before { display:none; }
     #tabla-clientes .btn-reset, #tabla-clientes .btn-eliminar, #tabla-clientes .btn-mayorista { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
@@ -1952,14 +1952,12 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
                 f'<button class="btn-mayorista {clase_boton}" data-id="{id_seguro}" '
                 f'data-habilitado="{str(not mayorista).lower()}">{texto_boton}</button>'
                 f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
+                f'<button class="btn-eliminar" data-id="{id_seguro}">Eliminar cuenta</button>'
                 '</div>'
             )
 
         def _celda_eliminar(c):
-            if not c.get("tiene_cuenta"):
-                return "—"
-            id_seguro = html.escape(c.get("id", ""))
-            return f'<button class="btn-eliminar" data-id="{id_seguro}">Eliminar cuenta</button>'
+            return ""
 
         filas_html = "".join(
             f'<tr class="cliente-fila" data-busqueda="{html.escape(" ".join((c.get("nombre", ""), c.get("celular", ""), c.get("email", ""), c.get("provincia", ""))).lower())}" data-provincia="{html.escape(c.get("provincia", ""))}"><td class="col-check"><input class="cliente-check" type="checkbox" '
