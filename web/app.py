@@ -1,3 +1,4 @@
+import hashlib
 import html
 import json
 import logging
@@ -11,6 +12,7 @@ import time
 import uuid
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Literal
@@ -25,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, pedidos, recibos
+from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, recibos
 from web.email_util import EnvioEmailError, enviar_email
 from web.productos import resolver_proveedor
 from web.supabase_client import get_client
@@ -48,6 +50,14 @@ PRODUCTOS_PATH = Path(os.environ.get("PRODUCTOS_PATH", str(BASE / "productos.jso
 # No se sirve al navegador: se genera junto al catálogo para enriquecer el
 # detalle administrativo de cada pedido sin exponer proveedores al público.
 PROVEEDORES_PATH = Path(os.environ.get("PROVEEDORES_PATH", str(BASE / "proveedores.json")))
+COSTOS_PATH = Path(os.environ.get(
+    "COSTOS_PATH", str(PRODUCTOS_PATH.with_name("costos.json"))
+))
+CATALOGO_MANIFEST_PATH = Path(os.environ.get(
+    "CATALOGO_MANIFEST_PATH",
+    str(PRODUCTOS_PATH.with_name("catalogo-manifest.json")),
+))
+_CAMPOS_PRIVADOS_CATALOGO = frozenset({"costo", "margen", "proveedor", "capacidad"})
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 ADMIN_CLIENTES_PASSWORD = os.environ.get("ADMIN_CLIENTES_PASSWORD")
 if not ADMIN_CLIENTES_PASSWORD:
@@ -219,6 +229,61 @@ def _cargar_proveedores():
     return json.loads(PROVEEDORES_PATH.read_text(encoding="utf-8"))
 
 
+def _cargar_costos():
+    """Load the private wholesale cost index without exposing its failures."""
+    try:
+        if not COSTOS_PATH.exists():
+            return {}
+        costos = json.loads(COSTOS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        logger.exception("No se pudo cargar el índice privado de costos")
+        return {}
+    return costos if isinstance(costos, dict) else {}
+
+
+def _cargar_snapshot_mayorista():
+    """Load exactly one committed product/cost generation, or fail closed."""
+    try:
+        manifiesto_antes = CATALOGO_MANIFEST_PATH.read_bytes()
+        manifiesto = json.loads(manifiesto_antes)
+        if (
+            not isinstance(manifiesto, dict)
+            or manifiesto.get("version") != 1
+            or not isinstance(manifiesto.get("generacion"), str)
+            or not manifiesto["generacion"].strip()
+        ):
+            return [], {}
+
+        productos_bytes = PRODUCTOS_PATH.read_bytes()
+        costos_bytes = COSTOS_PATH.read_bytes()
+        manifiesto_despues = CATALOGO_MANIFEST_PATH.read_bytes()
+        if manifiesto_antes != manifiesto_despues:
+            return [], {}
+
+        productos_hash = manifiesto.get("productos_sha256")
+        costos_hash = manifiesto.get("costos_sha256")
+        if (
+            not isinstance(productos_hash, str)
+            or not isinstance(costos_hash, str)
+            or not secrets.compare_digest(
+                hashlib.sha256(productos_bytes).hexdigest(), productos_hash
+            )
+            or not secrets.compare_digest(
+                hashlib.sha256(costos_bytes).hexdigest(), costos_hash
+            )
+        ):
+            return [], {}
+
+        productos = json.loads(productos_bytes)
+        costos = json.loads(costos_bytes)
+        if not isinstance(productos, list) or not isinstance(costos, dict):
+            return [], {}
+        return productos, costos
+    except (OSError, json.JSONDecodeError, UnicodeError, TypeError, ValueError):
+        logger.exception("No se pudo cargar un snapshot mayorista consistente")
+        return [], {}
+
+
 def _cliente():
     import anthropic
     return anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
@@ -271,6 +336,10 @@ def chat(entrada: ChatIn, request: Request):
 
 class ClientesLoginIn(BaseModel):
     password: str
+
+
+class ClienteMayoristaIn(BaseModel):
+    habilitado: bool
 
 
 class MailingOfertaIn(BaseModel):
@@ -404,20 +473,31 @@ def _resolver_descuento_codigo(productos_catalogo, descuento_row, items):
     if not productos_aplicables:
         return None
 
-    descuento_total = {"usd": 0, "pesos": 0, "transferencia": 0}
+    descuento_total = {"usd": Decimal("0"), "pesos": Decimal("0"), "transferencia": Decimal("0")}
     cantidad_total = 0
     for item in items_norm:
         if item["nombre"] not in productos_aplicables:
             continue
         producto = disponibles[item["nombre"]]
-        usd = int(producto.get("usd") or 0)
-        pesos = int(producto.get("pesos") or 0)
-        transferencia = int(producto.get("transferencia") or 0)
+        try:
+            usd = pedidos.decimal_monetario(producto.get("usd"))
+            pesos = pedidos.decimal_monetario(producto.get("pesos"))
+            transferencia = pedidos.decimal_monetario(producto.get("transferencia"))
+        except ValueError:
+            continue
         if usd <= 0:
             continue
         qty = item["cantidad"]
         cantidad_total += qty
-        descuento_usd_unit = min(int(descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD), usd)
+        try:
+            descuento_usd_unit = min(
+                pedidos.decimal_monetario(
+                    descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD
+                ),
+                usd,
+            )
+        except ValueError:
+            continue
         descuento_total["usd"] += descuento_usd_unit * qty
         descuento_total["pesos"] += round(descuento_usd_unit * (pesos / usd)) * qty
         descuento_total["transferencia"] += round(descuento_usd_unit * (transferencia / usd)) * qty
@@ -429,8 +509,13 @@ def _resolver_descuento_codigo(productos_catalogo, descuento_row, items):
         "codigo": descuento_row["code"],
         "productos": sorted(productos_aplicables),
         "cantidad": cantidad_total,
-        "descuento_usd_por_item": int(descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD),
-        "descuento": descuento_total,
+        "descuento_usd_por_item": pedidos.numero_monetario_db(
+            descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD
+        ),
+        "descuento": {
+            moneda: pedidos.numero_monetario_db(valor)
+            for moneda, valor in descuento_total.items()
+        },
     }
 
 
@@ -652,6 +737,23 @@ def admin_clientes_eliminar(cliente_id: str, request: Request):
         logger.exception("No se pudo eliminar el cliente %s", cliente_id)
         return JSONResponse({"error": "No se pudo eliminar la cuenta en este momento"}, status_code=503)
     return {"ok": True}
+
+
+@app.post("/admin/clientes/{cliente_id}/mayorista")
+def admin_clientes_actualizar_mayorista(
+    cliente_id: str, entrada: ClienteMayoristaIn, request: Request,
+):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    filas_cliente = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas_cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    if entrada.habilitado and not filas_cliente[0].get("auth_id"):
+        raise HTTPException(status_code=400, detail="El contacto no tiene una cuenta habilitable")
+    tipo_cliente = "mayorista" if entrada.habilitado else "minorista"
+    client.table("clientes").update({"tipo_cliente": tipo_cliente}).eq("id", cliente_id).execute()
+    return {"ok": True, "tipo_cliente": tipo_cliente}
 
 
 @app.post("/admin/pedidos/{pedido_id}/recibo")
@@ -939,6 +1041,13 @@ _ADMIN_CLIENTES_ESTILO = """
   .btn-historial:hover { color:#fff; }
   .btn-eliminar { background:#8d1627; border:1px solid #c8102e; color:#fff; }
   .btn-eliminar:hover { background:#c8102e; }
+  .tipo-cliente { display:inline-block; border-radius:999px; font-size:12px; font-weight:700; margin:0 0 6px; padding:3px 7px; }
+  .tipo-cliente-mayorista { background:#184d3b; color:#b9f5d0; }
+  .tipo-cliente-minorista { background:#303640; color:#dfe2e8; }
+  .tipo-cliente-sin-cuenta { background:#303640; color:#dfe2e8; }
+  .btn-mayorista { border:1px solid #4a5160; border-radius:8px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; padding:8px 10px; }
+  .btn-mayorista:disabled { cursor:not-allowed; opacity:.55; }
+  .btn-mayorista-activo { border-color:#8d1627; color:#ffb3bd; }
   .acciones-masivas { display:none; align-items:center; gap:10px; margin:0 0 14px; flex-wrap:wrap; }
   .acciones-masivas.visible { display:flex; }
   .acciones-masivas span { color:#9aa0ab; font-size:13px; }
@@ -1102,7 +1211,7 @@ _ADMIN_CLIENTES_ESTILO = """
     #tabla-clientes td:last-child { border-bottom:0; }
     #tabla-clientes .col-check { justify-content:flex-start; text-align:left; }
     #tabla-clientes .col-check::before { display:none; }
-    #tabla-clientes .btn-reset, #tabla-clientes .btn-eliminar { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
+    #tabla-clientes .btn-reset, #tabla-clientes .btn-eliminar, #tabla-clientes .btn-mayorista { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
     .acciones-mailing { align-items:stretch; flex-direction:column; }
     .acciones-mailing button { width:100%; min-height:44px; }
     .modal-mail { align-items:flex-end; padding:12px; }
@@ -1172,22 +1281,23 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     filas_clientes = client.table("clientes").select("*").execute().data
     clientes = [
         {
-            "id": c.get("id", ""),
-            "nombre": f"{c.get('nombre', '')} {c.get('apellido', '')}".strip(),
-            "celular": c.get("celular", ""),
-            "email": c.get("email", ""),
+            "id": c.get("id") or "",
+            "nombre": f"{c.get('nombre') or ''} {c.get('apellido') or ''}".strip(),
+            "celular": c.get("celular") or "",
+            "email": c.get("email") or "",
             "provincia": c.get("provincia") or "Sin especificar",
-            "fecha": c.get("creado_en", ""),
+            "fecha": c.get("creado_en") or "",
             "tiene_cuenta": bool(c.get("auth_id")),
-            "direccion": c.get("direccion"),
+            "tipo_cliente": "mayorista" if c.get("tipo_cliente") == "mayorista" else "minorista",
+            "direccion": c.get("direccion") or "",
         }
         for c in filas_clientes
     ]
     clientes.sort(key=lambda r: r.get("fecha", ""), reverse=True)
     clientes_por_id = {cliente["id"]: cliente for cliente in clientes}
     fecha_hoy = entregas.ahora_argentina().date().isoformat()
-    pedidos = client.table("pedidos").select("*").execute().data
-    tareas = client.table("tareas_entrega").select("*").execute().data
+    pedidos = [] if mostrar_clientes else client.table("pedidos").select("*").execute().data
+    tareas = [] if mostrar_clientes else client.table("tareas_entrega").select("*").execute().data
     tareas_hoy = [
         tarea for tarea in tareas
         if tarea.get("fecha_entrega") == fecha_hoy and not tarea.get("completada_en")
@@ -1747,9 +1857,23 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
     else:
         def _celda_cuenta(c):
             if not c.get("tiene_cuenta"):
-                return "—"
+                return (
+                    '<span class="tipo-cliente tipo-cliente-sin-cuenta">'
+                    'El cliente todavía no tiene una cuenta</span><br>'
+                    '<button class="btn-mayorista" disabled>Habilitar mayorista</button>'
+                )
             id_seguro = html.escape(c.get("id", ""))
-            return f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
+            mayorista = c.get("tipo_cliente") == "mayorista"
+            etiqueta = "Mayorista" if mayorista else "Minorista"
+            clase_etiqueta = "tipo-cliente-mayorista" if mayorista else "tipo-cliente-minorista"
+            texto_boton = "Quitar mayorista" if mayorista else "Habilitar mayorista"
+            clase_boton = "btn-mayorista-activo" if mayorista else ""
+            return (
+                f'<span class="tipo-cliente {clase_etiqueta}">{etiqueta}</span><br>'
+                f'<button class="btn-mayorista {clase_boton}" data-id="{id_seguro}" '
+                f'data-habilitado="{str(not mayorista).lower()}">{texto_boton}</button><br>'
+                f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
+            )
 
         def _celda_eliminar(c):
             if not c.get("tiene_cuenta"):
@@ -1838,6 +1962,21 @@ document.querySelectorAll(".btn-eliminar").forEach((btn) => {{
     alert(datos.error || "No se pudo eliminar la cuenta");
     btn.textContent = "Eliminar cuenta";
     btn.disabled = false;
+  }});
+}});
+document.querySelectorAll(".btn-mayorista").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const habilitado = btn.dataset.habilitado === "true";
+    const accion = habilitado ? "habilitar" : "quitar";
+    if (!confirm(`¿${{accion.charAt(0).toUpperCase() + accion.slice(1)}} acceso mayorista a este cliente?`)) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/clientes/${{btn.dataset.id}}/mayorista`, {{
+      method: "POST", headers: {{"Content-Type": "application/json"}},
+      body: JSON.stringify({{habilitado}}),
+    }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || datos.detail || "No se pudo actualizar el acceso mayorista."); btn.disabled = false; return; }}
+    location.reload();
   }});
 }});
 document.querySelectorAll(".btn-enviar-recibo").forEach((btn) => {{
@@ -2216,6 +2355,39 @@ def _sesion_activa(request: Request):
     return bool(request.session.get("cliente_id"))
 
 
+def _tipo_cliente_sesion(request: Request) -> str:
+    """Resolve the persisted price tier; anonymous and failed lookups are retail."""
+    if not _sesion_activa(request):
+        return "minorista"
+    try:
+        filas = (get_client().table("clientes").select("tipo_cliente")
+                 .eq("id", request.session["cliente_id"]).execute().data)
+    except Exception:
+        logger.exception("No se pudo resolver el tipo de cliente de la sesión")
+        return "minorista"
+    if filas and filas[0].get("tipo_cliente") == "mayorista":
+        return "mayorista"
+    return "minorista"
+
+
+def _catalogo_autorizado(request: Request) -> tuple[list[dict], str]:
+    """Return the product list and price tier authorized for this request."""
+    tipo_cliente = _tipo_cliente_sesion(request)
+    if tipo_cliente == "mayorista":
+        productos_crudos, costos = _cargar_snapshot_mayorista()
+    else:
+        productos_crudos, costos = _cargar_productos(), None
+    productos = [
+        {campo: valor for campo, valor in producto.items()
+         if campo not in _CAMPOS_PRIVADOS_CATALOGO}
+        for producto in productos_crudos
+    ]
+    request.state.productos_publicos_autorizados = productos
+    if tipo_cliente == "mayorista":
+        return mayoristas.catalogo_mayorista(productos, costos), tipo_cliente
+    return productos, tipo_cliente
+
+
 def _debe_cambiar_password(request: Request):
     return bool(request.session.get("debe_cambiar_password"))
 
@@ -2373,7 +2545,8 @@ def api_me(request: Request):
         return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
     if cliente is None:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    return cliente
+    tipo_cliente = _tipo_cliente_sesion(request)
+    return {**cliente, "tipo_cliente": tipo_cliente, "modo_precio": tipo_cliente}
 
 
 class ActualizarMeIn(BaseModel):
@@ -2510,8 +2683,8 @@ class DetallePedidoIn(BaseModel):
     nombre: str = Field(min_length=1, max_length=300)
     color: str | None = Field(default=None, max_length=100)
     cantidad: int = Field(ge=1, le=100)
-    usd_unitario: int = Field(ge=0)
-    usd_subtotal: int = Field(ge=0)
+    usd_unitario: Decimal = Field(ge=0)
+    usd_subtotal: Decimal = Field(ge=0)
 
 
 class PedidoIn(BaseModel):
@@ -2519,8 +2692,10 @@ class PedidoIn(BaseModel):
     fecha_entrega: date | None = None
     direccion_entrega: str | None = Field(default=None, max_length=500)
     detalle: list[DetallePedidoIn] = Field(default_factory=list)
-    total_usd: int | None = Field(default=None, ge=0)
-    descuento_usd: int = Field(default=0, ge=0)
+    total_usd: Decimal | None = Field(default=None, ge=0)
+    descuento_usd: Decimal = Field(default=0, ge=0)
+    codigo_descuento: str | None = Field(default=None, max_length=100)
+    codigo_promo: str | None = Field(default=None, max_length=100)
 
 
 class EditarFechaEntregaIn(BaseModel):
@@ -2601,23 +2776,235 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         return JSONResponse({"error": "Elegí una fecha de entrega"}, status_code=400)
     if not entregas.fecha_entrega_valida(entrada.fecha_entrega):
         return JSONResponse({"error": "La fecha de entrega elegida ya no está disponible"}, status_code=400)
+    client = get_client()
+    catalogo_autorizado, modo_precio = _catalogo_autorizado(request)
+    if not entrada.detalle:
+        if modo_precio == "mayorista":
+            return JSONResponse(
+                {
+                    "error": "Los precios cambiaron. Recargá el catálogo e intentá de nuevo.",
+                    "conflicto": "catalogo",
+                },
+                status_code=409,
+            )
+        pedidos.guardar_pedido(
+            client,
+            cliente_id,
+            entrada.productos,
+            entrada.fecha_entrega,
+            modo_precio=modo_precio,
+            descuento_mayorista_usd=0,
+        )
+        return {"ok": True}
     if entrada.detalle and not (entrada.direccion_entrega or "").strip():
         return JSONResponse({"error": "Especificá dirección de entrega"}, status_code=400)
-    proveedores = _cargar_proveedores()
-    detalle = [
-        {**item.model_dump(), "proveedor": resolver_proveedor(proveedores, item.nombre)}
-        for item in entrada.detalle
-    ]
-    pedidos.guardar_pedido(
-        get_client(),
-        cliente_id,
-        entrada.productos,
-        entrada.fecha_entrega,
-        direccion_entrega=(entrada.direccion_entrega or "").strip() or None,
-        detalle=detalle,
-        total_usd=entrada.total_usd,
-        descuento_usd=entrada.descuento_usd,
+
+    error_precios = JSONResponse(
+        {
+            "error": "Los precios cambiaron. Recargá el catálogo e intentá de nuevo.",
+            "conflicto": "catalogo",
+        },
+        status_code=409,
     )
+    nombres_autorizados = [
+        producto.get("nombre")
+        for producto in catalogo_autorizado
+        if producto.get("nombre")
+    ]
+    productos_publicos = getattr(
+        request.state, "productos_publicos_autorizados", catalogo_autorizado
+    )
+    nombres_publicos = [
+        producto.get("nombre")
+        for producto in productos_publicos
+        if producto.get("nombre")
+    ]
+    if (
+        len(nombres_autorizados) != len(set(nombres_autorizados))
+        or len(nombres_publicos) != len(set(nombres_publicos))
+    ):
+        return error_precios
+    por_nombre = {
+        producto.get("nombre"): producto
+        for producto in catalogo_autorizado
+        if producto.get("nombre")
+    }
+    publicos_por_nombre = {
+        producto.get("nombre"): producto
+        for producto in productos_publicos
+        if producto.get("nombre")
+    }
+    proveedores = _cargar_proveedores()
+    detalle = []
+    productos_pedido = []
+    total_bruto_usd = Decimal("0")
+    descuento_mayorista_usd = Decimal("0")
+    cantidad_total = 0
+    for item in entrada.detalle:
+        producto = por_nombre.get(item.nombre)
+        if not producto or producto.get("usd") is None:
+            return error_precios
+        try:
+            precio_autorizado = pedidos.decimal_monetario(producto.get("usd"))
+        except ValueError:
+            return error_precios
+        if precio_autorizado < 0 or item.usd_unitario != precio_autorizado:
+            return error_precios
+
+        colores = producto.get("colores")
+        if isinstance(colores, list) and colores:
+            if item.color not in colores:
+                return error_precios
+            color = item.color
+        else:
+            if item.color not in (None, "Color único"):
+                return error_precios
+            color = None
+
+        subtotal_autorizado = precio_autorizado * item.cantidad
+        if item.usd_subtotal != subtotal_autorizado:
+            return error_precios
+        total_bruto_usd += subtotal_autorizado
+        cantidad_total += item.cantidad
+        if modo_precio == "mayorista":
+            producto_publico = publicos_por_nombre.get(item.nombre)
+            if not producto_publico or producto_publico.get("usd") is None:
+                return error_precios
+            try:
+                precio_publico = pedidos.decimal_monetario(
+                    producto_publico.get("usd")
+                )
+            except ValueError:
+                return error_precios
+            if precio_publico < precio_autorizado:
+                return error_precios
+            descuento_mayorista_usd += (
+                precio_publico - precio_autorizado
+            ) * item.cantidad
+        detalle.append({
+            "nombre": item.nombre,
+            "color": color,
+            "cantidad": item.cantidad,
+            "usd_unitario": pedidos.numero_monetario_db(precio_autorizado),
+            "usd_subtotal": pedidos.numero_monetario_db(subtotal_autorizado),
+            "proveedor": resolver_proveedor(proveedores, item.nombre),
+        })
+        etiqueta = f"{item.nombre} ({color})" if color else item.nombre
+        if etiqueta not in productos_pedido:
+            productos_pedido.append(etiqueta)
+
+    descuento_cantidad_usd = Decimal("0")
+    if modo_precio == "minorista":
+        if cantidad_total > 5:
+            descuento_cantidad_usd = Decimal("7.5") * cantidad_total
+        elif cantidad_total > 1:
+            descuento_cantidad_usd = Decimal("5") * cantidad_total
+
+    fila_descuento = None
+    descuento_mailing_usd = Decimal("0")
+    codigo_descuento = (entrada.codigo_descuento or "").strip().upper()
+    if codigo_descuento and modo_precio == "minorista":
+        fila_descuento = _descuento_codigo_row(client, cliente_id, codigo_descuento)
+        descuento = (
+            _resolver_descuento_codigo(catalogo_autorizado, fila_descuento, entrada.detalle)
+            if fila_descuento
+            else None
+        )
+        if not descuento:
+            return JSONResponse(
+                {
+                    "error": "El código de descuento ya no es válido para este pedido.",
+                    "conflicto": "codigo_descuento",
+                },
+                status_code=409,
+            )
+        descuento_mailing_usd = pedidos.decimal_monetario(
+            descuento["descuento"]["usd"]
+        )
+
+    descuento_usd = min(
+        descuento_cantidad_usd + descuento_mailing_usd,
+        total_bruto_usd,
+    )
+    total_usd = total_bruto_usd - descuento_usd
+    if entrada.total_usd != total_usd:
+        return error_precios
+    codigo_promo = (entrada.codigo_promo or "").strip().upper()
+    if fila_descuento or codigo_promo:
+        parametros = {
+            "p_cliente_id": cliente_id,
+            "p_codigo": fila_descuento["code"] if fila_descuento else None,
+            "p_productos": productos_pedido,
+            "p_detalle": detalle,
+            "p_total_usd": pedidos.numero_monetario_db(total_usd),
+            "p_descuento_usd": pedidos.numero_monetario_db(descuento_usd),
+            "p_descuento_mailing_usd": pedidos.numero_monetario_db(
+                descuento_mailing_usd
+            ),
+            "p_fecha_entrega": entrada.fecha_entrega.isoformat(),
+            "p_direccion_entrega": (
+                (entrada.direccion_entrega or "").strip() or None
+            ),
+            "p_modo_precio": modo_precio,
+            "p_descuento_mayorista_usd": pedidos.numero_monetario_db(
+                descuento_mayorista_usd
+            ),
+            "p_origen": "whatsapp",
+            "p_codigo_promo": codigo_promo or None,
+        }
+        try:
+            resultado = client.rpc(
+                "guardar_pedido_con_descuento_mailing", parametros
+            ).execute().data
+        except Exception:
+            logger.exception(
+                "No se pudo guardar atomicamente el pedido con promociones"
+            )
+            return JSONResponse(
+                {"error": "No pudimos confirmar las promociones y guardar el pedido."},
+                status_code=503,
+            )
+        if not isinstance(resultado, dict):
+            return JSONResponse(
+                {"error": "No pudimos confirmar las promociones y guardar el pedido."},
+                status_code=503,
+            )
+        if not resultado.get("ok"):
+            if resultado.get("error") == "codigo_promo_no_disponible":
+                return JSONResponse(
+                    {
+                        "error": "El código de regalo ya no está disponible para este pedido.",
+                        "conflicto": "codigo_promo",
+                    },
+                    status_code=409,
+                )
+            return JSONResponse(
+                {
+                    "error": "El código de descuento ya no es válido para este pedido.",
+                    "conflicto": "codigo_descuento",
+                },
+                status_code=409,
+            )
+        if not isinstance(resultado.get("pedido"), dict):
+            return JSONResponse(
+                {"error": "No pudimos confirmar las promociones y guardar el pedido."},
+                status_code=503,
+            )
+    else:
+        pedidos.guardar_pedido(
+            client,
+            cliente_id,
+            productos_pedido,
+            entrada.fecha_entrega,
+            direccion_entrega=(entrada.direccion_entrega or "").strip() or None,
+            detalle=detalle,
+            total_usd=pedidos.numero_monetario_db(total_usd),
+            descuento_usd=pedidos.numero_monetario_db(descuento_usd),
+            modo_precio=modo_precio,
+            descuento_mayorista_usd=pedidos.numero_monetario_db(
+                descuento_mayorista_usd
+            ),
+        )
     return {"ok": True}
 
 
@@ -2799,15 +3186,10 @@ def api_descuentos_consumir(entrada: DescuentoCodigoIn, request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     if _debe_cambiar_password(request):
         raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
-    client = get_client()
-    fila = _descuento_codigo_row(client, cliente_id, entrada.codigo)
-    if not fila:
-        return JSONResponse({"error": "Código inválido o ya utilizado"}, status_code=400)
-    descuento = _resolver_descuento_codigo(_cargar_productos(), fila, entrada.items)
-    if not descuento:
-        return JSONResponse({"error": "El código no aplica a los productos actuales del carrito"}, status_code=400)
-    client.table("codigos_descuento").update({"usado_en": datetime.utcnow().isoformat()}).eq("code", fila["code"]).execute()
-    return {"ok": True, **descuento}
+    return JSONResponse(
+        {"error": "Este endpoint fue retirado; el código se consume al guardar el pedido."},
+        status_code=410,
+    )
 
 
 @app.post("/api/codigos-promo/validar")
@@ -2830,12 +3212,10 @@ def api_codigos_promo_consumir(entrada: CodigoPromoIn, request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     if _debe_cambiar_password(request):
         raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
-    client = get_client()
-    fila = _codigo_promo_row(client, entrada.codigo)
-    if not fila:
-        return JSONResponse({"error": "Código inválido o ya alcanzó el límite de usos"}, status_code=400)
-    client.table("codigos_promo").update({"usos_actuales": int(fila.get("usos_actuales") or 0) + 1}).eq("code", fila["code"]).execute()
-    return {"ok": True, "codigo": fila["code"], "producto_regalo": fila["producto_regalo"]}
+    return JSONResponse(
+        {"error": "Este endpoint fue retirado; el regalo se consume al guardar el pedido."},
+        status_code=410,
+    )
 
 
 @app.get("/catalogo")
@@ -2846,18 +3226,19 @@ def pagina_catalogo(request: Request):
 
 
 @app.get("/api/catalogo")
-def api_catalogo():
-    productos = _cargar_productos()
+def api_catalogo(request: Request):
+    productos, modo_precio = _catalogo_autorizado(request)
     if not productos:
         return {"secciones": {s: [] for s in catalogo.SECCIONES},
-                "mensaje": "Estamos actualizando los precios"}
-    return {"secciones": catalogo.secciones_catalogo(productos)}
+                "mensaje": "Estamos actualizando los precios",
+                "modo_precio": modo_precio}
+    return {"secciones": catalogo.secciones_catalogo(productos), "modo_precio": modo_precio}
 
 
 @app.get("/api/recomendados")
 def api_recomendados(request: Request, limit: int = 16):
-    productos = _cargar_productos()
-    if not productos:
+    productos_autorizados, _modo_precio = _catalogo_autorizado(request)
+    if not productos_autorizados:
         return {"productos": []}
 
     filas_interacciones = []
@@ -2874,10 +3255,23 @@ def api_recomendados(request: Request, limit: int = 16):
             logger.exception("No se pudieron cargar interacciones para recomendaciones")
 
     limite = max(1, min(limit, 24))
+    ranking = interacciones.recomendar_nombres(
+        productos_autorizados, filas_interacciones, limite=limite
+    )
+    por_nombre = {
+        producto["nombre"]: producto
+        for producto in productos_autorizados
+        if producto.get("nombre")
+    }
     return {
-        "productos": interacciones.recomendar_productos(
-            productos, filas_interacciones, limite=limite
-        )
+        "productos": [
+            {
+                **por_nombre[candidato["nombre"]],
+                "motivo_recomendacion": candidato["motivo_recomendacion"],
+            }
+            for candidato in ranking
+            if candidato["nombre"] in por_nombre
+        ]
     }
 
 

@@ -212,6 +212,16 @@ header {
 .rc-modo-y-carrito {
   display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 150px;
 }
+.indicador-mayorista {
+  display: block;
+  padding: 4px 6px;
+  border: 1px solid var(--rc-green-faint);
+  color: var(--rc-green-dim);
+  font-size: 10px;
+  line-height: 1.25;
+  letter-spacing: .02em;
+  text-align: center;
+}
 .rc-modo-y-carrito button {
   width: 100%; text-align: center;
   padding: 8px 14px; font-size: clamp(13px, 3.5vw, 15px);
@@ -298,10 +308,18 @@ html[data-modo="fallout"] .rc-perfil-nombre {
 .rc-perfil-dropdown.oculto { display: none; }
 #btn-logout-classic.oculto { display: none; }
 #btn-logout-fallout.oculto { display: none; }
+/* Las 3 opciones ("Ir a perfil" es <a>, las otras dos <button>) tienen que
+   verse IDÉNTICAS: un <button> nativo trae chrome propio del sistema
+   operativo (padding/alineado vertical) que ni border:none ni background
+   pisan del todo sin appearance:none — por eso, aunque el CSS fuera igual,
+   el texto quedaba desalineado contra el <a>. flex+align-items+una altura
+   fija resuelve la alineación vertical sin depender de line-height. */
 .rc-perfil-opcion {
-  display: block; width: 100%; padding: 9px 12px; font-size: 13px; text-align: left;
+  display: flex; align-items: center; width: 100%; min-height: 40px; box-sizing: border-box;
+  padding: 0 12px; font-size: 13px; text-align: left;
   font-family: var(--rc-font); font-weight: 600;
-  background: transparent; border: none; box-shadow: none;
+  background: transparent; border: none; box-shadow: none; margin: 0;
+  appearance: none; -webkit-appearance: none;
   line-height: 1.25;
   white-space: nowrap;
   color: var(--rc-green); text-decoration: none; cursor: var(--rc-cursor);
@@ -309,7 +327,17 @@ html[data-modo="fallout"] .rc-perfil-nombre {
 .rc-perfil-opcion:hover, .rc-perfil-opcion:focus-visible {
   color: var(--rc-green-bright); background: var(--rc-bg-panel-2); cursor: var(--rc-cursor-mira);
 }
-.rc-perfil-opcion:first-child { border-bottom: 1px solid var(--rc-green-faint); }
+/* ".rc-modo-y-carrito button" (arriba) es un selector por descendiente que
+   agarra CUALQUIER <button> adentro de ese contenedor -incluidos estos, que
+   viven anidados ahí mismo dentro de #rc-perfil-dropdown- y con más
+   especificidad que ".rc-perfil-opcion" le pisaba padding/font-size/
+   text-align/display. Como "Ir a perfil" es un <a>, nunca le tocaba esa
+   regla y quedaba con otra pinta sin importar qué le cambiáramos a
+   ".rc-perfil-opcion". Este selector con el id del dropdown le gana. */
+#rc-perfil-dropdown.rc-perfil-dropdown .rc-perfil-opcion {
+  display: flex; align-items: center; width: 100%;
+  padding: 0 12px; font-size: 13px; text-align: left;
+}
 
 /* "Cerrar sesión" del menú de perfil solo existe en Modo Classic. */
 #btn-logout-classic { display: block; }
@@ -341,9 +369,12 @@ html[data-modo="classic"] #btn-classic-theme { display: block; }
   color: var(--rc-green-bright); border-color: var(--rc-green);
   box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
 }
-/* Diálogo de confirmación: 2 botones lado a lado en vez de 1 solo. */
-.rc-logout-acciones { display: flex; gap: 10px; }
-.rc-logout-acciones button { width: auto; flex: 1; }
+/* Diálogo de confirmación: 2 botones lado a lado en vez de 1 solo, angostos
+   (no estirados a todo el ancho de la tarjeta como con flex:1) y centrados —
+   mismo alto que los botones de categoría, ancho acorde al tamaño de la
+   ventana de confirmación. */
+.rc-logout-acciones { display: flex; gap: 10px; justify-content: center; }
+.rc-logout-acciones button { flex: 0 0 auto; width: 130px; }
 
 /* Encabezado compartido por las cajas "Aplicá tu código" y "Dirección de
    entrega": título + botón de cerrar, mismo formato que el resto del carrito. */

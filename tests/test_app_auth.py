@@ -207,6 +207,26 @@ def test_completar_signup_con_access_token_crea_sesion_y_redirige_a_landing(monk
     assert me.json()["email"] == "juan@x.com"
 
 
+def test_api_me_expone_el_modo_precio_vigente(monkeypatch):
+    """Catches UI state omitting the server-resolved customer price mode."""
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver")
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "PÃ©rez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234",
+        "provincia": "CÃ³rdoba", "direccion": "Av. ColÃ³n 123, CÃ³rdoba",
+    })
+    cliente = fake.table("clientes").select("*").execute().data[0]
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", cliente["id"]).execute()
+
+    r = c.get("/api/me")
+
+    assert r.status_code == 200
+    assert r.json()["tipo_cliente"] == "mayorista"
+    assert r.json()["modo_precio"] == "mayorista"
+
+
 def test_registro_celular_duplicado_devuelve_400(monkeypatch):
     c = _cliente(monkeypatch)
     c.post("/registro", json={

@@ -88,3 +88,69 @@ def test_api_recomendados_fallback_excluye_usados(monkeypatch):
     productos = r.json()["productos"]
     assert len(productos) == 5
     assert all("cpo" not in p["nombre"].lower() for p in productos)
+
+
+def test_api_recomendados_mayorista_hidrata_precios_y_filtra_catalogo_autorizado(
+    monkeypatch,
+):
+    """Catches ranking output bypassing wholesale eligibility and hydration."""
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    productos = [
+        {
+            "nombre": "Filtrado", "categoria": "Samsung", "usd": 130,
+            "costo": 100, "proveedor": "privado", "margen": 30,
+        },
+        {
+            "nombre": "Elegible", "categoria": "Samsung", "usd": 180,
+            "costo": 100, "proveedor": "privado", "margen": 80,
+        },
+    ]
+    monkeypatch.setattr(appmod, "_cargar_productos", lambda: productos)
+    monkeypatch.setattr(
+        appmod,
+        "_cargar_snapshot_mayorista",
+        lambda: (productos, {"Filtrado": 100, "Elegible": 100}),
+    )
+    c = TestClient(appmod.app, base_url="https://testserver")
+    c.post("/registro", json={
+        "nombre": "Ana", "apellido": "Gómez", "celular": "3511234567",
+        "email": "ana@x.com", "password": "clave1234",
+        "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
+    })
+    cliente = fake.table("clientes").select("*").execute().data[0]
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq(
+        "id", cliente["id"]
+    ).execute()
+    fake.table("interacciones_cliente").insert({
+        "cliente_id": cliente["id"],
+        "tipo_evento": "view_item",
+        "producto_nombre": "Filtrado",
+        "fecha": "2026-08-26T12:00:00+00:00",
+    }).execute()
+
+    respuesta = c.get("/api/recomendados?limit=4")
+
+    assert respuesta.status_code == 200
+    recomendados = respuesta.json()["productos"]
+    assert [producto["nombre"] for producto in recomendados] == ["Elegible"]
+    assert recomendados[0]["usd"] == 130
+    assert not ({"costo", "proveedor", "margen", "capacidad"} & recomendados[0].keys())
+
+
+def test_api_recomendados_minorista_no_devuelve_campos_privados(monkeypatch):
+    """Catches the recommendation route returning raw product dictionaries."""
+    monkeypatch.setattr(appmod, "_cargar_productos", lambda: [{
+        "nombre": "Producto", "categoria": "Samsung", "usd": 180,
+        "costo": 100, "proveedor": "privado", "margen": 80,
+        "capacidad": 53,
+    }])
+
+    respuesta = TestClient(appmod.app, base_url="https://testserver").get(
+        "/api/recomendados?limit=1"
+    )
+
+    assert respuesta.status_code == 200
+    producto = respuesta.json()["productos"][0]
+    assert producto["nombre"] == "Producto"
+    assert not ({"costo", "proveedor", "margen", "capacidad"} & producto.keys())

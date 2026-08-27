@@ -127,6 +127,8 @@ if (!new URLSearchParams(location.search).get("codigo")) {
 
 let SECCIONES_DATA = {};
 let RECOMENDADOS_DATA = [];
+let modoPrecioActual = "minorista";
+let catalogoListo = false;
 let cotizacionActual = null; // U$D actual, usado en el reloj del header y en el narrador de noticias
 let pronosticoManana = null; // texto del pronóstico del día siguiente, para el narrador
 let pronosticoConsejo = null; // consejo práctico según ese pronóstico (paraguas, abrigo, etc.)
@@ -209,7 +211,7 @@ function aplicarTemaClassic(tema, persistir = false) {
   const botonTema = document.getElementById("btn-classic-theme");
   if (botonTema) {
     const siguienteTema = temaNormalizado === "light" ? "dark" : "light";
-    botonTema.textContent = `Usar modo ${siguienteTema}`;
+    botonTema.textContent = siguienteTema === "light" ? "Modo Light ☼" : "Modo Oscuro ☾";
     botonTema.setAttribute("aria-label", `Cambiar a modo ${siguienteTema}`);
   }
 }
@@ -3115,6 +3117,8 @@ function ocultarNavegacionCatalogo() {
 }
 
 async function cargarCatalogo() {
+  catalogoListo = false;
+  renderCarrito();
   let datos;
   try {
     const anonId = obtenerAnonId();
@@ -3133,20 +3137,25 @@ async function cargarCatalogo() {
     document.getElementById("productos").innerHTML =
       '<p class="mensaje-vacio">No pudimos cargar el catálogo. Escribinos por WhatsApp: ' +
       '<a href="https://wa.me/543512145217" target="_blank" rel="noopener">wa.me/543512145217</a></p>';
-    return;
+    return false;
   }
+  modoPrecioActual = datos.modo_precio === "mayorista" ? "mayorista" : "minorista";
   SECCIONES_DATA = datos.secciones || {};
   RECOMENDADOS_DATA = RECOMENDADOS_DATA
     .map((p) => ({ ...p, marca: p.marca || "Otras marcas" }))
     .filter((p) => p && p.nombre);
+  actualizarModoPrecio();
   refrescarPreciosCarrito();
+  catalogoListo = true;
+  renderCarrito();
   if (datos.mensaje) {
     ocultarNavegacionCatalogo();
     document.getElementById("productos").innerHTML = `<p class="mensaje-vacio">${datos.mensaje}</p>`;
-    return;
+    return true;
   }
   pintarCategorias();
   actualizarVista();
+  return true;
 }
 
 function refrescarPreciosCarrito() {
@@ -3201,6 +3210,21 @@ function borrarDescuentoMailing() {
   renderCarrito();
 }
 
+function actualizarModoPrecio() {
+  const esMayorista = modoPrecioActual === "mayorista";
+  const indicador = document.getElementById("indicador-mayorista");
+  const botonCodigo = document.getElementById("btn-abrir-codigo");
+  const panelCodigo = document.getElementById("modal-codigo");
+
+  if (indicador) indicador.hidden = !esMayorista;
+  if (botonCodigo) botonCodigo.hidden = esMayorista;
+  if (panelCodigo) {
+    panelCodigo.hidden = esMayorista;
+    if (esMayorista) panelCodigo.classList.add("oculto");
+  }
+  if (esMayorista) borrarDescuentoMailing();
+}
+
 function itemsCarritoParaDescuento(carrito) {
   return carrito.map((it) => ({ nombre: it.nombre, cantidad: it.cantidad }));
 }
@@ -3233,9 +3257,8 @@ function setEstadoCodigoMailing(mensaje, tipo = "") {
 }
 
 function descuentoMailingAplicado(carrito) {
-  // Los códigos de mailing quedan temporalmente desactivados en el carrito.
-  return null;
-  /*
+  if (!catalogoListo) return null;
+  if (modoPrecioActual === "mayorista") return null;
   const descuento = cargarDescuentoMailing();
   if (!descuento || !Array.isArray(descuento.productos) || !descuento.productos.length) return null;
 
@@ -3257,7 +3280,6 @@ function descuentoMailingAplicado(carrito) {
 
   if (!cantidad) return null;
   return { codigo: descuento.codigo, cantidad, usd, pesos, transferencia, productos: descuento.productos };
-  */
 }
 
 function mismoItemCarrito(it, nombre, color) {
@@ -3312,6 +3334,7 @@ async function procesarPendienteCarrito() {
 }
 
 async function procesarCheckoutPendiente() {
+  if (!catalogoListo) return false;
   if (!hayCheckoutPendiente()) return false;
   const sesion = await obtenerEstadoSesionCliente(true);
   if (!sesion || sesion.debe_cambiar_password) return false;
@@ -3325,6 +3348,7 @@ async function procesarCheckoutPendiente() {
 }
 
 async function asegurarSesionParaCheckout() {
+  if (!catalogoListo) return false;
   const sesion = await obtenerEstadoSesionCliente(true);
   if (sesion && !sesion.debe_cambiar_password) return true;
   guardarPendienteCheckout();
@@ -3333,6 +3357,7 @@ async function asegurarSesionParaCheckout() {
 }
 
 function cambiarCantidad(nombre, color, delta) {
+  if (!catalogoListo) return;
   const carrito = cargarCarrito();
   const item = carrito.find((it) => mismoItemCarrito(it, nombre, color));
   if (!item) return;
@@ -3342,6 +3367,7 @@ function cambiarCantidad(nombre, color, delta) {
 }
 
 function quitarDelCarrito(nombre, color) {
+  if (!catalogoListo) return;
   const catalogoPlano = {};
   Object.values(SECCIONES_DATA).forEach((productos) => {
     (productos || []).forEach((p) => {
@@ -3359,6 +3385,7 @@ function quitarDelCarrito(nombre, color) {
 }
 
 function vaciarCarrito() {
+  if (!catalogoListo) return;
   guardarCarrito([]);
 }
 
@@ -3383,6 +3410,11 @@ function descuentoPorUnidad(cantidadTotal) {
 }
 
 function calcularDescuento(carrito) {
+  if (!catalogoListo) return null;
+  return modoPrecioActual === "mayorista" ? null : calcularDescuentoMinorista(carrito);
+}
+
+function calcularDescuentoMinorista(carrito) {
   const cantidadTotal = carrito.reduce((n, it) => n + it.cantidad, 0);
   const porUnidad = descuentoPorUnidad(cantidadTotal);
   if (porUnidad === 0) return null;
@@ -3442,14 +3474,23 @@ function itemRegaloPromoHtml(regalo) {
 }
 
 function renderCarrito() {
+  const contadorEl = document.getElementById("carrito-contador");
+  const el = document.getElementById("items-carrito");
+  const totalEl = document.getElementById("total-carrito");
+  if (!catalogoListo) {
+    contadorEl.textContent = "0";
+    el.innerHTML = '<p class="mensaje-vacio">Actualizando carrito...</p>';
+    totalEl.textContent = "";
+    return;
+  }
+
   const carrito = cargarCarrito();
   const cantidadTotal = carrito.reduce((n, it) => n + it.cantidad, 0);
-  document.getElementById("carrito-contador").textContent = cantidadTotal;
+  contadorEl.textContent = cantidadTotal;
 
   const descuento = calcularDescuento(carrito);
   const descuentoMailing = descuentoMailingAplicado(carrito);
   const regaloPromo = carrito.length ? cargarRegaloPromo() : null;
-  const el = document.getElementById("items-carrito");
   el.innerHTML = carrito.length === 0
     ? '<p class="mensaje-vacio">Tu carrito está vacío.</p>'
     : carrito.map(itemCarritoHtml).join("")
@@ -3468,7 +3509,6 @@ function renderCarrito() {
   });
 
   const t = totales(carrito);
-  const totalEl = document.getElementById("total-carrito");
   const inputCodigo = document.getElementById("input-codigo-mailing");
   const descuentoGuardado = cargarDescuentoMailing();
   if (inputCodigo && document.activeElement !== inputCodigo) {
@@ -3502,6 +3542,7 @@ function sincronizarLimiteCarrito() {
 }
 
 function abrirCarrito() {
+  if (!catalogoListo) return;
   cargarOpcionesEntrega().catch(() => {});
   sincronizarLimiteCarrito();
   document.getElementById("panel-carrito").classList.remove("oculto");
@@ -3514,6 +3555,7 @@ function cerrarCarrito() {
 }
 
 function armarMensajeWhatsapp(carrito, fechaEntrega) {
+  if (!catalogoListo) return null;
   const lineas = carrito.map((it) => {
     const color = it.color ? ` (${it.color})` : "";
     const totalUsd = (it.usd || 0) * it.cantidad;
@@ -3550,27 +3592,12 @@ async function cargarOpcionesEntrega() {
   nota.textContent = datos.opciones?.[0]?.requiere_confirmacion ? "El pedido se entrega el lunes. Confirmá si querés continuar." : "Elegí tu fecha de entrega.";
 }
 
-async function consumirCodigoMailing(carrito) {
-  borrarDescuentoMailing();
-  return { ok: true };
-  /*
-  const descuento = cargarDescuentoMailing();
-  if (!descuento?.codigo) return { ok: true };
-  const r = await fetch("/api/descuentos/consumir", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ codigo: descuento.codigo, items: itemsCarritoParaDescuento(carrito) }),
-  });
-  const body = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    setEstadoCodigoMailing(body.error || "No se pudo aplicar el código en este checkout.", "error");
-    return { ok: false };
-  }
-  return { ok: true };
-  */
-}
-
 async function aplicarCodigoMailing() {
+  if (!catalogoListo) return;
+  if (modoPrecioActual === "mayorista") {
+    borrarDescuentoMailing();
+    return;
+  }
   const carrito = cargarCarrito();
   if (!carrito.length) {
     setEstadoCodigoMailing("Agregá productos al carrito antes de aplicar un código.", "error");
@@ -3598,6 +3625,11 @@ async function aplicarCodigoMailing() {
 }
 
 async function aplicarCodigoMailingPorValor(codigo) {
+  if (!catalogoListo) return false;
+  if (modoPrecioActual === "mayorista") {
+    borrarDescuentoMailing();
+    return false;
+  }
   const input = document.getElementById("input-codigo-mailing");
   if (input) input.value = codigo;
   const carrito = cargarCarrito();
@@ -3618,19 +3650,17 @@ async function aplicarCodigoMailingPorValor(codigo) {
 }
 
 async function derivarCheckoutAWhatsapp(carrito) {
+  if (!catalogoListo) return false;
   registrarInteraccion("complete_checkout", {
     metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
   });
-  const consume = await consumirCodigoMailing(carrito);
-  if (!consume.ok) return;
-  const consumePromo = await consumirCodigoPromo();
-  if (!consumePromo.ok) return;
   const fechaEntrega = document.getElementById("fecha-entrega").value;
   const direccionEntrega = document.getElementById("direccion-entrega").value.trim();
   if (!direccionEntrega) { alert("Especificá dirección de entrega."); return; }
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
+  if (!mensaje) return false;
   try {
-    await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega);
+    if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega))) return false;
   } catch (error) {
     console.error("No se pudo guardar el pedido", error);
     alert("No pudimos guardar tu pedido. Probá nuevamente antes de abrir WhatsApp.");
@@ -3642,6 +3672,7 @@ async function derivarCheckoutAWhatsapp(carrito) {
   borrarRegaloPromo();
   cerrarCarrito();
   window.location.href = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
+  return true;
 }
 
 document.getElementById("btn-carrito").addEventListener("click", abrirCarrito);
@@ -3812,6 +3843,7 @@ document.getElementById("btn-guardar-direccion").addEventListener("click", async
 });
 
 document.getElementById("btn-abrir-codigo").addEventListener("click", () => {
+  if (modoPrecioActual === "mayorista") return;
   abrirPanelSecundario("modal-codigo");
 });
 document.addEventListener("pointerdown", (evento) => {
@@ -3823,6 +3855,11 @@ document.addEventListener("pointerdown", (evento) => {
 });
 
 document.getElementById("btn-aplicar-codigo").addEventListener("click", async () => {
+  if (!catalogoListo) return;
+  if (modoPrecioActual === "mayorista") {
+    borrarDescuentoMailing();
+    return;
+  }
   const carrito = cargarCarrito();
   if (!carrito.length) {
     alert("Agregá productos al carrito antes de aplicar un código.");
@@ -3849,36 +3886,24 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
   alert(`¡Código aplicado! Sumamos ${body.producto_regalo} de regalo a tu pedido.`);
 });
 
-async function consumirCodigoPromo() {
-  const regalo = cargarRegaloPromo();
-  if (!regalo?.codigo) return { ok: true };
-  const r = await fetch("/api/codigos-promo/consumir", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ codigo: regalo.codigo }),
-  });
-  const respuesta = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    setEstadoCodigoMailing(respuesta.error || "No se pudo aplicar el código en este checkout.", "error");
-    borrarRegaloPromo();
-    return { ok: false };
-  }
-  return { ok: true };
-}
 // Al cerrar un pedido, suma los productos encargados al registro del
 // cliente (mismo clientes.json/csv que ya alimentan el gate inicial y el
 // buscador por chat) — así el panel /admin/clientes también refleja los
 // pedidos hechos desde la web, no solo el alta inicial.
 async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega) {
+  if (!catalogoListo) return false;
   const regaloPromo = cargarRegaloPromo();
   const productos = [...new Set(carrito.map((it) =>
     it.color && it.color !== "Color único" ? `${it.nombre} (${it.color})` : it.nombre
   ))];
-  if (regaloPromo) productos.push(`${regaloPromo.producto_regalo} (regalo código ${regaloPromo.codigo})`);
   const descuento = calcularDescuento(carrito);
   const descuentoMailing = descuentoMailingAplicado(carrito);
-  const descuento_usd = (descuento?.usd || 0) + (descuentoMailing?.usd || 0);
-  const total_usd = Math.max(totales(carrito).usd - descuento_usd, 0);
+  const total_usd = Math.max(
+    totales(carrito).usd - (descuento?.usd || 0) - (descuentoMailing?.usd || 0),
+    0,
+  );
+  const codigo_descuento = descuentoMailing?.codigo || null;
+  const codigo_promo = regaloPromo?.codigo || null;
   const detalle = carrito.map((it) => ({
     nombre: it.nombre,
     color: it.color || null,
@@ -3886,27 +3911,33 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
     usd_unitario: it.usd || 0,
     usd_subtotal: (it.usd || 0) * it.cantidad,
   }));
-  if (regaloPromo) {
-    detalle.push({
-      nombre: regaloPromo.producto_regalo,
-      color: null,
-      cantidad: 1,
-      usd_unitario: 0,
-      usd_subtotal: 0,
-    });
-  }
   const respuesta = await fetch("/api/pedidos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ productos, fecha_entrega, direccion_entrega, detalle, total_usd, descuento_usd }),
+    body: JSON.stringify({
+      productos, fecha_entrega, direccion_entrega, detalle, total_usd,
+      codigo_descuento, codigo_promo,
+    }),
   });
+  const body = await respuesta.json().catch(() => ({}));
+  if (respuesta.status === 409) {
+    if (body.conflicto === "codigo_promo") borrarRegaloPromo();
+    if (body.conflicto === "codigo_descuento") borrarDescuentoMailing();
+    alert(body.error
+      ? `${body.error}\n\nRevisá el carrito y confirmá nuevamente.`
+      : "El catálogo cambió. Revisá el carrito y confirmá nuevamente.");
+    const recargado = await cargarCatalogo();
+    if (recargado) abrirCarrito();
+    return false;
+  }
   if (!respuesta.ok) {
-    const body = await respuesta.json().catch(() => ({}));
     throw new Error(body.error || "No se pudo guardar el pedido");
   }
+  return true;
 }
 
 document.getElementById("btn-whatsapp").addEventListener("click", async () => {
+  if (!catalogoListo) return;
   const carrito = cargarCarrito();
   if (carrito.length === 0) return;
   registrarInteraccion("begin_checkout", {

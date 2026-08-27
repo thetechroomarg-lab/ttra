@@ -65,27 +65,24 @@ def test_validar_codigo_promo_falla_si_esta_inactivo(monkeypatch):
     assert r.status_code == 400
 
 
-def test_consumir_codigo_promo_incrementa_el_contador_de_usos(monkeypatch):
+def test_endpoint_legado_no_preconsume_codigo_promo(monkeypatch):
     c, fake = _cliente_logueado(monkeypatch)
     _insertar_codigo_promo(fake, usos_maximos=20, usos_actuales=5)
 
     r = c.post("/api/codigos-promo/consumir", json={"codigo": "QUIEROMISPLAY6"})
 
-    assert r.status_code == 200
-    body = r.json()
-    assert body["ok"] is True
-    assert body["producto_regalo"] == "Auriculares Redmi 6 Play"
+    assert r.status_code == 410
     filas = fake.table("codigos_promo").select("*").eq("code", "QUIEROMISPLAY6").execute().data
-    assert filas[0]["usos_actuales"] == 6
+    assert filas[0]["usos_actuales"] == 5
 
 
-def test_consumir_codigo_promo_falla_cuando_ya_no_quedan_usos(monkeypatch):
+def test_endpoint_legado_no_muta_codigo_promo_agotado(monkeypatch):
     c, fake = _cliente_logueado(monkeypatch)
     _insertar_codigo_promo(fake, usos_maximos=20, usos_actuales=20)
 
     r = c.post("/api/codigos-promo/consumir", json={"codigo": "QUIEROMISPLAY6"})
 
-    assert r.status_code == 400
+    assert r.status_code == 410
     filas = fake.table("codigos_promo").select("*").eq("code", "QUIEROMISPLAY6").execute().data
     assert filas[0]["usos_actuales"] == 20
 
