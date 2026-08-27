@@ -197,23 +197,57 @@ class FakeSupabaseClient:
             if self.atomic_order_failure_stage == "before_order":
                 raise RuntimeError("Fallo simulado antes de guardar")
 
-            codigo = next(
-                (
-                    fila
-                    for fila in self.table("codigos_descuento")._filas
-                    if fila.get("cliente_id") == parametros.get("p_cliente_id")
-                    and fila.get("code") == parametros.get("p_codigo")
-                    and fila.get("activo")
-                    and not fila.get("usado_en")
-                ),
-                None,
-            )
-            if not codigo:
-                return {"ok": False, "error": "codigo_no_disponible"}
+            codigo_texto = (parametros.get("p_codigo") or "").strip().upper()
+            codigo = None
+            if codigo_texto:
+                codigo = next(
+                    (
+                        fila
+                        for fila in self.table("codigos_descuento")._filas
+                        if fila.get("cliente_id") == parametros.get("p_cliente_id")
+                        and fila.get("code") == codigo_texto
+                        and fila.get("activo")
+                        and not fila.get("usado_en")
+                    ),
+                    None,
+                )
+                if not codigo:
+                    return {"ok": False, "error": "codigo_no_disponible"}
 
-            elegibles = set(codigo.get("productos") or [])
+            promo_texto = (parametros.get("p_codigo_promo") or "").strip().upper()
+            promo = None
+            if promo_texto:
+                promo = next(
+                    (
+                        fila
+                        for fila in self.table("codigos_promo")._filas
+                        if fila.get("code") == promo_texto
+                        and fila.get("activo")
+                        and int(fila.get("usos_actuales") or 0)
+                        < int(fila.get("usos_maximos") or 0)
+                    ),
+                    None,
+                )
+                if not promo:
+                    return {"ok": False, "error": "codigo_promo_no_disponible"}
+
+            modo_precio = parametros.get("p_modo_precio")
+            if modo_precio not in {"minorista", "mayorista"}:
+                return {"ok": False, "error": "pedido_invalido"}
+            try:
+                descuento_mayorista = pedidos.decimal_monetario(
+                    parametros.get("p_descuento_mayorista_usd")
+                )
+            except ValueError:
+                return {"ok": False, "error": "pedido_invalido"}
+            if descuento_mayorista < 0 or (
+                modo_precio == "minorista" and descuento_mayorista != 0
+            ):
+                return {"ok": False, "error": "pedido_invalido"}
+
+            elegibles = set(codigo.get("productos") or []) if codigo else set()
             descuento_unitario = pedidos.decimal_monetario(
-                codigo.get("descuento_usd") or 5
+                (codigo or {}).get("descuento_usd") or 5
             )
             descuento_mailing = Decimal("0")
             bruto = Decimal("0")
@@ -222,21 +256,22 @@ class FakeSupabaseClient:
                 unitario = pedidos.decimal_monetario(item.get("usd_unitario"))
                 subtotal = pedidos.decimal_monetario(item.get("usd_subtotal"))
                 unidades = int(item.get("cantidad") or 0)
-                if unidades <= 0 or subtotal != unitario * unidades:
+                if unidades <= 0 or unitario <= 0 or subtotal != unitario * unidades:
                     return {"ok": False, "error": "montos_invalidos"}
                 bruto += subtotal
                 cantidad += unidades
-                if item.get("nombre") in elegibles and unitario > 0:
+                if codigo and item.get("nombre") in elegibles:
                     descuento_mailing += min(descuento_unitario, unitario) * unidades
 
             descuento_cantidad = Decimal("0")
-            if cantidad >= 6:
-                descuento_cantidad = Decimal("7.5") * cantidad
-            elif cantidad >= 2:
-                descuento_cantidad = Decimal("5") * cantidad
+            if modo_precio == "minorista":
+                if cantidad >= 6:
+                    descuento_cantidad = Decimal("7.5") * cantidad
+                elif cantidad >= 2:
+                    descuento_cantidad = Decimal("5") * cantidad
             descuento_total = min(descuento_cantidad + descuento_mailing, bruto)
             if (
-                descuento_mailing <= 0
+                (codigo is not None and descuento_mailing <= 0)
                 or pedidos.decimal_monetario(
                     parametros.get("p_descuento_mailing_usd")
                 ) != descuento_mailing
@@ -244,24 +279,37 @@ class FakeSupabaseClient:
                 != descuento_total
                 or pedidos.decimal_monetario(parametros.get("p_total_usd"))
                 != bruto - descuento_total
-                or parametros.get("p_modo_precio") != "minorista"
-                or pedidos.decimal_monetario(
-                    parametros.get("p_descuento_mayorista_usd")
-                ) != 0
+                or (codigo is not None and modo_precio != "minorista")
             ):
                 return {"ok": False, "error": "montos_invalidos"}
+
+            productos_rpc = list(parametros.get("p_productos") or [])
+            detalle_rpc = copy.deepcopy(parametros.get("p_detalle") or [])
+            if promo:
+                productos_rpc.append(
+                    f'{promo["producto_regalo"]} (regalo código {promo["code"]})'
+                )
+                detalle_rpc.append({
+                    "nombre": promo["producto_regalo"],
+                    "color": None,
+                    "cantidad": 1,
+                    "usd_unitario": 0,
+                    "usd_subtotal": 0,
+                    "tipo": "regalo_promocional",
+                    "codigo_promo": promo["code"],
+                })
 
             fecha_entrega = date.fromisoformat(parametros["p_fecha_entrega"])
             pedido = pedidos.guardar_pedido(
                 self,
                 parametros["p_cliente_id"],
-                parametros["p_productos"],
+                productos_rpc,
                 fecha_entrega,
                 direccion_entrega=parametros.get("p_direccion_entrega"),
-                detalle=parametros["p_detalle"],
+                detalle=detalle_rpc,
                 total_usd=parametros["p_total_usd"],
                 descuento_usd=parametros["p_descuento_usd"],
-                modo_precio=parametros["p_modo_precio"],
+                modo_precio=modo_precio,
                 descuento_mayorista_usd=parametros[
                     "p_descuento_mayorista_usd"
                 ],
@@ -270,9 +318,22 @@ class FakeSupabaseClient:
             if self.atomic_order_failure_stage == "after_order":
                 raise RuntimeError("Fallo simulado al consumir")
 
-            if codigo.get("usado_en"):
-                raise RuntimeError("El codigo fue consumido concurrentemente")
-            codigo["usado_en"] = datetime.now(timezone.utc).isoformat()
+            if codigo:
+                if codigo.get("usado_en"):
+                    raise RuntimeError("El codigo fue consumido concurrentemente")
+                codigo["usado_en"] = datetime.now(timezone.utc).isoformat()
+                if self.atomic_order_failure_stage == "after_mailing":
+                    raise RuntimeError("Fallo simulado despues del mailing")
+
+            if promo:
+                if int(promo.get("usos_actuales") or 0) >= int(
+                    promo.get("usos_maximos") or 0
+                ):
+                    raise RuntimeError("El regalo fue consumido concurrentemente")
+                promo["usos_actuales"] = int(promo.get("usos_actuales") or 0) + 1
+                if self.atomic_order_failure_stage == "after_promo":
+                    raise RuntimeError("Fallo simulado despues del regalo")
+
             if self.atomic_order_failure_stage == "after_consume":
                 raise RuntimeError("Fallo simulado despues de consumir")
             return {"ok": True, "pedido": pedido}

@@ -1,6 +1,10 @@
+import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import tempfile
+import uuid
 
 from consolidate import consolidar
 from bands import calcular_precio, calcular_precio_celular
@@ -9,6 +13,8 @@ from imagelink import google_image_link
 _SLIM = re.compile(r"(?i)\bslim\b")
 _MARCAS_SLIM = ("xiaomi", "poco", "redmi", "moto", "motorola", "samsung", "galaxy")
 _SIN_CARGADOR = re.compile(r"(?i)\bs/cargador\b|\bslim\b")
+CATALOGO_MANIFEST_VERSION = 1
+CATALOGO_MANIFEST_NOMBRE = "catalogo-manifest.json"
 
 
 def _sin_cargador(nombre):
@@ -211,13 +217,47 @@ def resolver_proveedor(proveedores, nombre):
     return candidatos.pop() if len(candidatos) == 1 else "Proveedor no identificado"
 
 
+def _escribir_json_atomico(ruta, contenido):
+    """Serialize completely beside the target, then atomically replace it."""
+    ruta = Path(ruta)
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    temporal = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=ruta.parent,
+            prefix=f".{ruta.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as archivo:
+            temporal = Path(archivo.name)
+            json.dump(contenido, archivo, ensure_ascii=False, indent=2)
+            archivo.flush()
+            os.fsync(archivo.fileno())
+        contenido_hash = hashlib.sha256(temporal.read_bytes()).hexdigest()
+        os.replace(temporal, ruta)
+        temporal = None
+        return contenido_hash
+    finally:
+        if temporal is not None:
+            temporal.unlink(missing_ok=True)
+
+
 def escribir_productos_json(items, cotizacion, ruta):
     productos = generar_productos(items, cotizacion)
     ruta = Path(ruta)
-    with ruta.open("w", encoding="utf-8") as f:
-        json.dump(productos, f, ensure_ascii=False, indent=2)
-    with ruta.with_name("proveedores.json").open("w", encoding="utf-8") as f:
-        json.dump(generar_proveedores(items), f, ensure_ascii=False, indent=2)
-    with ruta.with_name("costos.json").open("w", encoding="utf-8") as f:
-        json.dump(generar_costos(items), f, ensure_ascii=False, indent=2)
+    proveedores_ruta = ruta.with_name("proveedores.json")
+    costos_ruta = ruta.with_name("costos.json")
+    manifiesto_ruta = ruta.with_name(CATALOGO_MANIFEST_NOMBRE)
+
+    productos_hash = _escribir_json_atomico(ruta, productos)
+    _escribir_json_atomico(proveedores_ruta, generar_proveedores(items))
+    costos_hash = _escribir_json_atomico(costos_ruta, generar_costos(items))
+    _escribir_json_atomico(manifiesto_ruta, {
+        "version": CATALOGO_MANIFEST_VERSION,
+        "generacion": str(uuid.uuid4()),
+        "productos_sha256": productos_hash,
+        "costos_sha256": costos_hash,
+    })
     return productos

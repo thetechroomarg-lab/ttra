@@ -133,8 +133,25 @@ create table if not exists codigos_descuento (
   creado_en timestamptz not null default now()
 );
 
--- El codigo de mailing se bloquea, valida, consume y guarda junto con el
--- pedido en una sola transaccion. Solo service_role puede invocar este RPC.
+-- Códigos promo genéricos (no atados a un cliente): al aplicarse suman un
+-- producto de regalo a $0 al pedido, hasta agotar usos_maximos usos totales.
+create table if not exists codigos_promo (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,
+  producto_regalo text not null,
+  usos_maximos integer not null default 20,
+  usos_actuales integer not null default 0,
+  activo boolean not null default true,
+  creado_en timestamptz not null default now()
+);
+
+-- Retira la firma anterior de forma idempotente antes de ampliar el RPC.
+drop function if exists public.guardar_pedido_con_descuento_mailing(
+  uuid, text, jsonb, jsonb, numeric, numeric, numeric, date, text, text, numeric, text
+);
+
+-- Mailing opcional, regalo opcional y pedido se bloquean y confirman en una
+-- sola transacción. Solo service_role puede invocar este RPC.
 create or replace function public.guardar_pedido_con_descuento_mailing(
   p_cliente_id uuid,
   p_codigo text,
@@ -147,7 +164,8 @@ create or replace function public.guardar_pedido_con_descuento_mailing(
   p_direccion_entrega text,
   p_modo_precio text,
   p_descuento_mayorista_usd numeric,
-  p_origen text default 'whatsapp'
+  p_origen text default 'whatsapp',
+  p_codigo_promo text default null
 )
 returns jsonb
 language plpgsql
@@ -156,6 +174,7 @@ set search_path = public
 as $$
 declare
   v_codigo codigos_descuento%rowtype;
+  v_codigo_promo codigos_promo%rowtype;
   v_pedido pedidos%rowtype;
   v_item jsonb;
   v_cantidad_item integer;
@@ -166,12 +185,19 @@ declare
   v_descuento_cantidad numeric := 0;
   v_descuento_mailing numeric := 0;
   v_descuento_total numeric;
-  v_detalle jsonb;
-  v_productos jsonb;
+  v_detalle_nuevo jsonb;
+  v_detalle_consolidado jsonb;
+  v_productos_nuevos jsonb;
+  v_productos_consolidados jsonb;
   v_consolidar boolean;
 begin
-  if p_modo_precio is distinct from 'minorista'
-     or p_descuento_mayorista_usd is distinct from 0
+  p_codigo := nullif(upper(trim(p_codigo)), '');
+  p_codigo_promo := nullif(upper(trim(p_codigo_promo)), '');
+  if p_modo_precio is null
+     or p_modo_precio not in ('minorista', 'mayorista')
+     or p_descuento_mayorista_usd is null
+     or p_descuento_mayorista_usd < 0
+     or (p_modo_precio = 'minorista' and p_descuento_mayorista_usd <> 0)
      or p_fecha_entrega is null
      or jsonb_typeof(p_productos) is distinct from 'array'
      or jsonb_typeof(p_detalle) is distinct from 'array'
@@ -179,16 +205,29 @@ begin
     return jsonb_build_object('ok', false, 'error', 'pedido_invalido');
   end if;
 
-  select * into v_codigo
-  from codigos_descuento
-  where cliente_id = p_cliente_id
-    and code = upper(trim(p_codigo))
-    and activo = true
-    and usado_en is null
-  for update;
+  if p_codigo is not null then
+    select * into v_codigo
+    from codigos_descuento
+    where cliente_id = p_cliente_id
+      and code = p_codigo
+      and activo = true
+      and usado_en is null
+    for update;
+    if not found then
+      return jsonb_build_object('ok', false, 'error', 'codigo_no_disponible');
+    end if;
+  end if;
 
-  if not found then
-    return jsonb_build_object('ok', false, 'error', 'codigo_no_disponible');
+  if p_codigo_promo is not null then
+    select * into v_codigo_promo
+    from codigos_promo
+    where code = p_codigo_promo
+      and activo = true
+      and usos_actuales < usos_maximos
+    for update;
+    if not found then
+      return jsonb_build_object('ok', false, 'error', 'codigo_promo_no_disponible');
+    end if;
   end if;
 
   for v_item in select value from jsonb_array_elements(p_detalle)
@@ -200,13 +239,13 @@ begin
     exception when others then
       return jsonb_build_object('ok', false, 'error', 'montos_invalidos');
     end;
-    if v_cantidad_item <= 0 or v_unitario < 0
+    if v_cantidad_item <= 0 or v_unitario <= 0
        or v_subtotal is distinct from v_unitario * v_cantidad_item then
       return jsonb_build_object('ok', false, 'error', 'montos_invalidos');
     end if;
     v_cantidad_total := v_cantidad_total + v_cantidad_item;
     v_total_bruto := v_total_bruto + v_subtotal;
-    if v_unitario > 0 and exists (
+    if p_codigo is not null and exists (
       select 1
       from jsonb_array_elements_text(coalesce(v_codigo.productos, '[]'::jsonb)) elegible(nombre)
       where elegible.nombre = v_item ->> 'nombre'
@@ -217,20 +256,40 @@ begin
     end if;
   end loop;
 
-  if v_cantidad_total >= 6 then
-    v_descuento_cantidad := 7.5 * v_cantidad_total;
-  elsif v_cantidad_total >= 2 then
-    v_descuento_cantidad := 5 * v_cantidad_total;
+  if p_modo_precio = 'minorista' then
+    if v_cantidad_total >= 6 then
+      v_descuento_cantidad := 7.5 * v_cantidad_total;
+    elsif v_cantidad_total >= 2 then
+      v_descuento_cantidad := 5 * v_cantidad_total;
+    end if;
   end if;
   v_descuento_total := least(
     v_descuento_cantidad + v_descuento_mailing,
     v_total_bruto
   );
-  if v_descuento_mailing <= 0
+  if (p_codigo is not null and (p_modo_precio <> 'minorista' or v_descuento_mailing <= 0))
+     or (p_codigo is null and p_descuento_mailing_usd is distinct from 0)
      or p_descuento_mailing_usd is distinct from v_descuento_mailing
      or p_descuento_usd is distinct from v_descuento_total
      or p_total_usd is distinct from v_total_bruto - v_descuento_total then
     return jsonb_build_object('ok', false, 'error', 'montos_invalidos');
+  end if;
+
+  v_productos_nuevos := p_productos;
+  v_detalle_nuevo := p_detalle;
+  if p_codigo_promo is not null then
+    v_productos_nuevos := v_productos_nuevos || jsonb_build_array(
+      format('%s (regalo código %s)', v_codigo_promo.producto_regalo, v_codigo_promo.code)
+    );
+    v_detalle_nuevo := v_detalle_nuevo || jsonb_build_array(jsonb_build_object(
+      'nombre', v_codigo_promo.producto_regalo,
+      'color', null,
+      'cantidad', 1,
+      'usd_unitario', 0,
+      'usd_subtotal', 0,
+      'tipo', 'regalo_promocional',
+      'codigo_promo', v_codigo_promo.code
+    ));
   end if;
 
   select * into v_pedido
@@ -249,17 +308,17 @@ begin
 
   if v_consolidar then
     select coalesce(jsonb_agg(valor order by primera_pos), '[]'::jsonb)
-    into v_productos
+    into v_productos_consolidados
     from (
       select valor, min(posicion) as primera_pos
       from jsonb_array_elements(
-        coalesce(v_pedido.productos, '[]'::jsonb) || p_productos
+        coalesce(v_pedido.productos, '[]'::jsonb) || v_productos_nuevos
       ) with ordinality elemento(valor, posicion)
       group by valor
     ) unicos;
 
     select coalesce(jsonb_agg(item_final order by primera_pos), '[]'::jsonb)
-    into v_detalle
+    into v_detalle_consolidado
     from (
       select
         ((array_agg(item order by posicion))[1] - 'cantidad' - 'usd_subtotal')
@@ -274,15 +333,16 @@ begin
           with ordinality existente(item, posicion)
         union all
         select item, 1000000 + posicion::bigint
-        from jsonb_array_elements(p_detalle)
+        from jsonb_array_elements(v_detalle_nuevo)
           with ordinality nuevo(item, posicion)
       ) items
-      group by item ->> 'nombre', item ->> 'color', (item ->> 'usd_unitario')::numeric
+      group by item ->> 'nombre', item ->> 'color',
+        (item ->> 'usd_unitario')::numeric, item ->> 'tipo', item ->> 'codigo_promo'
     ) agrupados;
 
     update pedidos
-    set productos = v_productos,
-        detalle = v_detalle,
+    set productos = v_productos_consolidados,
+        detalle = v_detalle_consolidado,
         total_usd = v_pedido.total_usd + p_total_usd,
         descuento_usd = coalesce(v_pedido.descuento_usd, 0) + p_descuento_usd,
         descuento_mayorista_usd = coalesce(v_pedido.descuento_mayorista_usd, 0)
@@ -296,17 +356,30 @@ begin
       modo_precio, descuento_mayorista_usd, fecha_entrega,
       direccion_entrega, origen
     ) values (
-      p_cliente_id, p_productos, p_detalle, p_total_usd, p_descuento_usd,
+      p_cliente_id, v_productos_nuevos, v_detalle_nuevo, p_total_usd, p_descuento_usd,
       p_modo_precio, p_descuento_mayorista_usd, p_fecha_entrega,
       p_direccion_entrega, coalesce(p_origen, 'whatsapp')
     ) returning * into v_pedido;
   end if;
 
-  update codigos_descuento
-  set usado_en = now()
-  where id = v_codigo.id and usado_en is null;
-  if not found then
-    raise exception 'El codigo fue consumido concurrentemente';
+  if p_codigo is not null then
+    update codigos_descuento
+    set usado_en = now()
+    where id = v_codigo.id and usado_en is null;
+    if not found then
+      raise exception 'El codigo fue consumido concurrentemente';
+    end if;
+  end if;
+
+  if p_codigo_promo is not null then
+    update codigos_promo
+    set usos_actuales = usos_actuales + 1
+    where id = v_codigo_promo.id
+      and activo = true
+      and usos_actuales < usos_maximos;
+    if not found then
+      raise exception 'El regalo fue consumido concurrentemente';
+    end if;
   end if;
 
   return jsonb_build_object('ok', true, 'pedido', to_jsonb(v_pedido));
@@ -314,23 +387,12 @@ end;
 $$;
 
 revoke all on function public.guardar_pedido_con_descuento_mailing(
-  uuid, text, jsonb, jsonb, numeric, numeric, numeric, date, text, text, numeric, text
+  uuid, text, jsonb, jsonb, numeric, numeric, numeric, date, text, text, numeric, text, text
 ) from public, anon, authenticated;
 grant execute on function public.guardar_pedido_con_descuento_mailing(
-  uuid, text, jsonb, jsonb, numeric, numeric, numeric, date, text, text, numeric, text
+  uuid, text, jsonb, jsonb, numeric, numeric, numeric, date, text, text, numeric, text, text
 ) to service_role;
 
--- Códigos promo genéricos (no atados a un cliente): al aplicarse suman un
--- producto de regalo a $0 al carrito, hasta agotar usos_maximos usos totales.
-create table if not exists codigos_promo (
-  id uuid primary key default gen_random_uuid(),
-  code text not null unique,
-  producto_regalo text not null,
-  usos_maximos integer not null default 20,
-  usos_actuales integer not null default 0,
-  activo boolean not null default true,
-  creado_en timestamptz not null default now()
-);
 alter table codigos_promo enable row level security;
 
 insert into codigos_promo (code, producto_regalo, usos_maximos)

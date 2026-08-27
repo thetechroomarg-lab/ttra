@@ -46,6 +46,8 @@ def _combinar_detalles(actual, nuevo):
             item.get("nombre"),
             item.get("color"),
             decimal_monetario(item.get("usd_unitario")),
+            item.get("tipo"),
+            item.get("codigo_promo"),
         ): indice
         for indice, item in enumerate(combinados)
     }
@@ -54,6 +56,8 @@ def _combinar_detalles(actual, nuevo):
             item.get("nombre"),
             item.get("color"),
             decimal_monetario(item.get("usd_unitario")),
+            item.get("tipo"),
+            item.get("codigo_promo"),
         )
         if clave not in posiciones:
             posiciones[clave] = len(combinados)

@@ -3118,6 +3118,7 @@ function ocultarNavegacionCatalogo() {
 
 async function cargarCatalogo() {
   catalogoListo = false;
+  renderCarrito();
   let datos;
   try {
     const anonId = obtenerAnonId();
@@ -3136,7 +3137,7 @@ async function cargarCatalogo() {
     document.getElementById("productos").innerHTML =
       '<p class="mensaje-vacio">No pudimos cargar el catálogo. Escribinos por WhatsApp: ' +
       '<a href="https://wa.me/543512145217" target="_blank" rel="noopener">wa.me/543512145217</a></p>';
-    return;
+    return false;
   }
   modoPrecioActual = datos.modo_precio === "mayorista" ? "mayorista" : "minorista";
   SECCIONES_DATA = datos.secciones || {};
@@ -3150,10 +3151,11 @@ async function cargarCatalogo() {
   if (datos.mensaje) {
     ocultarNavegacionCatalogo();
     document.getElementById("productos").innerHTML = `<p class="mensaje-vacio">${datos.mensaje}</p>`;
-    return;
+    return true;
   }
   pintarCategorias();
   actualizarVista();
+  return true;
 }
 
 function refrescarPreciosCarrito() {
@@ -3652,8 +3654,6 @@ async function derivarCheckoutAWhatsapp(carrito) {
   registrarInteraccion("complete_checkout", {
     metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
   });
-  const consumePromo = await consumirCodigoPromo();
-  if (!consumePromo.ok) return;
   const fechaEntrega = document.getElementById("fecha-entrega").value;
   const direccionEntrega = document.getElementById("direccion-entrega").value.trim();
   if (!direccionEntrega) { alert("Especificá dirección de entrega."); return; }
@@ -3886,23 +3886,6 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
   alert(`¡Código aplicado! Sumamos ${body.producto_regalo} de regalo a tu pedido.`);
 });
 
-async function consumirCodigoPromo() {
-  if (!catalogoListo) return { ok: false };
-  const regalo = cargarRegaloPromo();
-  if (!regalo?.codigo) return { ok: true };
-  const r = await fetch("/api/codigos-promo/consumir", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ codigo: regalo.codigo }),
-  });
-  const respuesta = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    setEstadoCodigoMailing(respuesta.error || "No se pudo aplicar el código en este checkout.", "error");
-    borrarRegaloPromo();
-    return { ok: false };
-  }
-  return { ok: true };
-}
 // Al cerrar un pedido, suma los productos encargados al registro del
 // cliente (mismo clientes.json/csv que ya alimentan el gate inicial y el
 // buscador por chat) — así el panel /admin/clientes también refleja los
@@ -3913,7 +3896,6 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
   const productos = [...new Set(carrito.map((it) =>
     it.color && it.color !== "Color único" ? `${it.nombre} (${it.color})` : it.nombre
   ))];
-  if (regaloPromo) productos.push(`${regaloPromo.producto_regalo} (regalo código ${regaloPromo.codigo})`);
   const descuento = calcularDescuento(carrito);
   const descuentoMailing = descuentoMailingAplicado(carrito);
   const total_usd = Math.max(
@@ -3921,6 +3903,7 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
     0,
   );
   const codigo_descuento = descuentoMailing?.codigo || null;
+  const codigo_promo = regaloPromo?.codigo || null;
   const detalle = carrito.map((it) => ({
     nombre: it.nombre,
     color: it.color || null,
@@ -3928,24 +3911,26 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
     usd_unitario: it.usd || 0,
     usd_subtotal: (it.usd || 0) * it.cantidad,
   }));
-  if (regaloPromo) {
-    detalle.push({
-      nombre: regaloPromo.producto_regalo,
-      color: null,
-      cantidad: 1,
-      usd_unitario: 0,
-      usd_subtotal: 0,
-    });
-  }
   const respuesta = await fetch("/api/pedidos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      productos, fecha_entrega, direccion_entrega, detalle, total_usd, codigo_descuento,
+      productos, fecha_entrega, direccion_entrega, detalle, total_usd,
+      codigo_descuento, codigo_promo,
     }),
   });
+  const body = await respuesta.json().catch(() => ({}));
+  if (respuesta.status === 409) {
+    if (body.conflicto === "codigo_promo") borrarRegaloPromo();
+    if (body.conflicto === "codigo_descuento") borrarDescuentoMailing();
+    alert(body.error
+      ? `${body.error}\n\nRevisá el carrito y confirmá nuevamente.`
+      : "El catálogo cambió. Revisá el carrito y confirmá nuevamente.");
+    const recargado = await cargarCatalogo();
+    if (recargado) abrirCarrito();
+    return false;
+  }
   if (!respuesta.ok) {
-    const body = await respuesta.json().catch(() => ({}));
     throw new Error(body.error || "No se pudo guardar el pedido");
   }
   return true;

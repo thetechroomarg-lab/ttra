@@ -181,3 +181,14 @@ def recomendar_productos(productos, filas_interacciones, limite=8):
             agregar(producto, "✨ Recomendado para vos")
 
     return recomendaciones
+
+
+def recomendar_nombres(productos, filas_interacciones, limite=8):
+    """Rank public product names without making ranked objects response data."""
+    return [
+        {
+            "nombre": producto["nombre"],
+            "motivo_recomendacion": producto["motivo_recomendacion"],
+        }
+        for producto in recomendar_productos(productos, filas_interacciones, limite)
+    ]

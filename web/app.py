@@ -1,3 +1,4 @@
+import hashlib
 import html
 import json
 import logging
@@ -51,6 +52,10 @@ PRODUCTOS_PATH = Path(os.environ.get("PRODUCTOS_PATH", str(BASE / "productos.jso
 PROVEEDORES_PATH = Path(os.environ.get("PROVEEDORES_PATH", str(BASE / "proveedores.json")))
 COSTOS_PATH = Path(os.environ.get(
     "COSTOS_PATH", str(PRODUCTOS_PATH.with_name("costos.json"))
+))
+CATALOGO_MANIFEST_PATH = Path(os.environ.get(
+    "CATALOGO_MANIFEST_PATH",
+    str(PRODUCTOS_PATH.with_name("catalogo-manifest.json")),
 ))
 _CAMPOS_PRIVADOS_CATALOGO = frozenset({"costo", "margen", "proveedor", "capacidad"})
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
@@ -234,6 +239,49 @@ def _cargar_costos():
         logger.exception("No se pudo cargar el índice privado de costos")
         return {}
     return costos if isinstance(costos, dict) else {}
+
+
+def _cargar_snapshot_mayorista():
+    """Load exactly one committed product/cost generation, or fail closed."""
+    try:
+        manifiesto_antes = CATALOGO_MANIFEST_PATH.read_bytes()
+        manifiesto = json.loads(manifiesto_antes)
+        if (
+            not isinstance(manifiesto, dict)
+            or manifiesto.get("version") != 1
+            or not isinstance(manifiesto.get("generacion"), str)
+            or not manifiesto["generacion"].strip()
+        ):
+            return [], {}
+
+        productos_bytes = PRODUCTOS_PATH.read_bytes()
+        costos_bytes = COSTOS_PATH.read_bytes()
+        manifiesto_despues = CATALOGO_MANIFEST_PATH.read_bytes()
+        if manifiesto_antes != manifiesto_despues:
+            return [], {}
+
+        productos_hash = manifiesto.get("productos_sha256")
+        costos_hash = manifiesto.get("costos_sha256")
+        if (
+            not isinstance(productos_hash, str)
+            or not isinstance(costos_hash, str)
+            or not secrets.compare_digest(
+                hashlib.sha256(productos_bytes).hexdigest(), productos_hash
+            )
+            or not secrets.compare_digest(
+                hashlib.sha256(costos_bytes).hexdigest(), costos_hash
+            )
+        ):
+            return [], {}
+
+        productos = json.loads(productos_bytes)
+        costos = json.loads(costos_bytes)
+        if not isinstance(productos, list) or not isinstance(costos, dict):
+            return [], {}
+        return productos, costos
+    except (OSError, json.JSONDecodeError, UnicodeError, TypeError, ValueError):
+        logger.exception("No se pudo cargar un snapshot mayorista consistente")
+        return [], {}
 
 
 def _cliente():
@@ -2323,13 +2371,18 @@ def _tipo_cliente_sesion(request: Request) -> str:
 def _catalogo_autorizado(request: Request) -> tuple[list[dict], str]:
     """Return the product list and price tier authorized for this request."""
     tipo_cliente = _tipo_cliente_sesion(request)
+    if tipo_cliente == "mayorista":
+        productos_crudos, costos = _cargar_snapshot_mayorista()
+    else:
+        productos_crudos, costos = _cargar_productos(), None
     productos = [
         {campo: valor for campo, valor in producto.items()
          if campo not in _CAMPOS_PRIVADOS_CATALOGO}
-        for producto in _cargar_productos()
+        for producto in productos_crudos
     ]
+    request.state.productos_publicos_autorizados = productos
     if tipo_cliente == "mayorista":
-        return mayoristas.catalogo_mayorista(productos, _cargar_costos()), tipo_cliente
+        return mayoristas.catalogo_mayorista(productos, costos), tipo_cliente
     return productos, tipo_cliente
 
 
@@ -2640,6 +2693,7 @@ class PedidoIn(BaseModel):
     total_usd: Decimal | None = Field(default=None, ge=0)
     descuento_usd: Decimal = Field(default=0, ge=0)
     codigo_descuento: str | None = Field(default=None, max_length=100)
+    codigo_promo: str | None = Field(default=None, max_length=100)
 
 
 class EditarFechaEntregaIn(BaseModel):
@@ -2725,7 +2779,10 @@ def api_pedidos(entrada: PedidoIn, request: Request):
     if not entrada.detalle:
         if modo_precio == "mayorista":
             return JSONResponse(
-                {"error": "Los precios cambiaron. Recargá el catálogo e intentá de nuevo."},
+                {
+                    "error": "Los precios cambiaron. Recargá el catálogo e intentá de nuevo.",
+                    "conflicto": "catalogo",
+                },
                 status_code=409,
             )
         pedidos.guardar_pedido(
@@ -2741,7 +2798,10 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         return JSONResponse({"error": "Especificá dirección de entrega"}, status_code=400)
 
     error_precios = JSONResponse(
-        {"error": "Los precios cambiaron. Recargá el catálogo e intentá de nuevo."},
+        {
+            "error": "Los precios cambiaron. Recargá el catálogo e intentá de nuevo.",
+            "conflicto": "catalogo",
+        },
         status_code=409,
     )
     nombres_autorizados = [
@@ -2749,7 +2809,9 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         for producto in catalogo_autorizado
         if producto.get("nombre")
     ]
-    productos_publicos = _cargar_productos()
+    productos_publicos = getattr(
+        request.state, "productos_publicos_autorizados", catalogo_autorizado
+    )
     nombres_publicos = [
         producto.get("nombre")
         for producto in productos_publicos
@@ -2848,7 +2910,10 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         )
         if not descuento:
             return JSONResponse(
-                {"error": "El código de descuento ya no es válido para este pedido."},
+                {
+                    "error": "El código de descuento ya no es válido para este pedido.",
+                    "conflicto": "codigo_descuento",
+                },
                 status_code=409,
             )
         descuento_mailing_usd = pedidos.decimal_monetario(
@@ -2862,10 +2927,11 @@ def api_pedidos(entrada: PedidoIn, request: Request):
     total_usd = total_bruto_usd - descuento_usd
     if entrada.total_usd != total_usd:
         return error_precios
-    if fila_descuento:
+    codigo_promo = (entrada.codigo_promo or "").strip().upper()
+    if fila_descuento or codigo_promo:
         parametros = {
             "p_cliente_id": cliente_id,
-            "p_codigo": fila_descuento["code"],
+            "p_codigo": fila_descuento["code"] if fila_descuento else None,
             "p_productos": productos_pedido,
             "p_detalle": detalle,
             "p_total_usd": pedidos.numero_monetario_db(total_usd),
@@ -2882,6 +2948,7 @@ def api_pedidos(entrada: PedidoIn, request: Request):
                 descuento_mayorista_usd
             ),
             "p_origen": "whatsapp",
+            "p_codigo_promo": codigo_promo or None,
         }
         try:
             resultado = client.rpc(
@@ -2889,25 +2956,36 @@ def api_pedidos(entrada: PedidoIn, request: Request):
             ).execute().data
         except Exception:
             logger.exception(
-                "No se pudo guardar atomicamente el pedido con descuento mailing"
+                "No se pudo guardar atomicamente el pedido con promociones"
             )
             return JSONResponse(
-                {"error": "No pudimos confirmar el descuento y guardar el pedido."},
+                {"error": "No pudimos confirmar las promociones y guardar el pedido."},
                 status_code=503,
             )
         if not isinstance(resultado, dict):
             return JSONResponse(
-                {"error": "No pudimos confirmar el descuento y guardar el pedido."},
+                {"error": "No pudimos confirmar las promociones y guardar el pedido."},
                 status_code=503,
             )
         if not resultado.get("ok"):
+            if resultado.get("error") == "codigo_promo_no_disponible":
+                return JSONResponse(
+                    {
+                        "error": "El código de regalo ya no está disponible para este pedido.",
+                        "conflicto": "codigo_promo",
+                    },
+                    status_code=409,
+                )
             return JSONResponse(
-                {"error": "El codigo de descuento ya no es valido para este pedido."},
+                {
+                    "error": "El código de descuento ya no es válido para este pedido.",
+                    "conflicto": "codigo_descuento",
+                },
                 status_code=409,
             )
         if not isinstance(resultado.get("pedido"), dict):
             return JSONResponse(
-                {"error": "No pudimos confirmar el descuento y guardar el pedido."},
+                {"error": "No pudimos confirmar las promociones y guardar el pedido."},
                 status_code=503,
             )
     else:
@@ -3132,12 +3210,10 @@ def api_codigos_promo_consumir(entrada: CodigoPromoIn, request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     if _debe_cambiar_password(request):
         raise HTTPException(status_code=403, detail="Tenés que elegir una contraseña nueva antes de seguir")
-    client = get_client()
-    fila = _codigo_promo_row(client, entrada.codigo)
-    if not fila:
-        return JSONResponse({"error": "Código inválido o ya alcanzó el límite de usos"}, status_code=400)
-    client.table("codigos_promo").update({"usos_actuales": int(fila.get("usos_actuales") or 0) + 1}).eq("code", fila["code"]).execute()
-    return {"ok": True, "codigo": fila["code"], "producto_regalo": fila["producto_regalo"]}
+    return JSONResponse(
+        {"error": "Este endpoint fue retirado; el regalo se consume al guardar el pedido."},
+        status_code=410,
+    )
 
 
 @app.get("/catalogo")
@@ -3159,8 +3235,8 @@ def api_catalogo(request: Request):
 
 @app.get("/api/recomendados")
 def api_recomendados(request: Request, limit: int = 16):
-    productos = _cargar_productos()
-    if not productos:
+    productos_autorizados, _modo_precio = _catalogo_autorizado(request)
+    if not productos_autorizados:
         return {"productos": []}
 
     filas_interacciones = []
@@ -3177,10 +3253,23 @@ def api_recomendados(request: Request, limit: int = 16):
             logger.exception("No se pudieron cargar interacciones para recomendaciones")
 
     limite = max(1, min(limit, 24))
+    ranking = interacciones.recomendar_nombres(
+        productos_autorizados, filas_interacciones, limite=limite
+    )
+    por_nombre = {
+        producto["nombre"]: producto
+        for producto in productos_autorizados
+        if producto.get("nombre")
+    }
     return {
-        "productos": interacciones.recomendar_productos(
-            productos, filas_interacciones, limite=limite
-        )
+        "productos": [
+            {
+                **por_nombre[candidato["nombre"]],
+                "motivo_recomendacion": candidato["motivo_recomendacion"],
+            }
+            for candidato in ranking
+            if candidato["nombre"] in por_nombre
+        ]
     }
 
 
