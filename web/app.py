@@ -2672,6 +2672,24 @@ def api_me_password(entrada: CambiarPasswordPropioIn, request: Request):
     return {"ok": True}
 
 
+@app.post("/api/me/condiciones-mayorista")
+def api_aceptar_condiciones_mayorista(request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    if _tipo_cliente_sesion(request) != "mayorista":
+        raise HTTPException(status_code=403, detail="Solo aplica a cuentas mayoristas")
+    aceptadas_en = datetime.now(timezone.utc).isoformat()
+    try:
+        client = get_client()
+        client.table("clientes").update(
+            {"condiciones_mayorista_aceptadas_en": aceptadas_en}
+        ).eq("id", request.session["cliente_id"]).execute()
+    except Exception:
+        logger.exception("No se pudo guardar la aceptación de condiciones mayoristas")
+        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+    return {"ok": True, "condiciones_mayorista_aceptadas_en": aceptadas_en}
+
+
 @app.get("/perfil")
 def pagina_perfil(request: Request):
     if not _sesion_activa(request) or _debe_cambiar_password(request):

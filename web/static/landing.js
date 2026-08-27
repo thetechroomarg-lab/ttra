@@ -1992,6 +1992,89 @@ function ocultarConfirmacionLogout() {
   if (confirmar) confirmar.classList.remove("visible");
 }
 
+// --- Popup obligatorio de condiciones mayoristas: se muestra una sola vez,
+// la primera vez que una cuenta mayorista entra a la landing (chequeado
+// contra clientes.condiciones_mayorista_aceptadas_en en /api/me). No tiene
+// forma de cerrarlo sin aceptar — ni botón cancelar ni click afuera — y el
+// botón "Acepto" arranca deshabilitado hasta que se llega al final del
+// scroll. Desde el perfil se reabre en modo solo lectura ("ver"), con botón
+// "Cerrar" en vez de "Acepto". ---
+const overlayTerminosMayorista = document.getElementById("rc-terminos-mayorista");
+const contenidoTerminosMayorista = document.getElementById("rc-terminos-contenido");
+const btnTerminosAceptar = document.getElementById("btn-terminos-aceptar");
+const btnTerminosCerrar = document.getElementById("btn-terminos-cerrar");
+let fragmentoTerminosMayoristaCache = null;
+
+async function cargarFragmentoTerminosMayorista() {
+  if (fragmentoTerminosMayoristaCache) return fragmentoTerminosMayoristaCache;
+  try {
+    const r = await fetch("/condiciones-mayorista.html");
+    fragmentoTerminosMayoristaCache = r.ok
+      ? await r.text()
+      : "<p>No pudimos cargar las condiciones mayoristas. Recargá la página.</p>";
+  } catch {
+    fragmentoTerminosMayoristaCache = "<p>No pudimos cargar las condiciones mayoristas. Recargá la página.</p>";
+  }
+  return fragmentoTerminosMayoristaCache;
+}
+
+async function mostrarModalTerminosMayorista(modo) {
+  if (!overlayTerminosMayorista || !contenidoTerminosMayorista) return;
+  contenidoTerminosMayorista.innerHTML = await cargarFragmentoTerminosMayorista();
+  contenidoTerminosMayorista.scrollTop = 0;
+  const esAceptar = modo === "aceptar";
+  if (btnTerminosAceptar) btnTerminosAceptar.classList.toggle("oculto", !esAceptar);
+  if (btnTerminosCerrar) btnTerminosCerrar.classList.toggle("oculto", esAceptar);
+  if (esAceptar && btnTerminosAceptar) {
+    btnTerminosAceptar.disabled = true;
+    btnTerminosAceptar.textContent = "Acepto";
+    const alLlegarAlFinal = () => {
+      const { scrollTop, clientHeight, scrollHeight } = contenidoTerminosMayorista;
+      if (scrollTop + clientHeight >= scrollHeight - 4) {
+        btnTerminosAceptar.disabled = false;
+        contenidoTerminosMayorista.removeEventListener("scroll", alLlegarAlFinal);
+      }
+    };
+    contenidoTerminosMayorista.addEventListener("scroll", alLlegarAlFinal);
+    // Por si el contenido ya entra completo sin necesidad de scrollear.
+    requestAnimationFrame(alLlegarAlFinal);
+  }
+  overlayTerminosMayorista.classList.add("visible");
+}
+
+function ocultarModalTerminosMayorista() {
+  if (overlayTerminosMayorista) overlayTerminosMayorista.classList.remove("visible");
+}
+
+if (btnTerminosCerrar) {
+  btnTerminosCerrar.addEventListener("click", ocultarModalTerminosMayorista);
+}
+
+if (btnTerminosAceptar) {
+  btnTerminosAceptar.addEventListener("click", async () => {
+    btnTerminosAceptar.disabled = true;
+    btnTerminosAceptar.textContent = "Guardando...";
+    try {
+      const r = await fetch("/api/me/condiciones-mayorista", { method: "POST" });
+      if (!r.ok) throw new Error("No se pudo guardar la aceptación");
+      const datos = await r.json();
+      if (estadoSesionCliente) {
+        estadoSesionCliente.condiciones_mayorista_aceptadas_en = datos.condiciones_mayorista_aceptadas_en;
+      }
+      ocultarModalTerminosMayorista();
+    } catch {
+      alert("No pudimos guardar tu aceptación. Probá de nuevo.");
+      btnTerminosAceptar.disabled = false;
+      btnTerminosAceptar.textContent = "Acepto";
+    }
+  });
+}
+
+function verificarCondicionesMayoristaPendientes(sesion) {
+  if (!sesion || sesion.tipo_cliente !== "mayorista" || sesion.condiciones_mayorista_aceptadas_en) return;
+  mostrarModalTerminosMayorista("aceptar");
+}
+
 async function cerrarSesionCliente() {
   try {
     localStorage.removeItem("ttra_cliente");
@@ -2096,7 +2179,7 @@ async function sincronizarMenuPerfilSegunSesion(force = false) {
   }
   return sesion;
 }
-sincronizarMenuPerfilSegunSesion(true);
+sincronizarMenuPerfilSegunSesion(true).then(verificarCondicionesMayoristaPendientes);
 
 if (btnLogoutClassic) {
   btnLogoutClassic.addEventListener("click", () => {

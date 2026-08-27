@@ -227,6 +227,70 @@ def test_api_me_expone_el_modo_precio_vigente(monkeypatch):
     assert r.json()["modo_precio"] == "mayorista"
 
 
+def test_api_me_expone_condiciones_mayorista_no_aceptadas_por_defecto(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver")
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234",
+        "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
+    })
+    cliente = fake.table("clientes").select("*").execute().data[0]
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", cliente["id"]).execute()
+
+    r = c.get("/api/me")
+
+    assert r.status_code == 200
+    assert r.json()["condiciones_mayorista_aceptadas_en"] is None
+
+
+def test_cuenta_mayorista_puede_aceptar_las_condiciones(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver")
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234",
+        "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
+    })
+    cliente = fake.table("clientes").select("*").execute().data[0]
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", cliente["id"]).execute()
+
+    r = c.post("/api/me/condiciones-mayorista")
+
+    assert r.status_code == 200
+    aceptadas_en = r.json()["condiciones_mayorista_aceptadas_en"]
+    assert aceptadas_en
+    me = c.get("/api/me")
+    assert me.json()["condiciones_mayorista_aceptadas_en"] == aceptadas_en
+
+
+def test_cuenta_minorista_no_puede_aceptar_condiciones_mayorista(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver")
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234",
+        "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",
+    })
+
+    r = c.post("/api/me/condiciones-mayorista")
+
+    assert r.status_code == 403
+
+
+def test_aceptar_condiciones_mayorista_requiere_sesion(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver")
+
+    r = c.post("/api/me/condiciones-mayorista")
+
+    assert r.status_code == 401
+
+
 def test_registro_celular_duplicado_devuelve_400(monkeypatch):
     c = _cliente(monkeypatch)
     c.post("/registro", json={

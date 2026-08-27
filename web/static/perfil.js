@@ -78,6 +78,53 @@ domicilioDireccionInput.addEventListener("input", () => {
   }, 250);
 });
 
+const seccionCondicionesMayorista = document.getElementById("seccion-condiciones-mayorista");
+const condicionesMayoristaFecha = document.getElementById("condiciones-mayorista-fecha");
+const btnVerCondicionesMayorista = document.getElementById("btn-ver-condiciones-mayorista");
+const overlayTerminosMayorista = document.getElementById("rc-terminos-mayorista");
+const contenidoTerminosMayorista = document.getElementById("rc-terminos-contenido");
+const btnTerminosCerrar = document.getElementById("btn-terminos-cerrar");
+let fragmentoTerminosMayoristaCache = null;
+
+function mostrarSeccionCondicionesMayorista(datos) {
+  if (!seccionCondicionesMayorista) return;
+  const esMayorista = datos.tipo_cliente === "mayorista";
+  seccionCondicionesMayorista.classList.toggle("oculto", !esMayorista);
+  if (esMayorista && condicionesMayoristaFecha) {
+    condicionesMayoristaFecha.textContent = datos.condiciones_mayorista_aceptadas_en
+      ? `Aceptadas el ${new Date(datos.condiciones_mayorista_aceptadas_en).toLocaleString("es-AR")}`
+      : "";
+  }
+}
+
+async function cargarFragmentoTerminosMayorista() {
+  if (fragmentoTerminosMayoristaCache) return fragmentoTerminosMayoristaCache;
+  try {
+    const r = await fetch("/condiciones-mayorista.html");
+    fragmentoTerminosMayoristaCache = r.ok
+      ? await r.text()
+      : "<p>No pudimos cargar las condiciones mayoristas. Probá de nuevo.</p>";
+  } catch {
+    fragmentoTerminosMayoristaCache = "<p>No pudimos cargar las condiciones mayoristas. Probá de nuevo.</p>";
+  }
+  return fragmentoTerminosMayoristaCache;
+}
+
+if (btnVerCondicionesMayorista) {
+  btnVerCondicionesMayorista.addEventListener("click", async () => {
+    if (!overlayTerminosMayorista || !contenidoTerminosMayorista) return;
+    contenidoTerminosMayorista.innerHTML = await cargarFragmentoTerminosMayorista();
+    contenidoTerminosMayorista.scrollTop = 0;
+    overlayTerminosMayorista.classList.add("visible");
+  });
+}
+
+if (btnTerminosCerrar) {
+  btnTerminosCerrar.addEventListener("click", () => {
+    if (overlayTerminosMayorista) overlayTerminosMayorista.classList.remove("visible");
+  });
+}
+
 async function cargarPerfil() {
   const errorEl = document.getElementById("perfil-error");
   try {
@@ -95,6 +142,7 @@ async function cargarPerfil() {
     document.getElementById("perfil-apellido").value = datos.apellido || "";
     document.getElementById("perfil-email").value = datos.email || "";
     document.getElementById("perfil-celular").value = datos.celular || "";
+    mostrarSeccionCondicionesMayorista(datos);
   } catch {
     errorEl.textContent = "No pudimos conectar, probá de nuevo en un momento";
   }

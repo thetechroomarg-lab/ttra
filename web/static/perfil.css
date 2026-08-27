@@ -34,3 +34,42 @@ input:disabled { opacity: .6; cursor: not-allowed; }
 .item-domicilio-acciones button {
   height: auto; min-height: 30px; padding: 0 10px; font-size: 11px;
 }
+
+#seccion-condiciones-mayorista.oculto { display: none; }
+
+/* Popup de solo lectura con las condiciones mayoristas ya aceptadas
+   (mismo look que el resto del perfil, sin dependencia de landing.css). */
+.rc-terminos-overlay {
+  position: fixed; inset: 0; z-index: 10020;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.rc-terminos-overlay.visible { display: flex; }
+.rc-terminos-tarjeta {
+  width: 100%; max-width: 640px; max-height: 85vh;
+  display: flex; flex-direction: column; text-align: left;
+  background: #010601; border: 3px solid var(--rc-green-dim);
+  box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
+  padding: 24px 20px;
+}
+.rc-terminos-contenido {
+  overflow-y: auto; margin-bottom: 18px; padding-right: 8px;
+  color: var(--rc-green-bright); font-size: 14px; line-height: 1.55;
+}
+.rc-terminos-contenido h1 {
+  margin: 0 0 14px; font-size: 17px; text-transform: uppercase; letter-spacing: .04em;
+  text-shadow: 0 0 6px var(--rc-glow);
+}
+.rc-terminos-contenido h2 {
+  margin: 22px 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--rc-green-bright);
+}
+.rc-terminos-contenido h3 { margin: 16px 0 8px; font-size: 13.5px; color: var(--rc-green-dim); }
+.rc-terminos-contenido p { margin: 0 0 10px; }
+.rc-terminos-contenido ul { margin: 0 0 10px; padding-left: 20px; }
+.rc-terminos-contenido li { margin-bottom: 6px; }
+.rc-terminos-acciones { display: flex; justify-content: center; }
+.rc-terminos-acciones button {
+  width: 130px; height: 42px;
+  color: var(--rc-green-bright); border-color: var(--rc-green);
+  box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
+}

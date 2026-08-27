@@ -28,6 +28,10 @@ alter table clientes add column if not exists provincia text;
 alter table clientes alter column email drop not null;
 alter table clientes add column if not exists direccion text;
 
+-- Fecha en que una cuenta mayorista aceptó las condiciones comerciales
+-- para revendedores (popup obligatorio en la landing). Null = no aceptadas.
+alter table clientes add column if not exists condiciones_mayorista_aceptadas_en timestamptz;
+
 -- Domicilios guardados por cliente para el checkout (hasta 5, uno
 -- predeterminado). La columna clientes.direccion se mantiene aparte: la
 -- sigue usando el panel admin para el "Vamos" de contactos-proveedor.
