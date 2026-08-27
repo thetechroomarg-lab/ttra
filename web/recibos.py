@@ -105,11 +105,16 @@ def html_recibo(cliente, pedido, logo_url=""):
     primer_nombre = html.escape(nombres[0] if nombres else "Cliente")
     recibo_id = html.escape(pedido.get("recibo_id") or "")
     fecha_emision = html.escape(_formatear_fecha_emision(pedido.get("recibo_emitido_en")))
+    entregado_por_alejo_html = (
+        "<p style='margin:14px 0 0;font-weight:700'>Entregado por Alejo</p>"
+        if pedido.get("entregado_por_cadete") else ""
+    )
     return f"""<!doctype html><html lang='es'><body style='margin:0;background:#f2f2f2;font-family:Arial,sans-serif;color:#161616'>
 <main style='max-width:680px;margin:24px auto;background:#fff;padding:32px;box-sizing:border-box'>
   <header style='border-bottom:3px solid #c8102e;padding-bottom:18px;margin-bottom:24px'>
     <strong style='font-size:22px;letter-spacing:-1px'>THE TECH ROOM ARG<span style='color:#c8102e'>.</span></strong>
     <p style='margin:14px 0 0;color:#555'>Recibo interno {recibo_id}<br>Emitido el {fecha_emision}</p>
+    {entregado_por_alejo_html}
   </header>
   <p>Hola {primer_nombre},</p><p>Este comprobante resume tu compra.</p>
   <table role='presentation' style='width:100%;border-collapse:collapse;table-layout:fixed;margin:20px 0'>
@@ -167,10 +172,14 @@ def pdf_recibo(cliente, pedido, fotos=None):
         Paragraph('THE TECH ROOM ARG<font color="#c8102e">.</font>', titulo),
         Paragraph(f"Recibo interno {html.escape(pedido.get('recibo_id') or '')}", normal),
         Paragraph(f"Emitido el {_formatear_fecha_emision(pedido.get('recibo_emitido_en'))}", normal),
+    ]
+    if pedido.get("entregado_por_cadete"):
+        elementos.append(Paragraph("<b>Entregado por Alejo</b>", normal))
+    elementos.extend([
         Spacer(1, 14),
         Paragraph(f"Cliente: {nombre_cliente}", normal),
         Spacer(1, 12),
-    ]
+    ])
     filas = [[_parrafo_celda("Producto", encabezado), _parrafo_celda("Cant.", encabezado),
               _parrafo_celda("Unitario", encabezado), _parrafo_celda("Subtotal", encabezado)]]
     for item in pedido.get("detalle") or []:

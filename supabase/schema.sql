@@ -85,6 +85,10 @@ alter table pedidos add column if not exists recibo_enviado_en timestamptz;
 alter table pedidos add column if not exists direccion_entrega text;
 alter table pedidos add column if not exists orden_entrega integer;
 alter table pedidos add column if not exists fotos_series jsonb not null default '[]'::jsonb;
+-- Slug del cadete al que se derivó la entrega (ej. "alejo"), o null si la
+-- maneja el admin. Ver panel restringido en /admin/cadete.
+alter table pedidos add column if not exists asignado_a text;
+alter table pedidos add column if not exists observaciones_cadete text;
 create unique index if not exists pedidos_recibo_id_unico
   on pedidos (recibo_id) where recibo_id is not null;
 create index if not exists pedidos_fecha_orden_entrega_idx
@@ -111,6 +115,8 @@ alter table tareas_entrega add column if not exists cliente_id uuid references c
 -- cuenta asociada — el campo "Cliente" del formulario ya no es opcional y
 -- siempre se guarda, coincida o no con la base.
 alter table tareas_entrega add column if not exists cliente_nombre text;
+alter table tareas_entrega add column if not exists asignado_a text;
+alter table tareas_entrega add column if not exists observaciones_cadete text;
 
 create sequence if not exists public.recibos_numero_seq start with 1993;
 create or replace function public.siguiente_numero_recibo()
