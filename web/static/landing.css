@@ -222,6 +222,13 @@ header {
   letter-spacing: .02em;
   text-align: center;
 }
+/* display:block de arriba le gana al display:none por defecto del
+   atributo [hidden] (misma especificidad, la clase pesa igual) — sin
+   esto el cartel queda visible siempre, sin importar lo que haga el JS
+   con `indicador.hidden`. */
+.indicador-mayorista[hidden] {
+  display: none;
+}
 .rc-modo-y-carrito button {
   width: 100%; text-align: center;
   padding: 8px 14px; font-size: clamp(13px, 3.5vw, 15px);
