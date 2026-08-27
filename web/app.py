@@ -1256,12 +1256,10 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             '</div>'
         )
 
-    def _tarjeta_tarea(tarea):
+    def _acciones_tarea(tarea):
         tarea_id = html.escape(tarea.get("id", ""))
         fecha = html.escape(tarea.get("fecha_entrega", ""))
         direccion = (tarea.get("direccion") or "").strip()
-        nombre_cliente = tarea.get("cliente_nombre") or clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
-        detalle_cliente = f'<br><span>Cliente: {html.escape(nombre_cliente)}</span>' if nombre_cliente else ""
         boton_direcciones = (
             f'<button class="btn-direcciones" type="button" '
             f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Vamos</button>'
@@ -1269,15 +1267,23 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             if direccion else f'<button class="btn-agregar-direccion-tarea" type="button" data-id="{tarea_id}">Agregar dirección</button>'
         )
         return (
-            f'<div class="pedido-hoy" data-tipo-entrega="tarea" data-entrega-id="{tarea_id}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar tarea">≡</button><div class="pedido-hoy-detalle">'
-            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
-            f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
             '<div class="pedido-acciones">'
             f'{boton_direcciones}'
             f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>'
             f'<button class="btn-editar-tarea" type="button" data-id="{tarea_id}" data-fecha="{fecha}" data-tipo="tarea">Editar fecha</button>'
             f'<button class="btn-eliminar-tarea" type="button" data-id="{tarea_id}">Eliminar tarea</button>'
-            '</div></div>'
+            '</div>'
+        )
+
+    def _tarjeta_tarea(tarea):
+        tarea_id = html.escape(tarea.get("id", ""))
+        nombre_cliente = tarea.get("cliente_nombre") or clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
+        detalle_cliente = f'<br><span>Cliente: {html.escape(nombre_cliente)}</span>' if nombre_cliente else ""
+        return (
+            f'<div class="pedido-hoy" data-tipo-entrega="tarea" data-entrega-id="{tarea_id}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar tarea">≡</button><div class="pedido-hoy-detalle">'
+            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
+            f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
+            f'{_acciones_tarea(tarea)}</div>'
         )
 
     def _acciones_recibo_historial(pedido):
@@ -1325,10 +1331,16 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             )
             descripcion = _descripcion_pedido(pedido)
             busqueda = html.escape(f"{nombre_cliente} {descripcion}".lower())
+            if pedido.get("recibo_enviado_en"):
+                estado = "Recibo enviado originalmente: " + html.escape(pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en", ""))
+                acciones = _acciones_recibo_historial(pedido)
+            else:
+                estado = "Pendiente de recibo" if pedido.get("detalle") and pedido.get("total_usd") is not None else "Sin detalle histórico"
+                acciones = _controles_entrega(pedido)
             return (
                 f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{html.escape(nombre_cliente)}</strong> · '
                 f'{html.escape(descripcion)} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}<br><span class="estado-recibo">'
-                f'{("Recibo enviado originalmente: " + html.escape(pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en", ""))) if pedido.get("recibo_enviado_en") else ("Pendiente de recibo" if pedido.get("detalle") and pedido.get("total_usd") is not None else "Sin detalle histórico")}</span>{_acciones_recibo_historial(pedido)}</div>'
+                f'{estado}</span>{acciones}</div>'
             )
 
         def _tarea_historial_html(tarea):
@@ -1341,15 +1353,18 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             detalle_nota = f" · {html.escape(nota)}" if nota else ""
             tacho = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
                      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>')
-            estado = (
-                f'Completada el {html.escape(tarea.get("completada_en"))}'
-                if tarea.get("completada_en") else "Pendiente"
-            )
-            titulo_tarjeta = "Tarea completada" if tarea.get("completada_en") else "Tarea"
+            if tarea.get("completada_en"):
+                estado = f'Completada el {html.escape(tarea.get("completada_en"))}'
+                titulo_tarjeta = "Tarea completada"
+                acciones = f'<button class="btn-eliminar-historial-tarea" type="button" data-id="{tarea_id}" title="Eliminar del historial" aria-label="Eliminar del historial">{tacho}</button>'
+            else:
+                estado = "Pendiente"
+                titulo_tarjeta = "Tarea"
+                acciones = _acciones_tarea(tarea)
             return (
                 f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{titulo_tarjeta}: {html.escape(titulo)}</strong>'
                 f'{detalle_cliente}{detalle_nota}<br><span class="estado-recibo">{estado}</span>'
-                f'<button class="btn-eliminar-historial-tarea" type="button" data-id="{tarea_id}" title="Eliminar del historial" aria-label="Eliminar del historial">{tacho}</button></div>'
+                f'{acciones}</div>'
             )
 
         pedidos_historial_html = "".join(
@@ -2682,8 +2697,6 @@ def api_pedidos(entrada: PedidoIn, request: Request):
 def admin_pedido_editar_fecha(pedido_id: str, entrada: EditarFechaEntregaIn, request: Request):
     if not _clientes_admin_activo(request):
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
-    if not entregas.fecha_entrega_valida(entrada.fecha_entrega):
-        return JSONResponse({"error": "La fecha de entrega elegida no está disponible"}, status_code=400)
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
     if not filas:
@@ -2802,8 +2815,6 @@ def admin_tarea_agregar_direccion(tarea_id: str, entrada: EditarDireccionEntrega
 def admin_tarea_editar_fecha(tarea_id: str, entrada: EditarFechaEntregaIn, request: Request):
     if not _clientes_admin_activo(request):
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
-    if not entregas.fecha_entrega_valida(entrada.fecha_entrega):
-        return JSONResponse({"error": "La fecha de entrega elegida no está disponible"}, status_code=400)
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
     if not filas:

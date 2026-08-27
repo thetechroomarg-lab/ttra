@@ -216,6 +216,35 @@ def test_admin_puede_editar_la_fecha_de_una_tarea_manual(monkeypatch):
     assert tarea["fecha_entrega"] == "2026-08-25"
 
 
+def test_admin_puede_adelantar_una_tarea_a_hoy_pasado_el_corte(monkeypatch):
+    # Después de las 16:30, "hoy" no es una fecha ofrecida al cliente (entregas.fecha_entrega_valida
+    # la excluye), pero el admin tiene que poder adelantar igual una tarea agendada para mañana.
+    import datetime as dt
+
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    monkeypatch.setattr(
+        appmod.entregas, "ahora_argentina",
+        lambda: dt.datetime(2026, 8, 24, 18, 0, tzinfo=appmod.entregas.ZONA_HORARIA),
+    )
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": "2026-08-25",
+        "titulo": "Visitar cliente", "orden": 1,
+    }).execute()
+    assert appmod.entregas.fecha_entrega_valida(dt.date(2026, 8, 24), appmod.entregas.ahora_argentina()) is False
+
+    respuesta = cliente.put("/admin/tareas-entrega/tarea-1/fecha-entrega", json={
+        "fecha_entrega": "2026-08-24",
+    })
+
+    assert respuesta.status_code == 200
+    tarea = fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data[0]
+    assert tarea["fecha_entrega"] == "2026-08-24"
+
+
 def test_admin_puede_eliminar_una_tarea_manual(monkeypatch):
     cliente, fake = _admin_con_fecha_fija(monkeypatch)
     fake.table("tareas_entrega").insert({

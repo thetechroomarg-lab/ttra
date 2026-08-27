@@ -365,6 +365,64 @@ def test_admin_puede_editar_y_eliminar_una_entrega_pendiente(monkeypatch):
     assert fake.table("pedidos").select("*").eq("id", "editable").execute().data == []
 
 
+def test_admin_puede_adelantar_un_pedido_a_hoy_pasado_el_corte(monkeypatch):
+    # Después de las 16:30, "hoy" no es una fecha ofrecida al cliente (entregas.fecha_entrega_valida
+    # la excluye), pero el admin tiene que poder adelantar igual un pedido agendado para mañana.
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "adelantable", "cliente_id": cliente["id"], "productos": ["Galaxy A56"],
+        "fecha_entrega": "2026-08-25",
+    }).execute()
+    monkeypatch.setattr(
+        appmod.entregas, "ahora_argentina",
+        lambda: __import__("datetime").datetime(2026, 8, 24, 18, 0, tzinfo=appmod.entregas.ZONA_HORARIA),
+    )
+    assert appmod.entregas.fecha_entrega_valida(
+        __import__("datetime").date(2026, 8, 24), appmod.entregas.ahora_argentina()
+    ) is False
+
+    editar = c.put("/admin/pedidos/adelantable/fecha-entrega", json={"fecha_entrega": "2026-08-24"})
+
+    assert editar.status_code == 200
+    assert fake.table("pedidos").select("*").eq("id", "adelantable").execute().data[0]["fecha_entrega"] == "2026-08-24"
+
+
+def test_admin_historial_muestra_acciones_para_un_pedido_pendiente_de_otra_fecha(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "pendiente-manana", "cliente_id": cliente["id"], "productos": ["Galaxy A56"],
+        "fecha_entrega": "2026-08-25",
+        "detalle": [{"nombre": "Galaxy A56", "cantidad": 1, "usd_unitario": 300, "usd_subtotal": 300}],
+        "total_usd": 300,
+    }).execute()
+
+    r = c.get("/admin/clientes?fecha_pedidos=2026-08-25")
+
+    assert 'data-id="pendiente-manana"' in r.text
+    assert 'class="btn-enviar-recibo"' in r.text
+    assert 'class="btn-editar-entrega"' in r.text
+    assert 'class="btn-eliminar-entrega"' in r.text
+
+
+def test_admin_historial_muestra_acciones_para_una_tarea_pendiente_de_otra_fecha(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-manana", "fecha_entrega": "2026-08-25",
+        "titulo": "Visitar cliente", "orden": 1,
+    }).execute()
+
+    r = c.get("/admin/clientes?fecha_pedidos=2026-08-25")
+
+    assert 'class="btn-completar-tarea"' in r.text
+    assert 'class="btn-editar-tarea"' in r.text
+    assert 'class="btn-eliminar-tarea"' in r.text
+
+
 def test_admin_puede_eliminar_un_pedido_del_historial_con_recibo_enviado(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     fake = appmod.get_client()
