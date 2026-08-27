@@ -1046,6 +1046,7 @@ _ADMIN_CLIENTES_ESTILO = """
   .vacio { color:#9aa0ab; text-align:center; padding:30px; }
   .btn-historial { display:inline-flex; color:#dfe2e8; }
   .btn-historial:hover { color:#fff; }
+  .btn-eliminar { display:inline-flex; align-items:center; justify-content:center; border:1px solid #8d1627; border-radius:8px; background:#252a33; color:#ff9baa; cursor:pointer; font-weight:700; padding:8px 10px; }
   .btn-eliminar:hover { background:#3a1620; }
   .btn-eliminar:disabled { cursor:not-allowed; opacity:.55; }
   .cuenta-cliente-acciones { display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
@@ -1109,8 +1110,8 @@ _ADMIN_CLIENTES_ESTILO = """
   .pedido-historico { padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
   .estado-recibo { display:inline-block; margin-top:4px; color:#9aa0ab; font-size:12px; }
   .acciones-recibo { display:inline-flex; gap:8px; margin-left:8px; vertical-align:middle; }
-  .btn-ver-recibo-pdf, .btn-reenviar-recibo, .btn-eliminar-historial, .btn-eliminar-historial-tarea, .btn-eliminar { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid #4a5160; border-radius:7px; background:#252a33; color:#f2f4f8; cursor:pointer; text-decoration:none; }
-  .btn-eliminar-historial, .btn-eliminar-historial-tarea, .btn-eliminar { border-color:#8d1627; color:#ff9baa; }
+  .btn-ver-recibo-pdf, .btn-reenviar-recibo, .btn-eliminar-historial, .btn-eliminar-historial-tarea { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid #4a5160; border-radius:7px; background:#252a33; color:#f2f4f8; cursor:pointer; text-decoration:none; }
+  .btn-eliminar-historial, .btn-eliminar-historial-tarea { border-color:#8d1627; color:#ff9baa; }
   .ordenar-columna { appearance:none; border:0; background:transparent; color:#f2f4f8; font:inherit; font-weight:700; cursor:pointer; padding:0; }
   .ordenar-columna:hover { color:#fff; text-decoration:underline; }
   .modal-mail { position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
@@ -1225,7 +1226,7 @@ _ADMIN_CLIENTES_ESTILO = """
     #tabla-clientes td:last-child { border-bottom:0; }
     #tabla-clientes .col-check { justify-content:flex-start; text-align:left; }
     #tabla-clientes .col-check::before { display:none; }
-    #tabla-clientes .btn-reset, #tabla-clientes .btn-mayorista { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
+    #tabla-clientes .btn-reset, #tabla-clientes .btn-mayorista, #tabla-clientes .btn-eliminar { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
     #tabla-clientes td:nth-child(7) { flex-direction:column; align-items:stretch; gap:6px; }
     #tabla-clientes td:nth-child(7)::before { margin-bottom:2px; }
     #tabla-clientes .cuenta-cliente-acciones { width:100%; gap:8px; }
