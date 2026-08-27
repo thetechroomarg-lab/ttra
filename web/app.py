@@ -1010,7 +1010,7 @@ _ICONO_OJO = (
 )
 
 _ICONO_TACHO = (
-    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
     'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
     '<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'
     '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>'
@@ -1046,8 +1046,7 @@ _ADMIN_CLIENTES_ESTILO = """
   .vacio { color:#9aa0ab; text-align:center; padding:30px; }
   .btn-historial { display:inline-flex; color:#dfe2e8; }
   .btn-historial:hover { color:#fff; }
-  .btn-eliminar { display:inline-flex; background:none; border:none; padding:0; color:#ff6b7a; cursor:pointer; }
-  .btn-eliminar:hover { color:#ff9baa; }
+  .btn-eliminar:hover { background:#3a1620; }
   .btn-eliminar:disabled { cursor:not-allowed; opacity:.55; }
   .cuenta-cliente-acciones { display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
   .tipo-cliente { display:inline-block; border-radius:999px; font-size:12px; font-weight:700; margin:0; padding:3px 7px; }
@@ -1110,8 +1109,8 @@ _ADMIN_CLIENTES_ESTILO = """
   .pedido-historico { padding:10px 0; border-top:1px solid #2a2e37; color:#dfe2e8; font-size:14px; }
   .estado-recibo { display:inline-block; margin-top:4px; color:#9aa0ab; font-size:12px; }
   .acciones-recibo { display:inline-flex; gap:8px; margin-left:8px; vertical-align:middle; }
-  .btn-ver-recibo-pdf, .btn-reenviar-recibo, .btn-eliminar-historial, .btn-eliminar-historial-tarea { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid #4a5160; border-radius:7px; background:#252a33; color:#f2f4f8; cursor:pointer; text-decoration:none; }
-  .btn-eliminar-historial, .btn-eliminar-historial-tarea { border-color:#8d1627; color:#ff9baa; }
+  .btn-ver-recibo-pdf, .btn-reenviar-recibo, .btn-eliminar-historial, .btn-eliminar-historial-tarea, .btn-eliminar { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid #4a5160; border-radius:7px; background:#252a33; color:#f2f4f8; cursor:pointer; text-decoration:none; }
+  .btn-eliminar-historial, .btn-eliminar-historial-tarea, .btn-eliminar { border-color:#8d1627; color:#ff9baa; }
   .ordenar-columna { appearance:none; border:0; background:transparent; color:#f2f4f8; font:inherit; font-weight:700; cursor:pointer; padding:0; }
   .ordenar-columna:hover { color:#fff; text-decoration:underline; }
   .modal-mail { position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
