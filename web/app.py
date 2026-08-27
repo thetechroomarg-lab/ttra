@@ -1041,13 +1041,15 @@ _ADMIN_CLIENTES_ESTILO = """
   .btn-historial:hover { color:#fff; }
   .btn-eliminar { background:#8d1627; border:1px solid #c8102e; color:#fff; }
   .btn-eliminar:hover { background:#c8102e; }
-  .tipo-cliente { display:inline-block; border-radius:999px; font-size:12px; font-weight:700; margin:0 0 6px; padding:3px 7px; }
+  .cuenta-cliente-acciones { display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+  .tipo-cliente { display:inline-block; border-radius:999px; font-size:12px; font-weight:700; margin:0; padding:3px 7px; }
   .tipo-cliente-mayorista { background:#184d3b; color:#b9f5d0; }
   .tipo-cliente-minorista { background:#303640; color:#dfe2e8; }
   .tipo-cliente-sin-cuenta { background:#303640; color:#dfe2e8; }
   .btn-mayorista { border:1px solid #4a5160; border-radius:8px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; padding:8px 10px; }
   .btn-mayorista:disabled { cursor:not-allowed; opacity:.55; }
   .btn-mayorista-activo { border-color:#8d1627; color:#ffb3bd; }
+  .btn-reset { border:1px solid #4a5160; border-radius:8px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; padding:8px 10px; }
   .acciones-masivas { display:none; align-items:center; gap:10px; margin:0 0 14px; flex-wrap:wrap; }
   .acciones-masivas.visible { display:flex; }
   .acciones-masivas span { color:#9aa0ab; font-size:13px; }
@@ -1218,6 +1220,9 @@ _ADMIN_CLIENTES_ESTILO = """
     #tabla-clientes .col-check { justify-content:flex-start; text-align:left; }
     #tabla-clientes .col-check::before { display:none; }
     #tabla-clientes .btn-reset, #tabla-clientes .btn-eliminar, #tabla-clientes .btn-mayorista { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
+    #tabla-clientes td:nth-child(7) { flex-direction:column; align-items:stretch; gap:6px; }
+    #tabla-clientes td:nth-child(7)::before { margin-bottom:2px; }
+    #tabla-clientes .cuenta-cliente-acciones { width:100%; gap:8px; }
     .acciones-mailing { align-items:stretch; flex-direction:column; }
     .acciones-mailing button { width:100%; min-height:44px; }
     .modal-mail { align-items:flex-end; padding:12px; }
@@ -1929,9 +1934,11 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
         def _celda_cuenta(c):
             if not c.get("tiene_cuenta"):
                 return (
+                    '<div class="cuenta-cliente-acciones">'
                     '<span class="tipo-cliente tipo-cliente-sin-cuenta">'
-                    'El cliente todavía no tiene una cuenta</span><br>'
+                    'El cliente todavía no tiene una cuenta</span>'
                     '<button class="btn-mayorista" disabled>Habilitar mayorista</button>'
+                    '</div>'
                 )
             id_seguro = html.escape(c.get("id", ""))
             mayorista = c.get("tipo_cliente") == "mayorista"
@@ -1940,10 +1947,12 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
             texto_boton = "Quitar mayorista" if mayorista else "Habilitar mayorista"
             clase_boton = "btn-mayorista-activo" if mayorista else ""
             return (
-                f'<span class="tipo-cliente {clase_etiqueta}">{etiqueta}</span><br>'
+                '<div class="cuenta-cliente-acciones">'
+                f'<span class="tipo-cliente {clase_etiqueta}">{etiqueta}</span>'
                 f'<button class="btn-mayorista {clase_boton}" data-id="{id_seguro}" '
-                f'data-habilitado="{str(not mayorista).lower()}">{texto_boton}</button><br>'
+                f'data-habilitado="{str(not mayorista).lower()}">{texto_boton}</button>'
                 f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
+                '</div>'
             )
 
         def _celda_eliminar(c):

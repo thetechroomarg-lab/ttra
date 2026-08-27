@@ -2181,6 +2181,32 @@ async function sincronizarMenuPerfilSegunSesion(force = false) {
 }
 sincronizarMenuPerfilSegunSesion(true).then(verificarCondicionesMayoristaPendientes);
 
+// --- Resincronizar sesión/precio al volver a una pestaña ya abierta:
+// /api/me y /api/catalogo solo se piden una vez al cargar la página, así
+// que si en el medio alguien cierra sesión en otra pestaña, o un admin le
+// saca/da mayorista a la cuenta, el cartel "Cuenta mayorista" y los
+// precios quedan con el estado viejo hasta que se refresca. Se dispara al
+// volver a poner el foco en la pestaña (visibilitychange) y al restaurarse
+// desde el bfcache del navegador (pageshow con persisted=true, típico al
+// volver con el botón "atrás"). Solo recarga el catálogo completo (más
+// pesado, reordena/repinta todo) si el modo de precio realmente cambió —
+// evita repintar en cada cambio de pestaña sin necesidad. ---
+async function resincronizarSesionAlVolver() {
+  const sesion = await obtenerEstadoSesionCliente(true);
+  const tipoVigente = sesion && sesion.tipo_cliente === "mayorista" ? "mayorista" : "minorista";
+  if (tipoVigente !== modoPrecioActual) {
+    await cargarCatalogo();
+  }
+  await sincronizarMenuPerfilSegunSesion(true);
+  verificarCondicionesMayoristaPendientes(sesion);
+}
+window.addEventListener("pageshow", (e) => {
+  if (e.persisted) resincronizarSesionAlVolver();
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") resincronizarSesionAlVolver();
+});
+
 if (btnLogoutClassic) {
   btnLogoutClassic.addEventListener("click", () => {
     cerrarMenuPerfil();
