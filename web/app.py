@@ -1050,6 +1050,7 @@ _ADMIN_CLIENTES_ESTILO = """
   .btn-eliminar:hover { background:#3a1620; }
   .btn-eliminar:disabled { cursor:not-allowed; opacity:.55; }
   .cuenta-cliente-acciones { display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+  .cuenta-cliente-acciones .btn-mayorista, .cuenta-cliente-acciones .btn-reset, .cuenta-cliente-acciones .btn-eliminar { box-sizing:border-box; width:100%; }
   .tipo-cliente { display:inline-block; border-radius:999px; font-size:12px; font-weight:700; margin:0; padding:3px 7px; }
   .tipo-cliente-mayorista { background:#184d3b; color:#b9f5d0; }
   .tipo-cliente-minorista { background:#303640; color:#dfe2e8; }
