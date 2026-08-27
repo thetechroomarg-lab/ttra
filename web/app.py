@@ -1009,6 +1009,13 @@ _ICONO_OJO = (
     '<path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg>'
 )
 
+_ICONO_TACHO = (
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'
+    '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>'
+)
+
 
 _ADMIN_CLIENTES_ESTILO = """
 <style>
@@ -1039,8 +1046,9 @@ _ADMIN_CLIENTES_ESTILO = """
   .vacio { color:#9aa0ab; text-align:center; padding:30px; }
   .btn-historial { display:inline-flex; color:#dfe2e8; }
   .btn-historial:hover { color:#fff; }
-  .btn-eliminar { background:#8d1627; border:1px solid #c8102e; color:#fff; }
-  .btn-eliminar:hover { background:#c8102e; }
+  .btn-eliminar { display:inline-flex; background:none; border:none; padding:0; color:#ff6b7a; cursor:pointer; }
+  .btn-eliminar:hover { color:#ff9baa; }
+  .btn-eliminar:disabled { cursor:not-allowed; opacity:.55; }
   .cuenta-cliente-acciones { display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
   .tipo-cliente { display:inline-block; border-radius:999px; font-size:12px; font-weight:700; margin:0; padding:3px 7px; }
   .tipo-cliente-mayorista { background:#184d3b; color:#b9f5d0; }
@@ -1216,10 +1224,9 @@ _ADMIN_CLIENTES_ESTILO = """
     #tabla-clientes td:nth-child(6)::before { content:"Historial"; }
     #tabla-clientes td:nth-child(7)::before { content:"Cuenta"; }
     #tabla-clientes td:last-child { border-bottom:0; }
-    #tabla-clientes td:empty { display:none; }
     #tabla-clientes .col-check { justify-content:flex-start; text-align:left; }
     #tabla-clientes .col-check::before { display:none; }
-    #tabla-clientes .btn-reset, #tabla-clientes .btn-eliminar, #tabla-clientes .btn-mayorista { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
+    #tabla-clientes .btn-reset, #tabla-clientes .btn-mayorista { border-radius:8px; box-sizing:border-box; min-height:36px; padding:8px 10px; width:100%; }
     #tabla-clientes td:nth-child(7) { flex-direction:column; align-items:stretch; gap:6px; }
     #tabla-clientes td:nth-child(7)::before { margin-bottom:2px; }
     #tabla-clientes .cuenta-cliente-acciones { width:100%; gap:8px; }
@@ -1929,7 +1936,7 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
         for provincia in provincias
     )
     if not clientes:
-        filas_html = '<tr><td colspan="8" class="vacio">Todavía no hay clientes registrados.</td></tr>'
+        filas_html = '<tr><td colspan="7" class="vacio">Todavía no hay clientes registrados.</td></tr>'
     else:
         def _celda_cuenta(c):
             if not c.get("tiene_cuenta"):
@@ -1952,12 +1959,10 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
                 f'<button class="btn-mayorista {clase_boton}" data-id="{id_seguro}" '
                 f'data-habilitado="{str(not mayorista).lower()}">{texto_boton}</button>'
                 f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
-                f'<button class="btn-eliminar" data-id="{id_seguro}">Eliminar cuenta</button>'
+                f'<button class="btn-eliminar" data-id="{id_seguro}" title="Eliminar cuenta" '
+                f'aria-label="Eliminar cuenta">{_ICONO_TACHO}</button>'
                 '</div>'
             )
-
-        def _celda_eliminar(c):
-            return ""
 
         filas_html = "".join(
             f'<tr class="cliente-fila" data-busqueda="{html.escape(" ".join((c.get("nombre", ""), c.get("celular", ""), c.get("email", ""), c.get("provincia", ""))).lower())}" data-provincia="{html.escape(c.get("provincia", ""))}"><td class="col-check"><input class="cliente-check" type="checkbox" '
@@ -1968,7 +1973,7 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
             f"<td>{html.escape(c.get('provincia', ''))}</td>"
             f'<td><a class="btn-historial" href="/admin/clientes/{html.escape(c.get("id", ""))}/historial" '
             f'title="Ver historial de pedidos" aria-label="Ver historial de pedidos">{_ICONO_OJO}</a></td>'
-            f"<td>{_celda_cuenta(c)}</td><td>{_celda_eliminar(c)}</td></tr>"
+            f"<td>{_celda_cuenta(c)}</td></tr>"
             for c in clientes
         )
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
@@ -1989,7 +1994,7 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
     <button id="btn-eliminar-masivo" type="button">Eliminar seleccionados</button>
   </div>
   <div class="tabla-scroll"><table id="tabla-clientes">
-    <thead><tr><th class="col-check"><input id="seleccionar-todos" type="checkbox" aria-label="Seleccionar todos"></th><th><button class="ordenar-columna" data-sort="nombre" data-sort-index="1">Nombre</button></th><th><button class="ordenar-columna" data-sort="celular" data-sort-index="2">Celular</button></th><th><button class="ordenar-columna" data-sort="email" data-sort-index="3">Email</button></th><th><button class="ordenar-columna" data-sort="provincia" data-sort-index="4">Provincia</button></th><th>Historial</th><th>Cuenta</th><th>Acciones</th></tr></thead>
+    <thead><tr><th class="col-check"><input id="seleccionar-todos" type="checkbox" aria-label="Seleccionar todos"></th><th><button class="ordenar-columna" data-sort="nombre" data-sort-index="1">Nombre</button></th><th><button class="ordenar-columna" data-sort="celular" data-sort-index="2">Celular</button></th><th><button class="ordenar-columna" data-sort="email" data-sort-index="3">Email</button></th><th><button class="ordenar-columna" data-sort="provincia" data-sort-index="4">Provincia</button></th><th>Historial</th><th>Cuenta</th></tr></thead>
     <tbody>{filas_html}</tbody>
   </table></div>
 </div>
@@ -2033,12 +2038,10 @@ document.querySelectorAll(".btn-eliminar").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
     if (!confirm("¿Eliminar esta cuenta definitivamente? También se borrarán sus pedidos e historial. Esta acción no se puede deshacer.")) return;
     btn.disabled = true;
-    btn.textContent = "Eliminando...";
     const r = await fetch(`/admin/clientes/${{btn.dataset.id}}/eliminar`, {{ method: "POST" }});
     const datos = await r.json();
     if (r.ok) {{ location.reload(); return; }}
     alert(datos.error || "No se pudo eliminar la cuenta");
-    btn.textContent = "Eliminar cuenta";
     btn.disabled = false;
   }});
 }});
