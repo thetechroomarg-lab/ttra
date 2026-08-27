@@ -101,6 +101,26 @@ def test_admin_habilita_y_revoca_acceso_mayorista(monkeypatch):
     assert fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]["tipo_cliente"] == "minorista"
 
 
+def test_revocar_mayorista_borra_la_aceptacion_de_condiciones(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").execute().data[0]
+
+    c.post(f'/admin/clientes/{cliente["id"]}/mayorista', json={"habilitado": True})
+    fake.table("clientes").update(
+        {"condiciones_mayorista_aceptadas_en": "2026-08-27T12:00:00+00:00"}
+    ).eq("id", cliente["id"]).execute()
+
+    c.post(f'/admin/clientes/{cliente["id"]}/mayorista', json={"habilitado": False})
+
+    fila = fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]
+    assert fila["condiciones_mayorista_aceptadas_en"] is None
+
+    c.post(f'/admin/clientes/{cliente["id"]}/mayorista', json={"habilitado": True})
+    fila = fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]
+    assert fila["condiciones_mayorista_aceptadas_en"] is None
+
+
 def test_admin_no_habilita_contacto_sin_cuenta(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     fake = appmod.get_client()

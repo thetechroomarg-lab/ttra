@@ -752,7 +752,10 @@ def admin_clientes_actualizar_mayorista(
     if entrada.habilitado and not filas_cliente[0].get("auth_id"):
         raise HTTPException(status_code=400, detail="El contacto no tiene una cuenta habilitable")
     tipo_cliente = "mayorista" if entrada.habilitado else "minorista"
-    client.table("clientes").update({"tipo_cliente": tipo_cliente}).eq("id", cliente_id).execute()
+    actualizacion = {"tipo_cliente": tipo_cliente}
+    if not entrada.habilitado:
+        actualizacion["condiciones_mayorista_aceptadas_en"] = None
+    client.table("clientes").update(actualizacion).eq("id", cliente_id).execute()
     return {"ok": True, "tipo_cliente": tipo_cliente}
 
 
