@@ -87,6 +87,8 @@ def guardar_pedido(
     modo_precio="minorista",
     descuento_mayorista_usd=0,
     origen="whatsapp",
+    lat=None,
+    lng=None,
 ):
     fecha_iso = fecha_entrega.isoformat() if fecha_entrega else None
     detalle = _normalizar_detalles(detalle)
@@ -120,6 +122,8 @@ def guardar_pedido(
                     descuento_mayorista_usd,
                 ),
                 "direccion_entrega": direccion_entrega or pendiente.get("direccion_entrega"),
+                "lat": lat if lat is not None else pendiente.get("lat"),
+                "lng": lng if lng is not None else pendiente.get("lng"),
             }
             client.table("pedidos").update(actualizado).eq("id", pendiente["id"]).execute()
             return {**pendiente, **actualizado}
@@ -137,6 +141,8 @@ def guardar_pedido(
         "direccion_entrega": direccion_entrega,
         "origen": origen,
         "fecha": datetime.now(timezone.utc).isoformat(),
+        "lat": lat,
+        "lng": lng,
     }
     client.table("pedidos").insert(fila).execute()
     return fila

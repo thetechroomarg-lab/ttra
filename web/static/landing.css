@@ -104,6 +104,17 @@ body.rc-portada-saliendo > :not(#rc-portada-ingreso) {
 .rc-portada-ingreso-titulo.visible {
   transform: translate(-50%, -50%);
 }
+.rc-portada-ingreso-titulo .rc-char {
+  display: inline-block;
+  white-space: pre;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.rc-portada-ingreso-titulo.visible .rc-char {
+  opacity: 1;
+  transform: translateY(0);
+}
 .rc-portada-ingreso-cta.visible {
   transform: translateY(0);
 }
@@ -1639,6 +1650,14 @@ html[data-modo="fallout"] .card:focus-within::before {
   padding: 0 12px;
 }
 #direccion-alias.oculto { display: none; }
+.btn-usar-ubicacion {
+  font-size: 12px;
+  padding: 6px 10px;
+  align-self: flex-start;
+  background: none;
+  border: 1px dashed var(--rc-green-dim);
+}
+.btn-usar-ubicacion:disabled { opacity: .6; cursor: default; }
 .lista-domicilios-entrega {
   list-style: none;
   margin: 0;

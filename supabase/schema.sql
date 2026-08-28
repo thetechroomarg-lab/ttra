@@ -45,6 +45,9 @@ create table if not exists domicilios_cliente (
 );
 create index if not exists domicilios_cliente_cliente_id_idx on domicilios_cliente (cliente_id);
 alter table domicilios_cliente enable row level security;
+-- Coordenadas exactas del domicilio (ver comentario análogo en pedidos).
+alter table domicilios_cliente add column if not exists lat double precision;
+alter table domicilios_cliente add column if not exists lng double precision;
 
 -- Migra el domicilio único que ya tenían las cuentas de clientes reales
 -- (columna clientes.direccion) como su primer domicilio guardado,
@@ -89,6 +92,12 @@ alter table pedidos add column if not exists fotos_series jsonb not null default
 -- maneja el admin. Ver panel restringido en /admin/cadete.
 alter table pedidos add column if not exists asignado_a text;
 alter table pedidos add column if not exists observaciones_cadete text;
+-- Coordenadas exactas de la entrega (geolocalización del navegador o el
+-- punto elegido en el autocomplete de Google Places), para que el link
+-- "Vamos" del panel lleve a la casa puntual en barrios privados en vez de
+-- solo buscar el texto de la dirección. Null si no se pudo capturar.
+alter table pedidos add column if not exists lat double precision;
+alter table pedidos add column if not exists lng double precision;
 create unique index if not exists pedidos_recibo_id_unico
   on pedidos (recibo_id) where recibo_id is not null;
 create index if not exists pedidos_fecha_orden_entrega_idx

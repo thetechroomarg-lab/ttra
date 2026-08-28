@@ -183,12 +183,16 @@ function ocultarSugerenciasRegistroDireccion() {
   registroSugerenciasDireccion.hidden = true;
 }
 
-async function cargarApiPlacesRegistro() {
-  if (apiPlacesRegistro !== undefined) return apiPlacesRegistro;
-  apiPlacesRegistro = fetch("/api/configuracion-publica")
+let scriptGoogleMapsRegistroCargado;
+
+// Igual que en landing.js: el script se carga una sola vez, sin importar
+// cuántas librerías (places, geocoding) se pidan después con importLibrary.
+async function cargarScriptGoogleMapsRegistro() {
+  if (scriptGoogleMapsRegistroCargado !== undefined) return scriptGoogleMapsRegistroCargado;
+  scriptGoogleMapsRegistroCargado = fetch("/api/configuracion-publica")
     .then((respuesta) => respuesta.ok ? respuesta.json() : {})
     .then(async ({ google_maps_api_key: clave }) => {
-      if (!clave) return null;
+      if (!clave) return false;
       await new Promise((resolver, rechazar) => {
         const script = document.createElement("script");
         script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(clave)}&libraries=places&v=weekly`;
@@ -197,10 +201,56 @@ async function cargarApiPlacesRegistro() {
         script.onerror = rechazar;
         document.head.append(script);
       });
-      return google.maps.importLibrary("places");
+      return true;
     })
+    .catch(() => false);
+  return scriptGoogleMapsRegistroCargado;
+}
+
+async function cargarApiPlacesRegistro() {
+  if (apiPlacesRegistro !== undefined) return apiPlacesRegistro;
+  apiPlacesRegistro = cargarScriptGoogleMapsRegistro()
+    .then((ok) => ok ? google.maps.importLibrary("places") : null)
     .catch(() => null);
   return apiPlacesRegistro;
+}
+
+let apiGeocodingRegistro;
+async function cargarApiGeocodingRegistro() {
+  if (apiGeocodingRegistro !== undefined) return apiGeocodingRegistro;
+  apiGeocodingRegistro = cargarScriptGoogleMapsRegistro()
+    .then((ok) => ok ? google.maps.importLibrary("geocoding") : null)
+    .catch(() => null);
+  return apiGeocodingRegistro;
+}
+
+function obtenerUbicacionActualRegistro() {
+  return new Promise((resolver) => {
+    if (!navigator.geolocation) { resolver(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      (posicion) => resolver({ lat: posicion.coords.latitude, lng: posicion.coords.longitude }),
+      () => resolver(null),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  });
+}
+
+// Coordenadas exactas asociadas al texto que hay AHORA en registroDireccionInput.
+let coordsRegistroDireccionActual = null;
+
+async function direccionRegistroUsandoMiUbicacion() {
+  const coords = await obtenerUbicacionActualRegistro();
+  if (!coords) return null;
+  const geocoding = await cargarApiGeocodingRegistro();
+  let direccion = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+  if (geocoding) {
+    try {
+      const { Geocoder } = geocoding;
+      const { results } = await new Geocoder().geocode({ location: coords });
+      if (results?.[0]?.formatted_address) direccion = results[0].formatted_address;
+    } catch { /* si falla el reverse geocoding, se usan las coordenadas crudas */ }
+  }
+  return { direccion, lat: coords.lat, lng: coords.lng };
 }
 
 async function mostrarSugerenciasRegistroDireccion(texto) {
@@ -222,8 +272,11 @@ async function mostrarSugerenciasRegistroDireccion(texto) {
     boton.textContent = placePrediction.text.text;
     boton.addEventListener("click", async () => {
       const place = placePrediction.toPlace();
-      await place.fetchFields({ fields: ["formattedAddress"] });
+      await place.fetchFields({ fields: ["formattedAddress", "location"] });
       registroDireccionInput.value = place.formattedAddress || placePrediction.text.text;
+      coordsRegistroDireccionActual = place.location
+        ? { lat: place.location.lat(), lng: place.location.lng() }
+        : null;
       ocultarSugerenciasRegistroDireccion();
     });
     item.append(boton);
@@ -232,8 +285,28 @@ async function mostrarSugerenciasRegistroDireccion(texto) {
   registroSugerenciasDireccion.hidden = false;
 }
 
+const btnRegistroUsarUbicacion = document.getElementById("btn-registro-usar-ubicacion");
+if (btnRegistroUsarUbicacion) {
+  btnRegistroUsarUbicacion.addEventListener("click", async () => {
+    const textoOriginal = btnRegistroUsarUbicacion.textContent;
+    btnRegistroUsarUbicacion.disabled = true;
+    btnRegistroUsarUbicacion.textContent = "Buscando ubicación...";
+    const resultado = await direccionRegistroUsandoMiUbicacion();
+    btnRegistroUsarUbicacion.disabled = false;
+    btnRegistroUsarUbicacion.textContent = textoOriginal;
+    if (!resultado) {
+      registroErrorEl.textContent = "No pudimos obtener tu ubicación. Revisá el permiso de ubicación del navegador.";
+      return;
+    }
+    registroDireccionInput.value = resultado.direccion;
+    coordsRegistroDireccionActual = { lat: resultado.lat, lng: resultado.lng };
+    ocultarSugerenciasRegistroDireccion();
+  });
+}
+
 registroDireccionInput.addEventListener("input", () => {
   clearTimeout(temporizadorRegistroDireccion);
+  coordsRegistroDireccionActual = null;
   const texto = registroDireccionInput.value.trim();
   if (texto.length < 3) {
     ocultarSugerenciasRegistroDireccion();
@@ -318,6 +391,8 @@ formRegistro.addEventListener("submit", async (e) => {
       password,
       provincia: document.getElementById("registro-provincia").value,
       direccion: registroDireccionInput.value,
+      lat: coordsRegistroDireccionActual?.lat ?? null,
+      lng: coordsRegistroDireccionActual?.lng ?? null,
     },
     registroErrorEl,
   );

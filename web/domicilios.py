@@ -9,6 +9,8 @@ def _normalizar(fila):
         "alias": fila.get("alias") or "",
         "direccion": fila.get("direccion") or "",
         "predeterminado": bool(fila.get("predeterminado")),
+        "lat": fila.get("lat"),
+        "lng": fila.get("lng"),
     }
 
 
@@ -37,7 +39,7 @@ def _obtener_propio(client, cliente_id, domicilio_id):
     return filas[0]
 
 
-def crear(client, cliente_id, alias, direccion, predeterminado=False):
+def crear(client, cliente_id, alias, direccion, lat=None, lng=None, predeterminado=False):
     alias = (alias or "").strip()
     direccion = (direccion or "").strip()
     if not alias:
@@ -56,12 +58,14 @@ def crear(client, cliente_id, alias, direccion, predeterminado=False):
         "alias": alias,
         "direccion": direccion,
         "predeterminado": hacer_predeterminado,
+        "lat": lat,
+        "lng": lng,
     }
     client.table("domicilios_cliente").insert(fila).execute()
     return _normalizar(fila)
 
 
-def actualizar(client, cliente_id, domicilio_id, alias, direccion):
+def actualizar(client, cliente_id, domicilio_id, alias, direccion, lat=None, lng=None):
     fila = _obtener_propio(client, cliente_id, domicilio_id)
     alias = (alias or "").strip()
     direccion = (direccion or "").strip()
@@ -69,8 +73,9 @@ def actualizar(client, cliente_id, domicilio_id, alias, direccion):
         raise ValueError("Ingresá un nombre para el domicilio")
     if not direccion:
         raise ValueError("Ingresá una dirección")
-    client.table("domicilios_cliente").update({"alias": alias, "direccion": direccion}).eq("id", domicilio_id).execute()
-    fila.update({"alias": alias, "direccion": direccion})
+    cambios = {"alias": alias, "direccion": direccion, "lat": lat, "lng": lng}
+    client.table("domicilios_cliente").update(cambios).eq("id", domicilio_id).execute()
+    fila.update(cambios)
     return _normalizar(fila)
 
 

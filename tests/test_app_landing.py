@@ -127,7 +127,7 @@ def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
         "async function procesarCheckoutPendiente()",
         "async function asegurarSesionParaCheckout()",
         "async function derivarCheckoutAWhatsapp(carrito)",
-        "async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega)",
+        "async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega, coordsDireccion)",
     ):
         assert "if (!catalogoListo)" in cuerpo_de(funcion)
 
@@ -137,7 +137,7 @@ def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
     inicio_checkout = js.index('document.getElementById("btn-whatsapp").addEventListener')
     fin_checkout = js.index('document.getElementById("btn-volver")', inicio_checkout)
     assert "if (!catalogoListo) return;" in js[inicio_checkout:fin_checkout]
-    assert "if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega))) return false;" in cuerpo_de("async function derivarCheckoutAWhatsapp(carrito)")
+    assert "if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;" in cuerpo_de("async function derivarCheckoutAWhatsapp(carrito)")
 
 
 def test_render_y_mutaciones_del_carrito_esperan_catalogo_listo():
@@ -194,7 +194,7 @@ def test_checkout_ofrece_sugerencias_de_direccion_de_google_maps_en_argentina():
     assert 'fetch("/api/configuracion-publica")' in script
     assert "AutocompleteSuggestion.fetchAutocompleteSuggestions" in script
     assert 'includedRegionCodes: ["ar"]' in script
-    assert 'place.fetchFields({ fields: ["formattedAddress"] })' in script
+    assert 'place.fetchFields({ fields: ["formattedAddress", "location"] })' in script
 
 
 def test_autocomplete_de_direccion_se_comparte_con_el_carrito_fallout():

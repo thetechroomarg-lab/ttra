@@ -428,6 +428,16 @@ def _formatear_entero_ar(valor):
     return f"{int(valor):,}".replace(",", ".")
 
 
+def _query_maps(direccion, lat, lng):
+    # Con coordenadas exactas (geolocalización del cliente al pedir, o el
+    # punto elegido en el autocomplete) el link va directo a la casa puntual
+    # — clave en barrios privados, donde la dirección de texto sola no
+    # alcanza. Sin coordenadas, cae al texto de siempre.
+    if lat is not None and lng is not None:
+        return f"{lat},{lng}"
+    return direccion
+
+
 def _link_whatsapp_cliente(celular):
     digitos = re.sub(r"\D", "", celular or "")
     if not digitos:
@@ -1482,7 +1492,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         direccion = (pedido.get("direccion_entrega") or "").strip()
         boton_direcciones = (
             f'<button class="btn-direcciones" type="button" '
-            f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Vamos</button>'
+            f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": _query_maps(direccion, pedido.get("lat"), pedido.get("lng"))}))}">Vamos</button>'
             f'<button class="btn-editar-direccion" type="button" data-id="{pedido_id}" data-direccion="{html.escape(direccion)}">Editar dirección</button>'
             if direccion else f'<button class="btn-agregar-direccion" type="button" data-id="{pedido_id}">Agregar dirección</button>'
         )
@@ -2495,12 +2505,12 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             )
         return " | ".join(pedido.get("productos") or [])
 
-    def _boton_vamos(direccion):
+    def _boton_vamos(direccion, lat=None, lng=None):
         if not direccion:
             return '<span style="color:#9aa0ab">Sin dirección cargada</span>'
         return (
             f'<button class="btn-direcciones" type="button" '
-            f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Vamos</button>'
+            f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": _query_maps(direccion, lat, lng)}))}">Vamos</button>'
         )
 
     def _boton_whatsapp_cliente(celular):
@@ -2533,7 +2543,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}</strong> · '
             f'{html.escape(cliente.get("celular") or "—")}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
             f'{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
-            f'<div class="pedido-acciones">{_boton_vamos(direccion)}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}</div></div>'
+            f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido.get("lat"), pedido.get("lng"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}</div></div>'
         )
 
     def _tarjeta_tarea_cadete(tarea):
@@ -2861,6 +2871,8 @@ class RegistroIn(BaseModel):
     password: str = Field(min_length=8)
     provincia: str = Field(min_length=2, max_length=80)
     direccion: str = Field(min_length=3, max_length=500)
+    lat: float | None = None
+    lng: float | None = None
 
 
 class LoginIn(BaseModel):
@@ -2965,7 +2977,10 @@ def registro(entrada: RegistroIn, request: Request):
         logger.exception("No se pudo completar el registro (¿Supabase no disponible?)")
         return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
     try:
-        domicilios.crear(client, cliente["id"], "Principal", entrada.direccion, predeterminado=True)
+        domicilios.crear(
+            client, cliente["id"], "Principal", entrada.direccion,
+            lat=entrada.lat, lng=entrada.lng, predeterminado=True,
+        )
     except Exception:
         logger.exception("No se pudo guardar el domicilio inicial del registro")
     if cliente["requiere_confirmacion_email"]:
@@ -3098,6 +3113,8 @@ def api_me_actualizar(entrada: ActualizarMeIn, request: Request):
 class DomicilioIn(BaseModel):
     alias: str = Field(min_length=1, max_length=80)
     direccion: str = Field(min_length=3, max_length=500)
+    lat: float | None = None
+    lng: float | None = None
 
 
 @app.get("/api/domicilios")
@@ -3118,6 +3135,7 @@ def api_domicilios_crear(entrada: DomicilioIn, request: Request):
     try:
         domicilio = domicilios.crear(
             get_client(), request.session["cliente_id"], entrada.alias, entrada.direccion,
+            lat=entrada.lat, lng=entrada.lng,
         )
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
@@ -3134,6 +3152,7 @@ def api_domicilios_actualizar(domicilio_id: str, entrada: DomicilioIn, request: 
     try:
         domicilio = domicilios.actualizar(
             get_client(), request.session["cliente_id"], domicilio_id, entrada.alias, entrada.direccion,
+            lat=entrada.lat, lng=entrada.lng,
         )
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
@@ -3237,6 +3256,8 @@ class PedidoIn(BaseModel):
     descuento_usd: Decimal = Field(default=0, ge=0)
     codigo_descuento: str | None = Field(default=None, max_length=100)
     codigo_promo: str | None = Field(default=None, max_length=100)
+    lat: float | None = None
+    lng: float | None = None
 
 
 class EditarFechaEntregaIn(BaseModel):
@@ -3533,6 +3554,18 @@ def api_pedidos(entrada: PedidoIn, request: Request):
                 {"error": "No pudimos confirmar las promociones y guardar el pedido."},
                 status_code=503,
             )
+        # La función guardar_pedido_con_descuento_mailing (RPC en Supabase) no
+        # conoce lat/lng: se completan acá con un update aparte para no tener
+        # que tocar esa función en la base.
+        if entrada.lat is not None and entrada.lng is not None:
+            pedido_id_rpc = resultado["pedido"].get("id")
+            if pedido_id_rpc:
+                try:
+                    client.table("pedidos").update(
+                        {"lat": entrada.lat, "lng": entrada.lng}
+                    ).eq("id", pedido_id_rpc).execute()
+                except Exception:
+                    logger.exception("No se pudo guardar lat/lng del pedido %s", pedido_id_rpc)
     else:
         pedidos.guardar_pedido(
             client,
@@ -3547,6 +3580,8 @@ def api_pedidos(entrada: PedidoIn, request: Request):
             descuento_mayorista_usd=pedidos.numero_monetario_db(
                 descuento_mayorista_usd
             ),
+            lat=entrada.lat,
+            lng=entrada.lng,
         )
     return {"ok": True}
 
@@ -3863,7 +3898,7 @@ def api_recomendados(request: Request, limit: int = 16):
 
 # Cotización del dólar en Córdoba usada como referencia en el sitio (a mano,
 # actualizar acá cuando cambie — es la misma fuente única que usa el catálogo).
-COTIZACION_DOLAR = 1575
+COTIZACION_DOLAR = 1570
 
 
 @app.get("/api/cotizacion")

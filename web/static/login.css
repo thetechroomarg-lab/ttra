@@ -17,8 +17,17 @@ h1 { margin: 0 0 20px; font-size: 20px; letter-spacing: .06em; text-transform: u
 input {
   padding: 12px 14px; font-size: 14px;
 }
-.registro-direccion-wrap { position: relative; }
+.registro-direccion-wrap { position: relative; display: flex; flex-direction: column; gap: 6px; }
 .registro-direccion-wrap input { width: 100%; }
+.btn-usar-ubicacion {
+  font-size: 12px;
+  padding: 6px 10px;
+  align-self: flex-start;
+  background: none;
+  border: 1px dashed var(--rc-green-dim);
+  color: var(--rc-green-bright);
+}
+.btn-usar-ubicacion:disabled { opacity: .6; cursor: default; }
 .registro-sugerencias-direccion {
   position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; right: 0;
   max-height: 180px; overflow-y: auto; margin: 0; padding: 0; list-style: none;

@@ -4568,7 +4568,7 @@ async function derivarCheckoutAWhatsapp(carrito) {
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
   if (!mensaje) return false;
   try {
-    if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega))) return false;
+    if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;
   } catch (error) {
     console.error("No se pudo guardar el pedido", error);
     alert("No pudimos guardar tu pedido. Probá nuevamente antes de abrir WhatsApp.");
@@ -4603,18 +4603,25 @@ const listaDomiciliosEntrega = document.getElementById("lista-domicilios-entrega
 let temporizadorSugerenciasDireccion;
 let apiPlacesCargada;
 let domiciliosCliente = [];
+// Coordenadas exactas asociadas al texto que hay AHORA en inputDireccionEntrega
+// (o null si no hay ninguna — texto tipeado a mano, sin elegir sugerencia).
+let coordsDireccionEntregaActual = null;
 
 function ocultarSugerenciasDireccion() {
   sugerenciasDireccion.replaceChildren();
   sugerenciasDireccion.classList.add("oculto");
 }
 
-async function cargarApiPlaces() {
-  if (apiPlacesCargada !== undefined) return apiPlacesCargada;
-  apiPlacesCargada = fetch("/api/configuracion-publica")
+let scriptGoogleMapsCargado;
+
+// Carga el script de Google Maps una sola vez (memoizado), sin importar
+// cuántas librerías (places, geocoding) se pidan después con importLibrary.
+async function cargarScriptGoogleMaps() {
+  if (scriptGoogleMapsCargado !== undefined) return scriptGoogleMapsCargado;
+  scriptGoogleMapsCargado = fetch("/api/configuracion-publica")
     .then((respuesta) => respuesta.ok ? respuesta.json() : {})
     .then(async ({ google_maps_api_key: clave }) => {
-      if (!clave) return null;
+      if (!clave) return false;
       await new Promise((resolver, rechazar) => {
         const script = document.createElement("script");
         script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(clave)}&libraries=places&v=weekly`;
@@ -4623,10 +4630,57 @@ async function cargarApiPlaces() {
         script.onerror = rechazar;
         document.head.append(script);
       });
-      return google.maps.importLibrary("places");
+      return true;
     })
+    .catch(() => false);
+  return scriptGoogleMapsCargado;
+}
+
+async function cargarApiPlaces() {
+  if (apiPlacesCargada !== undefined) return apiPlacesCargada;
+  apiPlacesCargada = cargarScriptGoogleMaps()
+    .then((ok) => ok ? google.maps.importLibrary("places") : null)
     .catch(() => null);
   return apiPlacesCargada;
+}
+
+let apiGeocodingCargada;
+async function cargarApiGeocoding() {
+  if (apiGeocodingCargada !== undefined) return apiGeocodingCargada;
+  apiGeocodingCargada = cargarScriptGoogleMaps()
+    .then((ok) => ok ? google.maps.importLibrary("geocoding") : null)
+    .catch(() => null);
+  return apiGeocodingCargada;
+}
+
+// --- "Usar mi ubicación": geolocalización del navegador + reverse geocoding
+// para completar el texto de la dirección, con las coordenadas exactas
+// (clave para barrios privados, donde el texto solo no alcanza). Devuelve
+// {direccion, lat, lng} o null si el user no dio permiso / falló algo.
+function obtenerUbicacionActual() {
+  return new Promise((resolver) => {
+    if (!navigator.geolocation) { resolver(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      (posicion) => resolver({ lat: posicion.coords.latitude, lng: posicion.coords.longitude }),
+      () => resolver(null),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  });
+}
+
+async function direccionUsandoMiUbicacion() {
+  const coords = await obtenerUbicacionActual();
+  if (!coords) return null;
+  const geocoding = await cargarApiGeocoding();
+  let direccion = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+  if (geocoding) {
+    try {
+      const { Geocoder } = geocoding;
+      const { results } = await new Geocoder().geocode({ location: coords });
+      if (results?.[0]?.formatted_address) direccion = results[0].formatted_address;
+    } catch { /* si falla el reverse geocoding, se usan las coordenadas crudas */ }
+  }
+  return { direccion, lat: coords.lat, lng: coords.lng };
 }
 
 async function mostrarSugerenciasDireccion(texto) {
@@ -4648,8 +4702,11 @@ async function mostrarSugerenciasDireccion(texto) {
     boton.textContent = placePrediction.text.text;
     boton.addEventListener("click", async () => {
       const place = placePrediction.toPlace();
-      await place.fetchFields({ fields: ["formattedAddress"] });
+      await place.fetchFields({ fields: ["formattedAddress", "location"] });
       inputDireccionEntrega.value = place.formattedAddress || placePrediction.text.text;
+      coordsDireccionEntregaActual = place.location
+        ? { lat: place.location.lat(), lng: place.location.lng() }
+        : null;
       ocultarSugerenciasDireccion();
     });
     item.append(boton);
@@ -4660,6 +4717,10 @@ async function mostrarSugerenciasDireccion(texto) {
 
 inputDireccionEntrega.addEventListener("input", () => {
   clearTimeout(temporizadorSugerenciasDireccion);
+  // El texto tipeado a mano ya no corresponde a las coordenadas que había
+  // (si había): se pierde la precisión hasta elegir otra sugerencia, usar
+  // la ubicación o seleccionar un domicilio guardado.
+  coordsDireccionEntregaActual = null;
   const texto = inputDireccionEntrega.value.trim();
   if (texto.length < 3) {
     ocultarSugerenciasDireccion();
@@ -4688,6 +4749,7 @@ function abrirFormularioNuevaDireccion() {
   inputDireccionAlias.classList.toggle("oculto", !puedeGuardar);
   inputDireccionAlias.value = "";
   inputDireccionEntrega.value = "";
+  coordsDireccionEntregaActual = null;
   abrirPanelSecundario("direccion-entrega-wrap");
 }
 
@@ -4715,6 +4777,9 @@ async function abrirSelectorDireccion() {
   listaDomiciliosEntrega.replaceChildren(
     ...domiciliosCliente.map((domicilio) => itemDomicilioEntregaHtml(`${domicilio.alias} — ${domicilio.direccion}`, () => {
       inputDireccionEntrega.value = domicilio.direccion;
+      coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
+        ? { lat: domicilio.lat, lng: domicilio.lng }
+        : null;
       document.getElementById("btn-abrir-direccion").textContent = `Entrega: ${domicilio.alias}`;
       cerrarPanelSecundario();
     })),
@@ -4726,6 +4791,25 @@ async function abrirSelectorDireccion() {
 document.getElementById("btn-abrir-direccion").addEventListener("click", () => {
   abrirSelectorDireccion().catch(abrirFormularioNuevaDireccion);
 });
+
+const btnUsarUbicacion = document.getElementById("btn-usar-ubicacion");
+if (btnUsarUbicacion) {
+  btnUsarUbicacion.addEventListener("click", async () => {
+    const textoOriginal = btnUsarUbicacion.textContent;
+    btnUsarUbicacion.disabled = true;
+    btnUsarUbicacion.textContent = "Buscando ubicación...";
+    const resultado = await direccionUsandoMiUbicacion();
+    btnUsarUbicacion.disabled = false;
+    btnUsarUbicacion.textContent = textoOriginal;
+    if (!resultado) {
+      alert("No pudimos obtener tu ubicación. Revisá el permiso de ubicación del navegador.");
+      return;
+    }
+    inputDireccionEntrega.value = resultado.direccion;
+    coordsDireccionEntregaActual = { lat: resultado.lat, lng: resultado.lng };
+    ocultarSugerenciasDireccion();
+  });
+}
 document.getElementById("btn-guardar-direccion").addEventListener("click", async () => {
   const direccion = inputDireccionEntrega.value.trim();
   if (!direccion) {
@@ -4738,7 +4822,11 @@ document.getElementById("btn-guardar-direccion").addEventListener("click", async
     const respuesta = await fetch("/api/domicilios", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ alias, direccion }),
+      body: JSON.stringify({
+        alias, direccion,
+        lat: coordsDireccionEntregaActual?.lat ?? null,
+        lng: coordsDireccionEntregaActual?.lng ?? null,
+      }),
     });
     if (respuesta.ok) {
       const domicilio = await respuesta.json();
@@ -4798,7 +4886,7 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
 // cliente (mismo clientes.json/csv que ya alimentan el gate inicial y el
 // buscador por chat) — así el panel /admin/clientes también refleja los
 // pedidos hechos desde la web, no solo el alta inicial.
-async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega) {
+async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega, coordsDireccion) {
   if (!catalogoListo) return false;
   const regaloPromo = cargarRegaloPromo();
   const productos = [...new Set(carrito.map((it) =>
@@ -4825,6 +4913,8 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
     body: JSON.stringify({
       productos, fecha_entrega, direccion_entrega, detalle, total_usd,
       codigo_descuento, codigo_promo,
+      lat: coordsDireccion?.lat ?? null,
+      lng: coordsDireccion?.lng ?? null,
     }),
   });
   const body = await respuesta.json().catch(() => ({}));
