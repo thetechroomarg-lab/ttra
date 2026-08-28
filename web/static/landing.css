@@ -548,6 +548,120 @@ html[data-modo="classic"] #btn-classic-theme { display: block; }
   box-shadow: 0 0 20px 4px var(--rc-halo-seleccion-glow), 0 6px 14px -6px rgba(0, 0, 0, 0.35);
 }
 
+/* --- Overlay CRT "plus": capas extra inspiradas en el shader retro de
+   God's Eye View (github.com/bilawalsidhu/gods-eye-view, MIT) — máscara RGB
+   de subpíxeles, barrido de scanline en movimiento y glitch bar ocasional.
+   Puramente CSS (sin WebGL), solo en modo Fallout, no intercepta clicks. */
+.rc-crt-plus { display: none; }
+html[data-modo="fallout"] .rc-crt-plus {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+html[data-modo="fallout"] .rc-crt-plus::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 40, 40, 0.035) 0px,
+    rgba(40, 255, 90, 0.035) 1px,
+    rgba(60, 90, 255, 0.035) 2px,
+    rgba(0, 0, 0, 0) 3px
+  );
+  mix-blend-mode: screen;
+}
+html[data-modo="fallout"] .rc-crt-plus::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 5vh;
+  background: linear-gradient(
+    to bottom,
+    rgba(123, 255, 160, 0) 0%,
+    rgba(123, 255, 160, 0.05) 50%,
+    rgba(123, 255, 160, 0) 100%
+  );
+  animation: rc-crt-scanband 7s linear infinite;
+}
+@keyframes rc-crt-scanband {
+  0% { top: -5vh; }
+  100% { top: 105vh; }
+}
+/* Glitch bar: elemento propio, separado del scanband/mascara de arriba.
+   Anima solo "opacity" (a diferencia de alternar todo el "background" entre
+   un gradiente y "none", que en algunos navegadores queda trabado en el
+   estado con gradiente en vez de apagarse) — así el flash prende y apaga
+   de forma confiable, ciclo largo, activo un instante muy breve. */
+.rc-crt-glitch { display: none; }
+html[data-modo="fallout"] .rc-crt-glitch {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: linear-gradient(
+    to bottom,
+    rgba(123, 255, 160, 0) 41%,
+    rgba(123, 255, 160, 0.25) 42%,
+    rgba(123, 255, 160, 0) 43%
+  );
+  opacity: 0;
+  animation: rc-crt-glitchbar 9s linear infinite;
+}
+@keyframes rc-crt-glitchbar {
+  0%, 96%, 96.8%, 100% { opacity: 0; }
+  96.4% { opacity: 1; }
+}
+
+/* --- Grano de "estática" de TV, animado con un filtro SVG feTurbulence
+   (sin ninguna imagen/asset — el ruido se genera en el navegador). Idea
+   tomada del grain de noir.js de God's Eye View (MIT), portada a CSS/SVG
+   puro en vez de WebGL. Muy sutil y solo en modo Fallout. --- */
+.rc-crt-grano { display: none; }
+html[data-modo="fallout"] .rc-crt-grano {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"><animate attributeName="seed" values="1;40;1" dur="1.2s" repeatCount="indefinite"/></feTurbulence><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.9 0 0 0 0"/></filter><rect width="100%25" height="100%25" filter="url(%23g)"/></svg>');
+}
+
+/* --- HUD fijo en la esquina, tipo cámara de vigilancia: REC parpadeante +
+   barras de señal que varían. Se dibuja DEBAJO del overlay CRT (menor
+   z-index que .rc-crt-plus/.rc-crt-glitch) para que el barrido de scanline
+   pase por encima, como si fuera parte de la señal capturada. --- */
+.rc-hud-chrome { display: none; }
+html[data-modo="fallout"] .rc-hud-chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 9990;
+  pointer-events: none;
+  font-family: var(--rc-font);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--rc-green-bright);
+  text-shadow: 0 0 4px var(--rc-glow);
+  opacity: 0.75;
+}
+.rc-hud-rec { animation: rc-hud-rec-blink 1.6s steps(1) infinite; }
+@keyframes rc-hud-rec-blink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0.25; }
+}
+.rc-hud-barras { letter-spacing: 0.12em; }
+
 .rc-switch-fallout-wrap { display: none; }
 html[data-modo="fallout"] .rc-switch-fallout-wrap {
   display: flex;
@@ -1278,6 +1392,37 @@ html[data-modo="fallout"] .tarjeta-recomendado-precio strong {
 }
 
 .grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 16px; }
+/* Reticle de "target lock" al pasar el mouse por una card, en modo Fallout —
+   idea tomada del HUD de God's Eye View (MIT): 4 escuadras de esquina que
+   "cierran" sobre la card al enfocarla, como si el Pip-Boy escaneara el
+   objetivo. Puro CSS (gradientes formando cada escuadra), sin bloquear
+   clicks. */
+html[data-modo="fallout"] .card { position: relative; }
+html[data-modo="fallout"] .card::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(1.12);
+  transition: opacity .18s ease, transform .18s ease;
+  background:
+    linear-gradient(to right, var(--rc-green-bright) 3px, transparent 3px) top left / 18px 3px no-repeat,
+    linear-gradient(to bottom, var(--rc-green-bright) 3px, transparent 3px) top left / 3px 18px no-repeat,
+    linear-gradient(to left, var(--rc-green-bright) 3px, transparent 3px) top right / 18px 3px no-repeat,
+    linear-gradient(to bottom, var(--rc-green-bright) 3px, transparent 3px) top right / 3px 18px no-repeat,
+    linear-gradient(to right, var(--rc-green-bright) 3px, transparent 3px) bottom left / 18px 3px no-repeat,
+    linear-gradient(to top, var(--rc-green-bright) 3px, transparent 3px) bottom left / 3px 18px no-repeat,
+    linear-gradient(to left, var(--rc-green-bright) 3px, transparent 3px) bottom right / 18px 3px no-repeat,
+    linear-gradient(to top, var(--rc-green-bright) 3px, transparent 3px) bottom right / 3px 18px no-repeat;
+  filter: drop-shadow(0 0 4px var(--rc-glow));
+}
+html[data-modo="fallout"] .card:hover::before,
+html[data-modo="fallout"] .card:focus-within::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
 .card {
   background: var(--rc-bg-panel); border: 3px solid var(--rc-green-faint); padding: 16px;
   box-shadow: 0 0 6px -1px var(--rc-glow), inset 0 0 6px -2px var(--rc-glow);

@@ -1933,6 +1933,51 @@ function fraseTriangulandoAlAzar() {
   return FRASES_TRIANGULANDO[Math.floor(Math.random() * FRASES_TRIANGULANDO.length)];
 }
 
+// --- Línea de telemetría del Pip-Boy (pie de cada tarjeta de lugar) ---
+// Idea tomada del "AI HUD summary" de God's Eye View (MIT) — un renglón que
+// reporta el estado del sistema — pero sin IA: rota entre datos reales del
+// dispositivo (hora local, batería si el navegador la expone) y un status
+// fijo, dando la sensación de telemetría en vivo sin costo ni backend.
+let bateriaPipboy = null;
+if (typeof navigator !== "undefined" && navigator.getBattery) {
+  navigator.getBattery().then((b) => {
+    bateriaPipboy = b;
+  }).catch(() => {});
+}
+
+function textoStatusPipboy() {
+  const opciones = [
+    "TRANSMISIÓN ESTABLE // SEÑAL 98% // ARCHIVO TTRA-01",
+    `HORA LOCAL: ${new Date().toLocaleTimeString("es-AR", { hour12: false })} // SISTEMA: NOMINAL`,
+  ];
+  if (bateriaPipboy) {
+    const nivel = Math.round(bateriaPipboy.level * 100);
+    const cargando = bateriaPipboy.charging ? " // CARGANDO" : "";
+    opciones.push(`BATERÍA DEL TERMINAL: ${nivel}%${cargando} // SISTEMA: NOMINAL`);
+  }
+  return opciones[Math.floor(Math.random() * opciones.length)];
+}
+
+// Refresca el texto de cada tarjeta visible sin recrear el DOM (no interfiere
+// con el carrousel de fotos, que sí reemplaza el nodo cada 20s).
+function actualizarStatusPipboyVisible() {
+  document.querySelectorAll(".pipboy-frase-texto").forEach((el) => {
+    el.textContent = textoStatusPipboy();
+  });
+}
+setInterval(actualizarStatusPipboyVisible, 4000);
+
+// --- Barras de señal del HUD fijo (esquina inferior izquierda) ---
+// Varían al azar cada tanto, simulando interferencia leve de la señal.
+// Puramente decorativo, no representa nada medido.
+const BARRAS_SEÑAL = ["▮▮▮▮▮", "▮▮▮▮▯", "▮▮▮▯▯", "▮▮▮▮▯", "▮▮▮▮▮", "▮▮▮▮▯"];
+function actualizarBarrasSeñal() {
+  const el = document.getElementById("rc-hud-barras");
+  if (!el) return;
+  el.textContent = BARRAS_SEÑAL[Math.floor(Math.random() * BARRAS_SEÑAL.length)];
+}
+setInterval(actualizarBarrasSeñal, 2600);
+
 // Convierte "31°25'18\"S 64°11'42\"O" (grados/minutos/segundos, con o sin
 // segundos, y el "(APROX.)" que algunas entradas tienen al final) a
 // {lat, lng} decimal. Devuelve null si el texto no matchea el formato (ej.
@@ -1984,7 +2029,7 @@ function tarjetaLugarHtml(src) {
           <div class="pipboy-globo-texto">${fraseTriangulandoAlAzar()}</div>
         </div>
         <div class="pipboy-pie">
-          <span class="pipboy-frase">TRANSMISIÓN ESTABLE // SEÑAL 98% // ARCHIVO TTRA-01<span class="rc-cursor">_</span></span>
+          <span class="pipboy-frase"><span class="pipboy-frase-texto">${textoStatusPipboy()}</span><span class="rc-cursor">_</span></span>
         </div>
       </div>
       <div class="pipboy-imagen-wrap">
