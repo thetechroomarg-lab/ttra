@@ -2300,6 +2300,20 @@ if (btnLogoFallout && audioModoFallout) {
   });
 }
 
+// La carita animada (":)") solo se ve en modo Fallout (oculta por CSS en
+// Classic) — al pasarle el mouse por encima suena boy.mp3.
+const caritaFallout = document.querySelector(".rc-cara-wrap");
+const audioCaritaFallout = document.getElementById("audio-carita-fallout");
+if (caritaFallout && audioCaritaFallout) {
+  caritaFallout.addEventListener("mouseenter", () => {
+    if (modoVisual !== "fallout") return;
+    audioCaritaFallout.currentTime = 0;
+    audioCaritaFallout.play().catch(() => {
+      // Autoplay bloqueado hasta el primer gesto del usuario: no es crítico.
+    });
+  });
+}
+
 // Estando en Fallout, pasar el mouse sobre "Modo Classic" (el único botón
 // de modo visible ahí) suena un abucheo sintetizado, en tono de broma.
 function reproducirAbucheo() {
