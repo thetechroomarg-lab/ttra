@@ -3863,7 +3863,7 @@ def api_recomendados(request: Request, limit: int = 16):
 
 # Cotización del dólar en Córdoba usada como referencia en el sitio (a mano,
 # actualizar acá cuando cambie — es la misma fuente única que usa el catálogo).
-COTIZACION_DOLAR = 1575
+COTIZACION_DOLAR = 1570
 
 
 @app.get("/api/cotizacion")
