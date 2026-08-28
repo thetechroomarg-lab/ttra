@@ -40,6 +40,12 @@ USAR_IA = False
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("web")
+# httpx/httpcore loguean cada request salvo Supabase en INFO, incluyendo la
+# URL completa — y las consultas por email/celular (ej. login, reseteo de
+# password) van como query string ahí (".../clientes?email=eq.juan@x.com").
+# Con el nivel de arriba eso terminaba en los logs de Railway en texto plano.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -67,7 +73,15 @@ if not ADMIN_CLIENTES_PASSWORD:
     # no una comodidad de desarrollo. Mejor que el server no arranque.
     raise RuntimeError("ADMIN_CLIENTES_PASSWORD no configurado — no se puede iniciar el servidor")
 CADETE_SLUG = "alejo"
-CADETE_PASSWORD = os.environ.get("CADETE_PASSWORD", "Alejo2026")
+CADETE_PASSWORD = os.environ.get("CADETE_PASSWORD")
+if not CADETE_PASSWORD:
+    # Mismo criterio que ADMIN_CLIENTES_PASSWORD: el panel de Alejo expone
+    # nombre/celular/dirección de clientes con pedidos derivados — un default
+    # hardcodeado en el repo (visible en el historial de git) es un agujero
+    # de seguridad, no una comodidad. Antes de este cambio el valor por
+    # defecto era "Alejo2026"; hay que setearlo como CADETE_PASSWORD en
+    # Railway (y en .env local) antes de deployar esto, o el server no arranca.
+    raise RuntimeError("CADETE_PASSWORD no configurado — no se puede iniciar el servidor")
 
 # Tope de gasto por chat/cliente (USD). Al superarlo, se lo deriva al WhatsApp.
 LIMITE_USD = 0.25
@@ -656,7 +670,7 @@ def _html_mailing_para_cliente(mensaje_html: str, cliente):
 
 @app.post("/admin/clientes/login")
 def admin_clientes_login(entrada: ClientesLoginIn, request: Request):
-    if entrada.password != ADMIN_CLIENTES_PASSWORD:
+    if not secrets.compare_digest(entrada.password, ADMIN_CLIENTES_PASSWORD):
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
     request.session["clientes_admin_ok"] = True
     return {"ok": True}
@@ -670,7 +684,7 @@ def admin_clientes_logout(request: Request):
 
 @app.post("/admin/cadete/login")
 def admin_cadete_login(entrada: ClientesLoginIn, request: Request):
-    if entrada.password != CADETE_PASSWORD:
+    if not secrets.compare_digest(entrada.password, CADETE_PASSWORD):
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
     request.session["cadete_ok"] = True
     return {"ok": True}
@@ -3899,7 +3913,7 @@ def api_noticias():
 async def admin_subir_productos(request: Request, x_admin_token: str = Header(default="")):
     if not ADMIN_TOKEN:
         raise HTTPException(status_code=503, detail="ADMIN_TOKEN no configurado en el servidor")
-    if x_admin_token != ADMIN_TOKEN:
+    if not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
         raise HTTPException(status_code=401, detail="Token inválido")
     try:
         productos = await request.json()
