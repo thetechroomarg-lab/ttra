@@ -53,7 +53,6 @@ def test_cadete_ve_solo_las_entregas_que_se_le_derivaron(monkeypatch):
     assert 'data-id="pedido-2"' not in r.text
     assert "Vamos" in r.text
     assert "Nueva tarea" not in r.text
-    assert 'class="btn-editar-entrega"' not in r.text
     assert 'class="btn-eliminar-entrega"' not in r.text
 
 
@@ -97,6 +96,43 @@ def test_admin_ve_boton_derivar_y_al_derivar_pasa_a_quitar(monkeypatch):
     quitar = admin.put("/admin/pedidos/pedido-1/derivar", json={"derivado": False})
     assert quitar.status_code == 200
     assert fake.table("pedidos").select("*").eq("id", "pedido-1").execute().data[0]["asignado_a"] is None
+
+
+def test_cadete_puede_editar_la_fecha_de_una_entrega_derivada(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("clientes").insert({"id": "cliente-1", "nombre": "Juan"}).execute()
+    fake.table("pedidos").insert({
+        "id": "pedido-1", "cliente_id": "cliente-1", "fecha_entrega": "2026-08-24",
+        "productos": ["iPhone 13"],
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1}], "total_usd": 500,
+    }).execute()
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": "2026-08-24", "titulo": "Retirar equipo", "orden": 1,
+    }).execute()
+    admin.put("/admin/pedidos/pedido-1/derivar", json={"derivado": True})
+    admin.put("/admin/tareas-entrega/tarea-1/derivar", json={"derivado": True})
+
+    cadete = _cadete_logueado()
+    r = cadete.put("/admin/pedidos/pedido-1/fecha-entrega", json={"fecha_entrega": "2026-08-26"})
+    assert r.status_code == 200
+    assert fake.table("pedidos").select("*").eq("id", "pedido-1").execute().data[0]["fecha_entrega"] == "2026-08-26"
+
+    r = cadete.put("/admin/tareas-entrega/tarea-1/fecha-entrega", json={"fecha_entrega": "2026-08-27"})
+    assert r.status_code == 200
+    assert fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data[0]["fecha_entrega"] == "2026-08-27"
+
+
+def test_cadete_no_puede_editar_la_fecha_de_una_entrega_no_derivada(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("pedidos").insert({
+        "id": "pedido-1", "fecha_entrega": "2026-08-24", "productos": ["iPhone 13"],
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1}], "total_usd": 500,
+    }).execute()
+
+    cadete = _cadete_logueado()
+    r = cadete.put("/admin/pedidos/pedido-1/fecha-entrega", json={"fecha_entrega": "2026-08-26"})
+
+    assert r.status_code == 403
 
 
 def test_cadete_ve_las_observaciones_y_el_total_a_cobrar(monkeypatch):
@@ -146,6 +182,10 @@ def test_recibo_enviado_por_cadete_marca_entregado_por_alejo(monkeypatch):
     assert "Entregado por Alejo" in enviados[0][2]
     pedido = fake.table("pedidos").select("*").eq("id", "pedido-1").execute().data[0]
     assert pedido["observaciones_cadete"] == "Entregado por Alejo"
+
+    r = admin.get("/admin/clientes?fecha_pedidos=2026-08-24")
+    assert "Entregado por Alejo" in r.text
+    assert "Recibo enviado originalmente" in r.text
 
 
 def test_recibo_enviado_por_cadete_conserva_las_instrucciones_previas(monkeypatch):

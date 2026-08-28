@@ -1322,7 +1322,7 @@ _CADETE_ESTILO = """
   .total-cadete { font-weight:700; font-size:16px; }
   .pedido-acciones { display:flex; flex-wrap:wrap; gap:8px; }
   .pedido-acciones > * { flex:1 1 120px; box-sizing:border-box; min-height:48px; font-size:15px; border-radius:8px; font-weight:700; cursor:pointer; }
-  .btn-direcciones { border:1px solid #4a5160; background:#252a33; color:#f2f4f8; }
+  .btn-direcciones, .btn-editar-entrega { border:1px solid #4a5160; background:#252a33; color:#f2f4f8; }
   .btn-enviar-recibo, .btn-completar-tarea { border:0; background:#c8102e; color:#fff; }
   .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
   .btn-whatsapp-cliente { display:flex; align-items:center; justify-content:center; border:1px solid #2fa84f; background:#1f2a1c; color:#8fd67a; text-decoration:none; text-align:center; }
@@ -2515,11 +2515,16 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<br><span class="observacion-cadete">Observaciones: {html.escape(observaciones)}</span>'
             if observaciones else ""
         )
+        fecha = html.escape(pedido.get("fecha_entrega", ""))
+        boton_fecha = (
+            f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}" '
+            'data-tipo="pedido">Editar fecha</button>'
+        )
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}</strong> · '
             f'{html.escape(cliente.get("celular") or "—")}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
             f'{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
-            f'<div class="pedido-acciones">{_boton_vamos(direccion)}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}</div></div>'
+            f'<div class="pedido-acciones">{_boton_vamos(direccion)}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}</div></div>'
         )
 
     def _tarjeta_tarea_cadete(tarea):
@@ -2533,12 +2538,17 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<br><span class="observacion-cadete">Observaciones: {html.escape(observaciones)}</span>'
             if observaciones else ""
         )
+        fecha = html.escape(tarea.get("fecha_entrega", ""))
+        boton_fecha = (
+            f'<button class="btn-editar-entrega" type="button" data-id="{tarea_id}" data-fecha="{fecha}" '
+            'data-tipo="tarea">Editar fecha</button>'
+        )
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
             f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion)}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
-            f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button></div></div>'
+            f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}</div></div>'
         )
 
     tarjetas = (
@@ -2570,6 +2580,22 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
     btn.disabled = true;
     const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/completar`, {{ method:"POST" }});
     if (!r.ok) {{ alert("No se pudo completar la tarea."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-editar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const fecha = prompt("Nueva fecha de entrega (AAAA-MM-DD)", btn.dataset.fecha);
+    if (!fecha || fecha === btn.dataset.fecha) return;
+    btn.disabled = true;
+    const ruta = btn.dataset.tipo === "pedido"
+      ? `/admin/pedidos/${{btn.dataset.id}}/fecha-entrega`
+      : `/admin/tareas-entrega/${{btn.dataset.id}}/fecha-entrega`;
+    const r = await fetch(ruta, {{
+      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{fecha_entrega: fecha}}),
+    }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo editar la fecha de entrega."); btn.disabled = false; return; }}
     location.reload();
   }});
 }});
@@ -3517,12 +3543,14 @@ def api_pedidos(entrada: PedidoIn, request: Request):
 
 @app.put("/admin/pedidos/{pedido_id}/fecha-entrega")
 def admin_pedido_editar_fecha(pedido_id: str, entrada: EditarFechaEntregaIn, request: Request):
-    if not _clientes_admin_activo(request):
-        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
     if not filas:
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if not _puede_operar_entrega(request, filas[0]):
+        raise HTTPException(status_code=403, detail="Esta entrega no está asignada a tu usuario")
     if filas[0].get("recibo_enviado_en"):
         return JSONResponse({"error": "No se puede editar una entrega con recibo emitido"}, status_code=400)
     pedido = pedidos.editar_fecha_entrega(client, pedido_id, entrada.fecha_entrega)
@@ -3676,12 +3704,14 @@ def admin_tarea_derivar(tarea_id: str, entrada: DerivarEntregaIn, request: Reque
 
 @app.put("/admin/tareas-entrega/{tarea_id}/fecha-entrega")
 def admin_tarea_editar_fecha(tarea_id: str, entrada: EditarFechaEntregaIn, request: Request):
-    if not _clientes_admin_activo(request):
-        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
     if not filas:
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    if not _puede_operar_entrega(request, filas[0]):
+        raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
     fecha_entrega = entrada.fecha_entrega.isoformat()
     existentes = client.table("tareas_entrega").select("orden").eq("fecha_entrega", fecha_entrega).execute().data
     orden = max((int(tarea.get("orden") or 0) for tarea in existentes), default=0) + 1
