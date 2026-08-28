@@ -1142,6 +1142,7 @@ _ADMIN_CLIENTES_ESTILO = """
   .tarea-direccion-wrap input { width:100%; }
   .tarea-campos input::placeholder { color:#9aa0ab; }
   .tarea-campos button { border:0; border-radius:8px; background:#c8102e; color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:38px; padding:0 14px; }
+  .tarea-enviar-alejo { display:flex; align-items:center; gap:6px; color:#f2f4f8; font-size:14px; white-space:nowrap; }
   .tarea-direccion-sugerencias { position:absolute; z-index:50; top:calc(100% + 4px); left:0; right:0; max-height:180px; overflow-y:auto; margin:0; padding:0; list-style:none; border:1px solid #4a5160; border-radius:8px; background:#12141a; box-shadow:0 8px 18px rgba(0,0,0,.28); }
   .tarea-direccion-sugerencias[hidden] { display:none; }
   .tarea-direccion-sugerencias button { display:block; width:100%; min-height:38px; padding:8px 10px; border:0; border-radius:0; border-bottom:1px solid #2a2e37; background:#12141a; color:#f2f4f8; text-align:left; font-weight:400; }
@@ -1155,15 +1156,13 @@ _ADMIN_CLIENTES_ESTILO = """
   .arrastrar-entrega:active { cursor:grabbing; }
   .pedido-hoy-detalle span { color:#9aa0ab; }
   .pedido-acciones { display:flex; align-items:center; gap:7px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
-  .btn-enviar-recibo { flex:0 0 auto; border:0; border-radius:8px; padding:9px 12px; background:#c8102e; color:#fff; cursor:pointer; font-weight:700; }
-  .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
-  .btn-direcciones, .btn-agregar-direccion, .btn-agregar-direccion-tarea, .btn-editar-direccion, .btn-editar-direccion-tarea,
+  .btn-enviar-recibo, .btn-direcciones, .btn-agregar-direccion, .btn-agregar-direccion-tarea, .btn-editar-direccion, .btn-editar-direccion-tarea,
   .btn-editar-entrega, .btn-eliminar-entrega, .btn-completar-tarea, .btn-editar-tarea, .btn-eliminar-tarea,
-  .btn-derivar-entrega, .btn-quitar-derivacion { border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; }
-  .btn-completar-tarea { background:#c8102e; border:0; color:#fff; }
+  .btn-derivar-entrega, .btn-quitar-derivacion { flex:0 0 auto; box-sizing:border-box; border:1px solid #4a5160; border-radius:8px; padding:8px 10px; background:#252a33; color:#f2f4f8; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+  .btn-enviar-recibo, .btn-completar-tarea { background:#c8102e; border:0; color:#fff; }
+  .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
   .btn-eliminar-entrega, .btn-eliminar-tarea { border-color:#8d1627; color:#ff9baa; }
-  .badge-derivado { display:inline-flex; align-items:center; padding:8px 10px; border-radius:8px; background:#1f2a1c; border:1px solid #3f6b32; color:#8fd67a; font-weight:700; font-size:13px; }
-  .control-derivar { display:inline-flex; align-items:center; gap:7px; }
+  .btn-quitar-derivacion { background:#1f2a1c; border-color:#3f6b32; color:#8fd67a; }
   .observacion-cadete { color:#f5c66b; }
   .total-cadete { font-weight:700; }
   .btn-whatsapp-cliente { display:inline-flex; align-items:center; justify-content:center; border:1px solid #2fa84f; border-radius:8px; padding:8px 10px; background:#1f2a1c; color:#8fd67a; cursor:pointer; font-weight:700; text-decoration:none; text-align:center; }
@@ -1262,9 +1261,6 @@ _ADMIN_CLIENTES_ESTILO = """
     .pedido-hoy-detalle, .pedido-historico { overflow-wrap:anywhere; word-break:break-word; }
     .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-auto-rows:auto; gap:7px; justify-content:stretch; width:100%; }
     .pedido-acciones > * { box-sizing:border-box; min-height:42px; }
-    .pedido-acciones .btn-eliminar-entrega, .pedido-acciones .btn-eliminar-tarea { grid-column:1 / -1; }
-    .pedido-acciones .control-derivar { display:flex; gap:7px; }
-    .pedido-acciones .control-derivar > * { box-sizing:border-box; flex:1 1 auto; min-width:0; min-height:42px; }
     .acciones-recibo { margin:8px 0 0; }
     .tabla-scroll { overflow:visible; }
     #tabla-clientes { min-width:0; font-size:13px; }
@@ -1463,13 +1459,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 
     def _control_derivar(entidad_id, tipo, derivado):
         if derivado:
-            contenido = (
-                '<span class="badge-derivado">Derivado a Alejo</span>'
-                f'<button class="btn-quitar-derivacion" type="button" data-id="{entidad_id}" data-tipo="{tipo}">Quitar</button>'
-            )
-        else:
-            contenido = f'<button class="btn-derivar-entrega" type="button" data-id="{entidad_id}" data-tipo="{tipo}">Derivar a Alejo</button>'
-        return f'<span class="control-derivar">{contenido}</span>'
+            return f'<button class="btn-quitar-derivacion" type="button" data-id="{entidad_id}" data-tipo="{tipo}">Derivado a Alejo</button>'
+        return f'<button class="btn-derivar-entrega" type="button" data-id="{entidad_id}" data-tipo="{tipo}">Derivar a Alejo</button>'
 
     def _controles_entrega(pedido):
         pedido_id = html.escape(pedido.get("id", ""))
@@ -1634,7 +1625,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         f'<div id="tarea-campos" class="tarea-campos" hidden><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea">'
         f'<input id="tarea-fecha" type="date" required value="{fecha_hoy}" title="Fecha de la tarea">'
         f'<div class="tarea-direccion-wrap"><input id="tarea-cliente-busqueda" required maxlength="200" placeholder="Cliente" autocomplete="off"><input type="hidden" id="tarea-cliente"><ul id="tarea-cliente-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Clientes" hidden></ul></div>'
-        f'<input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Agregar dirección" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><button type="submit">Agregar tarea</button></div></form>'
+        f'<input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Agregar dirección" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div>'
+        f'<label class="tarea-enviar-alejo"><input type="checkbox" id="tarea-enviar-alejo"> Enviar a Alejo</label>'
+        f'<button type="submit">Agregar tarea</button></div></form>'
         f'{pedidos_hoy_html}</section>'
         if fecha_historial == fecha_hoy else ""
     )
@@ -2038,7 +2031,7 @@ document.getElementById("tarea-cerrar")?.addEventListener("click", () => {{
 }});
 document.getElementById("form-tarea-entrega")?.addEventListener("submit", async (e) => {{
   e.preventDefault();
-  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:document.getElementById("tarea-fecha").value, titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, cliente_nombre:document.getElementById("tarea-cliente-busqueda").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value}}) }});
+  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:document.getElementById("tarea-fecha").value, titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, cliente_nombre:document.getElementById("tarea-cliente-busqueda").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value, enviar_a_alejo:document.getElementById("tarea-enviar-alejo").checked}}) }});
   if (!r.ok) {{ alert("No se pudo crear la tarea."); return; }}
   location.href = `/admin/clientes?fecha_pedidos=${{document.getElementById("tarea-fecha").value}}`;
 }});
@@ -2067,6 +2060,7 @@ document.querySelectorAll(".btn-derivar-entrega").forEach((btn) => {{
 }});
 document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
+    if (!confirm(btn.dataset.tipo === "pedido" ? "¿Quitar pedido a Alejo?" : "¿Quitar tarea a Alejo?")) return;
     btn.disabled = true;
     const r = await fetch(_rutaDerivar(btn.dataset.tipo, btn.dataset.id), {{
       method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: false}}),
@@ -2271,6 +2265,7 @@ document.querySelectorAll(".btn-derivar-entrega").forEach((btn) => {{
 }});
 document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
+    if (!confirm(btn.dataset.tipo === "pedido" ? "¿Quitar pedido a Alejo?" : "¿Quitar tarea a Alejo?")) return;
     btn.disabled = true;
     const r = await fetch(_rutaDerivar(btn.dataset.tipo, btn.dataset.id), {{
       method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: false}}),
@@ -3245,6 +3240,7 @@ class TareaEntregaIn(BaseModel):
     cliente_nombre: str = Field(min_length=1, max_length=200)
     nota: str | None = Field(default=None, max_length=1000)
     direccion: str | None = Field(default=None, max_length=500)
+    enviar_a_alejo: bool = False
 
 
 class OrdenEntregaItemIn(BaseModel):
@@ -3644,6 +3640,7 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
         "nota": (entrada.nota or "").strip() or None,
         "direccion": (entrada.direccion or "").strip() or None,
         "orden": orden,
+        "asignado_a": CADETE_SLUG if entrada.enviar_a_alejo else None,
     }
     client.table("tareas_entrega").insert(tarea).execute()
     return {"ok": True, "tarea": tarea}

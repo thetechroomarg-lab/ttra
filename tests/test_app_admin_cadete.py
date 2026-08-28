@@ -285,6 +285,37 @@ def test_cadete_puede_completar_una_tarea_derivada(monkeypatch):
     assert fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data[0]["completada_en"]
 
 
+def test_admin_puede_crear_una_tarea_ya_enviada_a_alejo(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+
+    r = admin.post("/admin/tareas-entrega", json={
+        "fecha_entrega": fecha_hoy, "titulo": "Retirar equipo",
+        "cliente_nombre": "Cliente", "enviar_a_alejo": True,
+    })
+    assert r.status_code == 200
+    tarea_id = r.json()["tarea"]["id"]
+    fila = fake.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data[0]
+    assert fila["asignado_a"] == "alejo"
+
+    cadete = _cadete_logueado()
+    panel = cadete.get("/admin/cadete")
+    assert "Retirar equipo" in panel.text
+
+
+def test_admin_puede_crear_una_tarea_sin_enviarla_a_alejo(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+
+    r = admin.post("/admin/tareas-entrega", json={
+        "fecha_entrega": "2026-08-24", "titulo": "Retirar equipo",
+        "cliente_nombre": "Cliente",
+    })
+    assert r.status_code == 200
+    tarea_id = r.json()["tarea"]["id"]
+    fila = fake.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data[0]
+    assert fila["asignado_a"] is None
+
+
 def test_cadete_no_puede_crear_tareas_ni_derivar(monkeypatch):
     _admin_logueado(monkeypatch)
     cadete = _cadete_logueado()
