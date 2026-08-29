@@ -1441,6 +1441,9 @@ _CADETE_ESTILO = """
   #salir { padding:12px 16px; min-height:44px; border-radius:var(--op-r-sm); border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease); }
   #salir:hover { background:var(--op-surface-3); }
   .pedidos-hoy h2 { font-size:var(--op-fs-title); }
+  .proximos-dias { margin-top:24px; }
+  .proximos-dia { margin-bottom:8px; }
+  .proximos-dia h3 { margin:0 0 8px; color:var(--op-text-dim); font-size:var(--op-fs-small); font-weight:700; text-transform:capitalize; }
   .pedido-hoy { display:flex; flex-direction:column; gap:12px; padding:16px; margin-bottom:12px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
   .pedido-hoy-detalle { font-size:var(--op-fs-body); line-height:1.55; overflow-wrap:anywhere; word-break:break-word; }
   .observacion-cadete { color:var(--op-warning); }
@@ -1480,6 +1483,13 @@ _CADETE_ESTILO = """
 _ADMIN_CLIENTES_PWA_HEAD = """
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="/admin-clientes.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#111318">
+"""
+
+_CADETE_PWA_HEAD = """
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="/admin-cadete.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#111318">
 """
@@ -2571,7 +2581,7 @@ document.getElementById("btn-eliminar-masivo").addEventListener("click", async (
 def admin_cadete(request: Request):
     if not _cadete_activo(request):
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Entregas — Ingresar</title>{_ADMIN_CLIENTES_PWA_HEAD}{_CADETE_ESTILO}</head><body>
+<title>Entregas — Ingresar</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
 <div class="tarjeta">
   <h1>Panel de entregas</h1>
   <p id="err" class="error" style="display:none"></p>
@@ -2691,14 +2701,50 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     )
     entregas_html = "".join(tarjetas) if tarjetas else '<p class="vacio">No tenés entregas asignadas para hoy.</p>'
 
+    pedidos_proximos = [
+        pedido for pedido in pedidos
+        if pedido.get("fecha_entrega", "") > fecha_hoy and not pedido.get("recibo_enviado_en")
+    ]
+    tareas_proximas = [
+        tarea for tarea in tareas
+        if tarea.get("fecha_entrega", "") > fecha_hoy and not tarea.get("completada_en")
+    ]
+
+    def _label_fecha_entrega(fecha_iso):
+        try:
+            momento = datetime.fromisoformat(fecha_iso)
+        except ValueError:
+            return fecha_iso
+        return f"{momento.strftime('%d/%m')} · {_DIAS_SEMANA[momento.weekday()]}"
+
+    fechas_proximas = sorted({
+        pedido.get("fecha_entrega") for pedido in pedidos_proximos
+    } | {
+        tarea.get("fecha_entrega") for tarea in tareas_proximas
+    })
+    proximos_html = "".join(
+        f'<div class="proximos-dia"><h3>{html.escape(_label_fecha_entrega(fecha))}</h3>'
+        + "".join(_tarjeta_pedido_cadete(pedido) for pedido in pedidos_proximos if pedido.get("fecha_entrega") == fecha)
+        + "".join(_tarjeta_tarea_cadete(tarea) for tarea in tareas_proximas if tarea.get("fecha_entrega") == fecha)
+        + "</div>"
+        for fecha in fechas_proximas
+    )
+    total_proximos = len(pedidos_proximos) + len(tareas_proximas)
+    seccion_proximos = (
+        f'<section class="pedidos-hoy proximos-dias"><div class="pedidos-hoy-header">'
+        f'<h2>Próximos días ({total_proximos})</h2></div>{proximos_html}</section>'
+        if total_proximos else ""
+    )
+
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Entregas asignadas</title>{_ADMIN_CLIENTES_PWA_HEAD}{_CADETE_ESTILO}</head><body>
+<title>Entregas asignadas</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
 <div class="panel">
   <div class="panel-header">
     <h1>Entregas asignadas</h1>
     <div class="panel-header-acciones"><button id="salir">Cerrar sesión</button></div>
   </div>
   <section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2></div>{entregas_html}</section>
+  {seccion_proximos}
 </div>
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
 <script>
