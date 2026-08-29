@@ -1,6 +1,34 @@
 /* web/static/perfil.css — Agrega a login.css solo lo propio de esta
    página (el resto de tarjeta/form/input/button lo hereda de ahí, para que
    el formato sea igual al de registro). */
+
+/* Embebido como #panel-perfil en index.html (ver landing.js/perfil.js):
+   esa página NO carga login.css completo -su "body{display:flex;
+   align-items:center...}" descentraría toda la home-, así que este panel
+   necesita su propia copia de las piezas de formulario que sí usa
+   (.form en columna, padding de los inputs, look del botón submit).
+   /perfil.html standalone sigue heredando las mismas reglas de login.css,
+   sin cambios ahí. */
+#panel-perfil .form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+#panel-perfil input {
+  padding: 12px 14px;
+  font-size: 14px;
+}
+#panel-perfil button[type="submit"],
+#panel-perfil #btn-cancelar-edicion-domicilio {
+  margin-top: 4px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
 .rc-perfil-volver {
   display: inline-block; margin-bottom: 16px; font-size: 13px; text-decoration: none;
   color: var(--rc-green-dim);

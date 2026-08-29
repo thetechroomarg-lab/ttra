@@ -1,4 +1,15 @@
+// Este script sirve dos contextos:
+// 1) /perfil.html standalone (link-volver existe): se comporta como
+//    siempre, cargando el perfil apenas el script corre.
+// 2) Panel embebido en index.html (panel-perfil existe, ver
+//    #panel-perfil/landing.js): NO carga nada hasta que se llama a
+//    window.abrirPanelPerfil() -evita pegarle a /api/me y redirigir a un
+//    invitado a login.html solo porque este script está en la página-, y
+//    "cerrar" oculta el panel en vez de navegar.
+const panelPerfilEmbebido = document.getElementById("panel-perfil");
 const linkVolver = document.getElementById("link-volver");
+const btnCerrarPanelPerfil = document.getElementById("btn-cerrar-panel-perfil");
+const overlayPerfilEmbebido = document.getElementById("overlay-perfil");
 const domicilioDireccionInput = document.getElementById("domicilio-direccion");
 const domicilioAliasInput = document.getElementById("domicilio-alias");
 const perfilSugerenciasDireccion = document.getElementById("perfil-sugerencias-direccion");
@@ -8,8 +19,21 @@ const btnCancelarEdicionDomicilio = document.getElementById("btn-cancelar-edicio
 let temporizadorPerfilDireccion;
 let apiPlacesPerfil;
 let domicilioEnEdicionId = null;
-if (document.documentElement.getAttribute("data-modo") === "fallout") {
+if (linkVolver && document.documentElement.getAttribute("data-modo") === "fallout") {
   linkVolver.href = "/?modo=fallout";
+}
+
+function cerrarPanelPerfil() {
+  if (!panelPerfilEmbebido) return;
+  panelPerfilEmbebido.classList.add("oculto");
+  if (overlayPerfilEmbebido) overlayPerfilEmbebido.classList.add("oculto");
+}
+
+if (btnCerrarPanelPerfil) {
+  btnCerrarPanelPerfil.addEventListener("click", cerrarPanelPerfil);
+}
+if (overlayPerfilEmbebido) {
+  overlayPerfilEmbebido.addEventListener("click", cerrarPanelPerfil);
 }
 
 function ocultarSugerenciasPerfilDireccion() {
@@ -81,10 +105,16 @@ domicilioDireccionInput.addEventListener("input", () => {
 const seccionCondicionesMayorista = document.getElementById("seccion-condiciones-mayorista");
 const condicionesMayoristaFecha = document.getElementById("condiciones-mayorista-fecha");
 const btnVerCondicionesMayorista = document.getElementById("btn-ver-condiciones-mayorista");
-const overlayTerminosMayorista = document.getElementById("rc-terminos-mayorista");
-const contenidoTerminosMayorista = document.getElementById("rc-terminos-contenido");
-const btnTerminosCerrar = document.getElementById("btn-terminos-cerrar");
-let fragmentoTerminosMayoristaCache = null;
+// Sufijo "Local": embebido en index.html, landing.js ya declara sus propias
+// const con estos mismos nombres (ambos scripts corren en el scope global)
+// — sin el sufijo, cargar los dos en la misma página tira
+// "Identifier ... has already been declared" y perfil.js entero deja de
+// ejecutarse. Solo se usan acá como fallback para /perfil.html standalone
+// (ver los "typeof mostrarModalTerminosMayorista" más abajo).
+const overlayTerminosMayoristaLocal = document.getElementById("rc-terminos-mayorista");
+const contenidoTerminosMayoristaLocal = document.getElementById("rc-terminos-contenido");
+const btnTerminosCerrarLocal = document.getElementById("btn-terminos-cerrar");
+let fragmentoTerminosMayoristaCacheLocal = null;
 
 function mostrarSeccionCondicionesMayorista(datos) {
   if (!seccionCondicionesMayorista) return;
@@ -97,37 +127,55 @@ function mostrarSeccionCondicionesMayorista(datos) {
   }
   // El modo Fallout no está disponible para cuentas mayoristas — si llegó
   // acá con ?modo=fallout en la URL (ej. un link viejo guardado), se lo
-  // saca a Classic apenas se sabe que la cuenta es mayorista.
+  // saca a Classic apenas se sabe que la cuenta es mayorista. Embebido en
+  // index.html usamos la función de landing.js (mantiene sincronizado su
+  // propio estado interno de modo); en /perfil.html standalone no existe,
+  // así que se cae al atributo directo de siempre.
   if (esMayorista && document.documentElement.getAttribute("data-modo") === "fallout") {
-    document.documentElement.setAttribute("data-modo", "classic");
+    if (typeof aplicarModoVisual === "function") {
+      aplicarModoVisual("classic");
+    } else {
+      document.documentElement.setAttribute("data-modo", "classic");
+    }
   }
 }
 
 async function cargarFragmentoTerminosMayorista() {
-  if (fragmentoTerminosMayoristaCache) return fragmentoTerminosMayoristaCache;
+  if (fragmentoTerminosMayoristaCacheLocal) return fragmentoTerminosMayoristaCacheLocal;
   try {
     const r = await fetch("/condiciones-mayorista.html");
-    fragmentoTerminosMayoristaCache = r.ok
+    fragmentoTerminosMayoristaCacheLocal = r.ok
       ? await r.text()
       : "<p>No pudimos cargar las condiciones mayoristas. Probá de nuevo.</p>";
   } catch {
-    fragmentoTerminosMayoristaCache = "<p>No pudimos cargar las condiciones mayoristas. Probá de nuevo.</p>";
+    fragmentoTerminosMayoristaCacheLocal = "<p>No pudimos cargar las condiciones mayoristas. Probá de nuevo.</p>";
   }
-  return fragmentoTerminosMayoristaCache;
+  return fragmentoTerminosMayoristaCacheLocal;
 }
 
 if (btnVerCondicionesMayorista) {
   btnVerCondicionesMayorista.addEventListener("click", async () => {
-    if (!overlayTerminosMayorista || !contenidoTerminosMayorista) return;
-    contenidoTerminosMayorista.innerHTML = await cargarFragmentoTerminosMayorista();
-    contenidoTerminosMayorista.scrollTop = 0;
-    overlayTerminosMayorista.classList.add("visible");
+    // Embebido en index.html: reusa el modal + overlay que landing.js ya
+    // maneja (mismos #rc-terminos-mayorista/#rc-terminos-contenido) —
+    // así respeta el toggle Acepto/Cerrar en vez de dejar el overlay con
+    // el estado de una apertura previa. Standalone en /perfil.html cae a
+    // la copia local de acá abajo (esos elementos no existen en esa página).
+    if (typeof mostrarModalTerminosMayorista === "function") {
+      mostrarModalTerminosMayorista("ver");
+      return;
+    }
+    if (!overlayTerminosMayoristaLocal || !contenidoTerminosMayoristaLocal) return;
+    contenidoTerminosMayoristaLocal.innerHTML = await cargarFragmentoTerminosMayorista();
+    contenidoTerminosMayoristaLocal.scrollTop = 0;
+    overlayTerminosMayoristaLocal.classList.add("visible");
   });
 }
 
-if (btnTerminosCerrar) {
-  btnTerminosCerrar.addEventListener("click", () => {
-    if (overlayTerminosMayorista) overlayTerminosMayorista.classList.remove("visible");
+// Embebido en index.html, landing.js ya le pone su propio listener a este
+// mismo botón (ver btnTerminosCerrar ahí) — evita duplicarlo acá.
+if (btnTerminosCerrarLocal && typeof mostrarModalTerminosMayorista !== "function") {
+  btnTerminosCerrarLocal.addEventListener("click", () => {
+    if (overlayTerminosMayoristaLocal) overlayTerminosMayoristaLocal.classList.remove("visible");
   });
 }
 
@@ -231,8 +279,30 @@ async function cargarDomicilios() {
   }
 }
 
-cargarPerfil();
-cargarDomicilios();
+if (panelPerfilEmbebido) {
+  // Embebido: no se carga nada hasta que el usuario realmente abre el
+  // panel (ver btn-perfil-toggle -> linkIrAPerfil en landing.js), para no
+  // pegarle a /api/me -y de paso redirigir a un invitado a login.html- en
+  // cada carga de la home solo porque este script está en la página.
+  window.abrirPanelPerfil = function abrirPanelPerfil() {
+    // Cierra el carrito si estaba abierto: los dos comparten la franja
+    // "flotante sobre la home blureada" y no tiene sentido ver ambos
+    // superpuestos a la vez.
+    if (typeof cerrarCarrito === "function") cerrarCarrito();
+    // Mismo cálculo que el carrito (separación real del footer, no un
+    // valor fijo) — sincronizarLimiteCarrito ya deja el resultado en la
+    // variable CSS compartida --rc-carrito-separacion-footer.
+    if (typeof sincronizarLimiteCarrito === "function") sincronizarLimiteCarrito();
+    panelPerfilEmbebido.classList.remove("oculto");
+    if (overlayPerfilEmbebido) overlayPerfilEmbebido.classList.remove("oculto");
+    cargarPerfil();
+    cargarDomicilios();
+  };
+} else {
+  // Standalone (/perfil.html): comportamiento de siempre.
+  cargarPerfil();
+  cargarDomicilios();
+}
 
 const formPerfil = document.getElementById("form-perfil");
 formPerfil.addEventListener("submit", async (e) => {

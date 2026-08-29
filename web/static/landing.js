@@ -182,13 +182,11 @@ function registrarInteraccion(tipoEvento, datos = {}) {
   }).catch(() => {});
 }
 let estadoSesionCliente = null;
-// Classic es siempre el modo de arranque (ver boot.js); Fallout solo dura
-// mientras no se recarga la página, no se persiste entre refrescos.
-// Atajo de desarrollo: ?modo=fallout en la URL arranca directo en Fallout
-// SIN el boot sequence (aplicarModoVisual no lo dispara por sí solo, solo
-// el click en el botón lo envuelve con la animación), para poder iterar
-// sobre cambios de Fallout sin pasar por Classic cada vez.
-let modoVisual = new URLSearchParams(location.search).get("modo") === "fallout" ? "fallout" : "classic";
+// Modo Fallout deshabilitado (a pedido: sin acceso de usuario por ahora,
+// solo Classic). Se comenta el atajo ?modo=fallout en vez de borrarlo, para
+// poder restaurarlo fácilmente el día que se vuelva a habilitar.
+// let modoVisual = new URLSearchParams(location.search).get("modo") === "fallout" ? "fallout" : "classic";
+let modoVisual = "classic";
 
 function temaClassicGuardado() {
   try {
@@ -2718,10 +2716,14 @@ function entrarAModoFallout() {
   }
 }
 
-const btnLogoFallout = document.getElementById("btn-logo-fallout");
-if (btnLogoFallout) {
-  btnLogoFallout.addEventListener("click", entrarAModoFallout);
-}
+// Modo Fallout deshabilitado: el botón #btn-logo-fallout se comentó en
+// index.html, así que esto ya no encuentra nada — se deja comentado en vez
+// de borrado para restaurarlo fácil más adelante.
+// const btnLogoFallout = document.getElementById("btn-logo-fallout");
+// if (btnLogoFallout) {
+//   btnLogoFallout.addEventListener("click", entrarAModoFallout);
+// }
+const btnLogoFallout = null;
 const btnModoClassic = document.getElementById("btn-modo-classic");
 if (btnModoClassic) btnModoClassic.addEventListener("click", () => {
   if (modoVisual !== "fallout") {
@@ -2879,6 +2881,7 @@ async function cerrarSesionCliente() {
 const menuPerfil = document.getElementById("rc-perfil-menu");
 const btnPerfilToggle = document.getElementById("btn-perfil-toggle");
 const dropdownPerfil = document.getElementById("rc-perfil-dropdown");
+const overlayPerfil = document.getElementById("overlay-perfil");
 const linkIrAPerfil = document.getElementById("link-ir-a-perfil");
 const btnClassicTheme = document.getElementById("btn-classic-theme");
 
@@ -2886,6 +2889,11 @@ function cerrarMenuPerfil() {
   if (!dropdownPerfil) return;
   dropdownPerfil.classList.add("oculto");
   if (btnPerfilToggle) btnPerfilToggle.setAttribute("aria-expanded", "false");
+  // El fondo blureado (overlay-perfil) es un agregado solo de Classic (ver
+  // classic.css) — sin CSS propia en Fallout, así que de todos modos no se
+  // ve ahí, pero igual la ocultamos siempre para no dejarla "abierta" si el
+  // usuario cambia de modo con el menú desplegado.
+  if (overlayPerfil) overlayPerfil.classList.add("oculto");
 }
 
 if (btnPerfilToggle && dropdownPerfil) {
@@ -2897,16 +2905,32 @@ if (btnPerfilToggle && dropdownPerfil) {
     } else {
       dropdownPerfil.classList.remove("oculto");
       btnPerfilToggle.setAttribute("aria-expanded", "true");
+      // Solo Classic pide el fondo blureado/sin interacción (pedido
+      // explícito: no tocar el comportamiento de Fallout).
+      if (overlayPerfil && document.documentElement.getAttribute("data-modo") === "classic") {
+        overlayPerfil.classList.remove("oculto");
+      }
     }
   });
   document.addEventListener("click", (e) => {
     if (menuPerfil && !menuPerfil.contains(e.target)) cerrarMenuPerfil();
   });
+  if (overlayPerfil) overlayPerfil.addEventListener("click", cerrarMenuPerfil);
 }
 
 if (linkIrAPerfil) {
   linkIrAPerfil.addEventListener("click", (e) => {
     e.preventDefault();
+    // Classic + con sesión: abre el panel embebido (ver perfil.js) en vez
+    // de navegar a /perfil — así queda la home blureada detrás, igual que
+    // el carrito. Fallout sigue navegando a la página completa de siempre
+    // (pedido explícito: no tocar ese modo) y un invitado sigue yendo a
+    // login, en los dos casos no hay panel que abrir.
+    if (modoVisual !== "fallout" && estadoSesionCliente && typeof window.abrirPanelPerfil === "function") {
+      cerrarMenuPerfil();
+      window.abrirPanelPerfil();
+      return;
+    }
     const destinoPerfil = modoVisual === "fallout" ? "/perfil?modo=fallout" : "/perfil";
     const paramsLogin = new URLSearchParams({ volver: `${location.pathname}${location.search}` });
     if (modoVisual === "fallout") paramsLogin.set("modo", "fallout");
@@ -3712,10 +3736,10 @@ function tarjetaProducto(p) {
   return `
     <div class="card" data-nombre="${escapeHtml(p.nombre)}">
       <h3>${marcaLogoHtml(p.marca, "marca-logo-card")}${escapeHtml(p.nombre)}</h3>
-      ${colores}
       <p class="precios">
         ${bloquePreciosHtml(p)}
       </p>
+      ${colores}
       <div class="card-acciones">
         <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}</span>
         <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="" type="button" disabled>Agregar al carrito</button>
@@ -4451,6 +4475,10 @@ function sincronizarLimiteCarrito() {
 
 function abrirCarrito() {
   if (!catalogoListo) return;
+  // Cierra el panel de perfil si estaba abierto: los dos comparten la
+  // franja "flotante sobre la home blureada" y no tiene sentido ver ambos
+  // superpuestos a la vez.
+  if (typeof cerrarPanelPerfil === "function") cerrarPanelPerfil();
   cargarOpcionesEntrega().catch(() => {});
   sincronizarLimiteCarrito();
   document.getElementById("panel-carrito").classList.remove("oculto");
@@ -4997,12 +5025,79 @@ function formatearFechaHora() {
   return `${fecha} ${hora}`;
 }
 
+// Últimos dígitos de la hora pintados en Classic (para animar -deslizar-
+// solo el/los dígitos que cambiaron entre un tick y el siguiente, en vez de
+// repintar/reanimar los 6 cada segundo). null = todavía no se armó la
+// estructura de spans, o venimos de Fallout (que no la usa).
+let digitosRelojClassicActual = null;
+
+// Arma <span class="rc-reloj-fecha">/-digitos/-resto> una sola vez dentro de
+// #fecha-hora, la primera vez que este tick corre en Classic.
+function asegurarEstructuraRelojClassic(el) {
+  if (el.querySelector(".rc-reloj-digitos")) return;
+  el.innerHTML =
+    '<span class="rc-reloj-fecha"></span> ' +
+    '<span class="rc-reloj-digitos"></span>' +
+    '<span class="rc-reloj-resto"></span>';
+}
+
 function pintarFechaHoraTemp() {
   const elFechaHora = document.getElementById("fecha-hora");
   const elCiudadTemp = document.getElementById("ciudad-temp");
   const elDolar = document.getElementById("dolar-linea");
   if (!elFechaHora || !elCiudadTemp || !elDolar) return;
-  elFechaHora.textContent = formatearFechaHora();
+
+  const ahora = new Date();
+  const fecha = ahora.toLocaleDateString("es-AR");
+  const hora = ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  // Efecto "reloj slot" solo en Classic (pedido explícito: no tocar Fallout,
+  // que sigue con el texto plano de siempre). match separa "05:55:10" (se
+  // anima dígito por dígito) de " p. m." (casi no cambia, texto fijo).
+  const esClassic = document.documentElement.getAttribute("data-modo") === "classic";
+  const match = esClassic ? hora.match(/^(\d{2}:\d{2}:\d{2})\s*(.*)$/) : null;
+
+  if (!match) {
+    // Fallout, o formato de hora inesperado: texto plano, sin animación.
+    elFechaHora.textContent = `${fecha} ${hora}`;
+    digitosRelojClassicActual = null;
+  } else {
+    const [, digitos, resto] = match;
+    asegurarEstructuraRelojClassic(elFechaHora);
+    elFechaHora.querySelector(".rc-reloj-fecha").textContent = fecha;
+    elFechaHora.querySelector(".rc-reloj-resto").textContent = resto ? ` ${resto}` : "";
+
+    const contenedorDigitos = elFechaHora.querySelector(".rc-reloj-digitos");
+    const nuevos = Array.from(digitos);
+    if (!digitosRelojClassicActual || digitosRelojClassicActual.length !== nuevos.length) {
+      // Primera pintada en Classic (o se acaba de volver de Fallout): arma
+      // los 8 caracteres (6 dígitos animables + 2 ":" fijos).
+      contenedorDigitos.innerHTML = nuevos
+        .map((char) =>
+          char === ":"
+            ? ":"
+            : `<span class="rc-reloj-digito"><span class="rc-reloj-digito-valor">${char}</span></span>`
+        )
+        .join("");
+    } else {
+      // Estructura ya armada: solo se toca (y anima) el dígito que cambió,
+      // el resto queda quieto — así cada segundo solo "gira" el de segundos,
+      // y minutos/hora solo cuando de verdad cambian.
+      const valores = contenedorDigitos.querySelectorAll(".rc-reloj-digito-valor");
+      let cursor = 0;
+      nuevos.forEach((char, i) => {
+        if (char === ":") return;
+        const span = valores[cursor++];
+        if (span && digitosRelojClassicActual[i] !== char) {
+          span.textContent = char;
+          span.classList.remove("rc-reloj-cambio");
+          void span.offsetWidth; // fuerza reflow: permite re-disparar la misma animación
+          span.classList.add("rc-reloj-cambio");
+        }
+      });
+    }
+    digitosRelojClassicActual = nuevos;
+  }
+
   const partesCiudadTemp = [];
   if (ciudadActual) partesCiudadTemp.push(ciudadActual);
   if (temperaturaActual !== null) partesCiudadTemp.push(`${temperaturaActual}°C`);

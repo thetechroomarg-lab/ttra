@@ -174,6 +174,23 @@ if ("serviceWorker" in navigator) {
   const btnPortada = document.getElementById("btn-portada-ingreso");
   const tituloPortada = portada ? portada.querySelector(".rc-portada-ingreso-titulo") : null;
   const ctaPortada = portada ? portada.querySelector(".rc-portada-ingreso-cta") : null;
+  // Envuelve cada caracter del título en su propio span con un delay
+  // creciente, para que al agregar la clase "visible" el texto aparezca
+  // letra por letra (fade per-char) en vez de como un bloque único.
+  if (tituloPortada) {
+    const texto = tituloPortada.textContent;
+    tituloPortada.setAttribute("aria-label", texto);
+    tituloPortada.textContent = "";
+    const DELAY_POR_CHAR_MS = 35;
+    Array.from(texto).forEach((char, i) => {
+      const span = document.createElement("span");
+      span.className = "rc-char";
+      span.setAttribute("aria-hidden", "true");
+      span.style.transitionDelay = `${i * DELAY_POR_CHAR_MS}ms`;
+      span.textContent = char === " " ? " " : char;
+      tituloPortada.appendChild(span);
+    });
+  }
   // Se muestra una sola vez por sesión de pestaña: si ya se descartó antes
   // (por ej. el redirect de vuelta desde login.html tras un login exitoso),
   // sessionStorage lo recuerda y no la volvemos a mostrar. Un refresh manual

@@ -17,7 +17,11 @@ html[data-modo="classic"] {
   --rc-green-dim: #a8a8a8;
   --rc-green-faint: #3a3a3a;
   --rc-glow: rgba(255, 255, 255, 0.12);
-  --cl-rojo: #9e9e9e;
+  /* Rojo coral (no gris): en dark el acento tiene que seguir leyéndose como
+     "acá está el precio/CTA" igual que en light — un gris se desatura contra
+     el resto de la UI y esa señal se pierde del todo. */
+  --cl-rojo: #ff6b5e;
+  --cl-verde-ok: #34d399;
   --cl-crema: #f2f2f2;
   --cl-azul-francia: #101010;
   --cl-amarillo-huevo: #cfcfcf;
@@ -65,14 +69,18 @@ html[data-modo="classic"] .rc-logout-tarjeta {
   background: var(--rc-bg-panel);
 }
 
+/* Más aire entre logo/buscador/utilidades (antes 18px/14px): al header le
+   faltaba separación entre "identidad" (logo) y "utilidad" (buscador,
+   fecha, carrito) — todo quedaba a la misma distancia, compitiendo por el
+   mismo primer vistazo en vez de dejar que el ojo entre por el logo primero. */
 html[data-modo="classic"] header {
   background: var(--cl-azul-francia);
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(0, var(--rc-header-buscador-width, 960px)) minmax(270px, 1fr);
   grid-template-rows: auto;
   align-items: start;
-  column-gap: 18px;
-  padding: 14px 20px 12px;
+  column-gap: 32px;
+  padding: 20px 28px 18px;
 }
 html[data-modo="classic"] .rc-header-superior {
   display: contents;
@@ -93,7 +101,7 @@ html[data-modo="classic"] .rc-header-centro {
 html[data-modo="classic"] .rc-categorias-classic-wrap {
   display: flex;
   justify-content: center;
-  padding: 10px 20px 0;
+  padding: 10px 28px 0;
 }
 html[data-modo="classic"] .rc-header-nav {
   display: flex;
@@ -126,7 +134,7 @@ html[data-modo="classic"] .fila-principal {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 8px 20px 16px;
+  padding: 8px 28px 32px;
 }
 html[data-modo="classic"] .columna-izquierda {
   display: none;
@@ -326,6 +334,52 @@ html[data-modo="classic"] button:active {
   box-shadow: 0 1px 4px rgba(10, 47, 63, 0.15);
 }
 
+/* "Agregar al carrito" es la acción de conversión más importante de toda la
+   página y hasta ahora tomaba el botón gris genérico — igual que "Salir" o
+   "Cancelar". Nada la distinguía como el próximo paso. Relleno sólido en el
+   acento coral (el mismo que ya marca precio y estados activos) para que
+   compita y gane frente al resto de los controles de la card. El estado
+   disabled ya viene grayscale+opacity (ver .btn-agregar:disabled más abajo),
+   así que se neutraliza solo sin necesitar un override aparte. */
+html[data-modo="classic"] .btn-agregar {
+  background: var(--cl-rojo);
+  border-color: var(--cl-rojo);
+  color: #fff;
+}
+html[data-modo="classic"] .btn-agregar:hover,
+html[data-modo="classic"] .btn-agregar:focus-visible {
+  background: color-mix(in srgb, var(--cl-rojo) 85%, black);
+  border-color: color-mix(in srgb, var(--cl-rojo) 85%, black);
+}
+
+/* Mismo problema en el panel de carrito: "Cerrar pedido por WhatsApp" (la
+   conversión final de todo el flujo) y "Vaciar carrito" (una acción
+   destructiva) llegaban con el mismo botón gris, compitiendo en igualdad de
+   peso. El primario gana con el mismo coral de .btn-agregar; el destructivo
+   pasa a un outline discreto para que no le dispute la atención. */
+html[data-modo="classic"] #btn-whatsapp {
+  background: var(--cl-rojo);
+  border-color: var(--cl-rojo);
+  color: #fff;
+}
+html[data-modo="classic"] #btn-whatsapp:hover,
+html[data-modo="classic"] #btn-whatsapp:focus-visible {
+  background: color-mix(in srgb, var(--cl-rojo) 85%, black);
+  border-color: color-mix(in srgb, var(--cl-rojo) 85%, black);
+}
+html[data-modo="classic"] #btn-vaciar-carrito {
+  background: transparent;
+  border-color: var(--rc-green-faint);
+  color: var(--rc-green-dim);
+  box-shadow: none;
+}
+html[data-modo="classic"] #btn-vaciar-carrito:hover,
+html[data-modo="classic"] #btn-vaciar-carrito:focus-visible {
+  border-color: var(--rc-green-dim);
+  color: var(--rc-green-bright);
+  box-shadow: none;
+}
+
 /* Ítems del menú principal (Celulares, Tablets, Notebooks, Gaming,
    Accesorios, Búsqueda por Marca): un realce sutil al pasar el mouse,
    acento rojo Martini que se desliza desde abajo. */
@@ -333,8 +387,23 @@ html[data-modo="classic"] .btn-categoria {
   position: relative;
   overflow: hidden;
   transition: transform .2s ease, box-shadow .2s ease, color .2s ease;
-  padding: 12px 16px;
+  /* Más padding + tracking (antes 12px 16px, sin letter-spacing propio):
+     la nav principal competía en peso visual con el resto de la UI en vez
+     de sentirse como un nivel de navegación con autoridad propia. */
+  padding: 14px 22px;
   font-size: 14px;
+  letter-spacing: .05em;
+  /* Superficie propia en dark (light ya la tiene, ver override más abajo):
+     sin esto cae al botón genérico, casi del mismo tono que el fondo de
+     página, y la navegación principal queda plana. */
+  background: #3a3a3a;
+  border-color: #3a3a3a;
+  color: var(--rc-green-bright);
+}
+html[data-modo="classic"] .btn-categoria:hover,
+html[data-modo="classic"] .btn-categoria:focus-visible {
+  background: #454545;
+  border-color: #454545;
 }
 html[data-modo="classic"] .btn-categoria::after {
   content: "";
@@ -359,6 +428,22 @@ html[data-modo="classic"] .selector-marcas .btn-categoria.btn-marca-logo {
 html[data-modo="classic"] .selector-marcas .btn-categoria.btn-marca-logo:hover {
   border-color: #e6e6e6;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+}
+/* El filtro seleccionado (marca/tipo dentro de una sección) llegaba con el
+   mismo fondo que uno sin seleccionar (--rc-green-faint == fondo de reposo
+   de .btn-categoria en dark) — la única diferencia era un borde 1px, fácil
+   de perder de vista. Acento coral sólido para que "esto está activo" se
+   lea de inmediato, igual que el resto de los estados seleccionados del
+   sistema (tabs de catálogo, botón activo del carrito). */
+html[data-modo="classic"] .btn-categoria.activo:not(.btn-marca-logo) {
+  background: var(--cl-rojo);
+  border-color: var(--cl-rojo);
+  color: #fff;
+  font-weight: 700;
+}
+html[data-modo="classic"] .btn-categoria.btn-marca-logo.activo {
+  border-color: var(--cl-rojo);
+  box-shadow: 0 0 0 2px var(--cl-rojo), 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 html[data-modo="classic"] #categorias .btn-categoria {
   flex: 0 0 auto;
@@ -467,6 +552,14 @@ html[data-modo="classic"] .rc-buscador input:focus {
   html[data-modo="classic"] .rc-perfil-menu {
     width: auto;
     order: 1;
+  }
+  /* En desktop el nombre vive al lado del ícono, apretado contra buscador y
+     fecha — el recorte a 3ch tiene sentido ahí. En mobile "Ir a perfil" pasó
+     a su propia fila (columna derecha absoluta, ver .rc-header-derecha
+     arriba), con todo el ancho disponible: cortarlo a una sola letra + "…"
+     ("Vladimir" → "V…") no ahorra nada y hace ilegible el nombre. */
+  html[data-modo="classic"] .rc-perfil-nombre {
+    max-width: 110px;
   }
   html[data-modo="classic"] .rc-buscador-header {
     width: 100%;
@@ -658,12 +751,41 @@ html[data-modo="classic"] .rc-logo-linea {
 }
 html[data-modo="classic"] .rc-cara-wrap { display: none; }
 
-/* Cards de producto: bordes redondeados, look más suave */
+/* Cards de producto: bordes redondeados, look más suave. Antes eran
+   estáticas (mismo shadow en reposo y hover, cero feedback al pasar el
+   mouse) — con 8 cards idénticas repitiendo el mismo borde rojo, nada le
+   decía al ojo "esto es interactivo". La elevación al hover + transición
+   da esa señal sin tocar el layout ni el grid subyacente. :not(.expandida)
+   evita que este hover le gane al pop de selección (misma especificidad,
+   .card.expandida ya define su propio transform:scale). */
 html[data-modo="classic"] .card,
 html[data-modo="classic"] .pipboy,
 html[data-modo="classic"] .tarjeta-recomendado {
   border-radius: 14px;
   box-shadow: 0 2px 10px rgba(10, 47, 63, 0.10);
+  transition: transform .22s cubic-bezier(.2, .8, .2, 1), box-shadow .22s ease, border-color .22s ease;
+}
+html[data-modo="classic"] .card:hover:not(.expandida),
+html[data-modo="classic"] .tarjeta-recomendado:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+  border-color: var(--rc-green-dim);
+}
+html[data-modo="classic"][data-classic-theme="light"] .card:hover:not(.expandida),
+html[data-modo="classic"][data-classic-theme="light"] .tarjeta-recomendado:hover {
+  box-shadow: 0 16px 32px rgba(16, 33, 79, 0.14);
+}
+/* Jerarquía tipográfica real entre nombre y precio: antes el nombre (.card
+   h3) heredaba peso normal — mismo peso visual que el resto del texto de la
+   card, sin que nada dijera "esto es el titular". El precio principal
+   (.card .precios strong) también estaba subdimensionado frente al mismo
+   dato en el carrusel de recomendados (18px), ahora quedan alineados. */
+html[data-modo="classic"] .card h3 {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+html[data-modo="classic"] .card .precios strong {
+  font-size: 18px;
 }
 
 /* Card seleccionada (título expandido): en Classic el contorno pasa a
@@ -746,7 +868,19 @@ html[data-modo="classic"] .btn-modo.activo {
 }
 
 /* Menú de perfil del header: comparte el bloque navy del header Classic,
-   pero "Cerrar sesión" va en rojo para marcar la acción destructiva. */
+   pero "Cerrar sesión" va en rojo para marcar la acción destructiva.
+   Esquinas redondeadas + sombra + overflow:hidden en el contenedor (ver
+   .rc-perfil-dropdown más abajo) para que este menú siga el mismo lenguaje
+   "flotante" que el resto de Classic (botones, cards, carrito, login) en
+   vez de quedar como el único rectángulo de bordes rectos del sitio. */
+html[data-modo="classic"] .rc-perfil-dropdown {
+  border-radius: 14px;
+  overflow: hidden;
+  /* Por encima de #overlay-perfil (z-index:9990, ver más abajo) — mismo
+     margen que usa #panel-carrito (9995) sobre #overlay-carrito (9990). */
+  z-index: 9995;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
 html[data-modo="classic"] .rc-perfil-opcion {
   background: var(--cl-azul-francia);
   color: #fff;
@@ -768,12 +902,19 @@ html[data-modo="classic"] .rc-perfil-opcion:active {
   border: none;
   box-shadow: none;
 }
-/* Rojo fijo (no la variable --cl-rojo, que en modo oscuro se desatura a
-   gris junto con el resto de la paleta): "Cerrar sesión" tiene que leerse
-   rojo siempre, sea modo claro u oscuro. */
+/* Separador sutil antes de "Cerrar sesión": es la única acción destructiva
+   del menú, y un borde no depende solo del color (accesible también para
+   daltonismo rojo-verde) para marcar "esto es distinto". */
+html[data-modo="classic"] #btn-logout-classic {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+/* Ahora sí la variable (ya no se desatura a gris en dark, ver --cl-rojo
+   arriba): "Cerrar sesión" queda consistente con el resto de los acentos
+   rojos del sitio en los dos temas, en vez de un valor fijo pensado para
+   cuando el rojo de dark todavía era gris. */
 html[data-modo="classic"] #btn-logout-classic,
 html[data-modo="classic"] #btn-logout-classic:hover {
-  color: #c6283b;
+  color: var(--cl-rojo);
 }
 
 /* Mensaje de confirmación de log out: mismo lenguaje visual del modo
@@ -828,6 +969,7 @@ html[data-modo="classic"][data-classic-theme="light"] {
   --rc-green-faint: #cbd5e1;
   --rc-glow: rgba(29, 111, 165, 0.14);
   --cl-rojo: #c6283b;
+  --cl-verde-ok: #15803d;
   --cl-crema: #ffffff;
   --cl-azul-francia: #102a43;
   --cl-amarillo-huevo: #dbeafe;
@@ -889,7 +1031,16 @@ html[data-modo="classic"][data-classic-theme="light"] .card.expandida {
   border-color: #1d6fa5;
   box-shadow: 0 16px 34px -6px rgba(29, 111, 165, 0.2);
 }
-html[data-modo="classic"][data-classic-theme="light"] .rc-perfil-opcion:hover {
+html[data-modo="classic"][data-classic-theme="light"] .rc-perfil-dropdown {
+  box-shadow: 0 12px 28px rgba(16, 33, 79, 0.18);
+}
+/* Extendido a :focus-visible/:active (antes solo cubría :hover): con
+   teclado, un usuario en light veía el navy casi negro de dark al enfocar
+   una opción -distinto del navy propio de light que sí ve al pasar el
+   mouse-, inconsistente entre dos formas de interactuar con el mismo menú. */
+html[data-modo="classic"][data-classic-theme="light"] .rc-perfil-opcion:hover,
+html[data-modo="classic"][data-classic-theme="light"] .rc-perfil-opcion:focus-visible,
+html[data-modo="classic"][data-classic-theme="light"] .rc-perfil-opcion:active {
   background: #173b5a;
 }
 html[data-modo="classic"][data-classic-theme="light"] .rc-logout-tarjeta {
@@ -939,8 +1090,8 @@ html[data-modo="classic"] .tarjeta-recomendado-acciones {
   pointer-events: auto;
 }
 .tarjeta-recomendado-acciones .dropdown-color { flex: 1; min-width: 0; }
-.tarjeta-recomendado-acciones .dropdown-color-boton { width: 100%; font-size: 11px; padding: 5px 8px; }
-.tarjeta-recomendado-acciones .btn-agregar { flex-shrink: 0; font-size: 11px; padding: 5px 10px; }
+.tarjeta-recomendado-acciones .dropdown-color-boton { width: 100%; font-size: 11px; padding: 5px 8px; min-height: 36px; }
+.tarjeta-recomendado-acciones .btn-agregar { flex-shrink: 0; font-size: 11px; padding: 5px 10px; min-height: 36px; }
 .tarjeta-recomendado-acciones .btn-agregar:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -1106,4 +1257,198 @@ html[data-modo="classic"] .tarjeta-recomendado-acciones {
   html[data-modo="classic"] .carrousel-recomendados-mobile-punto.activo {
     background: var(--cl-rojo);
   }
+}
+
+/* Mensajes de error/éxito de formularios (login.css trae valores fijos del
+   verde fosforescente/rojo de Fallout): en Classic tienen que usar la
+   paleta propia (rojo Martini / verde editorial), no la de Fallout. */
+html[data-modo="classic"] .error { color: var(--cl-rojo); }
+html[data-modo="classic"] .ok { color: var(--cl-verde-ok); }
+
+/* Reloj tipo "slot machine": cada dígito de HH:MM:SS gira con un slide
+   vertical cuando cambia (ver pintarFechaHoraTemp en landing.js). Solo
+   Classic — Fallout sigue con el texto plano de siempre, sin animación. */
+html[data-modo="classic"] .rc-reloj-digitos {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+html[data-modo="classic"] .rc-reloj-digito {
+  display: inline-block;
+  overflow: hidden;
+  height: 1.2em;
+  line-height: 1.2em;
+  min-width: 0.62em;
+  text-align: center;
+  vertical-align: bottom;
+}
+html[data-modo="classic"] .rc-reloj-digito-valor {
+  display: inline-block;
+}
+html[data-modo="classic"] .rc-reloj-digito-valor.rc-reloj-cambio {
+  animation: rc-reloj-slide .35s ease;
+}
+@keyframes rc-reloj-slide {
+  from { transform: translateY(60%); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+/* Border trail: al hacer click en una card (título expandido, ver
+   .card.expandida y pintarSeleccion en landing.js) un punto de luz recorre
+   el borde en loop, con el color de acento del tema (coral en dark, rojo
+   Martini en light) en vez del arcoíris genérico del componente original —
+   mismo acento que ya usa el precio/CTA, para que lea como "seleccionado",
+   no como decoración suelta. Técnica: anillo del grosor del borde (mask con
+   composite:exclude) + conic-gradient que gira (@property --rc-trail-angulo
+   habilita animar el ángulo). Sin soporte de @property (Firefox viejo) el
+   anillo queda estático en vez de animado — degradación aceptable. */
+@property --rc-trail-angulo {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+html[data-modo="classic"] .card.expandida {
+  position: relative;
+}
+html[data-modo="classic"] .card.expandida::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  padding: 3px;
+  background: conic-gradient(
+    from var(--rc-trail-angulo),
+    transparent 0%,
+    transparent 78%,
+    var(--cl-rojo) 92%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: rc-trail-girar 2.2s linear infinite;
+}
+@keyframes rc-trail-girar {
+  to { --rc-trail-angulo: 360deg; }
+}
+
+/* Fondo "vidrio esmerilado" al abrir el carrito o el menú de perfil: en vez
+   de un tinte plano (lo que trae #overlay-carrito por default, compartido
+   con Fallout), el resto de la pantalla se ve desenfocada detrás — el
+   usuario entiende que sigue ahí pero fuera de foco, no que desapareció, y
+   no puede interactuar con ella (el click en el overlay cierra el panel/
+   menú, ver landing.js). #overlay-perfil es nuevo, solo existe para
+   Classic — en Fallout nunca se le saca la clase "oculto" (ver el chequeo
+   de modo en landing.js), así que ni siquiera hace falta un ".oculto{
+   display:none}" para Fallout: sin position/tamaño no se ve. */
+html[data-modo="classic"] #overlay-carrito,
+html[data-modo="classic"] #overlay-perfil {
+  background: rgba(16, 20, 24, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: opacity .2s ease;
+}
+html[data-modo="classic"] #overlay-perfil {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+}
+html[data-modo="classic"] #overlay-perfil.oculto {
+  display: none;
+}
+html[data-modo="classic"][data-classic-theme="light"] #overlay-carrito,
+html[data-modo="classic"][data-classic-theme="light"] #overlay-perfil {
+  background: rgba(16, 33, 79, 0.18);
+}
+
+/* Panel de perfil embebido en la home (ver #panel-perfil en index.html y
+   window.abrirPanelPerfil en perfil.js): misma geometría que #panel-carrito
+   -franja de aire arriba, ancho acotado, esquinas redondeadas, scroll
+   propio en vez de estirarse hasta el borde- para que los dos paneles
+   flotantes del sitio se sientan como el mismo componente. Solo Classic:
+   en Fallout el link "Ir a perfil" nunca llama a abrirPanelPerfil (ver
+   landing.js), así que esto no hace falta ahí. */
+html[data-modo="classic"] #panel-perfil {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  bottom: var(--rc-carrito-separacion-footer, 24px);
+  transform: translateX(-50%);
+  width: min(600px, calc(100vw - 32px));
+  background: var(--rc-bg-panel);
+  border: 2px solid var(--rc-green-dim);
+  border-radius: 18px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+  z-index: 9995;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+}
+html[data-modo="classic"] #panel-perfil.oculto {
+  display: none;
+}
+html[data-modo="classic"][data-classic-theme="light"] #panel-perfil {
+  box-shadow: 0 18px 42px rgba(16, 33, 79, 0.2);
+}
+/* Mismo borde superior coral que .tarjeta (login) y .tarjeta-recomendado/
+   .card (borde rojo): las tres superficies "flotantes" del sitio -carrito,
+   perfil, login- quedan bajo la misma firma visual en vez de sentirse como
+   componentes de sistemas distintos. */
+html[data-modo="classic"] #panel-carrito,
+html[data-modo="classic"] #panel-perfil {
+  border-top: 4px solid var(--cl-rojo);
+}
+
+/* --- Login / registro / perfil standalone: la tarjeta (login.css) era un
+   rectángulo con borde de 1px y CERO elevación — la primera pantalla que ve
+   cualquiera que se registra quedaba con menos profundidad que un dropdown.
+   Reusa el mismo lenguaje de sombra que ya define #panel-carrito/
+   #panel-perfil (0 18px 42px), para que toda "superficie flotante" del
+   sitio pertenezca al mismo sistema. El borde superior en el acento del
+   sitio (mismo rojo/coral que ya marca precio y cards) le da a esta pantalla
+   utilitaria una firma de marca, no solo un formulario genérico. --- */
+html[data-modo="classic"] .tarjeta {
+  padding: 36px 32px;
+  border-radius: 20px;
+  border-top: 4px solid var(--cl-rojo);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+}
+html[data-modo="classic"][data-classic-theme="light"] .tarjeta {
+  box-shadow: 0 18px 42px rgba(16, 33, 79, 0.2);
+}
+html[data-modo="classic"] .form {
+  gap: 14px;
+}
+/* El login no tenía ninguna presencia de marca — ni logo ni color propio,
+   solo un título en mayúscula chica. Era la primera pantalla que ve
+   cualquiera que se registra y no se sentía TTRA. Versión compacta de una
+   sola línea del mismo lenguaje del wordmark del header (Arial bold + punto
+   en el acento coral), en vez de repetir el logo de 4 líneas pensado para un
+   header ancho — acá tiene que entrar en una tarjeta de 360px. */
+html[data-modo="classic"] .rc-marca-login {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  color: var(--rc-green-bright);
+  text-align: center;
+  margin-bottom: 6px;
+}
+html[data-modo="classic"] .rc-marca-login-punto {
+  color: var(--cl-rojo);
+}
+/* El título en sí pasa de mayúscula-chica-de-etiqueta a un titular real: la
+   misma jerarquía "esto es lo primero que leés" que ya tienen los precios y
+   nombres de producto, no un label de formulario. */
+html[data-modo="classic"] .tarjeta h1 {
+  margin: 0 0 24px;
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  text-align: center;
 }

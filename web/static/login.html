@@ -34,12 +34,13 @@
   <div id="rc-boot"></div>
   <div class="rc-crt"></div>
   <main class="tarjeta">
-    <h1 id="titulo-login">Bienvenid@ a The Tech Room Arg</h1>
+    <div class="rc-marca-login" aria-hidden="true">THE TECH ROOM <span class="rc-marca-login-punto">ARG.</span></div>
+    <h1 id="titulo-login">Bienvenid@ de nuevo</h1>
 
     <form id="form-login" class="form">
-      <input type="email" id="login-email" placeholder="Email" autocomplete="email" required>
+      <input type="email" id="login-email" placeholder="Email" autocomplete="email" required aria-label="Email">
       <div class="rc-password-wrap">
-        <input type="password" id="login-password" placeholder="Contraseña" autocomplete="current-password" required>
+        <input type="password" id="login-password" placeholder="Contraseña" autocomplete="current-password" required aria-label="Contraseña">
         <button type="button" id="btn-ver-login-password" class="rc-password-toggle" aria-label="Mostrar contraseña" tabindex="-1">
           <svg class="rc-password-icono rc-password-icono-mostrar" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
@@ -59,12 +60,12 @@
     </form>
 
     <form id="form-registro" class="form oculto">
-      <input type="text" id="registro-nombre" placeholder="Nombre" autocomplete="given-name" required>
-      <input type="text" id="registro-apellido" placeholder="Apellido" autocomplete="family-name" required>
-      <input type="password" id="registro-password" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="new-password" minlength="8" required>
-      <input type="password" id="registro-password-repetir" placeholder="Repetir contraseña" autocomplete="new-password" minlength="8" required>
-      <input type="tel" id="registro-celular" placeholder="Celular" autocomplete="tel" required>
-      <input type="email" id="registro-email" placeholder="Email" autocomplete="email" required>
+      <input type="text" id="registro-nombre" placeholder="Nombre" autocomplete="given-name" required aria-label="Nombre">
+      <input type="text" id="registro-apellido" placeholder="Apellido" autocomplete="family-name" required aria-label="Apellido">
+      <input type="password" id="registro-password" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="new-password" minlength="8" required aria-label="Contraseña (mínimo 8 caracteres)">
+      <input type="password" id="registro-password-repetir" placeholder="Repetir contraseña" autocomplete="new-password" minlength="8" required aria-label="Repetir contraseña">
+      <input type="tel" id="registro-celular" placeholder="Celular" autocomplete="tel" required aria-label="Celular">
+      <input type="email" id="registro-email" placeholder="Email" autocomplete="email" required aria-label="Email">
       <select id="registro-provincia" autocomplete="address-level1" required>
         <option value="" selected disabled>Seleccioná tu provincia</option>
         <option>Buenos Aires</option><option>Catamarca</option><option>Chaco</option><option>Chubut</option>
@@ -76,7 +77,7 @@
         <option>Ciudad Autónoma de Buenos Aires</option>
       </select>
       <div class="registro-direccion-wrap">
-        <input type="text" id="registro-direccion" placeholder="Domicilio de entrega" autocomplete="street-address" maxlength="500" required>
+        <input type="text" id="registro-direccion" placeholder="Domicilio de entrega" autocomplete="street-address" maxlength="500" required aria-label="Domicilio de entrega">
         <button id="btn-registro-usar-ubicacion" type="button" class="btn-usar-ubicacion">📍 Usar mi ubicación</button>
         <ul id="registro-sugerencias-direccion" class="registro-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
       </div>
@@ -88,8 +89,8 @@
 
     <form id="form-cambiar-obligatorio" class="form oculto">
       <p class="rc-switch-form">Te reseteamos la contraseña — elegí una nueva para poder seguir.</p>
-      <input type="password" id="cambiar-password" placeholder="Contraseña nueva" autocomplete="new-password" required>
-      <input type="password" id="cambiar-password-repetir" placeholder="Repetir contraseña nueva" autocomplete="new-password" required>
+      <input type="password" id="cambiar-password" placeholder="Contraseña nueva" autocomplete="new-password" required aria-label="Contraseña nueva">
+      <input type="password" id="cambiar-password-repetir" placeholder="Repetir contraseña nueva" autocomplete="new-password" required aria-label="Repetir contraseña nueva">
       <button type="submit">Confirmar</button>
       <p class="error" id="cambiar-error"></p>
     </form>

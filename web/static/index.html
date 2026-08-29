@@ -53,6 +53,7 @@
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="landing.css">
   <link rel="stylesheet" href="classic.css">
+  <link rel="stylesheet" href="perfil.css">
 </head>
 <body id="rc-body-landing">
   <div id="rc-boot"></div>
@@ -79,7 +80,12 @@
           <span class="rc-logo-linea">THE</span>
           <span class="rc-logo-linea">TECH</span>
           <span class="rc-logo-linea">ROOM</span>
-          <span class="rc-logo-linea">ARG<button id="btn-logo-fallout" type="button" class="rc-logo-punto-boton" aria-label="Entrar al modo Fallout"><span class="rc-logo-punto">.</span></button></span>
+          <!-- Modo Fallout deshabilitado (a pedido: sin acceso de usuario por
+               ahora) — el botón que entraba a Fallout queda comentado en vez
+               de borrado, para poder restaurarlo. El punto rojo del logo
+               sigue ahí como marca visual, ahora sin interactividad. -->
+          <!-- <span class="rc-logo-linea">ARG<button id="btn-logo-fallout" type="button" class="rc-logo-punto-boton" aria-label="Entrar al modo Fallout"><span class="rc-logo-punto">.</span></button></span> -->
+          <span class="rc-logo-linea">ARG<span class="rc-logo-punto">.</span></span>
         </h1>
         <span class="rc-cara-wrap" aria-hidden="true">
           <span id="cara-animada-a" class="rc-cara-animada visible">:)</span>
@@ -92,7 +98,7 @@
             <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
             <line x1="15" y1="15" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          <input id="input-busqueda" type="text" placeholder="Busca en todo The Tech Room Arg..." autocomplete="off">
+          <input id="input-busqueda" type="text" placeholder="Busca en todo The Tech Room Arg..." autocomplete="off" aria-label="Buscar productos">
         </div>
         <div class="rc-noticiero">
           <a id="noticiero-texto" class="rc-noticiero-texto" target="_blank" rel="noopener"></a>
@@ -255,7 +261,53 @@
       <p class="carrito-disclaimer">Este pedido no garantiza la reserva de los productos. La disponibilidad y los detalles finales se confirman por WhatsApp.</p>
     </div>
   </aside>
+  <aside id="panel-perfil" class="oculto">
+    <div class="panel-carrito-header">
+      <h2>Mi perfil</h2>
+      <button id="btn-cerrar-panel-perfil" type="button">✕</button>
+    </div>
+    <form id="form-perfil" class="form">
+      <input id="perfil-nombre" type="text" placeholder="Nombre" autocomplete="given-name" required aria-label="Nombre">
+      <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required aria-label="Apellido">
+      <input id="perfil-email" type="email" placeholder="Email" disabled aria-label="Email">
+      <input id="perfil-celular" type="tel" placeholder="Celular" autocomplete="tel" required aria-label="Celular">
+      <button type="submit">Guardar cambios</button>
+      <p class="error" id="perfil-error"></p>
+      <p class="ok" id="perfil-ok"></p>
+    </form>
+
+    <section id="seccion-condiciones-mayorista" class="oculto">
+      <h2>Condiciones mayoristas</h2>
+      <p id="condiciones-mayorista-fecha" class="ok"></p>
+      <button type="button" id="btn-ver-condiciones-mayorista">Ver condiciones mayoristas</button>
+    </section>
+
+    <h2>Mis domicilios</h2>
+    <div id="lista-domicilios" class="lista-domicilios"></div>
+    <form id="form-domicilio" class="form">
+      <input id="domicilio-alias" type="text" placeholder="Nombre (ej. Casa, Oficina)" maxlength="80" required aria-label="Nombre del domicilio">
+      <div class="perfil-direccion-wrap">
+        <input id="domicilio-direccion" type="text" placeholder="Dirección" autocomplete="street-address" maxlength="500" required aria-label="Dirección">
+        <ul id="perfil-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
+      </div>
+      <button type="submit" id="btn-guardar-domicilio">Agregar domicilio</button>
+      <button type="button" id="btn-cancelar-edicion-domicilio" class="oculto">Cancelar</button>
+      <p class="error" id="domicilio-error"></p>
+      <p class="ok" id="domicilio-ok"></p>
+    </form>
+
+    <h2>Cambiar contraseña</h2>
+    <form id="form-password" class="form">
+      <input id="password-actual" type="password" placeholder="Contraseña actual" autocomplete="current-password" required aria-label="Contraseña actual">
+      <input id="password-nueva" type="password" placeholder="Contraseña nueva" autocomplete="new-password" required minlength="8" aria-label="Contraseña nueva">
+      <input id="password-nueva-repetir" type="password" placeholder="Repetir contraseña nueva" autocomplete="new-password" required minlength="8" aria-label="Repetir contraseña nueva">
+      <button type="submit">Cambiar contraseña</button>
+      <p class="error" id="password-error"></p>
+      <p class="ok" id="password-ok"></p>
+    </form>
+  </aside>
   <div id="overlay-carrito" class="oculto"></div>
+  <div id="overlay-perfil" class="oculto"></div>
 
   <div id="rc-logout-confirmar" class="rc-logout-overlay">
     <div class="rc-logout-tarjeta">
@@ -327,5 +379,6 @@
 
   <script src="boot.js"></script>
   <script src="landing.js"></script>
+  <script src="perfil.js"></script>
 </body>
 </html>

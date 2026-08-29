@@ -10,10 +10,13 @@
     gtag('config', 'G-ZPQR91G145');
   </script>
   <script>
-    document.documentElement.setAttribute(
-      "data-modo",
-      new URLSearchParams(location.search).get("modo") === "fallout" ? "fallout" : "classic"
-    );
+    // Modo Fallout deshabilitado (a pedido: sin acceso de usuario por
+    // ahora) — se comenta el atajo ?modo=fallout en vez de borrarlo.
+    // document.documentElement.setAttribute(
+    //   "data-modo",
+    //   new URLSearchParams(location.search).get("modo") === "fallout" ? "fallout" : "classic"
+    // );
+    document.documentElement.setAttribute("data-modo", "classic");
     try {
       if (localStorage.getItem("ttra_classic_theme") === "light") {
         document.documentElement.setAttribute("data-classic-theme", "light");

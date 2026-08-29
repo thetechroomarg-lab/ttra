@@ -428,12 +428,13 @@ def test_login_recupera_el_tema_light_classic_antes_de_cargar_estilos():
 def test_landing_y_catalogo_recuperan_el_tema_light_classic_antes_de_cargar_estilos():
     landing = (appmod.BASE / "static" / "index.html").read_text()
     catalogo = (appmod.BASE / "static" / "catalogo.html").read_text()
-    catalogo_css = (appmod.BASE / "static" / "catalogo.css").read_text()
 
     for pagina in (landing, catalogo):
         assert 'localStorage.getItem("ttra_classic_theme") === "light"' in pagina
         assert 'document.documentElement.setAttribute("data-classic-theme", "light")' in pagina
-    assert 'html[data-classic-theme="light"]' in catalogo_css
+    # catalogo.html carga classic.css (mismo sistema de variables que el
+    # resto del sitio, en vez de un bloque de --rc-* duplicado y propio).
+    assert '<link rel="stylesheet" href="classic.css">' in catalogo
 
 
 def test_classic_light_usa_botones_de_categoria_gris_oscuro_con_tipografia_blanca():
