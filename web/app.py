@@ -1440,6 +1440,9 @@ _CADETE_ESTILO = """
   .panel-header h1 { font-size:var(--op-fs-display); margin:0; }
   #salir { padding:12px 16px; min-height:44px; border-radius:var(--op-r-sm); border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease); }
   #salir:hover { background:var(--op-surface-3); }
+  .selector-fecha-cadete { display:flex; align-items:center; gap:8px; margin:0 0 16px; flex-wrap:wrap; }
+  .selector-fecha-cadete label { color:var(--op-text-dim); font-size:var(--op-fs-small); font-weight:700; }
+  .selector-fecha-cadete input { min-height:44px; box-sizing:border-box; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); padding:0 10px; font:inherit; color-scheme:dark; }
   .pedidos-hoy h2 { font-size:var(--op-fs-title); }
   .proximos-dias { margin-top:24px; }
   .proximos-dia { margin-bottom:8px; }
@@ -2608,17 +2611,31 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 
     client = get_client()
     fecha_hoy = entregas.ahora_argentina().date().isoformat()
+    fecha_param = request.query_params.get("fecha", "")
+    try:
+        date.fromisoformat(fecha_param)
+        fecha_consulta = fecha_param
+    except ValueError:
+        fecha_consulta = fecha_hoy
+
+    def _label_fecha_entrega(fecha_iso):
+        try:
+            momento = datetime.fromisoformat(fecha_iso)
+        except ValueError:
+            return fecha_iso
+        return f"{momento.strftime('%d/%m')} · {_DIAS_SEMANA[momento.weekday()]}"
+
     filas_clientes = client.table("clientes").select("*").execute().data
     clientes_por_id = {c.get("id"): c for c in filas_clientes}
     pedidos = client.table("pedidos").select("*").eq("asignado_a", CADETE_SLUG).execute().data
     tareas = client.table("tareas_entrega").select("*").eq("asignado_a", CADETE_SLUG).execute().data
     pedidos_hoy = [
         pedido for pedido in pedidos
-        if pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
+        if pedido.get("fecha_entrega") == fecha_consulta and not pedido.get("recibo_enviado_en")
     ]
     tareas_hoy = [
         tarea for tarea in tareas
-        if tarea.get("fecha_entrega") == fecha_hoy and not tarea.get("completada_en")
+        if tarea.get("fecha_entrega") == fecha_consulta and not tarea.get("completada_en")
     ]
 
     def _descripcion_pedido(pedido):
@@ -2699,42 +2716,39 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         [_tarjeta_pedido_cadete(pedido) for pedido in pedidos_hoy]
         + [_tarjeta_tarea_cadete(tarea) for tarea in tareas_hoy]
     )
-    entregas_html = "".join(tarjetas) if tarjetas else '<p class="vacio">No tenés entregas asignadas para hoy.</p>'
-
-    pedidos_proximos = [
-        pedido for pedido in pedidos
-        if pedido.get("fecha_entrega", "") > fecha_hoy and not pedido.get("recibo_enviado_en")
-    ]
-    tareas_proximas = [
-        tarea for tarea in tareas
-        if tarea.get("fecha_entrega", "") > fecha_hoy and not tarea.get("completada_en")
-    ]
-
-    def _label_fecha_entrega(fecha_iso):
-        try:
-            momento = datetime.fromisoformat(fecha_iso)
-        except ValueError:
-            return fecha_iso
-        return f"{momento.strftime('%d/%m')} · {_DIAS_SEMANA[momento.weekday()]}"
-
-    fechas_proximas = sorted({
-        pedido.get("fecha_entrega") for pedido in pedidos_proximos
-    } | {
-        tarea.get("fecha_entrega") for tarea in tareas_proximas
-    })
-    proximos_html = "".join(
-        f'<div class="proximos-dia"><h3>{html.escape(_label_fecha_entrega(fecha))}</h3>'
-        + "".join(_tarjeta_pedido_cadete(pedido) for pedido in pedidos_proximos if pedido.get("fecha_entrega") == fecha)
-        + "".join(_tarjeta_tarea_cadete(tarea) for tarea in tareas_proximas if tarea.get("fecha_entrega") == fecha)
-        + "</div>"
-        for fecha in fechas_proximas
+    entregas_html = "".join(tarjetas) if tarjetas else (
+        '<p class="vacio">No tenés entregas asignadas para hoy.</p>' if fecha_consulta == fecha_hoy
+        else '<p class="vacio">No tenés entregas asignadas para ese día.</p>'
     )
-    total_proximos = len(pedidos_proximos) + len(tareas_proximas)
-    seccion_proximos = (
-        f'<section class="pedidos-hoy proximos-dias"><div class="pedidos-hoy-header">'
-        f'<h2>Próximos días ({total_proximos})</h2></div>{proximos_html}</section>'
-        if total_proximos else ""
-    )
+
+    seccion_proximos = ""
+    if fecha_consulta == fecha_hoy:
+        pedidos_proximos = [
+            pedido for pedido in pedidos
+            if pedido.get("fecha_entrega", "") > fecha_hoy and not pedido.get("recibo_enviado_en")
+        ]
+        tareas_proximas = [
+            tarea for tarea in tareas
+            if tarea.get("fecha_entrega", "") > fecha_hoy and not tarea.get("completada_en")
+        ]
+        fechas_proximas = sorted({
+            pedido.get("fecha_entrega") for pedido in pedidos_proximos
+        } | {
+            tarea.get("fecha_entrega") for tarea in tareas_proximas
+        })
+        proximos_html = "".join(
+            f'<div class="proximos-dia"><h3>{html.escape(_label_fecha_entrega(fecha))}</h3>'
+            + "".join(_tarjeta_pedido_cadete(pedido) for pedido in pedidos_proximos if pedido.get("fecha_entrega") == fecha)
+            + "".join(_tarjeta_tarea_cadete(tarea) for tarea in tareas_proximas if tarea.get("fecha_entrega") == fecha)
+            + "</div>"
+            for fecha in fechas_proximas
+        )
+        total_proximos = len(pedidos_proximos) + len(tareas_proximas)
+        if total_proximos:
+            seccion_proximos = (
+                f'<section class="pedidos-hoy proximos-dias"><div class="pedidos-hoy-header">'
+                f'<h2>Próximos días ({total_proximos})</h2></div>{proximos_html}</section>'
+            )
 
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Entregas asignadas</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
@@ -2743,7 +2757,11 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <h1>Entregas asignadas</h1>
     <div class="panel-header-acciones"><button id="salir">Cerrar sesión</button></div>
   </div>
-  <section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2></div>{entregas_html}</section>
+  <div class="selector-fecha-cadete">
+    <label for="fecha-cadete">Ver entregas del día</label>
+    <input id="fecha-cadete" type="date" value="{fecha_consulta}">
+  </div>
+  <section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pendientes para {'hoy' if fecha_consulta == fecha_hoy else html.escape(_label_fecha_entrega(fecha_consulta))} ({len(pedidos_hoy) + len(tareas_hoy)})</h2></div>{entregas_html}</section>
   {seccion_proximos}
 </div>
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
@@ -2751,6 +2769,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 document.getElementById("salir").addEventListener("click", async () => {{
   await fetch("/admin/cadete/logout", {{ method: "POST" }});
   location.reload();
+}});
+document.getElementById("fecha-cadete").addEventListener("change", (e) => {{
+  location.href = `/admin/cadete?fecha=${{e.target.value}}`;
 }});
 document.querySelectorAll(".btn-direcciones").forEach((btn) => {{
   btn.addEventListener("click", () => {{ window.open(btn.dataset.maps, "_blank", "noopener"); }});
