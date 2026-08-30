@@ -316,15 +316,87 @@ def test_admin_puede_crear_una_tarea_sin_enviarla_a_alejo(monkeypatch):
     assert fila["asignado_a"] is None
 
 
-def test_cadete_no_puede_crear_tareas_ni_derivar(monkeypatch):
-    _admin_logueado(monkeypatch)
+def test_cadete_puede_crear_sus_propias_notas_pero_no_derivar(monkeypatch):
+    _, fake = _admin_logueado(monkeypatch)
     cadete = _cadete_logueado()
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
 
     r = cadete.post("/admin/tareas-entrega", json={
-        "fecha_entrega": appmod.entregas.ahora_argentina().date().isoformat(),
-        "titulo": "Intento de tarea", "cliente_nombre": "Cliente",
+        "fecha_entrega": fecha_hoy, "titulo": "Nota propia del cadete",
     })
-    assert r.status_code == 401
+    assert r.status_code == 200
+    tarea = fake.table("tareas_entrega").select("*").eq("titulo", "Nota propia del cadete").execute().data[0]
+    assert tarea["asignado_a"] == "alejo"
+
+    panel = cadete.get("/admin/cadete")
+    assert "Nota propia del cadete" in panel.text
 
     r = cadete.put("/admin/pedidos/pedido-1/derivar", json={"derivado": True})
     assert r.status_code == 401
+
+
+def test_cadete_puede_agregar_direccion_opcional_a_su_nota(monkeypatch):
+    _admin_logueado(monkeypatch)
+    cadete = _cadete_logueado()
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+
+    sin_direccion = cadete.post("/admin/tareas-entrega", json={
+        "fecha_entrega": fecha_hoy, "titulo": "Nota sin direccion",
+    })
+    assert sin_direccion.status_code == 200
+
+    con_direccion = cadete.post("/admin/tareas-entrega", json={
+        "fecha_entrega": fecha_hoy, "titulo": "Nota con direccion", "direccion": "Av. Colón 123",
+    })
+    assert con_direccion.status_code == 200
+    assert con_direccion.json()["tarea"]["direccion"] == "Av. Colón 123"
+
+
+def test_cadete_puede_derivar_a_vlad_su_nota_directo_al_crearla(monkeypatch):
+    _, fake = _admin_logueado(monkeypatch)
+    cadete = _cadete_logueado()
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+
+    r = cadete.post("/admin/tareas-entrega", json={
+        "fecha_entrega": fecha_hoy, "titulo": "Nota directo para Vlad", "derivar_a_vlad": True,
+    })
+    assert r.status_code == 200
+    tarea = fake.table("tareas_entrega").select("*").eq("titulo", "Nota directo para Vlad").execute().data[0]
+    assert tarea.get("asignado_a") is None
+
+    panel_cadete = cadete.get("/admin/cadete")
+    assert "Nota directo para Vlad" not in panel_cadete.text
+
+
+def test_cadete_puede_derivar_su_propia_nota_a_vlad(monkeypatch):
+    _, fake = _admin_logueado(monkeypatch)
+    cadete = _cadete_logueado()
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+
+    creada = cadete.post("/admin/tareas-entrega", json={
+        "fecha_entrega": fecha_hoy, "titulo": "Nota a devolver",
+    })
+    tarea_id = creada.json()["tarea"]["id"]
+
+    r = cadete.put(f"/admin/tareas-entrega/{tarea_id}/derivar", json={"derivado": False})
+    assert r.status_code == 200
+    assert fake.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data[0]["asignado_a"] is None
+
+    panel = cadete.get("/admin/cadete")
+    assert "Nota a devolver" not in panel.text
+
+
+def test_cadete_no_puede_derivar_a_vlad_una_tarea_ajena_ni_auto_asignarse(monkeypatch):
+    _, fake = _admin_logueado(monkeypatch)
+    cadete = _cadete_logueado()
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-de-otro", "fecha_entrega": fecha_hoy, "titulo": "No es del cadete",
+    }).execute()
+
+    r = cadete.put("/admin/tareas-entrega/tarea-de-otro/derivar", json={"derivado": False})
+    assert r.status_code == 403
+
+    r = cadete.put("/admin/tareas-entrega/tarea-de-otro/derivar", json={"derivado": True})
+    assert r.status_code == 403
+    assert fake.table("tareas_entrega").select("*").eq("id", "tarea-de-otro").execute().data[0].get("asignado_a") is None

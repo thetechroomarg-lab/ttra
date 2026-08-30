@@ -1154,6 +1154,7 @@ _ADMIN_CLIENTES_ESTILO = """
   th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--op-border); }
   th { color:var(--op-text); }
   .vacio { color:var(--op-text-dim); text-align:center; padding:30px; }
+  .scroll-hint { display:none; }
   .btn-historial { display:inline-flex; color:var(--op-text-dim); }
   .btn-historial:hover { color:var(--op-text); }
   .btn-eliminar { display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--op-accent-border); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-danger-text); cursor:pointer; font-weight:700; padding:8px 10px; transition:background-color var(--op-dur) var(--op-ease); }
@@ -1364,6 +1365,7 @@ _ADMIN_CLIENTES_ESTILO = """
     .tabla-scroll { overflow:visible; }
     .tabla-scroll.tabla-historial { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .tabla-historial table { min-width:480px; }
+    .scroll-hint { display:block; margin:0 0 6px; color:var(--op-text-faint); font-size:var(--op-fs-micro); }
     #tabla-clientes { min-width:0; font-size:13px; }
     #tabla-clientes thead { display:none; }
     #tabla-clientes, #tabla-clientes tbody, #tabla-clientes tr, #tabla-clientes td { box-sizing:border-box; display:block; width:100%; }
@@ -1430,7 +1432,8 @@ _CADETE_ESTILO = """
   body { margin:0; background:var(--op-bg); color:var(--op-text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
   .tarjeta { max-width:360px; margin:60px auto; padding:24px; background:var(--op-surface); border-radius:var(--op-r-md); box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
   .tarjeta h1 { font-size:var(--op-fs-display); margin:0 0 16px; }
-  .tarjeta input, .tarjeta button { width:100%; padding:14px; border-radius:var(--op-r-sm); border:1px solid var(--op-border-strong); font-size:16px; margin-bottom:10px; }
+  .tarjeta input, .tarjeta button { width:100%; padding:14px; border-radius:var(--op-r-sm); border:1px solid var(--op-border-strong); font-size:16px; margin-bottom:10px; box-sizing:border-box; }
+  .tarjeta input { background:var(--op-surface-2); color:var(--op-text); font-family:inherit; }
   .tarjeta button { background:var(--op-accent); color:#fff; border:0; font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
   .tarjeta button:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
   .tarjeta button:active { background:var(--op-accent-press); transform:translateY(0); }
@@ -1443,6 +1446,28 @@ _CADETE_ESTILO = """
   .selector-fecha-cadete { display:flex; align-items:center; gap:8px; margin:0 0 16px; flex-wrap:wrap; }
   .selector-fecha-cadete label { color:var(--op-text-dim); font-size:var(--op-fs-small); font-weight:700; }
   .selector-fecha-cadete input { min-height:44px; box-sizing:border-box; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); padding:0 10px; font:inherit; color-scheme:dark; }
+  .form-tarea-entrega { margin:0 0 16px; }
+  .tarea-toggle, .tarea-cerrar { cursor:pointer; font:inherit; }
+  .tarea-toggle { border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; font-weight:700; min-height:44px; padding:0 16px; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .tarea-toggle:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .tarea-toggle:active { background:var(--op-accent-press); transform:translateY(0); }
+  .tarea-cerrar { border:0; background:transparent; color:var(--op-text-dim); font-size:20px; line-height:1; padding:4px 8px; margin:0 0 8px; }
+  .tarea-cerrar:hover, .tarea-cerrar:focus-visible { color:var(--op-text); }
+  .nota-campos { display:grid; gap:8px; grid-template-columns:1fr; margin-top:8px; }
+  .nota-campos[hidden] { display:none; }
+  .nota-campos input { box-sizing:border-box; width:100%; min-height:44px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); padding:0 10px; font-size:16px; font-family:inherit; }
+  .nota-campos input::placeholder { color:var(--op-text-dim); }
+  .tarea-direccion-wrap { position:relative; min-width:0; }
+  .tarea-direccion-sugerencias { position:absolute; z-index:50; top:calc(100% + 4px); left:0; right:0; max-height:180px; overflow-y:auto; margin:0; padding:0; list-style:none; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); box-shadow:0 8px 18px rgba(0,0,0,.28); }
+  .tarea-direccion-sugerencias[hidden] { display:none; }
+  .tarea-direccion-sugerencias button { display:block; width:100%; min-height:44px; padding:8px 10px; border:0; border-radius:0; border-bottom:1px solid var(--op-border); background:var(--op-surface-2); color:var(--op-text); text-align:left; font-weight:400; }
+  .tarea-direccion-sugerencias li:last-child button { border-bottom:0; }
+  .tarea-direccion-sugerencias button:hover, .tarea-direccion-sugerencias button:focus-visible { background:var(--op-surface-3); outline:0; }
+  .nota-campos button { border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:44px; padding:0 14px; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .nota-campos button:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .nota-campos button:active { background:var(--op-accent-press); transform:translateY(0); }
+  .nota-derivar-vlad-label { display:flex; align-items:center; gap:6px; color:var(--op-text); font-size:14px; }
+  .nota-derivar-vlad-label input { width:auto; min-height:0; border:0; background:none; padding:0; border-radius:0; }
   .pedidos-hoy h2 { font-size:var(--op-fs-title); }
   .proximos-dias { margin-top:24px; }
   .proximos-dia { margin-bottom:8px; }
@@ -1453,8 +1478,8 @@ _CADETE_ESTILO = """
   .total-cadete { font-weight:700; font-size:16px; }
   .pedido-acciones { display:flex; flex-wrap:wrap; gap:8px; }
   .pedido-acciones > * { flex:1 1 120px; box-sizing:border-box; min-height:48px; font-size:15px; border-radius:var(--op-r-sm); font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
-  .btn-direcciones, .btn-editar-entrega { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
-  .btn-direcciones:hover, .btn-editar-entrega:hover { background:var(--op-surface-3); }
+  .btn-direcciones, .btn-editar-entrega, .btn-derivar-vlad { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
+  .btn-direcciones:hover, .btn-editar-entrega:hover, .btn-derivar-vlad:hover { background:var(--op-surface-3); }
   .btn-enviar-recibo, .btn-completar-tarea { border:0; background:var(--op-accent); color:#fff; }
   .btn-enviar-recibo:hover, .btn-completar-tarea:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
   .btn-enviar-recibo:active, .btn-completar-tarea:active { background:var(--op-accent-press); transform:translateY(0); }
@@ -2704,12 +2729,15 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<button class="btn-editar-entrega" type="button" data-id="{tarea_id}" data-fecha="{fecha}" '
             'data-tipo="tarea">Editar fecha</button>'
         )
+        boton_derivar_vlad = (
+            f'<button class="btn-derivar-vlad" type="button" data-id="{tarea_id}">Derivar a Vlad</button>'
+        )
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
             f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion)}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
-            f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}</div></div>'
+            f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}</div></div>'
         )
 
     tarjetas = (
@@ -2761,6 +2789,18 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <label for="fecha-cadete">Ver entregas del día</label>
     <input id="fecha-cadete" type="date" value="{fecha_consulta}">
   </div>
+  <form id="form-nota-cadete" class="form-tarea-entrega">
+    <button id="nota-toggle" class="tarea-toggle" type="button">+ Nueva nota</button>
+    <button id="nota-cerrar" class="tarea-cerrar" type="button" hidden aria-label="Cerrar formulario de nota" title="Cerrar">✕</button>
+    <div id="nota-campos" class="nota-campos" hidden>
+      <input id="nota-titulo" required maxlength="200" placeholder="Nota">
+      <input id="nota-fecha" type="date" required value="{fecha_consulta}" title="Fecha de la nota">
+      <input id="nota-detalle" maxlength="1000" placeholder="Detalle opcional">
+      <div class="tarea-direccion-wrap"><input id="nota-direccion" maxlength="500" placeholder="Agregar dirección (opcional)" autocomplete="off"><ul id="nota-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div>
+      <label class="nota-derivar-vlad-label"><input type="checkbox" id="nota-derivar-vlad"> Derivar a Vlad</label>
+      <button type="submit">Agregar nota</button>
+    </div>
+  </form>
   <section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pendientes para {'hoy' if fecha_consulta == fecha_hoy else html.escape(_label_fecha_entrega(fecha_consulta))} ({len(pedidos_hoy) + len(tareas_hoy)})</h2></div>{entregas_html}</section>
   {seccion_proximos}
 </div>
@@ -2773,6 +2813,33 @@ document.getElementById("salir").addEventListener("click", async () => {{
 document.getElementById("fecha-cadete").addEventListener("change", (e) => {{
   location.href = `/admin/cadete?fecha=${{e.target.value}}`;
 }});
+document.getElementById("nota-toggle").addEventListener("click", (e) => {{
+  e.currentTarget.hidden = true;
+  document.getElementById("nota-campos").hidden = false;
+  document.getElementById("nota-cerrar").hidden = false;
+  document.getElementById("nota-titulo").focus();
+}});
+document.getElementById("nota-cerrar").addEventListener("click", () => {{
+  document.getElementById("form-nota-cadete").reset();
+  document.getElementById("nota-campos").hidden = true;
+  document.getElementById("nota-cerrar").hidden = true;
+  document.getElementById("nota-toggle").hidden = false;
+}});
+document.getElementById("form-nota-cadete").addEventListener("submit", async (e) => {{
+  e.preventDefault();
+  const r = await fetch("/admin/tareas-entrega", {{
+    method:"POST", headers:{{"Content-Type":"application/json"}},
+    body:JSON.stringify({{
+      fecha_entrega:document.getElementById("nota-fecha").value,
+      titulo:document.getElementById("nota-titulo").value,
+      nota:document.getElementById("nota-detalle").value,
+      direccion:document.getElementById("nota-direccion").value,
+      derivar_a_vlad:document.getElementById("nota-derivar-vlad").checked,
+    }}),
+  }});
+  if (!r.ok) {{ alert("No se pudo crear la nota."); return; }}
+  location.href = `/admin/cadete?fecha=${{document.getElementById("nota-fecha").value}}`;
+}});
 document.querySelectorAll(".btn-direcciones").forEach((btn) => {{
   btn.addEventListener("click", () => {{ window.open(btn.dataset.maps, "_blank", "noopener"); }});
 }});
@@ -2781,6 +2848,17 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
     btn.disabled = true;
     const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/completar`, {{ method:"POST" }});
     if (!r.ok) {{ alert("No se pudo completar la tarea."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-derivar-vlad").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Devolverle esta nota a Vlad?")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/derivar`, {{
+      method:"PUT", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{derivado:false}}),
+    }});
+    if (!r.ok) {{ alert("No se pudo derivar la nota."); btn.disabled = false; return; }}
     location.reload();
   }});
 }});
@@ -2838,6 +2916,68 @@ document.getElementById("series-enviar").addEventListener("click", async () => {
   if (!r.ok) {{ alert(respuesta.error || "No se pudo enviar el recibo."); boton.disabled = false; boton.textContent = "Enviar recibo"; modalSeries.hidden = true; return; }}
   location.reload();
 }});
+let apiPlacesCadete;
+async function cargarApiPlacesCadete() {{
+  if (apiPlacesCadete !== undefined) return apiPlacesCadete;
+  apiPlacesCadete = fetch("/api/configuracion-publica")
+    .then((respuesta) => respuesta.ok ? respuesta.json() : {{}})
+    .then(async (configuracion) => {{
+      if (!configuracion.google_maps_api_key) return null;
+      await new Promise((resolver, rechazar) => {{
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${{encodeURIComponent(configuracion.google_maps_api_key)}}&libraries=places&v=weekly`;
+        script.async = true;
+        script.onload = resolver;
+        script.onerror = rechazar;
+        document.head.append(script);
+      }});
+      return google.maps.importLibrary("places");
+    }})
+    .catch((error) => {{ console.error("No se pudo cargar Google Places", error); return null; }});
+  return apiPlacesCadete;
+}}
+function activarAutocompleteDireccionCadete(input, lista) {{
+  if (!input || !lista) return;
+  let temporizador;
+  function ocultar() {{ lista.replaceChildren(); lista.hidden = true; }}
+  async function mostrar(texto) {{
+    const places = await cargarApiPlacesCadete();
+    if (!places || texto !== input.value.trim()) return;
+    const {{ AutocompleteSuggestion }} = places;
+    const {{ suggestions }} = await AutocompleteSuggestion.fetchAutocompleteSuggestions({{
+      input: texto,
+      includedRegionCodes: ["ar"],
+    }}).catch((error) => {{ console.error("Autocomplete de direccion fallo", error); return {{ suggestions: [] }}; }});
+    if (texto !== input.value.trim() || !suggestions?.length) {{ ocultar(); return; }}
+    lista.replaceChildren(...suggestions.slice(0, 5).map(({{ placePrediction }}) => {{
+      const item = document.createElement("li");
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.textContent = placePrediction.text.text;
+      boton.addEventListener("click", async () => {{
+        const place = placePrediction.toPlace();
+        await place.fetchFields({{ fields: ["formattedAddress"] }});
+        input.value = place.formattedAddress || placePrediction.text.text;
+        ocultar();
+      }});
+      item.append(boton);
+      return item;
+    }}));
+    lista.hidden = false;
+  }}
+  input.addEventListener("input", () => {{
+    clearTimeout(temporizador);
+    const texto = input.value.trim();
+    if (texto.length < 3) {{ ocultar(); return; }}
+    temporizador = setTimeout(() => {{ mostrar(texto).catch(ocultar); }}, 250);
+  }});
+  document.addEventListener("pointerdown", (evento) => {{
+    if (lista.hidden) return;
+    if (evento.target === input || lista.contains(evento.target)) return;
+    ocultar();
+  }});
+}}
+activarAutocompleteDireccionCadete(document.getElementById("nota-direccion"), document.getElementById("nota-direccion-sugerencias"));
 </script>
 {_ADMIN_CLIENTES_PWA_SCRIPT}
 </body></html>"""
@@ -2942,6 +3082,7 @@ def admin_clientes_historial(cliente_id: str, request: Request):
   <section class="subseccion">
     <h2>Pedidos confirmados</h2>
     <p>Acá ves todo lo que el cliente cargó al carrito y confirmó.</p>
+    <p class="scroll-hint">Deslizá para ver todas las columnas →</p>
     <div class="tabla-scroll tabla-historial"><table>
       <thead><tr><th class="col-check"></th><th>Fecha</th><th>Día</th><th>Hora</th><th>Productos</th></tr></thead>
       <tbody>{filas_pedidos_html}</tbody>
@@ -2950,6 +3091,7 @@ def admin_clientes_historial(cliente_id: str, request: Request):
   <section class="subseccion">
     <h2>Productos más consultados</h2>
     <p>Ranking por cantidad de vistas de este cliente, ordenado de mayor a menor para decidir mejor el mailing.</p>
+    <p class="scroll-hint">Deslizá para ver todas las columnas →</p>
     <div class="tabla-scroll tabla-historial"><table>
       <thead><tr><th class="col-check"></th><th>Producto</th><th>Vistas</th><th>Última vista</th></tr></thead>
       <tbody>{filas_consultados_html}</tbody>
@@ -2958,6 +3100,7 @@ def admin_clientes_historial(cliente_id: str, request: Request):
   <section class="subseccion">
     <h2>Historial de vistas</h2>
     <p>Acá ves todas las interacciones de navegación, vistas e íconos que tocó el cliente.</p>
+    <p class="scroll-hint">Deslizá para ver todas las columnas →</p>
     <div class="tabla-scroll tabla-historial"><table>
       <thead><tr><th class="col-check"></th><th>Fecha</th><th>Día</th><th>Hora</th><th>Evento</th><th>Detalle</th></tr></thead>
       <tbody>{filas_interacciones_html}</tbody>
@@ -3458,6 +3601,7 @@ class TareaEntregaIn(BaseModel):
     nota: str | None = Field(default=None, max_length=1000)
     direccion: str | None = Field(default=None, max_length=500)
     enviar_a_alejo: bool = False
+    derivar_a_vlad: bool = False
 
 
 class OrdenEntregaItemIn(BaseModel):
@@ -3855,13 +3999,23 @@ def admin_reordenar_entregas(entrada: ReordenarEntregasIn, request: Request):
 
 @app.post("/admin/tareas-entrega")
 def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
-    if not _clientes_admin_activo(request):
-        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    es_admin = _clientes_admin_activo(request)
+    es_cadete = _cadete_activo(request)
+    if not (es_admin or es_cadete):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     existentes = client.table("tareas_entrega").select("orden").eq(
         "fecha_entrega", entrada.fecha_entrega.isoformat()
     ).execute().data
     orden = max((int(t.get("orden") or 0) for t in existentes), default=0) + 1
+    # El admin decide con el checkbox "Enviar a Alejo" si la tarea le queda
+    # asignada o no. El cadete crea notas propias asignadas a él por default,
+    # salvo que tilde "Derivar a Vlad" al crearla (se la manda directo, sin
+    # el paso extra de derivarla después).
+    if es_admin:
+        asignado_a = CADETE_SLUG if entrada.enviar_a_alejo else None
+    else:
+        asignado_a = None if entrada.derivar_a_vlad else CADETE_SLUG
     tarea = {
         "id": str(uuid.uuid4()),
         "fecha_entrega": entrada.fecha_entrega.isoformat(),
@@ -3871,7 +4025,7 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
         "nota": (entrada.nota or "").strip() or None,
         "direccion": (entrada.direccion or "").strip() or None,
         "orden": orden,
-        "asignado_a": CADETE_SLUG if entrada.enviar_a_alejo else None,
+        "asignado_a": asignado_a,
     }
     client.table("tareas_entrega").insert(tarea).execute()
     return {"ok": True, "tarea": tarea}
@@ -3916,12 +4070,21 @@ def admin_tarea_agregar_direccion(tarea_id: str, entrada: EditarDireccionEntrega
 
 @app.put("/admin/tareas-entrega/{tarea_id}/derivar")
 def admin_tarea_derivar(tarea_id: str, entrada: DerivarEntregaIn, request: Request):
-    if not _clientes_admin_activo(request):
-        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    es_admin = _clientes_admin_activo(request)
+    es_cadete = _cadete_activo(request)
+    if not (es_admin or es_cadete):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
     if not filas:
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    if not es_admin:
+        # El cadete solo puede devolverle a Vlad una nota que ya es suya
+        # (nunca auto-asignarse una tarea ajena ni tocar sus observaciones).
+        if entrada.derivado or filas[0].get("asignado_a") != CADETE_SLUG:
+            raise HTTPException(status_code=403, detail="No podés derivar esta tarea")
+        client.table("tareas_entrega").update({"asignado_a": None}).eq("id", tarea_id).execute()
+        return {"ok": True, "tarea_id": tarea_id, "asignado_a": None}
     asignado_a = CADETE_SLUG if entrada.derivado else None
     observaciones = ((entrada.observaciones or "").strip() or None) if entrada.derivado else None
     client.table("tareas_entrega").update({
