@@ -30,6 +30,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, recibos
 from web.email_util import EnvioEmailError, enviar_email
 from web.productos import resolver_proveedor
+from web.slugs import slug as slug_producto
 from web.supabase_client import get_client
 from web.chat import responder
 from web.reglas import WHATSAPP
@@ -4199,6 +4200,63 @@ def api_catalogo(request: Request):
                 "mensaje": "Estamos actualizando los precios",
                 "modo_precio": modo_precio}
     return {"secciones": catalogo.secciones_catalogo(productos), "modo_precio": modo_precio}
+
+
+_PRODUCTO_PUBLICO_ESTILO = """
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background:#111318; color:#f2f4f8;
+         margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
+  .tarjeta { background:#1b1e24; border-radius:16px; padding:28px 24px; width:100%; max-width:420px;
+             box-shadow:0 10px 30px rgba(0,0,0,0.5); box-sizing:border-box; border:1px solid #2a2e37; }
+  .tarjeta h1 { margin:0 0 6px; font-size:20px; }
+  .tarjeta .colores { color:#aab0bd; font-size:14px; margin:0 0 18px; }
+  .precios p { margin:4px 0; font-size:15px; }
+  .precios strong { font-size:20px; }
+  .btn-wa { display:block; text-align:center; margin-top:20px; background:#25D366; color:#0a0a0a;
+            font-weight:800; text-decoration:none; padding:14px; border-radius:10px; }
+  .link-catalogo { display:block; text-align:center; margin-top:12px; color:#aab0bd; font-size:13px; text-decoration:none; }
+</style>
+"""
+
+
+@app.get("/p/{slug_url}", response_class=HTMLResponse)
+def pagina_producto_publico(slug_url: str):
+    productos_publicos, _costos = _cargar_productos(), None
+    producto = next(
+        (p for p in productos_publicos if slug_producto(p.get("nombre", "")) == slug_url),
+        None,
+    )
+    if producto is None:
+        return HTMLResponse(
+            f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
+            f"<title>Producto no encontrado</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
+            f"<body><div class='tarjeta'><h1>No encontré ese producto</h1>"
+            f"<p class='colores'>Puede que ya no esté disponible. Escribime por WhatsApp y te confirmo.</p>"
+            f"<a class='btn-wa' href='{WHATSAPP}'>Escribir por WhatsApp</a></div></body></html>",
+            status_code=404,
+        )
+    nombre = html.escape(producto.get("nombre", ""))
+    colores = producto.get("colores") or []
+    colores_html = f"<p class='colores'>{html.escape(', '.join(colores))}</p>" if colores else ""
+    usd = producto.get("usd")
+    pesos = producto.get("pesos")
+    transferencia = producto.get("transferencia")
+    mensaje_wa = urlencode({"text": f"Hola! Te consulto por: {producto.get('nombre', '')}"})
+    link_wa = f"{WHATSAPP}?{mensaje_wa}"
+    return HTMLResponse(
+        f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
+        f"<meta name='viewport' content='width=device-width, initial-scale=1'>"
+        f"<title>{nombre} — The Tech Room Arg</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
+        f"<body><div class='tarjeta'><h1>{nombre}</h1>{colores_html}"
+        f"<div class='precios'>"
+        f"<p><strong>U$D {usd}</strong></p>"
+        f"<p>$ {pesos} pesos contado</p>"
+        f"<p>$ {transferencia} pesos transferencia</p>"
+        f"</div>"
+        f"<a class='btn-wa' href='{link_wa}'>Consultar por WhatsApp</a>"
+        f"<a class='link-catalogo' href='/login'>Ver todo el catálogo</a>"
+        f"</div></body></html>"
+    )
 
 
 @app.get("/api/recomendados")
