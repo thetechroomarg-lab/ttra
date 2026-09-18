@@ -73,8 +73,10 @@ function etiquetaMarca(marca) {
 }
 
 function marcaLogoHtml(marca, clase) {
-  const slug = MARCA_LOGO[marca];
-  if (!slug) return "";
+  // Marca sin logo mapeado (ej. una marca nueva que llegó en un catálogo
+  // actualizado): usa la insignia genérica en vez de dejar el casillero
+  // vacío, así la grilla de "Búsqueda por Marca" nunca queda rota.
+  const slug = MARCA_LOGO[marca] || MARCA_LOGO["Otras marcas"];
   return `<img class="${clase}" src="/logos/${slug}.svg" alt="" />`;
 }
 
