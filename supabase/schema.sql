@@ -32,6 +32,10 @@ alter table clientes add column if not exists direccion text;
 -- para revendedores (popup obligatorio en la landing). Null = no aceptadas.
 alter table clientes add column if not exists condiciones_mayorista_aceptadas_en timestamptz;
 
+-- Un cliente que se dio de baja del mailing de novedades (link en el
+-- footer del mail) queda excluido de la audiencia de próximas campañas.
+alter table clientes add column if not exists no_mailing boolean not null default false;
+
 -- Domicilios guardados por cliente para el checkout (hasta 5, uno
 -- predeterminado). La columna clientes.direccion se mantiene aparte: la
 -- sigue usando el panel admin para el "Vamos" de contactos-proveedor.

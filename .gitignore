@@ -11,4 +11,5 @@ web/*.db
 
 web/clientes.json
 web/clientes.csv
+web/mailing/data/
 .worktrees/
