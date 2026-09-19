@@ -347,8 +347,11 @@ def test_cadete_puede_crear_sus_propias_notas_pero_no_derivar(monkeypatch):
     panel = cadete.get("/admin/cadete")
     assert "Nota propia del cadete" in panel.text
 
-    r = cadete.put("/admin/pedidos/pedido-1/derivar", json={"derivado": True})
-    assert r.status_code == 401
+    fake.table("pedidos").insert({
+        "id": "pedido-ajeno", "cliente_id": None, "productos": [], "fecha_entrega": fecha_hoy,
+    }).execute()
+    r = cadete.put("/admin/pedidos/pedido-ajeno/derivar", json={"derivado": True})
+    assert r.status_code == 403
 
 
 def test_cadete_puede_agregar_direccion_opcional_a_su_nota(monkeypatch):
@@ -438,6 +441,72 @@ def test_boton_recibo_de_nota_pasa_a_reenviar_si_ya_se_envio(monkeypatch):
 
     assert '<button class="btn-recibo-nota" type="button" data-id="tarea-1">Reenviar recibo</button>' in panel.text
     assert '<button class="btn-recibo-nota" type="button" data-id="tarea-2">Recibo</button>' in panel.text
+
+
+def test_boton_vamos_de_pedido_incluye_link_whatsapp_con_cliente_real(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+    fake.table("clientes").insert({
+        "id": "c1", "nombre": "Ana", "apellido": "Lopez", "celular": "3511234567",
+    }).execute()
+    fake.table("pedidos").insert({
+        "id": "pedido-1", "cliente_id": "c1", "fecha_entrega": fecha_hoy, "productos": ["iPhone 13"],
+        "direccion_entrega": "Av. Colón 123",
+    }).execute()
+    admin.put("/admin/pedidos/pedido-1/derivar", json={"derivado": True})
+
+    cadete = _cadete_logueado()
+    panel = cadete.get("/admin/cadete")
+
+    assert 'data-whatsapp="https://wa.me/5493511234567?text=' in panel.text
+    assert "Estoy%20en%20camino" in panel.text or "Estoy+en+camino" in panel.text
+
+
+def test_boton_vamos_sin_cliente_real_no_lleva_whatsapp(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": fecha_hoy, "titulo": "Retirar equipo", "orden": 1,
+        "direccion": "Av. Colón 123",
+    }).execute()
+    admin.put("/admin/tareas-entrega/tarea-1/derivar", json={"derivado": True})
+
+    cadete = _cadete_logueado()
+    panel = cadete.get("/admin/cadete")
+
+    assert "data-whatsapp=" not in panel.text
+    assert "Vamos" in panel.text
+
+
+def test_cadete_puede_derivar_a_vlad_su_propio_pedido(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("pedidos").insert({
+        "id": "pedido-1", "cliente_id": None, "productos": [], "fecha_entrega": "2026-09-20",
+    }).execute()
+    admin.put("/admin/pedidos/pedido-1/derivar", json={"derivado": True})
+
+    cadete = _cadete_logueado()
+    panel = cadete.get("/admin/cadete?fecha=2026-09-20")
+    assert 'class="btn-derivar-vlad" type="button" data-id="pedido-1" data-tipo="pedido"' in panel.text
+
+    respuesta = cadete.put("/admin/pedidos/pedido-1/derivar", json={"derivado": False})
+    assert respuesta.status_code == 200
+    fila = fake.table("pedidos").select("*").eq("id", "pedido-1").execute().data[0]
+    assert fila["asignado_a"] is None
+
+
+def test_cadete_no_puede_derivar_pedido_ajeno_ni_autoasignarselo(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("pedidos").insert({
+        "id": "pedido-ajeno", "cliente_id": None, "productos": [], "fecha_entrega": "2026-09-20",
+    }).execute()
+
+    cadete = _cadete_logueado()
+    respuesta = cadete.put("/admin/pedidos/pedido-ajeno/derivar", json={"derivado": False})
+    assert respuesta.status_code == 403
+
+    respuesta_autoasignar = cadete.put("/admin/pedidos/pedido-ajeno/derivar", json={"derivado": True})
+    assert respuesta_autoasignar.status_code == 403
 
 
 def test_cadete_puede_agregar_direccion_a_su_propia_tarea(monkeypatch):

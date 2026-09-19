@@ -16,7 +16,7 @@ from decimal import Decimal
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Literal
-from urllib.parse import urlencode, urlparse
+from urllib.parse import quote, urlencode, urlparse
 
 import httpx
 from dotenv import load_dotenv
@@ -473,13 +473,24 @@ def _query_maps(direccion, lat, lng):
     return direccion
 
 
-def _link_whatsapp_cliente(celular):
+def _link_whatsapp_cliente(celular, texto=None):
     digitos = re.sub(r"\D", "", celular or "")
     if not digitos:
         return None
     if not digitos.startswith("54"):
         digitos = "549" + digitos
-    return f"https://wa.me/{digitos}"
+    link = f"https://wa.me/{digitos}"
+    if texto:
+        link += f"?text={quote(texto)}"
+    return link
+
+
+# Mensaje precargado al tocar "Vamos" en una entrega con cliente real y
+# celular cargado: WhatsApp no permite disparar el envío de ubicación en
+# tiempo real de forma automática (es una acción manual del chat, por
+# privacidad), así que el mensaje avisa y el cadete comparte la ubicación
+# con un toque más, ya con el chat abierto.
+MENSAJE_EN_CAMINO = "¡Hola! Estoy en camino 🚗 Te envío mi ubicación en tiempo real para que puedas ver por dónde voy"
 
 
 def _precios_mail_producto(producto):
@@ -2745,14 +2756,16 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             )
         return " | ".join(pedido.get("productos") or [])
 
-    def _boton_vamos(direccion, item_id, tipo, lat=None, lng=None):
+    def _boton_vamos(direccion, item_id, tipo, lat=None, lng=None, celular=None):
         if not direccion:
             return (
                 f'<button class="btn-agregar-direccion-cadete" type="button" '
                 f'data-id="{item_id}" data-tipo="{tipo}">Sin dirección cargada · Agregar</button>'
             )
+        link_whatsapp = _link_whatsapp_cliente(celular, MENSAJE_EN_CAMINO)
+        data_whatsapp = f' data-whatsapp="{html.escape(link_whatsapp)}"' if link_whatsapp else ""
         return (
-            f'<button class="btn-direcciones" type="button" '
+            f'<button class="btn-direcciones" type="button"{data_whatsapp} '
             f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": _query_maps(direccion, lat, lng)}))}">Vamos</button>'
         )
 
@@ -2782,11 +2795,14 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}" '
             'data-tipo="pedido">Editar fecha</button>'
         )
+        boton_derivar_vlad = (
+            f'<button class="btn-derivar-vlad" type="button" data-id="{pedido_id}" data-tipo="pedido">Derivar a Vlad</button>'
+        )
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}</strong> · '
             f'{html.escape(cliente.get("celular") or "—")}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
             f'{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
-            f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}</div></div>'
+            f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"), cliente.get("celular"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}{boton_derivar_vlad}</div></div>'
         )
 
     def _tarjeta_tarea_cadete(tarea):
@@ -2806,7 +2822,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             'data-tipo="tarea">Editar fecha</button>'
         )
         boton_derivar_vlad = (
-            f'<button class="btn-derivar-vlad" type="button" data-id="{tarea_id}">Derivar a Vlad</button>'
+            f'<button class="btn-derivar-vlad" type="button" data-id="{tarea_id}" data-tipo="tarea">Derivar a Vlad</button>'
         )
         texto_recibo = "Reenviar recibo" if tarea.get("id") in tareas_con_recibo else "Recibo"
         boton_recibo_manual = (
@@ -2816,7 +2832,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
             f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
-            f'<div class="pedido-acciones">{_boton_vamos(direccion, tarea_id, "tarea")}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
+            f'<div class="pedido-acciones">{_boton_vamos(direccion, tarea_id, "tarea", celular=cliente_tarea.get("celular"))}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
             f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}{boton_recibo_manual}</div></div>'
         )
 
@@ -2942,7 +2958,10 @@ document.getElementById("form-nota-cadete").addEventListener("submit", async (e)
   location.href = `/admin/cadete?fecha=${{document.getElementById("nota-fecha").value}}`;
 }});
 document.querySelectorAll(".btn-direcciones").forEach((btn) => {{
-  btn.addEventListener("click", () => {{ window.open(btn.dataset.maps, "_blank", "noopener"); }});
+  btn.addEventListener("click", () => {{
+    window.open(btn.dataset.maps, "_blank", "noopener");
+    if (btn.dataset.whatsapp) location.href = btn.dataset.whatsapp;
+  }});
 }});
 let direccionCadeteActiva = null;
 const modalDireccionCadete = document.getElementById("modal-direccion-cadete");
@@ -2987,12 +3006,16 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
 }});
 document.querySelectorAll(".btn-derivar-vlad").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
-    if (!confirm("¿Devolverle esta nota a Vlad?")) return;
+    const esPedido = btn.dataset.tipo === "pedido";
+    if (!confirm(`¿Devolverle ${{esPedido ? "este pedido" : "esta nota"}} a Vlad?`)) return;
     btn.disabled = true;
-    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/derivar`, {{
+    const ruta = esPedido
+      ? `/admin/pedidos/${{btn.dataset.id}}/derivar`
+      : `/admin/tareas-entrega/${{btn.dataset.id}}/derivar`;
+    const r = await fetch(ruta, {{
       method:"PUT", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{derivado:false}}),
     }});
-    if (!r.ok) {{ alert("No se pudo derivar la nota."); btn.disabled = false; return; }}
+    if (!r.ok) {{ alert(`No se pudo derivar ${{esPedido ? "el pedido" : "la nota"}}.`); btn.disabled = false; return; }}
     location.reload();
   }});
 }});
@@ -4327,12 +4350,21 @@ def admin_pedido_agregar_direccion(pedido_id: str, entrada: EditarDireccionEntre
 
 @app.put("/admin/pedidos/{pedido_id}/derivar")
 def admin_pedido_derivar(pedido_id: str, entrada: DerivarEntregaIn, request: Request):
-    if not _clientes_admin_activo(request):
-        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    es_admin = _clientes_admin_activo(request)
+    es_cadete = _cadete_activo(request)
+    if not (es_admin or es_cadete):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
     if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if not es_admin:
+        # El cadete solo puede devolverle a Vlad un pedido que ya es suyo
+        # (nunca auto-asignarse uno ajeno ni tocar sus observaciones).
+        if entrada.derivado or filas[0].get("asignado_a") != CADETE_SLUG:
+            raise HTTPException(status_code=403, detail="No podés derivar este pedido")
+        client.table("pedidos").update({"asignado_a": None}).eq("id", pedido_id).execute()
+        return {"ok": True, "pedido_id": pedido_id, "asignado_a": None}
     asignado_a = CADETE_SLUG if entrada.derivado else None
     observaciones = ((entrada.observaciones or "").strip() or None) if entrada.derivado else None
     client.table("pedidos").update({
