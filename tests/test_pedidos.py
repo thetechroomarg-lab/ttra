@@ -174,6 +174,62 @@ def test_eliminar_pedido_marca_borrado_en_vez_de_borrar():
     assert filas[0]["borrado_en"] is not None
 
 
+def test_guardar_pedido_no_consolida_con_pedido_borrado():
+    client = FakeSupabaseClient()
+    detalle = [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}]
+
+    borrado = pedidos.guardar_pedido(
+        client, "cliente-1", ["Elegible"], date(2026, 8, 24),
+        detalle=detalle, total_usd=180,
+    )
+    pedidos.eliminar_pedido(client, borrado["id"], "Vlad")
+
+    nuevo = pedidos.guardar_pedido(
+        client, "cliente-1", ["Elegible"], date(2026, 8, 24),
+        detalle=detalle, total_usd=180,
+    )
+
+    assert nuevo["id"] != borrado["id"]
+    filas = client.table("pedidos").select("*").execute().data
+    assert len(filas) == 2
+    fila_borrada = next(f for f in filas if f["id"] == borrado["id"])
+    assert fila_borrada["borrado_en"] is not None
+    assert fila_borrada["total_usd"] == 180
+    fila_nueva = next(f for f in filas if f["id"] == nuevo["id"])
+    assert fila_nueva["total_usd"] == 180
+    assert fila_nueva.get("borrado_en") is None
+
+
+def test_editar_fecha_no_consolida_con_pedido_borrado_en_destino():
+    client = FakeSupabaseClient()
+    detalle = [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}]
+
+    borrado = pedidos.guardar_pedido(
+        client, "cliente-1", ["Elegible"], date(2026, 8, 24),
+        detalle=detalle, total_usd=180,
+    )
+    pedidos.eliminar_pedido(client, borrado["id"], "Vlad")
+
+    vivo = pedidos.guardar_pedido(
+        client, "cliente-1", ["Elegible"], date(2026, 8, 25),
+        detalle=detalle, total_usd=180,
+    )
+
+    resultado = pedidos.editar_fecha_entrega(client, vivo["id"], date(2026, 8, 24))
+
+    assert resultado["id"] == vivo["id"]
+    assert resultado["fecha_entrega"] == "2026-08-24"
+    filas = client.table("pedidos").select("*").execute().data
+    assert len(filas) == 2
+    fila_vivo = next(f for f in filas if f["id"] == vivo["id"])
+    assert fila_vivo["fecha_entrega"] == "2026-08-24"
+    assert fila_vivo["total_usd"] == 180
+    fila_borrada = next(f for f in filas if f["id"] == borrado["id"])
+    assert fila_borrada["fecha_entrega"] == "2026-08-24"
+    assert fila_borrada["total_usd"] == 180
+    assert fila_borrada["borrado_en"] is not None
+
+
 def test_restaurar_pedido_limpia_borrado():
     fake = FakeSupabaseClient()
     fake.table("pedidos").insert({

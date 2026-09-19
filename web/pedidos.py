@@ -96,7 +96,10 @@ def guardar_pedido(
     descuento_usd = numero_monetario_db(descuento_usd)
     descuento_mayorista_usd = numero_monetario_db(descuento_mayorista_usd)
     if fecha_iso and detalle and total_usd is not None:
-        existentes = client.table("pedidos").select("*").eq("cliente_id", cliente_id).execute().data
+        existentes = [
+            p for p in client.table("pedidos").select("*").eq("cliente_id", cliente_id).execute().data
+            if not p.get("borrado_en")
+        ]
         pendiente = next(
             (
                 pedido for pedido in existentes
@@ -156,7 +159,10 @@ def editar_fecha_entrega(client, pedido_id, fecha_entrega):
     fecha_iso = fecha_entrega.isoformat()
     if pedido.get("fecha_entrega") == fecha_iso:
         return pedido
-    candidatos = client.table("pedidos").select("*").eq("cliente_id", pedido["cliente_id"]).execute().data
+    candidatos = [
+        p for p in client.table("pedidos").select("*").eq("cliente_id", pedido["cliente_id"]).execute().data
+        if not p.get("borrado_en")
+    ]
     destino = next(
         (
             otro for otro in candidatos
