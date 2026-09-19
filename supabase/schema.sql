@@ -98,6 +98,12 @@ alter table pedidos add column if not exists observaciones_cadete text;
 -- solo buscar el texto de la dirección. Null si no se pudo capturar.
 alter table pedidos add column if not exists lat double precision;
 alter table pedidos add column if not exists lng double precision;
+-- Borrado temporal (papelera): una fila con borrado_en no nulo queda oculta
+-- de todas las listas activas pero sigue existiendo 48hs por si hay que
+-- restaurarla. Se purga (delete real) al superar ese plazo, de forma
+-- perezosa, la próxima vez que alguien abre la papelera.
+alter table pedidos add column if not exists borrado_en timestamptz;
+alter table pedidos add column if not exists borrado_por text;
 create unique index if not exists pedidos_recibo_id_unico
   on pedidos (recibo_id) where recibo_id is not null;
 create index if not exists pedidos_fecha_orden_entrega_idx
@@ -126,6 +132,28 @@ alter table tareas_entrega add column if not exists cliente_id uuid references c
 alter table tareas_entrega add column if not exists cliente_nombre text;
 alter table tareas_entrega add column if not exists asignado_a text;
 alter table tareas_entrega add column if not exists observaciones_cadete text;
+alter table tareas_entrega add column if not exists borrado_en timestamptz;
+alter table tareas_entrega add column if not exists borrado_por text;
+
+-- Recibos generados a mano desde una nota del cadete, sin depender de que
+-- exista un pedido en la base (ver panel "Recibo" en /admin/cadete). Los
+-- items son una instantánea: nombre + precio USD tal cual los cargó el
+-- cadete, no una referencia viva al catálogo.
+create table if not exists recibos_manuales (
+  id uuid primary key default gen_random_uuid(),
+  tarea_id uuid references tareas_entrega(id) on delete set null,
+  nombre_cliente text not null,
+  email_cliente text not null,
+  items jsonb not null,
+  total_usd numeric not null,
+  fotos_series jsonb not null default '[]'::jsonb,
+  recibo_id text unique,
+  creado_por text not null,
+  creado_en timestamptz not null default now(),
+  enviado_en timestamptz
+);
+create index if not exists recibos_manuales_tarea_idx on recibos_manuales (tarea_id);
+alter table recibos_manuales enable row level security;
 
 create sequence if not exists public.recibos_numero_seq start with 1993;
 create or replace function public.siguiente_numero_recibo()
