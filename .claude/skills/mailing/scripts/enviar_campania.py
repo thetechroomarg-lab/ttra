@@ -45,7 +45,7 @@ def main():
         try:
             enviar_email(cliente["email"], ASUNTO, html)
             ok += 1
-        except EnvioEmailError as e:
+        except Exception as e:
             fallidos += 1
             print(f"FALLÓ envío a {cliente['email']}: {e}", file=sys.stderr)
         time.sleep(0.4)
