@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Arma el borrador semanal de la campaña de mailing de novedades: detecta
-productos nuevos del catálogo, suma la nota pendiente (si hay), arma el HTML
+productos nuevos del catálogo, completa hasta 10 productos siempre (sin
+excepción, 5 por columna), suma la nota pendiente (si hay), arma el HTML
 y lo deja guardado para que el agente lo publique como Artifact.
 
 Uso:
@@ -54,16 +55,16 @@ def main():
     # próxima comparación sea siempre contra el catálogo más reciente.
     estado.guardar_snapshot(DATA_DIR, productos_actuales)
 
-    if not nuevos and not nota:
-        print("SIN_NOVEDADES: no hay productos nuevos ni nota pendiente, no se arma borrador.")
-        return
+    # La campaña siempre sale con 10 productos, sin excepción — si hay menos
+    # de 10 nuevos esta semana, se completa al azar con el resto del catálogo.
+    seleccion = catalogo_diff.seleccionar_para_campania(nuevos, productos_actuales, cantidad=10)
 
     client = get_client()
     elegibles = destinatarios.clientes_elegibles(client)
-    html = template.armar_html(nuevos, nota)
+    html = template.armar_html(seleccion, nota)
 
     borrador = {
-        "productos": nuevos,
+        "productos": seleccion,
         "nota": nota,
         "html_preview": html,
         "destinatarios": len(elegibles),
@@ -74,9 +75,11 @@ def main():
     estado.limpiar_nota_pendiente(DATA_DIR)
 
     print("BORRADOR_LISTO")
-    print("productos_nuevos:", len(nuevos))
-    for producto in nuevos:
-        print("  -", producto["nombre"])
+    print("productos_en_la_campania:", len(seleccion))
+    print("de_los_cuales_nuevos_esta_semana:", len(nuevos))
+    for producto in seleccion:
+        marca = "(nuevo)" if producto in nuevos else "(relleno)"
+        print("  -", producto["nombre"], marca)
     print("incluye_nota:", bool(nota))
     print("destinatarios:", len(elegibles))
     print("archivo:", DATA_DIR / "borrador_actual.json")

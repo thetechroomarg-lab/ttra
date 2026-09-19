@@ -1,6 +1,6 @@
 ---
 name: mailing
-description: Arma y envía la campaña semanal de mailing de novedades a los clientes de The Tech Room Arg — detecta productos nuevos del catálogo, suma una nota/promo manual opcional, y solo envía cuando Vladimir lo confirma explícitamente. Usar cuando Vladimir dice "dejá esta nota para la próxima campaña", "mandá la campaña de novedades", o cuando corre la rutina semanal programada.
+description: Arma y envía la campaña semanal de mailing de novedades a los clientes de The Tech Room Arg — siempre exactamente 10 productos (5 por columna: los nuevos del catálogo primero, completando al azar si faltan), suma una nota/promo manual opcional, y solo envía cuando Vladimir lo confirma explícitamente. Usar cuando Vladimir dice "dejá esta nota para la próxima campaña", "mandá la campaña de novedades", o cuando corre la rutina semanal programada.
 ---
 
 # Campaña de mailing de novedades
@@ -12,14 +12,14 @@ ambiente de prueba separado (ver `web/supabase_client.py`).
 
 ```bash
 cd "/Users/toraba/TTRA Project"
-./.venv/bin/python .claude/skills/mailing/scripts/nota.py "Todo el stock de iPhone 13 con $30 de descuento esta semana"
+./.venv/bin/python .claude/skills/mailing/scripts/nota.py "texto exacto que Vladimir dictó, nunca un descuento inventado por vos"
 ```
 
-Reemplaza cualquier nota pendiente sin usar (el script avisa si pisa una).
+Reemplaza cualquier nota pendiente sin usar (el script avisa si pisa una). El texto de la nota SIEMPRE sale textual de lo que Vladimir escribió — nunca inventar ni completar un número de descuento, aunque sea a modo de ejemplo.
 
 ## Rutina semanal (automática, vía skill `schedule`)
 
-Cada lunes 9:00 AM (hora Argentina) corré:
+Cada sábado 20:00 (hora Argentina) corré:
 
 ```bash
 cd "/Users/toraba/TTRA Project"
@@ -28,10 +28,10 @@ cd "/Users/toraba/TTRA Project"
 
 El script:
 - Compara `web/productos.json` contra el último snapshot y detecta productos nuevos.
+- Arma la selección final de la campaña: **siempre exactamente 10 productos, sin excepción, 5 por columna** — prioriza los nuevos de la semana y completa al azar con el resto del catálogo si hay menos de 10 nuevos (`web/mailing/catalogo_diff.seleccionar_para_campania`).
 - Lee la nota pendiente (si hay) y la consume — queda limpia después de esta corrida, se haya aprobado el borrador o no.
-- Si no hay productos nuevos ni nota, imprime `SIN_NOVEDADES` — no hace falta seguir, no le muestres nada a Vladimir esta semana.
-- Si imprime `PRIMERA_CORRIDA`, tampoco hay nada para mostrar (recién se inicializó el snapshot).
-- Si arma un borrador, imprime `BORRADOR_LISTO` seguido de un resumen (cantidad de productos, si incluye nota, cantidad de destinatarios), y guarda el HTML completo en `web/mailing/data/borrador_actual.json` (campo `html_preview`).
+- Si imprime `PRIMERA_CORRIDA`, no hay nada para mostrar todavía (recién se inicializó el snapshot) — no generes notificación ni artifact esa semana.
+- Si arma un borrador, imprime `BORRADOR_LISTO` seguido de un resumen (cuántos de los 10 son realmente nuevos vs. relleno, si incluye nota, cantidad de destinatarios), y guarda el HTML completo en `web/mailing/data/borrador_actual.json` (campo `html_preview`).
 
 Si imprimió `BORRADOR_LISTO`:
 
@@ -60,5 +60,6 @@ Contale a Vladimir el resultado final en el chat.
 ## Gotchas
 
 - El envío real (`enviar_campania.py`) NUNCA se corre automáticamente ni sin que Vladimir lo haya pedido explícitamente para ese borrador puntual.
-- Si `armar_borrador.py` imprime `SIN_NOVEDADES` o `PRIMERA_CORRIDA`, no generes notificación ni artifact esa semana.
+- Si `armar_borrador.py` imprime `PRIMERA_CORRIDA`, no generes notificación ni artifact esa semana.
+- Nunca inventar un descuento, promo o condición comercial — ni real ni de ejemplo. La nota siempre sale textual de `/mailing nota`.
 - La columna `clientes.no_mailing` tiene que existir en Supabase antes de correr cualquiera de estos scripts contra producción (`supabase/schema.sql`, corrida a mano en el SQL Editor).

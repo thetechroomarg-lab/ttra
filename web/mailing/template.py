@@ -1,25 +1,27 @@
-"""Arma el HTML del mail semanal de novedades, con estilo terminal oscuro
-consistente con la web (ver web/static/theme.css). Usa estilos inline para
-degradar razonablemente en clientes de mail que ignoran CSS embebido."""
+"""Arma el HTML del mail semanal de novedades, con la paleta del modo Classic
+de la web (ver web/static/classic.css — carbón, blanco/crema, rojo coral,
+tipografía Nunito). Usa estilos inline para degradar razonablemente en
+clientes de mail que ignoran CSS embebido."""
 import html
 
 from web.slugs import url_producto
 
 BASE_URL = "https://thetechroomarg.com"
 
-_BG = "#030a03"
-_PANEL = "#0b1f0b"
-_VERDE = "#33ff66"
-_VERDE_BRILLANTE = "#7bffa0"
-_VERDE_TENUE = "#1f8c3f"
-_FUENTE = "'Share Tech Mono', 'Courier New', monospace"
+_BG = "#1a1a1a"
+_PANEL = "#262626"
+_BLANCO = "#ffffff"
+_CREMA = "#e6e6e6"
+_GRIS_TENUE = "#a8a8a8"
+_ROJO = "#ff6b5e"
+_FUENTE = "'Nunito', 'Segoe UI', system-ui, sans-serif"
 
 
 def _tarjeta_producto(producto, base_url):
     nombre = html.escape(producto.get("nombre", ""))
     colores = producto.get("colores") or []
     colores_html = (
-        f"<p style='margin:4px 0 0; font-size:13px; color:{_VERDE_TENUE};'>"
+        f"<p style='margin:4px 0 0; font-size:13px; color:{_GRIS_TENUE};'>"
         f"{html.escape(', '.join(colores))}</p>"
         if colores else ""
     )
@@ -27,13 +29,13 @@ def _tarjeta_producto(producto, base_url):
     return f"""
 <td style="padding:12px; vertical-align:top; width:50%;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-         style="background:{_PANEL}; border:1px solid {_VERDE_TENUE}; border-radius:6px;">
+         style="background:{_PANEL}; border:1px solid #3a3a3a; border-radius:6px;">
     <tr><td style="padding:16px;">
-      <p style="margin:0; font-family:{_FUENTE}; font-size:15px; font-weight:bold; color:{_VERDE_BRILLANTE};">{nombre}</p>
+      <p style="margin:0; font-family:{_FUENTE}; font-size:15px; font-weight:800; color:{_BLANCO};">{nombre}</p>
       {colores_html}
-      <p style="margin:10px 0 0; font-family:{_FUENTE}; font-size:14px; color:{_VERDE};">U$D {producto.get("usd")}</p>
-      <p style="margin:2px 0 0; font-family:{_FUENTE}; font-size:12px; color:{_VERDE_TENUE};">$ {producto.get("pesos")} contado &middot; $ {producto.get("transferencia")} transferencia</p>
-      <a href="{link}" style="display:inline-block; margin-top:12px; padding:8px 14px; background:{_VERDE}; color:{_BG}; text-decoration:none; font-family:{_FUENTE}; font-weight:bold; font-size:13px; border-radius:4px;">Ver producto</a>
+      <p style="margin:10px 0 0; font-family:{_FUENTE}; font-size:14px; font-weight:700; color:{_ROJO};">U$D {producto.get("usd")}</p>
+      <p style="margin:2px 0 0; font-family:{_FUENTE}; font-size:12px; color:{_GRIS_TENUE};">$ {producto.get("pesos")} contado &middot; $ {producto.get("transferencia")} transferencia</p>
+      <a href="{link}" style="display:inline-block; margin-top:12px; padding:8px 14px; background:{_ROJO}; color:{_BLANCO}; text-decoration:none; font-family:{_FUENTE}; font-weight:700; font-size:13px; border-radius:4px;">Ver producto</a>
     </td></tr>
   </table>
 </td>"""
@@ -47,8 +49,8 @@ def armar_html(productos_nuevos, nota=None, cliente_id=None, base_url=BASE_URL):
         banner_nota = f"""
 <tr><td style="padding:0 20px 20px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-         style="background:{_VERDE_TENUE}; border-radius:6px;">
-    <tr><td style="padding:16px; font-family:{_FUENTE}; font-size:14px; color:{_BG}; font-weight:bold;">
+         style="background:{_ROJO}; border-radius:6px;">
+    <tr><td style="padding:16px; font-family:{_FUENTE}; font-size:14px; color:{_BLANCO}; font-weight:800;">
       {html.escape(nota)}
     </td></tr>
   </table>
@@ -70,16 +72,16 @@ def armar_html(productos_nuevos, nota=None, cliente_id=None, base_url=BASE_URL):
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; background:{_BG};">
 <tr><td style="padding:0 20px 20px; text-align:center;">
-  <p style="margin:0; font-family:'Archivo Black', sans-serif; font-size:20px; color:{_VERDE_BRILLANTE}; letter-spacing:1px;">THE TECH ROOM ARG</p>
-  <p style="margin:4px 0 0; font-family:{_FUENTE}; font-size:12px; color:{_VERDE_TENUE};">Novedades de la semana</p>
+  <p style="margin:0; font-family:{_FUENTE}; font-size:20px; font-weight:800; color:{_BLANCO}; letter-spacing:0.5px;">THE TECH ROOM ARG</p>
+  <p style="margin:4px 0 0; font-family:{_FUENTE}; font-size:12px; color:{_GRIS_TENUE};">Novedades de la semana</p>
 </td></tr>
 {banner_nota}
 <tr><td style="padding:0 12px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{filas_productos}</table>
 </td></tr>
 <tr><td style="padding:24px 20px 8px; text-align:center;">
-  <p style="margin:0; font-family:{_FUENTE}; font-size:11px; color:{_VERDE_TENUE};">
-    <a href="{baja_url}" style="color:{_VERDE_TENUE};">No quiero recibir más novedades por mail</a>
+  <p style="margin:0; font-family:{_FUENTE}; font-size:11px; color:{_GRIS_TENUE};">
+    <a href="{baja_url}" style="color:{_GRIS_TENUE};">No quiero recibir más novedades por mail</a>
   </p>
 </td></tr>
 </table>
