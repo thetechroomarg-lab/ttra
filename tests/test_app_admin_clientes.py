@@ -807,3 +807,14 @@ def test_admin_resetea_password_cliente_inexistente(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     r = c.post("/admin/clientes/id-que-no-existe/resetear-password")
     assert r.status_code == 400
+
+
+def test_panel_pedidos_tiene_link_a_papelera(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
+
+    assert 'href="/admin/papelera"' in cliente.get("/admin/clientes").text
+    assert 'href="/admin/papelera"' in cliente.get("/admin/clientes/lista").text

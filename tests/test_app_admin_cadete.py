@@ -400,3 +400,13 @@ def test_cadete_no_puede_derivar_a_vlad_una_tarea_ajena_ni_auto_asignarse(monkey
     r = cadete.put("/admin/tareas-entrega/tarea-de-otro/derivar", json={"derivado": True})
     assert r.status_code == 403
     assert fake.table("tareas_entrega").select("*").eq("id", "tarea-de-otro").execute().data[0].get("asignado_a") is None
+
+
+def test_panel_cadete_tiene_link_a_papelera(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "CADETE_PASSWORD", "clave-cadete")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/cadete/login", json={"password": "clave-cadete"})
+
+    assert 'href="/admin/cadete/papelera"' in cliente.get("/admin/cadete").text
