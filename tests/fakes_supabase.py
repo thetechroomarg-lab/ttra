@@ -103,6 +103,20 @@ class _FakeRpcCall:
         return _FakeRpcResult(self._callback())
 
 
+class _FakeNotFilter:
+    """Doble mínimo de `.not_` — soporta `.is_(campo, "null")` como filtro
+    de "campo no es null", que es lo único que usa el código productivo."""
+
+    def __init__(self, query):
+        self._query = query
+
+    def is_(self, campo, valor):
+        if valor != "null":
+            raise ValueError(valor)
+        self._query._filtros.append((campo, "not_null"))
+        return self._query
+
+
 class _FakeQuery:
     def __init__(self, tabla, operacion, payload=None):
         self._tabla = tabla
@@ -114,9 +128,16 @@ class _FakeQuery:
         self._filtros.append((campo, valor))
         return self
 
+    @property
+    def not_(self):
+        return _FakeNotFilter(self)
+
     def _filtrar(self, filas):
         for campo, valor in self._filtros:
-            filas = [f for f in filas if f.get(campo) == valor]
+            if valor == "not_null":
+                filas = [f for f in filas if f.get(campo) is not None]
+            else:
+                filas = [f for f in filas if f.get(campo) == valor]
         return filas
 
     def execute(self):

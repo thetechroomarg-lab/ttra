@@ -989,3 +989,25 @@ def test_fake_rpc_rechaza_auditoria_mayorista_en_modo_minorista():
     assert resultado == {"ok": False, "error": "pedido_invalido"}
     assert fake.table("pedidos").select("*").execute().data == []
     assert fake.table("codigos_promo").select("*").execute().data[0]["usos_actuales"] == 0
+
+
+def test_eliminar_pedido_es_recuperable_y_desaparece_de_listas(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
+    fake.table("clientes").insert({"id": "c1", "nombre": "Ana", "apellido": "Lopez"}).execute()
+    fake.table("pedidos").insert({
+        "id": "p1", "cliente_id": "c1", "productos": [], "fecha_entrega": "2026-09-20",
+    }).execute()
+
+    respuesta = cliente.delete("/admin/pedidos/p1")
+    assert respuesta.status_code == 200
+
+    fila = fake.table("pedidos").select("*").eq("id", "p1").execute().data[0]
+    assert fila["borrado_en"] is not None
+    assert fila["borrado_por"] == "Vlad"
+
+    respuesta_doble_borrado = cliente.delete("/admin/pedidos/p1")
+    assert respuesta_doble_borrado.status_code == 404
