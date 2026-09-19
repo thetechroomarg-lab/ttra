@@ -1605,6 +1605,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     pedidos = [] if mostrar_clientes else client.table("pedidos").select("*").execute().data
     pedidos = [p for p in pedidos if _activo(p)]
     tareas = [] if mostrar_clientes else client.table("tareas_entrega").select("*").execute().data
+    tareas = [t for t in tareas if _activo(t)]
     tareas_hoy = [
         tarea for tarea in tareas
         if tarea.get("fecha_entrega") == fecha_hoy and not tarea.get("completada_en")
@@ -2669,6 +2670,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     pedidos = client.table("pedidos").select("*").eq("asignado_a", CADETE_SLUG).execute().data
     pedidos = [p for p in pedidos if _activo(p)]
     tareas = client.table("tareas_entrega").select("*").eq("asignado_a", CADETE_SLUG).execute().data
+    tareas = [t for t in tareas if _activo(t)]
     pedidos_hoy = [
         pedido for pedido in pedidos
         if pedido.get("fecha_entrega") == fecha_consulta and not pedido.get("recibo_enviado_en")
@@ -4001,7 +4003,7 @@ def admin_reordenar_entregas(entrada: ReordenarEntregasIn, request: Request):
     ]
     tareas_hoy = [
         tarea for tarea in client.table("tareas_entrega").select("*").eq("fecha_entrega", fecha_hoy).execute().data
-        if not tarea.get("completada_en")
+        if _activo(tarea) and not tarea.get("completada_en")
     ]
     esperados = {("pedido", pedido["id"]) for pedido in pedidos_hoy} | {("tarea", tarea["id"]) for tarea in tareas_hoy}
     recibidos = [(item.tipo, item.id) for item in entrada.items]
@@ -4053,7 +4055,7 @@ def admin_completar_tarea_entrega(tarea_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     if not _puede_operar_entrega(request, filas[0]):
         raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
@@ -4078,7 +4080,7 @@ def admin_tarea_agregar_direccion(tarea_id: str, entrada: EditarDireccionEntrega
         return JSONResponse({"error": "Ingresá una dirección de entrega"}, status_code=400)
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     client.table("tareas_entrega").update({"direccion": direccion}).eq("id", tarea_id).execute()
     return {"ok": True, "tarea_id": tarea_id, "direccion": direccion}
@@ -4092,7 +4094,7 @@ def admin_tarea_derivar(tarea_id: str, entrada: DerivarEntregaIn, request: Reque
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     if not es_admin:
         # El cadete solo puede devolverle a Vlad una nota que ya es suya
@@ -4115,7 +4117,7 @@ def admin_tarea_editar_fecha(tarea_id: str, entrada: EditarFechaEntregaIn, reque
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     if not _puede_operar_entrega(request, filas[0]):
         raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
@@ -4135,9 +4137,12 @@ def admin_tarea_eliminar(tarea_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
-    client.table("tareas_entrega").delete().eq("id", tarea_id).execute()
+    client.table("tareas_entrega").update({
+        "borrado_en": datetime.now(timezone.utc).isoformat(),
+        "borrado_por": _quien_opera(request),
+    }).eq("id", tarea_id).execute()
     return {"ok": True, "tarea_id": tarea_id}
 
 

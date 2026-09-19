@@ -255,7 +255,8 @@ def test_admin_puede_eliminar_una_tarea_manual(monkeypatch):
     respuesta = cliente.delete("/admin/tareas-entrega/tarea-1")
 
     assert respuesta.status_code == 200
-    assert fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data == []
+    fila = fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data[0]
+    assert fila["borrado_en"] is not None
 
 
 def test_admin_puede_completar_una_tarea_manual(monkeypatch):
@@ -399,4 +400,26 @@ def test_admin_puede_eliminar_una_tarea_completada_del_historial(monkeypatch):
     eliminar = cliente.delete("/admin/tareas-entrega/tarea-1")
 
     assert eliminar.status_code == 200
-    assert fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data == []
+    fila = fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data[0]
+    assert fila["borrado_en"] is not None
+
+
+def test_eliminar_tarea_es_recuperable(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
+    fake.table("tareas_entrega").insert({
+        "id": "t1", "fecha_entrega": "2026-09-20", "titulo": "Llamar a Ana", "orden": 1,
+    }).execute()
+
+    respuesta = cliente.delete("/admin/tareas-entrega/t1")
+    assert respuesta.status_code == 200
+
+    fila = fake.table("tareas_entrega").select("*").eq("id", "t1").execute().data[0]
+    assert fila["borrado_en"] is not None
+    assert fila["borrado_por"] == "Vlad"
+
+    respuesta_doble_borrado = cliente.delete("/admin/tareas-entrega/t1")
+    assert respuesta_doble_borrado.status_code == 404
