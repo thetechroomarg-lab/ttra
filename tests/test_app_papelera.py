@@ -63,6 +63,25 @@ def test_cadete_papelera_solo_ve_lo_propio(monkeypatch):
     assert "ajeno" not in respuesta.text
 
 
+def test_purgar_y_listar_papelera_solo_lee_filas_borradas(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    for i in range(5):
+        fake.table("pedidos").insert({
+            "id": f"activo-{i}", "cliente_id": "c1", "productos": [], "fecha_entrega": "2026-09-20",
+        }).execute()
+    fake.table("pedidos").insert({
+        "id": "borrado-1", "cliente_id": "c1", "productos": [], "fecha_entrega": "2026-09-20",
+        "borrado_en": _iso_hace(1), "borrado_por": "Vlad",
+    }).execute()
+
+    pedidos_borrados, tareas_borradas = appmod._purgar_y_listar_papelera(fake)
+
+    assert [p["id"] for p in pedidos_borrados] == ["borrado-1"]
+    assert tareas_borradas == []
+    assert len(fake.table("pedidos")._filas) == 6  # nada activo se purgó ni se filtró de más
+
+
 def test_papelera_muestra_cuenta_regresiva_de_purga(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)

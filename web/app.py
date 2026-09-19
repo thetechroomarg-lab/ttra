@@ -439,7 +439,7 @@ def _purgar_y_listar_papelera(client, asignado_a=None):
     limite = datetime.now(timezone.utc) - timedelta(hours=48)
 
     def _procesar(tabla):
-        filas = client.table(tabla).select("*").execute().data
+        filas = client.table(tabla).select("*").not_.is_("borrado_en", "null").execute().data
         vivas, vencidas = [], []
         for fila in filas:
             borrado_en = fila.get("borrado_en")
