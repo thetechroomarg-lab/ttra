@@ -2713,6 +2713,11 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     pedidos = [p for p in pedidos if _activo(p)]
     tareas = client.table("tareas_entrega").select("*").eq("asignado_a", CADETE_SLUG).execute().data
     tareas = [t for t in tareas if _activo(t)]
+    tareas_ids = {t.get("id") for t in tareas}
+    tareas_con_recibo = {
+        r.get("tarea_id") for r in client.table("recibos_manuales").select("*").execute().data
+        if r.get("enviado_en") and r.get("tarea_id") in tareas_ids
+    }
     pedidos_hoy = [
         pedido for pedido in pedidos
         if pedido.get("fecha_entrega") == fecha_consulta and not pedido.get("recibo_enviado_en")
@@ -2791,8 +2796,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         boton_derivar_vlad = (
             f'<button class="btn-derivar-vlad" type="button" data-id="{tarea_id}">Derivar a Vlad</button>'
         )
+        texto_recibo = "Reenviar recibo" if tarea.get("id") in tareas_con_recibo else "Recibo"
         boton_recibo_manual = (
-            f'<button class="btn-recibo-nota" type="button" data-id="{tarea_id}">Recibo</button>'
+            f'<button class="btn-recibo-nota" type="button" data-id="{tarea_id}">{texto_recibo}</button>'
         )
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
@@ -4119,6 +4125,24 @@ def admin_pedido_editar_fecha(pedido_id: str, entrada: EditarFechaEntregaIn, req
     return {"ok": True, "pedido_id": pedido["id"], "fecha_entrega": pedido["fecha_entrega"]}
 
 
+def _expira_en_papelera(borrado_en):
+    if not borrado_en:
+        return "—"
+    try:
+        momento = datetime.fromisoformat(borrado_en.replace("Z", "+00:00"))
+    except ValueError:
+        return "—"
+    if momento.tzinfo is None:
+        momento = momento.replace(tzinfo=timezone.utc)
+    restante = timedelta(hours=48) - (datetime.now(timezone.utc) - momento)
+    if restante <= timedelta(0):
+        return "se está por purgar"
+    horas = int(restante.total_seconds() // 3600)
+    if horas < 1:
+        return "se borra definitivamente en menos de 1 h"
+    return f"se borra definitivamente en {horas} h"
+
+
 def _tarjeta_papelera(tipo, fila, clientes_por_id):
     item_id = html.escape(fila.get("id", ""))
     if tipo == "pedido":
@@ -4127,10 +4151,14 @@ def _tarjeta_papelera(tipo, fila, clientes_por_id):
     else:
         titulo = f"Nota: {html.escape(fila.get('titulo') or '')}"
     borrado_por = html.escape(fila.get("borrado_por") or "—")
-    borrado_en = html.escape(fila.get("borrado_en") or "")
+    borrado_en_raw = fila.get("borrado_en")
+    fecha, dia_semana, hora = _formatear_fecha_ar(borrado_en_raw)
+    borrado_en = html.escape(f"{fecha} · {dia_semana} · {hora}" if borrado_en_raw else "—")
+    expira = html.escape(_expira_en_papelera(borrado_en_raw))
     return (
         f'<div class="papelera-item"><div class="papelera-item-detalle">'
-        f'<strong>{titulo}</strong><br><span>Borrado por {borrado_por} · {borrado_en}</span></div>'
+        f'<strong>{titulo}</strong><br><span>Borrado por {borrado_por} · {borrado_en}</span>'
+        f'<br><span class="papelera-item-expira">{expira}</span></div>'
         f'<div class="papelera-item-acciones">'
         f'<button class="btn-restaurar-papelera" type="button" data-tipo="{tipo}" data-id="{item_id}">Restaurar</button>'
         f'</div></div>'

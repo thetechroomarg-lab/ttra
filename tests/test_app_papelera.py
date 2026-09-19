@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
@@ -60,6 +61,24 @@ def test_cadete_papelera_solo_ve_lo_propio(monkeypatch):
     assert respuesta.status_code == 200
     assert "propio" in respuesta.text
     assert "ajeno" not in respuesta.text
+
+
+def test_papelera_muestra_cuenta_regresiva_de_purga(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
+
+    fake.table("pedidos").insert({
+        "id": "reciente", "cliente_id": "c1", "productos": [], "fecha_entrega": "2026-09-20",
+        "borrado_en": _iso_hace(2), "borrado_por": "Vlad",
+    }).execute()
+
+    respuesta = cliente.get("/admin/papelera")
+    assert respuesta.status_code == 200
+    assert re.search(r"se borra definitivamente en 4[56] h", respuesta.text)
+    assert "T00:00" not in respuesta.text  # no muestra el ISO crudo
 
 
 def test_cadete_papelera_usa_manifest_y_estilo_propios(monkeypatch):

@@ -418,6 +418,28 @@ def test_cadete_no_puede_derivar_a_vlad_una_tarea_ajena_ni_auto_asignarse(monkey
     assert fake.table("tareas_entrega").select("*").eq("id", "tarea-de-otro").execute().data[0].get("asignado_a") is None
 
 
+def test_boton_recibo_de_nota_pasa_a_reenviar_si_ya_se_envio(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": fecha_hoy, "titulo": "Nota con recibo", "orden": 1,
+    }).execute()
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-2", "fecha_entrega": fecha_hoy, "titulo": "Nota sin recibo", "orden": 2,
+    }).execute()
+    admin.put("/admin/tareas-entrega/tarea-1/derivar", json={"derivado": True})
+    admin.put("/admin/tareas-entrega/tarea-2/derivar", json={"derivado": True})
+    fake.table("recibos_manuales").insert({
+        "id": "recibo-1", "tarea_id": "tarea-1", "enviado_en": "2026-09-18T10:00:00+00:00",
+    }).execute()
+
+    cadete = _cadete_logueado()
+    panel = cadete.get("/admin/cadete")
+
+    assert '<button class="btn-recibo-nota" type="button" data-id="tarea-1">Reenviar recibo</button>' in panel.text
+    assert '<button class="btn-recibo-nota" type="button" data-id="tarea-2">Recibo</button>' in panel.text
+
+
 def test_panel_cadete_tiene_link_a_papelera(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
