@@ -64,3 +64,36 @@ def test_seleccion_no_alcanza_catalogo_devuelve_lo_disponible():
     seleccion = catalogo_diff.seleccionar_para_campania(nuevos, catalogo, cantidad=10)
 
     assert len(seleccion) == 5
+
+
+def test_detectar_nuevos_excluye_usados_por_nombre():
+    actuales = [{"nombre": "IPHONE 11 64GB USADO"}, {"nombre": "IPHONE 12 128GB"}]
+
+    nuevos = catalogo_diff.detectar_nuevos(actuales, [])
+
+    assert nuevos == [{"nombre": "IPHONE 12 128GB"}]
+
+
+def test_detectar_nuevos_excluye_usados_por_categoria():
+    actuales = [{"nombre": "IPHONE 11 64GB", "categoria": "Apple - iPhone Usado"}]
+
+    assert catalogo_diff.detectar_nuevos(actuales, []) == []
+
+
+def test_seleccion_nunca_incluye_usados_como_nuevos():
+    nuevos = [{"nombre": "IPHONE 11 USADO"}] + _productos(12, "N")
+    catalogo = nuevos + _productos(5, "C")
+
+    seleccion = catalogo_diff.seleccionar_para_campania(nuevos, catalogo, cantidad=10)
+
+    assert all("USADO" not in p["nombre"] for p in seleccion)
+
+
+def test_seleccion_nunca_completa_relleno_con_usados():
+    nuevos = _productos(2, "N")
+    catalogo = nuevos + [{"nombre": "IPHONE 11 USADO"}] + _productos(20, "C")
+
+    seleccion = catalogo_diff.seleccionar_para_campania(nuevos, catalogo, cantidad=10)
+
+    assert len(seleccion) == 10
+    assert all("USADO" not in p["nombre"] for p in seleccion)
