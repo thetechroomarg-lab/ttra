@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, recibos
+from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, recibos, recibos_manuales
 from web.email_util import EnvioEmailError, enviar_email
 from web.productos import resolver_proveedor
 from web.slugs import slug as slug_producto
@@ -2771,12 +2771,15 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         boton_derivar_vlad = (
             f'<button class="btn-derivar-vlad" type="button" data-id="{tarea_id}">Derivar a Vlad</button>'
         )
+        boton_recibo_manual = (
+            f'<button class="btn-enviar-recibo btn-recibo-nota" type="button" data-id="{tarea_id}">Recibo</button>'
+        )
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
             f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion)}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
-            f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}</div></div>'
+            f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}{boton_recibo_manual}</div></div>'
         )
 
     tarjetas = (
@@ -4259,6 +4262,84 @@ def admin_tarea_eliminar(tarea_id: str, request: Request):
         "borrado_por": _quien_opera(request),
     }).eq("id", tarea_id).execute()
     return {"ok": True, "tarea_id": tarea_id}
+
+
+@app.post("/admin/tareas-entrega/{tarea_id}/recibo-manual")
+async def admin_tarea_recibo_manual(tarea_id: str, request: Request):
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
+    if not filas or not _activo(filas[0]):
+        raise HTTPException(status_code=404, detail="Nota no encontrada")
+    tarea = filas[0]
+    if not _puede_operar_entrega(request, tarea):
+        raise HTTPException(status_code=403, detail="Esta nota no está asignada a tu usuario")
+
+    formulario = await request.form()
+    nombre_cliente = (formulario.get("nombre") or "").strip()
+    email_cliente = (formulario.get("email") or "").strip()
+    if not nombre_cliente or not email_cliente:
+        return JSONResponse({"error": "Nombre y email son obligatorios"}, status_code=400)
+    try:
+        items_crudos = json.loads(formulario.get("items") or "[]")
+        items = recibos_manuales.construir_items(items_crudos)
+    except (ValueError, TypeError) as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+    total_usd = recibos_manuales.calcular_total(items)
+    recibo_id = _nuevo_recibo_id(client)
+    emitido_en = datetime.now(timezone.utc).isoformat()
+    pedido_para_mail = recibos_manuales.armar_pedido_like(
+        nombre_cliente, items, total_usd, recibo_id, emitido_en, _quien_opera(request),
+    )
+    partes_nombre = nombre_cliente.split(" ", 1)
+    cliente_para_mail = {
+        "nombre": partes_nombre[0],
+        "apellido": partes_nombre[1] if len(partes_nombre) > 1 else "",
+        "email": email_cliente,
+    }
+
+    fotos_pdf, adjuntos_fotos, fotos_guardadas = [], [], []
+    for foto in formulario.getlist("fotos")[:10]:
+        if not getattr(foto, "filename", None):
+            continue
+        contenido = await foto.read()
+        if not contenido or len(contenido) > 2_500_000:
+            return JSONResponse({"error": "Cada foto comprimida debe pesar menos de 2,5 MB"}, status_code=400)
+        nombre_archivo = f"serie-{uuid.uuid4().hex}.jpg"
+        ruta = f"recibos-manuales/{tarea_id}/{nombre_archivo}"
+        client.storage.from_("recibos-series").upload(ruta, contenido, {"content-type": "image/jpeg"})
+        fotos_guardadas.append(ruta)
+        fotos_pdf.append(contenido)
+        adjuntos_fotos.append({"filename": nombre_archivo, "content": contenido})
+
+    try:
+        pdf_adjunto = recibos.pdf_recibo(cliente_para_mail, pedido_para_mail, fotos=fotos_pdf)
+        enviar_email(
+            email_cliente,
+            f"Recibo {recibo_id} — The Tech Room Arg",
+            recibos.html_recibo(cliente_para_mail, pedido_para_mail),
+            [{"filename": f"recibo-{recibo_id}.pdf", "content": pdf_adjunto}, *adjuntos_fotos],
+        )
+    except EnvioEmailError as e:
+        return JSONResponse({"error": str(e)}, status_code=502)
+
+    registro = {
+        "id": str(uuid.uuid4()),
+        "tarea_id": tarea_id,
+        "nombre_cliente": nombre_cliente,
+        "email_cliente": email_cliente,
+        "items": items,
+        "total_usd": total_usd,
+        "fotos_series": fotos_guardadas,
+        "recibo_id": recibo_id,
+        "creado_por": _quien_opera(request),
+        "creado_en": emitido_en,
+        "enviado_en": datetime.now(timezone.utc).isoformat(),
+    }
+    client.table("recibos_manuales").insert(registro).execute()
+    return {"ok": True, "recibo_id": recibo_id}
 
 
 @app.get("/api/entregas-disponibles")
