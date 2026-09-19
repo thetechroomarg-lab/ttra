@@ -440,6 +440,52 @@ def test_boton_recibo_de_nota_pasa_a_reenviar_si_ya_se_envio(monkeypatch):
     assert '<button class="btn-recibo-nota" type="button" data-id="tarea-2">Recibo</button>' in panel.text
 
 
+def test_cadete_puede_agregar_direccion_a_su_propia_tarea(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": "2026-09-20", "titulo": "Sin direccion", "orden": 1,
+    }).execute()
+    admin.put("/admin/tareas-entrega/tarea-1/derivar", json={"derivado": True})
+
+    cadete = _cadete_logueado()
+    panel = cadete.get("/admin/cadete?fecha=2026-09-20")
+    assert 'class="btn-agregar-direccion-cadete" type="button" data-id="tarea-1" data-tipo="tarea"' in panel.text
+
+    respuesta = cadete.put("/admin/tareas-entrega/tarea-1/direccion", json={"direccion_entrega": "Av. Colón 123"})
+    assert respuesta.status_code == 200
+    fila = fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data[0]
+    assert fila["direccion"] == "Av. Colón 123"
+
+
+def test_cadete_no_puede_agregar_direccion_a_tarea_ajena(monkeypatch):
+    _admin_logueado(monkeypatch)
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-ajena", "fecha_entrega": "2026-09-20", "titulo": "No es mia", "orden": 1,
+        "asignado_a": None,
+    }).execute()
+
+    cadete = _cadete_logueado()
+    respuesta = cadete.put("/admin/tareas-entrega/tarea-ajena/direccion", json={"direccion_entrega": "Av. Colón 123"})
+    assert respuesta.status_code == 403
+
+
+def test_cadete_puede_agregar_direccion_a_su_propio_pedido(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("clientes").insert({"id": "c1", "nombre": "Ana", "apellido": "Lopez"}).execute()
+    fake.table("pedidos").insert({
+        "id": "pedido-1", "cliente_id": "c1", "productos": ["iPhone 13"], "fecha_entrega": "2026-09-20",
+    }).execute()
+    admin.put("/admin/pedidos/pedido-1/derivar", json={"derivado": True})
+
+    cadete = _cadete_logueado()
+    respuesta = cadete.put("/admin/pedidos/pedido-1/direccion", json={"direccion_entrega": "Av. Colón 123"})
+    assert respuesta.status_code == 200
+    fila = fake.table("pedidos").select("*").eq("id", "pedido-1").execute().data[0]
+    assert fila["direccion_entrega"] == "Av. Colón 123"
+
+
 def test_panel_cadete_tiene_link_a_papelera(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)

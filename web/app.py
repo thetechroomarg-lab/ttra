@@ -1516,8 +1516,8 @@ _CADETE_ESTILO = """
   .total-cadete { font-weight:700; font-size:16px; }
   .pedido-acciones { display:flex; flex-wrap:wrap; gap:8px; }
   .pedido-acciones > * { flex:1 1 120px; box-sizing:border-box; min-height:48px; font-size:15px; border-radius:var(--op-r-sm); font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
-  .btn-direcciones, .btn-editar-entrega, .btn-derivar-vlad { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
-  .btn-direcciones:hover, .btn-editar-entrega:hover, .btn-derivar-vlad:hover { background:var(--op-surface-3); }
+  .btn-direcciones, .btn-editar-entrega, .btn-derivar-vlad, .btn-agregar-direccion-cadete { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
+  .btn-direcciones:hover, .btn-editar-entrega:hover, .btn-derivar-vlad:hover, .btn-agregar-direccion-cadete:hover { background:var(--op-surface-3); }
   .btn-enviar-recibo, .btn-completar-tarea, .btn-recibo-nota { border:0; background:var(--op-accent); color:#fff; }
   .btn-enviar-recibo:hover, .btn-completar-tarea:hover, .btn-recibo-nota:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
   .btn-enviar-recibo:active, .btn-completar-tarea:active, .btn-recibo-nota:active { background:var(--op-accent-press); transform:translateY(0); }
@@ -1530,9 +1530,18 @@ _CADETE_ESTILO = """
   .modal-series-contenido { width:100%; max-width:420px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
   .modal-series h2 { font-size:var(--op-fs-title); margin:0 0 8px; }
   .modal-series p { color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .modal-direccion-cadete { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .modal-direccion-cadete[hidden] { display:none; }
+  .modal-direccion-cadete-contenido { width:100%; max-width:420px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-sizing:border-box; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-direccion-cadete h2 { font-size:var(--op-fs-title); margin:0 0 12px; }
+  .modal-direccion-cadete input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); font:inherit; }
+  .modal-direccion-cadete .direccion-acciones { display:flex; gap:8px; margin-top:14px; }
+  .modal-direccion-cadete .direccion-acciones button { flex:1; min-height:44px; border-radius:var(--op-r-sm); font-weight:700; cursor:pointer; }
   .modal-recibo-manual { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:20px; }
   .modal-recibo-manual[hidden] { display:none; }
-  .modal-recibo-manual-contenido { width:min(520px,100%); max-height:90vh; overflow-y:auto; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-sizing:border-box; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-recibo-manual-contenido { position:relative; width:min(520px,100%); max-height:90vh; overflow-y:auto; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-sizing:border-box; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-recibo-manual-cerrar { position:absolute; top:10px; right:10px; border:0; background:transparent; color:var(--op-text-dim); font-size:20px; line-height:1; cursor:pointer; padding:6px; min-width:32px; min-height:32px; }
+  .modal-recibo-manual-cerrar:hover, .modal-recibo-manual-cerrar:focus-visible { color:var(--op-text); }
   .modal-recibo-manual h2 { color:var(--op-text); font-size:var(--op-fs-title); margin:0 0 12px; }
   .modal-recibo-manual label { display:block; color:var(--op-text-dim); font-size:var(--op-fs-small); margin:10px 0 4px; }
   .modal-recibo-manual input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); font:inherit; }
@@ -2736,9 +2745,12 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             )
         return " | ".join(pedido.get("productos") or [])
 
-    def _boton_vamos(direccion, lat=None, lng=None):
+    def _boton_vamos(direccion, item_id, tipo, lat=None, lng=None):
         if not direccion:
-            return '<span style="color:#9aa0ab">Sin dirección cargada</span>'
+            return (
+                f'<button class="btn-agregar-direccion-cadete" type="button" '
+                f'data-id="{item_id}" data-tipo="{tipo}">Sin dirección cargada · Agregar</button>'
+            )
         return (
             f'<button class="btn-direcciones" type="button" '
             f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": _query_maps(direccion, lat, lng)}))}">Vamos</button>'
@@ -2774,7 +2786,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}</strong> · '
             f'{html.escape(cliente.get("celular") or "—")}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
             f'{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
-            f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido.get("lat"), pedido.get("lng"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}</div></div>'
+            f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}</div></div>'
         )
 
     def _tarjeta_tarea_cadete(tarea):
@@ -2804,7 +2816,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
             f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
-            f'<div class="pedido-acciones">{_boton_vamos(direccion)}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
+            f'<div class="pedido-acciones">{_boton_vamos(direccion, tarea_id, "tarea")}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
             f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}{boton_recibo_manual}</div></div>'
         )
 
@@ -2873,7 +2885,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   {seccion_proximos}
 </div>
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
+<div class="modal-direccion-cadete" id="modal-direccion-cadete" hidden><div class="modal-direccion-cadete-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-cadete-titulo"><h2 id="direccion-cadete-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-cadete-input" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-cadete-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="direccion-acciones"><button id="direccion-cadete-cancelar" type="button">Cancelar</button><button id="direccion-cadete-guardar" type="button">Guardar dirección</button></div></div></div>
 <div class="modal-recibo-manual" id="modal-recibo-manual" hidden><div class="modal-recibo-manual-contenido" role="dialog" aria-modal="true" aria-labelledby="recibo-manual-titulo">
+  <button id="recibo-manual-cerrar" class="modal-recibo-manual-cerrar" type="button" aria-label="Cerrar" title="Cerrar">✕</button>
   <h2 id="recibo-manual-titulo">Generar recibo</h2>
   <label for="recibo-manual-nombre">Nombre</label>
   <input id="recibo-manual-nombre" placeholder="Nombre del cliente">
@@ -2929,6 +2943,39 @@ document.getElementById("form-nota-cadete").addEventListener("submit", async (e)
 }});
 document.querySelectorAll(".btn-direcciones").forEach((btn) => {{
   btn.addEventListener("click", () => {{ window.open(btn.dataset.maps, "_blank", "noopener"); }});
+}});
+let direccionCadeteActiva = null;
+const modalDireccionCadete = document.getElementById("modal-direccion-cadete");
+const campoDireccionCadete = document.getElementById("direccion-cadete-input");
+document.querySelectorAll(".btn-agregar-direccion-cadete").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    direccionCadeteActiva = {{ id: btn.dataset.id, tipo: btn.dataset.tipo }};
+    campoDireccionCadete.value = "";
+    document.getElementById("direccion-cadete-sugerencias").hidden = true;
+    modalDireccionCadete.hidden = false;
+    campoDireccionCadete.focus();
+  }});
+}});
+document.getElementById("direccion-cadete-cancelar").addEventListener("click", () => {{
+  direccionCadeteActiva = null;
+  modalDireccionCadete.hidden = true;
+}});
+document.getElementById("direccion-cadete-guardar").addEventListener("click", async () => {{
+  if (!direccionCadeteActiva) return;
+  const direccion = campoDireccionCadete.value.trim();
+  if (!direccion) {{ campoDireccionCadete.focus(); return; }}
+  const boton = document.getElementById("direccion-cadete-guardar");
+  boton.disabled = true;
+  const destino = direccionCadeteActiva.tipo === "tarea"
+    ? `/admin/tareas-entrega/${{direccionCadeteActiva.id}}/direccion`
+    : `/admin/pedidos/${{direccionCadeteActiva.id}}/direccion`;
+  const r = await fetch(destino, {{
+    method: "PUT", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{direccion_entrega: direccion}}),
+  }});
+  const datos = await r.json().catch(() => ({{}}));
+  if (!r.ok) {{ alert(datos.error || "No se pudo guardar la dirección."); boton.disabled = false; return; }}
+  location.reload();
 }});
 document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
@@ -3092,6 +3139,7 @@ document.querySelectorAll(".btn-recibo-nota").forEach((btn) => {{
   }});
 }});
 document.getElementById("recibo-manual-cancelar").addEventListener("click", () => {{ modalReciboManual.hidden = true; }});
+document.getElementById("recibo-manual-cerrar").addEventListener("click", () => {{ modalReciboManual.hidden = true; }});
 document.getElementById("recibo-manual-enviar").addEventListener("click", async () => {{
   if (!tareaReciboManualActiva) return;
   const boton = document.getElementById("recibo-manual-enviar");
@@ -3174,6 +3222,7 @@ function activarAutocompleteDireccionCadete(input, lista) {{
   }});
 }}
 activarAutocompleteDireccionCadete(document.getElementById("nota-direccion"), document.getElementById("nota-direccion-sugerencias"));
+activarAutocompleteDireccionCadete(document.getElementById("direccion-cadete-input"), document.getElementById("direccion-cadete-sugerencias"));
 </script>
 {_ADMIN_CLIENTES_PWA_SCRIPT}
 </body></html>"""
@@ -4259,8 +4308,8 @@ def admin_pedido_eliminar(pedido_id: str, request: Request):
 
 @app.put("/admin/pedidos/{pedido_id}/direccion")
 def admin_pedido_agregar_direccion(pedido_id: str, entrada: EditarDireccionEntregaIn, request: Request):
-    if not _clientes_admin_activo(request):
-        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     direccion = entrada.direccion_entrega.strip()
     if not direccion:
         return JSONResponse({"error": "Ingresá una dirección de entrega"}, status_code=400)
@@ -4268,6 +4317,8 @@ def admin_pedido_agregar_direccion(pedido_id: str, entrada: EditarDireccionEntre
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
     if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if not _puede_operar_entrega(request, filas[0]):
+        raise HTTPException(status_code=403, detail="Esta entrega no está asignada a tu usuario")
     if filas[0].get("recibo_enviado_en"):
         return JSONResponse({"error": "No se puede editar una entrega con recibo emitido"}, status_code=400)
     client.table("pedidos").update({"direccion_entrega": direccion}).eq("id", pedido_id).execute()
@@ -4372,8 +4423,8 @@ def admin_completar_tarea_entrega(tarea_id: str, request: Request):
 
 @app.put("/admin/tareas-entrega/{tarea_id}/direccion")
 def admin_tarea_agregar_direccion(tarea_id: str, entrada: EditarDireccionEntregaIn, request: Request):
-    if not _clientes_admin_activo(request):
-        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     direccion = entrada.direccion_entrega.strip()
     if not direccion:
         return JSONResponse({"error": "Ingresá una dirección de entrega"}, status_code=400)
@@ -4381,6 +4432,8 @@ def admin_tarea_agregar_direccion(tarea_id: str, entrada: EditarDireccionEntrega
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
     if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    if not _puede_operar_entrega(request, filas[0]):
+        raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
     client.table("tareas_entrega").update({"direccion": direccion}).eq("id", tarea_id).execute()
     return {"ok": True, "tarea_id": tarea_id, "direccion": direccion}
 
