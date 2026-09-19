@@ -80,6 +80,17 @@ def test_detectar_nuevos_excluye_usados_por_categoria():
     assert catalogo_diff.detectar_nuevos(actuales, []) == []
 
 
+def test_detectar_nuevos_excluye_cpo_aunque_la_categoria_sea_normal():
+    actuales = [
+        {"nombre": "iPhone 13 Pro Max 128GB CPO", "categoria": "Apple - iPhone"},
+        {"nombre": "iPhone 13 Pro Max 128GB", "categoria": "Apple - iPhone"},
+    ]
+
+    nuevos = catalogo_diff.detectar_nuevos(actuales, [])
+
+    assert nuevos == [{"nombre": "iPhone 13 Pro Max 128GB", "categoria": "Apple - iPhone"}]
+
+
 def test_seleccion_nunca_incluye_usados_como_nuevos():
     nuevos = [{"nombre": "IPHONE 11 USADO"}] + _productos(12, "N")
     catalogo = nuevos + _productos(5, "C")

@@ -8,8 +8,11 @@ import random
 
 
 def es_usado(producto):
+    """"Usado" es el marcador obvio, pero "CPO" (Certified Pre-Owned) es la
+    misma categoría de producto (reacondicionado) bajo otro nombre — ambos
+    quedan afuera de la campaña siempre."""
     texto = f"{producto.get('nombre', '')} {producto.get('categoria', '')}".lower()
-    return "usado" in texto
+    return "usado" in texto or "cpo" in texto
 
 
 def detectar_nuevos(productos_actuales, snapshot_anterior):
