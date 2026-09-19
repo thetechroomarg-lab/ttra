@@ -4259,6 +4259,29 @@ def pagina_producto_publico(slug_url: str):
     )
 
 
+@app.get("/mailing/baja/{cliente_id}", response_class=HTMLResponse)
+def mailing_baja(cliente_id: str):
+    client = get_client()
+    filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas:
+        return HTMLResponse(
+            f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
+            f"<title>No encontramos esa cuenta</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
+            f"<body><div class='tarjeta'><h1>No encontramos esa cuenta</h1>"
+            f"<p class='colores'>El link puede estar vencido. Escribime por WhatsApp si seguís recibiendo mails.</p>"
+            f"<a class='btn-wa' href='{WHATSAPP}'>Escribir por WhatsApp</a></div></body></html>",
+            status_code=404,
+        )
+    client.table("clientes").update({"no_mailing": True}).eq("id", cliente_id).execute()
+    return HTMLResponse(
+        f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
+        f"<title>Listo — The Tech Room Arg</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
+        f"<body><div class='tarjeta'><h1>Listo</h1>"
+        f"<p class='colores'>No vas a recibir más mails de novedades. Si te arrepentís, escribime por WhatsApp.</p>"
+        f"<a class='btn-wa' href='{WHATSAPP}'>Escribir por WhatsApp</a></div></body></html>"
+    )
+
+
 @app.get("/api/recomendados")
 def api_recomendados(request: Request, limit: int = 16):
     productos_autorizados, _modo_precio = _catalogo_autorizado(request)
