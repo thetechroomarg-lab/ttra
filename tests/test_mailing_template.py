@@ -40,7 +40,7 @@ def test_sin_cliente_id_el_link_de_baja_es_un_placeholder():
     assert 'href="#"' in html
 
 
-def test_todas_las_cards_tienen_la_misma_altura_fija():
+def test_cada_franja_de_la_card_tiene_altura_fija_e_igual_en_ambas():
     corto = _producto(nombre="A", colores=[])
     largo = _producto(
         nombre="Xiaomi Redmi Note 17 PRO MAX 5G 8GB 512GB NFC (8GB+8GB)",
@@ -49,4 +49,25 @@ def test_todas_las_cards_tienen_la_misma_altura_fija():
 
     html = template.armar_html([corto, largo], nota=None, cliente_id=None)
 
-    assert html.count('height="260"') == 4  # table + td, por cada una de las 2 cards
+    # 5 franjas (nombre, colores, usd, pesos, boton) x 2 cards = 10 alturas fijas
+    assert html.count('height="58"') == 2
+    assert html.count('height="34"') == 4  # colores + pesos, x2 cards
+    assert html.count('height="22"') == 2
+    assert html.count('height="46"') == 2
+
+
+def test_footer_incluye_los_cuatro_datos_de_contacto_como_links():
+    html = template.armar_html([_producto()], nota=None, cliente_id=None)
+
+    assert 'href="https://wa.me/543512145217"' in html
+    assert 'href="mailto:thetechroomarg@gmail.com"' in html
+    assert 'href="https://instagram.com/thetechroomarg"' in html
+    assert 'href="https://tiktok.com/@thetechroomarg"' in html
+
+
+def test_card_sin_colores_igual_reserva_la_franja_de_color():
+    sin_colores = {"nombre": "Producto sin color", "usd": 100, "pesos": 100, "transferencia": 100, "colores": []}
+
+    html = template.armar_html([sin_colores], nota=None, cliente_id=None)
+
+    assert "&nbsp;" in html
