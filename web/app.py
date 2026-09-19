@@ -3008,24 +3008,34 @@ let tareaReciboManualActiva = null;
 const modalReciboManual = document.getElementById("modal-recibo-manual");
 function renderItemsReciboManual() {{
   const lista = document.getElementById("recibo-manual-items");
-  lista.innerHTML = itemsReciboManual.map((item, indice) => `
-    <li><span>${{item.nombre}}</span>
-    <input type="number" min="0" step="0.01" value="${{item.precio_usd}}" data-indice="${{indice}}" class="recibo-manual-precio">
-    <button type="button" data-indice="${{indice}}" aria-label="Quitar ítem">×</button></li>
-  `).join("");
-  lista.querySelectorAll(".recibo-manual-precio").forEach((input) => {{
+  lista.replaceChildren(...itemsReciboManual.map((item, indice) => {{
+    const li = document.createElement("li");
+    const span = document.createElement("span");
+    span.textContent = item.nombre;
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = "0";
+    input.step = "0.01";
+    input.value = item.precio_usd;
+    input.dataset.indice = indice;
+    input.className = "recibo-manual-precio";
     input.addEventListener("input", () => {{
       itemsReciboManual[Number(input.dataset.indice)].precio_usd = Number(input.value) || 0;
       actualizarTotalReciboManual();
     }});
-  }});
-  lista.querySelectorAll("button").forEach((boton) => {{
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.dataset.indice = indice;
+    boton.setAttribute("aria-label", "Quitar ítem");
+    boton.textContent = "×";
     boton.addEventListener("click", () => {{
       itemsReciboManual.splice(Number(boton.dataset.indice), 1);
       renderItemsReciboManual();
       actualizarTotalReciboManual();
     }});
-  }});
+    li.append(span, input, boton);
+    return li;
+  }}));
 }}
 function actualizarTotalReciboManual() {{
   const total = itemsReciboManual.reduce((suma, item) => suma + (Number(item.precio_usd) || 0), 0);
@@ -3038,11 +3048,12 @@ buscadorReciboManual.addEventListener("input", async () => {{
   if (!texto) {{ sugerenciasReciboManual.hidden = true; return; }}
   const catalogo = await cargarCatalogoRecibo();
   const coincidencias = catalogo.filter((p) => (p.nombre || "").toLowerCase().includes(texto)).slice(0, 8);
-  sugerenciasReciboManual.innerHTML = coincidencias.map((p, indice) =>
-    `<li data-indice="${{indice}}" data-nombre="${{p.nombre}}" data-usd="${{p.usd ?? 0}}">${{p.nombre}} — US$ ${{p.usd ?? 0}}</li>`
-  ).join("");
-  sugerenciasReciboManual.hidden = coincidencias.length === 0;
-  sugerenciasReciboManual.querySelectorAll("li").forEach((li) => {{
+  sugerenciasReciboManual.replaceChildren(...coincidencias.map((p, indice) => {{
+    const li = document.createElement("li");
+    li.dataset.indice = indice;
+    li.dataset.nombre = p.nombre;
+    li.dataset.usd = p.usd ?? 0;
+    li.textContent = `${{p.nombre}} — US$ ${{p.usd ?? 0}}`;
     li.addEventListener("click", () => {{
       itemsReciboManual.push({{ nombre: li.dataset.nombre, precio_usd: Number(li.dataset.usd) || 0 }});
       renderItemsReciboManual();
@@ -3050,7 +3061,9 @@ buscadorReciboManual.addEventListener("input", async () => {{
       buscadorReciboManual.value = "";
       sugerenciasReciboManual.hidden = true;
     }});
-  }});
+    return li;
+  }}));
+  sugerenciasReciboManual.hidden = coincidencias.length === 0;
 }});
 document.getElementById("recibo-manual-agregar-foto").addEventListener("click", () => {{
   const selector = Object.assign(document.createElement("input"), {{ type:"file", accept:"image/*", capture:"environment" }});
