@@ -4654,6 +4654,7 @@ async def admin_tarea_recibo_manual(tarea_id: str, request: Request):
         "enviado_en": datetime.now(timezone.utc).isoformat(),
     }
     client.table("recibos_manuales").insert(registro).execute()
+    client.table("tareas_entrega").update({"completada_en": emitido_en}).eq("id", tarea_id).execute()
     return {"ok": True, "recibo_id": recibo_id}
 
 

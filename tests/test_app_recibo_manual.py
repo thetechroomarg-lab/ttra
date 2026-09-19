@@ -45,6 +45,9 @@ def test_recibo_manual_envia_mail_y_persiste(monkeypatch):
     assert registro["total_usd"] == 425.0
     assert registro["enviado_en"] is not None
 
+    tarea = fake.table("tareas_entrega").select("*").eq("id", "t1").execute().data[0]
+    assert tarea["completada_en"] is not None
+
 
 def test_recibo_manual_rechaza_items_vacios(monkeypatch):
     fake, cliente = _login_cadete(monkeypatch)
