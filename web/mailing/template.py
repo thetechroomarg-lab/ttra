@@ -26,11 +26,15 @@ def _tarjeta_producto(producto, base_url):
         if colores else ""
     )
     link = url_producto(producto.get("nombre", ""), base=base_url)
+    # height en el <table> Y en el <td> (no solo CSS) porque Outlook/algunos
+    # clientes de mail ignoran min-height por CSS pero sí respetan el
+    # atributo HTML height — así todas las cards miden lo mismo aunque el
+    # nombre o la lista de colores varíen en largo.
     return f"""
 <td style="padding:12px; vertical-align:top; width:50%;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-         style="background:{_PANEL}; border:1px solid #3a3a3a; border-radius:6px;">
-    <tr><td style="padding:16px;">
+  <table role="presentation" width="100%" height="260" cellpadding="0" cellspacing="0"
+         style="background:{_PANEL}; border:1px solid #3a3a3a; border-radius:6px; height:260px;">
+    <tr><td height="260" style="padding:16px; vertical-align:top; height:260px;">
       <p style="margin:0; font-family:{_FUENTE}; font-size:15px; font-weight:800; color:{_BLANCO};">{nombre}</p>
       {colores_html}
       <p style="margin:10px 0 0; font-family:{_FUENTE}; font-size:14px; font-weight:700; color:{_ROJO};">U$D {producto.get("usd")}</p>

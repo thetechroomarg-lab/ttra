@@ -38,3 +38,15 @@ def test_sin_cliente_id_el_link_de_baja_es_un_placeholder():
     html = template.armar_html([_producto()], nota=None, cliente_id=None)
 
     assert 'href="#"' in html
+
+
+def test_todas_las_cards_tienen_la_misma_altura_fija():
+    corto = _producto(nombre="A", colores=[])
+    largo = _producto(
+        nombre="Xiaomi Redmi Note 17 PRO MAX 5G 8GB 512GB NFC (8GB+8GB)",
+        colores=["Black", "Cloud Blush", "Green", "Purple"],
+    )
+
+    html = template.armar_html([corto, largo], nota=None, cliente_id=None)
+
+    assert html.count('height="260"') == 4  # table + td, por cada una de las 2 cards
