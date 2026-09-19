@@ -1258,15 +1258,15 @@ _ADMIN_CLIENTES_ESTILO = """
   .arrastrar-entrega:active { cursor:grabbing; }
   .pedido-hoy-detalle span { color:var(--op-text-dim); }
   .pedido-acciones { display:flex; align-items:center; gap:7px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
-  .btn-enviar-recibo, .btn-direcciones, .btn-agregar-direccion, .btn-agregar-direccion-tarea, .btn-editar-direccion, .btn-editar-direccion-tarea,
+  .btn-enviar-recibo, .btn-recibo-nota, .btn-direcciones, .btn-agregar-direccion, .btn-agregar-direccion-tarea, .btn-editar-direccion, .btn-editar-direccion-tarea,
   .btn-editar-entrega, .btn-eliminar-entrega, .btn-completar-tarea, .btn-editar-tarea, .btn-eliminar-tarea,
   .btn-derivar-entrega, .btn-quitar-derivacion { flex:0 0 auto; box-sizing:border-box; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:8px 10px; background:var(--op-surface-2); color:var(--op-text); cursor:pointer; font-weight:700; display:inline-flex; align-items:center; justify-content:center; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
   .btn-direcciones:hover, .btn-agregar-direccion:hover, .btn-agregar-direccion-tarea:hover, .btn-editar-direccion:hover, .btn-editar-direccion-tarea:hover,
   .btn-editar-entrega:hover, .btn-editar-tarea:hover, .btn-derivar-entrega:hover { background:var(--op-surface-3); }
-  .btn-enviar-recibo, .btn-completar-tarea { background:var(--op-accent); border:0; color:#fff; }
-  .btn-enviar-recibo:hover, .btn-completar-tarea:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
-  .btn-enviar-recibo:active, .btn-completar-tarea:active { background:var(--op-accent-press); transform:translateY(0); }
-  .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
+  .btn-enviar-recibo, .btn-completar-tarea, .btn-recibo-nota { background:var(--op-accent); border:0; color:#fff; }
+  .btn-enviar-recibo:hover, .btn-completar-tarea:hover, .btn-recibo-nota:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .btn-enviar-recibo:active, .btn-completar-tarea:active, .btn-recibo-nota:active { background:var(--op-accent-press); transform:translateY(0); }
+  .btn-enviar-recibo:disabled, .btn-recibo-nota:disabled { opacity:.55; cursor:not-allowed; }
   .btn-eliminar-entrega, .btn-eliminar-tarea { border-color:var(--op-accent-border); color:var(--op-danger-text); }
   .btn-eliminar-entrega:hover, .btn-eliminar-tarea:hover { background:var(--op-accent-bg); }
   .btn-quitar-derivacion { background:var(--op-success-bg); border-color:var(--op-success-border); color:var(--op-success); }
@@ -1392,7 +1392,7 @@ _ADMIN_CLIENTES_ESTILO = """
     .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-areas:"recibo direcciones" "editar eliminar"; grid-auto-rows:auto; gap:7px; justify-content:stretch; width:100%; }
     .pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }
     .pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }
-    .pedido-acciones .btn-enviar-recibo { grid-area:recibo; }
+    .pedido-acciones .btn-enviar-recibo, .pedido-acciones .btn-recibo-nota { grid-area:recibo; }
     .pedido-acciones .btn-direcciones { grid-area:direcciones; }
     .pedido-acciones .btn-editar-entrega { grid-area:editar; }
     .pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }
@@ -1515,10 +1515,10 @@ _CADETE_ESTILO = """
   .pedido-acciones > * { flex:1 1 120px; box-sizing:border-box; min-height:48px; font-size:15px; border-radius:var(--op-r-sm); font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
   .btn-direcciones, .btn-editar-entrega, .btn-derivar-vlad { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
   .btn-direcciones:hover, .btn-editar-entrega:hover, .btn-derivar-vlad:hover { background:var(--op-surface-3); }
-  .btn-enviar-recibo, .btn-completar-tarea { border:0; background:var(--op-accent); color:#fff; }
-  .btn-enviar-recibo:hover, .btn-completar-tarea:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
-  .btn-enviar-recibo:active, .btn-completar-tarea:active { background:var(--op-accent-press); transform:translateY(0); }
-  .btn-enviar-recibo:disabled { opacity:.55; cursor:not-allowed; }
+  .btn-enviar-recibo, .btn-completar-tarea, .btn-recibo-nota { border:0; background:var(--op-accent); color:#fff; }
+  .btn-enviar-recibo:hover, .btn-completar-tarea:hover, .btn-recibo-nota:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .btn-enviar-recibo:active, .btn-completar-tarea:active, .btn-recibo-nota:active { background:var(--op-accent-press); transform:translateY(0); }
+  .btn-enviar-recibo:disabled, .btn-recibo-nota:disabled { opacity:.55; cursor:not-allowed; }
   .btn-whatsapp-cliente { display:flex; align-items:center; justify-content:center; border:1px solid var(--op-success-border); background:var(--op-success-bg); color:var(--op-success); text-decoration:none; text-align:center; }
   .btn-whatsapp-cliente:hover { background:var(--op-surface-3); }
   .vacio { color:var(--op-text-dim); text-align:center; padding:48px 12px; }
@@ -2772,7 +2772,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<button class="btn-derivar-vlad" type="button" data-id="{tarea_id}">Derivar a Vlad</button>'
         )
         boton_recibo_manual = (
-            f'<button class="btn-enviar-recibo btn-recibo-nota" type="button" data-id="{tarea_id}">Recibo</button>'
+            f'<button class="btn-recibo-nota" type="button" data-id="{tarea_id}">Recibo</button>'
         )
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'

@@ -180,7 +180,7 @@ def test_admin_apila_controles_y_muestra_clientes_como_tarjetas_en_mobile(monkey
     assert "#tabla-clientes .col-check { justify-content:flex-start; text-align:left; }" in r.text
     assert ".pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }" in r.text
     assert ".pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }" in r.text
-    assert ".pedido-acciones .btn-enviar-recibo { grid-area:recibo; }" in r.text
+    assert ".pedido-acciones .btn-enviar-recibo, .pedido-acciones .btn-recibo-nota { grid-area:recibo; }" in r.text
     assert ".pedido-acciones .btn-direcciones { grid-area:direcciones; }" in r.text
     assert ".pedido-acciones .btn-editar-entrega { grid-area:editar; }" in r.text
     assert ".pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }" in r.text

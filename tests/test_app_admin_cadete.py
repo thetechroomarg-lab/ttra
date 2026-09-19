@@ -303,6 +303,22 @@ def test_admin_puede_crear_una_tarea_ya_enviada_a_alejo(monkeypatch):
     assert "Retirar equipo" in panel.text
 
 
+def test_boton_recibo_de_nota_no_lleva_la_clase_del_modal_de_pedido(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+
+    r = admin.post("/admin/tareas-entrega", json={
+        "fecha_entrega": fecha_hoy, "titulo": "Retirar equipo",
+        "cliente_nombre": "Cliente", "enviar_a_alejo": True,
+    })
+    assert r.status_code == 200
+
+    cadete = _cadete_logueado()
+    panel = cadete.get("/admin/cadete")
+    assert 'class="btn-recibo-nota"' in panel.text
+    assert 'class="btn-enviar-recibo btn-recibo-nota"' not in panel.text
+
+
 def test_admin_puede_crear_una_tarea_sin_enviarla_a_alejo(monkeypatch):
     admin, fake = _admin_logueado(monkeypatch)
 
