@@ -436,7 +436,8 @@ def test_admin_puede_editar_y_eliminar_una_entrega_pendiente(monkeypatch):
     assert fake.table("pedidos").select("*").eq("id", "editable").execute().data[0]["fecha_entrega"] == "2026-08-25"
     eliminar = c.delete("/admin/pedidos/editable")
     assert eliminar.status_code == 200
-    assert fake.table("pedidos").select("*").eq("id", "editable").execute().data == []
+    fila = fake.table("pedidos").select("*").eq("id", "editable").execute().data[0]
+    assert fila["borrado_en"] is not None
 
 
 def test_admin_puede_adelantar_un_pedido_a_hoy_pasado_el_corte(monkeypatch):
@@ -512,7 +513,8 @@ def test_admin_puede_eliminar_un_pedido_del_historial_con_recibo_enviado(monkeyp
     eliminar = c.delete("/admin/pedidos/con-recibo")
 
     assert eliminar.status_code == 200
-    assert fake.table("pedidos").select("*").eq("id", "con-recibo").execute().data == []
+    fila = fake.table("pedidos").select("*").eq("id", "con-recibo").execute().data[0]
+    assert fila["borrado_en"] is not None
 
 
 def test_historial_muestra_boton_para_eliminar_pedido_con_recibo(monkeypatch):

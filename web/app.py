@@ -423,6 +423,18 @@ def _puede_operar_entrega(request: Request, fila: dict):
     return _cadete_activo(request) and fila.get("asignado_a") == CADETE_SLUG
 
 
+def _activo(fila):
+    return not fila.get("borrado_en")
+
+
+def _quien_opera(request: Request):
+    if _clientes_admin_activo(request):
+        return "Vlad"
+    if _cadete_activo(request):
+        return CADETE_SLUG
+    return None
+
+
 def _formatear_entero_ar(valor):
     if valor is None:
         return "—"
@@ -830,7 +842,7 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas_pedido = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas_pedido:
+    if not filas_pedido or not _activo(filas_pedido[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     pedido = filas_pedido[0]
     if not _puede_operar_entrega(request, pedido):
@@ -900,7 +912,7 @@ def admin_pedido_pdf_recibo(pedido_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     pedido = filas[0]
     if not pedido.get("recibo_enviado_en"):
@@ -1591,6 +1603,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     clientes_por_id = {cliente["id"]: cliente for cliente in clientes}
     fecha_hoy = entregas.ahora_argentina().date().isoformat()
     pedidos = [] if mostrar_clientes else client.table("pedidos").select("*").execute().data
+    pedidos = [p for p in pedidos if _activo(p)]
     tareas = [] if mostrar_clientes else client.table("tareas_entrega").select("*").execute().data
     tareas_hoy = [
         tarea for tarea in tareas
@@ -2654,6 +2667,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     filas_clientes = client.table("clientes").select("*").execute().data
     clientes_por_id = {c.get("id"): c for c in filas_clientes}
     pedidos = client.table("pedidos").select("*").eq("asignado_a", CADETE_SLUG).execute().data
+    pedidos = [p for p in pedidos if _activo(p)]
     tareas = client.table("tareas_entrega").select("*").eq("asignado_a", CADETE_SLUG).execute().data
     pedidos_hoy = [
         pedido for pedido in pedidos
@@ -2997,6 +3011,7 @@ def admin_clientes_historial(cliente_id: str, request: Request):
     nombre_cliente = f"{cliente.get('nombre', '')} {cliente.get('apellido', '')}".strip()
 
     filas_pedidos = client.table("pedidos").select("*").eq("cliente_id", cliente_id).execute().data
+    filas_pedidos = [p for p in filas_pedidos if _activo(p)]
     filas_pedidos.sort(key=lambda p: p.get("fecha", ""), reverse=True)
     try:
         filas_interacciones = client.table("interacciones_cliente").select("*").eq("cliente_id", cliente_id).execute().data
@@ -3919,7 +3934,7 @@ def admin_pedido_editar_fecha(pedido_id: str, entrada: EditarFechaEntregaIn, req
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     if not _puede_operar_entrega(request, filas[0]):
         raise HTTPException(status_code=403, detail="Esta entrega no está asignada a tu usuario")
@@ -3935,9 +3950,9 @@ def admin_pedido_eliminar(pedido_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
-    pedidos.eliminar_pedido(client, pedido_id)
+    pedidos.eliminar_pedido(client, pedido_id, _quien_opera(request))
     return {"ok": True}
 
 
@@ -3950,7 +3965,7 @@ def admin_pedido_agregar_direccion(pedido_id: str, entrada: EditarDireccionEntre
         return JSONResponse({"error": "Ingresá una dirección de entrega"}, status_code=400)
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     if filas[0].get("recibo_enviado_en"):
         return JSONResponse({"error": "No se puede editar una entrega con recibo emitido"}, status_code=400)
@@ -3964,7 +3979,7 @@ def admin_pedido_derivar(pedido_id: str, entrada: DerivarEntregaIn, request: Req
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     asignado_a = CADETE_SLUG if entrada.derivado else None
     observaciones = ((entrada.observaciones or "").strip() or None) if entrada.derivado else None
@@ -3982,7 +3997,7 @@ def admin_reordenar_entregas(entrada: ReordenarEntregasIn, request: Request):
     fecha_hoy = entregas.ahora_argentina().date().isoformat()
     pedidos_hoy = [
         pedido for pedido in client.table("pedidos").select("*").execute().data
-        if pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
+        if _activo(pedido) and pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
     ]
     tareas_hoy = [
         tarea for tarea in client.table("tareas_entrega").select("*").eq("fecha_entrega", fecha_hoy).execute().data

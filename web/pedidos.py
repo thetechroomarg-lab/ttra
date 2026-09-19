@@ -192,8 +192,18 @@ def editar_fecha_entrega(client, pedido_id, fecha_entrega):
     return {**pedido, "fecha_entrega": fecha_iso}
 
 
-def eliminar_pedido(client, pedido_id):
+def eliminar_pedido(client, pedido_id, borrado_por):
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
     if not filas:
         raise ValueError("Pedido no encontrado")
-    client.table("pedidos").delete().eq("id", pedido_id).execute()
+    client.table("pedidos").update({
+        "borrado_en": datetime.now(timezone.utc).isoformat(),
+        "borrado_por": borrado_por,
+    }).eq("id", pedido_id).execute()
+
+
+def restaurar_pedido(client, pedido_id):
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas:
+        raise ValueError("Pedido no encontrado")
+    client.table("pedidos").update({"borrado_en": None, "borrado_por": None}).eq("id", pedido_id).execute()

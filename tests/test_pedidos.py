@@ -158,3 +158,31 @@ def test_guardar_pedido_serializa_decimal_a_numero_db():
     assert pedido["descuento_usd"] == 0.1
     assert pedido["detalle"][0]["usd_unitario"] == 0.1
     assert pedido["detalle"][0]["usd_subtotal"] == 0.3
+
+
+def test_eliminar_pedido_marca_borrado_en_vez_de_borrar():
+    fake = FakeSupabaseClient()
+    fake.table("pedidos").insert({
+        "id": "p1", "cliente_id": "c1", "productos": [], "fecha_entrega": "2026-09-20",
+    }).execute()
+
+    pedidos.eliminar_pedido(fake, "p1", "Vlad")
+
+    filas = fake.table("pedidos").select("*").eq("id", "p1").execute().data
+    assert len(filas) == 1
+    assert filas[0]["borrado_por"] == "Vlad"
+    assert filas[0]["borrado_en"] is not None
+
+
+def test_restaurar_pedido_limpia_borrado():
+    fake = FakeSupabaseClient()
+    fake.table("pedidos").insert({
+        "id": "p1", "cliente_id": "c1", "productos": [], "fecha_entrega": "2026-09-20",
+        "borrado_en": "2026-09-19T10:00:00+00:00", "borrado_por": "Vlad",
+    }).execute()
+
+    pedidos.restaurar_pedido(fake, "p1")
+
+    fila = fake.table("pedidos").select("*").eq("id", "p1").execute().data[0]
+    assert fila["borrado_en"] is None
+    assert fila["borrado_por"] is None
