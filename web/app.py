@@ -1527,6 +1527,23 @@ _CADETE_ESTILO = """
   .modal-series-contenido { width:100%; max-width:420px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
   .modal-series h2 { font-size:var(--op-fs-title); margin:0 0 8px; }
   .modal-series p { color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .modal-recibo-manual { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal-recibo-manual[hidden] { display:none; }
+  .modal-recibo-manual-contenido { width:min(520px,100%); max-height:90vh; overflow-y:auto; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-sizing:border-box; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-recibo-manual h2 { color:var(--op-text); font-size:var(--op-fs-title); margin:0 0 12px; }
+  .modal-recibo-manual label { display:block; color:var(--op-text-dim); font-size:var(--op-fs-small); margin:10px 0 4px; }
+  .modal-recibo-manual input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); font:inherit; }
+  .recibo-manual-buscador { position:relative; }
+  .recibo-manual-sugerencias { position:absolute; z-index:1; top:100%; left:0; right:0; margin:2px 0 0; padding:4px; list-style:none; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); max-height:200px; overflow-y:auto; }
+  .recibo-manual-sugerencias[hidden] { display:none; }
+  .recibo-manual-sugerencias li { padding:8px; border-radius:var(--op-r-sm); cursor:pointer; color:var(--op-text); font-size:var(--op-fs-small); }
+  .recibo-manual-sugerencias li:hover { background:var(--op-surface-2); }
+  .recibo-manual-items { list-style:none; margin:10px 0; padding:0; }
+  .recibo-manual-items li { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--op-border-strong); }
+  .recibo-manual-items li span { flex:1; color:var(--op-text); font-size:var(--op-fs-small); }
+  .recibo-manual-items li input { width:100px; min-height:36px; }
+  .recibo-manual-items li button { border:0; background:transparent; color:var(--op-text-dim); font-size:18px; cursor:pointer; }
+  .recibo-manual-total { color:var(--op-text); font-weight:600; margin:10px 0; }
   .series-fotos { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
   .serie-foto { position:relative; width:88px; height:88px; }
   .serie-foto img { width:100%; height:100%; object-fit:cover; border-radius:var(--op-r-sm); }
@@ -2847,6 +2864,25 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   {seccion_proximos}
 </div>
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
+<div class="modal-recibo-manual" id="modal-recibo-manual" hidden><div class="modal-recibo-manual-contenido" role="dialog" aria-modal="true" aria-labelledby="recibo-manual-titulo">
+  <h2 id="recibo-manual-titulo">Generar recibo</h2>
+  <label for="recibo-manual-nombre">Nombre</label>
+  <input id="recibo-manual-nombre" placeholder="Nombre del cliente">
+  <label for="recibo-manual-email">Email</label>
+  <input id="recibo-manual-email" type="email" placeholder="email@ejemplo.com">
+  <label for="recibo-manual-item-buscar">Agregar ítem</label>
+  <div class="recibo-manual-buscador">
+    <input id="recibo-manual-item-buscar" autocomplete="off" placeholder="Escribí para buscar en el catálogo">
+    <ul id="recibo-manual-sugerencias" class="recibo-manual-sugerencias" role="listbox" hidden></ul>
+  </div>
+  <ul id="recibo-manual-items" class="recibo-manual-items"></ul>
+  <div class="recibo-manual-total">Total: US$ <span id="recibo-manual-total">0</span></div>
+  <div class="series-acciones">
+    <button id="recibo-manual-agregar-foto" type="button">Agregar foto</button>
+    <button id="recibo-manual-cancelar" type="button">Cancelar</button>
+    <button id="recibo-manual-enviar" type="button">Enviar</button>
+  </div>
+</div></div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
   await fetch("/admin/cadete/logout", {{ method: "POST" }});
@@ -2957,6 +2993,102 @@ document.getElementById("series-enviar").addEventListener("click", async () => {
   const respuesta = await r.json().catch(() => ({{}}));
   if (!r.ok) {{ alert(respuesta.error || "No se pudo enviar el recibo."); boton.disabled = false; boton.textContent = "Enviar recibo"; modalSeries.hidden = true; return; }}
   location.reload();
+}});
+let catalogoRecibo = null;
+async function cargarCatalogoRecibo() {{
+  if (catalogoRecibo) return catalogoRecibo;
+  const r = await fetch("/api/catalogo");
+  const datos = await r.json().catch(() => ({{}}));
+  catalogoRecibo = Object.values(datos.secciones || {{}}).flat();
+  return catalogoRecibo;
+}}
+let itemsReciboManual = [];
+let fotosReciboManual = [];
+let tareaReciboManualActiva = null;
+const modalReciboManual = document.getElementById("modal-recibo-manual");
+function renderItemsReciboManual() {{
+  const lista = document.getElementById("recibo-manual-items");
+  lista.innerHTML = itemsReciboManual.map((item, indice) => `
+    <li><span>${{item.nombre}}</span>
+    <input type="number" min="0" step="0.01" value="${{item.precio_usd}}" data-indice="${{indice}}" class="recibo-manual-precio">
+    <button type="button" data-indice="${{indice}}" aria-label="Quitar ítem">×</button></li>
+  `).join("");
+  lista.querySelectorAll(".recibo-manual-precio").forEach((input) => {{
+    input.addEventListener("input", () => {{
+      itemsReciboManual[Number(input.dataset.indice)].precio_usd = Number(input.value) || 0;
+      actualizarTotalReciboManual();
+    }});
+  }});
+  lista.querySelectorAll("button").forEach((boton) => {{
+    boton.addEventListener("click", () => {{
+      itemsReciboManual.splice(Number(boton.dataset.indice), 1);
+      renderItemsReciboManual();
+      actualizarTotalReciboManual();
+    }});
+  }});
+}}
+function actualizarTotalReciboManual() {{
+  const total = itemsReciboManual.reduce((suma, item) => suma + (Number(item.precio_usd) || 0), 0);
+  document.getElementById("recibo-manual-total").textContent = total.toFixed(2);
+}}
+const buscadorReciboManual = document.getElementById("recibo-manual-item-buscar");
+const sugerenciasReciboManual = document.getElementById("recibo-manual-sugerencias");
+buscadorReciboManual.addEventListener("input", async () => {{
+  const texto = buscadorReciboManual.value.trim().toLowerCase();
+  if (!texto) {{ sugerenciasReciboManual.hidden = true; return; }}
+  const catalogo = await cargarCatalogoRecibo();
+  const coincidencias = catalogo.filter((p) => (p.nombre || "").toLowerCase().includes(texto)).slice(0, 8);
+  sugerenciasReciboManual.innerHTML = coincidencias.map((p, indice) =>
+    `<li data-indice="${{indice}}" data-nombre="${{p.nombre}}" data-usd="${{p.usd ?? 0}}">${{p.nombre}} — US$ ${{p.usd ?? 0}}</li>`
+  ).join("");
+  sugerenciasReciboManual.hidden = coincidencias.length === 0;
+  sugerenciasReciboManual.querySelectorAll("li").forEach((li) => {{
+    li.addEventListener("click", () => {{
+      itemsReciboManual.push({{ nombre: li.dataset.nombre, precio_usd: Number(li.dataset.usd) || 0 }});
+      renderItemsReciboManual();
+      actualizarTotalReciboManual();
+      buscadorReciboManual.value = "";
+      sugerenciasReciboManual.hidden = true;
+    }});
+  }});
+}});
+document.getElementById("recibo-manual-agregar-foto").addEventListener("click", () => {{
+  const selector = Object.assign(document.createElement("input"), {{ type:"file", accept:"image/*", capture:"environment" }});
+  selector.addEventListener("change", async () => {{
+    if (selector.files?.[0]) fotosReciboManual.push(await comprimirFotoSerie(selector.files[0]));
+  }});
+  selector.click();
+}});
+document.querySelectorAll(".btn-recibo-nota").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    tareaReciboManualActiva = btn.dataset.id;
+    itemsReciboManual = []; fotosReciboManual = [];
+    document.getElementById("recibo-manual-nombre").value = "";
+    document.getElementById("recibo-manual-email").value = "";
+    renderItemsReciboManual(); actualizarTotalReciboManual();
+    modalReciboManual.hidden = false;
+  }});
+}});
+document.getElementById("recibo-manual-cancelar").addEventListener("click", () => {{ modalReciboManual.hidden = true; }});
+document.getElementById("recibo-manual-enviar").addEventListener("click", async () => {{
+  if (!tareaReciboManualActiva) return;
+  const boton = document.getElementById("recibo-manual-enviar");
+  const nombre = document.getElementById("recibo-manual-nombre").value.trim();
+  const email = document.getElementById("recibo-manual-email").value.trim();
+  if (!nombre || !email) {{ alert("Completá nombre y email."); return; }}
+  if (itemsReciboManual.length === 0) {{ alert("Agregá al menos un ítem."); return; }}
+  boton.disabled = true; boton.textContent = "Enviando...";
+  const cuerpo = new FormData();
+  cuerpo.append("nombre", nombre);
+  cuerpo.append("email", email);
+  cuerpo.append("items", JSON.stringify(itemsReciboManual));
+  fotosReciboManual.forEach((foto) => cuerpo.append("fotos", foto));
+  const r = await fetch(`/admin/tareas-entrega/${{tareaReciboManualActiva}}/recibo-manual`, {{ method:"POST", body:cuerpo }});
+  const respuesta = await r.json().catch(() => ({{}}));
+  boton.disabled = false; boton.textContent = "Enviar";
+  if (!r.ok) {{ alert(respuesta.error || "No se pudo enviar el recibo."); return; }}
+  modalReciboManual.hidden = true;
+  alert(`Recibo ${{respuesta.recibo_id}} enviado.`);
 }});
 let apiPlacesCadete;
 async function cargarApiPlacesCadete() {{
