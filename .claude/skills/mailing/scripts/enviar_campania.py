@@ -8,7 +8,6 @@ Uso:
 """
 import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parents[4]
@@ -18,15 +17,16 @@ from dotenv import load_dotenv
 load_dotenv(PROJECT_DIR / "web" / ".env")
 
 from web.mailing import destinatarios, estado, template
-from web.email_util import EnvioEmailError, enviar_email
+from web.email_util import enviar_email
 from web.supabase_client import get_client
 
-DATA_DIR = PROJECT_DIR / "web" / "mailing" / "data"
 ASUNTO = "Novedades de la semana en The Tech Room Arg"
 
 
 def main():
-    borrador = estado.leer_borrador(DATA_DIR)
+    client = get_client()
+
+    borrador = estado.leer_borrador(client)
     if borrador is None:
         print("ERROR: no hay ningún borrador armado. Corré armar_borrador.py primero.", file=sys.stderr)
         sys.exit(1)
@@ -34,7 +34,6 @@ def main():
         print("ERROR: el último borrador ya fue enviado. Esperá al próximo borrador semanal.", file=sys.stderr)
         sys.exit(1)
 
-    client = get_client()
     elegibles = destinatarios.clientes_elegibles(client)
     productos = borrador["productos"]
     nota = borrador.get("nota")
@@ -50,11 +49,8 @@ def main():
             print(f"FALLÓ envío a {cliente['email']}: {e}", file=sys.stderr)
         time.sleep(0.4)
 
-    estado.marcar_borrador_usado(DATA_DIR)
-    estado.registrar_envio(
-        DATA_DIR,
-        f"{datetime.now(timezone.utc).isoformat()} | productos={len(productos)} | ok={ok} | fallidos={fallidos}",
-    )
+    estado.marcar_borrador_usado(client)
+    estado.registrar_envio(client, productos=len(productos), ok=ok, fallidos=fallidos)
 
     print(f"ENVIADA: {ok}/{ok + fallidos} destinatarios, {fallidos} fallidos.")
 

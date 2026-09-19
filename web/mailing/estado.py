@@ -1,62 +1,73 @@
-"""Persistencia en disco del estado de las campañas de mailing (snapshot del
-catálogo, nota pendiente, borrador actual, log de envíos). Vive fuera de
-Supabase: son archivos JSON simples, sin necesidad de una tabla nueva."""
-import json
+"""Persistencia del estado de las campañas de mailing (snapshot del catálogo,
+nota pendiente, borrador actual, log de envíos) en Supabase — no en disco.
+Así tanto un script corrido a mano en la máquina local como la rutina
+programada corriendo en la nube leen y escriben el mismo estado."""
 from datetime import datetime, timezone
 
-
-def _leer(path):
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+_TABLA_ESTADO = "mailing_estado"
+_TABLA_ENVIOS = "mailing_envios"
 
 
-def _escribir(path, datos):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
+def _leer_clave(client, clave):
+    filas = client.table(_TABLA_ESTADO).select("*").eq("clave", clave).execute().data
+    return filas[0]["valor"] if filas else None
 
 
-def leer_snapshot(data_dir):
-    return _leer(data_dir / "snapshot_catalogo.json")
+def _escribir_clave(client, clave, valor):
+    existente = client.table(_TABLA_ESTADO).select("*").eq("clave", clave).execute().data
+    fila = {
+        "clave": clave,
+        "valor": valor,
+        "actualizado_en": datetime.now(timezone.utc).isoformat(),
+    }
+    if existente:
+        client.table(_TABLA_ESTADO).update(fila).eq("clave", clave).execute()
+    else:
+        client.table(_TABLA_ESTADO).insert(fila).execute()
 
 
-def guardar_snapshot(data_dir, productos):
-    _escribir(data_dir / "snapshot_catalogo.json", productos)
+def leer_snapshot(client):
+    return _leer_clave(client, "snapshot")
 
 
-def leer_nota_pendiente(data_dir):
-    datos = _leer(data_dir / "nota_pendiente.json")
+def guardar_snapshot(client, productos):
+    _escribir_clave(client, "snapshot", productos)
+
+
+def leer_nota_pendiente(client):
+    datos = _leer_clave(client, "nota_pendiente")
     return (datos or {}).get("texto")
 
 
-def guardar_nota_pendiente(data_dir, texto):
-    _escribir(data_dir / "nota_pendiente.json", {
+def guardar_nota_pendiente(client, texto):
+    _escribir_clave(client, "nota_pendiente", {
         "texto": texto,
         "creada_en": datetime.now(timezone.utc).isoformat(),
     })
 
 
-def limpiar_nota_pendiente(data_dir):
-    _escribir(data_dir / "nota_pendiente.json", {"texto": None, "creada_en": None})
+def limpiar_nota_pendiente(client):
+    _escribir_clave(client, "nota_pendiente", {"texto": None, "creada_en": None})
 
 
-def leer_borrador(data_dir):
-    return _leer(data_dir / "borrador_actual.json")
+def leer_borrador(client):
+    return _leer_clave(client, "borrador_actual")
 
 
-def guardar_borrador(data_dir, borrador):
-    _escribir(data_dir / "borrador_actual.json", borrador)
+def guardar_borrador(client, borrador):
+    _escribir_clave(client, "borrador_actual", borrador)
 
 
-def marcar_borrador_usado(data_dir):
-    borrador = leer_borrador(data_dir)
+def marcar_borrador_usado(client):
+    borrador = leer_borrador(client)
     if borrador is not None:
         borrador["usado"] = True
-        guardar_borrador(data_dir, borrador)
+        guardar_borrador(client, borrador)
 
 
-def registrar_envio(data_dir, linea):
-    path = data_dir / "enviados.log"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as f:
-        f.write(linea.rstrip("\n") + "\n")
+def registrar_envio(client, productos, ok, fallidos):
+    client.table(_TABLA_ENVIOS).insert({
+        "productos": productos,
+        "ok": ok,
+        "fallidos": fallidos,
+    }).execute()

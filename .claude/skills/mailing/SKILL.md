@@ -8,6 +8,15 @@ description: Arma y envía la campaña semanal de mailing de novedades a los cli
 Escribe DIRECTO en la base de producción (Supabase) al enviar — no hay
 ambiente de prueba separado (ver `web/supabase_client.py`).
 
+Todo el estado (snapshot del catálogo, nota pendiente, borrador actual) vive
+en las tablas `mailing_estado`/`mailing_envios` de Supabase — no en archivos
+locales. El catálogo se lee del endpoint público `GET /api/productos`, no de
+`web/productos.json`. Por eso estos tres scripts corren igual desde esta
+máquina o desde la rutina programada en la nube (skill `schedule`): les hace
+falta `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` y `RESEND_API_KEY` como
+variables de entorno — localmente salen de `web/.env`, en la nube hay que
+cargarlas a mano en la sección Environments de claude.ai.
+
 ## Dejar una nota/promo para la próxima campaña
 
 ```bash
@@ -27,14 +36,14 @@ cd "/Users/toraba/TTRA Project"
 ```
 
 El script:
-- Compara `web/productos.json` contra el último snapshot y detecta productos nuevos.
+- Descarga el catálogo desde `GET /api/productos` y lo compara contra el último snapshot guardado en `mailing_estado` para detectar productos nuevos.
 - Arma la selección final de la campaña: **siempre exactamente 10 productos, sin excepción, 5 por columna** — prioriza los nuevos de la semana y completa al azar con el resto del catálogo si hay menos de 10 nuevos (`web/mailing/catalogo_diff.seleccionar_para_campania`).
 - Lee la nota pendiente (si hay) y la consume — queda limpia después de esta corrida, se haya aprobado el borrador o no.
-- Si arma un borrador, imprime `BORRADOR_LISTO` seguido de un resumen (cuántos de los 10 son realmente nuevos vs. relleno, si incluye nota, cantidad de destinatarios), y guarda el HTML completo en `web/mailing/data/borrador_actual.json` (campo `html_preview`).
+- Si arma un borrador, imprime `BORRADOR_LISTO` seguido de un resumen (cuántos de los 10 son realmente nuevos vs. relleno, si incluye nota, cantidad de destinatarios), y guarda el HTML completo en `mailing_estado` (clave `borrador_actual`, campo `valor.html_preview`).
 
 Si imprimió `BORRADOR_LISTO`:
 
-1. Leé `web/mailing/data/borrador_actual.json`, tomá el campo `html_preview`.
+1. Leé el borrador de Supabase (`select valor from mailing_estado where clave = 'borrador_actual'`, o correlo desde Python con `web.mailing.estado.leer_borrador(client)`), tomá el campo `html_preview`.
 2. Escribilo a un archivo `.html` y publicalo con tu herramienta Artifact (favicon 📧, título "Campaña de novedades").
 3. Mandale una notificación push a Vladimir con la herramienta PushNotification: cantidad de productos nuevos, si incluye nota, cantidad de destinatarios, y que revise el link del artifact.
 4. No envíes nada vos solo — el envío real requiere que Vladimir lo pida explícitamente después de revisar el artifact.

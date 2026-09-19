@@ -36,6 +36,25 @@ alter table clientes add column if not exists condiciones_mayorista_aceptadas_en
 -- footer del mail) queda excluido de la audiencia de próximas campañas.
 alter table clientes add column if not exists no_mailing boolean not null default false;
 
+-- Estado de la campaña de mailing de novedades (snapshot del catálogo, nota
+-- pendiente, borrador actual). Una sola fila por `clave` — no es historial,
+-- es el "último valor conocido" de cada cosa, para que tanto un script local
+-- como la rutina en la nube lean/escriban el mismo estado.
+create table if not exists mailing_estado (
+  clave text primary key,
+  valor jsonb not null,
+  actualizado_en timestamptz not null default now()
+);
+
+-- Un registro por campaña efectivamente enviada (no por borrador armado).
+create table if not exists mailing_envios (
+  id uuid primary key default gen_random_uuid(),
+  productos int not null,
+  ok int not null,
+  fallidos int not null,
+  enviado_en timestamptz not null default now()
+);
+
 -- Domicilios guardados por cliente para el checkout (hasta 5, uno
 -- predeterminado). La columna clientes.direccion se mantiene aparte: la
 -- sigue usando el panel admin para el "Vamos" de contactos-proveedor.

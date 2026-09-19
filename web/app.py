@@ -4752,6 +4752,14 @@ def mailing_baja_confirmar(cliente_id: str):
     )
 
 
+@app.get("/api/productos")
+def api_productos():
+    """Catálogo público de solo lectura — mismos datos que ya se muestran en
+    /p/<slug>, expuestos como feed para consumidores externos (ej. la rutina
+    de mailing corriendo en un checkout que no tiene productos.json local)."""
+    return _cargar_productos()
+
+
 @app.get("/api/recomendados")
 def api_recomendados(request: Request, limit: int = 16):
     productos_autorizados, _modo_precio = _catalogo_autorizado(request)
