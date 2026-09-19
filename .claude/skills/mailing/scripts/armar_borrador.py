@@ -42,11 +42,10 @@ def main():
         )
         sys.exit(1)
 
-    snapshot_anterior = estado.leer_snapshot(DATA_DIR)
-    if snapshot_anterior is None:
-        estado.guardar_snapshot(DATA_DIR, productos_actuales)
-        print("PRIMERA_CORRIDA: snapshot inicializado, no hay borrador para armar todavía.")
-        return
+    # En la primera corrida no hay snapshot previo: se trata como catálogo
+    # vacío, así que "nuevos" queda siendo todo el catálogo — no cambia el
+    # resultado, porque seleccionar_para_campania igual recorta a 10 al azar.
+    snapshot_anterior = estado.leer_snapshot(DATA_DIR) or []
 
     nuevos = catalogo_diff.detectar_nuevos(productos_actuales, snapshot_anterior)
     nota = estado.leer_nota_pendiente(DATA_DIR)

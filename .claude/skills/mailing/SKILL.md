@@ -30,7 +30,6 @@ El script:
 - Compara `web/productos.json` contra el último snapshot y detecta productos nuevos.
 - Arma la selección final de la campaña: **siempre exactamente 10 productos, sin excepción, 5 por columna** — prioriza los nuevos de la semana y completa al azar con el resto del catálogo si hay menos de 10 nuevos (`web/mailing/catalogo_diff.seleccionar_para_campania`).
 - Lee la nota pendiente (si hay) y la consume — queda limpia después de esta corrida, se haya aprobado el borrador o no.
-- Si imprime `PRIMERA_CORRIDA`, no hay nada para mostrar todavía (recién se inicializó el snapshot) — no generes notificación ni artifact esa semana.
 - Si arma un borrador, imprime `BORRADOR_LISTO` seguido de un resumen (cuántos de los 10 son realmente nuevos vs. relleno, si incluye nota, cantidad de destinatarios), y guarda el HTML completo en `web/mailing/data/borrador_actual.json` (campo `html_preview`).
 
 Si imprimió `BORRADOR_LISTO`:
@@ -60,6 +59,5 @@ Contale a Vladimir el resultado final en el chat.
 ## Gotchas
 
 - El envío real (`enviar_campania.py`) NUNCA se corre automáticamente ni sin que Vladimir lo haya pedido explícitamente para ese borrador puntual.
-- Si `armar_borrador.py` imprime `PRIMERA_CORRIDA`, no generes notificación ni artifact esa semana.
 - Nunca inventar un descuento, promo o condición comercial — ni real ni de ejemplo. La nota siempre sale textual de `/mailing nota`.
 - La columna `clientes.no_mailing` tiene que existir en Supabase antes de correr cualquiera de estos scripts contra producción (`supabase/schema.sql`, corrida a mano en el SQL Editor).
