@@ -423,6 +423,19 @@ def _puede_operar_entrega(request: Request, fila: dict):
     return _cadete_activo(request) and fila.get("asignado_a") == CADETE_SLUG
 
 
+def _json_para_script(valor):
+    # json.dumps no escapa "<", ">" ni "&", así que un dato de usuario (ej. un
+    # nombre de cliente) que contenga "</script>" cerraría el bloque e
+    # inyectaría HTML/JS arbitrario. Usar esto en vez de json.dumps() para
+    # cualquier valor con datos de usuario embebido dentro de un <script>.
+    return (
+        json.dumps(valor, ensure_ascii=False)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
+
+
 def _activo(fila):
     return not fila.get("borrado_en")
 
@@ -724,10 +737,43 @@ def _html_mailing_para_cliente(mensaje_html: str, cliente):
     return f"<p>Hola {primer_nombre},</p>{contenido}<p>Saludos,<br>Vlad.</p>"
 
 
+_LOGIN_MAX_INTENTOS = 8
+_LOGIN_VENTANA_SEG = 15 * 60
+_intentos_login_fallidos: dict[tuple[str, str], list[float]] = {}
+
+
+def _ip_cliente(request: Request):
+    adelante = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    if adelante:
+        return adelante
+    return request.client.host if request.client else "desconocido"
+
+
+def _login_bloqueado(request: Request, ruta: str):
+    clave = (_ip_cliente(request), ruta)
+    ahora = time.time()
+    intentos = [t for t in _intentos_login_fallidos.get(clave, []) if ahora - t < _LOGIN_VENTANA_SEG]
+    _intentos_login_fallidos[clave] = intentos
+    return len(intentos) >= _LOGIN_MAX_INTENTOS
+
+
+def _registrar_login_fallido(request: Request, ruta: str):
+    clave = (_ip_cliente(request), ruta)
+    _intentos_login_fallidos.setdefault(clave, []).append(time.time())
+
+
+def _limpiar_login_fallido(request: Request, ruta: str):
+    _intentos_login_fallidos.pop((_ip_cliente(request), ruta), None)
+
+
 @app.post("/admin/clientes/login")
 def admin_clientes_login(entrada: ClientesLoginIn, request: Request):
+    if _login_bloqueado(request, "clientes"):
+        return JSONResponse({"error": "Demasiados intentos. Probá de nuevo en unos minutos."}, status_code=429)
     if not secrets.compare_digest(entrada.password, ADMIN_CLIENTES_PASSWORD):
+        _registrar_login_fallido(request, "clientes")
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
+    _limpiar_login_fallido(request, "clientes")
     request.session["clientes_admin_ok"] = True
     return {"ok": True}
 
@@ -740,8 +786,12 @@ def admin_clientes_logout(request: Request):
 
 @app.post("/admin/cadete/login")
 def admin_cadete_login(entrada: ClientesLoginIn, request: Request):
+    if _login_bloqueado(request, "cadete"):
+        return JSONResponse({"error": "Demasiados intentos. Probá de nuevo en unos minutos."}, status_code=429)
     if not secrets.compare_digest(entrada.password, CADETE_PASSWORD):
+        _registrar_login_fallido(request, "cadete")
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
+    _limpiar_login_fallido(request, "cadete")
     request.session["cadete_ok"] = True
     return {"ok": True}
 
@@ -1865,12 +1915,11 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     else:
         pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'
 
-    clientes_tarea_json = json.dumps(
+    clientes_tarea_json = _json_para_script(
         [
             {"id": cliente["id"], "nombre": cliente["nombre"], "direccion": cliente.get("direccion") or ""}
             for cliente in sorted(clientes, key=lambda cliente: cliente["nombre"].casefold())
-        ],
-        ensure_ascii=False,
+        ]
     )
     pendientes_hoy_seccion_html = (
         f'<section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2>'
@@ -3383,9 +3432,9 @@ def admin_clientes_historial(cliente_id: str, request: Request):
 <script>
 const btnMailing = document.getElementById("btn-preparar-mailing");
 const checksMailing = [...document.querySelectorAll(".chk-mailing")];
-const emailCliente = {json.dumps(cliente.get("email", "") or "")};
-const nombreCliente = {json.dumps(nombre_cliente or "cliente")};
-const clienteId = {json.dumps(cliente.get("id", ""))};
+const emailCliente = {_json_para_script(cliente.get("email", "") or "")};
+const nombreCliente = {_json_para_script(nombre_cliente or "cliente")};
+const clienteId = {_json_para_script(cliente.get("id", ""))};
 
 function filasSeleccionadas() {{
   return checksMailing
