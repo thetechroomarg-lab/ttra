@@ -40,6 +40,8 @@ Si imprimió `BORRADOR_LISTO`:
 3. Mandale una notificación push a Vladimir con la herramienta PushNotification: cantidad de productos nuevos, si incluye nota, cantidad de destinatarios, y que revise el link del artifact.
 4. No envíes nada vos solo — el envío real requiere que Vladimir lo pida explícitamente después de revisar el artifact.
 
+La cantidad de destinatarios y los datos de producto quedan congelados al momento de armar el borrador. Si Vladimir aprueba la campaña más de uno o dos días después, avisale que convendría un chequeo rápido de precios antes de mandarla, por si quedaron desactualizados.
+
 ## Enviar la campaña aprobada
 
 Cuando Vladimir confirma (dice "dale, mandala" o similar) después de haber visto el artifact:

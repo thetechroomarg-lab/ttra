@@ -27,9 +27,19 @@ DATA_DIR = PROJECT_DIR / "web" / "mailing" / "data"
 
 
 def main():
-    productos_actuales = json.loads(
-        (PROJECT_DIR / "web" / "productos.json").read_text(encoding="utf-8")
-    )
+    try:
+        productos_actuales = json.loads(
+            (PROJECT_DIR / "web" / "productos.json").read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError):
+        productos_actuales = None
+
+    if not productos_actuales:
+        print(
+            "ERROR: productos.json no accesible o vacío, no se puede armar el borrador.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     snapshot_anterior = estado.leer_snapshot(DATA_DIR)
     if snapshot_anterior is None:

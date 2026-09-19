@@ -4259,19 +4259,39 @@ def pagina_producto_publico(slug_url: str):
     )
 
 
+def _mailing_baja_cliente_no_encontrado():
+    return HTMLResponse(
+        f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
+        f"<title>No encontramos esa cuenta</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
+        f"<body><div class='tarjeta'><h1>No encontramos esa cuenta</h1>"
+        f"<p class='colores'>El link puede estar vencido. Escribime por WhatsApp si seguís recibiendo mails.</p>"
+        f"<a class='btn-wa' href='{WHATSAPP}'>Escribir por WhatsApp</a></div></body></html>",
+        status_code=404,
+    )
+
+
 @app.get("/mailing/baja/{cliente_id}", response_class=HTMLResponse)
 def mailing_baja(cliente_id: str):
     client = get_client()
     filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
     if not filas:
-        return HTMLResponse(
-            f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
-            f"<title>No encontramos esa cuenta</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
-            f"<body><div class='tarjeta'><h1>No encontramos esa cuenta</h1>"
-            f"<p class='colores'>El link puede estar vencido. Escribime por WhatsApp si seguís recibiendo mails.</p>"
-            f"<a class='btn-wa' href='{WHATSAPP}'>Escribir por WhatsApp</a></div></body></html>",
-            status_code=404,
-        )
+        return _mailing_baja_cliente_no_encontrado()
+    return HTMLResponse(
+        f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
+        f"<title>Confirmar baja — The Tech Room Arg</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
+        f"<body><div class='tarjeta'><h1>¿Querés dejar de recibir novedades por mail?</h1>"
+        f"<p class='colores'>Si confirmás, no vas a recibir más mails de novedades.</p>"
+        f"<a class='btn-wa' href='/mailing/baja/{cliente_id}/confirmar'>Sí, dejar de recibir novedades</a>"
+        f"<a class='link-catalogo' href='{WHATSAPP}'>Cancelar</a></div></body></html>"
+    )
+
+
+@app.get("/mailing/baja/{cliente_id}/confirmar", response_class=HTMLResponse)
+def mailing_baja_confirmar(cliente_id: str):
+    client = get_client()
+    filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas:
+        return _mailing_baja_cliente_no_encontrado()
     client.table("clientes").update({"no_mailing": True}).eq("id", cliente_id).execute()
     return HTMLResponse(
         f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
