@@ -435,6 +435,28 @@ def _quien_opera(request: Request):
     return None
 
 
+def _purgar_y_listar_papelera(client, asignado_a=None):
+    limite = datetime.now(timezone.utc) - timedelta(hours=48)
+
+    def _procesar(tabla):
+        filas = client.table(tabla).select("*").execute().data
+        vivas, vencidas = [], []
+        for fila in filas:
+            borrado_en = fila.get("borrado_en")
+            if not borrado_en:
+                continue
+            momento = datetime.fromisoformat(borrado_en)
+            (vencidas if momento < limite else vivas).append(fila)
+        for fila in vencidas:
+            client.table(tabla).delete().eq("id", fila["id"]).execute()
+        if asignado_a is not None:
+            vivas = [f for f in vivas if f.get("asignado_a") == asignado_a or f.get("borrado_por") == asignado_a]
+        vivas.sort(key=lambda f: f.get("borrado_en", ""), reverse=True)
+        return vivas
+
+    return _procesar("pedidos"), _procesar("tareas_entrega")
+
+
 def _formatear_entero_ar(valor):
     if valor is None:
         return "—"
@@ -3944,6 +3966,76 @@ def admin_pedido_editar_fecha(pedido_id: str, entrada: EditarFechaEntregaIn, req
         return JSONResponse({"error": "No se puede editar una entrega con recibo emitido"}, status_code=400)
     pedido = pedidos.editar_fecha_entrega(client, pedido_id, entrada.fecha_entrega)
     return {"ok": True, "pedido_id": pedido["id"], "fecha_entrega": pedido["fecha_entrega"]}
+
+
+def _tarjeta_papelera(tipo, fila, clientes_por_id):
+    item_id = html.escape(fila.get("id", ""))
+    if tipo == "pedido":
+        cliente = clientes_por_id.get(fila.get("cliente_id"), {})
+        titulo = f"Pedido de {html.escape(cliente.get('nombre', '') or 'cliente')}"
+    else:
+        titulo = f"Nota: {html.escape(fila.get('titulo') or '')}"
+    borrado_por = html.escape(fila.get("borrado_por") or "—")
+    borrado_en = html.escape(fila.get("borrado_en") or "")
+    return (
+        f'<div class="papelera-item"><div class="papelera-item-detalle">'
+        f'<strong>{titulo}</strong><br><span>Borrado por {borrado_por} · {borrado_en}</span></div>'
+        f'<div class="papelera-item-acciones">'
+        f'<button class="btn-restaurar-papelera" type="button" data-tipo="{tipo}" data-id="{item_id}">Restaurar</button>'
+        f'</div></div>'
+    )
+
+
+def _pagina_papelera(request: Request, titulo_pagina: str, pedidos_borrados, tareas_borradas, clientes_por_id, url_salir):
+    items_html = "".join(
+        [_tarjeta_papelera("pedido", p, clientes_por_id) for p in pedidos_borrados]
+        + [_tarjeta_papelera("tarea", t, clientes_por_id) for t in tareas_borradas]
+    ) or '<p class="papelera-vacia">No hay elementos borrados.</p>'
+    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>{titulo_pagina}</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}
+<style>
+  .papelera-item {{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); margin-bottom:8px; background:var(--op-surface); }}
+  .papelera-item-detalle span {{ color:var(--op-text-dim); font-size:var(--op-fs-small); }}
+  .papelera-vacia {{ color:var(--op-text-dim); padding:20px 0; }}
+</style>
+</head><body>
+<div class="panel">
+  <div class="panel-header"><h1>{titulo_pagina}</h1>
+    <div class="panel-header-acciones"><a class="btn-clientes" href="{url_salir}">Volver</a></div>
+  </div>
+  <section>{items_html}</section>
+</div>
+<script>
+document.querySelectorAll(".btn-restaurar-papelera").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    btn.disabled = true;
+    const r = await fetch(`/admin/papelera/${{btn.dataset.tipo}}/${{btn.dataset.id}}/restaurar`, {{ method: "POST" }});
+    if (!r.ok) {{ alert("No se pudo restaurar."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+</script>
+</body></html>"""
+
+
+@app.get("/admin/papelera", response_class=HTMLResponse)
+def admin_papelera(request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    pedidos_borrados, tareas_borradas = _purgar_y_listar_papelera(client)
+    clientes_por_id = {c.get("id"): c for c in client.table("clientes").select("*").execute().data}
+    return _pagina_papelera(request, "Borrados", pedidos_borrados, tareas_borradas, clientes_por_id, "/admin/clientes")
+
+
+@app.get("/admin/cadete/papelera", response_class=HTMLResponse)
+def admin_cadete_papelera(request: Request):
+    if not _cadete_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    pedidos_borrados, tareas_borradas = _purgar_y_listar_papelera(client, asignado_a=CADETE_SLUG)
+    clientes_por_id = {c.get("id"): c for c in client.table("clientes").select("*").execute().data}
+    return _pagina_papelera(request, "Borrados", pedidos_borrados, tareas_borradas, clientes_por_id, "/admin/cadete")
 
 
 @app.delete("/admin/pedidos/{pedido_id}")
