@@ -62,6 +62,31 @@ def test_cadete_papelera_solo_ve_lo_propio(monkeypatch):
     assert "ajeno" not in respuesta.text
 
 
+def test_cadete_papelera_usa_manifest_y_estilo_propios(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "CADETE_PASSWORD", "clave-cadete")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/cadete/login", json={"password": "clave-cadete"})
+
+    respuesta = cliente.get("/admin/cadete/papelera")
+    assert respuesta.status_code == 200
+    assert "admin-cadete.webmanifest" in respuesta.text
+    assert "admin-clientes.webmanifest" not in respuesta.text
+
+
+def test_admin_papelera_usa_manifest_y_estilo_admin(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
+
+    respuesta = cliente.get("/admin/papelera")
+    assert respuesta.status_code == 200
+    assert "admin-cadete.webmanifest" not in respuesta.text
+
+
 def test_papelera_requiere_sesion(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)

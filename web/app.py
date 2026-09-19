@@ -1478,6 +1478,9 @@ _CADETE_ESTILO = """
   .panel-header h1 { font-size:var(--op-fs-display); margin:0; }
   #salir { padding:12px 16px; min-height:44px; border-radius:var(--op-r-sm); border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease); }
   #salir:hover { background:var(--op-surface-3); }
+  .panel-header-acciones { display:flex; align-items:center; gap:10px; }
+  .btn-clientes { min-height:44px; display:inline-flex; align-items:center; border:1px solid var(--op-border-strong); background:var(--op-surface-2); border-radius:var(--op-r-sm); color:var(--op-text); font-size:14px; font-weight:700; padding:8px 14px; text-decoration:none; transition:background-color var(--op-dur) var(--op-ease); }
+  .btn-clientes:hover { background:var(--op-surface-3); }
   .selector-fecha-cadete { display:flex; align-items:center; gap:8px; margin:0 0 16px; flex-wrap:wrap; }
   .selector-fecha-cadete label { color:var(--op-text-dim); font-size:var(--op-fs-small); font-weight:700; }
   .selector-fecha-cadete input { min-height:44px; box-sizing:border-box; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); padding:0 10px; font:inherit; color-scheme:dark; }
@@ -4134,13 +4137,15 @@ def _tarjeta_papelera(tipo, fila, clientes_por_id):
     )
 
 
-def _pagina_papelera(request: Request, titulo_pagina: str, pedidos_borrados, tareas_borradas, clientes_por_id, url_salir):
+def _pagina_papelera(request: Request, titulo_pagina: str, pedidos_borrados, tareas_borradas, clientes_por_id, url_salir, pwa_head=None, estilo=None):
+    pwa_head = _ADMIN_CLIENTES_PWA_HEAD if pwa_head is None else pwa_head
+    estilo = _ADMIN_CLIENTES_ESTILO if estilo is None else estilo
     items_html = "".join(
         [_tarjeta_papelera("pedido", p, clientes_por_id) for p in pedidos_borrados]
         + [_tarjeta_papelera("tarea", t, clientes_por_id) for t in tareas_borradas]
     ) or '<p class="papelera-vacia">No hay elementos borrados.</p>'
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>{titulo_pagina}</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}
+<title>{titulo_pagina}</title>{pwa_head}{estilo}
 <style>
   .papelera-item {{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); margin-bottom:8px; background:var(--op-surface); }}
   .papelera-item-detalle span {{ color:var(--op-text-dim); font-size:var(--op-fs-small); }}
@@ -4183,7 +4188,10 @@ def admin_cadete_papelera(request: Request):
     client = get_client()
     pedidos_borrados, tareas_borradas = _purgar_y_listar_papelera(client, asignado_a=CADETE_SLUG)
     clientes_por_id = {c.get("id"): c for c in client.table("clientes").select("*").execute().data}
-    return _pagina_papelera(request, "Borrados", pedidos_borrados, tareas_borradas, clientes_por_id, "/admin/cadete")
+    return _pagina_papelera(
+        request, "Borrados", pedidos_borrados, tareas_borradas, clientes_por_id, "/admin/cadete",
+        pwa_head=_CADETE_PWA_HEAD, estilo=_CADETE_ESTILO,
+    )
 
 
 @app.post("/admin/papelera/{tipo}/{item_id}/restaurar")
