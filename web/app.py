@@ -4038,6 +4038,29 @@ def admin_cadete_papelera(request: Request):
     return _pagina_papelera(request, "Borrados", pedidos_borrados, tareas_borradas, clientes_por_id, "/admin/cadete")
 
 
+@app.post("/admin/papelera/{tipo}/{item_id}/restaurar")
+def admin_papelera_restaurar(tipo: Literal["pedido", "tarea"], item_id: str, request: Request):
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    tabla = "pedidos" if tipo == "pedido" else "tareas_entrega"
+    filas = client.table(tabla).select("*").eq("id", item_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="No encontrado")
+    fila = filas[0]
+    if not fila.get("borrado_en"):
+        raise HTTPException(status_code=404, detail="No está borrado")
+    if not _clientes_admin_activo(request):
+        propio = fila.get("asignado_a") == CADETE_SLUG or fila.get("borrado_por") == CADETE_SLUG
+        if not propio:
+            raise HTTPException(status_code=403, detail="No podés restaurar este elemento")
+    if tipo == "pedido":
+        pedidos.restaurar_pedido(client, item_id)
+    else:
+        client.table("tareas_entrega").update({"borrado_en": None, "borrado_por": None}).eq("id", item_id).execute()
+    return {"ok": True, "tipo": tipo, "id": item_id}
+
+
 @app.delete("/admin/pedidos/{pedido_id}")
 def admin_pedido_eliminar(pedido_id: str, request: Request):
     if not _clientes_admin_activo(request):
