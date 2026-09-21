@@ -91,7 +91,8 @@ def _hero_html(hero):
         return ""
     url = str(hero.get("url", "")).strip()
     parsed = urlparse(url)
-    if parsed.scheme != "https" or not parsed.netloc:
+    preview_local = parsed.scheme == "data" and url.startswith("data:image/")
+    if (parsed.scheme != "https" or not parsed.netloc) and not preview_local:
         raise ValueError("La URL del hero debe usar HTTPS")
     try:
         width = int(hero.get("width", 0))

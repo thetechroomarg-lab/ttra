@@ -98,3 +98,11 @@ def test_template_sin_hero_sigue_siendo_valido():
     html = template.armar_html([producto])
     assert "<img" not in html
     assert producto["nombre"] in html
+
+
+def test_template_acepta_data_uri_de_imagen_para_preview_local():
+    html = template.armar_html([], hero={
+        "url": "data:image/png;base64,ZmFrZQ==", "alt": "Arte local",
+        "width": 1200, "height": 600,
+    })
+    assert 'src="data:image/png;base64,ZmFrZQ=="' in html
