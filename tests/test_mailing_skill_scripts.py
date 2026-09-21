@@ -10,8 +10,10 @@ SCRIPTS = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "mailing"
 sys.path.insert(0, str(SCRIPTS))
 
 import aprobar
+import catalogo
 import enviar
 import preparar
+import resumen
 
 
 VERSION_ID = "2c1c82e4-73e5-46d2-a77e-921c21ef82d3"
@@ -36,11 +38,20 @@ class FakeApi:
     def post(self, path, **kwargs):
         self.calls.append(Llamada(path))
         if path == "/admin/mailing/campanias":
-            return {"id": VERSION_ID, "campaign_id": VERSION_ID, "estado": "previsualizado"}
+            return {
+                "id": VERSION_ID, "campaign_id": VERSION_ID, "estado": "previsualizado",
+                "manifest": {"html": "<html>preview</html>", "productos": [{"nombre": "IPHONE 16"}]},
+            }
         return {"id": VERSION_ID, "estado": "aprobado"}
 
     def get(self, path):
         self.calls.append(Llamada(path))
+        if path == "/api/productos":
+            return [
+                {"nombre": "IPHONE 16 128GB", "usd": 800},
+                {"nombre": "IPHONE 16 PRO 256GB", "usd": 1000},
+                {"nombre": "MOTO EDGE 60", "usd": 500},
+            ]
         return {"campaign_id": VERSION_ID, "estado": "previsualizado"}
 
 
@@ -61,6 +72,21 @@ def test_preparar_sube_asset_antes_de_crear_campania(tmp_path):
     assert [llamada.path for llamada in api.calls] == [
         f"/admin/mailing/assets/{resultado['campaign_id']}", "/admin/mailing/campanias"
     ]
+
+
+def test_preparar_escribe_html_manifest_e_imagen_en_directorio_local(tmp_path):
+    api = FakeApi()
+    imagen = imagen_jpeg(tmp_path)
+    salida = tmp_path / "salida"
+    resultado = preparar.ejecutar(
+        api=api, imagen=imagen, productos=["IPHONE 16 128GB"],
+        brief="premium", asunto="Semana Apple", preheader="Novedades",
+        alt="iPhone en estudio", output_dir=salida,
+    )
+    assert (salida / "preview.html").read_text(encoding="utf-8") == "<html>preview</html>"
+    assert (salida / "manifest.json").is_file()
+    assert (salida / "hero.jpg").read_bytes() == imagen.read_bytes()
+    assert resultado["preview_path"] == str(salida / "preview.html")
 
 
 def test_regenerar_reutiliza_campaign_id_del_padre(tmp_path):
@@ -96,3 +122,16 @@ def test_enviar_solo_llama_con_confirmacion_exacta():
     assert [llamada.path for llamada in api.calls] == [
         f"/admin/mailing/campanias/{VERSION_ID}/enviar"
     ]
+
+
+def test_catalogo_filtra_por_todos_los_terminos_y_conserva_precio():
+    api = FakeApi()
+    resultado = catalogo.buscar(api, ["iphone", "16 pro"])
+    assert resultado == [{"nombre": "IPHONE 16 PRO 256GB", "usd": 1000}]
+
+
+def test_resumen_consulta_estado_destinatarios_y_preparacion():
+    api = FakeApi()
+    resultado = resumen.ejecutar(api, VERSION_ID)
+    assert resultado["estado"] == "previsualizado"
+    assert api.calls[0].path == f"/admin/mailing/campanias/{VERSION_ID}"
