@@ -247,7 +247,8 @@ def test_pedido_rechaza_fecha_fuera_de_las_opciones(monkeypatch):
         "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
         "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba",})
 
-    r = c.post("/api/pedidos", json={"productos": ["iPhone 13"], "fecha_entrega": "2026-08-29"})
+    # Domingo: nunca es una fecha de entrega válida (no hay entregas ese día).
+    r = c.post("/api/pedidos", json={"productos": ["iPhone 13"], "fecha_entrega": "2026-08-30"})
 
     assert r.status_code == 400
 
