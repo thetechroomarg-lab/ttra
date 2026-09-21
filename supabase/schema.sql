@@ -507,3 +507,17 @@ values ('recibos-series', 'recibos-series', false)
 on conflict (id) do nothing;
 alter table interacciones_cliente enable row level security;
 alter table codigos_descuento enable row level security;
+
+-- Suscripciones Web Push del panel del cadete (ver web/push_cadete.py):
+-- puede haber más de una fila (celu nuevo, reinstaló la PWA, etc.), cada
+-- una es un endpoint de navegador distinto. Sin cliente_id/auth_id porque
+-- el login de cadete es una sola contraseña compartida, no cuentas
+-- individuales (ver CADETE_PASSWORD en web/app.py).
+create table if not exists cadete_push_suscripciones (
+  id uuid primary key default gen_random_uuid(),
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  creada_en timestamptz not null default now()
+);
+alter table cadete_push_suscripciones enable row level security;

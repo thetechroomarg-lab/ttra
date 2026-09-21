@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, recibos, recibos_manuales
+from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales
 from web.email_util import EnvioEmailError, enviar_email
 from web.productos import resolver_proveedor
 from web.slugs import slug as slug_producto
@@ -362,6 +362,11 @@ class ClienteMayoristaIn(BaseModel):
 class DerivarEntregaIn(BaseModel):
     derivado: bool
     observaciones: str | None = None
+
+
+class SuscripcionPushIn(BaseModel):
+    endpoint: str
+    keys: dict
 
 
 class MailingOfertaIn(BaseModel):
@@ -799,6 +804,26 @@ def admin_cadete_login(entrada: ClientesLoginIn, request: Request):
 @app.post("/admin/cadete/logout")
 def admin_cadete_logout(request: Request):
     request.session.pop("cadete_ok", None)
+    return {"ok": True}
+
+
+@app.get("/admin/cadete/push/vapid-public-key")
+def admin_cadete_push_vapid_public_key(request: Request):
+    if not _cadete_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de cadete requerida")
+    if not push_cadete.PUSH_CONFIGURADO:
+        raise HTTPException(status_code=503, detail="Notificaciones no configuradas")
+    return {"publicKey": push_cadete.VAPID_PUBLIC_KEY}
+
+
+@app.post("/admin/cadete/push/suscribir")
+def admin_cadete_push_suscribir(entrada: SuscripcionPushIn, request: Request):
+    if not _cadete_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de cadete requerida")
+    try:
+        push_cadete.guardar_suscripcion(get_client(), entrada.model_dump())
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
     return {"ok": True}
 
 
@@ -2928,7 +2953,10 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 <div class="panel">
   <div class="panel-header">
     <h1>Entregas asignadas</h1>
-    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/cadete/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
+    <div class="panel-header-acciones">
+      <button id="btn-notificaciones" type="button" hidden>🔔 Activar notificaciones</button>
+      <a class="btn-clientes" href="/admin/cadete/papelera">Borrados</a><button id="salir">Cerrar sesión</button>
+    </div>
   </div>
   <div class="selector-fecha-cadete">
     <label for="fecha-cadete">Ver entregas del día</label>
@@ -3295,6 +3323,52 @@ function activarAutocompleteDireccionCadete(input, lista) {{
 }}
 activarAutocompleteDireccionCadete(document.getElementById("nota-direccion"), document.getElementById("nota-direccion-sugerencias"));
 activarAutocompleteDireccionCadete(document.getElementById("direccion-cadete-input"), document.getElementById("direccion-cadete-sugerencias"));
+
+// --- Notificaciones push: avisa en el celu cuando Vlad asigna un pedido o
+// una nota, sin tener la app abierta (ver web/push_cadete.py). Botón oculto
+// por default: solo se muestra si el navegador soporta push y todavía no
+// está suscripto (o el permiso no fue denegado de forma permanente).
+function urlBase64ToUint8Array(base64String) {{
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}}
+
+async function initNotificacionesCadete() {{
+  const btn = document.getElementById("btn-notificaciones");
+  if (!btn || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (Notification.permission === "denied") return;
+
+  const reg = await navigator.serviceWorker.ready;
+  const suscripcionActual = await reg.pushManager.getSubscription();
+  if (suscripcionActual && Notification.permission === "granted") return; // ya activo
+
+  btn.hidden = false;
+  btn.addEventListener("click", async () => {{
+    btn.disabled = true;
+    try {{
+      const permiso = await Notification.requestPermission();
+      if (permiso !== "granted") {{ btn.disabled = false; return; }}
+      const r = await fetch("/admin/cadete/push/vapid-public-key");
+      if (!r.ok) {{ alert("Notificaciones no configuradas todavía."); btn.disabled = false; return; }}
+      const {{ publicKey }} = await r.json();
+      const sub = await reg.pushManager.subscribe({{
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      }});
+      await fetch("/admin/cadete/push/suscribir", {{
+        method: "POST", headers: {{"Content-Type": "application/json"}},
+        body: JSON.stringify(sub.toJSON()),
+      }});
+      btn.hidden = true;
+    }} catch (e) {{
+      console.error("No se pudo activar notificaciones", e);
+      btn.disabled = false;
+    }}
+  }});
+}}
+initNotificacionesCadete();
 </script>
 {_ADMIN_CLIENTES_PWA_SCRIPT}
 </body></html>"""
@@ -4419,6 +4493,15 @@ def admin_pedido_derivar(pedido_id: str, entrada: DerivarEntregaIn, request: Req
     client.table("pedidos").update({
         "asignado_a": asignado_a, "observaciones_cadete": observaciones,
     }).eq("id", pedido_id).execute()
+    if asignado_a == CADETE_SLUG:
+        filas_cliente = client.table("clientes").select("nombre,apellido").eq("id", filas[0].get("cliente_id")).execute().data
+        nombre_cliente = (
+            f"{filas_cliente[0].get('nombre', '')} {filas_cliente[0].get('apellido', '')}".strip()
+            if filas_cliente else ""
+        ) or "un cliente"
+        push_cadete.enviar_push_cadete(
+            client, "📦 Nuevo pedido asignado", f"Te asignaron la entrega de {nombre_cliente}."
+        )
     return {"ok": True, "pedido_id": pedido_id, "asignado_a": asignado_a}
 
 
@@ -4477,6 +4560,8 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
         "asignado_a": asignado_a,
     }
     client.table("tareas_entrega").insert(tarea).execute()
+    if es_admin and asignado_a == CADETE_SLUG:
+        push_cadete.enviar_push_cadete(client, "📝 Nueva nota asignada", tarea["titulo"])
     return {"ok": True, "tarea": tarea}
 
 
@@ -4541,6 +4626,8 @@ def admin_tarea_derivar(tarea_id: str, entrada: DerivarEntregaIn, request: Reque
     client.table("tareas_entrega").update({
         "asignado_a": asignado_a, "observaciones_cadete": observaciones,
     }).eq("id", tarea_id).execute()
+    if asignado_a == CADETE_SLUG:
+        push_cadete.enviar_push_cadete(client, "📝 Nueva nota asignada", filas[0].get("titulo") or "")
     return {"ok": True, "tarea_id": tarea_id, "asignado_a": asignado_a}
 
 
