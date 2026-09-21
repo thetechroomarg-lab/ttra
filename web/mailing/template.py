@@ -3,12 +3,10 @@ de la web (ver web/static/classic.css — carbón, blanco/crema, rojo coral,
 tipografía Nunito). Usa estilos inline para degradar razonablemente en
 clientes de mail que ignoran CSS embebido."""
 import html
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
 from web.reglas import WHATSAPP
-from web.slugs import url_producto
-
-BASE_URL = "https://thetechroomarg.com"
+BASE_URL = "https://www.thetechroomarg.com"
 
 _INSTAGRAM = "https://instagram.com/thetechroomarg"
 _TIKTOK = "https://tiktok.com/@thetechroomarg"
@@ -45,7 +43,7 @@ def _tarjeta_producto(producto, base_url):
     nombre = html.escape(producto.get("nombre", ""))
     colores = producto.get("colores") or []
     texto_colores = html.escape(", ".join(colores)) if colores else "&nbsp;"
-    link = url_producto(producto.get("nombre", ""), base=base_url)
+    link = f"{base_url.rstrip('/')}/?{urlencode({'producto': producto.get('nombre', '')})}"
 
     fila_nombre = _fila_fija(
         _ALTO_NOMBRE,
