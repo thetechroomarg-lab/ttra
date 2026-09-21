@@ -29,7 +29,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, recibos, recibos_manuales
 from web.email_util import EnvioEmailError, enviar_email
-from web.mailing import assets as mailing_assets
+from web.mailing import assets as mailing_assets, campanias, destinatarios, servicio as mailing_servicio, template as mailing_template
 from web.productos import resolver_proveedor
 from web.slugs import slug as slug_producto
 from web.supabase_client import get_client
@@ -369,6 +369,29 @@ class DerivarEntregaIn(BaseModel):
 
 class MailingOfertaIn(BaseModel):
     productos: list[str]
+
+
+class MailingHeroIn(BaseModel):
+    url: str
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    alt: str = Field(min_length=1, max_length=300)
+    width: int = Field(gt=0, le=10000)
+    height: int = Field(gt=0, le=10000)
+
+
+class MailingCampaniaIn(BaseModel):
+    campaign_id: str
+    brief: str = Field(default="", max_length=2000)
+    asunto: str = Field(min_length=1, max_length=200)
+    preheader: str = Field(default="", max_length=300)
+    nota: str | None = Field(default=None, max_length=2000)
+    productos: list[str] = Field(min_length=1, max_length=20)
+    hero: MailingHeroIn
+    parent_id: str | None = None
+
+
+class MailingConfirmacionIn(BaseModel):
+    confirmacion: str
 
 
 class ClientesSeleccionadosIn(BaseModel):
@@ -4955,6 +4978,114 @@ def api_noticias():
     except Exception:
         logger.exception("No se pudieron obtener las noticias")
     return {"titulares": _noticias_cache["titulares"]}
+
+
+@app.post("/admin/mailing/campanias", status_code=201)
+def admin_crear_campania_mailing(
+    entrada: MailingCampaniaIn,
+    request: Request,
+    x_admin_token: str = Header(default=""),
+):
+    if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    if MAILING_ASSETS_PATH is None:
+        raise HTTPException(status_code=503, detail="MAILING_ASSETS_PATH no configurado")
+    catalogo_actual = _cargar_productos()
+    if not catalogo_actual:
+        raise HTTPException(status_code=503, detail="El catálogo no está disponible")
+    if len(set(entrada.productos)) != len(entrada.productos):
+        raise HTTPException(status_code=422, detail="No repitas productos en la campaña")
+    try:
+        productos = mailing_servicio.seleccionar_productos(catalogo_actual, entrada.productos)
+        mailing_servicio.verificar_asset(
+            MAILING_ASSETS_PATH, entrada.campaign_id, entrada.hero.model_dump(),
+            _public_app_base_url(request),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    base_url = _public_app_base_url(request)
+    html_preview = mailing_template.armar_html(
+        productos,
+        nota=entrada.nota,
+        cliente_id="__CLIENTE_ID__",
+        base_url=base_url,
+        hero=entrada.hero.model_dump(),
+        preheader=entrada.preheader,
+    )
+    client = get_client()
+    try:
+        manifiesto = {
+            "campaign_id": str(uuid.UUID(entrada.campaign_id)),
+            "parent_id": entrada.parent_id,
+            "brief": entrada.brief,
+            "asunto": entrada.asunto,
+            "preheader": entrada.preheader,
+            "nota": entrada.nota,
+            "productos": productos,
+            "catalog_sha256": mailing_servicio.huella_comercial(productos),
+            "hero": entrada.hero.model_dump(),
+            "asset_url": entrada.hero.url,
+            "asset_sha256": entrada.hero.sha256,
+            "html": html_preview,
+            "destinatarios_preview": len(destinatarios.clientes_elegibles(client)),
+            "armado_en": datetime.now(timezone.utc).isoformat(),
+        }
+        if entrada.parent_id:
+            padre = campanias.obtener_version(client, entrada.parent_id)
+            if not padre:
+                raise ValueError("La versión original no existe")
+            if padre["campaign_id"] != manifiesto["campaign_id"]:
+                raise ValueError("La regeneración debe conservar la campaña original")
+        version = campanias.crear_version(client, manifiesto)
+    except campanias.InvalidTransition as exc:
+        raise HTTPException(status_code=409, detail="La versión de campaña cambió") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception:
+        logger.exception("No se pudo crear la versión de mailing")
+        raise HTTPException(status_code=503, detail="No se pudo guardar la campaña")
+    return version
+
+
+@app.get("/admin/mailing/campanias/{version_id}")
+def admin_obtener_campania_mailing(
+    version_id: str,
+    x_admin_token: str = Header(default=""),
+):
+    if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    version = campanias.obtener_version(get_client(), version_id)
+    if not version:
+        raise HTTPException(status_code=404, detail="Campaña no encontrada")
+    return version
+
+
+@app.post("/admin/mailing/campanias/{version_id}/aprobar")
+def admin_aprobar_campania_mailing(
+    version_id: str,
+    request: Request,
+    x_admin_token: str = Header(default=""),
+):
+    if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    if MAILING_ASSETS_PATH is None:
+        raise HTTPException(status_code=503, detail="MAILING_ASSETS_PATH no configurado")
+    client = get_client()
+    version = campanias.obtener_version(client, version_id)
+    if not version:
+        raise HTTPException(status_code=404, detail="Campaña no encontrada")
+    hero = version["manifest"].get("hero") or {}
+    try:
+        mailing_servicio.verificar_asset(
+            MAILING_ASSETS_PATH, version["campaign_id"], hero,
+            _public_app_base_url(request),
+        )
+        return campanias.transicionar(client, version_id, "previsualizado", "aprobado")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except campanias.InvalidTransition as exc:
+        raise HTTPException(status_code=409, detail="La campaña no está disponible para aprobación") from exc
 
 
 @app.post("/admin/productos")
