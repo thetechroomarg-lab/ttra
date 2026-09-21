@@ -145,6 +145,8 @@ class _FakeQuery:
             return _FakeExecuteResult(self._filtrar(list(self._tabla._filas)))
         if self._operacion == "insert":
             fila = dict(self._payload)
+            if self._tabla._nombre in {"mailing_campanias", "mailing_envios_detalle"}:
+                fila.setdefault("id", str(uuid.uuid4()))
             self._tabla._filas.append(fila)
             return _FakeExecuteResult([fila])
         if self._operacion == "update":
@@ -203,7 +205,22 @@ class FakeSupabaseClient:
             return _FakeRpcCall(
                 lambda: self._guardar_pedido_con_descuento_mailing(parametros or {})
             )
+        if nombre == "transicionar_mailing_campania":
+            return _FakeRpcCall(
+                lambda: self._transicionar_mailing_campania(parametros or {})
+            )
         raise ValueError(nombre)
+
+    def _transicionar_mailing_campania(self, parametros):
+        filas = self.table("mailing_campanias")._filas
+        fila = next((f for f in filas if f.get("id") == parametros.get("p_id")), None)
+        if not fila or fila.get("estado") != parametros.get("p_desde"):
+            raise RuntimeError("invalid_mailing_transition")
+        fila["estado"] = parametros["p_hacia"]
+        cambios = parametros.get("p_cambios") or {}
+        if cambios.get("resultado") is not None:
+            fila["resultado"] = cambios["resultado"]
+        return copy.deepcopy(fila)
 
     def _guardar_pedido_con_descuento_mailing(self, parametros):
         """Simula el RPC transaccional, incluyendo rollback ante excepciones."""

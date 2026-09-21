@@ -55,6 +55,61 @@ create table if not exists mailing_envios (
   enviado_en timestamptz not null default now()
 );
 
+-- Versiones inmutables de campañas visuales. Cada regeneración conserva la
+-- anterior y crea una versión hija; el manifiesto contiene el HTML aprobado,
+-- productos/precios congelados y el hash del arte persistente.
+create table if not exists mailing_campanias (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null,
+  parent_id uuid references mailing_campanias(id) on delete set null,
+  version integer not null,
+  estado text not null check (estado in ('previsualizado','aprobado','enviando','enviado','invalidado')),
+  manifest jsonb not null,
+  creado_en timestamptz not null default now(),
+  aprobado_en timestamptz,
+  enviado_en timestamptz,
+  resultado jsonb,
+  unique (campaign_id, version)
+);
+alter table mailing_campanias enable row level security;
+
+-- Resultado por destinatario para auditoría y para evitar reintentos ciegos
+-- tras un fallo parcial del proveedor de correo.
+create table if not exists mailing_envios_detalle (
+  version_id uuid not null references mailing_campanias(id) on delete cascade,
+  cliente_id uuid not null references clientes(id) on delete cascade,
+  estado text not null check (estado in ('ok','fallido')),
+  error text,
+  enviado_en timestamptz not null default now(),
+  primary key (version_id, cliente_id)
+);
+alter table mailing_envios_detalle enable row level security;
+
+-- Compare-and-set del estado para que dos aprobaciones/envíos concurrentes
+-- no puedan avanzar la misma versión desde el mismo estado.
+create or replace function public.transicionar_mailing_campania(
+  p_id uuid, p_desde text, p_hacia text, p_cambios jsonb default '{}'::jsonb
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare fila mailing_campanias;
+begin
+  update mailing_campanias
+     set estado = p_hacia,
+         aprobado_en = case when p_hacia = 'aprobado' then now() else aprobado_en end,
+         enviado_en = case when p_hacia = 'enviado' then now() else enviado_en end,
+         resultado = coalesce(p_cambios->'resultado', resultado)
+   where id = p_id and estado = p_desde
+   returning * into fila;
+  if fila.id is null then
+    raise exception 'invalid_mailing_transition';
+  end if;
+  return to_jsonb(fila);
+end;
+$$;
+
 -- Domicilios guardados por cliente para el checkout (hasta 5, uno
 -- predeterminado). La columna clientes.direccion se mantiene aparte: la
 -- sigue usando el panel admin para el "Vamos" de contactos-proveedor.
