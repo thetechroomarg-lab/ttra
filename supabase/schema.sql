@@ -96,6 +96,13 @@ set search_path = public
 as $$
 declare fila mailing_campanias;
 begin
+  if not (
+    (p_desde = 'previsualizado' and p_hacia in ('aprobado', 'invalidado'))
+    or (p_desde = 'aprobado' and p_hacia in ('enviando', 'invalidado'))
+    or (p_desde = 'enviando' and p_hacia = 'enviado')
+  ) then
+    raise exception 'invalid_mailing_transition';
+  end if;
   update mailing_campanias
      set estado = p_hacia,
          aprobado_en = case when p_hacia = 'aprobado' then now() else aprobado_en end,
@@ -109,6 +116,9 @@ begin
   return to_jsonb(fila);
 end;
 $$;
+revoke all on function public.transicionar_mailing_campania(uuid, text, text, jsonb) from public;
+revoke all on function public.transicionar_mailing_campania(uuid, text, text, jsonb) from anon, authenticated;
+grant execute on function public.transicionar_mailing_campania(uuid, text, text, jsonb) to service_role;
 
 -- Domicilios guardados por cliente para el checkout (hasta 5, uno
 -- predeterminado). La columna clientes.direccion se mantiene aparte: la

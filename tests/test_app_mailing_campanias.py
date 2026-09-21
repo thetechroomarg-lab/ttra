@@ -129,3 +129,18 @@ def test_aprobar_version_con_asset_correcto_no_envia(monkeypatch, tmp_path):
     )
     assert repetida.status_code == 409
     assert appmod.enviar_email.call_count == 0
+
+
+def test_endpoint_enviar_exige_confirmacion_exacta_antes_de_obtener_client(monkeypatch):
+    monkeypatch.setattr(appmod, "ADMIN_TOKEN", "secreto")
+    mock_client = Mock(side_effect=AssertionError("no debe consultar Supabase"))
+    monkeypatch.setattr(appmod, "get_client", mock_client)
+    monkeypatch.setattr(appmod, "enviar_email", Mock())
+    respuesta = TestClient(appmod.app).post(
+        f"/admin/mailing/campanias/{CAMPAIGN_ID}/enviar",
+        headers={"x-admin-token": "secreto"},
+        json={"confirmacion": "sí, mandala"},
+    )
+    assert respuesta.status_code == 422
+    mock_client.assert_not_called()
+    appmod.enviar_email.assert_not_called()

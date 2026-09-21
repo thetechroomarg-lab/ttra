@@ -33,6 +33,13 @@ def test_solo_una_aprobacion_atomica_puede_ganar():
         campanias.transicionar(fake, fila["id"], "previsualizado", "aprobado")
 
 
+def test_transicion_rechaza_salto_de_estado():
+    fake = FakeSupabaseClient()
+    fila = campanias.crear_version(fake, manifiesto())
+    with pytest.raises(campanias.InvalidTransition):
+        campanias.transicionar(fake, fila["id"], "previsualizado", "enviado")
+
+
 def test_regenerar_crea_version_nueva_sin_mutar_la_anterior():
     fake = FakeSupabaseClient()
     primera = campanias.crear_version(fake, manifiesto())

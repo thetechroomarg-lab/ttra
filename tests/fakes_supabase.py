@@ -214,7 +214,18 @@ class FakeSupabaseClient:
     def _transicionar_mailing_campania(self, parametros):
         filas = self.table("mailing_campanias")._filas
         fila = next((f for f in filas if f.get("id") == parametros.get("p_id")), None)
-        if not fila or fila.get("estado") != parametros.get("p_desde"):
+        transiciones = {
+            ("previsualizado", "aprobado"),
+            ("previsualizado", "invalidado"),
+            ("aprobado", "enviando"),
+            ("aprobado", "invalidado"),
+            ("enviando", "enviado"),
+        }
+        if (
+            not fila
+            or fila.get("estado") != parametros.get("p_desde")
+            or (parametros.get("p_desde"), parametros.get("p_hacia")) not in transiciones
+        ):
             raise RuntimeError("invalid_mailing_transition")
         fila["estado"] = parametros["p_hacia"]
         cambios = parametros.get("p_cambios") or {}

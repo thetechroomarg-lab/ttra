@@ -29,7 +29,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, recibos, recibos_manuales
 from web.email_util import EnvioEmailError, enviar_email
-from web.mailing import assets as mailing_assets, campanias, destinatarios, servicio as mailing_servicio, template as mailing_template
+from web.mailing import assets as mailing_assets, campanias, destinatarios, envio as mailing_envio, servicio as mailing_servicio, template as mailing_template
 from web.productos import resolver_proveedor
 from web.slugs import slug as slug_producto
 from web.supabase_client import get_client
@@ -5086,6 +5086,47 @@ def admin_aprobar_campania_mailing(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except campanias.InvalidTransition as exc:
         raise HTTPException(status_code=409, detail="La campaña no está disponible para aprobación") from exc
+
+
+@app.post("/admin/mailing/campanias/{version_id}/enviar")
+def admin_enviar_campania_mailing(
+    version_id: str,
+    entrada: MailingConfirmacionIn,
+    request: Request,
+    x_admin_token: str = Header(default=""),
+):
+    if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    try:
+        uuid_version = str(uuid.UUID(version_id))
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Campaña no encontrada") from exc
+    if not secrets.compare_digest(
+        entrada.confirmacion.encode("utf-8"), f"ENVIAR {uuid_version}".encode("utf-8")
+    ):
+        raise HTTPException(status_code=422, detail="La confirmación no coincide con la versión")
+    if MAILING_ASSETS_PATH is None:
+        raise HTTPException(status_code=503, detail="MAILING_ASSETS_PATH no configurado")
+    try:
+        resultado = mailing_envio.enviar_version(
+            get_client(),
+            uuid_version,
+            _cargar_productos(),
+            enviar_email,
+            assets_root=MAILING_ASSETS_PATH,
+        )
+    except mailing_envio.CampaniaDesactualizada as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except mailing_envio.AssetAusente as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except campanias.InvalidTransition as exc:
+        raise HTTPException(status_code=409, detail="La campaña no está aprobada para envío") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception:
+        logger.exception("No se pudo completar envío de campaña %s", uuid_version)
+        raise HTTPException(status_code=503, detail="No se pudo completar el envío")
+    return {"ok": True, **resultado.__dict__}
 
 
 @app.post("/admin/productos")
