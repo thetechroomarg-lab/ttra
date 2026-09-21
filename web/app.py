@@ -20,7 +20,7 @@ from urllib.parse import quote, urlencode, urlparse
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -29,6 +29,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, recibos, recibos_manuales
 from web.email_util import EnvioEmailError, enviar_email
+from web.mailing import assets as mailing_assets
 from web.productos import resolver_proveedor
 from web.slugs import slug as slug_producto
 from web.supabase_client import get_client
@@ -54,6 +55,8 @@ BASE = Path(__file__).parent
 # En producción (Railway) apunta a un volumen persistente vía la variable de
 # entorno PRODUCTOS_PATH; en local, cae al archivo de siempre junto al código.
 PRODUCTOS_PATH = Path(os.environ.get("PRODUCTOS_PATH", str(BASE / "productos.json")))
+_MAILING_ASSETS_ENV = os.environ.get("MAILING_ASSETS_PATH")
+MAILING_ASSETS_PATH = Path(_MAILING_ASSETS_ENV) if _MAILING_ASSETS_ENV else None
 # No se sirve al navegador: se genera junto al catálogo para enriquecer el
 # detalle administrativo de cada pedido sin exponer proveedores al público.
 PROVEEDORES_PATH = Path(os.environ.get("PROVEEDORES_PATH", str(BASE / "proveedores.json")))
@@ -4969,6 +4972,68 @@ async def admin_subir_productos(request: Request, x_admin_token: str = Header(de
     PRODUCTOS_PATH.parent.mkdir(parents=True, exist_ok=True)
     PRODUCTOS_PATH.write_text(json.dumps(productos, ensure_ascii=False, indent=2), encoding="utf-8")
     return {"ok": True, "productos": len(productos)}
+
+
+@app.post("/admin/mailing/assets/{campaign_id}")
+async def admin_subir_asset_mailing(
+    campaign_id: str,
+    request: Request,
+    archivo: UploadFile = File(...),
+    x_admin_token: str = Header(default=""),
+):
+    if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    if MAILING_ASSETS_PATH is None:
+        raise HTTPException(status_code=503, detail="MAILING_ASSETS_PATH no configurado")
+    try:
+        contenido = await archivo.read(mailing_assets.MAX_BYTES + 1)
+        asset = mailing_assets.guardar_asset(
+            MAILING_ASSETS_PATH, campaign_id, contenido, archivo.content_type or ""
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    finally:
+        await archivo.close()
+    base = _public_app_base_url(request)
+    url = f"{base}/mailing/assets/{campaign_id}/{asset.filename}"
+    return {
+        "ok": True,
+        "url": url,
+        "filename": asset.filename,
+        "sha256": asset.sha256,
+        "content_type": asset.content_type,
+        "width": asset.width,
+        "height": asset.height,
+    }
+
+
+@app.get("/mailing/assets/{campaign_id}/{filename}")
+def mailing_asset_publico(campaign_id: str, filename: str):
+    if MAILING_ASSETS_PATH is None:
+        raise HTTPException(status_code=404, detail="Asset no encontrado")
+    try:
+        uuid_campania = uuid.UUID(campaign_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Asset no encontrado") from exc
+    match = re.fullmatch(r"([0-9a-f]{64})\.(jpg|png|webp)", filename)
+    if not match:
+        raise HTTPException(status_code=404, detail="Asset no encontrado")
+    digest, extension = match.groups()
+    media_type = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}[extension]
+    path = MAILING_ASSETS_PATH / str(uuid_campania) / filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Asset no encontrado")
+    contenido = path.read_bytes()
+    if not secrets.compare_digest(hashlib.sha256(contenido).hexdigest(), digest):
+        raise HTTPException(status_code=404, detail="Asset no encontrado")
+    return Response(
+        content=contenido,
+        media_type=media_type,
+        headers={
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @app.get("/")
