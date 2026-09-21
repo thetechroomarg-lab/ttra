@@ -198,6 +198,18 @@ def test_cotizacion_del_header_sale_del_manifiesto_del_catalogo(tmp_path, monkey
     assert respuesta.json() == {"valor": 1532}
 
 
+def test_cta_preventa_mobile_conserva_fondo_amarillo_y_texto_centrado():
+    css = (appmod.BASE / "static" / "landing.css").read_text(encoding="utf-8")
+    inicio = css.index(".rc-preventa-link,")
+    fin = css.index("}", inicio)
+    regla = css[inicio:fin]
+
+    assert "background-color: #f2c94c !important;" in regla
+    assert "justify-content: center;" in regla
+    assert "text-align: center;" in regla
+    assert "box-sizing: border-box;" in regla
+
+
 def test_checkout_ofrece_sugerencias_de_direccion_de_google_maps_en_argentina():
     html = (appmod.BASE / "static" / "index.html").read_text()
     script = (appmod.BASE / "static" / "landing.js").read_text()

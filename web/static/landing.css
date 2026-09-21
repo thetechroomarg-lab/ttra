@@ -1897,7 +1897,11 @@ html[data-modo="fallout"] .btn-categoria.rc-preventa-link {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  background: #f2c94c;
+  justify-content: center;
+  box-sizing: border-box;
+  text-align: center;
+  background-color: #f2c94c !important;
+  background-image: none !important;
   color: #111 !important;
   border-color: #f2c94c;
   text-shadow: none !important;
