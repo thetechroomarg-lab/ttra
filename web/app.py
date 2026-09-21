@@ -5051,14 +5051,47 @@ def admin_crear_campania_mailing(
 @app.get("/admin/mailing/campanias/{version_id}")
 def admin_obtener_campania_mailing(
     version_id: str,
+    request: Request,
     x_admin_token: str = Header(default=""),
 ):
     if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
         raise HTTPException(status_code=401, detail="Token inválido")
-    version = campanias.obtener_version(get_client(), version_id)
+    client = get_client()
+    version = campanias.obtener_version(client, version_id)
     if not version:
         raise HTTPException(status_code=404, detail="Campaña no encontrada")
-    return version
+    productos_actuales = _cargar_productos()
+    actuales_por_nombre = {p.get("nombre"): p for p in productos_actuales}
+    productos_version = version["manifest"].get("productos") or []
+    productos_live = [
+        actuales_por_nombre.get(p.get("nombre")) for p in productos_version
+    ]
+    catalogo_vigente = bool(productos_live) and all(productos_live) and secrets.compare_digest(
+        mailing_servicio.huella_comercial(productos_live),
+        str(version["manifest"].get("catalog_sha256", "")),
+    )
+    asset_disponible = False
+    if MAILING_ASSETS_PATH is not None:
+        try:
+            mailing_servicio.verificar_asset(
+                MAILING_ASSETS_PATH,
+                version["campaign_id"],
+                version["manifest"].get("hero") or {},
+                _public_app_base_url(request),
+            )
+            asset_disponible = True
+        except ValueError:
+            asset_disponible = False
+    elegibles = destinatarios.clientes_elegibles(client)
+    return {
+        **version,
+        "destinatarios_actuales": len(elegibles),
+        "catalogo_vigente": catalogo_vigente,
+        "asset_disponible": asset_disponible,
+        "envio_disponible": bool(
+            version["estado"] == "aprobado" and catalogo_vigente and asset_disponible
+        ),
+    }
 
 
 @app.post("/admin/mailing/campanias/{version_id}/aprobar")

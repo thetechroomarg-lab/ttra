@@ -144,3 +144,29 @@ def test_endpoint_enviar_exige_confirmacion_exacta_antes_de_obtener_client(monke
     assert respuesta.status_code == 422
     mock_client.assert_not_called()
     appmod.enviar_email.assert_not_called()
+
+
+def test_resumen_campania_recalcula_destinatarios_actuales(monkeypatch, tmp_path):
+    client, fake = preparar_cliente(monkeypatch, tmp_path)
+    asset = subir_asset(client)
+    creada = client.post(
+        "/admin/mailing/campanias",
+        headers={"x-admin-token": "secreto"},
+        json=payload_campania(asset),
+    ).json()
+    fake.table("clientes").insert({
+        "id": "11111111-1111-1111-1111-111111111111", "email": "a@example.com",
+    }).execute()
+    fake.table("clientes").insert({
+        "id": "22222222-2222-2222-2222-222222222222", "email": "b@example.com",
+    }).execute()
+    fake.table("clientes").insert({
+        "id": "33333333-3333-3333-3333-333333333333", "email": "c@example.com", "no_mailing": True,
+    }).execute()
+    resumen = client.get(
+        f"/admin/mailing/campanias/{creada['id']}",
+        headers={"x-admin-token": "secreto"},
+    )
+    assert resumen.status_code == 200
+    assert resumen.json()["destinatarios_actuales"] == 2
+    assert resumen.json()["catalogo_vigente"] is True
