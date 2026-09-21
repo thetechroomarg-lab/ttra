@@ -186,6 +186,15 @@ def test_configuracion_publica_no_inventa_una_clave_de_maps(monkeypatch):
     assert respuesta.json() == {"google_maps_api_key": ""}
 
 
+def test_cotizacion_del_header_coincide_con_la_actualizacion_del_catalogo():
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+
+    respuesta = cliente.get("/api/cotizacion")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json() == {"valor": 1565}
+
+
 def test_checkout_ofrece_sugerencias_de_direccion_de_google_maps_en_argentina():
     html = (appmod.BASE / "static" / "index.html").read_text()
     script = (appmod.BASE / "static" / "landing.js").read_text()
