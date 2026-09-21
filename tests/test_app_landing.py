@@ -4,6 +4,25 @@ import web.app as appmod
 from tests.fakes_supabase import FakeSupabaseClient
 
 
+# La landing esta partida en 4 archivos que el navegador carga en orden y que
+# comparten scope global (ver index.html). Los tests miran el texto del script,
+# asi que lo leen concatenado, igual que lo ve el browser.
+LANDING_PARTES = (
+    "landing-base.js",
+    "landing-datos-lugares.js",
+    "landing-pipboy.js",
+    "landing.js",
+)
+
+
+def leer_landing_js():
+    return "\n".join(
+        (appmod.BASE / "static" / nombre).read_text(encoding="utf-8")
+        for nombre in LANDING_PARTES
+    )
+
+
+
 def test_todas_las_paginas_html_incluyen_una_unica_etiqueta_google_al_inicio_del_head():
     for nombre in ("index.html", "login.html", "perfil.html", "catalogo.html"):
         html = (appmod.BASE / "static" / nombre).read_text()
@@ -14,14 +33,14 @@ def test_todas_las_paginas_html_incluyen_una_unica_etiqueta_google_al_inicio_del
 
 
 def test_landing_descarta_descuento_mailing_persistido_fuera_de_un_link():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
 
     assert 'if (!new URLSearchParams(location.search).get("codigo")) {' in script
     assert "localStorage.removeItem(CLAVE_DESCUENTO_MAILING);" in script
 
 
 def test_checkout_envia_codigo_mailing_y_no_lo_preconsume():
-    script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    script = leer_landing_js()
     inicio = script.index("async function registrarPedidoEnClientes")
     fin = script.index('document.getElementById("btn-whatsapp")', inicio)
     checkout = script[inicio:fin]
@@ -32,7 +51,7 @@ def test_checkout_envia_codigo_mailing_y_no_lo_preconsume():
 
 def test_checkout_envia_codigo_regalo_y_no_lo_preconsume():
     """Catches consuming a gift before the order transaction commits."""
-    script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    script = leer_landing_js()
     inicio = script.index("async function registrarPedidoEnClientes")
     fin = script.index('document.getElementById("btn-whatsapp")', inicio)
     checkout = script[inicio:fin]
@@ -45,7 +64,7 @@ def test_checkout_envia_codigo_regalo_y_no_lo_preconsume():
 
 def test_checkout_409_muestra_mensaje_recarga_y_exige_confirmacion_nueva():
     """Catches stale-value retry or WhatsApp continuation after a price conflict."""
-    script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    script = leer_landing_js()
     inicio = script.index("async function registrarPedidoEnClientes")
     fin = script.index('document.getElementById("btn-whatsapp")', inicio)
     checkout = script[inicio:fin]
@@ -61,7 +80,7 @@ def test_checkout_409_muestra_mensaje_recarga_y_exige_confirmacion_nueva():
 
 
 def test_recarga_por_conflicto_reconcilia_carrito_antes_de_habilitar_checkout():
-    script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    script = leer_landing_js()
     inicio = script.index("async function cargarCatalogo()")
     fin = script.index("function refrescarPreciosCarrito()", inicio)
     carga = script[inicio:fin]
@@ -73,7 +92,7 @@ def test_recarga_por_conflicto_reconcilia_carrito_antes_de_habilitar_checkout():
 
 def test_modo_mayorista_muestra_insignia_y_anula_descuentos_minoristas():
     html = (appmod.BASE / "static" / "index.html").read_text(encoding="utf-8")
-    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    js = leer_landing_js()
 
     assert 'id="indicador-mayorista"' in html
     assert 'modoPrecioActual === "mayorista"' in js
@@ -82,7 +101,7 @@ def test_modo_mayorista_muestra_insignia_y_anula_descuentos_minoristas():
 
 
 def test_cuenta_mayorista_no_puede_usar_modo_fallout():
-    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    js = leer_landing_js()
     perfil_js = (appmod.BASE / "static" / "perfil.js").read_text(encoding="utf-8")
 
     assert "function restringirFalloutSegunSesion(sesion)" in js
@@ -100,7 +119,7 @@ def test_cuenta_mayorista_no_puede_usar_modo_fallout():
 
 
 def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
-    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    js = leer_landing_js()
 
     assert "let catalogoListo = false;" in js
     inicio_carga = js.index("async function cargarCatalogo()")
@@ -141,7 +160,7 @@ def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
 
 
 def test_render_y_mutaciones_del_carrito_esperan_catalogo_listo():
-    js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    js = leer_landing_js()
 
     inicio_render = js.index("function renderCarrito()")
     fin_render = js.index("function sincronizarLimiteCarrito()", inicio_render)
@@ -186,9 +205,21 @@ def test_configuracion_publica_no_inventa_una_clave_de_maps(monkeypatch):
     assert respuesta.json() == {"google_maps_api_key": ""}
 
 
+def test_cotizacion_del_header_sale_del_manifiesto_del_catalogo(tmp_path, monkeypatch):
+    manifiesto = tmp_path / "catalogo-manifest.json"
+    manifiesto.write_text('{"cotizacion": 1532}', encoding="utf-8")
+    monkeypatch.setattr(appmod, "CATALOGO_MANIFEST_PATH", manifiesto)
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+
+    respuesta = cliente.get("/api/cotizacion")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json() == {"valor": 1532}
+
+
 def test_checkout_ofrece_sugerencias_de_direccion_de_google_maps_en_argentina():
     html = (appmod.BASE / "static" / "index.html").read_text()
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
 
     assert 'id="sugerencias-direccion"' in html
     assert 'fetch("/api/configuracion-publica")' in script
@@ -198,7 +229,7 @@ def test_checkout_ofrece_sugerencias_de_direccion_de_google_maps_en_argentina():
 
 
 def test_autocomplete_de_direccion_se_comparte_con_el_carrito_fallout():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
     css = (appmod.BASE / "static" / "landing.css").read_text()
     inicio = script.index("async function cargarApiPlaces()")
     fin = script.index("function abrirPanelSecundario", inicio)
@@ -221,7 +252,7 @@ def test_registro_pide_domicilio_y_lo_autocompleta_con_google_maps():
 
 def test_checkout_ofrece_domicilios_guardados_como_desplegable():
     index_html = (appmod.BASE / "static" / "index.html").read_text()
-    landing_js = (appmod.BASE / "static" / "landing.js").read_text()
+    landing_js = leer_landing_js()
 
     assert 'id="lista-domicilios-entrega"' in index_html
     assert "fetch(\"/api/domicilios\")" in landing_js
@@ -229,7 +260,7 @@ def test_checkout_ofrece_domicilios_guardados_como_desplegable():
 
 
 def test_checkout_va_directo_al_formulario_sin_domicilios_guardados():
-    landing_js = (appmod.BASE / "static" / "landing.js").read_text()
+    landing_js = leer_landing_js()
 
     inicio = landing_js.index("async function abrirSelectorDireccion")
     fin = landing_js.index("document.getElementById(\"btn-abrir-direccion\")", inicio)
@@ -246,7 +277,7 @@ def test_checkout_va_directo_al_formulario_sin_domicilios_guardados():
 
 def test_domicilios_de_registro_y_checkout_tambien_funcionan_en_fallout():
     login_js = (appmod.BASE / "static" / "login.js").read_text()
-    landing_js = (appmod.BASE / "static" / "landing.js").read_text()
+    landing_js = leer_landing_js()
     inicio_registro = login_js.index("async function cargarApiPlacesRegistro")
     fin_registro = login_js.index("registroDireccionInput.addEventListener", inicio_registro)
     registro_autocomplete = login_js[inicio_registro:fin_registro]
@@ -272,7 +303,7 @@ def test_perfil_permite_gestionar_hasta_cinco_domicilios_con_autocomplete():
 
 
 def test_compartir_producto_abre_siempre_el_panel_compartible():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
     inicio = script.index("async function compartirProducto(nombre)")
     fin = script.index("let pipboyApagado", inicio)
     compartir = script[inicio:fin]
@@ -285,7 +316,7 @@ def test_compartir_producto_abre_siempre_el_panel_compartible():
 
 
 def test_compartir_producto_abre_un_panel_visible_si_el_navegador_no_puede_compartir():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
     css = (appmod.BASE / "static" / "landing.css").read_text()
 
     assert "function abrirPanelCompartir(url, nombre)" in script
@@ -297,7 +328,7 @@ def test_compartir_producto_abre_un_panel_visible_si_el_navegador_no_puede_compa
 
 
 def test_panel_compartir_usa_botones_iguales_y_redondeados_en_ambos_modos():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
     css = (appmod.BASE / "static" / "landing.css").read_text()
     inicio = css.index(".rc-panel-compartir-acciones > * {")
     fin = css.index(".rc-panel-compartir-cerrar", inicio)
@@ -314,7 +345,7 @@ def test_panel_compartir_usa_botones_iguales_y_redondeados_en_ambos_modos():
 
 
 def test_landing_mobile_muestra_una_sola_card_recomendada_completa():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
 
     assert "function tarjetaRecomendadoMobileHtml()" in script
     assert "carrousel-recomendados-mobile-track" not in script
@@ -322,7 +353,7 @@ def test_landing_mobile_muestra_una_sola_card_recomendada_completa():
 
 
 def test_cards_recomendadas_no_muestran_etiqueta_de_recomendacion():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
 
     inicio = script.index("function tarjetaRecomendadoHtml(p)")
     fin = script.index("function esClassicDesktopActivo()", inicio)
@@ -333,7 +364,7 @@ def test_cards_recomendadas_no_muestran_etiqueta_de_recomendacion():
 
 def test_login_fallout_conserva_el_tema_y_el_retorno_a_la_landing():
     login = (appmod.BASE / "static" / "login.js").read_text()
-    landing = (appmod.BASE / "static" / "landing.js").read_text()
+    landing = leer_landing_js()
 
     assert 'const modoFallout = paramsPantalla.get("modo") === "fallout";' in login
     assert 'document.documentElement.setAttribute("data-modo", "fallout")' in login
@@ -349,7 +380,7 @@ def test_selector_de_provincia_tiene_estilo_fallout_en_login():
 
 
 def test_busqueda_por_marca_muestra_un_selector_visual_solo_con_logos():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
     css = (appmod.BASE / "static" / "landing.css").read_text()
 
     inicio = script.index("function pintarSelectorMarcas(el)")
@@ -367,7 +398,7 @@ def test_busqueda_por_marca_muestra_un_selector_visual_solo_con_logos():
 
 
 def test_busqueda_por_marca_deja_otras_marcas_al_final_del_selector():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
 
     inicio = script.index("function todasLasMarcasDelCatalogo()")
     fin = script.index("function pintarSelectorMarcas(el)", inicio)
@@ -394,7 +425,7 @@ def test_carrito_fallout_mobile_permite_scroll_cuando_el_footer_es_mas_alto_que_
 
 def test_classic_tiene_alternancia_light_persistente_dentro_del_menu_de_perfil():
     html = (appmod.BASE / "static" / "index.html").read_text()
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
     css = (appmod.BASE / "static" / "classic.css").read_text()
 
     dropdown_inicio = html.index('id="rc-perfil-dropdown"')
@@ -557,7 +588,7 @@ def test_classic_mobile_ajusta_tipografia_para_entrar_sin_scroll_y_abre_color_ha
 
 
 def test_classic_mobile_recomendados_no_renderiza_puntos_y_conserva_swipe():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
     inicio = script.index("function pintarCarrouselRecomendadosMobile(el)")
     fin = script.index("function pintarCarrouselRecomendados(el)", inicio)
     pintar = script[inicio:fin]
@@ -607,7 +638,7 @@ def test_classic_mobile_card_recomendada_ocupa_el_alto_libre_sin_un_tope_fijo():
 
 def test_classic_mobile_mantiene_iconos_y_espaciado_de_acciones_compactos():
     css = (appmod.BASE / "static" / "classic.css").read_text()
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
 
     def regla(selector):
         inicio = css.index(selector)
@@ -691,7 +722,7 @@ def test_carrito_muestra_disclaimer_y_alinea_altura_de_botones():
 
 def test_modal_codigo_es_solo_titulo_input_y_aplicar():
     html = (appmod.BASE / "static" / "index.html").read_text()
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
     modal = html[html.index('<div id="modal-codigo"'):html.index('<button id="btn-whatsapp"')]
 
     assert "Aplicá tu código" in modal
@@ -705,7 +736,7 @@ def test_modal_codigo_es_solo_titulo_input_y_aplicar():
 
 
 def test_carrito_muestra_un_solo_panel_secundario_y_cierra_al_tocar_afuera():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
 
     assert "function abrirPanelSecundario(idPanel)" in script
     assert 'panelDireccionEntrega.classList.toggle("oculto", idPanel !== "direccion-entrega-wrap")' in script
@@ -716,7 +747,7 @@ def test_carrito_muestra_un_solo_panel_secundario_y_cierra_al_tocar_afuera():
 
 def test_direccion_entrega_cierra_sin_boton_x():
     html = (appmod.BASE / "static" / "index.html").read_text()
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
     direccion = html[html.index('<div id="direccion-entrega-wrap"'):html.index('<button id="btn-vaciar-carrito"')]
 
     assert 'id="btn-cerrar-direccion"' not in direccion
@@ -724,7 +755,7 @@ def test_direccion_entrega_cierra_sin_boton_x():
 
 
 def test_carrito_y_whatsapp_muestran_los_cinco_precios_de_las_cards():
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
     css = (appmod.BASE / "static" / "landing.css").read_text()
 
     assert 'class="item-precios"' in script
@@ -737,7 +768,7 @@ def test_carrito_y_whatsapp_muestran_los_cinco_precios_de_las_cards():
 
 def test_carrito_es_modal_flotante_y_respeta_el_footer():
     css = (appmod.BASE / "static" / "landing.css").read_text()
-    script = (appmod.BASE / "static" / "landing.js").read_text()
+    script = leer_landing_js()
 
     inicio = css.index("#panel-carrito {\n  --carrito-boton-altura:")
     regla_modal = css[inicio : css.index("}", inicio)]

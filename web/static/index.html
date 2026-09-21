@@ -378,6 +378,11 @@
   </footer>
 
   <script src="boot.js"></script>
+  <!-- La landing va partida en 4 archivos que comparten scope global: el
+       orden importa, cada uno usa cosas definidas en los anteriores. -->
+  <script src="landing-base.js"></script>
+  <script src="landing-datos-lugares.js"></script>
+  <script src="landing-pipboy.js"></script>
   <script src="landing.js"></script>
   <script src="perfil.js"></script>
 </body>
