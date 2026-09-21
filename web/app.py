@@ -4882,14 +4882,31 @@ def api_recomendados(request: Request, limit: int = 16):
     }
 
 
-# Cotización del dólar en Córdoba usada como referencia en el sitio (a mano,
-# actualizar acá cuando cambie — es la misma fuente única que usa el catálogo).
+# Fallback para instalaciones antiguas o una actualización incompleta. La fuente
+# normal es la cotización publicada atómicamente con el catálogo.
 COTIZACION_DOLAR = 1565
+
+
+def _cargar_cotizacion_catalogo():
+    try:
+        manifiesto = json.loads(CATALOGO_MANIFEST_PATH.read_text(encoding="utf-8"))
+        cotizacion = manifiesto.get("cotizacion")
+        if (
+            isinstance(cotizacion, bool)
+            or not isinstance(cotizacion, (int, float))
+            or not math.isfinite(cotizacion)
+            or cotizacion <= 0
+        ):
+            return COTIZACION_DOLAR
+        return cotizacion
+    except (OSError, json.JSONDecodeError, UnicodeError, TypeError, ValueError):
+        logger.warning("No se pudo cargar la cotización del catálogo")
+        return COTIZACION_DOLAR
 
 
 @app.get("/api/cotizacion")
 def api_cotizacion():
-    return {"valor": COTIZACION_DOLAR}
+    return {"valor": _cargar_cotizacion_catalogo()}
 
 
 NOTICIAS_RSS_URL = (

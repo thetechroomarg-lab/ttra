@@ -186,13 +186,16 @@ def test_configuracion_publica_no_inventa_una_clave_de_maps(monkeypatch):
     assert respuesta.json() == {"google_maps_api_key": ""}
 
 
-def test_cotizacion_del_header_coincide_con_la_actualizacion_del_catalogo():
+def test_cotizacion_del_header_sale_del_manifiesto_del_catalogo(tmp_path, monkeypatch):
+    manifiesto = tmp_path / "catalogo-manifest.json"
+    manifiesto.write_text('{"cotizacion": 1532}', encoding="utf-8")
+    monkeypatch.setattr(appmod, "CATALOGO_MANIFEST_PATH", manifiesto)
     cliente = TestClient(appmod.app, base_url="https://testserver")
 
     respuesta = cliente.get("/api/cotizacion")
 
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"valor": 1565}
+    assert respuesta.json() == {"valor": 1532}
 
 
 def test_checkout_ofrece_sugerencias_de_direccion_de_google_maps_en_argentina():
