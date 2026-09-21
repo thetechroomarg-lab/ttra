@@ -3,6 +3,7 @@ de la web (ver web/static/classic.css — carbón, blanco/crema, rojo coral,
 tipografía Nunito). Usa estilos inline para degradar razonablemente en
 clientes de mail que ignoran CSS embebido."""
 import html
+from urllib.parse import urlparse
 
 from web.reglas import WHATSAPP
 from web.slugs import url_producto
@@ -85,8 +86,42 @@ def _tarjeta_producto(producto, base_url):
 </td>"""
 
 
-def armar_html(productos_nuevos, nota=None, cliente_id=None, base_url=BASE_URL):
+def _hero_html(hero):
+    if not hero:
+        return ""
+    url = str(hero.get("url", "")).strip()
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or not parsed.netloc:
+        raise ValueError("La URL del hero debe usar HTTPS")
+    try:
+        width = int(hero.get("width", 0))
+        height = int(hero.get("height", 0))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Dimensiones del hero inválidas") from exc
+    if width <= 0 or height <= 0:
+        raise ValueError("Dimensiones del hero inválidas")
+    alto_email = max(1, round(560 * height / width))
+    alt = html.escape(str(hero.get("alt", "")), quote=True)
+    url = html.escape(url, quote=True)
+    return f'''
+<tr><td style="padding:0 20px 20px;">
+  <img src="{url}" alt="{alt}" width="560" height="{alto_email}"
+       style="display:block; width:100%; max-width:560px; height:auto; border:0; border-radius:8px;">
+</td></tr>'''
+
+
+def armar_html(productos_nuevos, nota=None, cliente_id=None, base_url=BASE_URL,
+               hero=None, preheader=""):
     baja_url = f"{base_url}/mailing/baja/{cliente_id}" if cliente_id else "#"
+    preheader_html = ""
+    if preheader:
+        preheader_html = (
+            '<div style="display:none; max-height:0; overflow:hidden; opacity:0; '
+            'mso-hide:all; font-size:1px; line-height:1px;">'
+            f'{html.escape(preheader)}'
+            '</div>'
+        )
+    hero_html = _hero_html(hero)
 
     banner_nota = ""
     if nota:
@@ -112,6 +147,7 @@ def armar_html(productos_nuevos, nota=None, cliente_id=None, base_url=BASE_URL):
 <html lang="es">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
 <body style="margin:0; padding:0; background:{_BG};">
+{preheader_html}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{_BG};">
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; background:{_BG};">
@@ -119,6 +155,7 @@ def armar_html(productos_nuevos, nota=None, cliente_id=None, base_url=BASE_URL):
   <p style="margin:0; font-family:{_FUENTE}; font-size:20px; font-weight:800; color:{_BLANCO}; letter-spacing:0.5px;">THE TECH ROOM ARG</p>
   <p style="margin:4px 0 0; font-family:{_FUENTE}; font-size:12px; color:{_GRIS_TENUE};">Novedades de la semana</p>
 </td></tr>
+{hero_html}
 {banner_nota}
 <tr><td style="padding:0 12px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{filas_productos}</table>

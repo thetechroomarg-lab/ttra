@@ -71,3 +71,30 @@ def test_card_sin_colores_igual_reserva_la_franja_de_color():
     html = template.armar_html([sin_colores], nota=None, cliente_id=None)
 
     assert "&nbsp;" in html
+
+
+def test_template_hibrido_incluye_hero_alt_precio_cta_y_baja():
+    html = template.armar_html(
+        [_producto(nombre="IPHONE 16 128GB", usd=800)],
+        cliente_id="cliente-1",
+        preheader="Oferta seleccionada",
+        hero={
+            "url": "https://thetechroomarg.com/mailing/assets/id/sha.jpg",
+            "alt": "iPhone sobre fondo carbón",
+            "width": 1200,
+            "height": 600,
+        },
+    )
+    assert 'src="https://thetechroomarg.com/mailing/assets/id/sha.jpg"' in html
+    assert 'alt="iPhone sobre fondo carbón"' in html
+    assert "U$D 800" in html
+    assert "Ver producto" in html
+    assert "/mailing/baja/cliente-1" in html
+    assert "Oferta seleccionada" in html
+
+
+def test_template_sin_hero_sigue_siendo_valido():
+    producto = _producto(nombre="IPHONE 16 128GB", usd=800)
+    html = template.armar_html([producto])
+    assert "<img" not in html
+    assert producto["nombre"] in html
