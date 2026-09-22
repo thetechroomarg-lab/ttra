@@ -20,6 +20,7 @@ with sync_playwright() as p:
         page.goto(BASE + '/?intro=1', wait_until='domcontentloaded')
         intro = page.locator('#rc-portada-ingreso')
         expect(intro.locator('canvas')).to_be_visible(timeout=15000)
+        assert intro.locator('.ttra-intro-signature, .ttra-intro-skip').count() == 0
         expect(page.locator('body > header')).to_be_hidden()
         assert page.locator('body > header').evaluate('(el) => el.inert')
         page.wait_for_timeout(1800)
@@ -50,18 +51,18 @@ with sync_playwright() as p:
         expect(intro).to_be_hidden()
         assert not errors, errors
         context.close()
-    for mode in ['reduce', 'failure', 'skip']:
+    for mode in ['reduce', 'failure', 'escape']:
         context = browser.new_context(reduced_motion='reduce' if mode == 'reduce' else 'no-preference', service_workers='block')
         context.route('**/api/**', api)
         if mode == 'failure':
             context.route('**/welcome-scene.js', lambda route: route.abort())
         page = context.new_page()
         page.goto(BASE + '/?intro=1', wait_until='domcontentloaded')
-        if mode == 'skip':
-            page.get_by_role('button', name='Omitir intro').click()
+        if mode == 'escape':
+            page.keyboard.press('Escape')
         expect(page.locator('#btn-portada-ingreso')).to_be_visible()
         page.locator('#btn-portada-ingreso').click()
         expect(page.locator('body > header')).to_be_visible()
         context.close()
     browser.close()
-print('Welcome: desktop, mobile, session, reduced motion, failure and skip passed')
+print('Welcome: desktop, mobile, session, reduced motion, failure and keyboard escape passed')

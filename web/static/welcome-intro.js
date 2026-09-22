@@ -5,12 +5,12 @@
   if (!intro) return;
   if (!root.classList.contains('ttra-welcome-pending')) { intro.hidden = true; return; }
   const enter = document.getElementById('btn-portada-ingreso');
-  const skip = intro.querySelector('.ttra-intro-skip');
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const siblings = [...document.body.children].filter(el => el !== intro && !['SCRIPT', 'STYLE'].includes(el.tagName));
   const inertBefore = siblings.map(el => el.inert);
   siblings.forEach(el => { el.inert = true; });
   document.body.classList.add('rc-portada-activa');
+  intro.focus({preventScroll: true});
   let scene, frame, finished = false, closed = false, last = 0, elapsed = 0;
   const dispose = () => { cancelAnimationFrame(frame); scene?.dispose(); scene = null; };
   const ready = (fallback = false) => {
@@ -43,10 +43,9 @@
   function smooth(t) { t = Math.max(0, Math.min(1, t)); return t*t*(3-2*t); }
   const reduce = () => { if (motion.matches) ready(true); };
   motion.addEventListener('change', reduce);
-  skip.addEventListener('click', () => ready());
   intro.addEventListener('keydown', event => {
     if (event.key === 'Escape') ready();
-    if (event.key === 'Tab') { event.preventDefault(); (finished ? enter : skip).focus(); }
+    if (event.key === 'Tab') { event.preventDefault(); (finished ? enter : intro).focus({preventScroll: true}); }
   });
   enter.addEventListener('click', () => {
     closed = true;

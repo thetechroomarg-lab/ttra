@@ -42,7 +42,7 @@ export function createScene(host) {
     mesh.rotation.x = Math.PI/2; mesh.position.set(x,y,z); parent.add(mesh); return mesh;
   }
   function texture(kind) {
-    const canvas = document.createElement('canvas'); canvas.width=768; canvas.height=1536;
+    const canvas = document.createElement('canvas'); canvas.width=768; canvas.height=kind === 'back' ? 1075 : 1536;
     const c = canvas.getContext('2d');
     c.fillStyle = kind === 'screen' ? '#09090c' : kind === 'battery' ? '#202126' : '#e87940'; c.fillRect(0,0,768,1536);
     if (kind === 'screen') {
@@ -62,7 +62,8 @@ export function createScene(host) {
       c.fillStyle='#71747a';for(let i=0;i<70;i++){if(i%3)c.fillRect(72+i*8,1050,3,120);}
     } else {
       // Same vector mark as /logos/apple.svg, drawn without a network dependency.
-      c.save(); c.translate(274,658); c.scale(220/24,220/24);
+      c.clearRect(0,0,canvas.width,canvas.height);
+      c.save(); c.translate(canvas.width/2-110,canvas.height/2-110); c.scale(220/24,220/24);
       c.fillStyle='#713c27';
       c.fill(new Path2D("M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"));
       c.restore();
@@ -80,12 +81,30 @@ export function createScene(host) {
     const group=new T.Group();group.position.z=z;phone.add(group);parts.push({group,start:new T.Vector3(0,0,z),target:new T.Vector3(...target)});return group;
   }
   const back=part(-.16,[-.7,.3,-1.85]);
-  slab(back,1.72,3.48,.09,orange);face(back,1.57,3.28,-.065,texture('back'),true);
-  slab(back,.83,.89,.08,orange,-.37,.99,-.10,.17);
-  for(const [x,y] of [[-.58,1.23],[-.19,1.03],[-.58,.79]]) {
-    cylinder(back,.168,.08,orange,x,y,-.18);cylinder(back,.125,.085,glass,x,y,-.22);cylinder(back,.074,.09,lens,x,y,-.23);
+  slab(back,1.72,3.48,.09,orange);
+  // iPhone 17 Pro Max: full-width plateau, left-side lenses, right-side sensors.
+  // Positive local X is the viewer's left when looking at the rear (-Z).
+  slab(back,1.60,1.01,.09,orange,0,1.16,-.10,.18);
+  const rearCameras = [[.48,1.39],[.055,1.16],[.48,.93]];
+  for(const [x,y] of rearCameras) {
+    cylinder(back,.218,.055,orange,x,y,-.176);
+    cylinder(back,.188,.06,black,x,y,-.197);
+    cylinder(back,.154,.065,glass,x,y,-.21);
+    cylinder(back,.070,.07,lens,x,y,-.225);
+    cylinder(back,.025,.072,glass,x,y,-.23);
   }
-  cylinder(back,.055,.09,white,-.16,1.32,-.17);
+  cylinder(back,.081,.035,titanium,-.56,1.40,-.16);
+  cylinder(back,.068,.04,white,-.56,1.40,-.18);
+  cylinder(back,.075,.04,black,-.56,.93,-.18);
+  cylinder(back,.012,.04,darkMetal,-.56,1.16,-.18);
+  // Separate lower glass inset, with the centered Apple mark.
+  const rearGlass = mat(0xdf7b45,.5,.52);
+  slab(back,1.50,2.10,.015,rearGlass,0,-.52,-.058,.15);
+  const rearLogo = face(back,1.40,1.96,-.084,texture('back'),true);
+  rearLogo.position.y = -.52;
+  rearLogo.material.transparent = true;
+  rearLogo.material.metalness = .65;
+  rearLogo.material.roughness = .6;
   const frame=part(0,[0,0,0]);
   // Hollow chassis: narrow rails leave the internal components visible.
   slab(frame,.055,3.20,.19,orange,-.85,0,0,.025);slab(frame,.055,3.20,.19,orange,.85,0,0,.025);
@@ -118,7 +137,7 @@ export function createScene(host) {
   cylinder(screen,.028,.012,lens,.13,1.5,.071);
   // Camera assembly detaches independently, visible from both orbit directions.
   const cameras=part(-.24,[-1.45,1.4,-2.5]);
-  for(const [x,y] of [[-.48,1.2],[-.13,1],[-.48,.78]]){
+  for(const [x,y] of rearCameras){
     cylinder(cameras,.148,.12,darkMetal,x,y,0);cylinder(cameras,.105,.13,lens,x,y,.02);cylinder(cameras,.065,.14,glass,x,y,.03);
   }
   const speaker=part(.06,[.35,-1.4,-1]);
