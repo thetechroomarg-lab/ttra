@@ -36,7 +36,7 @@
   }
   themeButton?.addEventListener('click', () => {
     if (!isClassic()) return;
-    // Reuse the same theme persistence and profile-menu label as the app.
+    // Reuse the app's theme persistence.
     if (typeof aplicarTemaClassic === 'function') {
       aplicarTemaClassic(root.dataset.classicTheme === 'light' ? 'dark' : 'light', true);
     }

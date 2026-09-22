@@ -423,7 +423,7 @@ def test_carrito_fallout_mobile_permite_scroll_cuando_el_footer_es_mas_alto_que_
     assert "overscroll-behavior: contain;" in regla
 
 
-def test_classic_tiene_alternancia_light_persistente_dentro_del_menu_de_perfil():
+def test_classic_tiene_alternancia_light_persistente_solo_en_el_header():
     html = (appmod.BASE / "static" / "index.html").read_text()
     script = leer_landing_js()
     css = (appmod.BASE / "static" / "classic.css").read_text()
@@ -432,7 +432,9 @@ def test_classic_tiene_alternancia_light_persistente_dentro_del_menu_de_perfil()
     dropdown_fin = html.index("</div>", dropdown_inicio)
     dropdown = html[dropdown_inicio:dropdown_fin]
 
-    assert 'id="btn-classic-theme"' in dropdown
+    assert 'id="btn-classic-theme"' not in html
+    assert 'id="ttra-theme"' in html
+    assert 'id="ttra-theme"' not in dropdown
     assert 'const CLAVE_TEMA_CLASSIC = "ttra_classic_theme";' in script
     assert 'document.documentElement.setAttribute("data-classic-theme", temaNormalizado);' in script
     assert 'localStorage.setItem(CLAVE_TEMA_CLASSIC, temaNormalizado);' in script

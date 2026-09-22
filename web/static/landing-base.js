@@ -211,12 +211,6 @@ function aplicarTemaClassic(tema, persistir = false) {
       // Sin storage, el tema se conserva durante esta visita.
     }
   }
-  const botonTema = document.getElementById("btn-classic-theme");
-  if (botonTema) {
-    const siguienteTema = temaNormalizado === "light" ? "dark" : "light";
-    botonTema.textContent = siguienteTema === "light" ? "Modo Light ☼" : "Modo Oscuro ☾";
-    botonTema.setAttribute("aria-label", `Cambiar a modo ${siguienteTema}`);
-  }
 }
 
 aplicarTemaClassic(temaClassicGuardado());

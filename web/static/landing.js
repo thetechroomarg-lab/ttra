@@ -426,7 +426,6 @@ const btnPerfilToggle = document.getElementById("btn-perfil-toggle");
 const dropdownPerfil = document.getElementById("rc-perfil-dropdown");
 const overlayPerfil = document.getElementById("overlay-perfil");
 const linkIrAPerfil = document.getElementById("link-ir-a-perfil");
-const btnClassicTheme = document.getElementById("btn-classic-theme");
 
 function cerrarMenuPerfil() {
   if (!dropdownPerfil) return;
@@ -479,13 +478,6 @@ if (linkIrAPerfil) {
     if (modoVisual === "fallout") paramsLogin.set("modo", "fallout");
     const destinoLogin = `/login.html?${paramsLogin.toString()}`;
     window.location.href = estadoSesionCliente ? destinoPerfil : destinoLogin;
-  });
-}
-
-if (btnClassicTheme) {
-  btnClassicTheme.addEventListener("click", () => {
-    const temaActual = document.documentElement.getAttribute("data-classic-theme");
-    aplicarTemaClassic(temaActual === "light" ? "dark" : "light", true);
   });
 }
 
