@@ -68,6 +68,8 @@ function escapeHtml(s) {
 }
 
 function tarjetaProducto(p) {
+  const precios = preciosDe(p);
+  const monto = (valor) => valor == null ? "-" : Number(valor).toLocaleString("es-AR");
   const colores = Array.isArray(p.colores) && p.colores.length > 0
     ? `<p class="colores">${escapeHtml(p.colores.join(", "))}</p>`
     : "";
@@ -76,9 +78,11 @@ function tarjetaProducto(p) {
       <h3>${escapeHtml(p.nombre)}</h3>
       ${colores}
       <p class="precios">
-        <strong>U$D ${p.usd ?? "-"}</strong><br>
-        $ ${p.pesos ?? "-"} contado<br>
-        $ ${p.transferencia ?? "-"} transferencia
+        <strong>U$D ${monto(precios.dolares)} contado</strong><br>
+        U$D ${monto(precios.bancoUsa)} transferencia banco USA<br>
+        ${monto(precios.usdt)} USDT<br>
+        $ ${monto(p.pesos)} contado<br>
+        $ ${monto(p.transferencia)} transferencia
       </p>
     </div>
   `;

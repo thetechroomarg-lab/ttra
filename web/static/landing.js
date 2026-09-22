@@ -1205,21 +1205,6 @@ function formatearPesos(valor) {
   return valor === undefined || valor === null ? "-" : Number(valor).toLocaleString("es-AR");
 }
 
-// Las 5 formas de precio que se muestran en cada card/list view (Classic y
-// Fallout comparten esta misma función — cada modo solo cambia el CSS).
-// Todo redondeado hacia arriba, nunca hacia abajo (a pedido).
-function preciosDe(p) {
-  const dolares = p.usd ?? null;
-  const pesos = p.pesos ?? null;
-  return {
-    dolares,
-    bancoUsa: dolares == null ? null : Math.ceil(dolares / 0.975),
-    usdt: dolares == null ? null : Math.ceil(dolares / 0.99),
-    pesos,
-    pesosTransf: pesos == null ? null : Math.ceil(pesos / 0.97),
-  };
-}
-
 function preciosCarritoHtml(precios, signo = "") {
   const monto = (valor) => `${signo}$${formatearPesos(valor)}`;
   return `
