@@ -111,7 +111,6 @@ html[data-modo="classic"] .ttra-hero { position: relative; z-index: 0; display: 
 }
 html[data-modo="classic"] .ttra-hero-copy { display: flex; flex-direction: column; align-items: flex-start; padding: 40px 0 0; }
 html[data-modo="classic"] .ttra-eyebrow { margin: 0 0 30px; font: 600 10px/1.6 var(--rc-font); letter-spacing: .14em; text-transform: uppercase; }
-html[data-modo="classic"] .ttra-dot { display: inline-block; width: 7px; height: 7px; margin: 0 8px 1px 0; border-radius: 50%; background: var(--ed-accent); }
 html[data-modo="classic"] .ttra-hero h2 { margin: 0 0 28px; color: var(--rc-green-bright); font: 500 clamp(58px, 7.5vw, 126px)/.95 var(--rc-font); letter-spacing: -.075em; }
 html[data-modo="classic"] .ttra-accent { color: var(--ed-accent); }
 html[data-modo="classic"] .ttra-hero-description { margin: 0; color: var(--rc-green-dim); font-size: 16px; line-height: 1.75; }
