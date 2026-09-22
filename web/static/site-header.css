@@ -63,9 +63,26 @@ html[data-modo="classic"] .ttra-site-cart svg { width: 18px; height: 18px; }
 /* The public rate uses the same catalog generation as product prices. */
 html[data-modo="classic"] .ttra-site-tools { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 html[data-modo="classic"] .ttra-site-rate { display: block; color: var(--rc-green-dim); font: 500 12px/1.4 var(--rc-font); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: .02em; text-shadow: none; }
-html[data-modo="classic"] .rc-header-derecha > .ttra-site-rate { order: 2; text-align: right; }
 @media (max-width: 700px) {
   html[data-modo="classic"] .ttra-site-rate { font-size: 11px; }
   html[data-modo="classic"] .ttra-site-tools { gap: 8px; }
 }
 html[data-modo="classic"] .ttra-site-header .rc-header-derecha { flex-direction: column; align-items: flex-end; gap: 8px; }
+
+/* Shared two-row layout: exchange rate / theme / account, then the cart. */
+html[data-modo="classic"] .ttra-site-header :is(.rc-modo-y-carrito, .ttra-site-actions) {
+  display: grid; grid-template-columns: minmax(0, max-content) 44px 44px;
+  align-items: center; gap: 6px 8px; width: max-content; max-width: 100%;
+}
+html[data-modo="classic"] .ttra-site-header .ttra-site-rate {
+  grid-column: 1; grid-row: 1; max-width: 112px; white-space: normal;
+  text-align: right; margin-right: 4px;
+}
+html[data-modo="classic"] .ttra-site-header .ttra-theme { grid-column: 2; grid-row: 1; }
+html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-menu, .ttra-site-account) { grid-column: 3; grid-row: 1; width: 44px; }
+html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-initials) { display: none; }
+html[data-modo="classic"] .ttra-site-header :is(#btn-carrito, .ttra-site-cart) {
+  grid-column: 2 / 4; grid-row: 2; justify-self: end; justify-content: center;
+  width: 100%; min-width: 0; padding: 10px 8px; gap: 6px;
+}
+html[data-modo="classic"] .ttra-site-header .indicador-mayorista { grid-column: 1 / -1; grid-row: 3; max-width: 216px; }

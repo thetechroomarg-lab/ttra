@@ -36,7 +36,9 @@
   setInterval(() => { if (!document.hidden) updateRate(); }, 300000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) updateRate(); });
   if (document.body.id === 'rc-body-landing') {
-    header.querySelector('.rc-header-derecha').appendChild(rate);
+    const homeActions = header.querySelector('.rc-modo-y-carrito');
+    homeActions.prepend(rate);
+    homeActions.insertBefore(homeActions.querySelector('.ttra-theme'), homeActions.querySelector('.rc-perfil-menu'));
     return;
   }
 
@@ -64,7 +66,9 @@
     </a>`;
   const tools = document.createElement('div');
   tools.className = 'ttra-site-tools';
-  tools.append(actions, rate);
+  actions.prepend(rate);
+  actions.insertBefore(actions.querySelector('.ttra-theme'), actions.querySelector('.ttra-site-account'));
+  tools.append(actions);
   if (previousActions) previousActions.replaceWith(tools);
   else header.appendChild(tools);
 
