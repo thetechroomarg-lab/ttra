@@ -1,0 +1,20 @@
+/* Decorative only: neither the overlay nor any SVG descendant can intercept input. */
+#ttra-home-cat, #ttra-home-cat * { pointer-events: none !important; user-select: none !important; -webkit-user-select: none !important; }
+#ttra-home-cat { position: fixed; top: 0; left: 0; z-index: 8; width: 76px; height: 64px; opacity: 0; visibility: hidden; contain: layout style; transition: opacity .18s ease; will-change: transform; }
+#ttra-home-cat.is-visible { opacity: 1; visibility: visible; }
+#ttra-home-cat svg { width: 100%; height: 100%; display: block; overflow: visible; transform: scaleX(var(--cat-facing, 1)); }
+#ttra-home-cat .cat-pose { transform-box: view-box; transform-origin: 62px 91px; transition: transform .16s ease; }
+#ttra-home-cat[data-state="crouch"] .cat-pose { transform: scale(1.08,.79); }
+#ttra-home-cat[data-state="jump"] .cat-pose { transform: rotate(var(--cat-tilt, -8deg)) scale(.95,1.05); }
+#ttra-home-cat[data-state="land"] .cat-pose { transform: scale(1.09,.82); }
+#ttra-home-cat .cat-tail { transform-box: view-box; transform-origin: 39px 75px; animation: cat-tail 4.4s ease-in-out infinite; }
+#ttra-home-cat .cat-eyes { transform-box: fill-box; transform-origin: center; animation: cat-blink 6.3s infinite; }
+#ttra-home-cat .cat-shadow { transition: opacity .15s; }
+#ttra-home-cat[data-state="jump"] .cat-shadow { opacity: 0; }
+html.ttra-welcome-pending #ttra-home-cat,
+html.ttra-scroll-locked #ttra-home-cat,
+body.rc-vista-seccion #ttra-home-cat { opacity: 0; visibility: hidden; }
+@keyframes cat-tail { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(8deg); } }
+@keyframes cat-blink { 0%,43%,47%,100% { transform: scaleY(1); } 45% { transform: scaleY(.08); } }
+@media(max-width:700px) { #ttra-home-cat { width: 60px; height: 50px; } }
+@media(prefers-reduced-motion:reduce) { #ttra-home-cat, #ttra-home-cat * { animation: none !important; transition: none !important; } }
