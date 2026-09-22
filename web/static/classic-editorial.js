@@ -7,6 +7,21 @@
   const isClassic = () => root.dataset.modo === 'classic';
   const layers = [...document.querySelectorAll('[data-parallax]')];
   const themeButton = document.getElementById('ttra-theme');
+  const glitchWord = document.querySelector('.ttra-glitch-word');
+
+  if (glitchWord) {
+    let showTu = true;
+    window.setInterval(() => {
+      if (!reducedMotion.matches) glitchWord.classList.add('is-glitching');
+      window.setTimeout(() => {
+        showTu = !showTu;
+        const word = showTu ? 'TU' : 'EL';
+        glitchWord.textContent = word;
+        glitchWord.dataset.word = word;
+      }, reducedMotion.matches ? 0 : 180);
+      window.setTimeout(() => glitchWord.classList.remove('is-glitching'), 430);
+    }, 5000);
+  }
 
   function updateThemeLabel() {
     const light = root.dataset.classicTheme === 'light';
