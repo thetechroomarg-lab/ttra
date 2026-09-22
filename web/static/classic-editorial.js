@@ -10,7 +10,6 @@
   const sectionTransitions = [
     [document.querySelector('.ttra-hero'), document.querySelector('.ttra-collection')],
     [document.querySelector('.ttra-collection'), document.querySelector('.ttra-about')],
-    [document.querySelector('.ttra-about'), document.querySelector('.rc-pie')],
   ].filter(([outgoing, incoming]) => outgoing && incoming);
   const themeButton = document.getElementById('ttra-theme');
   const glitchWord = document.querySelector('.ttra-glitch-word');
@@ -82,8 +81,9 @@
 
   function updateThemeLabel() {
     const light = root.dataset.classicTheme === 'light';
-    themeButton?.setAttribute('aria-label', light ? 'Activar modo oscuro' : 'Activar modo claro');
-    themeButton?.setAttribute('title', light ? 'Activar modo oscuro' : 'Activar modo claro');
+    themeButton?.setAttribute('aria-label', light ? 'Modo oscuro' : 'Modo claro');
+    themeButton?.setAttribute('title', light ? 'Modo oscuro' : 'Modo claro');
+    if (themeButton) themeButton.textContent = light ? 'Modo oscuro' : 'Modo claro';
   }
   themeButton?.addEventListener('click', () => {
     if (!isClassic()) return;
@@ -105,6 +105,7 @@
       if (!enabled) {
         outgoing.style.removeProperty('--section-scale');
         outgoing.style.removeProperty('--section-brightness');
+        outgoing.style.removeProperty('--section-blur');
         incoming.style.removeProperty('--section-enter-y');
         continue;
       }
@@ -118,6 +119,9 @@
       const offset = (1 - progress) * (mobile.matches ? 32 : 96);
       outgoing.style.setProperty('--section-scale', (1 - progress * depth).toFixed(3));
       outgoing.style.setProperty('--section-brightness', (1 - progress * .25).toFixed(3));
+      // Smoothstep follows scroll in both directions, with no one-shot state.
+      const focusProgress = progress * progress * (3 - 2 * progress);
+      outgoing.style.setProperty('--section-blur', `${(focusProgress * (mobile.matches ? 5 : 8)).toFixed(3)}px`);
       incoming.style.setProperty('--section-enter-y', `${offset.toFixed(1)}px`);
     }
   }

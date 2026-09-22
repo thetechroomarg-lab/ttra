@@ -3,6 +3,8 @@
 .ttra-editorial { display: none; }
 html[data-modo="classic"] {
   --rc-bg: #141513;
+  --ed-header-bg: #20221f;
+  --ed-footer-bg: #0d0f0d;
   --rc-bg-panel: #1e201d;
   --rc-bg-panel-2: #292b27;
   --rc-green: #f0eee8;
@@ -26,6 +28,8 @@ html[data-modo="classic"] {
 }
 html[data-modo="classic"][data-classic-theme="light"] {
   --rc-bg: #f5f3ec;
+  --ed-header-bg: #eae7dd;
+  --ed-footer-bg: #e2dfd5;
   --rc-bg-panel: #fffdf8;
   --rc-bg-panel-2: #eae7dd;
   --rc-green: #242620;
@@ -93,7 +97,7 @@ html[data-modo="classic"] .ttra-skip { position: fixed; top: -100px; left: 20px;
 html[data-modo="classic"] .ttra-skip:focus { top: 16px; }
 
 /* Masthead: brand and account. The legacy search node stays hidden for script compatibility. */
-html[data-modo="classic"] #rc-body-landing > header { display: grid; grid-template-columns: 1fr minmax(240px, 440px) 1fr; align-items: center; gap: 28px; padding: 24px var(--ed-gutter); background: var(--rc-bg); border-bottom: 1px solid var(--ed-line); }
+html[data-modo="classic"] #rc-body-landing > header { display: grid; grid-template-columns: 1fr minmax(240px, 440px) 1fr; align-items: center; gap: 28px; padding: 24px var(--ed-gutter); background: var(--ed-header-bg); border-bottom: 1px solid var(--ed-line); }
 html[data-modo="classic"] .rc-titulo-grupo { align-self: center; }
 html[data-modo="classic"] .rc-logo { line-height: .88; margin: 0; }
 html[data-modo="classic"] .rc-logo-linea { font: 800 clamp(30px, 3vw, 42px)/.88 Arial, sans-serif; letter-spacing: -.065em; color: var(--rc-green-bright); -webkit-text-stroke: 0; }
@@ -120,7 +124,7 @@ html[data-modo="classic"] .ttra-theme:hover { background: var(--rc-bg-panel-2); 
 
 /* Hero and original CSS device study: no external imagery or animation libraries. */
 html[data-modo="classic"] .ttra-scroll-stage { position: relative; isolation: isolate; background: var(--rc-bg); }
-html[data-modo="classic"] .ttra-hero { position: relative; z-index: 0; display: grid; grid-template-columns: 1.05fr 1fr; min-height: 680px; padding: 36px var(--ed-gutter) 40px; gap: clamp(24px, 4vw, 72px); transform: scale(var(--section-scale, 1)); transform-origin: center top; filter: brightness(var(--section-brightness, 1)); }
+html[data-modo="classic"] .ttra-hero { position: relative; z-index: 0; display: grid; grid-template-columns: 1.05fr 1fr; min-height: 680px; padding: 36px var(--ed-gutter) 40px; gap: clamp(24px, 4vw, 72px); transform: scale(var(--section-scale, 1)); transform-origin: center top; filter: brightness(var(--section-brightness, 1)) blur(var(--section-blur, 0px)); }
 @media (min-width: 701px) and (min-height: 620px) and (prefers-reduced-motion: no-preference) {
   html[data-modo="classic"] .ttra-hero { position: sticky; top: 0; }
 }
@@ -161,7 +165,7 @@ html[data-modo="classic"] .ttra-screen-brand span { color: #30221d; }
 html[data-modo="classic"] .ttra-screen-bar { position: absolute; bottom: 8px; width: 60px; height: 3px; left: calc(50% - 30px); background: #fff1db; border-radius: 3px; }
 
 /* Editorial rhythm and category studies. */
-html[data-modo="classic"] .ttra-collection { position: relative; z-index: 1; padding: 70px var(--ed-gutter) 65px; scroll-margin-top: 25px; background: var(--rc-bg); box-shadow: 0 -24px 55px #00000022; translate: 0 var(--section-enter-y, 0px); transform: scale(var(--section-scale, 1)); transform-origin: center bottom; filter: brightness(var(--section-brightness, 1)); }
+html[data-modo="classic"] .ttra-collection { position: relative; z-index: 1; padding: 70px var(--ed-gutter) 65px; scroll-margin-top: 25px; background: var(--rc-bg); box-shadow: 0 -24px 55px #00000022; translate: 0 var(--section-enter-y, 0px); transform: scale(var(--section-scale, 1)); transform-origin: center bottom; filter: brightness(var(--section-brightness, 1)) blur(var(--section-blur, 0px)); }
 html[data-modo="classic"] .ttra-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 35px; }
 html[data-modo="classic"] .ttra-section-heading .ttra-eyebrow { margin-bottom: 16px; color: var(--rc-green-dim); }
 html[data-modo="classic"] .ttra-section-heading h2 { margin: 0; font: 500 clamp(30px, 3.5vw, 52px)/1.05 var(--rc-font); letter-spacing: -.055em; }
@@ -240,7 +244,7 @@ html[data-modo="classic"] body.rc-vista-seccion main#productos { height: auto; m
 html[data-modo="classic"] body.rc-vista-seccion #rc-categorias-classic-wrap { margin-top: 20px; }
 
 /* Story and footer. */
-html[data-modo="classic"] .ttra-about { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; margin: 30px var(--ed-gutter) 35px; background: var(--rc-bg-panel); box-shadow: 0 -24px 55px #00000028; translate: 0 var(--section-enter-y, 0px); transform: scale(var(--section-scale, 1)); transform-origin: center bottom; filter: brightness(var(--section-brightness, 1)); }
+html[data-modo="classic"] .ttra-about { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; margin: 30px var(--ed-gutter) 35px; background: var(--rc-bg-panel); box-shadow: 0 -24px 55px #00000028; translate: 0 var(--section-enter-y, 0px); transform: scale(var(--section-scale, 1)); transform-origin: center bottom; filter: brightness(var(--section-brightness, 1)) blur(var(--section-blur, 0px)); }
 html[data-modo="classic"] .ttra-about-photo { min-height: 490px; position: relative; overflow: hidden; background: #394236; }
 html[data-modo="classic"] .ttra-about-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 25%, #111d18b3); }
 html[data-modo="classic"] .ttra-about-photo img { position: absolute; width: 100%; height: 120%; top: -10%; object-fit: cover; filter: saturate(.55); }
@@ -379,53 +383,72 @@ html[data-modo="classic"] .ttra-category .ttra-circle-arrow { display: block; fl
   html[data-modo="classic"] .ttra-category .ttra-circle-arrow { flex-basis: 32px; width: 32px; height: 32px; }
 }
 
-/* A personal introduction, set apart from the storefront's editorial type. */
+/* Locally hosted handwriting keeps the name tag consistent on every device. */
+@font-face {
+  font-family: 'TTRA Handwriting';
+  src: url('/fonts/caveat-variable.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
 html[data-modo="classic"] .ttra-personal-intro {
   position: relative;
   box-sizing: border-box;
-  width: min(100%, 470px);
-  margin: 4px 0 0;
-  padding: 23px 28px 24px;
-  border-left: 4px solid #d52f27;
-  border-radius: 2px 14px 14px 2px;
-  background: #eee7d8;
-  color: #252921;
+  width: min(100%, 410px);
+  margin: 8px 0 0;
+  padding: 0 0 13px;
+  overflow: hidden;
+  border: 1px solid #ff7770;
+  border-bottom: 12px solid #e9524f;
+  border-radius: 14px;
+  background: #f5f2e9;
+  color: #272a35;
   font-size: 24px;
-  line-height: 1.3;
-  box-shadow: 0 12px 34px #00000026;
+  line-height: 1.2;
+  text-align: center;
+  box-shadow: 0 12px 28px #00000030;
+}
+html[data-modo="classic"] .ttra-intro-hello {
+  display: block;
+  padding: 10px 16px 8px;
+  background: #e9524f;
+  color: #fffaf2;
+  font: 800 clamp(30px, 4vw, 40px)/1 Arial, sans-serif;
+  letter-spacing: .18em;
+  text-indent: .18em;
+  text-transform: uppercase;
 }
 html[data-modo="classic"] .ttra-intro-name {
   display: block;
-  margin-bottom: 12px;
-  font: 400 clamp(30px, 3vw, 43px)/1.15 Georgia, 'Times New Roman', serif;
-  letter-spacing: -.045em;
+  padding: 4px 18px 10px;
+  font-family: 'TTRA Handwriting', cursive;
+  letter-spacing: 0;
+}
+html[data-modo="classic"] .ttra-intro-soy {
+  display: block;
+  color: #ba3936;
+  font-size: 27px;
+  line-height: 1;
 }
 html[data-modo="classic"] .ttra-intro-name strong {
-  font-weight: 700;
-  color: #ad2e25;
-  text-decoration: underline;
-  text-decoration-color: #ad2e254d;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 6px;
+  display: inline-block;
+  color: #272a35;
+  font-size: clamp(58px, 6vw, 76px);
+  font-weight: 600;
+  line-height: 1.05;
+  transform: rotate(-3deg);
 }
 html[data-modo="classic"] .ttra-intro-detail {
   display: block;
-  max-width: 32ch;
-  font: 500 16px/1.8 var(--rc-font);
+  padding: 10px 20px 0;
+  border-top: 5px solid #e9524f;
+  font: 500 clamp(24px, 2.4vw, 29px)/1.1 'TTRA Handwriting', cursive;
   letter-spacing: 0;
+  text-wrap: balance;
 }
 html[data-modo="classic"] .ttra-intro-detail strong {
-  display: inline-block;
-  padding: 0 8px;
-  border-radius: 4px;
-  background: #252921;
-  color: #fff8e9;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
-}
-@media(max-width:700px) {
-  html[data-modo="classic"] .ttra-personal-intro { padding: 20px; }
-  html[data-modo="classic"] .ttra-intro-name { font-size: 32px; }
 }
 
 /* In-view card sequence: soft focus and scale resolve once on entry. */

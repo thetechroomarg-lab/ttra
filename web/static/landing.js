@@ -2542,12 +2542,7 @@ function animarCara() {
 
 setInterval(animarCara, 380);
 
-// --- Fecha, hora, ciudad y temperatura del usuario, a la izquierda del carrito ---
-// La ciudad y la temperatura corresponden a la ubicación real del visitante
-// (pide permiso de geolocalización al navegador); si lo rechaza o no está
-// disponible, se usa Córdoba Capital como respaldo.
-
-const COORD_RESPALDO = { lat: -31.4201, lon: -64.1888 };
+// --- Compatibilidad con el reloj del header anterior, sin geolocalización ---
 let temperaturaActual = null;
 let ciudadActual = null;
 
@@ -2672,9 +2667,7 @@ function barajar(lista) {
   return copia;
 }
 
-// Se resuelve una sola vez por carga de página (no se vuelve a barajar en
-// los refrescos de clima cada 15 min, para no reiniciar el carrousel si el
-// visitante lo está mirando).
+// Se resuelve una sola vez por carga de página, sin consultar la ubicación.
 let provinciaImagenesResueltas = false;
 
 function actualizarImagenesSegunProvincia(codigoIso) {
@@ -2704,54 +2697,6 @@ function actualizarImagenesSegunProvincia(codigoIso) {
       pintarCarrouselCiudad(productosEl);
     }
   }
-}
-
-async function cargarClimaYCiudad(lat, lon, ubicacionReal) {
-  let codigoIso = null;
-  try {
-    const [climaR, ciudadR, pronosticoR] = await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`),
-      fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`),
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`),
-    ]);
-    if (climaR.ok) {
-      const datosClima = await climaR.json();
-      temperaturaActual = Math.round(datosClima.current.temperature_2m);
-    }
-    if (ciudadR.ok) {
-      const datosCiudad = await ciudadR.json();
-      ciudadActual = datosCiudad.locality || datosCiudad.city || null;
-      codigoIso = datosCiudad.principalSubdivisionCode || null;
-    }
-    if (pronosticoR.ok) {
-      const datosPronostico = await pronosticoR.json();
-      const max = Math.round(datosPronostico.daily.temperature_2m_max[1]);
-      const min = Math.round(datosPronostico.daily.temperature_2m_min[1]);
-      const codigo = datosPronostico.daily.weathercode[1];
-      const desc = descripcionClima(codigo);
-      pronosticoManana = `Mañana en ${ciudadActual || "Córdoba"}: máxima de ${max}°, mínima de ${min}°, ${desc}`;
-      pronosticoConsejo = consejoClima(codigo, min, max);
-    }
-  } catch {
-    // se mantiene lo último cargado si algo falla
-  }
-  // Solo confiamos en la provincia si la ubicación vino de geolocalización
-  // real aceptada por el visitante; si no (permiso denegado, no soportado,
-  // etc.), el default es Córdoba ("AR-X"), no fotos de todo el país.
-  actualizarImagenesSegunProvincia(ubicacionReal ? codigoIso : "AR-X");
-  pintarFechaHoraTemp();
-}
-
-function iniciarUbicacionYClima() {
-  if (!("geolocation" in navigator)) {
-    cargarClimaYCiudad(COORD_RESPALDO.lat, COORD_RESPALDO.lon, false);
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    (posicion) => cargarClimaYCiudad(posicion.coords.latitude, posicion.coords.longitude, true),
-    () => cargarClimaYCiudad(COORD_RESPALDO.lat, COORD_RESPALDO.lon, false),
-    { timeout: 8000 }
-  );
 }
 
 pintarFechaHoraTemp();
@@ -2874,8 +2819,8 @@ async function iniciarNoticiero() {
 }
 
 iniciarNoticiero();
-iniciarUbicacionYClima();
-setInterval(iniciarUbicacionYClima, 15 * 60 * 1000);
+// Legacy city artwork uses Córdoba without requesting the visitor’s location.
+actualizarImagenesSegunProvincia("AR-X");
 
 // El recuadro de noticias nace y termina exactamente a la altura del logo:
 // misma altura, mismo tope y mismo pie. Se re-sincroniza si cambia la fuente

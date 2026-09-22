@@ -52,7 +52,9 @@ def test_pagina_catalogo_sin_sesion_muestra_todos_los_productos(tmp_path, monkey
     r = c.get("/catalogo")
     assert r.status_code == 200
     assert "Todo el catálogo" in r.text
-    assert 'id="tabs"' in r.text
+    assert 'id="tabs"' not in r.text
+    assert 'Filtrar por categoría' not in r.text
+    assert 'id="marca-filter"' in r.text
 
 
 def test_api_catalogo_sin_productos(tmp_path, monkeypatch):

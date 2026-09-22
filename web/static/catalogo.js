@@ -13,16 +13,6 @@ function pintarCarrousel() {
   el.innerHTML = marcas.map((m) => `<span>${m}</span>`).join("");
 }
 
-function pintarTabs(activa) {
-  const el = document.getElementById("tabs");
-  el.innerHTML = ["Todos", ...SECCIONES].map(
-    (s) => `<button type="button" data-seccion="${s}" class="${s === activa ? "activa" : ""}" aria-pressed="${s === activa}">${s}</button>`
-  ).join("");
-  el.querySelectorAll("button").forEach((btn) => {
-    btn.addEventListener("click", () => pintarSeccion(btn.dataset.seccion));
-  });
-}
-
 // Match the existing product-view history used by the administration panel.
 const productosConsultados = new Set();
 function registrarConsultaProducto(producto) {
@@ -64,7 +54,6 @@ function pintarMarcas() {
 
 function pintarSeccion(nombre) {
   categoriaActiva = nombre;
-  pintarTabs(nombre);
   const el = document.getElementById("secciones");
   const base = nombre === "Todos"
     ? Object.values(SECCIONES_DATA).flat()
@@ -166,7 +155,6 @@ async function cargarCatalogo() {
       document.getElementById("secciones").innerHTML =
         `<p class="mensaje-vacio">${escapeHtml(datos.mensaje)}</p>`;
       document.getElementById("contador-productos").textContent = "0 productos";
-      pintarTabs(null);
       return;
     }
     pintarMarcas();

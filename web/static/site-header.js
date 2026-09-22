@@ -28,53 +28,6 @@
   if (!header || root.dataset.modo !== 'classic') return;
   header.classList.add('ttra-site-header');
 
-  const forest = document.createElement('div');
-  forest.className = 'ttra-ambient-bamboo';
-  forest.setAttribute('aria-hidden', 'true');
-  forest.setAttribute('inert', '');
-  // Deterministic silhouettes: no image downloads or per-frame JavaScript.
-  const bamboo = (x, index, distant) => {
-    const width = distant ? 8 : 15;
-    const top = -90 + (index % 4) * 48;
-    const lean = (index % 3 - 1) * 22;
-    const nodes = Array.from({length: 9}, (_, n) => {
-      const y = 970 - n * 125;
-      const branch = n > 2 && (n + index) % 2 === 0;
-      const side = (n + index) % 3 === 0 ? -1 : 1;
-      return `<path class="ttra-bamboo-node" d="M${-width / 2 - 2} ${y}Q0 ${y + 3} ${width / 2 + 2} ${y}"/>
-        ${branch ? `<g transform="translate(0 ${y}) scale(${side} 1)">
-          <g class="ttra-bamboo-leaves">
-            <path class="ttra-bamboo-branch" d="M0 0Q43 -55 120 -78M35 -38Q60 -80 65 -107M69 -60Q106 -40 144 -48"/>
-            <path d="M25 -29Q12 -67 17 -87Q38 -71 25 -29Z
-              M41 -45Q35 -88 48 -108Q57 -77 41 -45Z
-              M56 -54Q71 -96 94 -104Q83 -72 56 -54Z
-              M77 -65Q104 -104 135 -108Q116 -79 77 -65Z
-              M101 -74Q143 -94 163 -84Q133 -68 101 -74Z
-              M43 -43Q75 -43 87 -19Q57 -22 43 -43Z
-              M78 -54Q104 -42 111 -17Q88 -23 78 -54Z
-              M106 -48Q138 -40 148 -20Q119 -23 106 -48Z
-              M61 -87Q46 -119 53 -139Q70 -119 61 -87Z"/>
-          </g>
-        </g>` : ''}`;
-    }).join('');
-    return `<g transform="translate(${x} 0)">
-      <g class="ttra-bamboo-stalk ${distant ? 'is-distant' : 'is-near'}" style="--bamboo-duration:${13 + index % 5 * 2}s;--bamboo-delay:-${index * 2.7}s;--bamboo-lean:${lean / 20}deg">
-        <path class="ttra-bamboo-trunk" d="M${-width / 2} 1080Q${-width / 2 - 5} 550 ${lean - width / 3} ${top}L${lean + width / 3} ${top}Q${width / 2 - 5} 550 ${width / 2} 1080Z"/>
-        <path class="ttra-bamboo-highlight" d="M${-width / 4} 1080Q${-width / 4 - 5} 550 ${lean} ${top}"/>
-        ${nodes}
-      </g>
-    </g>`;
-  };
-  forest.innerHTML = `<svg viewBox="0 0 1440 1000" preserveAspectRatio="xMidYMid slice" focusable="false" xmlns="http://www.w3.org/2000/svg">
-    ${Array.from({length: 13}, (_, i) => bamboo(25 + i * 119, i, true)).join('')}
-    ${[65, 230, 405, 590, 790, 995, 1190, 1390].map((x, i) => bamboo(x, i + 13, false)).join('')}
-  </svg>`;
-  document.body.classList.add('ttra-has-bamboo');
-  document.body.prepend(forest);
-  const pauseForest = () => forest.classList.toggle('is-paused', document.hidden);
-  document.addEventListener('visibilitychange', pauseForest);
-  pauseForest();
-
   // Reuse the home contact footer on every storefront page, including products.
   const previousFooter = document.querySelector('body > .ttra-page-footer');
   if (previousFooter) {
@@ -122,9 +75,136 @@
     if (!event.target.closest('a[href]')) return;
     try { sessionStorage.setItem('ttra_portada_vista', '1'); } catch {}
   });
+  function mountDock(actions) {
+    const dock = document.createElement('div');
+    dock.className = 'ttra-dock';
+    dock.setAttribute('role', 'navigation');
+    dock.setAttribute('aria-label', 'Navegación principal');
+    const svg = (paths) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+    const home = document.createElement('a');
+    home.className = 'ttra-dock-home ttra-dock-control';
+    home.href = '/';
+    home.setAttribute('aria-label', 'Inicio');
+    if (location.pathname === '/') home.setAttribute('aria-current', 'page');
+    home.innerHTML = svg('<path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/>') + '<span class="ttra-dock-label">Inicio</span>';
+    const categories = document.createElement('button');
+    categories.type = 'button';
+    categories.className = 'ttra-dock-categories ttra-dock-control';
+    categories.setAttribute('aria-label', 'Categorías');
+    categories.setAttribute('aria-expanded', 'false');
+    categories.setAttribute('aria-controls', 'ttra-dock-categories');
+    categories.innerHTML = svg('<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>') + '<span class="ttra-dock-label">Categorías</span>';
+    const panel = document.createElement('div');
+    panel.id = 'ttra-dock-categories';
+    panel.className = 'ttra-dock-category-panel';
+    panel.hidden = true;
+    panel.setAttribute('aria-label', 'Categorías del catálogo');
+    const links = [
+      ['Todo el catálogo', '/catalogo'],
+      ['Celulares', '/catalogo?categoria=Celulares'],
+      ['Tablets', '/catalogo?categoria=Tablets'],
+      ['Notebooks y Macbooks', '/catalogo?categoria=Notebooks%20y%20Macbooks'],
+      ['Gaming', '/catalogo?categoria=Gaming'],
+      ['Accesorios', '/catalogo?categoria=Accesorios%20Celulares'],
+      ['Búsqueda por marca', '/catalogo?filtro=marca#catalog-filters'],
+    ];
+    for (const [title, href] of links) {
+      const link = document.createElement('a');
+      link.textContent = title; link.href = href; panel.append(link);
+    }
+    const contact = document.createElement('button');
+    contact.type = 'button';
+    contact.className = 'ttra-dock-contact ttra-dock-control';
+    contact.setAttribute('aria-label', 'Vías de contacto');
+    contact.setAttribute('aria-expanded', 'false');
+    contact.setAttribute('aria-controls', 'ttra-dock-contact');
+    contact.innerHTML = svg('<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 6.5h14M5 17.5h14"/>') + '<span class="ttra-dock-label">Contacto</span>';
+    const contactPanel = document.createElement('div');
+    contactPanel.id = 'ttra-dock-contact';
+    contactPanel.className = 'ttra-dock-category-panel';
+    contactPanel.hidden = true;
+    contactPanel.setAttribute('aria-label', 'Vías de contacto');
+    for (const source of document.querySelectorAll('body > footer .rc-redes a')) {
+      const link = source.cloneNode(true);
+      link.removeAttribute('class');
+      const label = document.createElement('span');
+      label.textContent = source.getAttribute('aria-label');
+      link.append(label);
+      contactPanel.append(link);
+    }
+    const closeContact = () => { contactPanel.hidden = true; contact.setAttribute('aria-expanded', 'false'); };
+    contact.addEventListener('click', () => {
+      const open = contactPanel.hidden;
+      closeCategories();
+      const profile = actions.querySelector('#btn-perfil-toggle, .ttra-site-profile');
+      if (profile?.getAttribute('aria-expanded') === 'true') profile.click();
+      contactPanel.hidden = !open;
+      contact.setAttribute('aria-expanded', String(open));
+    });
+    const closeCategories = () => { panel.hidden = true; categories.setAttribute('aria-expanded', 'false'); };
+    actions.querySelector('#btn-perfil-toggle, .ttra-site-profile').addEventListener('click', () => {
+      closeCategories();
+      closeContact();
+    });
+    categories.addEventListener('click', () => {
+      const open = panel.hidden;
+      closeContact();
+      const profile = actions.querySelector('#btn-perfil-toggle, .ttra-site-profile');
+      if (profile?.getAttribute('aria-expanded') === 'true') profile.click();
+      panel.hidden = !open;
+      categories.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', event => {
+      if (!contactPanel.contains(event.target) && !contact.contains(event.target)) closeContact();
+      if (!panel.contains(event.target) && !categories.contains(event.target)) closeCategories();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !contactPanel.hidden) { closeContact(); contact.focus(); }
+      if (event.key === 'Escape' && !panel.hidden) { closeCategories(); categories.focus(); }
+    });
+    dock.addEventListener('focusout', event => {
+      if (event.relatedTarget && !dock.contains(event.relatedTarget)) { closeCategories(); closeContact(); }
+    });
+    header.append(rate);
+    actions.prepend(home, categories);
+    actions.querySelector('#btn-carrito, .ttra-site-cart').after(contact);
+    dock.append(actions, panel, contactPanel);
+    const dockSection = document.createElement('section');
+    dockSection.className = 'ttra-dock-section';
+    dockSection.setAttribute('aria-label', 'Navegación del sitio');
+    dockSection.append(dock);
+    const footer = document.querySelector('body > footer');
+    if (footer) footer.replaceWith(dockSection);
+    else document.body.append(dockSection);
+    document.body.classList.add('ttra-has-dock');
+    for (const [selector, label] of [['#btn-carrito, .ttra-site-cart', 'Carrito'], ['#btn-perfil-toggle, .ttra-site-profile', 'Perfil']]) {
+      const control = actions.querySelector(selector);
+      control.classList.add('ttra-dock-control');
+      const text = document.createElement('span');
+      text.className = 'ttra-dock-label'; text.textContent = label; control.append(text);
+    }
+    // Pointer proximity reproduces the dock magnification without a framework.
+    const controls = [...dock.querySelectorAll('.ttra-dock-control')];
+    const reset = () => controls.forEach(control => control.style.removeProperty('--dock-lift'));
+    dock.addEventListener('pointermove', event => {
+      if (event.pointerType !== 'mouse' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      for (const control of controls) {
+        const rect = control.getBoundingClientRect();
+        const distance = Math.abs(event.clientX - rect.left - rect.width / 2);
+        control.style.setProperty('--dock-lift', Math.max(0, 1 - distance / 100).toFixed(3));
+      }
+    });
+    dock.addEventListener('pointerleave', reset);
+  }
   const rate = document.createElement('span');
   rate.className = 'ttra-site-rate';
-  rate.textContent = 'Dólar · …';
+  const rateLabel = document.createElement('span');
+  rateLabel.className = 'ttra-rate-label';
+  rateLabel.textContent = 'Cotización dólar';
+  const rateAmount = document.createElement('span');
+  rateAmount.className = 'ttra-rate-amount';
+  rateAmount.textContent = '…';
+  rate.append(rateLabel, rateAmount);
   // This endpoint reads the exchange rate published with productos.json.
   async function updateRate() {
     try {
@@ -132,10 +212,10 @@
       if (!response.ok) throw new Error('cotizacion');
       const {valor} = await response.json();
       if (typeof valor !== 'number' || !Number.isFinite(valor) || valor <= 0) throw new Error('cotizacion');
-      rate.textContent = `Dólar · $${new Intl.NumberFormat('es-AR', {maximumFractionDigits: 2}).format(valor)}`;
+      rateAmount.textContent = `$${new Intl.NumberFormat('es-AR', {maximumFractionDigits: 2}).format(valor)}`;
       rate.dataset.loaded = 'true';
     } catch {
-      if (!rate.dataset.loaded) rate.textContent = 'Dólar · no disponible';
+      if (!rate.dataset.loaded) rateAmount.textContent = 'No disponible';
     }
   }
   updateRate();
@@ -144,7 +224,11 @@
   if (document.body.id === 'rc-body-landing') {
     const homeActions = header.querySelector('.rc-modo-y-carrito');
     homeActions.prepend(rate);
-    homeActions.insertBefore(homeActions.querySelector('.ttra-theme'), homeActions.querySelector('.rc-perfil-menu'));
+    const theme = homeActions.querySelector('.ttra-theme');
+    theme.classList.add('rc-perfil-opcion');
+    theme.setAttribute('role', 'menuitem');
+    homeActions.querySelector('#rc-perfil-dropdown').insertBefore(theme, homeActions.querySelector('#btn-logout-classic'));
+    mountDock(homeActions);
     return;
   }
 
@@ -160,20 +244,19 @@
       </button>
       <div id="ttra-site-menu" class="ttra-site-menu" hidden>
         <a class="ttra-site-profile-link" href="/perfil">Ir a perfil</a>
-        <a href="/catalogo">Explorar catálogo</a>
         <button type="button" class="ttra-site-logout" hidden>Cerrar sesión</button>
         <p class="ttra-site-error" role="status" hidden></p>
       </div>
     </div>
     <button class="ttra-theme" type="button" aria-label="Cambiar tema" title="Cambiar tema">◐</button>
-    <button class="ttra-site-cart" type="button" aria-haspopup="dialog">
+    <button class="ttra-site-cart" type="button" aria-label="Abrir carrito" aria-haspopup="dialog">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-      Carrito <span class="ttra-site-count">0</span>
+      <span class="ttra-cart-label">Carrito</span> <span class="ttra-site-count">0</span>
     </button>`;
   const tools = document.createElement('div');
   tools.className = 'ttra-site-tools';
   actions.prepend(rate);
-  actions.insertBefore(actions.querySelector('.ttra-theme'), actions.querySelector('.ttra-site-account'));
+  actions.querySelector('.ttra-site-menu').insertBefore(actions.querySelector('.ttra-theme'), actions.querySelector('.ttra-site-logout'));
   tools.append(actions);
   if (previousActions) previousActions.replaceWith(tools);
   else header.appendChild(tools);
@@ -222,7 +305,8 @@
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !menu.hidden) closeMenu(true);
   });
-  actions.addEventListener('focusout', () => {
+  actions.addEventListener('focusout', (event) => {
+    if (actions.querySelector('.ttra-site-account').contains(event.relatedTarget)) return;
     queueMicrotask(() => {
       if (!actions.querySelector('.ttra-site-account').contains(document.activeElement)) closeMenu();
     });
@@ -230,9 +314,10 @@
 
   const themeButton = actions.querySelector('.ttra-theme');
   function updateThemeLabel() {
-    const label = root.dataset.classicTheme === 'light' ? 'Activar modo oscuro' : 'Activar modo claro';
+    const label = root.dataset.classicTheme === 'light' ? 'Modo oscuro' : 'Modo claro';
     themeButton.setAttribute('aria-label', label);
     themeButton.title = label;
+    themeButton.textContent = label;
   }
   themeButton.addEventListener('click', () => {
     root.dataset.classicTheme = root.dataset.classicTheme === 'light' ? 'dark' : 'light';
@@ -292,4 +377,5 @@
     }
   });
   updateSession();
+  mountDock(actions);
 })();
