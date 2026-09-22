@@ -2087,7 +2087,7 @@ def api_codigos_promo_consumir(entrada: CodigoPromoIn, request: Request):
 
 @app.get("/catalogo")
 def pagina_catalogo(request: Request):
-    if not _sesion_activa(request) or _debe_cambiar_password(request):
+    if _sesion_activa(request) and _debe_cambiar_password(request):
         return RedirectResponse("/login.html")
     return FileResponse(str(BASE / "static" / "catalogo.html"))
 

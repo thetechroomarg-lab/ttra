@@ -34,19 +34,30 @@
   <link rel="stylesheet" href="catalogo.css">
   <link rel="stylesheet" href="classic-editorial.css">
 </head>
-<body>
+<body class="catalog-page">
   <div id="rc-boot"></div>
   <div class="rc-crt"></div>
-  <header>
-    <h1>THE TECH ROOM ARG</h1>
-    <button id="btn-logout" type="button">Salir</button>
+  <header class="catalog-header">
+    <a class="catalog-brand" href="/" aria-label="The Tech Room Arg, volver al inicio">THE<br>TECH<br>ROOM<br>ARG<span>.</span></a>
+    <div class="catalog-header-actions">
+      <a class="catalog-back" href="/">← Volver al inicio</a>
+      <a class="catalog-login" id="catalog-login" href="/login.html">Ingresar</a>
+      <button id="btn-logout" type="button" hidden>Cerrar sesión</button>
+    </div>
   </header>
+
+  <section class="catalog-intro" aria-labelledby="catalog-title">
+    <p class="catalog-eyebrow">THE TECH ROOM ARG / CATÁLOGO</p>
+    <h1 id="catalog-title">Todo para tu mundo<span>.</span></h1>
+    <p>Explorá todos los productos o elegí una categoría. Si necesitás ayuda, escribime.</p>
+  </section>
 
   <div class="carrousel-wrap">
     <div class="carrousel" id="carrousel"></div>
   </div>
 
-  <nav class="tabs" id="tabs"></nav>
+  <div class="catalog-filter-header"><p>Filtrar por categoría</p><span id="contador-productos" aria-live="polite">Cargando productos…</span></div>
+  <nav class="tabs" id="tabs" aria-label="Filtrar productos por categoría"></nav>
   <main id="secciones"></main>
 
   <script src="boot.js"></script>

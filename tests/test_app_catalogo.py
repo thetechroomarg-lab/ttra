@@ -47,11 +47,12 @@ def test_api_catalogo_es_publica_sin_sesion(tmp_path, monkeypatch):
     assert r.status_code == 200
 
 
-def test_pagina_catalogo_sin_sesion_redirige_a_login(tmp_path, monkeypatch):
+def test_pagina_catalogo_sin_sesion_muestra_todos_los_productos(tmp_path, monkeypatch):
     c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
     r = c.get("/catalogo")
-    assert r.status_code in (302, 307)
-    assert "login" in r.headers["location"]
+    assert r.status_code == 200
+    assert "Todo para tu mundo" in r.text
+    assert 'id="tabs"' in r.text
 
 
 def test_api_catalogo_sin_productos(tmp_path, monkeypatch):

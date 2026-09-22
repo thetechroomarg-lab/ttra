@@ -15,8 +15,8 @@ function pintarCarrousel() {
 
 function pintarTabs(activa) {
   const el = document.getElementById("tabs");
-  el.innerHTML = SECCIONES.map(
-    (s) => `<button data-seccion="${s}" class="${s === activa ? "activa" : ""}">${s}</button>`
+  el.innerHTML = ["Todos", ...SECCIONES].map(
+    (s) => `<button type="button" data-seccion="${s}" class="${s === activa ? "activa" : ""}" aria-pressed="${s === activa}">${s}</button>`
   ).join("");
   el.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => pintarSeccion(btn.dataset.seccion));
@@ -28,9 +28,13 @@ let SECCIONES_DATA = {};
 function pintarSeccion(nombre) {
   pintarTabs(nombre);
   const el = document.getElementById("secciones");
-  const productos = SECCIONES_DATA[nombre] || [];
+  const productos = nombre === "Todos"
+    ? Object.values(SECCIONES_DATA).flat()
+    : (SECCIONES_DATA[nombre] || []);
+  document.getElementById("contador-productos").textContent =
+    `${productos.length} ${productos.length === 1 ? "producto" : "productos"}`;
   if (productos.length === 0) {
-    el.innerHTML = `<p class="mensaje-vacio">Todavía no hay productos cargados en ${nombre}.</p>`;
+    el.innerHTML = `<p class="mensaje-vacio">Todavía no hay productos cargados en ${escapeHtml(nombre)}.</p>`;
     return;
   }
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
@@ -60,20 +64,28 @@ function tarjetaProducto(p) {
 }
 
 async function cargarCatalogo() {
-  const r = await fetch("/api/catalogo");
-  if (r.status === 401) {
-    window.location.href = "/login.html";
-    return;
-  }
-  const datos = await r.json();
-  SECCIONES_DATA = datos.secciones || {};
-  if (datos.mensaje) {
+  try {
+    const r = await fetch("/api/catalogo");
+    if (r.status === 401) {
+      window.location.href = "/login.html";
+      return;
+    }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const datos = await r.json();
+    SECCIONES_DATA = datos.secciones || {};
+    if (datos.mensaje) {
+      document.getElementById("secciones").innerHTML =
+        `<p class="mensaje-vacio">${escapeHtml(datos.mensaje)}</p>`;
+      document.getElementById("contador-productos").textContent = "0 productos";
+      pintarTabs(null);
+      return;
+    }
+    pintarSeccion("Todos");
+  } catch {
     document.getElementById("secciones").innerHTML =
-      `<p class="mensaje-vacio">${datos.mensaje}</p>`;
-    pintarTabs(null);
-    return;
+      '<p class="mensaje-vacio">No pude cargar el catálogo. Probá de nuevo en un momento.</p>';
+    document.getElementById("contador-productos").textContent = "Catálogo no disponible";
   }
-  pintarSeccion(SECCIONES[0]);
 }
 
 document.getElementById("btn-logout").addEventListener("click", async () => {
@@ -81,5 +93,17 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
   window.location.href = "/login.html";
 });
 
+async function sincronizarSesion() {
+  try {
+    const respuesta = await fetch("/api/me");
+    if (!respuesta.ok) return;
+    document.getElementById("catalog-login").hidden = true;
+    document.getElementById("btn-logout").hidden = false;
+  } catch {
+    // El catálogo público sigue disponible aunque falle la consulta de sesión.
+  }
+}
+
 pintarCarrousel();
+sincronizarSesion();
 cargarCatalogo();
