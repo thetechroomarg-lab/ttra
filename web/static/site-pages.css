@@ -138,9 +138,7 @@ html[data-modo="classic"] .ttra-page .rc-terminos-contenido { overscroll-behavio
 
 /* Catalog page: details and rhythm carry the same visual language as the home. */
 html[data-modo="classic"] .catalog-page .catalog-header { align-items: center; }
-html[data-modo="classic"] .catalog-page .catalog-intro { padding-top: clamp(70px, 8vw, 135px); padding-bottom: clamp(70px, 8vw, 125px); }
 html[data-modo="classic"] .catalog-page .catalog-intro h1 { max-width: 1050px; }
-html[data-modo="classic"] .catalog-page .catalog-intro > p:last-child { font-size: 16px; }
 html[data-modo="classic"] .catalog-page .catalog-filter-header { border-top: 1px solid var(--ed-line); }
 html[data-modo="classic"] .catalog-page .tabs button { transition: border-color .2s, color .2s, background .2s; }
 html[data-modo="classic"] .catalog-page .card { position: relative; display: flex; flex-direction: column; min-height: 230px; transition: border-color .25s, transform .35s var(--ed-ease); }
