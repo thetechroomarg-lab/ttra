@@ -180,7 +180,7 @@ def test_admin_apila_controles_y_muestra_clientes_como_tarjetas_en_mobile(monkey
     assert "#tabla-clientes .col-check { justify-content:flex-start; text-align:left; }" in r.text
     assert ".pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }" in r.text
     assert ".pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }" in r.text
-    assert ".pedido-acciones .btn-enviar-recibo { grid-area:recibo; }" in r.text
+    assert ".pedido-acciones .btn-enviar-recibo, .pedido-acciones .btn-recibo-nota { grid-area:recibo; }" in r.text
     assert ".pedido-acciones .btn-direcciones { grid-area:direcciones; }" in r.text
     assert ".pedido-acciones .btn-editar-entrega { grid-area:editar; }" in r.text
     assert ".pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }" in r.text
@@ -436,7 +436,8 @@ def test_admin_puede_editar_y_eliminar_una_entrega_pendiente(monkeypatch):
     assert fake.table("pedidos").select("*").eq("id", "editable").execute().data[0]["fecha_entrega"] == "2026-08-25"
     eliminar = c.delete("/admin/pedidos/editable")
     assert eliminar.status_code == 200
-    assert fake.table("pedidos").select("*").eq("id", "editable").execute().data == []
+    fila = fake.table("pedidos").select("*").eq("id", "editable").execute().data[0]
+    assert fila["borrado_en"] is not None
 
 
 def test_admin_puede_adelantar_un_pedido_a_hoy_pasado_el_corte(monkeypatch):
@@ -512,7 +513,8 @@ def test_admin_puede_eliminar_un_pedido_del_historial_con_recibo_enviado(monkeyp
     eliminar = c.delete("/admin/pedidos/con-recibo")
 
     assert eliminar.status_code == 200
-    assert fake.table("pedidos").select("*").eq("id", "con-recibo").execute().data == []
+    fila = fake.table("pedidos").select("*").eq("id", "con-recibo").execute().data[0]
+    assert fila["borrado_en"] is not None
 
 
 def test_historial_muestra_boton_para_eliminar_pedido_con_recibo(monkeypatch):
@@ -805,3 +807,14 @@ def test_admin_resetea_password_cliente_inexistente(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     r = c.post("/admin/clientes/id-que-no-existe/resetear-password")
     assert r.status_code == 400
+
+
+def test_panel_pedidos_tiene_link_a_papelera(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
+
+    assert 'href="/admin/papelera"' in cliente.get("/admin/clientes").text
+    assert 'href="/admin/papelera"' in cliente.get("/admin/clientes/lista").text

@@ -71,6 +71,38 @@ def test_html_recibo_ajusta_nombres_largos_sin_invadir_otras_columnas():
     assert "word-break:break-word" in contenido
 
 
+def test_formatear_fecha_emision_convierte_a_gmt_menos_3():
+    assert recibos._formatear_fecha_emision("2026-08-24T15:30:00+00:00") == "24/08/2026 12:30"
+    assert recibos._formatear_fecha_emision("2026-08-24T02:15:00+00:00") == "23/08/2026 23:15"
+
+
+def test_html_recibo_incluye_leyenda_no_valido_como_factura():
+    contenido = recibos.html_recibo(
+        {"nombre": "Ana", "apellido": "Pérez"},
+        {"recibo_id": "TTRA-000006", "detalle": [], "total_usd": 0},
+    )
+
+    assert "Documento no válido como factura" in contenido
+
+
+def test_pdf_recibo_incluye_leyenda_no_valido_como_factura(monkeypatch):
+    textos = []
+    original = recibos.Paragraph
+
+    def _paragraph_espia(texto, *args, **kwargs):
+        textos.append(texto)
+        return original(texto, *args, **kwargs)
+
+    monkeypatch.setattr(recibos, "Paragraph", _paragraph_espia)
+
+    recibos.pdf_recibo(
+        {"nombre": "Ana", "apellido": "Pérez"},
+        {"recibo_id": "TTRA-000007", "detalle": [], "total_usd": 0, "descuento_usd": 0},
+    )
+
+    assert any("Documento no válido como factura" in texto for texto in textos)
+
+
 def test_pdf_recibo_contiene_el_detalle_y_la_fecha_original():
     pdf = recibos.pdf_recibo(
         {"nombre": "Ana", "apellido": "Pérez"},

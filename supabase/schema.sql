@@ -32,6 +32,94 @@ alter table clientes add column if not exists direccion text;
 -- para revendedores (popup obligatorio en la landing). Null = no aceptadas.
 alter table clientes add column if not exists condiciones_mayorista_aceptadas_en timestamptz;
 
+-- Un cliente que se dio de baja del mailing de novedades (link en el
+-- footer del mail) queda excluido de la audiencia de próximas campañas.
+alter table clientes add column if not exists no_mailing boolean not null default false;
+
+-- Estado de la campaña de mailing de novedades (snapshot del catálogo, nota
+-- pendiente, borrador actual). Una sola fila por `clave` — no es historial,
+-- es el "último valor conocido" de cada cosa, para que tanto un script local
+-- como la rutina en la nube lean/escriban el mismo estado.
+create table if not exists mailing_estado (
+  clave text primary key,
+  valor jsonb not null,
+  actualizado_en timestamptz not null default now()
+);
+
+-- Un registro por campaña efectivamente enviada (no por borrador armado).
+create table if not exists mailing_envios (
+  id uuid primary key default gen_random_uuid(),
+  productos int not null,
+  ok int not null,
+  fallidos int not null,
+  enviado_en timestamptz not null default now()
+);
+
+-- Versiones inmutables de campañas visuales. Cada regeneración conserva la
+-- anterior y crea una versión hija; el manifiesto contiene el HTML aprobado,
+-- productos/precios congelados y el hash del arte persistente.
+create table if not exists mailing_campanias (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null,
+  parent_id uuid references mailing_campanias(id) on delete set null,
+  version integer not null,
+  estado text not null check (estado in ('previsualizado','aprobado','enviando','enviado','invalidado')),
+  manifest jsonb not null,
+  creado_en timestamptz not null default now(),
+  aprobado_en timestamptz,
+  enviado_en timestamptz,
+  resultado jsonb,
+  unique (campaign_id, version)
+);
+alter table mailing_campanias enable row level security;
+
+-- Resultado por destinatario para auditoría y para evitar reintentos ciegos
+-- tras un fallo parcial del proveedor de correo.
+create table if not exists mailing_envios_detalle (
+  version_id uuid not null references mailing_campanias(id) on delete cascade,
+  cliente_id uuid not null references clientes(id) on delete cascade,
+  estado text not null check (estado in ('ok','fallido')),
+  error text,
+  enviado_en timestamptz not null default now(),
+  primary key (version_id, cliente_id)
+);
+alter table mailing_envios_detalle enable row level security;
+
+-- Compare-and-set del estado para que dos aprobaciones/envíos concurrentes
+-- no puedan avanzar la misma versión desde el mismo estado.
+create or replace function public.transicionar_mailing_campania(
+  p_id uuid, p_desde text, p_hacia text, p_cambios jsonb default '{}'::jsonb
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare fila mailing_campanias;
+begin
+  if not (
+    (p_desde = 'previsualizado' and p_hacia in ('aprobado', 'invalidado'))
+    or (p_desde = 'aprobado' and p_hacia in ('enviando', 'invalidado'))
+    or (p_desde = 'enviando' and p_hacia = 'enviado')
+  ) then
+    raise exception 'invalid_mailing_transition';
+  end if;
+  update mailing_campanias
+     set estado = p_hacia,
+         aprobado_en = case when p_hacia = 'aprobado' then now() else aprobado_en end,
+         enviado_en = case when p_hacia = 'enviado' then now() else enviado_en end,
+         resultado = coalesce(p_cambios->'resultado', resultado)
+   where id = p_id and estado = p_desde
+   returning * into fila;
+  if fila.id is null then
+    raise exception 'invalid_mailing_transition';
+  end if;
+  return to_jsonb(fila);
+end;
+$$;
+revoke all on function public.transicionar_mailing_campania(uuid, text, text, jsonb) from public;
+revoke all on function public.transicionar_mailing_campania(uuid, text, text, jsonb) from anon, authenticated;
+grant execute on function public.transicionar_mailing_campania(uuid, text, text, jsonb) to service_role;
+
 -- Domicilios guardados por cliente para el checkout (hasta 5, uno
 -- predeterminado). La columna clientes.direccion se mantiene aparte: la
 -- sigue usando el panel admin para el "Vamos" de contactos-proveedor.
@@ -98,6 +186,12 @@ alter table pedidos add column if not exists observaciones_cadete text;
 -- solo buscar el texto de la dirección. Null si no se pudo capturar.
 alter table pedidos add column if not exists lat double precision;
 alter table pedidos add column if not exists lng double precision;
+-- Borrado temporal (papelera): una fila con borrado_en no nulo queda oculta
+-- de todas las listas activas pero sigue existiendo 48hs por si hay que
+-- restaurarla. Se purga (delete real) al superar ese plazo, de forma
+-- perezosa, la próxima vez que alguien abre la papelera.
+alter table pedidos add column if not exists borrado_en timestamptz;
+alter table pedidos add column if not exists borrado_por text;
 create unique index if not exists pedidos_recibo_id_unico
   on pedidos (recibo_id) where recibo_id is not null;
 create index if not exists pedidos_fecha_orden_entrega_idx
@@ -126,6 +220,28 @@ alter table tareas_entrega add column if not exists cliente_id uuid references c
 alter table tareas_entrega add column if not exists cliente_nombre text;
 alter table tareas_entrega add column if not exists asignado_a text;
 alter table tareas_entrega add column if not exists observaciones_cadete text;
+alter table tareas_entrega add column if not exists borrado_en timestamptz;
+alter table tareas_entrega add column if not exists borrado_por text;
+
+-- Recibos generados a mano desde una nota del cadete, sin depender de que
+-- exista un pedido en la base (ver panel "Recibo" en /admin/cadete). Los
+-- items son una instantánea: nombre + precio USD tal cual los cargó el
+-- cadete, no una referencia viva al catálogo.
+create table if not exists recibos_manuales (
+  id uuid primary key default gen_random_uuid(),
+  tarea_id uuid references tareas_entrega(id) on delete set null,
+  nombre_cliente text not null,
+  email_cliente text not null,
+  items jsonb not null,
+  total_usd numeric not null,
+  fotos_series jsonb not null default '[]'::jsonb,
+  recibo_id text unique,
+  creado_por text not null,
+  creado_en timestamptz not null default now(),
+  enviado_en timestamptz
+);
+create index if not exists recibos_manuales_tarea_idx on recibos_manuales (tarea_id);
+alter table recibos_manuales enable row level security;
 
 create sequence if not exists public.recibos_numero_seq start with 1993;
 create or replace function public.siguiente_numero_recibo()
@@ -456,3 +572,17 @@ values ('recibos-series', 'recibos-series', false)
 on conflict (id) do nothing;
 alter table interacciones_cliente enable row level security;
 alter table codigos_descuento enable row level security;
+
+-- Suscripciones Web Push del panel del cadete (ver web/push_cadete.py):
+-- puede haber más de una fila (celu nuevo, reinstaló la PWA, etc.), cada
+-- una es un endpoint de navegador distinto. Sin cliente_id/auth_id porque
+-- el login de cadete es una sola contraseña compartida, no cuentas
+-- individuales (ver CADETE_PASSWORD en web/app.py).
+create table if not exists cadete_push_suscripciones (
+  id uuid primary key default gen_random_uuid(),
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  creada_en timestamptz not null default now()
+);
+alter table cadete_push_suscripciones enable row level security;

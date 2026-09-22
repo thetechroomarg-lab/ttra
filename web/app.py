@@ -16,19 +16,20 @@ from decimal import Decimal
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Literal
-from urllib.parse import urlencode, urlparse
+from urllib.parse import quote, urlencode, urlparse
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, recibos
+from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales
 from web.email_util import EnvioEmailError, enviar_email
+from web.mailing import assets as mailing_assets, campanias, destinatarios, envio as mailing_envio, servicio as mailing_servicio, template as mailing_template
 from web.productos import resolver_proveedor
 from web.slugs import slug as slug_producto
 from web.supabase_client import get_client
@@ -88,6 +89,8 @@ def _leer_ui(nombre):
 # En producción (Railway) apunta a un volumen persistente vía la variable de
 # entorno PRODUCTOS_PATH; en local, cae al archivo de siempre junto al código.
 PRODUCTOS_PATH = Path(os.environ.get("PRODUCTOS_PATH", str(BASE / "productos.json")))
+_MAILING_ASSETS_ENV = os.environ.get("MAILING_ASSETS_PATH")
+MAILING_ASSETS_PATH = Path(_MAILING_ASSETS_ENV) if _MAILING_ASSETS_ENV else None
 # No se sirve al navegador: se genera junto al catálogo para enriquecer el
 # detalle administrativo de cada pedido sin exponer proveedores al público.
 PROVEEDORES_PATH = Path(os.environ.get("PROVEEDORES_PATH", str(BASE / "proveedores.json")))
@@ -397,8 +400,36 @@ class DerivarEntregaIn(BaseModel):
     observaciones: str | None = None
 
 
+class SuscripcionPushIn(BaseModel):
+    endpoint: str
+    keys: dict
+
+
 class MailingOfertaIn(BaseModel):
     productos: list[str]
+
+
+class MailingHeroIn(BaseModel):
+    url: str
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    alt: str = Field(min_length=1, max_length=300)
+    width: int = Field(gt=0, le=10000)
+    height: int = Field(gt=0, le=10000)
+
+
+class MailingCampaniaIn(BaseModel):
+    campaign_id: str
+    brief: str = Field(default="", max_length=2000)
+    asunto: str = Field(min_length=1, max_length=200)
+    preheader: str = Field(default="", max_length=300)
+    nota: str | None = Field(default=None, max_length=2000)
+    productos: list[str] = Field(min_length=1, max_length=20)
+    hero: MailingHeroIn
+    parent_id: str | None = None
+
+
+class MailingConfirmacionIn(BaseModel):
+    confirmacion: str
 
 
 class ClientesSeleccionadosIn(BaseModel):
@@ -442,6 +473,101 @@ class CodigoPromoIn(BaseModel):
 _DESCUENTO_MAILING_USD = 5
 
 
+def _clientes_admin_activo(request: Request):
+    return bool(request.session.get("clientes_admin_ok"))
+
+
+def _cadete_activo(request: Request):
+    return bool(request.session.get("cadete_ok"))
+
+
+def _puede_operar_entrega(request: Request, fila: dict):
+    if _clientes_admin_activo(request):
+        return True
+    return _cadete_activo(request) and fila.get("asignado_a") == CADETE_SLUG
+
+
+def _json_para_script(valor):
+    # json.dumps no escapa "<", ">" ni "&", así que un dato de usuario (ej. un
+    # nombre de cliente) que contenga "</script>" cerraría el bloque e
+    # inyectaría HTML/JS arbitrario. Usar esto en vez de json.dumps() para
+    # cualquier valor con datos de usuario embebido dentro de un <script>.
+    return (
+        json.dumps(valor, ensure_ascii=False)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
+
+
+def _activo(fila):
+    return not fila.get("borrado_en")
+
+
+def _quien_opera(request: Request):
+    if _clientes_admin_activo(request):
+        return "Vlad"
+    if _cadete_activo(request):
+        return CADETE_SLUG
+    return None
+
+
+def _purgar_y_listar_papelera(client, asignado_a=None):
+    limite = datetime.now(timezone.utc) - timedelta(hours=48)
+
+    def _procesar(tabla):
+        filas = client.table(tabla).select("*").not_.is_("borrado_en", "null").execute().data
+        vivas, vencidas = [], []
+        for fila in filas:
+            borrado_en = fila.get("borrado_en")
+            if not borrado_en:
+                continue
+            momento = datetime.fromisoformat(borrado_en)
+            (vencidas if momento < limite else vivas).append(fila)
+        for fila in vencidas:
+            client.table(tabla).delete().eq("id", fila["id"]).execute()
+        if asignado_a is not None:
+            vivas = [f for f in vivas if f.get("asignado_a") == asignado_a or f.get("borrado_por") == asignado_a]
+        vivas.sort(key=lambda f: f.get("borrado_en", ""), reverse=True)
+        return vivas
+
+    return _procesar("pedidos"), _procesar("tareas_entrega")
+
+
+def _formatear_entero_ar(valor):
+    if valor is None:
+        return "—"
+    return f"{int(valor):,}".replace(",", ".")
+
+
+def _query_maps(direccion, lat, lng):
+    # Con coordenadas exactas (geolocalización del cliente al pedir, o el
+    # punto elegido en el autocomplete) el link va directo a la casa puntual
+    # — clave en barrios privados, donde la dirección de texto sola no
+    # alcanza. Sin coordenadas, cae al texto de siempre.
+    if lat is not None and lng is not None:
+        return f"{lat},{lng}"
+    return direccion
+
+
+def _link_whatsapp_cliente(celular, texto=None):
+    digitos = re.sub(r"\D", "", celular or "")
+    if not digitos:
+        return None
+    if not digitos.startswith("54"):
+        digitos = "549" + digitos
+    link = f"https://wa.me/{digitos}"
+    if texto:
+        link += f"?text={quote(texto)}"
+    return link
+
+
+# Mensaje precargado al tocar "Vamos" en una entrega con cliente real y
+# celular cargado: WhatsApp no permite disparar el envío de ubicación en
+# tiempo real de forma automática (es una acción manual del chat, por
+# privacidad), así que el mensaje avisa y el cadete comparte la ubicación
+# con un toque más, ya con el chat abierto.
+MENSAJE_EN_CAMINO = "¡Hola! Estoy en camino 🚗 Te envío mi ubicación en tiempo real para que puedas ver por dónde voy"
 
 
 def _precios_mail_producto(producto):
@@ -740,6 +866,26 @@ def admin_cadete_logout(request: Request):
     return {"ok": True}
 
 
+@app.get("/admin/cadete/push/vapid-public-key")
+def admin_cadete_push_vapid_public_key(request: Request):
+    if not _cadete_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de cadete requerida")
+    if not push_cadete.PUSH_CONFIGURADO:
+        raise HTTPException(status_code=503, detail="Notificaciones no configuradas")
+    return {"publicKey": push_cadete.VAPID_PUBLIC_KEY}
+
+
+@app.post("/admin/cadete/push/suscribir")
+def admin_cadete_push_suscribir(entrada: SuscripcionPushIn, request: Request):
+    if not _cadete_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de cadete requerida")
+    try:
+        push_cadete.guardar_suscripcion(get_client(), entrada.model_dump())
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    return {"ok": True}
+
+
 def _clientes_seleccionados(client, cliente_ids: list[str]):
     ids = list(dict.fromkeys(cliente_id for cliente_id in cliente_ids if cliente_id))
     clientes_por_id = {
@@ -863,7 +1009,7 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas_pedido = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas_pedido:
+    if not filas_pedido or not _activo(filas_pedido[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     pedido = filas_pedido[0]
     if not _puede_operar_entrega(request, pedido):
@@ -933,7 +1079,7 @@ def admin_pedido_pdf_recibo(pedido_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     pedido = filas[0]
     if not pedido.get("recibo_enviado_en"):
@@ -1083,10 +1229,2388 @@ def admin_clientes_mailing_oferta(cliente_id: str, entrada: MailingOfertaIn, req
 
 
 
-from web import paginas_admin, paginas_cadete  # noqa: E402  (necesita app creado)
-app.include_router(paginas_admin.router)
-app.include_router(paginas_cadete.router)
 
+
+_ICONO_OJO = (
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg>'
+)
+
+_ICONO_TACHO = (
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'
+    '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>'
+)
+
+
+_ADMIN_CLIENTES_ESTILO = """
+<style>
+  :root {
+    --op-bg: #111318;
+    --op-surface: #1b1e24;
+    --op-surface-2: #23272f;
+    --op-surface-3: #2c313c;
+    --op-border: #2a2e37;
+    --op-border-strong: #3d4451;
+    --op-text: #f2f4f8;
+    --op-text-dim: #aab0bd;
+    --op-text-faint: #6f7683;
+    --op-accent: #c8102e;
+    --op-accent-hover: #dd1533;
+    --op-accent-press: #a10d24;
+    --op-accent-bg: #2a1216;
+    --op-accent-border: #5c2430;
+    --op-danger-text: #ff9baa;
+    --op-success: #34d399;
+    --op-success-bg: #133024;
+    --op-success-border: #1f5c3f;
+    --op-warning: #f5c66b;
+    --op-input-bg: #12141a;
+    --op-s1: 4px; --op-s2: 8px; --op-s3: 12px; --op-s4: 16px; --op-s5: 24px; --op-s6: 32px;
+    --op-r-sm: 8px; --op-r-md: 12px; --op-r-lg: 16px;
+    --op-fs-display: 22px; --op-fs-title: 17px; --op-fs-body: 14px; --op-fs-small: 13px; --op-fs-micro: 12px;
+    --op-ease: cubic-bezier(.2,.8,.2,1); --op-dur: 140ms;
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background:var(--op-bg); margin:0;
+         min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
+  .tarjeta { background:var(--op-surface); border-radius:var(--op-r-lg); padding:28px 24px; width:100%; max-width:340px;
+             box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); box-sizing:border-box; border:1px solid var(--op-border); }
+  .tarjeta h1 { margin:0 0 16px; color:var(--op-text); font-size:var(--op-fs-display); }
+  .tarjeta input { width:100%; height:42px; padding:0 12px; font-size:16px; box-sizing:border-box;
+                   border:2px solid var(--op-border-strong); border-radius:var(--op-r-md); margin-bottom:10px;
+                   background:var(--op-input-bg); color:var(--op-text); }
+  .tarjeta button { width:100%; height:44px; border:none; border-radius:var(--op-r-sm); background:var(--op-accent);
+                    color:#fff; font-size:15px; font-weight:700; cursor:pointer;
+                    transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .tarjeta button:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .tarjeta button:active { background:var(--op-accent-press); transform:translateY(0); }
+  .error { color:var(--op-danger-text); font-size:13px; margin:0 0 10px; }
+  .panel { background:var(--op-surface); border-radius:var(--op-r-lg); padding:20px; max-width:1000px; width:100%;
+           margin:20px auto; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); box-sizing:border-box;
+           border:1px solid var(--op-border); }
+  .panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .panel-header h1 { color:var(--op-text); font-size:var(--op-fs-display); margin:0; }
+  .panel-header button { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); border-radius:var(--op-r-sm);
+                          padding:8px 14px; cursor:pointer; font-weight:700; transition:background-color var(--op-dur) var(--op-ease); }
+  .panel-header button:hover { background:var(--op-surface-3); }
+  .panel-header-acciones { display:flex; align-items:center; gap:10px; }
+  .btn-clientes { border:1px solid var(--op-border-strong); background:var(--op-surface-2); border-radius:var(--op-r-sm); color:var(--op-text); font-size:14px; font-weight:700; padding:8px 14px; text-decoration:none; transition:background-color var(--op-dur) var(--op-ease); }
+  .btn-clientes:hover { background:var(--op-surface-3); }
+  table { width:100%; border-collapse:collapse; font-size:var(--op-fs-body); color:var(--op-text-dim); }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--op-border); }
+  th { color:var(--op-text); }
+  .vacio { color:var(--op-text-dim); text-align:center; padding:30px; }
+  .scroll-hint { display:none; }
+  .btn-historial { display:inline-flex; color:var(--op-text-dim); }
+  .btn-historial:hover { color:var(--op-text); }
+  .btn-eliminar { display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--op-accent-border); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-danger-text); cursor:pointer; font-weight:700; padding:8px 10px; transition:background-color var(--op-dur) var(--op-ease); }
+  .btn-eliminar:hover { background:var(--op-accent-bg); }
+  .btn-eliminar:disabled { cursor:not-allowed; opacity:.55; }
+  .cuenta-cliente-acciones { display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+  .cuenta-cliente-acciones .btn-mayorista, .cuenta-cliente-acciones .btn-reset, .cuenta-cliente-acciones .btn-eliminar { box-sizing:border-box; width:100%; }
+  .tipo-cliente { display:inline-block; border-radius:999px; font-size:var(--op-fs-micro); font-weight:700; margin:0; padding:3px 7px; }
+  .tipo-cliente-mayorista { background:var(--op-success-bg); color:var(--op-success); }
+  .tipo-cliente-minorista { background:var(--op-surface-2); color:var(--op-text-dim); }
+  .tipo-cliente-sin-cuenta { background:var(--op-surface-2); color:var(--op-text-dim); }
+  .btn-mayorista { border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); cursor:pointer; font-weight:700; padding:8px 10px; transition:background-color var(--op-dur) var(--op-ease); }
+  .btn-mayorista:hover { background:var(--op-surface-3); }
+  .btn-mayorista:disabled { cursor:not-allowed; opacity:.55; }
+  .btn-mayorista-activo { border-color:var(--op-accent-border); color:var(--op-danger-text); }
+  .btn-reset { border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); cursor:pointer; font-weight:700; padding:8px 10px; transition:background-color var(--op-dur) var(--op-ease); }
+  .btn-reset:hover { background:var(--op-surface-3); }
+  .acciones-masivas { display:none; align-items:center; gap:10px; margin:0 0 14px; flex-wrap:wrap; }
+  .acciones-masivas.visible { display:flex; }
+  .acciones-masivas span { color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .acciones-masivas button { border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:9px 12px; background:var(--op-surface-2); color:var(--op-text); cursor:pointer; font-weight:700; transition:background-color var(--op-dur) var(--op-ease); }
+  .acciones-masivas button:hover { background:var(--op-surface-3); }
+  #btn-mail-masivo { background:var(--op-surface-2); border:1px solid var(--op-border-strong); color:var(--op-text); }
+  #btn-eliminar-masivo { background:var(--op-surface-2); border:1px solid var(--op-accent-border); color:var(--op-danger-text); }
+  #btn-eliminar-masivo:hover { background:var(--op-accent-bg); }
+  .filtros-clientes { display:flex; gap:8px; margin:0 0 14px; flex-wrap:wrap; }
+  .filtros-clientes input, .filtros-clientes select { min-height:38px; box-sizing:border-box; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-input-bg); color:var(--op-text); padding:0 10px; font:inherit; }
+  #filtro-clientes { flex:1 1 240px; }
+  .paginacion-clientes { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:14px; }
+  .paginacion-clientes span { color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .paginacion-clientes button { border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); cursor:pointer; font-weight:700; padding:8px 14px; transition:background-color var(--op-dur) var(--op-ease); }
+  .paginacion-clientes button:hover { background:var(--op-surface-3); }
+  .paginacion-clientes button:disabled { cursor:not-allowed; opacity:.45; }
+  .pedidos-hoy { margin:0 0 20px; padding:14px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .pedidos-hoy-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .pedidos-hoy h2 { margin:0 0 10px; color:var(--op-text); font-size:var(--op-fs-title); }
+  .tarea-cerrar { border:0; background:transparent; color:var(--op-text-dim); font-size:20px; line-height:1; cursor:pointer; padding:4px 8px; margin:0 0 10px; }
+  .tarea-cerrar:hover, .tarea-cerrar:focus-visible { color:var(--op-text); }
+  .form-tarea-entrega { margin:0 0 12px; }
+  .form-tarea-entrega input { font-size:16px; }
+  .form-tarea-entrega button { cursor:pointer; }
+  .tarea-toggle { border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:38px; padding:0 14px; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .tarea-toggle:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .tarea-toggle:active { background:var(--op-accent-press); transform:translateY(0); }
+  .tarea-campos { display:grid; gap:8px; grid-template-columns:1.2fr 1.2fr 1.5fr 1.5fr auto; margin-top:8px; }
+  .tarea-campos[hidden] { display:none; }
+  .tarea-direccion-wrap { position:relative; min-width:0; }
+  .tarea-campos input, .tarea-campos select { box-sizing:border-box; min-width:0; min-height:38px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-input-bg); color:var(--op-text); padding:0 10px; font:inherit; }
+  .tarea-direccion-wrap input { width:100%; }
+  .tarea-campos input::placeholder { color:var(--op-text-dim); }
+  .tarea-campos button { border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:38px; padding:0 14px; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .tarea-campos button:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .tarea-campos button:active { background:var(--op-accent-press); transform:translateY(0); }
+  .tarea-enviar-alejo { display:flex; align-items:center; gap:6px; color:var(--op-text); font-size:14px; white-space:nowrap; }
+  .tarea-direccion-sugerencias { position:absolute; z-index:50; top:calc(100% + 4px); left:0; right:0; max-height:180px; overflow-y:auto; margin:0; padding:0; list-style:none; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-input-bg); box-shadow:0 8px 18px rgba(0,0,0,.28); }
+  .tarea-direccion-sugerencias[hidden] { display:none; }
+  .tarea-direccion-sugerencias button { display:block; width:100%; min-height:38px; padding:8px 10px; border:0; border-radius:0; border-bottom:1px solid var(--op-border); background:var(--op-input-bg); color:var(--op-text); text-align:left; font-weight:400; }
+  .tarea-direccion-sugerencias li:last-child button { border-bottom:0; }
+  .tarea-direccion-sugerencias button:hover, .tarea-direccion-sugerencias button:focus-visible { background:var(--op-surface-3); outline:0; }
+  .pedido-hoy { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:10px 0; border-top:1px solid var(--op-border); color:var(--op-text-dim); font-size:var(--op-fs-body); }
+  .pedido-hoy strong { color:var(--op-text); }
+  .pedido-hoy-detalle { min-width:0; flex:1 1 auto; }
+  .pedido-hoy.arrastrando { opacity:.5; }
+  .arrastrar-entrega { flex:0 0 auto; width:32px; min-height:36px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); cursor:grab; font:700 20px/1 sans-serif; touch-action:none; transition:background-color var(--op-dur) var(--op-ease); }
+  .arrastrar-entrega:hover { background:var(--op-surface-3); }
+  .arrastrar-entrega:active { cursor:grabbing; }
+  .pedido-hoy-detalle span { color:var(--op-text-dim); }
+  .pedido-acciones { display:flex; align-items:center; gap:7px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
+  .btn-enviar-recibo, .btn-recibo-nota, .btn-direcciones, .btn-agregar-direccion, .btn-agregar-direccion-tarea, .btn-editar-direccion, .btn-editar-direccion-tarea,
+  .btn-editar-entrega, .btn-eliminar-entrega, .btn-completar-tarea, .btn-editar-tarea, .btn-eliminar-tarea,
+  .btn-derivar-entrega, .btn-quitar-derivacion { flex:0 0 auto; box-sizing:border-box; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:8px 10px; background:var(--op-surface-2); color:var(--op-text); cursor:pointer; font-weight:700; display:inline-flex; align-items:center; justify-content:center; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .btn-direcciones:hover, .btn-agregar-direccion:hover, .btn-agregar-direccion-tarea:hover, .btn-editar-direccion:hover, .btn-editar-direccion-tarea:hover,
+  .btn-editar-entrega:hover, .btn-editar-tarea:hover, .btn-derivar-entrega:hover { background:var(--op-surface-3); }
+  .btn-enviar-recibo, .btn-completar-tarea, .btn-recibo-nota { background:var(--op-accent); border:0; color:#fff; }
+  .btn-enviar-recibo:hover, .btn-completar-tarea:hover, .btn-recibo-nota:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .btn-enviar-recibo:active, .btn-completar-tarea:active, .btn-recibo-nota:active { background:var(--op-accent-press); transform:translateY(0); }
+  .btn-enviar-recibo:disabled, .btn-recibo-nota:disabled { opacity:.55; cursor:not-allowed; }
+  .btn-eliminar-entrega, .btn-eliminar-tarea { border-color:var(--op-accent-border); color:var(--op-danger-text); }
+  .btn-eliminar-entrega:hover, .btn-eliminar-tarea:hover { background:var(--op-accent-bg); }
+  .btn-quitar-derivacion { background:var(--op-success-bg); border-color:var(--op-success-border); color:var(--op-success); }
+  .btn-quitar-derivacion:hover { background:var(--op-surface-3); }
+  .observacion-cadete { color:var(--op-warning); }
+  .total-cadete { font-weight:700; }
+  .btn-whatsapp-cliente { display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--op-success-border); border-radius:var(--op-r-sm); padding:8px 10px; background:var(--op-success-bg); color:var(--op-success); cursor:pointer; font-weight:700; text-decoration:none; text-align:center; transition:background-color var(--op-dur) var(--op-ease); }
+  .btn-whatsapp-cliente:hover { background:var(--op-surface-3); }
+  .historial-pedidos { margin:0 0 20px; padding:14px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .historial-pedidos h2 { margin:0 0 10px; color:var(--op-text); font-size:var(--op-fs-title); }
+  .historial-pedidos label { color:var(--op-text-dim); font-size:var(--op-fs-small); font-weight:700; }
+  .historial-pedidos input { margin-left:8px; min-height:34px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 8px; background:var(--op-input-bg); color:var(--op-text); font:inherit; }
+  #filtro-historial-pedidos { box-sizing:border-box; display:block; margin:0 0 10px; min-height:38px; width:100%; }
+  #fecha-historial-pedidos, #tarea-fecha { color-scheme:dark; }
+  #fecha-historial-pedidos::-webkit-calendar-picker-indicator, #tarea-fecha::-webkit-calendar-picker-indicator { filter:none; opacity:.9; cursor:pointer; }
+  .pedido-historico { padding:10px 0; border-top:1px solid var(--op-border); color:var(--op-text-dim); font-size:var(--op-fs-body); }
+  .estado-recibo { display:inline-block; margin-top:4px; color:var(--op-text-dim); font-size:var(--op-fs-micro); }
+  .acciones-recibo { display:inline-flex; gap:8px; margin-left:8px; vertical-align:middle; }
+  .btn-ver-recibo-pdf, .btn-reenviar-recibo, .btn-eliminar-historial, .btn-eliminar-historial-tarea { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid transparent; border-radius:var(--op-r-sm); background:transparent; color:var(--op-text); cursor:pointer; text-decoration:none; transition:background-color var(--op-dur) var(--op-ease); }
+  .btn-ver-recibo-pdf:hover, .btn-reenviar-recibo:hover { background:var(--op-surface-2); }
+  .btn-eliminar-historial, .btn-eliminar-historial-tarea { border-color:var(--op-accent-border); color:var(--op-danger-text); }
+  .btn-eliminar-historial:hover, .btn-eliminar-historial-tarea:hover { background:var(--op-accent-bg); }
+  .ordenar-columna { appearance:none; border:0; background:transparent; color:var(--op-text); font:inherit; font-weight:700; cursor:pointer; padding:0; }
+  .ordenar-columna:hover { color:#fff; text-decoration:underline; }
+  .modal-mail { position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
+  .modal-mail[hidden] { display:none; }
+  .modal-series { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
+  .modal-series[hidden] { display:none; }
+  .modal-series-contenido { width:min(520px,100%); background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-sizing:border-box; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-series h2 { color:var(--op-text); font-size:var(--op-fs-title); margin:0 0 8px; }
+  .modal-series p { color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .series-fotos { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0; }
+  .serie-foto { position:relative; }
+  .serie-foto img { border-radius:var(--op-r-sm); display:block; height:90px; object-fit:cover; width:100%; }
+  .serie-foto button { position:absolute; right:4px; top:4px; border:0; border-radius:50%; background:var(--op-accent); color:#fff; cursor:pointer; width:24px; height:24px; }
+  .series-acciones { display:flex; gap:8px; }
+  .series-acciones button { border:0; border-radius:var(--op-r-sm); color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; transition:background-color var(--op-dur) var(--op-ease); }
+  #series-agregar, #series-cancelar { background:var(--op-surface-2); border:1px solid var(--op-border-strong); color:var(--op-text); }
+  #series-agregar:hover, #series-cancelar:hover { background:var(--op-surface-3); }
+  #series-enviar { background:var(--op-accent); margin-left:auto; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  #series-enviar:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  #series-enviar:active { background:var(--op-accent-press); transform:translateY(0); }
+  .modal-direccion { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
+  .modal-direccion[hidden] { display:none; }
+  .modal-fecha-entrega { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); align-items:center; justify-content:center; padding:20px; }
+  .modal-fecha-entrega[hidden] { display:none; }
+  .modal-series, .modal-direccion { display:flex; }
+  .modal-fecha-entrega { display:flex; }
+  .modal-direccion-contenido { width:min(520px,100%); background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-sizing:border-box; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-fecha-contenido { width:min(420px,100%); background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-sizing:border-box; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-direccion h2 { color:var(--op-text); font-size:var(--op-fs-title); margin:0 0 12px; }
+  .modal-fecha-entrega h2 { color:var(--op-text); font-size:var(--op-fs-title); margin:0 0 12px; }
+  .modal-direccion input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); font:inherit; }
+  .modal-fecha-entrega input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); color-scheme:dark; font:inherit; }
+  .direccion-acciones { display:flex; gap:8px; margin-top:12px; }
+  .fecha-entrega-acciones { display:flex; gap:8px; margin-top:12px; }
+  .direccion-acciones button { border:0; border-radius:var(--op-r-sm); color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; transition:background-color var(--op-dur) var(--op-ease); }
+  .fecha-entrega-acciones button { border:0; border-radius:var(--op-r-sm); color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; transition:background-color var(--op-dur) var(--op-ease); }
+  #direccion-cancelar { background:var(--op-surface-2); border:1px solid var(--op-border-strong); color:var(--op-text); }
+  #direccion-cancelar:hover { background:var(--op-surface-3); }
+  #direccion-guardar { background:var(--op-accent); margin-left:auto; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  #direccion-guardar:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  #direccion-guardar:active { background:var(--op-accent-press); transform:translateY(0); }
+  #fecha-entrega-cancelar { background:var(--op-surface-2); border:1px solid var(--op-border-strong); color:var(--op-text); }
+  #fecha-entrega-cancelar:hover { background:var(--op-surface-3); }
+  #fecha-entrega-guardar { background:var(--op-accent); margin-left:auto; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  #fecha-entrega-guardar:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  #fecha-entrega-guardar:active { background:var(--op-accent-press); transform:translateY(0); }
+  .modal-mail-contenido { width:min(520px, 100%); background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-sizing:border-box; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-mail h2 { margin:0 0 8px; color:var(--op-text); font-size:var(--op-fs-title); }
+  .modal-mail p { margin:0 0 12px; color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .mail-editor-toolbar { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 8px; }
+  .mail-editor-toolbar button { align-items:center; background:var(--op-surface-2); border:1px solid var(--op-border-strong); border-radius:6px; color:var(--op-text); cursor:pointer; display:inline-flex; font:inherit; font-weight:700; justify-content:center; min-height:32px; padding:4px 9px; transition:background-color var(--op-dur) var(--op-ease); }
+  .mail-editor-toolbar button:hover { background:var(--op-surface-3); border-color:var(--op-text-dim); }
+  .mail-editor { width:100%; min-height:160px; resize:vertical; overflow:auto; box-sizing:border-box; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:10px; color:var(--op-text); background:var(--op-input-bg); font:inherit; line-height:1.45; }
+  .mail-editor:empty::before { color:var(--op-text-faint); content:attr(data-placeholder); pointer-events:none; }
+  .mail-editor:focus { border-color:var(--op-text-dim); outline:0; }
+  .mail-editor p { color:inherit; font-size:inherit; margin:0 0 10px; }
+  .mail-editor ul, .mail-editor ol { margin:0 0 10px; padding-left:22px; }
+  .modal-mail-acciones { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+  .modal-mail-acciones button { border:0; border-radius:var(--op-r-sm); padding:9px 12px; cursor:pointer; font-weight:700; transition:background-color var(--op-dur) var(--op-ease); }
+  #mail-cancelar { background:var(--op-surface-2); color:var(--op-text); border:1px solid var(--op-border-strong); }
+  #mail-cancelar:hover { background:var(--op-surface-3); }
+  #mail-enviar { background:var(--op-accent); color:#fff; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  #mail-enviar:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  #mail-enviar:active { background:var(--op-accent-press); transform:translateY(0); }
+  .panel-header a.volver { color:var(--op-text-dim); text-decoration:none; font-weight:700; font-size:14px; }
+  .panel-header a.volver:hover { color:var(--op-text); }
+  .subseccion { margin-top:22px; }
+  .subseccion h2 { color:var(--op-text); font-size:var(--op-fs-title); margin:0 0 10px; }
+  .subseccion p { margin:0 0 12px; color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .acciones-mailing { display:flex; align-items:center; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .acciones-mailing button { border:none; background:var(--op-accent); color:#fff; border-radius:var(--op-r-sm);
+                             padding:10px 14px; cursor:pointer; font-weight:700;
+                             transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .acciones-mailing button:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .acciones-mailing button:active { background:var(--op-accent-press); transform:translateY(0); }
+  .acciones-mailing button[disabled] { opacity:.45; cursor:not-allowed; }
+  .acciones-mailing span { color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .col-check { width:40px; text-align:center; }
+  .col-check input { width:16px; height:16px; accent-color:var(--op-accent); cursor:pointer; }
+  .tabla-scroll { width:100%; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  button, a[class*="btn"] { cursor:pointer; }
+  button:focus-visible, a[class*="btn"]:focus-visible { outline:2px solid var(--op-accent); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition:none !important; animation:none !important; } }
+  @media (max-width: 640px) {
+    body { align-items:flex-start; padding:12px; }
+    .panel { margin:0; padding:16px; border-radius:var(--op-r-md); }
+    .panel-header { align-items:stretch; flex-direction:column; gap:10px; }
+    .panel-header-acciones { align-items:stretch; flex-direction:column; }
+    .panel-header button, .panel-header a.volver { box-sizing:border-box; text-align:center; width:100%; }
+    .panel-header .btn-clientes { box-sizing:border-box; text-align:center; width:100%; }
+    .historial-pedidos input { box-sizing:border-box; display:block; margin:8px 0 0; max-width:100%; width:100%; }
+    .filtros-clientes { flex-direction:column; }
+    .filtros-clientes input, .filtros-clientes select { min-width:0; width:100%; }
+    #filtro-clientes { flex:0 1 auto; min-height:38px; }
+    .pedido-hoy { align-items:stretch; flex-direction:column; }
+    .arrastrar-entrega { align-self:flex-start; min-height:42px; width:44px; }
+    .tarea-campos { grid-template-columns:1fr; }
+    .tarea-campos input, .tarea-campos select { min-height:44px; }
+    .tarea-campos button, .tarea-toggle { min-height:44px; }
+    .pedido-hoy-detalle, .pedido-historico { overflow-wrap:anywhere; word-break:break-word; }
+    .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-areas:"recibo direcciones" "editar eliminar"; grid-auto-rows:auto; gap:7px; justify-content:stretch; width:100%; }
+    .pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }
+    .pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }
+    .pedido-acciones .btn-enviar-recibo, .pedido-acciones .btn-recibo-nota { grid-area:recibo; }
+    .pedido-acciones .btn-direcciones { grid-area:direcciones; }
+    .pedido-acciones .btn-editar-entrega { grid-area:editar; }
+    .pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }
+    .acciones-recibo { margin:8px 0 0; }
+    .tabla-scroll { overflow:visible; }
+    .tabla-scroll.tabla-historial { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .tabla-historial table { min-width:480px; }
+    .scroll-hint { display:block; margin:0 0 6px; color:var(--op-text-faint); font-size:var(--op-fs-micro); }
+    #tabla-clientes { min-width:0; font-size:13px; }
+    #tabla-clientes thead { display:none; }
+    #tabla-clientes, #tabla-clientes tbody, #tabla-clientes tr, #tabla-clientes td { box-sizing:border-box; display:block; width:100%; }
+    #tabla-clientes tr[hidden] { display:none !important; }
+    #tabla-clientes tbody { display:grid; gap:12px; }
+    #tabla-clientes tr { background:var(--op-input-bg); border:1px solid var(--op-border); border-radius:var(--op-r-md); padding:4px 12px; }
+    #tabla-clientes td { align-items:flex-start; border-bottom:1px solid var(--op-border); display:flex; gap:12px; justify-content:space-between; min-height:42px; padding:10px 0; white-space:normal; overflow-wrap:anywhere; vertical-align:top; }
+    #tabla-clientes td::before { color:var(--op-text-dim); content:""; flex:0 0 82px; font-size:12px; font-weight:700; }
+    #tabla-clientes td:nth-child(1)::before { content:"Seleccionar"; }
+    #tabla-clientes td:nth-child(2)::before { content:"Nombre"; }
+    #tabla-clientes td:nth-child(3)::before { content:"Celular"; }
+    #tabla-clientes td:nth-child(4)::before { content:"Email"; }
+    #tabla-clientes td:nth-child(5)::before { content:"Provincia"; }
+    #tabla-clientes td:nth-child(6)::before { content:"Historial"; }
+    #tabla-clientes td:nth-child(7)::before { content:"Cuenta"; }
+    #tabla-clientes td:last-child { border-bottom:0; }
+    #tabla-clientes .col-check { justify-content:flex-start; text-align:left; }
+    #tabla-clientes .col-check::before { display:none; }
+    #tabla-clientes .btn-reset, #tabla-clientes .btn-mayorista, #tabla-clientes .btn-eliminar { border-radius:var(--op-r-sm); box-sizing:border-box; min-height:44px; padding:8px 10px; width:100%; }
+    #tabla-clientes td:nth-child(7) { flex-direction:column; align-items:stretch; gap:6px; }
+    #tabla-clientes td:nth-child(7)::before { margin-bottom:2px; }
+    #tabla-clientes .cuenta-cliente-acciones { width:100%; gap:8px; }
+    .acciones-mailing { align-items:stretch; flex-direction:column; }
+    .acciones-mailing button { width:100%; min-height:44px; }
+    .modal-mail { align-items:flex-end; padding:12px; }
+    .modal-mail-contenido { max-height:calc(100vh - 24px); overflow-y:auto; padding:16px; }
+    .modal-mail-acciones { flex-direction:column-reverse; }
+    .modal-mail-acciones button { min-height:44px; width:100%; }
+  }
+</style>
+"""
+
+# Alejo entra siempre desde el celular — a diferencia del panel de admin
+# (pensado para escritorio, con overrides mobile en un @media), este es
+# mobile-first sin media query: una sola columna y botones grandes siempre.
+_CADETE_ESTILO = """
+<style>
+  :root {
+    --op-bg: #111318;
+    --op-surface: #1b1e24;
+    --op-surface-2: #23272f;
+    --op-surface-3: #2c313c;
+    --op-border: #2a2e37;
+    --op-border-strong: #3d4451;
+    --op-text: #f2f4f8;
+    --op-text-dim: #aab0bd;
+    --op-text-faint: #6f7683;
+    --op-accent: #c8102e;
+    --op-accent-hover: #dd1533;
+    --op-accent-press: #a10d24;
+    --op-accent-bg: #2a1216;
+    --op-accent-border: #5c2430;
+    --op-danger-text: #ff9baa;
+    --op-success: #34d399;
+    --op-success-bg: #133024;
+    --op-success-border: #1f5c3f;
+    --op-warning: #f5c66b;
+    --op-s1: 4px; --op-s2: 8px; --op-s3: 12px; --op-s4: 16px; --op-s5: 24px; --op-s6: 32px;
+    --op-r-sm: 8px; --op-r-md: 12px; --op-r-lg: 16px;
+    --op-fs-display: 22px; --op-fs-title: 17px; --op-fs-body: 14px; --op-fs-small: 13px; --op-fs-micro: 12px;
+    --op-ease: cubic-bezier(.2,.8,.2,1); --op-dur: 140ms;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--op-bg); color:var(--op-text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+  .tarjeta { max-width:360px; margin:60px auto; padding:24px; background:var(--op-surface); border-radius:var(--op-r-md); box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .tarjeta h1 { font-size:var(--op-fs-display); margin:0 0 16px; }
+  .tarjeta input, .tarjeta button { width:100%; padding:14px; border-radius:var(--op-r-sm); border:1px solid var(--op-border-strong); font-size:16px; margin-bottom:10px; box-sizing:border-box; }
+  .tarjeta input { background:var(--op-surface-2); color:var(--op-text); font-family:inherit; }
+  .tarjeta button { background:var(--op-accent); color:#fff; border:0; font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .tarjeta button:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .tarjeta button:active { background:var(--op-accent-press); transform:translateY(0); }
+  .error { color:var(--op-danger-text); font-size:14px; }
+  .panel { max-width:480px; margin:0 auto; padding:16px; }
+  .panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .panel-header h1 { font-size:var(--op-fs-display); margin:0; }
+  #salir { padding:12px 16px; min-height:44px; border-radius:var(--op-r-sm); border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease); }
+  #salir:hover { background:var(--op-surface-3); }
+  .panel-header-acciones { display:flex; align-items:center; gap:10px; }
+  .btn-clientes { min-height:44px; display:inline-flex; align-items:center; border:1px solid var(--op-border-strong); background:var(--op-surface-2); border-radius:var(--op-r-sm); color:var(--op-text); font-size:14px; font-weight:700; padding:8px 14px; text-decoration:none; transition:background-color var(--op-dur) var(--op-ease); }
+  .btn-clientes:hover { background:var(--op-surface-3); }
+  .selector-fecha-cadete { display:flex; align-items:center; gap:8px; margin:0 0 16px; flex-wrap:wrap; }
+  .selector-fecha-cadete label { color:var(--op-text-dim); font-size:var(--op-fs-small); font-weight:700; }
+  .selector-fecha-cadete input { min-height:44px; box-sizing:border-box; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); padding:0 10px; font:inherit; color-scheme:dark; }
+  .form-tarea-entrega { margin:0 0 16px; }
+  .tarea-toggle, .tarea-cerrar { cursor:pointer; font:inherit; }
+  .tarea-toggle { border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; font-weight:700; min-height:44px; padding:0 16px; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .tarea-toggle:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .tarea-toggle:active { background:var(--op-accent-press); transform:translateY(0); }
+  .tarea-cerrar { border:0; background:transparent; color:var(--op-text-dim); font-size:20px; line-height:1; padding:4px 8px; margin:0 0 8px; }
+  .tarea-cerrar:hover, .tarea-cerrar:focus-visible { color:var(--op-text); }
+  .nota-campos { display:grid; gap:8px; grid-template-columns:1fr; margin-top:8px; }
+  .nota-campos[hidden] { display:none; }
+  .nota-campos input { box-sizing:border-box; width:100%; min-height:44px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); padding:0 10px; font-size:16px; font-family:inherit; }
+  .nota-campos input::placeholder { color:var(--op-text-dim); }
+  .tarea-direccion-wrap { position:relative; min-width:0; }
+  .tarea-direccion-sugerencias { position:absolute; z-index:50; top:calc(100% + 4px); left:0; right:0; max-height:180px; overflow-y:auto; margin:0; padding:0; list-style:none; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); box-shadow:0 8px 18px rgba(0,0,0,.28); }
+  .tarea-direccion-sugerencias[hidden] { display:none; }
+  .tarea-direccion-sugerencias button { display:block; width:100%; min-height:44px; padding:8px 10px; border:0; border-radius:0; border-bottom:1px solid var(--op-border); background:var(--op-surface-2); color:var(--op-text); text-align:left; font-weight:400; }
+  .tarea-direccion-sugerencias li:last-child button { border-bottom:0; }
+  .tarea-direccion-sugerencias button:hover, .tarea-direccion-sugerencias button:focus-visible { background:var(--op-surface-3); outline:0; }
+  .nota-campos button { border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:44px; padding:0 14px; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .nota-campos button:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .nota-campos button:active { background:var(--op-accent-press); transform:translateY(0); }
+  .nota-derivar-vlad-label { display:flex; align-items:center; gap:6px; color:var(--op-text); font-size:14px; }
+  .nota-derivar-vlad-label input { width:auto; min-height:0; border:0; background:none; padding:0; border-radius:0; }
+  .pedidos-hoy h2 { font-size:var(--op-fs-title); }
+  .proximos-dias { margin-top:24px; }
+  .proximos-dia { margin-bottom:8px; }
+  .proximos-dia h3 { margin:0 0 8px; color:var(--op-text-dim); font-size:var(--op-fs-small); font-weight:700; text-transform:capitalize; }
+  .pedido-hoy { display:flex; flex-direction:column; gap:12px; padding:16px; margin-bottom:12px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .pedido-hoy-detalle { font-size:var(--op-fs-body); line-height:1.55; overflow-wrap:anywhere; word-break:break-word; }
+  .observacion-cadete { color:var(--op-warning); }
+  .total-cadete { font-weight:700; font-size:16px; }
+  .pedido-acciones { display:flex; flex-wrap:wrap; gap:8px; }
+  .pedido-acciones > * { flex:1 1 120px; box-sizing:border-box; min-height:48px; font-size:15px; border-radius:var(--op-r-sm); font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .btn-direcciones, .btn-editar-entrega, .btn-derivar-vlad, .btn-agregar-direccion-cadete { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
+  .btn-direcciones:hover, .btn-editar-entrega:hover, .btn-derivar-vlad:hover, .btn-agregar-direccion-cadete:hover { background:var(--op-surface-3); }
+  .btn-enviar-recibo, .btn-completar-tarea, .btn-recibo-nota { border:0; background:var(--op-accent); color:#fff; }
+  .btn-enviar-recibo:hover, .btn-completar-tarea:hover, .btn-recibo-nota:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .btn-enviar-recibo:active, .btn-completar-tarea:active, .btn-recibo-nota:active { background:var(--op-accent-press); transform:translateY(0); }
+  .btn-enviar-recibo:disabled, .btn-recibo-nota:disabled { opacity:.55; cursor:not-allowed; }
+  .btn-whatsapp-cliente { display:flex; align-items:center; justify-content:center; border:1px solid var(--op-success-border); background:var(--op-success-bg); color:var(--op-success); text-decoration:none; text-align:center; }
+  .btn-whatsapp-cliente:hover { background:var(--op-surface-3); }
+  .vacio { color:var(--op-text-dim); text-align:center; padding:48px 12px; }
+  .modal-series { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .modal-series[hidden] { display:none; }
+  .modal-series-contenido { width:100%; max-width:420px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-series h2 { font-size:var(--op-fs-title); margin:0 0 8px; }
+  .modal-series p { color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .modal-direccion-cadete { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .modal-direccion-cadete[hidden] { display:none; }
+  .modal-direccion-cadete-contenido { width:100%; max-width:420px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-sizing:border-box; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-direccion-cadete h2 { font-size:var(--op-fs-title); margin:0 0 12px; }
+  .modal-direccion-cadete input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); font:inherit; }
+  .modal-direccion-cadete .direccion-acciones { display:flex; gap:8px; margin-top:14px; }
+  .modal-direccion-cadete .direccion-acciones button { flex:1; min-height:44px; border-radius:var(--op-r-sm); font-weight:700; cursor:pointer; }
+  .modal-recibo-manual { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal-recibo-manual[hidden] { display:none; }
+  .modal-recibo-manual-contenido { position:relative; width:min(520px,100%); max-height:90vh; overflow-y:auto; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); padding:20px; box-sizing:border-box; box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
+  .modal-recibo-manual-cerrar { position:absolute; top:10px; right:10px; border:0; background:transparent; color:var(--op-text-dim); font-size:20px; line-height:1; cursor:pointer; padding:6px; min-width:32px; min-height:32px; }
+  .modal-recibo-manual-cerrar:hover, .modal-recibo-manual-cerrar:focus-visible { color:var(--op-text); }
+  .modal-recibo-manual h2 { color:var(--op-text); font-size:var(--op-fs-title); margin:0 0 12px; }
+  .modal-recibo-manual label { display:block; color:var(--op-text-dim); font-size:var(--op-fs-small); margin:10px 0 4px; }
+  .modal-recibo-manual input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); font:inherit; }
+  .recibo-manual-buscador { position:relative; }
+  .recibo-manual-sugerencias { position:absolute; z-index:1; top:100%; left:0; right:0; margin:2px 0 0; padding:4px; list-style:none; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); max-height:200px; overflow-y:auto; }
+  .recibo-manual-sugerencias[hidden] { display:none; }
+  .recibo-manual-sugerencias li { padding:8px; border-radius:var(--op-r-sm); cursor:pointer; color:var(--op-text); font-size:var(--op-fs-small); }
+  .recibo-manual-sugerencias li:hover { background:var(--op-surface-2); }
+  .recibo-manual-items { list-style:none; margin:10px 0; padding:0; }
+  .recibo-manual-items li { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--op-border-strong); }
+  .recibo-manual-items li span { flex:1; color:var(--op-text); font-size:var(--op-fs-small); }
+  .recibo-manual-items li input { width:100px; min-height:36px; }
+  .recibo-manual-items li button { border:0; background:transparent; color:var(--op-text-dim); font-size:18px; cursor:pointer; }
+  .recibo-manual-total { color:var(--op-text); font-weight:600; margin:10px 0; }
+  .series-fotos { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+  .serie-foto { position:relative; width:88px; height:88px; }
+  .serie-foto img { width:100%; height:100%; object-fit:cover; border-radius:var(--op-r-sm); }
+  .serie-foto button { position:absolute; top:-6px; right:-6px; width:24px; height:24px; border-radius:50%; border:0; background:var(--op-accent); color:#fff; font-weight:700; cursor:pointer; }
+  .series-acciones { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .series-acciones button { min-height:48px; border-radius:var(--op-r-sm); font-weight:700; cursor:pointer; border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); transition:background-color var(--op-dur) var(--op-ease); }
+  .series-acciones button:hover { background:var(--op-surface-3); }
+  #series-enviar { border:0; background:var(--op-accent); color:#fff; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  #series-enviar:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  #series-enviar:active { background:var(--op-accent-press); transform:translateY(0); }
+  button, a[class*="btn"] { cursor:pointer; }
+  button:focus-visible, a[class*="btn"]:focus-visible { outline:2px solid var(--op-accent); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition:none !important; animation:none !important; } }
+</style>
+"""
+
+_ADMIN_CLIENTES_PWA_HEAD = """
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="/admin-clientes.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#111318">
+"""
+
+_CADETE_PWA_HEAD = """
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="/admin-cadete.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#111318">
+"""
+
+_ADMIN_CLIENTES_PWA_SCRIPT = """
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+</script>
+"""
+
+
+_ADMIN_CLIENTES_ESTILO += _leer_ui("operations_editorial.css.html")
+
+
+@app.get("/admin/clientes", response_class=HTMLResponse)
+def admin_clientes(request: Request):
+    return _admin_clientes_pagina(request, mostrar_clientes=False)
+
+
+@app.get("/admin/clientes/lista", response_class=HTMLResponse)
+def admin_clientes_lista(request: Request):
+    return _admin_clientes_pagina(request, mostrar_clientes=True)
+
+
+def _admin_clientes_pagina(request: Request, mostrar_clientes: bool):
+    if not _clientes_admin_activo(request):
+        return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Clientes — Ingresar</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
+<div class="tarjeta">
+  <h1>Panel de clientes</h1>
+  <p id="err" class="error" style="display:none"></p>
+  <input id="pass" type="password" placeholder="Contraseña" autofocus>
+  <button id="btn">Ingresar</button>
+</div>
+<div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
+<script>
+document.getElementById("btn").addEventListener("click", async () => {{
+  const r = await fetch("/admin/clientes/login", {{
+    method: "POST", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{password: document.getElementById("pass").value}})
+  }});
+  if (r.ok) {{ location.reload(); return; }}
+  const err = document.getElementById("err");
+  err.textContent = "Contraseña incorrecta";
+  err.style.display = "block";
+}});
+document.getElementById("pass").addEventListener("keydown", (e) => {{
+  if (e.key === "Enter") document.getElementById("btn").click();
+}});
+</script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
+</body></html>"""
+
+    client = get_client()
+    filas_clientes = client.table("clientes").select("*").execute().data
+    clientes = [
+        {
+            "id": c.get("id") or "",
+            "nombre": f"{c.get('nombre') or ''} {c.get('apellido') or ''}".strip(),
+            "celular": c.get("celular") or "",
+            "email": c.get("email") or "",
+            "provincia": c.get("provincia") or "Sin especificar",
+            "fecha": c.get("creado_en") or "",
+            "tiene_cuenta": bool(c.get("auth_id")),
+            "tipo_cliente": "mayorista" if c.get("tipo_cliente") == "mayorista" else "minorista",
+            "direccion": c.get("direccion") or "",
+        }
+        for c in filas_clientes
+    ]
+    clientes.sort(key=lambda r: r.get("fecha", ""), reverse=True)
+    clientes_por_id = {cliente["id"]: cliente for cliente in clientes}
+    fecha_hoy = entregas.ahora_argentina().date().isoformat()
+    pedidos = [] if mostrar_clientes else client.table("pedidos").select("*").execute().data
+    pedidos = [p for p in pedidos if _activo(p)]
+    tareas = [] if mostrar_clientes else client.table("tareas_entrega").select("*").execute().data
+    tareas = [t for t in tareas if _activo(t)]
+    tareas_hoy = [
+        tarea for tarea in tareas
+        if tarea.get("fecha_entrega") == fecha_hoy and not tarea.get("completada_en")
+    ]
+    tareas_hoy.sort(key=lambda tarea: int(tarea.get("orden") or 0))
+    pedidos_hoy = [
+        pedido for pedido in pedidos
+        if pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
+    ]
+    fecha_historial = request.query_params.get("fecha_pedidos") or fecha_hoy
+    try:
+        fecha_historial = date.fromisoformat(fecha_historial).isoformat()
+    except ValueError:
+        fecha_historial = fecha_hoy
+    pedidos_historial = [
+        pedido for pedido in pedidos
+        if pedido.get("fecha_entrega") == fecha_historial
+        and (pedido.get("recibo_enviado_en") or fecha_historial != fecha_hoy)
+    ]
+    tareas_historial = [
+        tarea for tarea in tareas
+        if tarea.get("fecha_entrega") == fecha_historial
+        and (tarea.get("completada_en") or fecha_historial != fecha_hoy)
+    ]
+
+    def _descripcion_pedido(pedido):
+        detalle = pedido.get("detalle") or []
+        if detalle:
+            return " | ".join(
+                f"{item.get('nombre', '')} x{item.get('cantidad', 0)}"
+                f" · Proveedor: {item.get('proveedor') or 'Proveedor no identificado'}"
+                for item in detalle
+            )
+        return " | ".join(pedido.get("productos") or [])
+
+    def _boton_recibo(pedido):
+        pedido_id = html.escape(pedido.get("id", ""))
+        if not pedido.get("detalle") or pedido.get("total_usd") is None:
+            return ('<button class="btn-enviar-recibo" type="button" '
+                    f'data-id="{pedido_id}" disabled title="Falta detalle histórico">Enviar recibo</button>')
+        return (f'<button class="btn-enviar-recibo" type="button" '
+                f'data-id="{pedido_id}">Enviar recibo</button>')
+
+    def _control_derivar(entidad_id, tipo, derivado):
+        if derivado:
+            return f'<button class="btn-quitar-derivacion" type="button" data-id="{entidad_id}" data-tipo="{tipo}">Derivado a Alejo</button>'
+        return f'<button class="btn-derivar-entrega" type="button" data-id="{entidad_id}" data-tipo="{tipo}">Derivar a Alejo</button>'
+
+    def _controles_entrega(pedido):
+        pedido_id = html.escape(pedido.get("id", ""))
+        fecha = html.escape(pedido.get("fecha_entrega", ""))
+        direccion = (pedido.get("direccion_entrega") or "").strip()
+        boton_direcciones = (
+            f'<button class="btn-direcciones" type="button" '
+            f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": _query_maps(direccion, pedido.get("lat"), pedido.get("lng"))}))}">Vamos</button>'
+            f'<button class="btn-editar-direccion" type="button" data-id="{pedido_id}" data-direccion="{html.escape(direccion)}">Editar dirección</button>'
+            if direccion else f'<button class="btn-agregar-direccion" type="button" data-id="{pedido_id}">Agregar dirección</button>'
+        )
+        return (
+            '<div class="pedido-acciones">'
+            f'{boton_direcciones}'
+            f'{_boton_recibo(pedido)}'
+            f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}" data-tipo="pedido">Editar fecha</button>'
+            f'{_control_derivar(pedido_id, "pedido", pedido.get("asignado_a") == CADETE_SLUG)}'
+            f'<button class="btn-eliminar-entrega" type="button" data-id="{pedido_id}">Eliminar entrega</button>'
+            '</div>'
+        )
+
+    def _acciones_tarea(tarea):
+        tarea_id = html.escape(tarea.get("id", ""))
+        fecha = html.escape(tarea.get("fecha_entrega", ""))
+        direccion = (tarea.get("direccion") or "").strip()
+        boton_direcciones = (
+            f'<button class="btn-direcciones" type="button" '
+            f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": direccion}))}">Vamos</button>'
+            f'<button class="btn-editar-direccion-tarea" type="button" data-id="{tarea_id}" data-direccion="{html.escape(direccion)}">Editar dirección</button>'
+            if direccion else f'<button class="btn-agregar-direccion-tarea" type="button" data-id="{tarea_id}">Agregar dirección</button>'
+        )
+        return (
+            '<div class="pedido-acciones">'
+            f'{boton_direcciones}'
+            f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>'
+            f'<button class="btn-editar-tarea" type="button" data-id="{tarea_id}" data-fecha="{fecha}" data-tipo="tarea">Editar fecha</button>'
+            f'{_control_derivar(tarea_id, "tarea", tarea.get("asignado_a") == CADETE_SLUG)}'
+            f'<button class="btn-eliminar-tarea" type="button" data-id="{tarea_id}">Eliminar tarea</button>'
+            '</div>'
+        )
+
+    def _tarjeta_tarea(tarea):
+        tarea_id = html.escape(tarea.get("id", ""))
+        nombre_cliente = tarea.get("cliente_nombre") or clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
+        detalle_cliente = f'<br><span>Cliente: {html.escape(nombre_cliente)}</span>' if nombre_cliente else ""
+        return (
+            f'<div class="pedido-hoy" data-tipo-entrega="tarea" data-entrega-id="{tarea_id}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar tarea">≡</button><div class="pedido-hoy-detalle">'
+            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
+            f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
+            f'{_acciones_tarea(tarea)}</div>'
+        )
+
+    def _acciones_recibo_historial(pedido):
+        if not pedido.get("recibo_enviado_en"):
+            return ""
+        pedido_id = html.escape(pedido.get("id", ""))
+        ojo = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+               'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg>')
+        reenvio = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+                   'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12A9 9 0 0 1 18.5 5.8"/><path d="M3 17v-5h5"/><path d="M21 7v5h-5"/></svg>')
+        tacho = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+                 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>')
+        return (f'<span class="acciones-recibo"><a class="btn-ver-recibo-pdf" href="/admin/pedidos/{pedido_id}/recibo.pdf" target="_blank" title="Ver PDF" aria-label="Ver PDF del recibo">{ojo}</a>'
+                f'<button class="btn-reenviar-recibo" type="button" data-id="{pedido_id}" title="Reenviar recibo" aria-label="Reenviar recibo">{reenvio}</button>'
+                f'<button class="btn-eliminar-historial" type="button" data-id="{pedido_id}" title="Eliminar del historial" aria-label="Eliminar del historial">{tacho}</button></span>')
+
+    def _tarjeta_pedido(pedido):
+        return (
+            f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}" data-tipo-entrega="pedido" data-entrega-id="{html.escape(pedido.get("id", ""))}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar pedido">≡</button><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
+            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
+            f'{_controles_entrega(pedido)}</div>'
+        )
+
+    entregas_pendientes = [
+        ("pedido", pedido, pedido.get("orden_entrega")) for pedido in pedidos_hoy
+    ] + [
+        ("tarea", tarea, tarea.get("orden")) for tarea in tareas_hoy
+    ]
+    if entregas_pendientes and all(orden is not None for _, _, orden in entregas_pendientes):
+        entregas_pendientes.sort(key=lambda entrega: int(entrega[2]))
+    tarjetas_pendientes_hoy = [
+        _tarjeta_pedido(entrega) if tipo == "pedido" else _tarjeta_tarea(entrega)
+        for tipo, entrega, _ in entregas_pendientes
+    ]
+    if tarjetas_pendientes_hoy:
+        pedidos_hoy_html = "".join(tarjetas_pendientes_hoy)
+    else:
+        pedidos_hoy_html = '<p class="vacio">No hay pedidos pendientes para hoy.</p>'
+    if pedidos_historial or tareas_historial:
+        def _pedido_historial_html(pedido):
+            cliente_pedido = clientes_por_id.get(pedido.get("cliente_id"), {})
+            nombre_cliente = (
+                f"{cliente_pedido.get('nombre', '')} {cliente_pedido.get('apellido', '')}".strip()
+                or "Cliente"
+            )
+            descripcion = _descripcion_pedido(pedido)
+            busqueda = html.escape(f"{nombre_cliente} {descripcion}".lower())
+            if pedido.get("recibo_enviado_en"):
+                estado = "Recibo enviado originalmente: " + html.escape(pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en", ""))
+                acciones = _acciones_recibo_historial(pedido)
+            else:
+                estado = "Pendiente de recibo" if pedido.get("detalle") and pedido.get("total_usd") is not None else "Sin detalle histórico"
+                acciones = _controles_entrega(pedido)
+            observaciones = (pedido.get("observaciones_cadete") or "").strip()
+            detalle_obs = (
+                f'<br><span class="observacion-cadete">Observaciones: {html.escape(observaciones)}</span>'
+                if observaciones else ""
+            )
+            return (
+                f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{html.escape(nombre_cliente)}</strong> · '
+                f'{html.escape(descripcion)} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}<br><span class="estado-recibo">'
+                f'{estado}</span>{detalle_obs}{acciones}</div>'
+            )
+
+        def _tarea_historial_html(tarea):
+            nombre_cliente = tarea.get("cliente_nombre") or clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
+            titulo = tarea.get("titulo") or "Tarea sin título"
+            nota = tarea.get("nota") or ""
+            tarea_id = html.escape(tarea.get("id", ""))
+            busqueda = html.escape(f"{nombre_cliente} {titulo} {nota}".lower())
+            detalle_cliente = f" · {html.escape(nombre_cliente)}" if nombre_cliente else ""
+            detalle_nota = f" · {html.escape(nota)}" if nota else ""
+            tacho = ('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+                     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>')
+            if tarea.get("completada_en"):
+                estado = f'Completada el {html.escape(tarea.get("completada_en"))}'
+                titulo_tarjeta = "Tarea completada"
+                acciones = f'<button class="btn-eliminar-historial-tarea" type="button" data-id="{tarea_id}" title="Eliminar del historial" aria-label="Eliminar del historial">{tacho}</button>'
+            else:
+                estado = "Pendiente"
+                titulo_tarjeta = "Tarea"
+                acciones = _acciones_tarea(tarea)
+            observaciones = (tarea.get("observaciones_cadete") or "").strip()
+            detalle_obs = (
+                f'<br><span class="observacion-cadete">Observaciones: {html.escape(observaciones)}</span>'
+                if observaciones else ""
+            )
+            return (
+                f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{titulo_tarjeta}: {html.escape(titulo)}</strong>'
+                f'{detalle_cliente}{detalle_nota}<br><span class="estado-recibo">{estado}</span>'
+                f'{detalle_obs}{acciones}</div>'
+            )
+
+        pedidos_historial_html = "".join(
+            [_pedido_historial_html(pedido) for pedido in pedidos_historial]
+            + [_tarea_historial_html(tarea) for tarea in tareas_historial]
+        )
+    else:
+        pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'
+
+    clientes_tarea_json = _json_para_script(
+        [
+            {"id": cliente["id"], "nombre": cliente["nombre"], "direccion": cliente.get("direccion") or ""}
+            for cliente in sorted(clientes, key=lambda cliente: cliente["nombre"].casefold())
+        ]
+    )
+    pendientes_hoy_seccion_html = (
+        f'<section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2>'
+        f'<button id="tarea-cerrar" class="tarea-cerrar" type="button" hidden aria-label="Cerrar formulario de tarea" title="Cerrar">✕</button></div>'
+        f'<form id="form-tarea-entrega" class="form-tarea-entrega"><button id="tarea-toggle" class="tarea-toggle" type="button">+ Nueva tarea</button>'
+        f'<div id="tarea-campos" class="tarea-campos" hidden><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea">'
+        f'<input id="tarea-fecha" type="date" required value="{fecha_hoy}" title="Fecha de la tarea">'
+        f'<div class="tarea-direccion-wrap"><input id="tarea-cliente-busqueda" required maxlength="200" placeholder="Cliente" autocomplete="off"><input type="hidden" id="tarea-cliente"><ul id="tarea-cliente-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Clientes" hidden></ul></div>'
+        f'<input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Agregar dirección" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div>'
+        f'<label class="tarea-enviar-alejo"><input type="checkbox" id="tarea-enviar-alejo"> Enviar a Alejo</label>'
+        f'<button type="submit">Agregar tarea</button></div></form>'
+        f'{pedidos_hoy_html}</section>'
+        if fecha_historial == fecha_hoy else ""
+    )
+
+    if not mostrar_clientes:
+        return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
+<div class="panel">
+  <div class="panel-header">
+    <h1>Pedidos y recibos</h1>
+    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
+  </div>
+  <section class="historial-pedidos"><h2>Historial de pedidos</h2><input id="filtro-historial-pedidos" type="search" placeholder="Buscar por cliente o producto"><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
+  {pendientes_hoy_seccion_html}
+</div>
+<div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
+<div class="modal-direccion" id="modal-direccion" hidden><div class="modal-direccion-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-titulo"><h2 id="direccion-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-entrega-admin" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-entrega-admin-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="direccion-acciones"><button id="direccion-cancelar" type="button">Cancelar</button><button id="direccion-guardar" type="button">Guardar dirección</button></div></div></div>
+<div class="modal-fecha-entrega" id="modal-fecha-entrega" hidden><div class="modal-fecha-contenido" role="dialog" aria-modal="true" aria-labelledby="fecha-entrega-titulo"><h2 id="fecha-entrega-titulo">Editar fecha de entrega</h2><input id="fecha-entrega-admin" type="date"><div class="fecha-entrega-acciones"><button id="fecha-entrega-cancelar" type="button">Cancelar</button><button id="fecha-entrega-guardar" type="button">Guardar fecha</button></div></div></div>
+<script>
+document.getElementById("salir").addEventListener("click", async () => {{
+  await fetch("/admin/clientes/logout", {{ method: "POST" }});
+  location.reload();
+}});
+async function comprimirFotoSerie(archivo) {{
+  const imagen = await createImageBitmap(archivo);
+  const escala = Math.min(1, 1600 / Math.max(imagen.width, imagen.height));
+  const lienzo = document.createElement("canvas");
+  lienzo.width = Math.round(imagen.width * escala); lienzo.height = Math.round(imagen.height * escala);
+  lienzo.getContext("2d").drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+  const blob = await new Promise((ok) => lienzo.toBlob(ok, "image/jpeg", .75));
+  return new File([blob], "numero-serie.jpg", {{ type:"image/jpeg" }});
+}}
+let pedidoReciboActivo = null;
+let fotosSerie = [];
+const modalSeries = document.getElementById("modal-series");
+const vistaFotosSerie = document.getElementById("series-fotos");
+function renderFotosSerie() {{
+  vistaFotosSerie.innerHTML = fotosSerie.map((foto, indice) => `<div class="serie-foto"><img src="${{URL.createObjectURL(foto)}}" alt="Foto de número de serie ${{indice + 1}}"><button type="button" data-indice="${{indice}}" aria-label="Quitar foto">×</button></div>`).join("");
+  vistaFotosSerie.querySelectorAll("button").forEach((boton) => boton.addEventListener("click", () => {{ fotosSerie.splice(Number(boton.dataset.indice), 1); renderFotosSerie(); }}));
+}}
+function agregarFotoSerie() {{
+  const selector = Object.assign(document.createElement("input"), {{ type:"file", accept:"image/*", capture:"environment" }});
+  selector.addEventListener("change", async () => {{ if (selector.files?.[0]) {{ fotosSerie.push(await comprimirFotoSerie(selector.files[0])); renderFotosSerie(); }} }});
+  selector.click();
+}}
+document.querySelectorAll(".btn-enviar-recibo").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    pedidoReciboActivo = btn; fotosSerie = []; renderFotosSerie(); modalSeries.hidden = false;
+  }});
+}});
+document.getElementById("series-agregar").addEventListener("click", agregarFotoSerie);
+document.getElementById("series-cancelar").addEventListener("click", () => {{ modalSeries.hidden = true; }});
+document.getElementById("series-enviar").addEventListener("click", async () => {{
+  if (!pedidoReciboActivo) return;
+  const boton = document.getElementById("series-enviar"); boton.disabled = true; boton.textContent = "Enviando...";
+  const adjuntos = new FormData(); fotosSerie.forEach((foto) => adjuntos.append("fotos", foto));
+  const r = await fetch(`/admin/pedidos/${{pedidoReciboActivo.dataset.id}}/recibo`, {{ method:"POST", body:adjuntos }});
+  const respuesta = await r.json().catch(() => ({{}}));
+  if (!r.ok) {{ alert(respuesta.error || "No se pudo enviar el recibo."); boton.disabled = false; boton.textContent = "Enviar recibo"; return; }}
+  location.reload();
+}});
+document.querySelectorAll(".btn-reenviar-recibo").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Reenviar el recibo original por email?")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/recibo`, {{ method: "POST" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo reenviar el recibo."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+let pedidoDireccionActivo = null;
+let tareaDireccionActiva = null;
+const modalDireccion = document.getElementById("modal-direccion");
+const campoDireccion = document.getElementById("direccion-entrega-admin");
+document.querySelectorAll(".btn-agregar-direccion").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    pedidoDireccionActivo = btn.dataset.id;
+    tareaDireccionActiva = null;
+    campoDireccion.value = "";
+    modalDireccion.hidden = false;
+    document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
+    campoDireccion.focus();
+  }});
+}});
+document.querySelectorAll(".btn-agregar-direccion-tarea").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    tareaDireccionActiva = btn.dataset.id;
+    pedidoDireccionActivo = null;
+    campoDireccion.value = "";
+    modalDireccion.hidden = false;
+    document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
+    campoDireccion.focus();
+  }});
+}});
+document.querySelectorAll(".btn-direcciones").forEach((btn) => {{
+  btn.addEventListener("click", () => {{ window.open(btn.dataset.maps, "_blank", "noopener"); }});
+}});
+document.querySelectorAll(".btn-editar-direccion").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    pedidoDireccionActivo = btn.dataset.id;
+    tareaDireccionActiva = null;
+    campoDireccion.value = btn.dataset.direccion || "";
+    modalDireccion.hidden = false;
+    document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
+    campoDireccion.focus();
+  }});
+}});
+document.querySelectorAll(".btn-editar-direccion-tarea").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    tareaDireccionActiva = btn.dataset.id;
+    pedidoDireccionActivo = null;
+    campoDireccion.value = btn.dataset.direccion || "";
+    modalDireccion.hidden = false;
+    document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
+    campoDireccion.focus();
+  }});
+}});
+document.getElementById("direccion-cancelar").addEventListener("click", () => {{
+  pedidoDireccionActivo = null;
+  tareaDireccionActiva = null;
+  modalDireccion.hidden = true;
+}});
+document.getElementById("direccion-guardar").addEventListener("click", async () => {{
+  const direccion = campoDireccion.value.trim();
+  if (!direccion) {{ campoDireccion.focus(); return; }}
+  const boton = document.getElementById("direccion-guardar");
+  boton.disabled = true;
+  const destino = tareaDireccionActiva
+    ? `/admin/tareas-entrega/${{tareaDireccionActiva}}/direccion`
+    : `/admin/pedidos/${{pedidoDireccionActivo}}/direccion`;
+  const r = await fetch(destino, {{
+    method: "PUT", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{direccion_entrega: direccion}}),
+  }});
+  const datos = await r.json().catch(() => ({{}}));
+  if (!r.ok) {{ alert(datos.error || "No se pudo guardar la dirección."); boton.disabled = false; return; }}
+  location.reload();
+}});
+let fechaEntregaActiva = null;
+const modalFechaEntrega = document.getElementById("modal-fecha-entrega");
+const campoFechaEntrega = document.getElementById("fecha-entrega-admin");
+document.querySelectorAll(".btn-editar-entrega, .btn-editar-tarea").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    fechaEntregaActiva = {{ tipo: btn.dataset.tipo, id: btn.dataset.id, fecha: btn.dataset.fecha }};
+    campoFechaEntrega.value = btn.dataset.fecha;
+    modalFechaEntrega.hidden = false;
+    campoFechaEntrega.focus();
+  }});
+}});
+document.getElementById("fecha-entrega-cancelar").addEventListener("click", () => {{
+  fechaEntregaActiva = null;
+  modalFechaEntrega.hidden = true;
+}});
+document.getElementById("fecha-entrega-guardar").addEventListener("click", async () => {{
+  const fecha = campoFechaEntrega.value;
+  if (!fecha) {{ campoFechaEntrega.focus(); return; }}
+  if (!fechaEntregaActiva || fecha === fechaEntregaActiva.fecha) {{ modalFechaEntrega.hidden = true; return; }}
+  const boton = document.getElementById("fecha-entrega-guardar");
+  boton.disabled = true;
+  const tabla = fechaEntregaActiva.tipo === "tarea" ? "tareas-entrega" : "pedidos";
+  const r = await fetch(`/admin/${{tabla}}/${{fechaEntregaActiva.id}}/fecha-entrega`, {{
+    method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{fecha_entrega: fecha}}),
+  }});
+  const datos = await r.json().catch(() => ({{}}));
+  if (!r.ok) {{
+    alert(datos.error || "No se pudo editar la fecha de entrega.");
+    boton.disabled = false;
+    return;
+  }}
+  location.reload();
+}});
+document.querySelectorAll(".btn-eliminar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta entrega? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}`, {{ method: "DELETE" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-eliminar-tarea").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta tarea? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}`, {{ method: "DELETE" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la tarea."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-eliminar-historial").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("Este pedido ya tiene un recibo emitido y enviado al cliente. ¿Eliminarlo del historial de todas formas? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}`, {{ method: "DELETE" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar el pedido."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-eliminar-historial-tarea").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta tarea del historial? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}`, {{ method: "DELETE" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la tarea."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.getElementById("fecha-historial-pedidos").addEventListener("change", (e) => {{
+  const url = new URL(location.href);
+  url.searchParams.set("fecha_pedidos", e.target.value);
+  location.href = url.toString();
+}});
+const filtroHistorialPedidos = document.getElementById("filtro-historial-pedidos");
+function filtrarHistorialPedidos() {{
+  const texto = filtroHistorialPedidos.value.trim().toLowerCase();
+  document.querySelectorAll("[data-busqueda-historial]").forEach((pedido) => {{
+    pedido.hidden = Boolean(texto && !pedido.dataset.busquedaHistorial.includes(texto));
+  }});
+}}
+filtroHistorialPedidos.addEventListener("input", filtrarHistorialPedidos);
+let apiPlacesAdmin;
+async function cargarApiPlacesAdmin() {{
+  if (apiPlacesAdmin !== undefined) return apiPlacesAdmin;
+  apiPlacesAdmin = fetch("/api/configuracion-publica")
+    .then((respuesta) => respuesta.ok ? respuesta.json() : {{}})
+    .then(async (configuracion) => {{
+      if (!configuracion.google_maps_api_key) return null;
+      await new Promise((resolver, rechazar) => {{
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${{encodeURIComponent(configuracion.google_maps_api_key)}}&libraries=places&v=weekly`;
+        script.async = true;
+        script.onload = resolver;
+        script.onerror = rechazar;
+        document.head.append(script);
+      }});
+      return google.maps.importLibrary("places");
+    }})
+    .catch((error) => {{ console.error("No se pudo cargar Google Places", error); return null; }});
+  return apiPlacesAdmin;
+}}
+function activarAutocompleteDireccion(input, lista) {{
+  if (!input || !lista) return;
+  let temporizador;
+  function ocultar() {{ lista.replaceChildren(); lista.hidden = true; }}
+  async function mostrar(texto) {{
+    const places = await cargarApiPlacesAdmin();
+    if (!places || texto !== input.value.trim()) return;
+    const {{ AutocompleteSuggestion }} = places;
+    const {{ suggestions }} = await AutocompleteSuggestion.fetchAutocompleteSuggestions({{
+      input: texto,
+      includedRegionCodes: ["ar"],
+    }}).catch((error) => {{ console.error("Autocomplete de direccion fallo", error); return {{ suggestions: [] }}; }});
+    if (texto !== input.value.trim() || !suggestions?.length) {{ ocultar(); return; }}
+    lista.replaceChildren(...suggestions.slice(0, 5).map(({{ placePrediction }}) => {{
+      const item = document.createElement("li");
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.textContent = placePrediction.text.text;
+      boton.addEventListener("click", async () => {{
+        const place = placePrediction.toPlace();
+        await place.fetchFields({{ fields: ["formattedAddress"] }});
+        input.value = place.formattedAddress || placePrediction.text.text;
+        ocultar();
+      }});
+      item.append(boton);
+      return item;
+    }}));
+    lista.hidden = false;
+  }}
+  input.addEventListener("input", () => {{
+    clearTimeout(temporizador);
+    const texto = input.value.trim();
+    if (texto.length < 3) {{ ocultar(); return; }}
+    temporizador = setTimeout(() => {{ mostrar(texto).catch(ocultar); }}, 250);
+  }});
+  document.addEventListener("pointerdown", (evento) => {{
+    if (lista.hidden) return;
+    if (evento.target === input || lista.contains(evento.target)) return;
+    ocultar();
+  }});
+}}
+activarAutocompleteDireccion(document.getElementById("tarea-direccion"), document.getElementById("tarea-direccion-sugerencias"));
+activarAutocompleteDireccion(document.getElementById("direccion-entrega-admin"), document.getElementById("direccion-entrega-admin-sugerencias"));
+const CLIENTES_TAREA = {clientes_tarea_json};
+const busquedaClienteTarea = document.getElementById("tarea-cliente-busqueda");
+const idClienteTarea = document.getElementById("tarea-cliente");
+const sugerenciasClienteTarea = document.getElementById("tarea-cliente-sugerencias");
+function ocultarSugerenciasClienteTarea() {{
+  sugerenciasClienteTarea.replaceChildren();
+  sugerenciasClienteTarea.hidden = true;
+}}
+busquedaClienteTarea?.addEventListener("input", () => {{
+  idClienteTarea.value = "";
+  const texto = busquedaClienteTarea.value.trim().toLowerCase();
+  if (!texto) {{ ocultarSugerenciasClienteTarea(); return; }}
+  const coincidencias = CLIENTES_TAREA.filter((cliente) => cliente.nombre.toLowerCase().includes(texto)).slice(0, 8);
+  if (!coincidencias.length) {{ ocultarSugerenciasClienteTarea(); return; }}
+  sugerenciasClienteTarea.replaceChildren(...coincidencias.map((cliente) => {{
+    const item = document.createElement("li");
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = cliente.nombre;
+    boton.addEventListener("click", () => {{
+      busquedaClienteTarea.value = cliente.nombre;
+      idClienteTarea.value = cliente.id;
+      if (cliente.direccion) document.getElementById("tarea-direccion").value = cliente.direccion;
+      ocultarSugerenciasClienteTarea();
+    }});
+    item.append(boton);
+    return item;
+  }}));
+  sugerenciasClienteTarea.hidden = false;
+}});
+document.addEventListener("pointerdown", (evento) => {{
+  if (!sugerenciasClienteTarea || sugerenciasClienteTarea.hidden) return;
+  if (evento.target.closest("#tarea-cliente-busqueda, #tarea-cliente-sugerencias")) return;
+  ocultarSugerenciasClienteTarea();
+}});
+const listaEntregas = document.querySelector(".pedidos-hoy");
+async function guardarOrdenEntregas() {{
+  const items = Array.from(listaEntregas.querySelectorAll(".pedido-hoy[data-tipo-entrega]")).map((entrega) => ({{
+    tipo: entrega.dataset.tipoEntrega,
+    id: entrega.dataset.entregaId,
+  }}));
+  const respuesta = await fetch("/admin/entregas/orden", {{
+    method: "PUT", headers: {{ "Content-Type": "application/json" }}, body: JSON.stringify({{ items }}),
+  }});
+  if (!respuesta.ok) {{ alert("No se pudo guardar el orden. Recargá la página e intentá nuevamente."); }}
+}}
+document.querySelectorAll(".arrastrar-entrega").forEach((tirador) => {{
+  tirador.addEventListener("pointerdown", (evento) => {{
+    if (evento.pointerType === "mouse") return;
+    const entrega = tirador.closest(".pedido-hoy[data-tipo-entrega]");
+    if (!entrega || !listaEntregas) return;
+    evento.preventDefault();
+    entrega.classList.add("arrastrando");
+    tirador.setPointerCapture(evento.pointerId);
+    const mover = (movimiento) => {{
+      const destino = document.elementFromPoint(movimiento.clientX, movimiento.clientY)?.closest(".pedido-hoy[data-tipo-entrega]");
+      if (!destino || destino === entrega || !listaEntregas.contains(destino)) return;
+      const mitad = destino.getBoundingClientRect().top + destino.offsetHeight / 2;
+      listaEntregas.insertBefore(entrega, movimiento.clientY < mitad ? destino : destino.nextSibling);
+    }};
+    const soltar = async () => {{
+      entrega.classList.remove("arrastrando");
+      document.removeEventListener("pointermove", mover);
+      document.removeEventListener("pointerup", soltar);
+      document.removeEventListener("pointercancel", soltar);
+      await guardarOrdenEntregas();
+    }};
+      document.addEventListener("pointermove", mover);
+      document.addEventListener("pointerup", soltar);
+      document.addEventListener("pointercancel", soltar);
+    }});
+}});
+let entregaNativaArrastrada = null;
+document.querySelectorAll(".arrastrar-entrega").forEach((tirador) => {{
+  tirador.addEventListener("dragstart", (evento) => {{
+    entregaNativaArrastrada = tirador.closest(".pedido-hoy[data-tipo-entrega]");
+    if (!entregaNativaArrastrada) return;
+    entregaNativaArrastrada.classList.add("arrastrando");
+    evento.dataTransfer.effectAllowed = "move";
+  }});
+  tirador.addEventListener("dragend", () => {{
+    entregaNativaArrastrada?.classList.remove("arrastrando");
+    entregaNativaArrastrada = null;
+  }});
+}});
+document.querySelectorAll(".pedido-hoy[data-tipo-entrega]").forEach((destino) => {{
+  destino.addEventListener("dragover", (evento) => {{
+    if (!entregaNativaArrastrada || entregaNativaArrastrada === destino) return;
+    evento.preventDefault();
+    const mitad = destino.getBoundingClientRect().top + destino.offsetHeight / 2;
+    listaEntregas.insertBefore(entregaNativaArrastrada, evento.clientY < mitad ? destino : destino.nextSibling);
+  }});
+  destino.addEventListener("drop", async (evento) => {{
+    if (!entregaNativaArrastrada) return;
+    evento.preventDefault();
+    entregaNativaArrastrada.classList.remove("arrastrando");
+    entregaNativaArrastrada = null;
+    await guardarOrdenEntregas();
+  }});
+}});
+document.getElementById("tarea-toggle")?.addEventListener("click", (e) => {{
+  e.currentTarget.hidden = true;
+  document.getElementById("tarea-campos").hidden = false;
+  document.getElementById("tarea-cerrar").hidden = false;
+  document.getElementById("tarea-titulo").focus();
+}});
+document.getElementById("tarea-cerrar")?.addEventListener("click", () => {{
+  document.getElementById("form-tarea-entrega").reset();
+  document.getElementById("tarea-cliente").value = "";
+  document.getElementById("tarea-campos").hidden = true;
+  document.getElementById("tarea-cerrar").hidden = true;
+  document.getElementById("tarea-toggle").hidden = false;
+}});
+document.getElementById("form-tarea-entrega")?.addEventListener("submit", async (e) => {{
+  e.preventDefault();
+  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:document.getElementById("tarea-fecha").value, titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, cliente_nombre:document.getElementById("tarea-cliente-busqueda").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value, enviar_a_alejo:document.getElementById("tarea-enviar-alejo").checked}}) }});
+  if (!r.ok) {{ alert("No se pudo crear la tarea."); return; }}
+  location.href = `/admin/clientes?fecha_pedidos=${{document.getElementById("tarea-fecha").value}}`;
+}});
+document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    btn.disabled = true;
+    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/completar`, {{ method:"POST" }});
+    if (!r.ok) {{ alert("No se pudo completar la tarea."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+function _rutaDerivar(tipo, id) {{
+  return tipo === "pedido" ? `/admin/pedidos/${{id}}/derivar` : `/admin/tareas-entrega/${{id}}/derivar`;
+}}
+document.querySelectorAll(".btn-derivar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const observaciones = prompt("Dejale una observación a Alejo (opcional)", "");
+    if (observaciones === null) return;
+    btn.disabled = true;
+    const r = await fetch(_rutaDerivar(btn.dataset.tipo, btn.dataset.id), {{
+      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: true, observaciones}}),
+    }});
+    if (!r.ok) {{ alert("No se pudo derivar la entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm(btn.dataset.tipo === "pedido" ? "¿Quitar pedido a Alejo?" : "¿Quitar tarea a Alejo?")) return;
+    btn.disabled = true;
+    const r = await fetch(_rutaDerivar(btn.dataset.tipo, btn.dataset.id), {{
+      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: false}}),
+    }});
+    if (!r.ok) {{ alert("No se pudo quitar la derivación."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+</script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
+</body></html>"""
+
+    provincias = sorted({c["provincia"] for c in clientes}, key=str.casefold)
+    opciones_provincia_html = "".join(
+        f'<option value="{html.escape(provincia)}">{html.escape(provincia)}</option>'
+        for provincia in provincias
+    )
+    if not clientes:
+        filas_html = '<tr><td colspan="7" class="vacio">Todavía no hay clientes registrados.</td></tr>'
+    else:
+        def _celda_cuenta(c):
+            if not c.get("tiene_cuenta"):
+                return (
+                    '<div class="cuenta-cliente-acciones">'
+                    '<span class="tipo-cliente tipo-cliente-sin-cuenta">'
+                    'El cliente todavía no tiene una cuenta</span>'
+                    '<button class="btn-mayorista" disabled>Habilitar mayorista</button>'
+                    '</div>'
+                )
+            id_seguro = html.escape(c.get("id", ""))
+            mayorista = c.get("tipo_cliente") == "mayorista"
+            etiqueta = "Mayorista" if mayorista else "Minorista"
+            clase_etiqueta = "tipo-cliente-mayorista" if mayorista else "tipo-cliente-minorista"
+            texto_boton = "Quitar mayorista" if mayorista else "Habilitar mayorista"
+            clase_boton = "btn-mayorista-activo" if mayorista else ""
+            return (
+                '<div class="cuenta-cliente-acciones">'
+                f'<span class="tipo-cliente {clase_etiqueta}">{etiqueta}</span>'
+                f'<button class="btn-mayorista {clase_boton}" data-id="{id_seguro}" '
+                f'data-habilitado="{str(not mayorista).lower()}">{texto_boton}</button>'
+                f'<button class="btn-reset" data-id="{id_seguro}">Resetear contraseña</button>'
+                f'<button class="btn-eliminar" data-id="{id_seguro}" title="Eliminar cuenta" '
+                f'aria-label="Eliminar cuenta">{_ICONO_TACHO}</button>'
+                '</div>'
+            )
+
+        filas_html = "".join(
+            f'<tr class="cliente-fila" data-busqueda="{html.escape(" ".join((c.get("nombre", ""), c.get("celular", ""), c.get("email", ""), c.get("provincia", ""))).lower())}" data-provincia="{html.escape(c.get("provincia", ""))}"><td class="col-check"><input class="cliente-check" type="checkbox" '
+            f'value="{html.escape(c.get("id", ""))}" aria-label="Seleccionar cliente"></td>'
+            f"<td>{html.escape(c.get('nombre', ''))}</td>"
+            f"<td>{html.escape(c.get('celular', ''))}</td>"
+            f"<td>{html.escape(c.get('email', '')) or '—'}</td>"
+            f"<td>{html.escape(c.get('provincia', ''))}</td>"
+            f'<td><a class="btn-historial" href="/admin/clientes/{html.escape(c.get("id", ""))}/historial" '
+            f'title="Ver historial de pedidos" aria-label="Ver historial de pedidos">{_ICONO_OJO}</a></td>'
+            f"<td>{_celda_cuenta(c)}</td></tr>"
+            for c in clientes
+        )
+    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Clientes</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
+<div class="panel">
+  <div class="panel-header">
+    <h1>Clientes ({len(clientes)})</h1>
+    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes">Pedidos y recibos</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
+  </div>
+  <div class="filtros-clientes">
+    <input id="filtro-clientes" type="search" placeholder="Buscar por nombre, email, celular o provincia">
+    <select id="filtro-provincia"><option value="">Todas las provincias</option>{opciones_provincia_html}</select>
+    <select id="ordenar-clientes"><option value="fecha-desc">Ordenar: más recientes</option><option value="nombre-asc">Nombre: A a Z</option><option value="nombre-desc">Nombre: Z a A</option><option value="celular-asc">Celular</option><option value="provincia-asc">Provincia: A a Z</option></select>
+  </div>
+  <div class="acciones-masivas" id="acciones-masivas">
+    <span id="seleccionados-texto">0 clientes seleccionados</span>
+    <button id="btn-mail-masivo" type="button">Enviar mail</button>
+    <button id="btn-eliminar-masivo" type="button">Eliminar seleccionados</button>
+  </div>
+  <div class="tabla-scroll"><table id="tabla-clientes">
+    <thead><tr><th class="col-check"><input id="seleccionar-todos" type="checkbox" aria-label="Seleccionar todos"></th><th><button class="ordenar-columna" data-sort="nombre" data-sort-index="1">Nombre</button></th><th><button class="ordenar-columna" data-sort="celular" data-sort-index="2">Celular</button></th><th><button class="ordenar-columna" data-sort="email" data-sort-index="3">Email</button></th><th><button class="ordenar-columna" data-sort="provincia" data-sort-index="4">Provincia</button></th><th>Historial</th><th>Cuenta</th></tr></thead>
+    <tbody>{filas_html}</tbody>
+  </table></div>
+  <div class="paginacion-clientes" id="paginacion-clientes" hidden></div>
+</div>
+<div class="modal-mail" id="modal-mail" hidden>
+  <div class="modal-mail-contenido" role="dialog" aria-modal="true" aria-labelledby="modal-mail-titulo">
+    <h2 id="modal-mail-titulo">Enviar mail</h2>
+    <p id="modal-mail-ayuda"></p>
+    <div class="mail-editor-toolbar" aria-label="Formato del mensaje">
+      <button type="button" data-mail-formato="bold" aria-label="Negrita"><strong>B</strong></button>
+      <button type="button" data-mail-formato="italic" aria-label="Cursiva"><em>I</em></button>
+      <button type="button" data-mail-formato="insertUnorderedList" aria-label="Lista">Lista</button>
+      <button type="button" id="mail-agregar-link">Enlace</button>
+    </div>
+    <div id="mail-mensaje" class="mail-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Escribí el mensaje para los clientes seleccionados"></div>
+    <div class="modal-mail-acciones"><button id="mail-cancelar" type="button">Cancelar</button><button id="mail-enviar" type="button">Enviar</button></div>
+  </div>
+</div>
+<script>
+document.getElementById("salir").addEventListener("click", async () => {{
+  await fetch("/admin/clientes/logout", {{ method: "POST" }});
+  location.reload();
+}});
+document.querySelectorAll(".btn-reset").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Generar una contraseña nueva para este cliente y mandársela por mail?")) return;
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+    const r = await fetch(`/admin/clientes/${{btn.dataset.id}}/resetear-password`, {{ method: "POST" }});
+    const datos = await r.json();
+    if (r.ok) {{
+      alert("Listo, le llegó un mail con la contraseña nueva.");
+      btn.textContent = "Resetear contraseña";
+    }} else {{
+      alert(datos.error || "No se pudo resetear la contraseña");
+      btn.textContent = "Resetear contraseña";
+    }}
+    btn.disabled = false;
+  }});
+}});
+document.querySelectorAll(".btn-eliminar").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta cuenta definitivamente? También se borrarán sus pedidos e historial. Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/clientes/${{btn.dataset.id}}/eliminar`, {{ method: "POST" }});
+    const datos = await r.json();
+    if (r.ok) {{ location.reload(); return; }}
+    alert(datos.error || "No se pudo eliminar la cuenta");
+    btn.disabled = false;
+  }});
+}});
+document.querySelectorAll(".btn-mayorista").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const habilitado = btn.dataset.habilitado === "true";
+    const accion = habilitado ? "habilitar" : "quitar";
+    if (!confirm(`¿${{accion.charAt(0).toUpperCase() + accion.slice(1)}} acceso mayorista a este cliente?`)) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/clientes/${{btn.dataset.id}}/mayorista`, {{
+      method: "POST", headers: {{"Content-Type": "application/json"}},
+      body: JSON.stringify({{habilitado}}),
+    }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || datos.detail || "No se pudo actualizar el acceso mayorista."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-enviar-recibo").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Enviar el recibo por email a este cliente?")) return;
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/recibo`, {{ method: "POST" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo enviar el recibo."); btn.disabled = false; btn.textContent = "Enviar recibo"; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-reenviar-recibo").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Reenviar el recibo original por email?")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/recibo`, {{ method: "POST" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo reenviar el recibo."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-editar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const fecha = prompt("Nueva fecha de entrega (AAAA-MM-DD)", btn.dataset.fecha);
+    if (!fecha || fecha === btn.dataset.fecha) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/fecha-entrega`, {{
+      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{fecha_entrega: fecha}}),
+    }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo editar la fecha de entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-eliminar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm("¿Eliminar esta entrega? Esta acción no se puede deshacer.")) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}`, {{ method: "DELETE" }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+function _rutaDerivar(tipo, id) {{
+  return tipo === "pedido" ? `/admin/pedidos/${{id}}/derivar` : `/admin/tareas-entrega/${{id}}/derivar`;
+}}
+document.querySelectorAll(".btn-derivar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const observaciones = prompt("Dejale una observación a Alejo (opcional)", "");
+    if (observaciones === null) return;
+    btn.disabled = true;
+    const r = await fetch(_rutaDerivar(btn.dataset.tipo, btn.dataset.id), {{
+      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: true, observaciones}}),
+    }});
+    if (!r.ok) {{ alert("No se pudo derivar la entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    if (!confirm(btn.dataset.tipo === "pedido" ? "¿Quitar pedido a Alejo?" : "¿Quitar tarea a Alejo?")) return;
+    btn.disabled = true;
+    const r = await fetch(_rutaDerivar(btn.dataset.tipo, btn.dataset.id), {{
+      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: false}}),
+    }});
+    if (!r.ok) {{ alert("No se pudo quitar la derivación."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+const checksClientes = Array.from(document.querySelectorAll(".cliente-check"));
+const seleccionarTodos = document.getElementById("seleccionar-todos");
+const accionesMasivas = document.getElementById("acciones-masivas");
+const seleccionadosTexto = document.getElementById("seleccionados-texto");
+const modalMail = document.getElementById("modal-mail");
+const mailMensaje = document.getElementById("mail-mensaje");
+const filtroClientes = document.getElementById("filtro-clientes");
+const filtroProvincia = document.getElementById("filtro-provincia");
+const ordenarClientesSelect = document.getElementById("ordenar-clientes");
+
+function idsSeleccionados() {{ return checksClientes.filter((chk) => chk.checked).map((chk) => chk.value); }}
+function actualizarSeleccion() {{
+  const cantidad = idsSeleccionados().length;
+  seleccionadosTexto.textContent = `${{cantidad}} cliente${{cantidad === 1 ? "" : "s"}} seleccionado${{cantidad === 1 ? "" : "s"}}`;
+  accionesMasivas.classList.toggle("visible", cantidad > 0);
+  seleccionarTodos.checked = checksClientes.length > 0 && cantidad === checksClientes.length;
+  seleccionarTodos.indeterminate = cantidad > 0 && cantidad < checksClientes.length;
+}}
+checksClientes.forEach((chk) => chk.addEventListener("change", actualizarSeleccion));
+seleccionarTodos.addEventListener("change", () => {{ checksClientes.forEach((chk) => {{ chk.checked = seleccionarTodos.checked; }}); actualizarSeleccion(); }});
+
+const CLIENTES_POR_PAGINA = 50;
+let paginaClientesActual = 1;
+const contenedorPaginacionClientes = document.getElementById("paginacion-clientes");
+
+function filasClientesQueCoincidenConFiltro() {{
+  const texto = filtroClientes.value.trim().toLowerCase();
+  const provincia = filtroProvincia.value;
+  return Array.from(document.querySelectorAll("#tabla-clientes tbody .cliente-fila")).filter((fila) =>
+    !((texto && !fila.dataset.busqueda.includes(texto)) || (provincia && fila.dataset.provincia !== provincia))
+  );
+}}
+
+function renderizarPaginacionClientes(total, totalPaginas) {{
+  if (!contenedorPaginacionClientes) return;
+  if (totalPaginas <= 1) {{ contenedorPaginacionClientes.innerHTML = ""; contenedorPaginacionClientes.hidden = true; return; }}
+  contenedorPaginacionClientes.hidden = false;
+  const desde = (paginaClientesActual - 1) * CLIENTES_POR_PAGINA + 1;
+  const hasta = Math.min(paginaClientesActual * CLIENTES_POR_PAGINA, total);
+  contenedorPaginacionClientes.innerHTML =
+    `<button type="button" id="pagina-clientes-anterior" ${{paginaClientesActual === 1 ? "disabled" : ""}}>Anterior</button>` +
+    `<span>${{desde}}–${{hasta}} de ${{total}} · página ${{paginaClientesActual}} de ${{totalPaginas}}</span>` +
+    `<button type="button" id="pagina-clientes-siguiente" ${{paginaClientesActual === totalPaginas ? "disabled" : ""}}>Siguiente</button>`;
+  document.getElementById("pagina-clientes-anterior").addEventListener("click", () => {{
+    if (paginaClientesActual <= 1) return;
+    paginaClientesActual -= 1;
+    actualizarVistaClientes();
+    document.getElementById("tabla-clientes").scrollIntoView({{ behavior: "smooth", block: "start" }});
+  }});
+  document.getElementById("pagina-clientes-siguiente").addEventListener("click", () => {{
+    if (paginaClientesActual >= totalPaginas) return;
+    paginaClientesActual += 1;
+    actualizarVistaClientes();
+    document.getElementById("tabla-clientes").scrollIntoView({{ behavior: "smooth", block: "start" }});
+  }});
+}}
+
+function actualizarVistaClientes() {{
+  const coincidentes = filasClientesQueCoincidenConFiltro();
+  const totalPaginas = Math.max(1, Math.ceil(coincidentes.length / CLIENTES_POR_PAGINA));
+  if (paginaClientesActual > totalPaginas) paginaClientesActual = totalPaginas;
+  const inicio = (paginaClientesActual - 1) * CLIENTES_POR_PAGINA;
+  const fin = inicio + CLIENTES_POR_PAGINA;
+  const coincidentesEnPagina = new Set(coincidentes.slice(inicio, fin));
+  document.querySelectorAll("#tabla-clientes tbody .cliente-fila").forEach((fila) => {{
+    fila.hidden = !coincidentesEnPagina.has(fila);
+  }});
+  renderizarPaginacionClientes(coincidentes.length, totalPaginas);
+}}
+
+function filtrarClientes() {{
+  paginaClientesActual = 1;
+  actualizarVistaClientes();
+}}
+filtroClientes.addEventListener("input", filtrarClientes);
+filtroProvincia.addEventListener("change", filtrarClientes);
+
+const columnasOrden = {{ nombre: 1, celular: 2, email: 3, provincia: 4 }};
+function ordenarFilasClientes(campo, ascendente) {{
+  const indice = columnasOrden[campo];
+  const filas = Array.from(document.querySelectorAll("#tabla-clientes tbody .cliente-fila"));
+  filas.sort((a, b) => a.cells[indice].textContent.trim().localeCompare(
+    b.cells[indice].textContent.trim(), "es", {{ numeric: true, sensitivity: "base" }}
+  ) * (ascendente ? 1 : -1));
+  const cuerpo = document.querySelector("#tabla-clientes tbody");
+  filas.forEach((fila) => cuerpo.appendChild(fila));
+  paginaClientesActual = 1;
+  actualizarVistaClientes();
+}}
+ordenarClientesSelect.addEventListener("change", () => {{
+  const [campo, direccion] = ordenarClientesSelect.value.split("-");
+  if (campo === "fecha") return;
+  ordenarFilasClientes(campo, direccion === "asc");
+}});
+
+document.querySelectorAll(".ordenar-columna").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    const ascendente = btn.dataset.orden !== "asc";
+    document.querySelectorAll(".ordenar-columna").forEach((otro) => {{ otro.dataset.orden = ""; }});
+    btn.dataset.orden = ascendente ? "asc" : "desc";
+    ordenarFilasClientes(btn.dataset.sort, ascendente);
+  }});
+}});
+actualizarVistaClientes();
+
+document.getElementById("btn-mail-masivo").addEventListener("click", () => {{
+  document.getElementById("modal-mail-ayuda").textContent = `El asunto será: Novedades de The Tech Room Arg. Se enviará a ${{idsSeleccionados().length}} cliente(s). Cada email comenzará con el nombre del cliente y terminará con “Saludos, Vlad.”.`;
+  mailMensaje.innerHTML = "";
+  modalMail.hidden = false;
+  mailMensaje.focus();
+}});
+document.querySelectorAll("[data-mail-formato]").forEach((boton) => {{
+  boton.addEventListener("click", () => {{
+    mailMensaje.focus();
+    document.execCommand(boton.dataset.mailFormato, false);
+  }});
+}});
+document.getElementById("mail-agregar-link").addEventListener("click", () => {{
+  const url = prompt("Pegá el enlace (https://...)");
+  if (!url) return;
+  mailMensaje.focus();
+  document.execCommand("createLink", false, url);
+}});
+document.getElementById("mail-cancelar").addEventListener("click", () => {{ modalMail.hidden = true; }});
+document.getElementById("mail-enviar").addEventListener("click", async () => {{
+  const mensaje = mailMensaje.innerHTML.trim();
+  if (!mailMensaje.textContent.trim()) {{ alert("Escribí un mensaje antes de enviar."); return; }}
+  const boton = document.getElementById("mail-enviar");
+  boton.disabled = true;
+  const r = await fetch("/admin/clientes/acciones/enviar-mail", {{
+    method: "POST", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{cliente_ids: idsSeleccionados(), mensaje}}),
+  }});
+  const datos = await r.json();
+  boton.disabled = false;
+  if (!r.ok) {{ alert(datos.error || "No se pudo enviar el mail."); return; }}
+  modalMail.hidden = true;
+  alert(`Mail enviado a ${{datos.enviados}} cliente(s). Fallidos: ${{datos.fallidos}}.`);
+}});
+document.getElementById("btn-eliminar-masivo").addEventListener("click", async () => {{
+  const ids = idsSeleccionados();
+  if (!confirm(`¿Eliminar definitivamente ${{ids.length}} cuenta(s)? También se borrarán sus pedidos e historial. Esta acción no se puede deshacer.`)) return;
+  const r = await fetch("/admin/clientes/acciones/eliminar", {{
+    method: "POST", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{cliente_ids: ids}}),
+  }});
+  const datos = await r.json();
+  if (!r.ok) {{ alert(datos.error || "No se pudieron eliminar las cuentas."); return; }}
+  location.reload();
+}});
+</script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
+</body></html>"""
+
+
+_CADETE_ESTILO += _leer_ui("operations_editorial.css.html")
+
+
+@app.get("/admin/cadete", response_class=HTMLResponse)
+def admin_cadete(request: Request):
+    if not _cadete_activo(request):
+        return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Entregas — Ingresar</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
+<div class="tarjeta">
+  <h1>Panel de entregas</h1>
+  <p id="err" class="error" style="display:none"></p>
+  <input id="pass" type="password" placeholder="Contraseña" autofocus>
+  <button id="btn">Ingresar</button>
+</div>
+<script>
+document.getElementById("btn").addEventListener("click", async () => {{
+  const r = await fetch("/admin/cadete/login", {{
+    method: "POST", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{password: document.getElementById("pass").value}})
+  }});
+  if (r.ok) {{ location.reload(); return; }}
+  const err = document.getElementById("err");
+  err.textContent = "Contraseña incorrecta";
+  err.style.display = "block";
+}});
+document.getElementById("pass").addEventListener("keydown", (e) => {{
+  if (e.key === "Enter") document.getElementById("btn").click();
+}});
+</script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
+</body></html>"""
+
+    client = get_client()
+    fecha_hoy = entregas.ahora_argentina().date().isoformat()
+    fecha_param = request.query_params.get("fecha", "")
+    try:
+        date.fromisoformat(fecha_param)
+        fecha_consulta = fecha_param
+    except ValueError:
+        fecha_consulta = fecha_hoy
+
+    def _label_fecha_entrega(fecha_iso):
+        try:
+            momento = datetime.fromisoformat(fecha_iso)
+        except ValueError:
+            return fecha_iso
+        return f"{momento.strftime('%d/%m')} · {_DIAS_SEMANA[momento.weekday()]}"
+
+    filas_clientes = client.table("clientes").select("*").execute().data
+    clientes_por_id = {c.get("id"): c for c in filas_clientes}
+    pedidos = client.table("pedidos").select("*").eq("asignado_a", CADETE_SLUG).execute().data
+    pedidos = [p for p in pedidos if _activo(p)]
+    tareas = client.table("tareas_entrega").select("*").eq("asignado_a", CADETE_SLUG).execute().data
+    tareas = [t for t in tareas if _activo(t)]
+    tareas_ids = {t.get("id") for t in tareas}
+    tareas_con_recibo = {
+        r.get("tarea_id") for r in client.table("recibos_manuales").select("*").execute().data
+        if r.get("enviado_en") and r.get("tarea_id") in tareas_ids
+    }
+    pedidos_hoy = [
+        pedido for pedido in pedidos
+        if pedido.get("fecha_entrega") == fecha_consulta and not pedido.get("recibo_enviado_en")
+    ]
+    tareas_hoy = [
+        tarea for tarea in tareas
+        if tarea.get("fecha_entrega") == fecha_consulta and not tarea.get("completada_en")
+    ]
+
+    def _descripcion_pedido(pedido):
+        detalle = pedido.get("detalle") or []
+        if detalle:
+            return " | ".join(
+                f"{item.get('nombre', '')} x{item.get('cantidad', 0)}"
+                for item in detalle
+            )
+        return " | ".join(pedido.get("productos") or [])
+
+    def _boton_vamos(direccion, item_id, tipo, lat=None, lng=None, celular=None):
+        if not direccion:
+            return (
+                f'<button class="btn-agregar-direccion-cadete" type="button" '
+                f'data-id="{item_id}" data-tipo="{tipo}">Sin dirección cargada · Agregar</button>'
+            )
+        link_whatsapp = _link_whatsapp_cliente(celular, MENSAJE_EN_CAMINO)
+        data_whatsapp = f' data-whatsapp="{html.escape(link_whatsapp)}"' if link_whatsapp else ""
+        return (
+            f'<button class="btn-direcciones" type="button"{data_whatsapp} '
+            f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": _query_maps(direccion, lat, lng)}))}">Vamos</button>'
+        )
+
+    def _boton_whatsapp_cliente(celular):
+        link = _link_whatsapp_cliente(celular)
+        if not link:
+            return ""
+        return f'<a class="btn-whatsapp-cliente" href="{html.escape(link)}" target="_blank" rel="noopener">WhatsApp</a>'
+
+    def _tarjeta_pedido_cadete(pedido):
+        pedido_id = html.escape(pedido.get("id", ""))
+        cliente = clientes_por_id.get(pedido.get("cliente_id"), {})
+        nombre_cliente = f"{cliente.get('nombre', '')} {cliente.get('apellido', '')}".strip() or "Cliente"
+        direccion = (pedido.get("direccion_entrega") or "").strip()
+        if not pedido.get("detalle") or pedido.get("total_usd") is None:
+            boton_recibo = (f'<button class="btn-enviar-recibo" type="button" data-id="{pedido_id}" '
+                             'disabled title="Falta detalle histórico">Enviar recibo</button>')
+        else:
+            boton_recibo = f'<button class="btn-enviar-recibo" type="button" data-id="{pedido_id}">Enviar recibo</button>'
+        observaciones = (pedido.get("observaciones_cadete") or "").strip()
+        detalle_obs = (
+            f'<br><span class="observacion-cadete">Observaciones: {html.escape(observaciones)}</span>'
+            if observaciones else ""
+        )
+        fecha = html.escape(pedido.get("fecha_entrega", ""))
+        boton_fecha = (
+            f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}" '
+            'data-tipo="pedido">Editar fecha</button>'
+        )
+        boton_derivar_vlad = (
+            f'<button class="btn-derivar-vlad" type="button" data-id="{pedido_id}" data-tipo="pedido">Derivar a Vlad</button>'
+        )
+        return (
+            f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}</strong> · '
+            f'{html.escape(cliente.get("celular") or "—")}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
+            f'{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
+            f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"), cliente.get("celular"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}{boton_derivar_vlad}</div></div>'
+        )
+
+    def _tarjeta_tarea_cadete(tarea):
+        tarea_id = html.escape(tarea.get("id", ""))
+        direccion = (tarea.get("direccion") or "").strip()
+        cliente_tarea = clientes_por_id.get(tarea.get("cliente_id"), {})
+        nombre_cliente = tarea.get("cliente_nombre") or ""
+        detalle_cliente = f'<br><span>Cliente: {html.escape(nombre_cliente)}</span>' if nombre_cliente else ""
+        observaciones = (tarea.get("observaciones_cadete") or "").strip()
+        detalle_obs = (
+            f'<br><span class="observacion-cadete">Observaciones: {html.escape(observaciones)}</span>'
+            if observaciones else ""
+        )
+        fecha = html.escape(tarea.get("fecha_entrega", ""))
+        boton_fecha = (
+            f'<button class="btn-editar-entrega" type="button" data-id="{tarea_id}" data-fecha="{fecha}" '
+            'data-tipo="tarea">Editar fecha</button>'
+        )
+        boton_derivar_vlad = (
+            f'<button class="btn-derivar-vlad" type="button" data-id="{tarea_id}" data-tipo="tarea">Derivar a Vlad</button>'
+        )
+        texto_recibo = "Reenviar recibo" if tarea.get("id") in tareas_con_recibo else "Recibo"
+        boton_recibo_manual = (
+            f'<button class="btn-recibo-nota" type="button" data-id="{tarea_id}">{texto_recibo}</button>'
+        )
+        return (
+            f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
+            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
+            f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
+            f'<div class="pedido-acciones">{_boton_vamos(direccion, tarea_id, "tarea", celular=cliente_tarea.get("celular"))}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
+            f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}{boton_recibo_manual}</div></div>'
+        )
+
+    tarjetas = (
+        [_tarjeta_pedido_cadete(pedido) for pedido in pedidos_hoy]
+        + [_tarjeta_tarea_cadete(tarea) for tarea in tareas_hoy]
+    )
+    entregas_html = "".join(tarjetas) if tarjetas else (
+        '<p class="vacio">No tenés entregas asignadas para hoy.</p>' if fecha_consulta == fecha_hoy
+        else '<p class="vacio">No tenés entregas asignadas para ese día.</p>'
+    )
+
+    seccion_proximos = ""
+    if fecha_consulta == fecha_hoy:
+        pedidos_proximos = [
+            pedido for pedido in pedidos
+            if pedido.get("fecha_entrega", "") > fecha_hoy and not pedido.get("recibo_enviado_en")
+        ]
+        tareas_proximas = [
+            tarea for tarea in tareas
+            if tarea.get("fecha_entrega", "") > fecha_hoy and not tarea.get("completada_en")
+        ]
+        fechas_proximas = sorted({
+            pedido.get("fecha_entrega") for pedido in pedidos_proximos
+        } | {
+            tarea.get("fecha_entrega") for tarea in tareas_proximas
+        })
+        proximos_html = "".join(
+            f'<div class="proximos-dia"><h3>{html.escape(_label_fecha_entrega(fecha))}</h3>'
+            + "".join(_tarjeta_pedido_cadete(pedido) for pedido in pedidos_proximos if pedido.get("fecha_entrega") == fecha)
+            + "".join(_tarjeta_tarea_cadete(tarea) for tarea in tareas_proximas if tarea.get("fecha_entrega") == fecha)
+            + "</div>"
+            for fecha in fechas_proximas
+        )
+        total_proximos = len(pedidos_proximos) + len(tareas_proximas)
+        if total_proximos:
+            seccion_proximos = (
+                f'<section class="pedidos-hoy proximos-dias"><div class="pedidos-hoy-header">'
+                f'<h2>Próximos días ({total_proximos})</h2></div>{proximos_html}</section>'
+            )
+
+    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Entregas asignadas</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
+<div class="panel">
+  <div class="panel-header">
+    <h1>Entregas asignadas</h1>
+    <div class="panel-header-acciones">
+      <button id="btn-notificaciones" type="button" hidden>🔔 Activar notificaciones</button>
+      <a class="btn-clientes" href="/admin/cadete/papelera">Borrados</a><button id="salir">Cerrar sesión</button>
+    </div>
+  </div>
+  <div class="selector-fecha-cadete">
+    <label for="fecha-cadete">Ver entregas del día</label>
+    <input id="fecha-cadete" type="date" value="{fecha_consulta}">
+  </div>
+  <form id="form-nota-cadete" class="form-tarea-entrega">
+    <button id="nota-toggle" class="tarea-toggle" type="button">+ Nueva nota</button>
+    <button id="nota-cerrar" class="tarea-cerrar" type="button" hidden aria-label="Cerrar formulario de nota" title="Cerrar">✕</button>
+    <div id="nota-campos" class="nota-campos" hidden>
+      <input id="nota-titulo" required maxlength="200" placeholder="Nota">
+      <input id="nota-fecha" type="date" required value="{fecha_consulta}" title="Fecha de la nota">
+      <input id="nota-detalle" maxlength="1000" placeholder="Detalle opcional">
+      <div class="tarea-direccion-wrap"><input id="nota-direccion" maxlength="500" placeholder="Agregar dirección (opcional)" autocomplete="off"><ul id="nota-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div>
+      <label class="nota-derivar-vlad-label"><input type="checkbox" id="nota-derivar-vlad"> Derivar a Vlad</label>
+      <button type="submit">Agregar nota</button>
+    </div>
+  </form>
+  <section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pendientes para {'hoy' if fecha_consulta == fecha_hoy else html.escape(_label_fecha_entrega(fecha_consulta))} ({len(pedidos_hoy) + len(tareas_hoy)})</h2></div>{entregas_html}</section>
+  {seccion_proximos}
+</div>
+<div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
+<div class="modal-direccion-cadete" id="modal-direccion-cadete" hidden><div class="modal-direccion-cadete-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-cadete-titulo"><h2 id="direccion-cadete-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-cadete-input" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-cadete-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="direccion-acciones"><button id="direccion-cadete-cancelar" type="button">Cancelar</button><button id="direccion-cadete-guardar" type="button">Guardar dirección</button></div></div></div>
+<div class="modal-recibo-manual" id="modal-recibo-manual" hidden><div class="modal-recibo-manual-contenido" role="dialog" aria-modal="true" aria-labelledby="recibo-manual-titulo">
+  <button id="recibo-manual-cerrar" class="modal-recibo-manual-cerrar" type="button" aria-label="Cerrar" title="Cerrar">✕</button>
+  <h2 id="recibo-manual-titulo">Generar recibo</h2>
+  <label for="recibo-manual-nombre">Nombre</label>
+  <input id="recibo-manual-nombre" placeholder="Nombre del cliente">
+  <label for="recibo-manual-email">Email</label>
+  <input id="recibo-manual-email" type="email" placeholder="email@ejemplo.com">
+  <label for="recibo-manual-item-buscar">Agregar ítem</label>
+  <div class="recibo-manual-buscador">
+    <input id="recibo-manual-item-buscar" autocomplete="off" placeholder="Escribí para buscar en el catálogo">
+    <ul id="recibo-manual-sugerencias" class="recibo-manual-sugerencias" role="listbox" hidden></ul>
+  </div>
+  <ul id="recibo-manual-items" class="recibo-manual-items"></ul>
+  <div class="recibo-manual-total">Total: US$ <span id="recibo-manual-total">0</span></div>
+  <div class="series-acciones">
+    <button id="recibo-manual-agregar-foto" type="button">Agregar foto</button>
+    <button id="recibo-manual-cancelar" type="button">Cancelar</button>
+    <button id="recibo-manual-enviar" type="button">Enviar</button>
+  </div>
+</div></div>
+<script>
+document.getElementById("salir").addEventListener("click", async () => {{
+  await fetch("/admin/cadete/logout", {{ method: "POST" }});
+  location.reload();
+}});
+document.getElementById("fecha-cadete").addEventListener("change", (e) => {{
+  location.href = `/admin/cadete?fecha=${{e.target.value}}`;
+}});
+document.getElementById("nota-toggle").addEventListener("click", (e) => {{
+  e.currentTarget.hidden = true;
+  document.getElementById("nota-campos").hidden = false;
+  document.getElementById("nota-cerrar").hidden = false;
+  document.getElementById("nota-titulo").focus();
+}});
+document.getElementById("nota-cerrar").addEventListener("click", () => {{
+  document.getElementById("form-nota-cadete").reset();
+  document.getElementById("nota-campos").hidden = true;
+  document.getElementById("nota-cerrar").hidden = true;
+  document.getElementById("nota-toggle").hidden = false;
+}});
+document.getElementById("form-nota-cadete").addEventListener("submit", async (e) => {{
+  e.preventDefault();
+  const r = await fetch("/admin/tareas-entrega", {{
+    method:"POST", headers:{{"Content-Type":"application/json"}},
+    body:JSON.stringify({{
+      fecha_entrega:document.getElementById("nota-fecha").value,
+      titulo:document.getElementById("nota-titulo").value,
+      nota:document.getElementById("nota-detalle").value,
+      direccion:document.getElementById("nota-direccion").value,
+      derivar_a_vlad:document.getElementById("nota-derivar-vlad").checked,
+    }}),
+  }});
+  if (!r.ok) {{ alert("No se pudo crear la nota."); return; }}
+  location.href = `/admin/cadete?fecha=${{document.getElementById("nota-fecha").value}}`;
+}});
+document.querySelectorAll(".btn-direcciones").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    window.open(btn.dataset.maps, "_blank", "noopener");
+    if (btn.dataset.whatsapp) location.href = btn.dataset.whatsapp;
+  }});
+}});
+let direccionCadeteActiva = null;
+const modalDireccionCadete = document.getElementById("modal-direccion-cadete");
+const campoDireccionCadete = document.getElementById("direccion-cadete-input");
+document.querySelectorAll(".btn-agregar-direccion-cadete").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    direccionCadeteActiva = {{ id: btn.dataset.id, tipo: btn.dataset.tipo }};
+    campoDireccionCadete.value = "";
+    document.getElementById("direccion-cadete-sugerencias").hidden = true;
+    modalDireccionCadete.hidden = false;
+    campoDireccionCadete.focus();
+  }});
+}});
+document.getElementById("direccion-cadete-cancelar").addEventListener("click", () => {{
+  direccionCadeteActiva = null;
+  modalDireccionCadete.hidden = true;
+}});
+document.getElementById("direccion-cadete-guardar").addEventListener("click", async () => {{
+  if (!direccionCadeteActiva) return;
+  const direccion = campoDireccionCadete.value.trim();
+  if (!direccion) {{ campoDireccionCadete.focus(); return; }}
+  const boton = document.getElementById("direccion-cadete-guardar");
+  boton.disabled = true;
+  const destino = direccionCadeteActiva.tipo === "tarea"
+    ? `/admin/tareas-entrega/${{direccionCadeteActiva.id}}/direccion`
+    : `/admin/pedidos/${{direccionCadeteActiva.id}}/direccion`;
+  const r = await fetch(destino, {{
+    method: "PUT", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{direccion_entrega: direccion}}),
+  }});
+  const datos = await r.json().catch(() => ({{}}));
+  if (!r.ok) {{ alert(datos.error || "No se pudo guardar la dirección."); boton.disabled = false; return; }}
+  location.reload();
+}});
+document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    btn.disabled = true;
+    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/completar`, {{ method:"POST" }});
+    if (!r.ok) {{ alert("No se pudo completar la tarea."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-derivar-vlad").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const esPedido = btn.dataset.tipo === "pedido";
+    if (!confirm(`¿Devolverle ${{esPedido ? "este pedido" : "esta nota"}} a Vlad?`)) return;
+    btn.disabled = true;
+    const ruta = esPedido
+      ? `/admin/pedidos/${{btn.dataset.id}}/derivar`
+      : `/admin/tareas-entrega/${{btn.dataset.id}}/derivar`;
+    const r = await fetch(ruta, {{
+      method:"PUT", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{derivado:false}}),
+    }});
+    if (!r.ok) {{ alert(`No se pudo derivar ${{esPedido ? "el pedido" : "la nota"}}.`); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-editar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    const fecha = prompt("Nueva fecha de entrega (AAAA-MM-DD)", btn.dataset.fecha);
+    if (!fecha || fecha === btn.dataset.fecha) return;
+    btn.disabled = true;
+    const ruta = btn.dataset.tipo === "pedido"
+      ? `/admin/pedidos/${{btn.dataset.id}}/fecha-entrega`
+      : `/admin/tareas-entrega/${{btn.dataset.id}}/fecha-entrega`;
+    const r = await fetch(ruta, {{
+      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{fecha_entrega: fecha}}),
+    }});
+    const datos = await r.json().catch(() => ({{}}));
+    if (!r.ok) {{ alert(datos.error || "No se pudo editar la fecha de entrega."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+async function comprimirFotoSerie(archivo) {{
+  const imagen = await createImageBitmap(archivo);
+  const escala = Math.min(1, 1600 / Math.max(imagen.width, imagen.height));
+  const lienzo = document.createElement("canvas");
+  lienzo.width = Math.round(imagen.width * escala); lienzo.height = Math.round(imagen.height * escala);
+  lienzo.getContext("2d").drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+  const blob = await new Promise((ok) => lienzo.toBlob(ok, "image/jpeg", .75));
+  return new File([blob], "numero-serie.jpg", {{ type:"image/jpeg" }});
+}}
+let pedidoReciboActivo = null;
+let fotosSerie = [];
+const modalSeries = document.getElementById("modal-series");
+const vistaFotosSerie = document.getElementById("series-fotos");
+function renderFotosSerie() {{
+  vistaFotosSerie.innerHTML = fotosSerie.map((foto, indice) => `<div class="serie-foto"><img src="${{URL.createObjectURL(foto)}}" alt="Foto de número de serie ${{indice + 1}}"><button type="button" data-indice="${{indice}}" aria-label="Quitar foto">×</button></div>`).join("");
+  vistaFotosSerie.querySelectorAll("button").forEach((boton) => boton.addEventListener("click", () => {{ fotosSerie.splice(Number(boton.dataset.indice), 1); renderFotosSerie(); }}));
+}}
+function agregarFotoSerie() {{
+  const selector = Object.assign(document.createElement("input"), {{ type:"file", accept:"image/*", capture:"environment" }});
+  selector.addEventListener("change", async () => {{ if (selector.files?.[0]) {{ fotosSerie.push(await comprimirFotoSerie(selector.files[0])); renderFotosSerie(); }} }});
+  selector.click();
+}}
+document.querySelectorAll(".btn-enviar-recibo").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    pedidoReciboActivo = btn; fotosSerie = []; renderFotosSerie(); modalSeries.hidden = false;
+  }});
+}});
+document.getElementById("series-agregar").addEventListener("click", agregarFotoSerie);
+document.getElementById("series-cancelar").addEventListener("click", () => {{ modalSeries.hidden = true; }});
+document.getElementById("series-enviar").addEventListener("click", async () => {{
+  if (!pedidoReciboActivo) return;
+  const boton = document.getElementById("series-enviar"); boton.disabled = true; boton.textContent = "Enviando...";
+  const adjuntos = new FormData(); fotosSerie.forEach((foto) => adjuntos.append("fotos", foto));
+  const r = await fetch(`/admin/pedidos/${{pedidoReciboActivo.dataset.id}}/recibo`, {{ method:"POST", body:adjuntos }});
+  const respuesta = await r.json().catch(() => ({{}}));
+  if (!r.ok) {{ alert(respuesta.error || "No se pudo enviar el recibo."); boton.disabled = false; boton.textContent = "Enviar recibo"; modalSeries.hidden = true; return; }}
+  location.reload();
+}});
+let catalogoRecibo = null;
+async function cargarCatalogoRecibo() {{
+  if (catalogoRecibo) return catalogoRecibo;
+  const r = await fetch("/api/catalogo");
+  const datos = await r.json().catch(() => ({{}}));
+  catalogoRecibo = Object.values(datos.secciones || {{}}).flat();
+  return catalogoRecibo;
+}}
+let itemsReciboManual = [];
+let fotosReciboManual = [];
+let tareaReciboManualActiva = null;
+const modalReciboManual = document.getElementById("modal-recibo-manual");
+function renderItemsReciboManual() {{
+  const lista = document.getElementById("recibo-manual-items");
+  lista.replaceChildren(...itemsReciboManual.map((item, indice) => {{
+    const li = document.createElement("li");
+    const span = document.createElement("span");
+    span.textContent = item.nombre;
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = "0";
+    input.step = "0.01";
+    input.value = item.precio_usd;
+    input.dataset.indice = indice;
+    input.className = "recibo-manual-precio";
+    input.addEventListener("input", () => {{
+      itemsReciboManual[Number(input.dataset.indice)].precio_usd = Number(input.value) || 0;
+      actualizarTotalReciboManual();
+    }});
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.dataset.indice = indice;
+    boton.setAttribute("aria-label", "Quitar ítem");
+    boton.textContent = "×";
+    boton.addEventListener("click", () => {{
+      itemsReciboManual.splice(Number(boton.dataset.indice), 1);
+      renderItemsReciboManual();
+      actualizarTotalReciboManual();
+    }});
+    li.append(span, input, boton);
+    return li;
+  }}));
+}}
+function actualizarTotalReciboManual() {{
+  const total = itemsReciboManual.reduce((suma, item) => suma + (Number(item.precio_usd) || 0), 0);
+  document.getElementById("recibo-manual-total").textContent = total.toFixed(2);
+}}
+const buscadorReciboManual = document.getElementById("recibo-manual-item-buscar");
+const sugerenciasReciboManual = document.getElementById("recibo-manual-sugerencias");
+buscadorReciboManual.addEventListener("input", async () => {{
+  const texto = buscadorReciboManual.value.trim().toLowerCase();
+  if (!texto) {{ sugerenciasReciboManual.hidden = true; return; }}
+  const catalogo = await cargarCatalogoRecibo();
+  const coincidencias = catalogo.filter((p) => (p.nombre || "").toLowerCase().includes(texto)).slice(0, 8);
+  sugerenciasReciboManual.replaceChildren(...coincidencias.map((p, indice) => {{
+    const li = document.createElement("li");
+    li.dataset.indice = indice;
+    li.dataset.nombre = p.nombre;
+    li.dataset.usd = p.usd ?? 0;
+    li.textContent = `${{p.nombre}} — US$ ${{p.usd ?? 0}}`;
+    li.addEventListener("click", () => {{
+      itemsReciboManual.push({{ nombre: li.dataset.nombre, precio_usd: Number(li.dataset.usd) || 0 }});
+      renderItemsReciboManual();
+      actualizarTotalReciboManual();
+      buscadorReciboManual.value = "";
+      sugerenciasReciboManual.hidden = true;
+    }});
+    return li;
+  }}));
+  sugerenciasReciboManual.hidden = coincidencias.length === 0;
+}});
+document.getElementById("recibo-manual-agregar-foto").addEventListener("click", () => {{
+  const selector = Object.assign(document.createElement("input"), {{ type:"file", accept:"image/*", capture:"environment" }});
+  selector.addEventListener("change", async () => {{
+    if (selector.files?.[0]) fotosReciboManual.push(await comprimirFotoSerie(selector.files[0]));
+  }});
+  selector.click();
+}});
+document.querySelectorAll(".btn-recibo-nota").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    tareaReciboManualActiva = btn.dataset.id;
+    itemsReciboManual = []; fotosReciboManual = [];
+    document.getElementById("recibo-manual-nombre").value = "";
+    document.getElementById("recibo-manual-email").value = "";
+    renderItemsReciboManual(); actualizarTotalReciboManual();
+    modalReciboManual.hidden = false;
+  }});
+}});
+document.getElementById("recibo-manual-cancelar").addEventListener("click", () => {{ modalReciboManual.hidden = true; }});
+document.getElementById("recibo-manual-cerrar").addEventListener("click", () => {{ modalReciboManual.hidden = true; }});
+document.getElementById("recibo-manual-enviar").addEventListener("click", async () => {{
+  if (!tareaReciboManualActiva) return;
+  const boton = document.getElementById("recibo-manual-enviar");
+  const nombre = document.getElementById("recibo-manual-nombre").value.trim();
+  const email = document.getElementById("recibo-manual-email").value.trim();
+  if (!nombre || !email) {{ alert("Completá nombre y email."); return; }}
+  if (itemsReciboManual.length === 0) {{ alert("Agregá al menos un ítem."); return; }}
+  boton.disabled = true; boton.textContent = "Enviando...";
+  const cuerpo = new FormData();
+  cuerpo.append("nombre", nombre);
+  cuerpo.append("email", email);
+  cuerpo.append("items", JSON.stringify(itemsReciboManual));
+  fotosReciboManual.forEach((foto) => cuerpo.append("fotos", foto));
+  const r = await fetch(`/admin/tareas-entrega/${{tareaReciboManualActiva}}/recibo-manual`, {{ method:"POST", body:cuerpo }});
+  const respuesta = await r.json().catch(() => ({{}}));
+  boton.disabled = false; boton.textContent = "Enviar";
+  if (!r.ok) {{ alert(respuesta.error || "No se pudo enviar el recibo."); return; }}
+  modalReciboManual.hidden = true;
+  alert(`Recibo ${{respuesta.recibo_id}} enviado.`);
+}});
+let apiPlacesCadete;
+async function cargarApiPlacesCadete() {{
+  if (apiPlacesCadete !== undefined) return apiPlacesCadete;
+  apiPlacesCadete = fetch("/api/configuracion-publica")
+    .then((respuesta) => respuesta.ok ? respuesta.json() : {{}})
+    .then(async (configuracion) => {{
+      if (!configuracion.google_maps_api_key) return null;
+      await new Promise((resolver, rechazar) => {{
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${{encodeURIComponent(configuracion.google_maps_api_key)}}&libraries=places&v=weekly`;
+        script.async = true;
+        script.onload = resolver;
+        script.onerror = rechazar;
+        document.head.append(script);
+      }});
+      return google.maps.importLibrary("places");
+    }})
+    .catch((error) => {{ console.error("No se pudo cargar Google Places", error); return null; }});
+  return apiPlacesCadete;
+}}
+function activarAutocompleteDireccionCadete(input, lista) {{
+  if (!input || !lista) return;
+  let temporizador;
+  function ocultar() {{ lista.replaceChildren(); lista.hidden = true; }}
+  async function mostrar(texto) {{
+    const places = await cargarApiPlacesCadete();
+    if (!places || texto !== input.value.trim()) return;
+    const {{ AutocompleteSuggestion }} = places;
+    const {{ suggestions }} = await AutocompleteSuggestion.fetchAutocompleteSuggestions({{
+      input: texto,
+      includedRegionCodes: ["ar"],
+    }}).catch((error) => {{ console.error("Autocomplete de direccion fallo", error); return {{ suggestions: [] }}; }});
+    if (texto !== input.value.trim() || !suggestions?.length) {{ ocultar(); return; }}
+    lista.replaceChildren(...suggestions.slice(0, 5).map(({{ placePrediction }}) => {{
+      const item = document.createElement("li");
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.textContent = placePrediction.text.text;
+      boton.addEventListener("click", async () => {{
+        const place = placePrediction.toPlace();
+        await place.fetchFields({{ fields: ["formattedAddress"] }});
+        input.value = place.formattedAddress || placePrediction.text.text;
+        ocultar();
+      }});
+      item.append(boton);
+      return item;
+    }}));
+    lista.hidden = false;
+  }}
+  input.addEventListener("input", () => {{
+    clearTimeout(temporizador);
+    const texto = input.value.trim();
+    if (texto.length < 3) {{ ocultar(); return; }}
+    temporizador = setTimeout(() => {{ mostrar(texto).catch(ocultar); }}, 250);
+  }});
+  document.addEventListener("pointerdown", (evento) => {{
+    if (lista.hidden) return;
+    if (evento.target === input || lista.contains(evento.target)) return;
+    ocultar();
+  }});
+}}
+activarAutocompleteDireccionCadete(document.getElementById("nota-direccion"), document.getElementById("nota-direccion-sugerencias"));
+activarAutocompleteDireccionCadete(document.getElementById("direccion-cadete-input"), document.getElementById("direccion-cadete-sugerencias"));
+
+// --- Notificaciones push: avisa en el celu cuando Vlad asigna un pedido o
+// una nota, sin tener la app abierta (ver web/push_cadete.py). Botón oculto
+// por default: solo se muestra si el navegador soporta push y todavía no
+// está suscripto (o el permiso no fue denegado de forma permanente).
+function urlBase64ToUint8Array(base64String) {{
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}}
+
+async function initNotificacionesCadete() {{
+  const btn = document.getElementById("btn-notificaciones");
+  if (!btn || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (Notification.permission === "denied") return;
+
+  const reg = await navigator.serviceWorker.ready;
+  const suscripcionActual = await reg.pushManager.getSubscription();
+  if (suscripcionActual && Notification.permission === "granted") return; // ya activo
+
+  btn.hidden = false;
+  btn.addEventListener("click", async () => {{
+    btn.disabled = true;
+    try {{
+      const permiso = await Notification.requestPermission();
+      if (permiso !== "granted") {{ btn.disabled = false; return; }}
+      const r = await fetch("/admin/cadete/push/vapid-public-key");
+      if (!r.ok) {{ alert("Notificaciones no configuradas todavía."); btn.disabled = false; return; }}
+      const {{ publicKey }} = await r.json();
+      const sub = await reg.pushManager.subscribe({{
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      }});
+      await fetch("/admin/cadete/push/suscribir", {{
+        method: "POST", headers: {{"Content-Type": "application/json"}},
+        body: JSON.stringify(sub.toJSON()),
+      }});
+      btn.hidden = true;
+    }} catch (e) {{
+      console.error("No se pudo activar notificaciones", e);
+      btn.disabled = false;
+    }}
+  }});
+}}
+initNotificacionesCadete();
+</script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
+</body></html>"""
+
+
+@app.get("/admin/clientes/{cliente_id}/historial", response_class=HTMLResponse)
+def admin_clientes_historial(cliente_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        return RedirectResponse("/admin/clientes")
+
+    client = get_client()
+    filas_cliente = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas_cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    cliente = filas_cliente[0]
+    nombre_cliente = f"{cliente.get('nombre', '')} {cliente.get('apellido', '')}".strip()
+
+    filas_pedidos = client.table("pedidos").select("*").eq("cliente_id", cliente_id).execute().data
+    filas_pedidos = [p for p in filas_pedidos if _activo(p)]
+    filas_pedidos.sort(key=lambda p: p.get("fecha", ""), reverse=True)
+    try:
+        filas_interacciones = client.table("interacciones_cliente").select("*").eq("cliente_id", cliente_id).execute().data
+    except Exception:
+        filas_interacciones = []
+    filas_interacciones.sort(
+        key=lambda i: ((i.get("fecha", "") or "")[:10], i.get("fecha", "") or ""),
+        reverse=True,
+    )
+    ranking_consultados = _ranking_productos_consultados(filas_interacciones)
+
+    def _tipo_evento_label(tipo):
+        return {
+            "view_item": "view item",
+            "select_product": "view item",
+            "view_product": "view item",
+        }.get(tipo, tipo or "Interacción")
+
+    def _detalle_interaccion(fila):
+        producto = (fila.get("producto_nombre") or "").strip()
+        return html.escape(producto) if producto else "—"
+
+    if not filas_pedidos:
+        filas_pedidos_html = '<tr><td colspan="5" class="vacio">Este cliente todavía no tiene pedidos confirmados.</td></tr>'
+    else:
+        def _fila_pedido(fila):
+            fecha, dia, hora = _formatear_fecha_ar(fila.get("fecha", ""))
+            productos_fila = [p for p in (fila.get("productos") or []) if p]
+            detalle = html.escape(" | ".join(productos_fila)) or "—"
+            return (
+                f'<tr data-campaign-item="{detalle}" data-campaign-source="pedido" '
+                f'data-campaign-products="{html.escape(json.dumps(productos_fila))}">'
+                f'<td class="col-check"><input type="checkbox" class="chk-mailing" '
+                f'aria-label="Seleccionar pedido confirmado"></td>'
+                f"<td>{fecha}</td><td>{dia}</td><td>{hora}</td><td>{detalle}</td></tr>"
+            )
+
+        filas_pedidos_html = "".join(_fila_pedido(fila) for fila in filas_pedidos)
+
+    if not filas_interacciones:
+        filas_interacciones_html = '<tr><td colspan="6" class="vacio">Este cliente todavía no tiene historial de vistas registrado.</td></tr>'
+    else:
+        def _fila_interaccion(fila):
+            fecha, dia, hora = _formatear_fecha_ar(fila.get("fecha", ""))
+            evento = html.escape(_tipo_evento_label(fila.get('tipo_evento', '')))
+            detalle = _detalle_interaccion(fila)
+            productos_fila = [fila.get("producto_nombre")] if fila.get("producto_nombre") else []
+            return (
+                f'<tr data-campaign-item="{evento} — {detalle}" data-campaign-source="vista" '
+                f'data-campaign-products="{html.escape(json.dumps(productos_fila))}">'
+                f'<td class="col-check"><input type="checkbox" class="chk-mailing" '
+                f'aria-label="Seleccionar interacción"></td>'
+                f"<td>{fecha}</td><td>{dia}</td><td>{hora}</td>"
+                f"<td>{evento}</td><td>{detalle}</td></tr>"
+            )
+
+        filas_interacciones_html = "".join(_fila_interaccion(fila) for fila in filas_interacciones)
+
+    if not ranking_consultados:
+        filas_consultados_html = '<tr><td colspan="4" class="vacio">Todavía no hay productos consultados para ordenar.</td></tr>'
+    else:
+        def _fila_consultado(fila):
+            fecha, dia, hora = _formatear_fecha_ar(fila.get("ultima_fecha", ""))
+            producto = html.escape(fila.get("producto", "")) or "—"
+            return (
+                f'<tr data-campaign-item="{producto}" data-campaign-source="ranking" '
+                f'data-campaign-products="{html.escape(json.dumps([fila.get("producto", "")]))}">'
+                f'<td class="col-check"><input type="checkbox" class="chk-mailing" '
+                f'aria-label="Seleccionar producto consultado"></td>'
+                f"<td>{producto}</td><td>{fila.get('vistas', 0)}</td><td>{fecha} {hora}</td></tr>"
+            )
+
+        filas_consultados_html = "".join(_fila_consultado(fila) for fila in ranking_consultados)
+
+    email_cliente = html.escape(cliente.get("email", "") or "")
+
+    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Historial — {html.escape(nombre_cliente)}</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
+<div class="panel">
+  <div class="panel-header">
+    <h1>Historial de {html.escape(nombre_cliente) or "cliente"}</h1>
+    <a class="volver" href="/admin/clientes/lista">← Volver</a>
+  </div>
+  <section class="subseccion">
+    <h2>Pedidos confirmados</h2>
+    <p>Acá ves todo lo que el cliente cargó al carrito y confirmó.</p>
+    <p class="scroll-hint">Deslizá para ver todas las columnas →</p>
+    <div class="tabla-scroll tabla-historial"><table>
+      <thead><tr><th class="col-check"></th><th>Fecha</th><th>Día</th><th>Hora</th><th>Productos</th></tr></thead>
+      <tbody>{filas_pedidos_html}</tbody>
+    </table></div>
+  </section>
+  <section class="subseccion">
+    <h2>Productos más consultados</h2>
+    <p>Ranking por cantidad de vistas de este cliente, ordenado de mayor a menor para decidir mejor el mailing.</p>
+    <p class="scroll-hint">Deslizá para ver todas las columnas →</p>
+    <div class="tabla-scroll tabla-historial"><table>
+      <thead><tr><th class="col-check"></th><th>Producto</th><th>Vistas</th><th>Última vista</th></tr></thead>
+      <tbody>{filas_consultados_html}</tbody>
+    </table></div>
+  </section>
+  <section class="subseccion">
+    <h2>Historial de vistas</h2>
+    <p>Acá ves todas las interacciones de navegación, vistas e íconos que tocó el cliente.</p>
+    <p class="scroll-hint">Deslizá para ver todas las columnas →</p>
+    <div class="tabla-scroll tabla-historial"><table>
+      <thead><tr><th class="col-check"></th><th>Fecha</th><th>Día</th><th>Hora</th><th>Evento</th><th>Detalle</th></tr></thead>
+      <tbody>{filas_interacciones_html}</tbody>
+    </table></div>
+  </section>
+  <div class="acciones-mailing">
+    <button id="btn-preparar-mailing" {'disabled' if not email_cliente else ''}>Enviar mailing</button>
+    <span id="mailing-ayuda">{'Seleccioná productos o vistas y se envía una oferta por mail si siguen disponibles en catálogo.' if email_cliente else 'Este cliente no tiene email disponible para mailing.'}</span>
+  </div>
+</div>
+<script>
+const btnMailing = document.getElementById("btn-preparar-mailing");
+const checksMailing = [...document.querySelectorAll(".chk-mailing")];
+const emailCliente = {_json_para_script(cliente.get("email", "") or "")};
+const nombreCliente = {_json_para_script(nombre_cliente or "cliente")};
+const clienteId = {_json_para_script(cliente.get("id", ""))};
+
+function filasSeleccionadas() {{
+  return checksMailing
+    .filter((chk) => chk.checked)
+    .map((chk) => chk.closest("tr"))
+    .filter(Boolean);
+}}
+
+function actualizarEstadoMailing() {{
+  if (!btnMailing || !emailCliente) return;
+  btnMailing.disabled = filasSeleccionadas().length === 0;
+}}
+
+function productosSeleccionados() {{
+  const productos = [];
+  const vistos = new Set();
+  for (const fila of filasSeleccionadas()) {{
+    let lista = [];
+    try {{
+      lista = JSON.parse(fila.dataset.campaignProducts || "[]");
+    }} catch {{
+      lista = [];
+    }}
+    for (const producto of lista) {{
+      if (!producto || vistos.has(producto)) continue;
+      vistos.add(producto);
+      productos.push(producto);
+    }}
+  }}
+  return productos;
+}}
+
+checksMailing.forEach((chk) => chk.addEventListener("change", actualizarEstadoMailing));
+actualizarEstadoMailing();
+
+if (btnMailing) {{
+  btnMailing.addEventListener("click", async () => {{
+    const productos = productosSeleccionados();
+    if (!emailCliente || productos.length === 0) return;
+    btnMailing.disabled = true;
+    const ayudaPrev = document.getElementById("mailing-ayuda").textContent;
+    document.getElementById("mailing-ayuda").textContent = "Enviando mailing...";
+    try {{
+      const r = await fetch(`/admin/clientes/${{clienteId}}/mailing-oferta`, {{
+        method: "POST",
+        headers: {{"Content-Type": "application/json"}},
+        body: JSON.stringify({{ productos }}),
+      }});
+      const datos = await r.json();
+      if (!r.ok) {{
+        document.getElementById("mailing-ayuda").textContent = datos.error || "No se pudo enviar el mailing.";
+        return;
+      }}
+      const omitidos = (datos.omitidos || []).length
+        ? ` Omitidos por falta de stock/catálogo: ${{datos.omitidos.join(", ")}}.`
+        : "";
+      document.getElementById("mailing-ayuda").textContent =
+        `Mail enviado a ${{emailCliente}} con ${{datos.enviados}} producto(s).${{omitidos}}`;
+    }} catch {{
+      document.getElementById("mailing-ayuda").textContent = "No se pudo enviar el mailing.";
+    }} finally {{
+      actualizarEstadoMailing();
+      if (!filasSeleccionadas().length) btnMailing.disabled = true;
+    }}
+  }});
+}}
+</script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
+</body></html>"""
 
 
 class RegistroIn(BaseModel):
@@ -1819,7 +4343,7 @@ def admin_pedido_editar_fecha(pedido_id: str, entrada: EditarFechaEntregaIn, req
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     if not _puede_operar_entrega(request, filas[0]):
         raise HTTPException(status_code=403, detail="Esta entrega no está asignada a tu usuario")
@@ -1829,29 +4353,151 @@ def admin_pedido_editar_fecha(pedido_id: str, entrada: EditarFechaEntregaIn, req
     return {"ok": True, "pedido_id": pedido["id"], "fecha_entrega": pedido["fecha_entrega"]}
 
 
+def _expira_en_papelera(borrado_en):
+    if not borrado_en:
+        return "—"
+    try:
+        momento = datetime.fromisoformat(borrado_en.replace("Z", "+00:00"))
+    except ValueError:
+        return "—"
+    if momento.tzinfo is None:
+        momento = momento.replace(tzinfo=timezone.utc)
+    restante = timedelta(hours=48) - (datetime.now(timezone.utc) - momento)
+    if restante <= timedelta(0):
+        return "se está por purgar"
+    horas = int(restante.total_seconds() // 3600)
+    if horas < 1:
+        return "se borra definitivamente en menos de 1 h"
+    return f"se borra definitivamente en {horas} h"
+
+
+def _tarjeta_papelera(tipo, fila, clientes_por_id):
+    item_id = html.escape(fila.get("id", ""))
+    if tipo == "pedido":
+        cliente = clientes_por_id.get(fila.get("cliente_id"), {})
+        titulo = f"Pedido de {html.escape(cliente.get('nombre', '') or 'cliente')}"
+    else:
+        titulo = f"Nota: {html.escape(fila.get('titulo') or '')}"
+    borrado_por = html.escape(fila.get("borrado_por") or "—")
+    borrado_en_raw = fila.get("borrado_en")
+    fecha, dia_semana, hora = _formatear_fecha_ar(borrado_en_raw)
+    borrado_en = html.escape(f"{fecha} · {dia_semana} · {hora}" if borrado_en_raw else "—")
+    expira = html.escape(_expira_en_papelera(borrado_en_raw))
+    return (
+        f'<div class="papelera-item"><div class="papelera-item-detalle">'
+        f'<strong>{titulo}</strong><br><span>Borrado por {borrado_por} · {borrado_en}</span>'
+        f'<br><span class="papelera-item-expira">{expira}</span></div>'
+        f'<div class="papelera-item-acciones">'
+        f'<button class="btn-restaurar-papelera" type="button" data-tipo="{tipo}" data-id="{item_id}">Restaurar</button>'
+        f'</div></div>'
+    )
+
+
+def _pagina_papelera(request: Request, titulo_pagina: str, pedidos_borrados, tareas_borradas, clientes_por_id, url_salir, pwa_head=None, estilo=None):
+    pwa_head = _ADMIN_CLIENTES_PWA_HEAD if pwa_head is None else pwa_head
+    estilo = _ADMIN_CLIENTES_ESTILO if estilo is None else estilo
+    items_html = "".join(
+        [_tarjeta_papelera("pedido", p, clientes_por_id) for p in pedidos_borrados]
+        + [_tarjeta_papelera("tarea", t, clientes_por_id) for t in tareas_borradas]
+    ) or '<p class="papelera-vacia">No hay elementos borrados.</p>'
+    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>{titulo_pagina}</title>{pwa_head}{estilo}
+<style>
+  .papelera-item {{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); margin-bottom:8px; background:var(--op-surface); }}
+  .papelera-item-detalle span {{ color:var(--op-text-dim); font-size:var(--op-fs-small); }}
+  .papelera-vacia {{ color:var(--op-text-dim); padding:20px 0; }}
+</style>
+</head><body>
+<div class="panel">
+  <div class="panel-header"><h1>{titulo_pagina}</h1>
+    <div class="panel-header-acciones"><a class="btn-clientes" href="{url_salir}">Volver</a></div>
+  </div>
+  <section>{items_html}</section>
+</div>
+<script>
+document.querySelectorAll(".btn-restaurar-papelera").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    btn.disabled = true;
+    const r = await fetch(`/admin/papelera/${{btn.dataset.tipo}}/${{btn.dataset.id}}/restaurar`, {{ method: "POST" }});
+    if (!r.ok) {{ alert("No se pudo restaurar."); btn.disabled = false; return; }}
+    location.reload();
+  }});
+}});
+</script>
+</body></html>"""
+
+
+@app.get("/admin/papelera", response_class=HTMLResponse)
+def admin_papelera(request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    pedidos_borrados, tareas_borradas = _purgar_y_listar_papelera(client)
+    clientes_por_id = {c.get("id"): c for c in client.table("clientes").select("*").execute().data}
+    return _pagina_papelera(request, "Borrados", pedidos_borrados, tareas_borradas, clientes_por_id, "/admin/clientes")
+
+
+@app.get("/admin/cadete/papelera", response_class=HTMLResponse)
+def admin_cadete_papelera(request: Request):
+    if not _cadete_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    pedidos_borrados, tareas_borradas = _purgar_y_listar_papelera(client, asignado_a=CADETE_SLUG)
+    clientes_por_id = {c.get("id"): c for c in client.table("clientes").select("*").execute().data}
+    return _pagina_papelera(
+        request, "Borrados", pedidos_borrados, tareas_borradas, clientes_por_id, "/admin/cadete",
+        pwa_head=_CADETE_PWA_HEAD, estilo=_CADETE_ESTILO,
+    )
+
+
+@app.post("/admin/papelera/{tipo}/{item_id}/restaurar")
+def admin_papelera_restaurar(tipo: Literal["pedido", "tarea"], item_id: str, request: Request):
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    tabla = "pedidos" if tipo == "pedido" else "tareas_entrega"
+    filas = client.table(tabla).select("*").eq("id", item_id).execute().data
+    if not filas:
+        raise HTTPException(status_code=404, detail="No encontrado")
+    fila = filas[0]
+    if not fila.get("borrado_en"):
+        raise HTTPException(status_code=404, detail="No está borrado")
+    if not _clientes_admin_activo(request):
+        propio = fila.get("asignado_a") == CADETE_SLUG or fila.get("borrado_por") == CADETE_SLUG
+        if not propio:
+            raise HTTPException(status_code=403, detail="No podés restaurar este elemento")
+    if tipo == "pedido":
+        pedidos.restaurar_pedido(client, item_id)
+    else:
+        client.table("tareas_entrega").update({"borrado_en": None, "borrado_por": None}).eq("id", item_id).execute()
+    return {"ok": True, "tipo": tipo, "id": item_id}
+
+
 @app.delete("/admin/pedidos/{pedido_id}")
 def admin_pedido_eliminar(pedido_id: str, request: Request):
     if not _clientes_admin_activo(request):
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
-    pedidos.eliminar_pedido(client, pedido_id)
+    pedidos.eliminar_pedido(client, pedido_id, _quien_opera(request))
     return {"ok": True}
 
 
 @app.put("/admin/pedidos/{pedido_id}/direccion")
 def admin_pedido_agregar_direccion(pedido_id: str, entrada: EditarDireccionEntregaIn, request: Request):
-    if not _clientes_admin_activo(request):
-        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     direccion = entrada.direccion_entrega.strip()
     if not direccion:
         return JSONResponse({"error": "Ingresá una dirección de entrega"}, status_code=400)
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if not _puede_operar_entrega(request, filas[0]):
+        raise HTTPException(status_code=403, detail="Esta entrega no está asignada a tu usuario")
     if filas[0].get("recibo_enviado_en"):
         return JSONResponse({"error": "No se puede editar una entrega con recibo emitido"}, status_code=400)
     client.table("pedidos").update({"direccion_entrega": direccion}).eq("id", pedido_id).execute()
@@ -1860,17 +4506,35 @@ def admin_pedido_agregar_direccion(pedido_id: str, entrada: EditarDireccionEntre
 
 @app.put("/admin/pedidos/{pedido_id}/derivar")
 def admin_pedido_derivar(pedido_id: str, entrada: DerivarEntregaIn, request: Request):
-    if not _clientes_admin_activo(request):
-        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    es_admin = _clientes_admin_activo(request)
+    es_cadete = _cadete_activo(request)
+    if not (es_admin or es_cadete):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if not es_admin:
+        # El cadete solo puede devolverle a Vlad un pedido que ya es suyo
+        # (nunca auto-asignarse uno ajeno ni tocar sus observaciones).
+        if entrada.derivado or filas[0].get("asignado_a") != CADETE_SLUG:
+            raise HTTPException(status_code=403, detail="No podés derivar este pedido")
+        client.table("pedidos").update({"asignado_a": None}).eq("id", pedido_id).execute()
+        return {"ok": True, "pedido_id": pedido_id, "asignado_a": None}
     asignado_a = CADETE_SLUG if entrada.derivado else None
     observaciones = ((entrada.observaciones or "").strip() or None) if entrada.derivado else None
     client.table("pedidos").update({
         "asignado_a": asignado_a, "observaciones_cadete": observaciones,
     }).eq("id", pedido_id).execute()
+    if asignado_a == CADETE_SLUG:
+        filas_cliente = client.table("clientes").select("nombre,apellido").eq("id", filas[0].get("cliente_id")).execute().data
+        nombre_cliente = (
+            f"{filas_cliente[0].get('nombre', '')} {filas_cliente[0].get('apellido', '')}".strip()
+            if filas_cliente else ""
+        ) or "un cliente"
+        push_cadete.enviar_push_cadete(
+            client, "📦 Nuevo pedido asignado", f"Te asignaron la entrega de {nombre_cliente}."
+        )
     return {"ok": True, "pedido_id": pedido_id, "asignado_a": asignado_a}
 
 
@@ -1882,11 +4546,11 @@ def admin_reordenar_entregas(entrada: ReordenarEntregasIn, request: Request):
     fecha_hoy = entregas.ahora_argentina().date().isoformat()
     pedidos_hoy = [
         pedido for pedido in client.table("pedidos").select("*").execute().data
-        if pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
+        if _activo(pedido) and pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
     ]
     tareas_hoy = [
         tarea for tarea in client.table("tareas_entrega").select("*").eq("fecha_entrega", fecha_hoy).execute().data
-        if not tarea.get("completada_en")
+        if _activo(tarea) and not tarea.get("completada_en")
     ]
     esperados = {("pedido", pedido["id"]) for pedido in pedidos_hoy} | {("tarea", tarea["id"]) for tarea in tareas_hoy}
     recibidos = [(item.tipo, item.id) for item in entrada.items]
@@ -1929,6 +4593,8 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
         "asignado_a": asignado_a,
     }
     client.table("tareas_entrega").insert(tarea).execute()
+    if es_admin and asignado_a == CADETE_SLUG:
+        push_cadete.enviar_push_cadete(client, "📝 Nueva nota asignada", tarea["titulo"])
     return {"ok": True, "tarea": tarea}
 
 
@@ -1938,7 +4604,7 @@ def admin_completar_tarea_entrega(tarea_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     if not _puede_operar_entrega(request, filas[0]):
         raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
@@ -1956,15 +4622,17 @@ def admin_completar_tarea_entrega(tarea_id: str, request: Request):
 
 @app.put("/admin/tareas-entrega/{tarea_id}/direccion")
 def admin_tarea_agregar_direccion(tarea_id: str, entrada: EditarDireccionEntregaIn, request: Request):
-    if not _clientes_admin_activo(request):
-        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
     direccion = entrada.direccion_entrega.strip()
     if not direccion:
         return JSONResponse({"error": "Ingresá una dirección de entrega"}, status_code=400)
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    if not _puede_operar_entrega(request, filas[0]):
+        raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
     client.table("tareas_entrega").update({"direccion": direccion}).eq("id", tarea_id).execute()
     return {"ok": True, "tarea_id": tarea_id, "direccion": direccion}
 
@@ -1977,7 +4645,7 @@ def admin_tarea_derivar(tarea_id: str, entrada: DerivarEntregaIn, request: Reque
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     if not es_admin:
         # El cadete solo puede devolverle a Vlad una nota que ya es suya
@@ -1991,6 +4659,8 @@ def admin_tarea_derivar(tarea_id: str, entrada: DerivarEntregaIn, request: Reque
     client.table("tareas_entrega").update({
         "asignado_a": asignado_a, "observaciones_cadete": observaciones,
     }).eq("id", tarea_id).execute()
+    if asignado_a == CADETE_SLUG:
+        push_cadete.enviar_push_cadete(client, "📝 Nueva nota asignada", filas[0].get("titulo") or "")
     return {"ok": True, "tarea_id": tarea_id, "asignado_a": asignado_a}
 
 
@@ -2000,7 +4670,7 @@ def admin_tarea_editar_fecha(tarea_id: str, entrada: EditarFechaEntregaIn, reque
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     if not _puede_operar_entrega(request, filas[0]):
         raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
@@ -2020,10 +4690,92 @@ def admin_tarea_eliminar(tarea_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
     client = get_client()
     filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
-    if not filas:
+    if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
-    client.table("tareas_entrega").delete().eq("id", tarea_id).execute()
+    client.table("tareas_entrega").update({
+        "borrado_en": datetime.now(timezone.utc).isoformat(),
+        "borrado_por": _quien_opera(request),
+    }).eq("id", tarea_id).execute()
     return {"ok": True, "tarea_id": tarea_id}
+
+
+@app.post("/admin/tareas-entrega/{tarea_id}/recibo-manual")
+async def admin_tarea_recibo_manual(tarea_id: str, request: Request):
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
+    if not filas or not _activo(filas[0]):
+        raise HTTPException(status_code=404, detail="Nota no encontrada")
+    tarea = filas[0]
+    if not _puede_operar_entrega(request, tarea):
+        raise HTTPException(status_code=403, detail="Esta nota no está asignada a tu usuario")
+
+    formulario = await request.form()
+    nombre_cliente = (formulario.get("nombre") or "").strip()
+    email_cliente = (formulario.get("email") or "").strip()
+    if not nombre_cliente or not email_cliente:
+        return JSONResponse({"error": "Nombre y email son obligatorios"}, status_code=400)
+    try:
+        items_crudos = json.loads(formulario.get("items") or "[]")
+        items = recibos_manuales.construir_items(items_crudos)
+    except (ValueError, TypeError) as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+    total_usd = recibos_manuales.calcular_total(items)
+    recibo_id = _nuevo_recibo_id(client)
+    emitido_en = datetime.now(timezone.utc).isoformat()
+    pedido_para_mail = recibos_manuales.armar_pedido_like(
+        nombre_cliente, items, total_usd, recibo_id, emitido_en, _quien_opera(request),
+    )
+    partes_nombre = nombre_cliente.split(" ", 1)
+    cliente_para_mail = {
+        "nombre": partes_nombre[0],
+        "apellido": partes_nombre[1] if len(partes_nombre) > 1 else "",
+        "email": email_cliente,
+    }
+
+    fotos_pdf, adjuntos_fotos, fotos_guardadas = [], [], []
+    for foto in formulario.getlist("fotos")[:10]:
+        if not getattr(foto, "filename", None):
+            continue
+        contenido = await foto.read()
+        if not contenido or len(contenido) > 2_500_000:
+            return JSONResponse({"error": "Cada foto comprimida debe pesar menos de 2,5 MB"}, status_code=400)
+        nombre_archivo = f"serie-{uuid.uuid4().hex}.jpg"
+        ruta = f"recibos-manuales/{tarea_id}/{nombre_archivo}"
+        client.storage.from_("recibos-series").upload(ruta, contenido, {"content-type": "image/jpeg"})
+        fotos_guardadas.append(ruta)
+        fotos_pdf.append(contenido)
+        adjuntos_fotos.append({"filename": nombre_archivo, "content": contenido})
+
+    try:
+        pdf_adjunto = recibos.pdf_recibo(cliente_para_mail, pedido_para_mail, fotos=fotos_pdf)
+        enviar_email(
+            email_cliente,
+            f"Recibo {recibo_id} — The Tech Room Arg",
+            recibos.html_recibo(cliente_para_mail, pedido_para_mail),
+            [{"filename": f"recibo-{recibo_id}.pdf", "content": pdf_adjunto}, *adjuntos_fotos],
+        )
+    except EnvioEmailError as e:
+        return JSONResponse({"error": str(e)}, status_code=502)
+
+    registro = {
+        "id": str(uuid.uuid4()),
+        "tarea_id": tarea_id,
+        "nombre_cliente": nombre_cliente,
+        "email_cliente": email_cliente,
+        "items": items,
+        "total_usd": total_usd,
+        "fotos_series": fotos_guardadas,
+        "recibo_id": recibo_id,
+        "creado_por": _quien_opera(request),
+        "creado_en": emitido_en,
+        "enviado_en": datetime.now(timezone.utc).isoformat(),
+    }
+    client.table("recibos_manuales").insert(registro).execute()
+    client.table("tareas_entrega").update({"completada_en": emitido_en}).eq("id", tarea_id).execute()
+    return {"ok": True, "recibo_id": recibo_id}
 
 
 @app.get("/api/entregas-disponibles")
@@ -2090,6 +4842,7 @@ def pagina_catalogo(request: Request):
     if _sesion_activa(request) and _debe_cambiar_password(request):
         return RedirectResponse("/login.html")
     return FileResponse(str(BASE / "static" / "catalogo.html"))
+
 
 
 @app.get("/api/catalogo")
@@ -2174,6 +4927,60 @@ def pagina_producto_publico(slug_url: str):
         f"<a class='ttra-product-secondary' href='/login'>Ver todo el catálogo</a>"
         f"</div></main>{_PRODUCTO_PUBLICO_FOOTER}</body></html>"
     )
+
+
+_MAILING_PUBLICO_ESTILO = '<meta name="viewport" content="width=device-width, initial-scale=1">\n<style>\n  body { font-family: \'Segoe UI\', system-ui, sans-serif; background:#111318; color:#f2f4f8;\n         margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }\n  .tarjeta { background:#1b1e24; border-radius:16px; padding:28px 24px; width:100%; max-width:420px;\n             box-shadow:0 10px 30px rgba(0,0,0,0.5); box-sizing:border-box; border:1px solid #2a2e37; }\n  .tarjeta h1 { margin:0 0 6px; font-size:20px; }\n  .tarjeta .colores { color:#aab0bd; font-size:14px; margin:0 0 18px; }\n  .precios p { margin:4px 0; font-size:15px; }\n  .precios strong { font-size:20px; }\n  .btn-wa { display:block; text-align:center; margin-top:20px; background:#25D366; color:#0a0a0a;\n            font-weight:800; text-decoration:none; padding:14px; border-radius:10px; }\n  .link-catalogo { display:block; text-align:center; margin-top:12px; color:#aab0bd; font-size:13px; text-decoration:none; }\n</style>\n'
+
+
+def _mailing_baja_cliente_no_encontrado():
+    return HTMLResponse(
+        f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
+        f"<title>No encontramos esa cuenta</title>{_MAILING_PUBLICO_ESTILO}</head>"
+        f"<body><div class='tarjeta'><h1>No encontramos esa cuenta</h1>"
+        f"<p class='colores'>El link puede estar vencido. Escribime por WhatsApp si seguís recibiendo mails.</p>"
+        f"<a class='btn-wa' href='{WHATSAPP}'>Escribir por WhatsApp</a></div></body></html>",
+        status_code=404,
+    )
+
+
+@app.get("/mailing/baja/{cliente_id}", response_class=HTMLResponse)
+def mailing_baja(cliente_id: str):
+    client = get_client()
+    filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas:
+        return _mailing_baja_cliente_no_encontrado()
+    return HTMLResponse(
+        f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
+        f"<title>Confirmar baja — The Tech Room Arg</title>{_MAILING_PUBLICO_ESTILO}</head>"
+        f"<body><div class='tarjeta'><h1>¿Querés dejar de recibir novedades por mail?</h1>"
+        f"<p class='colores'>Si confirmás, no vas a recibir más mails de novedades.</p>"
+        f"<a class='btn-wa' href='/mailing/baja/{cliente_id}/confirmar'>Sí, dejar de recibir novedades</a>"
+        f"<a class='link-catalogo' href='{WHATSAPP}'>Cancelar</a></div></body></html>"
+    )
+
+
+@app.get("/mailing/baja/{cliente_id}/confirmar", response_class=HTMLResponse)
+def mailing_baja_confirmar(cliente_id: str):
+    client = get_client()
+    filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+    if not filas:
+        return _mailing_baja_cliente_no_encontrado()
+    client.table("clientes").update({"no_mailing": True}).eq("id", cliente_id).execute()
+    return HTMLResponse(
+        f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
+        f"<title>Listo — The Tech Room Arg</title>{_MAILING_PUBLICO_ESTILO}</head>"
+        f"<body><div class='tarjeta'><h1>Listo</h1>"
+        f"<p class='colores'>No vas a recibir más mails de novedades. Si te arrepentís, escribime por WhatsApp.</p>"
+        f"<a class='btn-wa' href='{WHATSAPP}'>Escribir por WhatsApp</a></div></body></html>"
+    )
+
+
+@app.get("/api/productos")
+def api_productos():
+    """Catálogo público de solo lectura — mismos datos que ya se muestran en
+    /p/<slug>, expuestos como feed para consumidores externos (ej. la rutina
+    de mailing corriendo en un checkout que no tiene productos.json local)."""
+    return _cargar_productos()
 
 
 @app.get("/api/recomendados")
@@ -2281,6 +5088,188 @@ def api_noticias():
     return {"titulares": _noticias_cache["titulares"]}
 
 
+@app.post("/admin/mailing/campanias", status_code=201)
+def admin_crear_campania_mailing(
+    entrada: MailingCampaniaIn,
+    request: Request,
+    x_admin_token: str = Header(default=""),
+):
+    if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    if MAILING_ASSETS_PATH is None:
+        raise HTTPException(status_code=503, detail="MAILING_ASSETS_PATH no configurado")
+    catalogo_actual = _cargar_productos()
+    if not catalogo_actual:
+        raise HTTPException(status_code=503, detail="El catálogo no está disponible")
+    if len(set(entrada.productos)) != len(entrada.productos):
+        raise HTTPException(status_code=422, detail="No repitas productos en la campaña")
+    try:
+        productos = mailing_servicio.seleccionar_productos(catalogo_actual, entrada.productos)
+        mailing_servicio.verificar_asset(
+            MAILING_ASSETS_PATH, entrada.campaign_id, entrada.hero.model_dump(),
+            _public_app_base_url(request),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    base_url = _public_app_base_url(request)
+    html_preview = mailing_template.armar_html(
+        productos,
+        nota=entrada.nota,
+        cliente_id="__CLIENTE_ID__",
+        base_url=base_url,
+        hero=entrada.hero.model_dump(),
+        preheader=entrada.preheader,
+    )
+    client = get_client()
+    try:
+        manifiesto = {
+            "campaign_id": str(uuid.UUID(entrada.campaign_id)),
+            "parent_id": entrada.parent_id,
+            "brief": entrada.brief,
+            "asunto": entrada.asunto,
+            "preheader": entrada.preheader,
+            "nota": entrada.nota,
+            "productos": productos,
+            "catalog_sha256": mailing_servicio.huella_comercial(productos),
+            "hero": entrada.hero.model_dump(),
+            "asset_url": entrada.hero.url,
+            "asset_sha256": entrada.hero.sha256,
+            "html": html_preview,
+            "destinatarios_preview": len(destinatarios.clientes_elegibles(client)),
+            "armado_en": datetime.now(timezone.utc).isoformat(),
+        }
+        if entrada.parent_id:
+            padre = campanias.obtener_version(client, entrada.parent_id)
+            if not padre:
+                raise ValueError("La versión original no existe")
+            if padre["campaign_id"] != manifiesto["campaign_id"]:
+                raise ValueError("La regeneración debe conservar la campaña original")
+        version = campanias.crear_version(client, manifiesto)
+    except campanias.InvalidTransition as exc:
+        raise HTTPException(status_code=409, detail="La versión de campaña cambió") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception:
+        logger.exception("No se pudo crear la versión de mailing")
+        raise HTTPException(status_code=503, detail="No se pudo guardar la campaña")
+    return version
+
+
+@app.get("/admin/mailing/campanias/{version_id}")
+def admin_obtener_campania_mailing(
+    version_id: str,
+    request: Request,
+    x_admin_token: str = Header(default=""),
+):
+    if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    client = get_client()
+    version = campanias.obtener_version(client, version_id)
+    if not version:
+        raise HTTPException(status_code=404, detail="Campaña no encontrada")
+    productos_actuales = _cargar_productos()
+    actuales_por_nombre = {p.get("nombre"): p for p in productos_actuales}
+    productos_version = version["manifest"].get("productos") or []
+    productos_live = [
+        actuales_por_nombre.get(p.get("nombre")) for p in productos_version
+    ]
+    catalogo_vigente = bool(productos_live) and all(productos_live) and secrets.compare_digest(
+        mailing_servicio.huella_comercial(productos_live),
+        str(version["manifest"].get("catalog_sha256", "")),
+    )
+    asset_disponible = False
+    if MAILING_ASSETS_PATH is not None:
+        try:
+            mailing_servicio.verificar_asset(
+                MAILING_ASSETS_PATH,
+                version["campaign_id"],
+                version["manifest"].get("hero") or {},
+                _public_app_base_url(request),
+            )
+            asset_disponible = True
+        except ValueError:
+            asset_disponible = False
+    elegibles = destinatarios.clientes_elegibles(client)
+    return {
+        **version,
+        "destinatarios_actuales": len(elegibles),
+        "catalogo_vigente": catalogo_vigente,
+        "asset_disponible": asset_disponible,
+        "envio_disponible": bool(
+            version["estado"] == "aprobado" and catalogo_vigente and asset_disponible
+        ),
+    }
+
+
+@app.post("/admin/mailing/campanias/{version_id}/aprobar")
+def admin_aprobar_campania_mailing(
+    version_id: str,
+    request: Request,
+    x_admin_token: str = Header(default=""),
+):
+    if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    if MAILING_ASSETS_PATH is None:
+        raise HTTPException(status_code=503, detail="MAILING_ASSETS_PATH no configurado")
+    client = get_client()
+    version = campanias.obtener_version(client, version_id)
+    if not version:
+        raise HTTPException(status_code=404, detail="Campaña no encontrada")
+    hero = version["manifest"].get("hero") or {}
+    try:
+        mailing_servicio.verificar_asset(
+            MAILING_ASSETS_PATH, version["campaign_id"], hero,
+            _public_app_base_url(request),
+        )
+        return campanias.transicionar(client, version_id, "previsualizado", "aprobado")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except campanias.InvalidTransition as exc:
+        raise HTTPException(status_code=409, detail="La campaña no está disponible para aprobación") from exc
+
+
+@app.post("/admin/mailing/campanias/{version_id}/enviar")
+def admin_enviar_campania_mailing(
+    version_id: str,
+    entrada: MailingConfirmacionIn,
+    request: Request,
+    x_admin_token: str = Header(default=""),
+):
+    if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    try:
+        uuid_version = str(uuid.UUID(version_id))
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Campaña no encontrada") from exc
+    if not secrets.compare_digest(
+        entrada.confirmacion.encode("utf-8"), f"ENVIAR {uuid_version}".encode("utf-8")
+    ):
+        raise HTTPException(status_code=422, detail="La confirmación no coincide con la versión")
+    if MAILING_ASSETS_PATH is None:
+        raise HTTPException(status_code=503, detail="MAILING_ASSETS_PATH no configurado")
+    try:
+        resultado = mailing_envio.enviar_version(
+            get_client(),
+            uuid_version,
+            _cargar_productos(),
+            enviar_email,
+            assets_root=MAILING_ASSETS_PATH,
+        )
+    except mailing_envio.CampaniaDesactualizada as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except mailing_envio.AssetAusente as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except campanias.InvalidTransition as exc:
+        raise HTTPException(status_code=409, detail="La campaña no está aprobada para envío") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception:
+        logger.exception("No se pudo completar envío de campaña %s", uuid_version)
+        raise HTTPException(status_code=503, detail="No se pudo completar el envío")
+    return {"ok": True, **resultado.__dict__}
+
+
 @app.post("/admin/productos")
 async def admin_subir_productos(request: Request, x_admin_token: str = Header(default="")):
     if not ADMIN_TOKEN:
@@ -2296,6 +5285,68 @@ async def admin_subir_productos(request: Request, x_admin_token: str = Header(de
     PRODUCTOS_PATH.parent.mkdir(parents=True, exist_ok=True)
     PRODUCTOS_PATH.write_text(json.dumps(productos, ensure_ascii=False, indent=2), encoding="utf-8")
     return {"ok": True, "productos": len(productos)}
+
+
+@app.post("/admin/mailing/assets/{campaign_id}")
+async def admin_subir_asset_mailing(
+    campaign_id: str,
+    request: Request,
+    archivo: UploadFile = File(...),
+    x_admin_token: str = Header(default=""),
+):
+    if not ADMIN_TOKEN or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Token inválido")
+    if MAILING_ASSETS_PATH is None:
+        raise HTTPException(status_code=503, detail="MAILING_ASSETS_PATH no configurado")
+    try:
+        contenido = await archivo.read(mailing_assets.MAX_BYTES + 1)
+        asset = mailing_assets.guardar_asset(
+            MAILING_ASSETS_PATH, campaign_id, contenido, archivo.content_type or ""
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    finally:
+        await archivo.close()
+    base = _public_app_base_url(request)
+    url = f"{base}/mailing/assets/{campaign_id}/{asset.filename}"
+    return {
+        "ok": True,
+        "url": url,
+        "filename": asset.filename,
+        "sha256": asset.sha256,
+        "content_type": asset.content_type,
+        "width": asset.width,
+        "height": asset.height,
+    }
+
+
+@app.get("/mailing/assets/{campaign_id}/{filename}")
+def mailing_asset_publico(campaign_id: str, filename: str):
+    if MAILING_ASSETS_PATH is None:
+        raise HTTPException(status_code=404, detail="Asset no encontrado")
+    try:
+        uuid_campania = uuid.UUID(campaign_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Asset no encontrado") from exc
+    match = re.fullmatch(r"([0-9a-f]{64})\.(jpg|png|webp)", filename)
+    if not match:
+        raise HTTPException(status_code=404, detail="Asset no encontrado")
+    digest, extension = match.groups()
+    media_type = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}[extension]
+    path = MAILING_ASSETS_PATH / str(uuid_campania) / filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Asset no encontrado")
+    contenido = path.read_bytes()
+    if not secrets.compare_digest(hashlib.sha256(contenido).hexdigest(), digest):
+        raise HTTPException(status_code=404, detail="Asset no encontrado")
+    return Response(
+        content=contenido,
+        media_type=media_type,
+        headers={
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @app.get("/")
