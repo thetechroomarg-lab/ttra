@@ -2092,6 +2092,13 @@ def pagina_catalogo(request: Request):
     return FileResponse(str(BASE / "static" / "catalogo.html"))
 
 
+@app.get("/preventa")
+def pagina_preventa(request: Request):
+    if not _sesion_activa(request) or _debe_cambiar_password(request):
+        return RedirectResponse("/login.html")
+    return FileResponse(str(BASE / "static" / "preventa.html"))
+
+
 @app.get("/api/catalogo")
 def api_catalogo(request: Request):
     productos, modo_precio = _catalogo_autorizado(request)
@@ -2103,20 +2110,28 @@ def api_catalogo(request: Request):
 
 
 _PRODUCTO_PUBLICO_ESTILO = """
-<style>
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background:#111318; color:#f2f4f8;
-         margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
-  .tarjeta { background:#1b1e24; border-radius:16px; padding:28px 24px; width:100%; max-width:420px;
-             box-shadow:0 10px 30px rgba(0,0,0,0.5); box-sizing:border-box; border:1px solid #2a2e37; }
-  .tarjeta h1 { margin:0 0 6px; font-size:20px; }
-  .tarjeta .colores { color:#aab0bd; font-size:14px; margin:0 0 18px; }
-  .precios p { margin:4px 0; font-size:15px; }
-  .precios strong { font-size:20px; }
-  .btn-wa { display:block; text-align:center; margin-top:20px; background:#25D366; color:#0a0a0a;
-            font-weight:800; text-decoration:none; padding:14px; border-radius:10px; }
-  .link-catalogo { display:block; text-align:center; margin-top:12px; color:#aab0bd; font-size:13px; text-decoration:none; }
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>document.documentElement.setAttribute('data-modo','classic');
+try { if (localStorage.getItem('ttra_classic_theme') === 'light')
+  document.documentElement.setAttribute('data-classic-theme','light'); } catch {}</script>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/theme.css">
+<link rel="stylesheet" href="/classic.css">
+<link rel="stylesheet" href="/classic-editorial.css">
+<link rel="stylesheet" href="/site-pages.css">
 """
+
+_PRODUCTO_PUBLICO_HEADER = (
+    '<header class="ttra-page-header"><a class="ttra-page-brand" href="/" '
+    'aria-label="The Tech Room Arg, volver al inicio">THE<br>TECH<br>ROOM<br>ARG<span>.</span></a>'
+    '<nav class="ttra-page-actions" aria-label="Navegación">'
+    '<a class="ttra-page-link" href="/catalogo">Explorar catálogo</a></nav></header>'
+)
+_PRODUCTO_PUBLICO_FOOTER = (
+    '<footer class="ttra-page-footer"><div class="ttra-page-footer-brand">'
+    'THE<br>TECH<br>ROOM<br>ARG<span>.</span></div>'
+    '<p>© The Tech Room Arg · Córdoba</p></footer>'
+)
 
 
 @app.get("/p/{slug_url}", response_class=HTMLResponse)
@@ -2130,9 +2145,13 @@ def pagina_producto_publico(slug_url: str):
         return HTMLResponse(
             f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
             f"<title>Producto no encontrado</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
-            f"<body><div class='tarjeta'><h1>No encontré ese producto</h1>"
+            f"<body class='ttra-page'>{_PRODUCTO_PUBLICO_HEADER}"
+            f"<main class='ttra-product-main'><div class='ttra-product-art' aria-hidden='true'><span>THE TECH ROOM ARG.</span></div>"
+            f"<div class='ttra-product-copy'><p class='ttra-page-eyebrow'>PRODUCTO NO DISPONIBLE</p>"
+            f"<h1>No encontré ese producto</h1>"
             f"<p class='colores'>Puede que ya no esté disponible. Escribime por WhatsApp y te confirmo.</p>"
-            f"<a class='btn-wa' href='{WHATSAPP}'>Escribir por WhatsApp</a></div></body></html>",
+            f"<a class='ttra-product-cta' href='{WHATSAPP}'>Escribir por WhatsApp</a>"
+            f"</div></main>{_PRODUCTO_PUBLICO_FOOTER}</body></html>",
             status_code=404,
         )
     nombre = html.escape(producto.get("nombre", ""))
@@ -2145,17 +2164,19 @@ def pagina_producto_publico(slug_url: str):
     link_wa = f"{WHATSAPP}?{mensaje_wa}"
     return HTMLResponse(
         f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
-        f"<meta name='viewport' content='width=device-width, initial-scale=1'>"
         f"<title>{nombre} — The Tech Room Arg</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
-        f"<body><div class='tarjeta'><h1>{nombre}</h1>{colores_html}"
-        f"<div class='precios'>"
+        f"<body class='ttra-page'>{_PRODUCTO_PUBLICO_HEADER}"
+        f"<main class='ttra-product-main'><div class='ttra-product-art' aria-hidden='true'><span>THE TECH ROOM ARG.</span></div>"
+        f"<div class='ttra-product-copy'><p class='ttra-page-eyebrow'>PRODUCTO / THE TECH ROOM ARG</p>"
+        f"<h1>{nombre}</h1>{colores_html}"
+        f"<div class='ttra-product-prices'>"
         f"<p><strong>U$D {usd}</strong></p>"
         f"<p>$ {pesos} pesos contado</p>"
         f"<p>$ {transferencia} pesos transferencia</p>"
         f"</div>"
-        f"<a class='btn-wa' href='{link_wa}'>Consultar por WhatsApp</a>"
-        f"<a class='link-catalogo' href='/login'>Ver todo el catálogo</a>"
-        f"</div></body></html>"
+        f"<a class='ttra-product-cta' href='{link_wa}'>Consultar por WhatsApp</a>"
+        f"<a class='ttra-product-secondary' href='/login'>Ver todo el catálogo</a>"
+        f"</div></main>{_PRODUCTO_PUBLICO_FOOTER}</body></html>"
     )
 
 

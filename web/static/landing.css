@@ -1885,3 +1885,40 @@ html[data-modo="fallout"] .card:focus-within::before {
 @media (max-width: 420px) {
   .rc-panel-compartir-acciones { flex-direction: column; }
 }
+
+/* Entrada provisoria a la preventa de iPhone 18: mismo formato que el resto
+   de .btn-categoria (tipografía, mayúsculas, padding), pero con fondo
+   amarillo fijo + texto negro para que se note como un CTA aparte, no una
+   categoría más del catálogo. Colores fijos (no variables del tema) a
+   propósito: tiene que verse igual en Fallout y en Classic. */
+.rc-preventa-link,
+html[data-modo="classic"] .btn-categoria.rc-preventa-link,
+html[data-modo="fallout"] .btn-categoria.rc-preventa-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-align: center;
+  background-color: #f2c94c !important;
+  background-image: none !important;
+  color: #111 !important;
+  border-color: #f2c94c;
+  text-shadow: none !important;
+  font-weight: 700;
+  border-radius: 10px;
+}
+.rc-preventa-link:hover,
+.rc-preventa-link:focus-visible,
+html[data-modo="classic"] .btn-categoria.rc-preventa-link:hover,
+html[data-modo="classic"] .btn-categoria.rc-preventa-link:focus-visible {
+  background: #ffd75e;
+  border-color: #ffd75e;
+  color: #111 !important;
+}
+/* La franja roja inferior en hover (::after) del look Classic queda
+   apagada acá: quedaba corriendo un rojo Martini sobre el fondo amarillo
+   del CTA, muy compitiendo con el acento propio de este botón. */
+html[data-modo="classic"] .btn-categoria.rc-preventa-link:hover::after {
+  transform: scaleX(0);
+}

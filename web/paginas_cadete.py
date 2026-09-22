@@ -44,7 +44,7 @@ router = APIRouter()
 def admin_cadete(request: Request):
     if not _cadete_activo(request):
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Entregas — Ingresar</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
+<title>Entregas — Ingresar</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body class="op-cadete">
 <div class="tarjeta">
   <h1>Panel de entregas</h1>
   <p id="err" class="error" style="display:none"></p>
@@ -214,7 +214,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             )
 
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Entregas asignadas</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
+<title>Entregas asignadas</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body class="op-cadete">
 <div class="panel">
   <div class="panel-header">
     <h1>Entregas asignadas</h1>

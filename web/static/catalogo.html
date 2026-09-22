@@ -33,13 +33,14 @@
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="catalogo.css">
   <link rel="stylesheet" href="classic-editorial.css">
+  <link rel="stylesheet" href="site-pages.css">
 </head>
-<body class="catalog-page">
+<body class="catalog-page ttra-page">
   <div id="rc-boot"></div>
   <div class="rc-crt"></div>
-  <header class="catalog-header">
-    <a class="catalog-brand" href="/" aria-label="The Tech Room Arg, volver al inicio">THE<br>TECH<br>ROOM<br>ARG<span>.</span></a>
-    <div class="catalog-header-actions">
+  <header class="catalog-header ttra-page-header">
+    <a class="catalog-brand ttra-page-brand" href="/" aria-label="The Tech Room Arg, volver al inicio">THE<br>TECH<br>ROOM<br>ARG<span>.</span></a>
+    <div class="catalog-header-actions ttra-page-actions">
       <a class="catalog-back" href="/">← Volver al inicio</a>
       <a class="catalog-login" id="catalog-login" href="/login.html">Ingresar</a>
       <button id="btn-logout" type="button" hidden>Cerrar sesión</button>
@@ -48,7 +49,7 @@
 
   <section class="catalog-intro" aria-labelledby="catalog-title">
     <p class="catalog-eyebrow">THE TECH ROOM ARG / CATÁLOGO</p>
-    <h1 id="catalog-title">Todo para tu mundo<span>.</span></h1>
+    <h1 id="catalog-title">Todo el catálogo<span>.</span></h1>
     <p>Explorá todos los productos o elegí una categoría. Si necesitás ayuda, escribime.</p>
   </section>
 
@@ -60,6 +61,8 @@
   <nav class="tabs" id="tabs" aria-label="Filtrar productos por categoría"></nav>
   <div class="catalog-brand-filter" id="catalog-filters"><label for="marca-filter">Filtrar por marca</label><select id="marca-filter"><option value="">Todas las marcas</option></select></div>
   <main id="secciones"></main>
+
+  <footer class="ttra-page-footer"><div class="ttra-page-footer-brand">THE<br>TECH<br>ROOM<br>ARG<span>.</span></div><p>© The Tech Room Arg · Córdoba</p></footer>
 
   <script src="boot.js"></script>
   <script src="catalogo.js"></script>

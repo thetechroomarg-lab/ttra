@@ -51,7 +51,7 @@ def test_pagina_catalogo_sin_sesion_muestra_todos_los_productos(tmp_path, monkey
     c = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
     r = c.get("/catalogo")
     assert r.status_code == 200
-    assert "Todo para tu mundo" in r.text
+    assert "Todo el catálogo" in r.text
     assert 'id="tabs"' in r.text
 
 

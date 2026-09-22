@@ -26,6 +26,7 @@ function fixture() {
     ['overlay-carrito', { classList: classes() }],
     ['overlay-perfil', { classList: classes() }],
     ['rc-terminos-mayorista', { classList: classes() }],
+    ['rc-terminos-perfil', { classList: classes() }],
     ['rc-panel-compartir', { hidden: true }],
   ]);
   elements.get('overlay-carrito').classList.add('oculto');
@@ -43,9 +44,15 @@ function fixture() {
     documentElement: root,
     body,
     getElementById: (id) => elements.get(id),
-    querySelector: (selector) => selector === '.rc-logout-overlay.visible' &&
-      elements.get('rc-terminos-mayorista').classList.contains('visible')
-      ? elements.get('rc-terminos-mayorista') : null,
+    querySelector: (selector) => {
+      if (selector === '.rc-logout-overlay.visible' &&
+        elements.get('rc-terminos-mayorista').classList.contains('visible'))
+        return elements.get('rc-terminos-mayorista');
+      if (selector === '.rc-terminos-overlay.visible' &&
+        elements.get('rc-terminos-perfil').classList.contains('visible'))
+        return elements.get('rc-terminos-perfil');
+      return null;
+    },
   };
   const source = readFileSync(join(__dirname, '../web/static/scroll-lock.js'), 'utf8');
   runInNewContext(source, { document, window, MutationObserver });
@@ -90,4 +97,14 @@ test('dynamic share dialog also locks and releases the background', () => {
   page.elements.get('rc-panel-compartir').hidden = true;
   page.sync();
   assert.equal(page.root.classList.contains('ttra-scroll-locked'), false);
+});
+
+test('standalone profile terms dialog keeps its page fixed', () => {
+  const page = fixture();
+  page.elements.get('rc-terminos-perfil').classList.add('visible');
+  page.sync();
+  assert.equal(page.root.classList.contains('ttra-scroll-locked'), true);
+  page.elements.get('rc-terminos-perfil').classList.remove('visible');
+  page.sync();
+  assert.deepEqual(page.scrollCalls, [[0, 640]]);
 });

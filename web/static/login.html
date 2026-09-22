@@ -30,13 +30,18 @@
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="login.css">
   <link rel="stylesheet" href="classic-editorial.css">
+  <link rel="stylesheet" href="site-pages.css">
 </head>
-<body>
+<body class="ttra-page">
   <div id="rc-boot"></div>
   <div class="rc-crt"></div>
+  <header class="ttra-page-header"><a class="ttra-page-brand" href="/" aria-label="The Tech Room Arg, volver al inicio">THE<br>TECH<br>ROOM<br>ARG<span>.</span></a><nav class="ttra-page-actions" aria-label="Navegación"><a class="ttra-page-link" href="/catalogo">Explorar catálogo</a></nav></header>
+  <div class="ttra-auth-layout">
+    <section class="ttra-auth-story" aria-label="The Tech Room Arg"><p class="ttra-page-eyebrow">THE TECH ROOM ARG</p><h2 class="ttra-page-display">Hola, soy<br><em>Vlad.</em></h2><p>Vendo tecnología desde el año 2009 y te ayudo a encontrar lo que buscás.</p></section>
+    <div class="ttra-auth-form-wrap">
   <main class="tarjeta">
     <div class="rc-marca-login" aria-hidden="true">THE TECH ROOM <span class="rc-marca-login-punto">ARG.</span></div>
-    <h1 id="titulo-login">Bienvenid@ de nuevo</h1>
+    <h1 id="titulo-login">Te doy la bienvenida</h1>
 
     <form id="form-login" class="form">
       <input type="email" id="login-email" placeholder="Email" autocomplete="email" required aria-label="Email">
@@ -96,6 +101,9 @@
       <p class="error" id="cambiar-error"></p>
     </form>
   </main>
+    </div>
+  </div>
+  <footer class="ttra-page-footer"><div class="ttra-page-footer-brand">THE<br>TECH<br>ROOM<br>ARG<span>.</span></div><p>© The Tech Room Arg · Córdoba</p></footer>
   <script src="boot.js"></script>
   <script src="login.js"></script>
 </body>

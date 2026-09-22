@@ -13,6 +13,7 @@
       (cart && !cart.classList.contains("oculto")) ||
       (profile && !profile.classList.contains("oculto")) ||
       document.querySelector(".rc-logout-overlay.visible") ||
+      document.querySelector(".rc-terminos-overlay.visible") ||
       (share && !share.hidden)
     );
   }

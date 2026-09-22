@@ -37,12 +37,17 @@
   <link rel="stylesheet" href="login.css">
   <link rel="stylesheet" href="perfil.css">
   <link rel="stylesheet" href="classic-editorial.css">
+  <link rel="stylesheet" href="site-pages.css">
 </head>
-<body>
+<body class="ttra-page">
   <div class="rc-crt"></div>
+  <header class="ttra-page-header"><a class="ttra-page-brand" href="/" aria-label="The Tech Room Arg, volver al inicio">THE<br>TECH<br>ROOM<br>ARG<span>.</span></a><nav class="ttra-page-actions" aria-label="Navegación"><a class="ttra-page-link" href="/catalogo">Explorar catálogo</a></nav></header>
+  <div class="ttra-account-main">
+    <div class="ttra-account-intro"><div><p class="ttra-page-eyebrow">TU ESPACIO</p><h1 class="ttra-page-display">Mi <em>perfil.</em></h1></div><p>Actualizá tus datos, domicilios y contraseña desde un solo lugar.</p></div>
   <main class="tarjeta">
     <a id="link-volver" class="rc-perfil-volver" href="/">← Volver</a>
-    <h1>Mi perfil</h1>
+    <div class="ttra-account-grid">
+    <section class="ttra-account-section" aria-labelledby="perfil-datos-titulo"><h2 id="perfil-datos-titulo">Mis datos</h2>
     <form id="form-perfil" class="form">
       <input id="perfil-nombre" type="text" placeholder="Nombre" autocomplete="given-name" required>
       <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required>
@@ -58,8 +63,9 @@
       <p id="condiciones-mayorista-fecha" class="ok"></p>
       <button type="button" id="btn-ver-condiciones-mayorista">Ver condiciones mayoristas</button>
     </section>
+    </section>
 
-    <h2>Mis domicilios</h2>
+    <section class="ttra-account-section" aria-labelledby="perfil-domicilios-titulo"><h2 id="perfil-domicilios-titulo">Mis domicilios</h2>
     <div id="lista-domicilios" class="lista-domicilios"></div>
     <form id="form-domicilio" class="form">
       <input id="domicilio-alias" type="text" placeholder="Nombre (ej. Casa, Oficina)" maxlength="80" required>
@@ -72,8 +78,9 @@
       <p class="error" id="domicilio-error"></p>
       <p class="ok" id="domicilio-ok"></p>
     </form>
+    </section>
 
-    <h2>Cambiar contraseña</h2>
+    <section class="ttra-account-section" aria-labelledby="perfil-password-titulo"><h2 id="perfil-password-titulo">Cambiar contraseña</h2>
     <form id="form-password" class="form">
       <input id="password-actual" type="password" placeholder="Contraseña actual" autocomplete="current-password" required>
       <input id="password-nueva" type="password" placeholder="Contraseña nueva" autocomplete="new-password" required minlength="8">
@@ -82,7 +89,10 @@
       <p class="error" id="password-error"></p>
       <p class="ok" id="password-ok"></p>
     </form>
+    </section>
+    </div>
   </main>
+  </div>
 
   <div id="rc-terminos-mayorista" class="rc-terminos-overlay">
     <div class="rc-terminos-tarjeta">
@@ -93,7 +103,10 @@
     </div>
   </div>
 
+  <footer class="ttra-page-footer"><div class="ttra-page-footer-brand">THE<br>TECH<br>ROOM<br>ARG<span>.</span></div><p>© The Tech Room Arg · Córdoba</p></footer>
+
   <script src="boot.js"></script>
   <script src="perfil.js"></script>
+  <script src="scroll-lock.js"></script>
 </body>
 </html>

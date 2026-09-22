@@ -5,7 +5,7 @@ const linkIrARegistro = document.getElementById("link-ir-a-registro");
 const linkIrALogin = document.getElementById("link-ir-a-login");
 const tituloLogin = document.getElementById("titulo-login");
 
-const TITULO_LOGIN = "Bienvenid@ de nuevo";
+const TITULO_LOGIN = "Te doy la bienvenida";
 const TITULO_REGISTRO = "Creación de cuenta";
 const TITULO_CAMBIAR_OBLIGATORIO = "Elegí tu contraseña nueva";
 

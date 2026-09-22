@@ -1,0 +1,223 @@
+/* The editorial identity shared by the storefront's secondary pages. */
+html[data-modo="classic"] body.ttra-page {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 100vh;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background: var(--rc-bg);
+  color: var(--rc-green);
+  font-family: var(--rc-font);
+}
+html[data-modo="classic"].ttra-scroll-locked body.ttra-page {
+  position: fixed;
+  top: var(--ttra-scroll-lock-top);
+  left: 0;
+  width: var(--ttra-scroll-lock-width);
+  overflow: hidden;
+}
+html[data-modo="classic"] body.ttra-page *,
+html[data-modo="classic"] body.ttra-page *::before,
+html[data-modo="classic"] body.ttra-page *::after { box-sizing: border-box; }
+html[data-modo="classic"] body.ttra-page :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 3px;
+}
+.ttra-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px var(--ed-gutter);
+  border-bottom: 1px solid var(--ed-line);
+  background: var(--rc-bg);
+}
+html[data-modo="classic"] body.ttra-page > header.ttra-page-header {
+  display: flex;
+  grid-template-columns: none;
+  grid-template-rows: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  padding: 24px var(--ed-gutter);
+  border-bottom: 1px solid var(--ed-line);
+  background: var(--rc-bg);
+}
+.ttra-page-brand {
+  flex: none;
+  color: var(--rc-green-bright);
+  font: 800 clamp(28px, 3vw, 42px)/.84 Arial, sans-serif;
+  letter-spacing: -.075em;
+  text-decoration: none;
+}
+.ttra-page-brand span { color: var(--ed-accent); }
+.ttra-page-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+.ttra-page-link,
+html[data-modo="classic"] .ttra-page .catalog-back,
+html[data-modo="classic"] .ttra-page .catalog-login,
+html[data-modo="classic"] .ttra-page #btn-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--ed-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--rc-green);
+  font: 600 12px var(--rc-font);
+  text-decoration: none;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.ttra-page-link:hover,
+html[data-modo="classic"] .ttra-page :is(.catalog-back, .catalog-login, #btn-logout):hover {
+  border-color: var(--ed-accent);
+  color: var(--rc-green-bright);
+  background: var(--rc-bg-panel);
+}
+html[data-modo="classic"] body.ttra-page .catalog-header-actions :is(.catalog-login, #btn-logout)[hidden] { display: none !important; }
+.ttra-page-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-top: auto;
+  padding: 40px var(--ed-gutter);
+  border-top: 1px solid var(--ed-line);
+  color: var(--rc-green-dim);
+  font-size: 12px;
+}
+.ttra-page-footer-brand { color: var(--rc-green-bright); font: 700 19px/.9 Arial, sans-serif; letter-spacing: -.065em; }
+.ttra-page-footer-brand span { color: var(--ed-accent); }
+.ttra-page-footer p { margin: 0; }
+.ttra-page-eyebrow { margin: 0 0 20px; color: var(--ed-accent); font-size: 10px; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; }
+.ttra-page-display { margin: 0; color: var(--rc-green-bright); font-size: clamp(48px, 7vw, 104px); font-weight: 500; line-height: .96; letter-spacing: -.075em; }
+.ttra-page-display em { color: var(--ed-accent); font-family: Georgia, serif; font-weight: 400; }
+.ttra-page-rule { height: 1px; background: var(--ed-line); }
+
+/* Login and registration keep their existing forms but gain a proper page composition. */
+html[data-modo="classic"] .ttra-auth-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr); flex: 1; min-height: 650px; }
+.ttra-auth-story { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 600px; padding: clamp(40px, 6vw, 100px) var(--ed-gutter); overflow: hidden; background: #e7e5dc; color: #242720; }
+.ttra-auth-story::before { content: ""; position: absolute; width: min(68vw, 720px); aspect-ratio: 1; right: -18%; top: 10%; border: 1px solid #a9afa3; border-radius: 50%; box-shadow: 0 0 0 90px #cdd1c624, 0 0 0 180px #cdd1c61d; pointer-events: none; }
+.ttra-auth-story .ttra-page-eyebrow { position: relative; z-index: 1; color: #ad3a2c; }
+.ttra-auth-story .ttra-page-display { position: relative; z-index: 1; max-width: 750px; color: #242720; }
+.ttra-auth-story > p:last-child { position: relative; z-index: 1; max-width: 280px; margin: 40px 0 0; font-size: 14px; line-height: 1.65; }
+.ttra-auth-form-wrap { display: grid; place-items: center; padding: 64px clamp(24px, 4vw, 80px); }
+html[data-modo="classic"] .ttra-auth-form-wrap .tarjeta { width: min(100%, 470px); margin: 0; padding: clamp(28px, 3vw, 42px); border: 1px solid var(--ed-line); border-top: 4px solid var(--ed-accent) !important; border-radius: 2px; background: var(--rc-bg-panel); box-shadow: none; }
+html[data-modo="classic"] .ttra-auth-form-wrap .rc-marca-login { display: none; }
+html[data-modo="classic"] .ttra-auth-form-wrap .tarjeta h1 { margin: 0 0 28px; font-size: clamp(28px, 3vw, 42px); line-height: 1.05; }
+html[data-modo="classic"] .ttra-auth-form-wrap .form { gap: 12px; }
+html[data-modo="classic"] .ttra-auth-form-wrap .form :is(input, select) { min-height: 52px; }
+html[data-modo="classic"] .ttra-auth-form-wrap .form button[type="submit"] { min-height: 54px; margin-top: 8px; font-weight: 800; background: #d52f27; color: #fff; }
+html[data-modo="classic"] .ttra-auth-form-wrap .form button[type="submit"]:hover { background: #f04433; }
+html[data-modo="classic"] .ttra-auth-form-wrap .rc-switch-form { text-align: left; }
+html[data-modo="classic"] .ttra-auth-form-wrap .rc-switch-form a { color: var(--ed-accent); }
+
+/* Standalone account page. The embedded profile panel remains untouched. */
+html[data-modo="classic"] .ttra-account-main { width: min(1100px, calc(100% - 2 * var(--ed-gutter))); align-self: center; padding: clamp(50px, 7vw, 95px) 0 100px; }
+.ttra-account-intro { display: grid; grid-template-columns: 1fr minmax(210px, 320px); align-items: end; gap: 34px; padding-bottom: 38px; border-bottom: 1px solid var(--ed-line); }
+.ttra-account-intro p:last-child { margin: 0; color: var(--rc-green-dim); font-size: 14px; line-height: 1.7; }
+html[data-modo="classic"] .ttra-account-main .tarjeta { width: 100%; padding: 0; border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important; }
+html[data-modo="classic"] .ttra-account-main .rc-perfil-volver { margin: 28px 0 0; }
+.ttra-account-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 4vw, 56px); margin-top: 42px; }
+.ttra-account-section { min-width: 0; padding: 26px; border: 1px solid var(--ed-line); background: var(--rc-bg-panel); }
+.ttra-account-section:first-child { grid-row: span 2; }
+html[data-modo="classic"] .ttra-account-section h2 { margin: 0 0 22px; color: var(--rc-green-bright); font-size: 22px; font-weight: 500; letter-spacing: -.035em; text-transform: none; }
+html[data-modo="classic"] .ttra-account-section .form { gap: 12px; }
+html[data-modo="classic"] .ttra-account-section .form button[type="submit"] { min-height: 50px; background: #d52f27; color: #fff; font-weight: 800; }
+html[data-modo="classic"] .ttra-account-section .item-domicilio { border-color: var(--ed-line); border-radius: 0; background: var(--rc-bg); }
+html[data-modo="classic"] .ttra-account-main #btn-cancelar-edicion-domicilio.oculto { display: none; }
+html[data-modo="classic"] .ttra-page .rc-terminos-overlay { background: rgba(16, 20, 18, .55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+html[data-modo="classic"] .ttra-page .rc-terminos-tarjeta { border: 1px solid var(--ed-line); border-top: 4px solid var(--ed-accent); border-radius: 2px; background: var(--rc-bg-panel); box-shadow: 0 24px 70px #00000030; }
+html[data-modo="classic"] .ttra-page .rc-terminos-contenido { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+/* Catalog page: details and rhythm carry the same visual language as the home. */
+html[data-modo="classic"] .catalog-page .catalog-header { align-items: center; }
+html[data-modo="classic"] .catalog-page .catalog-intro { padding-top: clamp(70px, 8vw, 135px); padding-bottom: clamp(70px, 8vw, 125px); }
+html[data-modo="classic"] .catalog-page .catalog-intro h1 { max-width: 1050px; }
+html[data-modo="classic"] .catalog-page .catalog-intro > p:last-child { font-size: 16px; }
+html[data-modo="classic"] .catalog-page .catalog-filter-header { border-top: 1px solid var(--ed-line); }
+html[data-modo="classic"] .catalog-page .tabs button { transition: border-color .2s, color .2s, background .2s; }
+html[data-modo="classic"] .catalog-page .card { position: relative; min-height: 230px; transition: border-color .25s, transform .35s var(--ed-ease); }
+html[data-modo="classic"] .catalog-page .card::before { content: "+"; position: absolute; top: 18px; right: 20px; color: var(--ed-accent); font: 300 25px Arial, sans-serif; }
+html[data-modo="classic"] .catalog-page .card h3 { padding-right: 26px; }
+html[data-modo="classic"] .catalog-page .card .precios { padding-top: 16px; border-top: 1px solid var(--ed-line); line-height: 1.8; }
+
+/* Preorder: an editorial release page rather than a utility form. */
+html[data-modo="classic"] .ttra-page .preventa-wrap { width: 100%; max-width: none; }
+html[data-modo="classic"] .ttra-page .preventa-header { position: relative; margin: 0; padding: clamp(60px, 8vw, 125px) var(--ed-gutter); border: 0; border-bottom: 1px solid var(--ed-line); border-radius: 0; background: radial-gradient(circle at 82% 35%, #db513526, transparent 35%), var(--rc-bg); box-shadow: none; }
+html[data-modo="classic"] .ttra-page .preventa-header h1 { max-width: 1000px; margin: 0 0 28px; font-size: clamp(50px, 8vw, 116px); font-weight: 500; line-height: .94; letter-spacing: -.075em; text-shadow: none; }
+html[data-modo="classic"] .ttra-page .preventa-header h1 span { color: var(--ed-accent); }
+html[data-modo="classic"] .ttra-page .preventa-header > p { max-width: 610px; margin: 0 0 22px; color: var(--rc-green-dim); font-size: 16px; line-height: 1.7; }
+html[data-modo="classic"] .ttra-page .preventa-header .ttra-page-eyebrow { margin-bottom: 22px; color: var(--ed-accent); font-size: 10px; font-weight: 700; line-height: 1.4; letter-spacing: .17em; }
+html[data-modo="classic"] .ttra-page .preventa-header .preventa-nota { margin-bottom: 0; color: var(--ed-accent); font-size: 12px; font-weight: 700; letter-spacing: .03em; }
+html[data-modo="classic"] .ttra-page .preventa-modelos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 50px var(--ed-gutter) 80px; }
+html[data-modo="classic"] .ttra-page .preventa-card { display: flex; flex-direction: column; min-width: 0; padding: 24px; border: 1px solid var(--ed-line); border-radius: 0; background: var(--rc-bg-panel); transition: border-color .25s, transform .35s var(--ed-ease); }
+html[data-modo="classic"] .ttra-page .preventa-card:hover { border-color: var(--ed-accent); transform: translateY(-4px); }
+html[data-modo="classic"] .ttra-page .preventa-card h2 { min-height: 2.3em; font-size: clamp(23px, 2.4vw, 34px); font-weight: 500; line-height: 1.12; letter-spacing: -.05em; }
+html[data-modo="classic"] .ttra-page .preventa-card .preventa-precio { margin: 20px 0 26px; color: var(--ed-accent); font-size: clamp(24px, 2.8vw, 35px); font-weight: 600; text-shadow: none; }
+html[data-modo="classic"] .ttra-page .preventa-card label { color: var(--rc-green); }
+html[data-modo="classic"] .ttra-page .preventa-card :is(input, select) { min-height: 46px; border-color: var(--ed-line); border-radius: 0; background: var(--rc-bg); color: var(--rc-green-bright); }
+html[data-modo="classic"] .ttra-page .preventa-sena { flex: 1; margin: 24px 0; padding: 18px; border-color: var(--ed-line); border-radius: 0; background: var(--rc-bg); }
+html[data-modo="classic"] .ttra-page .preventa-sena-titulo { color: var(--ed-accent); font-weight: 700; letter-spacing: .08em; }
+html[data-modo="classic"] .ttra-page .preventa-sena-lista { gap: 12px; }
+html[data-modo="classic"] .ttra-page .preventa-reservar { display: flex; align-items: center; justify-content: center; min-height: 50px; margin-top: auto; padding: 12px 16px; border-radius: 0; background: #d52f27; color: #fff; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-page .preventa-reservar:hover { background: #f04433; }
+html[data-modo="classic"] .ttra-page .preventa-condiciones { margin: 0 var(--ed-gutter) 90px; padding: clamp(26px, 4vw, 55px); border-color: var(--ed-line); border-radius: 0; background: var(--rc-bg-panel); }
+html[data-modo="classic"] .ttra-page .preventa-condiciones h3 { font-size: clamp(25px, 3vw, 40px); font-weight: 500; letter-spacing: -.05em; }
+html[data-modo="classic"] .ttra-page .preventa-condiciones ul { max-width: 850px; }
+html[data-modo="classic"] .ttra-page .preventa-condiciones li { margin-bottom: 12px; }
+
+/* Public product detail / fallback page. */
+.ttra-product-main { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); flex: 1; gap: clamp(30px, 6vw, 110px); align-items: center; padding: 70px var(--ed-gutter) 100px; }
+.ttra-product-art { position: relative; display: grid; place-items: center; min-height: 470px; overflow: hidden; background: #e7e5dc; color: #30362e; }
+.ttra-product-art::before { content: ""; width: 68%; aspect-ratio: 1; border: 1px solid #adb4aa; border-radius: 50%; box-shadow: 0 0 0 55px #bdc5b520, 0 0 0 110px #bdc5b51a; }
+.ttra-product-art span { position: absolute; font: 800 clamp(28px, 4vw, 60px)/.9 Arial, sans-serif; letter-spacing: -.07em; text-align: center; }
+.ttra-product-copy { max-width: 650px; }
+.ttra-product-copy h1 { margin: 0 0 24px; color: var(--rc-green-bright); font-size: clamp(44px, 5vw, 82px); font-weight: 500; line-height: 1.02; letter-spacing: -.065em; }
+.ttra-product-copy .colores { margin: 0 0 34px; color: var(--rc-green-dim); font-size: 14px; line-height: 1.7; }
+.ttra-product-prices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 28px; border-top: 1px solid var(--ed-line); border-bottom: 1px solid var(--ed-line); }
+.ttra-product-prices p { margin: 0; padding: 19px 12px; color: var(--rc-green); font-size: 14px; }
+.ttra-product-prices p + p { border-left: 1px solid var(--ed-line); }
+.ttra-product-prices strong { color: var(--ed-accent); font-size: 22px; }
+.ttra-product-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 14px 24px; background: #d52f27; color: #fff; font-size: 13px; font-weight: 800; text-decoration: none; }
+.ttra-product-cta:hover { background: #f04433; }
+.ttra-product-secondary { display: inline-flex; margin: 18px 0 0 20px; color: var(--rc-green-dim); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; }
+
+@media (max-width: 980px) {
+  html[data-modo="classic"] .ttra-page .preventa-modelos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html[data-modo="classic"] .ttra-auth-layout { grid-template-columns: 1fr 1fr; }
+  .ttra-product-main { gap: 30px; }
+}
+@media (max-width: 700px) {
+  html[data-modo="classic"] body.ttra-page > header.ttra-page-header { align-items: flex-start; flex-wrap: wrap; gap: 14px; padding: 20px; }
+  .ttra-page-brand { font-size: 25px; }
+  .ttra-page-actions { width: 100%; justify-content: flex-start; gap: 6px; }
+  .ttra-page-link, html[data-modo="classic"] .ttra-page :is(.catalog-back, .catalog-login, #btn-logout) { min-height: 40px; padding: 8px 10px; font-size: 10px; }
+  .ttra-page-footer { padding: 35px 20px; }
+  html[data-modo="classic"] .ttra-auth-layout { display: flex; flex-direction: column; }
+  .ttra-auth-story { min-height: 330px; padding: 45px 20px; }
+  .ttra-auth-story::before { width: 430px; right: -190px; top: -60px; }
+  .ttra-auth-story .ttra-page-display { font-size: clamp(43px, 10vw, 70px); }
+  .ttra-auth-form-wrap { padding: 55px 20px 80px; }
+  .ttra-account-intro { grid-template-columns: 1fr; }
+  .ttra-account-grid { grid-template-columns: 1fr; }
+  .ttra-account-section:first-child { grid-row: auto; }
+  .ttra-account-section { padding: 22px; }
+  html[data-modo="classic"] .ttra-page .preventa-modelos { grid-template-columns: 1fr; padding: 28px 20px 60px; }
+  html[data-modo="classic"] .ttra-page .preventa-header { padding: 65px 20px; }
+  html[data-modo="classic"] .ttra-page .preventa-condiciones { margin: 0 20px 65px; }
+  .ttra-product-main { grid-template-columns: 1fr; padding: 35px 20px 75px; }
+  .ttra-product-art { min-height: 330px; }
+  .ttra-product-prices { grid-template-columns: 1fr; }
+  .ttra-product-prices p + p { border-left: 0; border-top: 1px solid var(--ed-line); }
+  .ttra-product-secondary { display: block; margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .ttra-page * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

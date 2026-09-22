@@ -131,12 +131,13 @@ _ICONO_TACHO = (
 )
 
 
-_ADMIN_CLIENTES_ESTILO = _leer_ui("admin_clientes.css.html")
+_OPERACIONES_ESTILO = _leer_ui("operations_editorial.css.html")
+_ADMIN_CLIENTES_ESTILO = _leer_ui("admin_clientes.css.html") + _OPERACIONES_ESTILO
 
 # Alejo entra siempre desde el celular — a diferencia del panel de admin
 # (pensado para escritorio, con overrides mobile en un @media), este es
 # mobile-first sin media query: una sola columna y botones grandes siempre.
-_CADETE_ESTILO = _leer_ui("cadete.css.html")
+_CADETE_ESTILO = _leer_ui("cadete.css.html") + _OPERACIONES_ESTILO
 
 _ADMIN_CLIENTES_PWA_HEAD = """
 <meta name="viewport" content="width=device-width, initial-scale=1">
