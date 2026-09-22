@@ -81,7 +81,7 @@ html[data-modo="classic"] .ttra-skip:focus { top: 16px; }
 html[data-modo="classic"] #rc-body-landing > header { display: grid; grid-template-columns: 1fr minmax(240px, 440px) 1fr; align-items: center; gap: 28px; padding: 24px var(--ed-gutter); background: var(--rc-bg); border-bottom: 1px solid var(--ed-line); }
 html[data-modo="classic"] .rc-titulo-grupo { align-self: center; }
 html[data-modo="classic"] .rc-logo { line-height: .88; margin: 0; }
-html[data-modo="classic"] .rc-logo-linea { font: 800 20px/.88 Arial, sans-serif; letter-spacing: -.065em; color: var(--rc-green-bright); -webkit-text-stroke: 0; }
+html[data-modo="classic"] .rc-logo-linea { font: 800 clamp(30px, 3vw, 42px)/.88 Arial, sans-serif; letter-spacing: -.065em; color: var(--rc-green-bright); -webkit-text-stroke: 0; }
 html[data-modo="classic"] .rc-header-centro { width: 100%; min-width: 0; }
 html[data-modo="classic"] .rc-buscador-header { min-height: 46px; border: 1px solid var(--ed-line); background: transparent; border-radius: 0; padding: 0 14px; }
 html[data-modo="classic"] #input-busqueda { font: 13px var(--rc-font); color: var(--rc-green); }
@@ -280,7 +280,7 @@ html[data-modo="classic"] .ttra-hero-actions { animation-delay: .18s; }
   html[data-modo="classic"] #rc-body-landing > header { grid-template-columns: 1fr auto; padding: 18px 20px; row-gap: 18px; }
   html[data-modo="classic"] .rc-header-centro { grid-area: auto; grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: 100%; }
   html[data-modo="classic"] .rc-header-derecha { grid-column: 2; grid-row: 1; position: static; display: flex; }
-  html[data-modo="classic"] .rc-logo-linea { font-size: 16px; }
+  html[data-modo="classic"] .rc-logo-linea { font-size: 24px; }
   html[data-modo="classic"] .rc-titulo-grupo { grid-column: 1; grid-row: 1; }
   html[data-modo="classic"] .rc-modo-y-carrito { gap: 8px; flex-direction: row; align-items: center; }
   html[data-modo="classic"] .rc-noticiero { display: none; }
@@ -325,6 +325,7 @@ html[data-modo="classic"] .ttra-hero-actions { animation-delay: .18s; }
   html[data-modo="classic"] .tarjeta { padding: 30px 24px; }
 }
 @media (max-width: 380px) {
+  html[data-modo="classic"] .rc-logo-linea { font-size: 20px; }
   html[data-modo="classic"] .ttra-device { width: 136px; height: 280px; }
   html[data-modo="classic"] .ttra-device-back { left: 5%; }
   html[data-modo="classic"] .ttra-device-front { right: 5%; }
