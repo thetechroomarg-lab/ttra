@@ -113,12 +113,9 @@ html[data-modo="classic"] .ttra-dot { display: inline-block; width: 7px; height:
 html[data-modo="classic"] .ttra-hero h2 { margin: 0 0 28px; color: var(--rc-green-bright); font: 500 clamp(58px, 7.5vw, 126px)/.95 var(--rc-font); letter-spacing: -.075em; }
 html[data-modo="classic"] .ttra-accent { color: var(--ed-accent); }
 html[data-modo="classic"] .ttra-hero-description { margin: 0; color: var(--rc-green-dim); font-size: 16px; line-height: 1.75; }
-html[data-modo="classic"] .ttra-hero-actions { display: flex; align-items: center; gap: 28px; margin-top: 34px; }
 html[data-modo="classic"] .ttra-button { display: inline-flex; align-items: center; justify-content: space-between; gap: 35px; min-height: 54px; padding: 17px 22px; background: var(--ed-button); color: #191b16; font: 700 13px var(--rc-font); text-decoration: none; transition: background .25s, transform .35s var(--ed-ease); }
 html[data-modo="classic"] .ttra-button:hover { background: #ff8468; transform: translateY(-3px); }
 html[data-modo="classic"] .ttra-button span { font-size: 22px; line-height: 1; }
-html[data-modo="classic"] .ttra-text-link { display: inline-flex; align-items: center; gap: 20px; min-height: 44px; color: var(--rc-green); font-size: 13px; text-decoration: none; border-bottom: 1px solid var(--ed-line); }
-html[data-modo="classic"] .ttra-text-link:hover { border-color: var(--ed-accent); }
 html[data-modo="classic"] .ttra-hero-foot { display: flex; justify-content: space-between; align-items: center; gap: 20px; width: 100%; margin-top: auto; padding-top: 55px; font-size: 9px; letter-spacing: .1em; color: var(--rc-green-dim); }
 html[data-modo="classic"] .ttra-hero-foot a { display: flex; align-items: center; gap: 14px; min-height: 44px; color: inherit; text-decoration: none; }
 html[data-modo="classic"] .ttra-hero-foot a span { font-size: 22px; }
@@ -285,7 +282,6 @@ html[data-modo="classic"] [data-reveal].ttra-reveal-ready.is-visible { opacity: 
 html[data-modo="classic"] .ttra-hero-copy > :not(.ttra-hero-foot) { animation: ttra-enter .85s var(--ed-ease) both; }
 html[data-modo="classic"] .ttra-hero-copy h2 { animation-delay: .06s; }
 html[data-modo="classic"] .ttra-hero-description { animation-delay: .12s; }
-html[data-modo="classic"] .ttra-hero-actions { animation-delay: .18s; }
 @keyframes ttra-enter { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 @media (min-width: 1600px) {
   html[data-modo="classic"] .ttra-device-back { left: 23%; }
@@ -324,7 +320,6 @@ html[data-modo="classic"] .ttra-hero-actions { animation-delay: .18s; }
   html[data-modo="classic"] .ttra-eyebrow { font-size: 9px; margin-bottom: 24px; }
   html[data-modo="classic"] .ttra-hero h2 { font-size: clamp(61px, 12.5vw, 90px); margin-bottom: 23px; }
   html[data-modo="classic"] .ttra-hero-description { font-size: 14px; }
-  html[data-modo="classic"] .ttra-hero-actions { margin-top: 25px; gap: 24px; }
   html[data-modo="classic"] .ttra-button { padding: 15px 18px; min-height: 50px; gap: 22px; font-size: 12px; }
   html[data-modo="classic"] .ttra-hero-foot { padding-top: 24px; font-size: 8px; }
   html[data-modo="classic"] .ttra-stage { min-height: 440px; }
@@ -371,7 +366,6 @@ html[data-modo="classic"] .ttra-hero-actions { animation-delay: .18s; }
   html[data-modo="classic"] .ttra-device-back { left: 5%; }
   html[data-modo="classic"] .ttra-device-front { right: 5%; }
   html[data-modo="classic"] .rc-perfil-nombre { display: none; }
-  html[data-modo="classic"] .ttra-hero-actions { gap: 16px; }
   html[data-modo="classic"] .ttra-desktop-break { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
