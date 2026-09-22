@@ -63,7 +63,9 @@
   <link rel="stylesheet" href="/site-header.css">
   <link rel="stylesheet" href="/carrito.css">
   <link rel="stylesheet" href="/welcome-intro.css">
+  <link rel="stylesheet" href="/hero-gallery.css">
   <script src="/welcome-intro.js" defer></script>
+  <script src="/hero-gallery.js" defer></script>
   <script src="/site-header.js" defer></script>
 </head>
 <body id="rc-body-landing">
@@ -229,21 +231,27 @@
   <div class="ttra-scroll-stage ttra-editorial ttra-home-only">
   <section class="ttra-hero ttra-editorial ttra-home-only" aria-labelledby="ttra-hero-title">
     <div class="ttra-hero-copy">
-      <h2 id="ttra-hero-title">Lo próximo.<br>Lo tuyo<span class="ttra-accent">.</span></h2>
+      <h2 id="ttra-hero-title">Lo Buscas?<br>Lo tenes<span class="ttra-accent">.</span></h2>
       <p class="ttra-hero-description">Hola, soy Vlad, vendo tecnología desde el año 2009.</p>
       <a class="ttra-catalog-cta" href="/catalogo">EXPLORAR CATALOGO <span aria-hidden="true">↗</span></a>
     </div>
-    <div class="ttra-stage" aria-hidden="true">
-      <div class="ttra-stage-top"><span>OBJETOS DE DESEO.</span><span>01 — TTRA</span></div>
-      <div class="ttra-orbit" data-parallax="-0.07"></div>
-      <div class="ttra-stage-word" data-parallax="0.05">ttra.</div>
+    <div class="ttra-stage" role="group" aria-label="Imágenes de tecnología" data-gallery-index="0">
+      <div class="ttra-orbit" aria-hidden="true" data-parallax="-0.07"></div>
+      <div class="ttra-stage-word" aria-hidden="true" data-parallax="0.05">ttra.</div>
+      <div class="ttra-hero-slide is-active" aria-hidden="true">
       <div class="ttra-device ttra-device-back" data-parallax="0.10">
         <div class="ttra-camera-island"><i></i><i></i><i></i><b></b></div>
         <span class="ttra-product-logo ttra-device-mark"><span>THE</span><span>TECH</span><span>ROOM</span><span>ARG<i>.</i></span></span>
         <span class="ttra-device-detail">TECNOLOGÍA PARA TU DÍA A DÍA</span>
       </div>
       <div class="ttra-device ttra-device-front" data-parallax="-0.12"><div class="ttra-screen"><i class="ttra-island"></i><span class="ttra-screen-time">09:41</span><div class="ttra-screen-art"></div><span class="ttra-screen-caption">HACÉ<br>LO<br>TUYO.</span><span class="ttra-screen-brand">THE TECH ROOM ARG<span>.</span></span><i class="ttra-screen-bar"></i></div></div>
-      <div class="ttra-stage-bottom"><span>MENOS RUIDO.<br>MÁS POSIBILIDADES.</span><span class="ttra-stage-plus">+</span></div>
+      </div>
+      <div class="ttra-hero-slide" aria-hidden="true"><img src="/hero-gallery/notebook.svg" alt="" width="600" height="640" decoding="async"></div>
+      <div class="ttra-hero-slide" aria-hidden="true"><img src="/hero-gallery/tablet.svg" alt="" width="600" height="640" decoding="async"></div>
+      <div class="ttra-hero-slide" aria-hidden="true"><img src="/hero-gallery/auriculares.svg" alt="" width="600" height="640" decoding="async"></div>
+      <div class="ttra-hero-slide" aria-hidden="true"><img src="/hero-gallery/gaming.svg" alt="" width="600" height="640" decoding="async"></div>
+      <div class="ttra-hero-slide" aria-hidden="true"><img src="/hero-gallery/smartwatch.svg" alt="" width="600" height="640" decoding="async"></div>
+      <button class="ttra-gallery-pause" type="button" aria-label="Pausar imágenes" title="Pausar imágenes"><span aria-hidden="true">Ⅱ</span></button>
     </div>
   </section>
   <section id="ttra-explorar" class="ttra-collection ttra-editorial ttra-home-only" aria-labelledby="ttra-collection-title">

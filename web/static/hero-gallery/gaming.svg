@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 640"><defs><linearGradient id="metal" x2="1" y2="1"><stop stop-color="#f8f7ed"/><stop offset=".42" stop-color="#c8cec2"/><stop offset=".8" stop-color="#899385"/><stop offset="1" stop-color="#dfe3d6"/></linearGradient><linearGradient id="dark" x2="1" y2="1"><stop stop-color="#596353"/><stop offset=".5" stop-color="#222c24"/><stop offset="1" stop-color="#414c40"/></linearGradient><linearGradient id="glass" x2=".8" y2="1"><stop stop-color="#233a37"/><stop offset="1" stop-color="#819b85"/></linearGradient><linearGradient id="coral" x2="1" y2="1"><stop stop-color="#ffbd91"/><stop offset=".55" stop-color="#e77050"/><stop offset="1" stop-color="#963d2d"/></linearGradient><filter id="shadow" x="-40%" y="-40%" width="180%" height="200%"><feDropShadow dx="15" dy="25" stdDeviation="17" flood-color="#283729" flood-opacity=".24"/></filter></defs><g transform="translate(35 170) rotate(-10 265 170) scale(1.66)">
+          <defs>
+            <linearGradient id="hero-pad-shell" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fffefa"/><stop offset=".52" stop-color="#e8e9e5"/><stop offset="1" stop-color="#c4cac7"/></linearGradient>
+            <linearGradient id="hero-pad-grip" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#fbfbf8"/><stop offset="1" stop-color="#b9c1c0"/></linearGradient>
+            <linearGradient id="hero-pad-core" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#343a40"/><stop offset="1" stop-color="#151a21"/></linearGradient>
+            <filter id="hero-pad-shadow" x="-20%" y="-30%" width="140%" height="170%"><feDropShadow dx="12" dy="18" stdDeviation="11" flood-color="#121714" flood-opacity=".42"/></filter>
+          </defs>
+          <g filter="url(#hero-pad-shadow)">
+            <path d="M43 75c4-21 18-35 43-39l29-3c11-1 20 3 28 8h34c8-5 17-9 28-8l29 3c25 4 39 18 43 39l17 75c5 23-7 41-24 39-14-2-25-18-36-37l-11-16c-6-9-15-14-26-14h-74c-11 0-20 5-26 14l-11 16c-11 19-22 35-36 37-17 2-29-16-24-39z" fill="#10151c" stroke="#0c1118" stroke-width="4"/>
+            <path d="M44 76c4-20 20-34 43-37l29-3c12-1 23 5 32 14l-19 43-26 21c-12 9-20 24-29 41-8 15-18 28-27 26-9-2-16-13-12-28z" fill="url(#hero-pad-grip)" stroke="#d8dfdd" stroke-width="2"/>
+            <path d="M276 76c-4-20-20-34-43-37l-29-3c-12-1-23 5-32 14l19 43 26 21c12 9 20 24 29 41 8 15 18 28 27 26 9-2 16-13 12-28z" fill="url(#hero-pad-shell)" stroke="#d8dfdd" stroke-width="2"/>
+            <path d="M114 37c10 0 21 5 28 11h36c7-6 18-11 28-11l-12 51c-9 13-19 17-34 17s-25-4-34-17z" fill="url(#hero-pad-core)"/>
+            <path d="M130 50c7-4 14-6 21-6h18c7 0 14 2 21 6l-5 31c-15 5-35 5-50 0z" fill="#242b33" stroke="#515b62" stroke-width="1.5"/>
+            <path d="M124 93c8 11 20 15 36 15s28-4 36-15" fill="none" stroke="#80cde1" stroke-width="3" opacity=".9"/>
+            <path d="M37 77c10-19 25-29 47-32l27-3" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".62"/>
+            <path d="M283 77c-10-19-25-29-47-32l-27-3" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+            <g fill="#283139" stroke="#11181f" stroke-width="1"><path d="M81 83h10v-10h11v10h10v11h-10v10H91V94H81z"/></g>
+            <g fill="none" stroke-width="2.5" opacity=".9">
+              <path d="M238 71l5 9h-10z" stroke="#86c9b4"/>
+              <circle cx="261" cy="93" r="5.5" stroke="#e87876"/>
+              <path d="M238 105l6 6-6 6-6-6z" stroke="#a7a1d8"/>
+              <path d="M209 89h10v10h-10z" stroke="#a7c5e3"/>
+            </g>
+            <g fill="#202830" stroke="#111820" stroke-width="3"><circle cx="128" cy="122" r="17"/><circle cx="192" cy="122" r="17"/></g>
+            <g fill="#10161d" stroke="#59636a" stroke-width="2"><circle cx="128" cy="122" r="10"/><circle cx="192" cy="122" r="10"/></g>
+            <circle cx="160" cy="121" r="5" fill="#394b53"/>
+            <path d="M154 90l6 3 6-3" fill="none" stroke="#9aa7ae" stroke-width="2" stroke-linecap="round"/>
+            <text x="160" y="72" text-anchor="middle" fill="#cbd5d7" font-size="9" font-weight="800" font-family="Arial, sans-serif" letter-spacing="1">TTR.</text>
+          </g>
+        </g></svg>
