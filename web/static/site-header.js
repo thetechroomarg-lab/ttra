@@ -100,6 +100,7 @@
     actions.querySelector('.ttra-site-count').textContent = count;
   }
   updateCartCount();
+  window.addEventListener('ttra:cart-change', updateCartCount);
   window.addEventListener('storage', (event) => {
     if (event.key === 'ttra_carrito' || event.key === null) updateCartCount();
     if (event.key === 'ttra_classic_theme' || event.key === null) {

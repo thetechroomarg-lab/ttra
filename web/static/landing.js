@@ -1379,12 +1379,8 @@ function pintarGrilla(el, productos, mensajeVacio) {
     }
     btnAgregar.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (!card.classList.contains("expandida")) {
-        seleccionarCard();
-        return;
-      }
       const producto = productos.find((p) => p.nombre === btnAgregar.dataset.nombre);
-      if (producto) await agregarAlCarritoProtegido(producto, btnAgregar.dataset.color || null);
+      if (producto) await agregarAlCarritoProtegido(producto, btnAgregar.dataset.color || null, card);
     });
     const btnCompartir = card.querySelector(".btn-compartir");
     if (btnCompartir) {
@@ -1748,33 +1744,35 @@ function mismoItemCarrito(it, nombre, color) {
   return it.nombre === nombre && (it.color || null) === (color || null);
 }
 
-function agregarAlCarrito(producto, color) {
-  const carrito = cargarCarrito();
-  const existente = carrito.find((it) => mismoItemCarrito(it, producto.nombre, color));
-  if (existente) {
-    existente.cantidad += 1;
-  } else {
-    carrito.push({
-      nombre: producto.nombre,
-      color: color || null,
-      usd: producto.usd,
-      pesos: producto.pesos,
-      transferencia: producto.transferencia,
-      cantidad: 1,
-    });
+function agregarAlCarrito(producto, color, desdeCard = false) {
+  if (!catalogoListo) return false;
+  try {
+    TTRACarrito.agregar(producto, color);
+  } catch {
+    TTRACarrito.notificar("No pude guardar el producto en el carrito. Probá de nuevo.", true);
+    return false;
   }
-  guardarCarrito(carrito);
+  renderCarrito();
   registrarInteraccion("add_to_cart", {
     producto_nombre: producto.nombre,
     categoria: productoSeccion(producto),
     marca: producto.marca || "Otras marcas",
     metadata: { color: color || "", cantidad: 1 },
   });
-  abrirCarrito();
+  if (!desdeCard) abrirCarrito();
+  return true;
 }
 
-async function agregarAlCarritoProtegido(producto, color) {
-  agregarAlCarrito(producto, color);
+async function agregarAlCarritoProtegido(producto, color, card = null) {
+  const button = card?.querySelector('.btn-agregar');
+  if (button?.disabled) return;
+  if (button) button.disabled = true;
+  const animarCard = modoVisual === 'classic' && card;
+  try {
+    if (agregarAlCarrito(producto, color, Boolean(animarCard)) && animarCard) await TTRACarrito.animar(card);
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 async function procesarPendienteCarrito() {

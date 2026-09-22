@@ -143,10 +143,15 @@ html[data-modo="classic"] .catalog-page .catalog-intro h1 { max-width: 1050px; }
 html[data-modo="classic"] .catalog-page .catalog-intro > p:last-child { font-size: 16px; }
 html[data-modo="classic"] .catalog-page .catalog-filter-header { border-top: 1px solid var(--ed-line); }
 html[data-modo="classic"] .catalog-page .tabs button { transition: border-color .2s, color .2s, background .2s; }
-html[data-modo="classic"] .catalog-page .card { position: relative; min-height: 230px; transition: border-color .25s, transform .35s var(--ed-ease); }
-html[data-modo="classic"] .catalog-page .card::before { content: "+"; position: absolute; top: 18px; right: 20px; color: var(--ed-accent); font: 300 25px Arial, sans-serif; }
-html[data-modo="classic"] .catalog-page .card h3 { padding-right: 26px; }
+html[data-modo="classic"] .catalog-page .card { position: relative; display: flex; flex-direction: column; min-height: 230px; transition: border-color .25s, transform .35s var(--ed-ease); }
 html[data-modo="classic"] .catalog-page .card .precios { padding-top: 16px; border-top: 1px solid var(--ed-line); line-height: 1.8; }
+html[data-modo="classic"] .catalog-card-actions { display: grid; gap: 10px; margin-top: auto; padding-top: 10px; }
+html[data-modo="classic"] .catalog-card-actions label { font-size: 12px; color: var(--rc-green-dim); }
+html[data-modo="classic"] .catalog-card-actions select { width: 100%; min-width: 0; min-height: 44px; padding: 10px; border: 1px solid var(--ed-line); border-radius: 2px; background: var(--rc-bg); color: var(--rc-green); font: 13px var(--rc-font); }
+html[data-modo="classic"] .catalog-card-actions .btn-agregar { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 46px; padding: 12px; border: 0; border-radius: 2px; background: #d52f27; color: #fff; font: 700 12px var(--rc-font); cursor: pointer; }
+html[data-modo="classic"] .catalog-card-actions .btn-agregar:hover:not(:disabled) { background: #f04433; }
+html[data-modo="classic"] .catalog-card-actions .btn-agregar:disabled { opacity: .5; cursor: not-allowed; }
+html[data-modo="classic"] .catalog-card-status { min-height: 2.6em; margin: 0; color: var(--rc-green-dim); font-size: 11px; line-height: 1.3; }
 
 /* Public product detail / fallback page. */
 .ttra-product-main { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); flex: 1; gap: clamp(30px, 6vw, 110px); align-items: center; padding: 70px var(--ed-gutter) 100px; }

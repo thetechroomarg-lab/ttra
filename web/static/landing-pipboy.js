@@ -384,7 +384,7 @@ function wireTarjetasRecomendadas(el) {
     }
     if (btnAgregar) {
       btnAgregar.addEventListener("click", async () => {
-        await agregarAlCarritoProtegido(producto, btnAgregar.dataset.color || null);
+        await agregarAlCarritoProtegido(producto, btnAgregar.dataset.color || null, card);
       });
     }
     const btnCompartir = card.querySelector(".btn-compartir");

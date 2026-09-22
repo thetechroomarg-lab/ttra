@@ -59,6 +59,34 @@ function pintarSeccion(nombre) {
     return;
   }
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
+  el.querySelectorAll('.card').forEach((card) => {
+    const producto = productos[Number(card.dataset.productIndex)];
+    const select = card.querySelector('select');
+    const button = card.querySelector('.btn-agregar');
+    const status = card.querySelector('.catalog-card-status');
+    select?.addEventListener('change', () => {
+      button.disabled = !select.value;
+      status.textContent = '';
+    });
+    button.addEventListener('click', async () => {
+      const color = select ? select.value : (producto.colores?.[0] || null);
+      if (select && !color) return;
+      button.disabled = true;
+      try {
+        TTRACarrito.agregar(producto, color);
+      } catch {
+        status.textContent = 'No pude guardar el producto en el carrito. Probá de nuevo.';
+        button.disabled = false;
+        return;
+      }
+      status.textContent = 'Agregado al carrito.';
+      try {
+        await TTRACarrito.animar(card);
+      } finally {
+        button.disabled = Boolean(select && !select.value);
+      }
+    });
+  });
 }
 
 function escapeHtml(s) {
@@ -67,16 +95,21 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
-function tarjetaProducto(p) {
+function tarjetaProducto(p, indice = 0) {
   const precios = preciosDe(p);
   const monto = (valor) => valor == null ? "-" : Number(valor).toLocaleString("es-AR");
-  const colores = Array.isArray(p.colores) && p.colores.length > 0
-    ? `<p class="colores">${escapeHtml(p.colores.join(", "))}</p>`
-    : "";
+  const opciones = Array.isArray(p.colores) ? p.colores : [];
+  const elegirColor = opciones.length > 1;
+  const colores = elegirColor
+    ? `<label for="catalog-color-${indice}">Color</label>
+       <select id="catalog-color-${indice}" required>
+         <option value="" disabled selected>Elegí un color</option>
+         ${opciones.map((color) => `<option value="${escapeHtml(color).replaceAll('"', '&quot;')}">${escapeHtml(color)}</option>`).join('')}
+       </select>`
+    : `<p class="colores">${escapeHtml(opciones[0] || 'Color único')}</p>`;
   return `
-    <div class="card">
+    <div class="card" data-product-index="${indice}">
       <h3>${escapeHtml(p.nombre)}</h3>
-      ${colores}
       <p class="precios">
         <strong>U$D ${monto(precios.dolares)} contado</strong><br>
         U$D ${monto(precios.bancoUsa)} transferencia banco USA<br>
@@ -84,6 +117,11 @@ function tarjetaProducto(p) {
         $ ${monto(p.pesos)} contado<br>
         $ ${monto(p.transferencia)} transferencia
       </p>
+      <div class="catalog-card-actions">
+        ${colores}
+        <button class="btn-agregar" type="button" ${elegirColor ? 'disabled' : ''}>Agregar al carrito <span aria-hidden="true">↗</span></button>
+        <p class="catalog-card-status" role="status">${elegirColor ? 'Elegí un color para agregar.' : ''}</p>
+      </div>
     </div>
   `;
 }
