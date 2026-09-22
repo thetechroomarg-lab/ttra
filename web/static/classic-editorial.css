@@ -138,7 +138,10 @@ html[data-modo="classic"] .ttra-camera-island i:nth-child(1) { top: 10px; left: 
 html[data-modo="classic"] .ttra-camera-island i:nth-child(2) { bottom: 10px; left: 7px; }
 html[data-modo="classic"] .ttra-camera-island i:nth-child(3) { top: 35px; right: 5px; }
 html[data-modo="classic"] .ttra-camera-island b { position: absolute; width: 13px; height: 13px; border-radius: 50%; background: #eeebd1; top: 12px; right: 18px; }
-html[data-modo="classic"] .ttra-device-mark { position: absolute; top: 50%; left: 41%; font: 600 48px var(--rc-font); color: #707b64; }
+html[data-modo="classic"] .ttra-product-logo { display: flex; flex-direction: column; align-items: flex-start; width: max-content; font: 800 15px/.87 Arial, Helvetica, sans-serif; letter-spacing: -.07em; color: #586a50; }
+html[data-modo="classic"] .ttra-product-logo i,
+html[data-modo="classic"] .ttra-product-logo b { color: #cc5846; font-style: normal; }
+html[data-modo="classic"] .ttra-device-mark { position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; }
 html[data-modo="classic"] .ttra-device-detail { position: absolute; bottom: 34px; left: 23px; font-size: 5px; letter-spacing: .1em; color: #4d5743; }
 html[data-modo="classic"] .ttra-device-front { top: 165px; right: 15%; padding: 6px; transform: rotate(12deg); background: #141713; border: 2px solid #828776; }
 html[data-modo="classic"] .ttra-screen { position: relative; height: 100%; overflow: hidden; border-radius: 26px; background: #f06446; }
@@ -146,6 +149,8 @@ html[data-modo="classic"] .ttra-island { position: absolute; z-index: 3; top: 8p
 html[data-modo="classic"] .ttra-screen-time { position: absolute; top: 46px; width: 100%; text-align: center; font: 500 37px var(--rc-font); letter-spacing: -.07em; color: #301e19; }
 html[data-modo="classic"] .ttra-screen-art { position: absolute; width: 340px; height: 340px; border: 42px solid #ffc29d; border-radius: 50%; top: 110px; left: -55px; box-shadow: inset 0 0 0 35px #963d2d, 0 0 0 25px #e8956d; transform: rotate(-35deg) scaleX(.75); }
 html[data-modo="classic"] .ttra-screen-caption { position: absolute; top: 160px; left: 18px; font: 800 37px/.88 var(--rc-font); letter-spacing: -.07em; color: #fdf0dc; }
+html[data-modo="classic"] .ttra-screen-brand { position: absolute; bottom: 30px; left: 17px; color: #fff1dc; font: 700 8px var(--rc-font); letter-spacing: -.03em; }
+html[data-modo="classic"] .ttra-screen-brand span { color: #30221d; }
 html[data-modo="classic"] .ttra-screen-bar { position: absolute; bottom: 8px; width: 60px; height: 3px; left: calc(50% - 30px); background: #fff1db; border-radius: 3px; }
 
 /* Editorial rhythm and category studies. */
@@ -172,18 +177,22 @@ html[data-modo="classic"] .ttra-mini-phone i { position: absolute; left: 10px; w
 html[data-modo="classic"] .ttra-mini-phone i:nth-child(1) { top: 12px; }
 html[data-modo="classic"] .ttra-mini-phone i:nth-child(2) { top: 40px; }
 html[data-modo="classic"] .ttra-mini-phone i:nth-child(3) { top: 26px; left: 40px; }
-html[data-modo="classic"] .ttra-mini-phone b { position: absolute; top: 48%; left: 43%; color: #c1c8b4; font-size: 28px; }
+html[data-modo="classic"] .ttra-mini-phone .ttra-product-logo { position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%); color: #c1c8b4; font-size: 11px; }
 html[data-modo="classic"] .ttra-category:hover .ttra-mini-phone { transform: translateY(-9px) rotate(6deg); }
 html[data-modo="classic"] .ttra-laptop { position: absolute; top: 65px; width: 70%; max-width: 280px; left: 0; right: 0; margin-inline: auto; transform: rotate(-7deg); }
 html[data-modo="classic"] .ttra-laptop > div { aspect-ratio: 1.55; border: 7px solid #30332f; border-radius: 9px 9px 2px 2px; background: #899986; overflow: hidden; }
 html[data-modo="classic"] .ttra-laptop span { display: block; padding: 12px 20px; font: 600 clamp(32px, 4vw, 58px)/.85 var(--rc-font); letter-spacing: -.07em; color: #eef0dd; }
 html[data-modo="classic"] .ttra-laptop em { font-family: Georgia, serif; font-weight: 400; }
+html[data-modo="classic"] .ttra-laptop small { position: absolute; right: 15px; bottom: 31px; color: #eef0dd; font: 700 7px var(--rc-font); letter-spacing: -.03em; }
+html[data-modo="classic"] .ttra-laptop small b { color: #f47a61; }
 html[data-modo="classic"] .ttra-laptop > i { display: block; width: 117%; margin-left: -8.5%; height: 13px; background: linear-gradient(#bfc0b8, #878980); border-radius: 1px 1px 50% 50%; box-shadow: 0 14px 15px #242d2230; }
 html[data-modo="classic"] .ttra-category:hover .ttra-laptop { transform: translateY(-8px) rotate(-3deg); }
 html[data-modo="classic"] .ttra-headphones { position: absolute; top: 78px; left: calc(50% - 70px); width: 140px; height: 152px; border: 18px solid #363831; border-bottom-color: transparent; border-radius: 80px 80px 32px 32px; transform: rotate(16deg); box-shadow: inset 2px 4px 0 #6d7065; }
 html[data-modo="classic"] .ttra-headphones i, html[data-modo="classic"] .ttra-headphones b { position: absolute; top: 63px; width: 44px; height: 83px; border: 5px solid #63665c; border-radius: 20px; background: linear-gradient(90deg, #252823, #53574a); box-shadow: 8px 10px 12px #32352825; }
 html[data-modo="classic"] .ttra-headphones i { left: -25px; transform: rotate(-8deg); }
 html[data-modo="classic"] .ttra-headphones b { right: -25px; transform: rotate(8deg); }
+html[data-modo="classic"] .ttra-headphones > span { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); color: #e8b69b; font: 700 10px var(--rc-font); letter-spacing: -.07em; }
+html[data-modo="classic"] .ttra-headphones > span em { color: #f5735d; font-style: normal; }
 html[data-modo="classic"] .ttra-category:hover .ttra-headphones { transform: translateY(-8px) rotate(5deg); }
 
 /* Catalog: preserve the existing rendering, price and selection contracts. */
@@ -288,8 +297,9 @@ html[data-modo="classic"] .ttra-hero-actions { animation-delay: .18s; }
   html[data-modo="classic"] .ttra-hero-foot { padding-top: 24px; font-size: 8px; }
   html[data-modo="classic"] .ttra-stage { min-height: 440px; }
   html[data-modo="classic"] .ttra-stage-word { font-size: 48vw; top: 23%; }
-  html[data-modo="classic"] .ttra-device-back { top: 70px; left: 20%; }
-  html[data-modo="classic"] .ttra-device-front { top: 100px; right: 19%; }
+  html[data-modo="classic"] .ttra-device-back { top: 70px; left: 11%; }
+  html[data-modo="classic"] .ttra-device-front { top: 100px; right: 8%; }
+  html[data-modo="classic"] .ttra-device-mark { top: 57%; }
   html[data-modo="classic"] .ttra-stage-top, html[data-modo="classic"] .ttra-stage-bottom { font-size: 8px; left: 18px; right: 18px; }
   html[data-modo="classic"] .ttra-stage-bottom { bottom: 12px; }
   html[data-modo="classic"] .ttra-manifesto { gap: 12px; padding: 24px 20px; font-size: clamp(16px, 4.4vw, 26px); }
@@ -319,8 +329,9 @@ html[data-modo="classic"] .ttra-hero-actions { animation-delay: .18s; }
   html[data-modo="classic"] .tarjeta { padding: 30px 24px; }
 }
 @media (max-width: 380px) {
-  html[data-modo="classic"] .ttra-device-back { left: 12%; }
-  html[data-modo="classic"] .ttra-device-front { right: 12%; }
+  html[data-modo="classic"] .ttra-device { width: 136px; height: 280px; }
+  html[data-modo="classic"] .ttra-device-back { left: 5%; }
+  html[data-modo="classic"] .ttra-device-front { right: 5%; }
   html[data-modo="classic"] .rc-perfil-nombre { display: none; }
   html[data-modo="classic"] .ttra-hero-actions { gap: 16px; }
   html[data-modo="classic"] .ttra-desktop-break { display: none; }
