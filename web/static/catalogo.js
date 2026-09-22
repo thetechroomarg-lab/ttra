@@ -24,17 +24,38 @@ function pintarTabs(activa) {
 }
 
 let SECCIONES_DATA = {};
+let categoriaActiva = "Todos";
+let marcaActiva = "";
+
+function pintarMarcas() {
+  const selector = document.getElementById("marca-filter");
+  const marcas = [...new Set(Object.values(SECCIONES_DATA).flat()
+    .map((producto) => producto.marca || "Otras marcas"))].sort((a, b) => a.localeCompare(b, "es"));
+  for (const marca of marcas) {
+    const opcion = document.createElement("option");
+    opcion.value = marca;
+    opcion.textContent = marca;
+    selector.appendChild(opcion);
+  }
+}
 
 function pintarSeccion(nombre) {
+  categoriaActiva = nombre;
   pintarTabs(nombre);
   const el = document.getElementById("secciones");
-  const productos = nombre === "Todos"
+  const base = nombre === "Todos"
     ? Object.values(SECCIONES_DATA).flat()
     : (SECCIONES_DATA[nombre] || []);
+  const productos = marcaActiva
+    ? base.filter((producto) => (producto.marca || "Otras marcas") === marcaActiva)
+    : base;
   document.getElementById("contador-productos").textContent =
     `${productos.length} ${productos.length === 1 ? "producto" : "productos"}`;
   if (productos.length === 0) {
-    el.innerHTML = `<p class="mensaje-vacio">Todavía no hay productos cargados en ${escapeHtml(nombre)}.</p>`;
+    const detalle = marcaActiva
+      ? ` de ${escapeHtml(marcaActiva)} en ${escapeHtml(nombre)}`
+      : ` en ${escapeHtml(nombre)}`;
+    el.innerHTML = `<p class="mensaje-vacio">Todavía no hay productos${detalle}.</p>`;
     return;
   }
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
@@ -80,7 +101,17 @@ async function cargarCatalogo() {
       pintarTabs(null);
       return;
     }
-    pintarSeccion("Todos");
+    pintarMarcas();
+    const parametros = new URLSearchParams(window.location.search);
+    const marcaSolicitada = parametros.get("marca");
+    const selectorMarca = document.getElementById("marca-filter");
+    if (marcaSolicitada && [...selectorMarca.options].some((opcion) => opcion.value === marcaSolicitada)) {
+      selectorMarca.value = marcaSolicitada;
+      marcaActiva = marcaSolicitada;
+    }
+    const categoriaSolicitada = parametros.get("categoria");
+    pintarSeccion(SECCIONES.includes(categoriaSolicitada) ? categoriaSolicitada : "Todos");
+    if (parametros.get("filtro") === "marca") selectorMarca.focus({ preventScroll: true });
   } catch {
     document.getElementById("secciones").innerHTML =
       '<p class="mensaje-vacio">No pude cargar el catálogo. Probá de nuevo en un momento.</p>';
@@ -91,6 +122,10 @@ async function cargarCatalogo() {
 document.getElementById("btn-logout").addEventListener("click", async () => {
   await fetch("/logout", { method: "POST" });
   window.location.href = "/login.html";
+});
+document.getElementById("marca-filter").addEventListener("change", (event) => {
+  marcaActiva = event.target.value;
+  pintarSeccion(categoriaActiva);
 });
 
 async function sincronizarSesion() {

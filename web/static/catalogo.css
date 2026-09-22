@@ -142,6 +142,10 @@ html[data-modo="classic"] .catalog-page .tabs { padding: 0 var(--ed-gutter) 23px
 html[data-modo="classic"] .catalog-page .tabs button { min-height: 44px; padding: 11px 16px; border: 1px solid var(--ed-line); border-radius: 0; background: transparent; color: var(--rc-green); font-size: 12px; font-weight: 600; letter-spacing: 0; }
 html[data-modo="classic"] .catalog-page .tabs button:hover { border-color: var(--ed-accent); transform: none; }
 html[data-modo="classic"] .catalog-page .tabs button.activa { border-color: #d52f27; background: #d52f27; color: #fff; }
+.catalog-brand-filter { display: flex; align-items: center; gap: 16px; padding: 20px var(--ed-gutter) 0; }
+.catalog-brand-filter label { color: var(--rc-green-dim); font-size: 12px; font-weight: 600; }
+.catalog-brand-filter select { min-height: 44px; min-width: 190px; padding: 10px 14px; border: 1px solid var(--ed-line); border-radius: 0; background: var(--rc-bg-panel); color: var(--rc-green-bright); font: 600 12px var(--rc-font); }
+.catalog-brand-filter select:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 3px; }
 html[data-modo="classic"] .catalog-page main { padding: 30px var(--ed-gutter) 90px; }
 html[data-modo="classic"] .catalog-page .grilla { grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 14px; }
 html[data-modo="classic"] .catalog-page .card { min-height: 195px; padding: 22px; border: 1px solid var(--ed-line); border-radius: 0; background: var(--rc-bg-panel); box-shadow: none; }
@@ -157,5 +161,7 @@ html[data-modo="classic"] .catalog-page .card .precios strong { color: var(--ed-
   .catalog-intro { padding-top: 62px; }
   .catalog-filter-header { padding-top: 32px; }
   .catalog-filter-header p { font-size: 17px; }
+  .catalog-brand-filter { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .catalog-brand-filter select { width: 100%; }
   html[data-modo="classic"] .catalog-page main { padding-bottom: 55px; }
 }

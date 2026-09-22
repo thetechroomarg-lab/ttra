@@ -48,6 +48,7 @@ html[data-modo="classic"] body#rc-body-landing .fila-principal,
 html[data-modo="classic"] body#rc-body-landing:not(.rc-vista-seccion) .fila-principal { flex: none; overflow: visible; }
 html[data-modo="classic"] body#rc-body-landing main#productos,
 html[data-modo="classic"] body#rc-body-landing:not(.rc-vista-seccion) main#productos { height: auto; overflow: visible; display: block; }
+html[data-modo="classic"] body#rc-body-landing:not(.rc-vista-seccion) :is(#rc-categorias-classic-wrap, .carrousel-wrap, .fila-principal) { display: none; }
 html[data-modo="classic"] .ttra-editorial h2 { text-transform: none; }
 html[data-modo="classic"] .rc-header-superior { display: contents; }
 html[data-modo="classic"] .rc-titulo-grupo { margin-left: 0; padding: 0; }
@@ -156,8 +157,8 @@ html[data-modo="classic"] .ttra-screen-bar { position: absolute; bottom: 8px; wi
 /* Editorial rhythm and category studies. */
 html[data-modo="classic"] .ttra-collection { padding: 70px var(--ed-gutter) 65px; scroll-margin-top: 25px; }
 html[data-modo="classic"] .ttra-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 35px; }
-html[data-modo="classic"] .ttra-section-heading .ttra-eyebrow, html[data-modo="classic"] .ttra-catalog-heading .ttra-eyebrow { margin-bottom: 16px; color: var(--rc-green-dim); }
-html[data-modo="classic"] :is(.ttra-section-heading, .ttra-catalog-heading) h2 { margin: 0; font: 500 clamp(30px, 3.5vw, 52px)/1.05 var(--rc-font); letter-spacing: -.055em; }
+html[data-modo="classic"] .ttra-section-heading .ttra-eyebrow { margin-bottom: 16px; color: var(--rc-green-dim); }
+html[data-modo="classic"] .ttra-section-heading h2 { margin: 0; font: 500 clamp(30px, 3.5vw, 52px)/1.05 var(--rc-font); letter-spacing: -.055em; }
 html[data-modo="classic"] .ttra-section-note { color: var(--rc-green-dim); font-size: 12px; line-height: 1.7; }
 html[data-modo="classic"] .ttra-collection-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 html[data-modo="classic"] .ttra-category { position: relative; min-height: 370px; padding: 22px; overflow: hidden; text-decoration: none; color: #292d23; background: #d5daca; }
@@ -219,8 +220,6 @@ html[data-modo="classic"] .ttra-category-preventa h3 { font-size: clamp(28px, 3v
 html[data-modo="classic"] .ttra-category-preventa p { font-size: 13px; }
 
 /* Catalog: preserve the existing rendering, price and selection contracts. */
-html[data-modo="classic"] .ttra-catalog-heading { padding: 35px var(--ed-gutter) 28px; }
-html[data-modo="classic"] .ttra-catalog-heading > p:last-child { color: var(--rc-green-dim); font-size: 14px; }
 html[data-modo="classic"] #rc-categorias-classic-wrap { width: auto; max-width: none; margin: 0 var(--ed-gutter); padding: 0; }
 html[data-modo="classic"] .rc-header-nav { justify-content: flex-start; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--ed-line); }
 html[data-modo="classic"] .categorias-columna { justify-content: flex-start; gap: 8px; }
@@ -349,7 +348,6 @@ html[data-modo="classic"] .ttra-hero-description { animation-delay: .12s; }
   html[data-modo="classic"] #rc-categorias-classic-wrap { margin: 0 20px; }
   html[data-modo="classic"] .rc-header-nav { gap: 8px; }
   html[data-modo="classic"] .btn-categoria { min-height: 44px; padding: 10px 12px; font-size: 11px; }
-  html[data-modo="classic"] .ttra-catalog-heading { padding: 32px 20px 15px; }
   html[data-modo="classic"] .fila-principal { padding: 16px 20px 35px; }
   html[data-modo="classic"] .carrousel-wrap { padding: 14px 20px; }
   html[data-modo="classic"] .ttra-about { grid-template-columns: 1fr; margin: 20px 20px 25px; }

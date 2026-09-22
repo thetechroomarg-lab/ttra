@@ -40,32 +40,6 @@
     attributes: true, attributeFilter: ['data-classic-theme', 'data-modo'],
   });
 
-  document.querySelectorAll('[data-category]').forEach(link => {
-    link.addEventListener('click', event => {
-      if (!isClassic() || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-      const control = [...document.querySelectorAll('#categorias [data-seccion]')]
-        .find(button => button.dataset.seccion === link.dataset.category);
-      if (!control) return; // The native anchor remains useful if the catalog cannot load.
-      event.preventDefault();
-      // The existing transition renders after a short fade. Wait for its
-      // actual view-state change before scrolling to the new layout.
-      const observer = new MutationObserver(() => {
-        if (!document.body.classList.contains('rc-vista-seccion')) return;
-        observer.disconnect();
-        requestAnimationFrame(() => {
-          const catalog = document.getElementById('productos');
-          catalog?.setAttribute('tabindex', '-1');
-          catalog?.focus({ preventScroll: true });
-          document.getElementById('rc-categorias-classic-wrap')?.scrollIntoView({
-            behavior: reducedMotion.matches ? 'instant' : 'smooth', block: 'start',
-          });
-        });
-      });
-      observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-      control.click();
-    });
-  });
-
   let frame = 0;
   function renderParallax() {
     frame = 0;
