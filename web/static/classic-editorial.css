@@ -245,8 +245,8 @@ html[data-modo="classic"] body.rc-vista-seccion { height: auto; overflow: auto; 
 html[data-modo="classic"] body.rc-vista-seccion main#productos { height: auto; max-height: none; overflow: visible; }
 html[data-modo="classic"] body.rc-vista-seccion #rc-categorias-classic-wrap { margin-top: 20px; }
 
-/* Story, purchase steps and footer. */
-html[data-modo="classic"] .ttra-about { display: grid; grid-template-columns: 1fr 1fr; margin: 30px var(--ed-gutter) 70px; background: var(--rc-bg-panel); }
+/* Story and footer. */
+html[data-modo="classic"] .ttra-about { display: grid; grid-template-columns: 1fr 1fr; margin: 30px var(--ed-gutter) 35px; background: var(--rc-bg-panel); }
 html[data-modo="classic"] .ttra-about-photo { min-height: 490px; position: relative; overflow: hidden; background: #394236; }
 html[data-modo="classic"] .ttra-about-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 25%, #111d18b3); }
 html[data-modo="classic"] .ttra-about-photo img { position: absolute; width: 100%; height: 120%; top: -10%; object-fit: cover; filter: saturate(.55); }
@@ -263,11 +263,6 @@ html[data-modo="classic"] .ttra-about-copy { padding: clamp(30px, 5vw, 80px); al
 html[data-modo="classic"] .ttra-about h2 { font-size: clamp(30px, 3vw, 46px); font-weight: 500; line-height: 1.1; letter-spacing: -.05em; margin: 0 0 24px; }
 html[data-modo="classic"] .ttra-about h2 em { font-family: Georgia, serif; font-weight: 400; color: var(--ed-accent); }
 html[data-modo="classic"] .ttra-about-copy > p:not(.ttra-eyebrow) { color: var(--rc-green-dim); font-size: 14px; line-height: 1.8; max-width: 350px; margin-bottom: 25px; }
-html[data-modo="classic"] .ttra-service { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin: 0 var(--ed-gutter); padding: 40px 0; border-top: 1px solid var(--ed-line); }
-html[data-modo="classic"] .ttra-service > div { position: relative; padding-left: 35px; }
-html[data-modo="classic"] .ttra-service span { position: absolute; left: 0; top: 3px; font-size: 10px; color: var(--ed-accent); }
-html[data-modo="classic"] .ttra-service h3 { font-size: 16px; font-weight: 500; margin: 0 0 10px; letter-spacing: -.02em; }
-html[data-modo="classic"] .ttra-service p { font-size: 12px; line-height: 1.6; color: var(--rc-green-dim); margin: 0; }
 html[data-modo="classic"] .rc-pie { position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding: 55px var(--ed-gutter); border-top: 1px solid var(--ed-line); background: var(--rc-bg); color: var(--rc-green); }
 html[data-modo="classic"] .ttra-footer-brand > span { font: 700 clamp(16px, 1.8vw, 25px)/.9 var(--rc-font); letter-spacing: -.065em; }
 html[data-modo="classic"] .ttra-footer-brand p { font-size: 12px; color: var(--rc-green-dim); margin-top: 20px; }
@@ -354,11 +349,10 @@ html[data-modo="classic"] .ttra-hero-description { animation-delay: .12s; }
   html[data-modo="classic"] .ttra-catalog-heading { padding: 32px 20px 15px; }
   html[data-modo="classic"] .fila-principal { padding: 16px 20px 35px; }
   html[data-modo="classic"] .carrousel-wrap { padding: 14px 20px; }
-  html[data-modo="classic"] .ttra-about { grid-template-columns: 1fr; margin: 20px 20px 45px; }
+  html[data-modo="classic"] .ttra-about { grid-template-columns: 1fr; margin: 20px 20px 25px; }
   html[data-modo="classic"] .ttra-about-photo { min-height: 310px; }
   html[data-modo="classic"] .ttra-about-copy { padding: 32px 25px; }
   html[data-modo="classic"] .ttra-about h2 { font-size: 35px; }
-  html[data-modo="classic"] .ttra-service { grid-template-columns: 1fr; padding: 30px 0; gap: 28px; }
   html[data-modo="classic"] .rc-pie { flex-direction: column; align-items: flex-start; padding: 36px 20px; }
   html[data-modo="classic"] .tarjeta { padding: 30px 24px; }
 }
