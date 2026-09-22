@@ -11,7 +11,10 @@
   siblings.forEach(el => { el.inert = true; });
   document.body.classList.add('rc-portada-activa');
   intro.focus({preventScroll: true});
-  let scene, frame, finished = false, closed = false, last = 0, elapsed = 0;
+  let keyboardNavigation = false;
+  let scene, frame, watchdog, finished = false, closed = false, last = 0, elapsed = 0;
+  const resetClock = () => { last = 0; };
+  document.addEventListener('visibilitychange', resetClock);
   const dispose = () => { cancelAnimationFrame(frame); scene?.dispose(); scene = null; };
   const ready = (fallback = false) => {
     if (closed) return;
@@ -22,14 +25,13 @@
     intro.style.setProperty('--title-opacity', '0');
     if (fallback) intro.dataset.fallback = 'true';
     intro.dataset.phase = 'ready';
-    if (intro.contains(document.activeElement)) enter.focus({preventScroll: true});
+    if (keyboardNavigation && intro.contains(document.activeElement)) enter.focus({preventScroll: true});
   };
-  const watchdog = setTimeout(() => ready(true), 25000);
   function tick(now) {
     if (closed || finished) return;
-    if (!document.hidden && last) elapsed += Math.min((now - last) / 1000, .1);
+    if (!document.hidden && last) elapsed += (now - last) / 1000;
     last = now;
-    scene.render(elapsed);
+    try { scene.render(elapsed); } catch { ready(true); return; }
     const reveal = smooth((elapsed - 7.8) / 1.2);
     const fade = smooth((elapsed - 10.2) / 1.4);
     intro.style.setProperty('--scene-opacity', String(1 - fade));
@@ -44,15 +46,19 @@
   const reduce = () => { if (motion.matches) ready(true); };
   motion.addEventListener('change', reduce);
   intro.addEventListener('keydown', event => {
+    if (event.key === 'Tab' || event.key === 'Escape') keyboardNavigation = true;
     if (event.key === 'Escape') ready();
     if (event.key === 'Tab') { event.preventDefault(); (finished ? enter : intro).focus({preventScroll: true}); }
   });
-  enter.addEventListener('click', () => {
+  function dismiss(remember = true) {
     closed = true;
     clearTimeout(watchdog);
     dispose();
     motion.removeEventListener('change', reduce);
-    try { sessionStorage.setItem('ttra_portada_vista', '1'); } catch {}
+    document.removeEventListener('visibilitychange', resetClock);
+    if (remember) {
+      try { sessionStorage.setItem('ttra_portada_vista', '1'); } catch {}
+    }
     const url = new URL(location.href); url.searchParams.delete('intro');
     history.replaceState(history.state, '', url);
     intro.hidden = true;
@@ -60,13 +66,37 @@
     root.classList.add('ttra-welcome-dismissed');
     document.body.classList.remove('rc-portada-activa');
     siblings.forEach((el, i) => { el.inert = inertBefore[i]; });
-    const heading = document.querySelector('.ttra-hero h1');
+    const heading = document.getElementById('ttra-hero-title');
     if (heading) { heading.tabIndex = -1; heading.focus({preventScroll: true}); }
-  });
-  if (motion.matches) { ready(true); return; }
-  import('/welcome-scene.js').then(({createScene}) => {
+  }
+  enter.addEventListener('click', () => dismiss());
+  async function start() {
+    const preview = new URLSearchParams(location.search).get('intro') === '1';
+    if (!preview) {
+      // Check the real session, never a localStorage flag that can outlive logout.
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      let guest = false;
+      try {
+        const response = await fetch('/api/me', {cache: 'no-store', signal: controller.signal});
+        guest = response.status === 401;
+      } catch { /* If session verification is unavailable, keep the store usable. */ }
+      finally { clearTimeout(timeout); }
+      if (closed) return;
+      if (!guest) { dismiss(false); return; }
+    }
     if (closed || finished) return;
-    scene = createScene(intro.querySelector('.ttra-intro-scene'));
-    frame = requestAnimationFrame(tick);
-  }).catch(() => ready(true));
+    // A visit lasts for this tab: internal navigation and reloads do not replay it.
+    // A newly opened tab starts fresh; signed-in customers are checked above first.
+    try { sessionStorage.setItem('ttra_portada_vista', '1'); } catch {}
+    watchdog = setTimeout(() => ready(true), 25000);
+    if (motion.matches) { ready(true); return; }
+    import('/welcome-scene.js').then(({createScene}) => {
+      if (closed || finished) return;
+      scene = createScene(intro.querySelector('.ttra-intro-scene'));
+      clearTimeout(watchdog);
+      frame = requestAnimationFrame(tick);
+    }).catch(() => ready(true));
+  }
+  start();
 })();

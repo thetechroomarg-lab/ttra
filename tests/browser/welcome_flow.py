@@ -14,6 +14,11 @@ with sync_playwright() as p:
         context = browser.new_context(viewport={'width': width, 'height': 900}, service_workers='block')
         context.add_init_script("sessionStorage.setItem('ttra_portada_vista','1')")
         context.route('**/api/**', api)
+        context.add_init_script("""window.introPhases = new Set();
+          new MutationObserver(() => {
+            const phase = document.querySelector('#rc-portada-ingreso')?.dataset.phase;
+            if (phase) window.introPhases.add(phase);
+          }).observe(document, {subtree:true, attributes:true, attributeFilter:['data-phase']});""")
         page = context.new_page()
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
@@ -23,16 +28,12 @@ with sync_playwright() as p:
         assert intro.locator('.ttra-intro-signature, .ttra-intro-skip').count() == 0
         expect(page.locator('body > header')).to_be_hidden()
         assert page.locator('body > header').evaluate('(el) => el.inert')
-        page.wait_for_timeout(1800)
-        page.screenshot(path=str(OUT / f'{width}-phone.png'))
-        page.wait_for_function("document.querySelector('#rc-portada-ingreso').dataset.phase === 'freeze'")
-        page.wait_for_timeout(800)
-        page.screenshot(path=str(OUT / f'{width}-freeze.png'))
-        page.wait_for_function("document.querySelector('#rc-portada-ingreso').dataset.phase === 'welcome'")
-        page.wait_for_timeout(900)
-        page.screenshot(path=str(OUT / f'{width}-welcome.png'))
         enter = page.locator('#btn-portada-ingreso')
         expect(enter).to_be_visible(timeout=20000)
+        assert intro.get_attribute('data-fallback') is None
+        phases = page.evaluate('Array.from(window.introPhases)')
+        assert all(phase in phases for phase in ['spin', 'freeze', 'welcome', 'ready']), phases
+        assert enter.evaluate('(el)=>getComputedStyle(el).outlineStyle') == 'none'
         style = enter.evaluate('(el) => { const s = getComputedStyle(el); return [s.backgroundColor, s.fontStyle, s.fontWeight, s.borderTopWidth]; }')
         assert style == ['rgba(0, 0, 0, 0)', 'normal', '800', '0px'], style
         assert enter.inner_text() == 'ENTRAR'
@@ -56,6 +57,11 @@ with sync_playwright() as p:
         context.route('**/api/**', api)
         if mode == 'failure':
             context.route('**/welcome-scene.js', lambda route: route.abort())
+        context.add_init_script("""window.introPhases = new Set();
+          new MutationObserver(() => {
+            const phase = document.querySelector('#rc-portada-ingreso')?.dataset.phase;
+            if (phase) window.introPhases.add(phase);
+          }).observe(document, {subtree:true, attributes:true, attributeFilter:['data-phase']});""")
         page = context.new_page()
         page.goto(BASE + '/?intro=1', wait_until='domcontentloaded')
         if mode == 'escape':
