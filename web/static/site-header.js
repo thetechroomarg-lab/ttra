@@ -16,7 +16,29 @@
     if (!event.target.closest('a[href]')) return;
     try { sessionStorage.setItem('ttra_portada_vista', '1'); } catch {}
   });
-  if (document.body.id === 'rc-body-landing') return;
+  const rate = document.createElement('span');
+  rate.className = 'ttra-site-rate';
+  rate.textContent = 'Dólar · …';
+  // This endpoint reads the exchange rate published with productos.json.
+  async function updateRate() {
+    try {
+      const response = await fetch('/api/cotizacion', {cache: 'no-store'});
+      if (!response.ok) throw new Error('cotizacion');
+      const {valor} = await response.json();
+      if (typeof valor !== 'number' || !Number.isFinite(valor) || valor <= 0) throw new Error('cotizacion');
+      rate.textContent = `Dólar · $${new Intl.NumberFormat('es-AR', {maximumFractionDigits: 2}).format(valor)}`;
+      rate.dataset.loaded = 'true';
+    } catch {
+      if (!rate.dataset.loaded) rate.textContent = 'Dólar · no disponible';
+    }
+  }
+  updateRate();
+  setInterval(() => { if (!document.hidden) updateRate(); }, 300000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) updateRate(); });
+  if (document.body.id === 'rc-body-landing') {
+    header.querySelector('.rc-header-derecha').appendChild(rate);
+    return;
+  }
 
   const previousActions = header.querySelector('.ttra-page-actions');
   const actions = document.createElement('nav');
@@ -40,8 +62,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
       Carrito <span class="ttra-site-count">0</span>
     </a>`;
-  if (previousActions) previousActions.replaceWith(actions);
-  else header.appendChild(actions);
+  const tools = document.createElement('div');
+  tools.className = 'ttra-site-tools';
+  tools.append(actions, rate);
+  if (previousActions) previousActions.replaceWith(tools);
+  else header.appendChild(tools);
 
   const toggle = actions.querySelector('.ttra-site-profile');
   const menu = actions.querySelector('.ttra-site-menu');
