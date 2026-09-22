@@ -120,9 +120,6 @@ html[data-modo="classic"] .ttra-catalog-cta span { font-size: 24px; line-height:
 html[data-modo="classic"] .ttra-button { display: inline-flex; align-items: center; justify-content: space-between; gap: 35px; min-height: 54px; padding: 17px 22px; background: var(--ed-button); color: #191b16; font: 700 13px var(--rc-font); text-decoration: none; transition: background .25s, transform .35s var(--ed-ease); }
 html[data-modo="classic"] .ttra-button:hover { background: #ff8468; transform: translateY(-3px); }
 html[data-modo="classic"] .ttra-button span { font-size: 22px; line-height: 1; }
-html[data-modo="classic"] .ttra-hero-foot { display: flex; justify-content: flex-end; align-items: center; gap: 20px; width: 100%; margin-top: auto; padding-top: 55px; font-size: 9px; letter-spacing: .1em; color: var(--rc-green-dim); }
-html[data-modo="classic"] .ttra-hero-foot a { display: flex; align-items: center; gap: 14px; min-height: 44px; color: inherit; text-decoration: none; }
-html[data-modo="classic"] .ttra-hero-foot a span { font-size: 22px; }
 html[data-modo="classic"] .ttra-stage { position: relative; min-height: 590px; background: #e7e5dc; overflow: hidden; isolation: isolate; color: #31352b; }
 html[data-modo="classic"] .ttra-stage-top, html[data-modo="classic"] .ttra-stage-bottom { position: absolute; left: 26px; right: 26px; display: flex; align-items: center; justify-content: space-between; z-index: 3; font: 600 9px/1.5 var(--rc-font); letter-spacing: .1em; }
 html[data-modo="classic"] .ttra-stage-top { top: 24px; }
@@ -278,7 +275,7 @@ html[data-modo="classic"] .form button[type="submit"] { min-height: 48px; backgr
 /* Progressive motion: visible by default, revealed only with working JS. */
 html[data-modo="classic"] [data-reveal].ttra-reveal-ready { opacity: 0; transform: translateY(24px); transition: opacity .7s var(--ed-ease), transform .8s var(--ed-ease); }
 html[data-modo="classic"] [data-reveal].ttra-reveal-ready.is-visible { opacity: 1; transform: none; }
-html[data-modo="classic"] .ttra-hero-copy > :not(.ttra-hero-foot) { animation: ttra-enter .85s var(--ed-ease) both; }
+html[data-modo="classic"] .ttra-hero-copy > * { animation: ttra-enter .85s var(--ed-ease) both; }
 html[data-modo="classic"] .ttra-hero-copy h2 { animation-delay: .06s; }
 html[data-modo="classic"] .ttra-hero-description { animation-delay: .12s; }
 @keyframes ttra-enter { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
@@ -320,7 +317,6 @@ html[data-modo="classic"] .ttra-hero-description { animation-delay: .12s; }
   html[data-modo="classic"] .ttra-hero h2 { font-size: clamp(61px, 12.5vw, 90px); margin-bottom: 23px; }
   html[data-modo="classic"] .ttra-hero-description { font-size: 14px; }
   html[data-modo="classic"] .ttra-button { padding: 15px 18px; min-height: 50px; gap: 22px; font-size: 12px; }
-  html[data-modo="classic"] .ttra-hero-foot { padding-top: 24px; font-size: 8px; }
   html[data-modo="classic"] .ttra-stage { min-height: 440px; }
   html[data-modo="classic"] .ttra-stage-word { font-size: 48vw; top: 23%; }
   html[data-modo="classic"] .ttra-device-back { top: 70px; left: 11%; }
