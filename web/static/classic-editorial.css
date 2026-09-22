@@ -360,7 +360,6 @@ html[data-modo="classic"] .ttra-hero-description { animation-delay: .12s; }
   html[data-modo="classic"] .ttra-device-back { left: 5%; }
   html[data-modo="classic"] .ttra-device-front { right: 5%; }
   html[data-modo="classic"] .rc-perfil-nombre { display: none; }
-  html[data-modo="classic"] .ttra-desktop-break { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   html[data-modo="classic"] { scroll-behavior: auto; }
