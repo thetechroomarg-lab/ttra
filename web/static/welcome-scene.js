@@ -56,13 +56,16 @@ export function createScene(host) {
       c.font='21px Arial';c.fillStyle='#ffffffbb';c.fillText('HECHO PARA TU MUNDO.',65,1370);
       c.fillStyle='#fff';c.fillRect(255,1485,258,8);
     } else if(kind === 'battery') {
-      c.fillStyle='#92969d';c.font='bold 70px Arial';c.fillText('TTRA',72,200);
-      c.font='29px Arial';['ENERGÍA PARA','LO QUE VIENE.','', 'BATERÍA DE IONES DE LITIO', '3,87 V · 19,35 Wh', '5000 mAh'].forEach((line,i)=>c.fillText(line,72,290+i*68));
+      c.fillStyle='#92969d';
+      c.font='29px Arial';['BATERÍA DE IONES DE LITIO', '', '3,87 V · 19,35 Wh', '5000 mAh'].forEach((line,i)=>c.fillText(line,72,290+i*68));
       c.font='110px Arial';c.fillText('+',65,1370);c.fillText('−',580,1370);
       c.fillStyle='#71747a';for(let i=0;i<70;i++){if(i%3)c.fillRect(72+i*8,1050,3,120);}
     } else {
-      c.fillStyle='#63321e';c.textAlign='center';c.font='bold 83px Arial';['THE','TECH','ROOM','ARG.'].forEach((line,i)=>c.fillText(line,384,680+i*92));
-      c.font='17px Arial';c.fillText('DISEÑADO PARA TU MUNDO',384,1400);
+      // Same vector mark as /logos/apple.svg, drawn without a network dependency.
+      c.save(); c.translate(274,658); c.scale(220/24,220/24);
+      c.fillStyle='#713c27';
+      c.fill(new Path2D("M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"));
+      c.restore();
     }
     const t=own(new T.CanvasTexture(canvas));t.colorSpace=T.SRGBColorSpace;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t;
   }
@@ -106,7 +109,11 @@ export function createScene(host) {
   slab(panel,1.67,3.43,.045,darkMetal);slab(panel,1.48,3.22,.015,black,0,0,.04);
   const screen=part(.20,[1.4,.40,2.65]);
   slab(screen,1.68,3.44,.05,glass);
-  face(screen,1.54,3.26,.043,texture('screen'));
+  const poweredDisplay = face(screen,1.54,3.26,.043,texture('screen'));
+  const shutdownFlash = new T.Mesh(own(new T.PlaneGeometry(1.54,.012)),
+    own(new T.MeshBasicMaterial({color:0xd5e7ff,transparent:true,opacity:0,depthWrite:false})));
+  shutdownFlash.position.z = .05;
+  screen.add(shutdownFlash);
   slab(screen,.46,.10,.011,black,0,1.50,.055,.05);
   cylinder(screen,.028,.012,lens,.13,1.5,.071);
   // Camera assembly detaches independently, visible from both orbit directions.
@@ -172,6 +179,17 @@ export function createScene(host) {
     render(t){
       const explosion=ease((t-4.95)/.55);const orbit=ease((t-5.5)/4.7);
       parts.forEach(({group,start,target})=>group.position.lerpVectors(start,target,explosion));
+      // Losing contact: a brief flicker, vertical collapse, then the last line dies.
+      // The glass remains in place and completely dark for the entire orbit.
+      const shutdown = T.MathUtils.clamp((t-5.12)/.65,0,1);
+      const collapse = ease((shutdown-.20)/.55);
+      poweredDisplay.scale.y = Math.max(.003,1-collapse);
+      const flicker = shutdown > 0 && shutdown < .22 ? .35+.65*Math.abs(Math.cos(shutdown*48)) : 1;
+      poweredDisplay.material.color.setScalar(flicker*(1-ease((shutdown-.65)/.23)));
+      poweredDisplay.visible = shutdown < .88;
+      shutdownFlash.visible = shutdown > .45 && shutdown < 1;
+      shutdownFlash.material.opacity = ease((shutdown-.45)/.2)*(1-ease((shutdown-.78)/.22));
+      shutdownFlash.scale.x = 1-ease((shutdown-.78)/.22);
       // Hero hold, acceleration to centrifuge speed, then an abrupt time freeze.
       const spinTime = T.MathUtils.clamp(t-1.3,0,4.2);
       const turns = spinTime < 1.1 ? spinTime*spinTime/2.2 : spinTime-.55;
