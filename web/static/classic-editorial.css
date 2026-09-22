@@ -63,7 +63,7 @@ html[data-modo="classic"] .carrousel-recomendados-mobile-card,
 html[data-modo="classic"] .carrousel-recomendados-wrap-mobile { height: auto; min-height: 0; }
 html[data-modo="classic"] .carrousel-recomendados-mobile-card .tarjeta-recomendado { height: auto; min-height: 300px; padding: 22px; }
 html[data-modo="classic"] .carrousel-recomendados-mobile-contador { color: var(--rc-green-dim); }
-html[data-modo="classic"] .rc-pie { flex-direction: row; text-align: left; }
+html[data-modo="classic"] .rc-pie { flex-direction: column; text-align: center; }
 
 html[data-modo="classic"] body.rc-vista-seccion .ttra-home-only { display: none; }
 /* Freeze the blurred page, while keeping the floating panels independently scrollable. */
@@ -266,9 +266,8 @@ html[data-modo="classic"] .ttra-about-copy { padding: clamp(30px, 5vw, 80px); al
 html[data-modo="classic"] .ttra-about h2 { font-size: clamp(30px, 3vw, 46px); font-weight: 500; line-height: 1.1; letter-spacing: -.05em; margin: 0 0 24px; }
 html[data-modo="classic"] .ttra-about h2 em { font-family: Georgia, serif; font-weight: 400; color: var(--ed-accent); }
 html[data-modo="classic"] .ttra-about-copy > p:not(.ttra-eyebrow) { color: var(--rc-green-dim); font-size: 14px; line-height: 1.8; max-width: 350px; margin-bottom: 25px; }
-html[data-modo="classic"] .rc-pie { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding: 55px var(--ed-gutter); border-top: 1px solid var(--ed-line); background: var(--rc-bg); color: var(--rc-green); box-shadow: 0 -20px 48px #00000022; translate: 0 var(--section-enter-y, 0px); }
-html[data-modo="classic"] .ttra-footer-brand > span { font: 700 clamp(16px, 1.8vw, 25px)/.9 var(--rc-font); letter-spacing: -.065em; }
-html[data-modo="classic"] .ttra-footer-brand p { font-size: 12px; color: var(--rc-green-dim); margin-top: 20px; }
+html[data-modo="classic"] .rc-pie { position: relative; z-index: 3; display: flex; justify-content: center; align-items: center; gap: 20px; padding: 55px var(--ed-gutter); border-top: 1px solid var(--ed-line); background: var(--rc-bg); color: var(--rc-green); box-shadow: 0 -20px 48px #00000022; translate: 0 var(--section-enter-y, 0px); }
+html[data-modo="classic"] .ttra-footer-title { margin: 0; font: 500 clamp(20px, 2vw, 28px)/1.2 var(--rc-font); letter-spacing: -.035em; }
 html[data-modo="classic"] .rc-red-icono { width: 44px; height: 44px; display: grid; place-items: center; color: var(--rc-green); }
 html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, .rc-logout-tarjeta, .tarjeta) { background: var(--rc-bg-panel); border: 1px solid var(--ed-line); border-radius: 6px; box-shadow: 0 24px 70px #00000030; }
 html[data-modo="classic"] .tarjeta { width: min(440px, 92vw); padding: 42px 32px; }
@@ -350,7 +349,7 @@ html[data-modo="classic"] .ttra-hero-description { animation-delay: .12s; }
   html[data-modo="classic"] .ttra-about-photo { min-height: 310px; }
   html[data-modo="classic"] .ttra-about-copy { padding: 32px 25px; }
   html[data-modo="classic"] .ttra-about h2 { font-size: 35px; }
-  html[data-modo="classic"] .rc-pie { flex-direction: column; align-items: flex-start; padding: 36px 20px; }
+  html[data-modo="classic"] .rc-pie { padding: 36px 20px; }
   html[data-modo="classic"] .tarjeta { padding: 30px 24px; }
 }
 @media (max-width: 380px) {
