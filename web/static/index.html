@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-modo="classic">
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZPQR91G145"></script>
@@ -54,8 +54,10 @@
   <link rel="stylesheet" href="landing.css">
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="perfil.css">
+  <link rel="stylesheet" href="classic-editorial.css">
 </head>
 <body id="rc-body-landing">
+  <a class="ttra-skip ttra-editorial" href="#productos">Saltar al catálogo</a>
   <div id="rc-boot"></div>
   <div id="rc-portada-ingreso" class="rc-portada-ingreso">
     <div class="rc-portada-ingreso-boton">
@@ -112,7 +114,7 @@
         </span>
         <div class="rc-modo-y-carrito">
           <div id="rc-perfil-menu" class="rc-perfil-menu">
-            <button id="btn-perfil-toggle" type="button" class="rc-perfil-boton" aria-haspopup="true" aria-expanded="false">
+            <button id="btn-perfil-toggle" aria-label="Mi cuenta" type="button" class="rc-perfil-boton" aria-haspopup="true" aria-expanded="false">
               <span id="perfil-primer-nombre" class="rc-perfil-nombre"></span>
               <span class="rc-perfil-icono" aria-hidden="true">
                 <svg class="rc-perfil-icono-svg rc-perfil-icono-classic" viewBox="0 0 24 24" aria-hidden="true">
@@ -138,6 +140,7 @@
           </div>
           <button id="btn-modo-classic" type="button" class="btn-modo" data-modo="classic">Modo Classic</button>
           <span id="indicador-mayorista" class="indicador-mayorista" hidden>Cuenta mayorista · precios preferenciales</span>
+          <button class="ttra-theme ttra-editorial" id="ttra-theme" type="button" aria-label="Cambiar tema" title="Cambiar tema">◐</button>
           <button id="btn-carrito" type="button">
             <svg class="rc-carrito-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="9" cy="21" r="1"/>
@@ -211,6 +214,51 @@
       </div>
     </div>
   </header>
+  <section class="ttra-hero ttra-editorial ttra-home-only" aria-labelledby="ttra-hero-title">
+    <div class="ttra-hero-copy">
+      <p class="ttra-eyebrow"><span class="ttra-dot"></span> THE TECH ROOM ARG · CÓRDOBA</p>
+      <h2 id="ttra-hero-title">Lo próximo.<br>Lo tuyo<span class="ttra-accent">.</span></h2>
+      <p class="ttra-hero-description">Tecnología que conecta con tu mundo.<br>Encontrá tu próximo celular, notebook y eso<br class="ttra-desktop-break"> que no sabías que necesitabas.</p>
+      <div class="ttra-hero-actions">
+        <a class="ttra-button" href="#ttra-explorar">Explorá la colección <span aria-hidden="true">↗</span></a>
+        <a class="ttra-text-link" href="https://wa.me/543512145217" target="_blank" rel="noopener">Hablemos <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="ttra-hero-foot"><span>BUENA TECNOLOGÍA. CERCA TUYO.</span><a href="#ttra-explorar" aria-label="Bajar a la colección">SCROLL <span aria-hidden="true">↓</span></a></div>
+    </div>
+    <div class="ttra-stage" aria-hidden="true">
+      <div class="ttra-stage-top"><span>OBJETOS DE DESEO.</span><span>01 — TTRA</span></div>
+      <div class="ttra-orbit" data-parallax="-0.07"></div>
+      <div class="ttra-stage-word" data-parallax="0.05">next.</div>
+      <div class="ttra-device ttra-device-back" data-parallax="0.10">
+        <div class="ttra-camera-island"><i></i><i></i><i></i><b></b></div><span class="ttra-device-mark">t.</span>
+        <span class="ttra-device-detail">DESIGNED FOR YOUR EVERYDAY</span>
+      </div>
+      <div class="ttra-device ttra-device-front" data-parallax="-0.12"><div class="ttra-screen"><i class="ttra-island"></i><span class="ttra-screen-time">09:41</span><div class="ttra-screen-art"></div><span class="ttra-screen-caption">MAKE<br>IT YOURS.</span><i class="ttra-screen-bar"></i></div></div>
+      <div class="ttra-stage-bottom"><span>MENOS RUIDO.<br>MÁS POSIBILIDADES.</span><span class="ttra-stage-plus">+</span></div>
+    </div>
+  </section>
+  <div class="ttra-manifesto ttra-editorial ttra-home-only"><span>Elegí bien.</span><span>Disfrutá más.</span><span class="ttra-accent" aria-hidden="true">✳</span><span>Hacelo tuyo.</span><span class="ttra-manifesto-small">TU MUNDO, EN MODO UPGRADE.</span></div>
+  <section id="ttra-explorar" class="ttra-collection ttra-editorial ttra-home-only" aria-labelledby="ttra-collection-title">
+    <div class="ttra-section-heading" data-reveal><div><p class="ttra-eyebrow">01 / ENCONTRÁ TU PRÓXIMO FAVORITO</p><h2 id="ttra-collection-title">Un mundo de posibilidades.</h2></div><span class="ttra-section-note">Vos elegís el próximo paso.<br>Nosotros te acompañamos.</span></div>
+    <div class="ttra-collection-grid">
+      <a class="ttra-category ttra-category-phone" href="#productos" data-category="Celulares" data-reveal>
+        <div class="ttra-category-top"><span>SIEMPRE CON VOS</span><span>01</span></div>
+        <div class="ttra-mini-phone" aria-hidden="true"><i></i><i></i><i></i><b>t.</b></div>
+        <div class="ttra-category-bottom"><div><h3>Celulares</h3><p>Tu mundo, en la palma de tu mano.</p></div><span class="ttra-circle-arrow" aria-hidden="true">↗</span></div>
+      </a>
+      <a class="ttra-category ttra-category-laptop" href="#productos" data-category="Notebooks y Macbooks" data-reveal>
+        <div class="ttra-category-top"><span>IDEAS SIN LÍMITES</span><span>02</span></div>
+        <div class="ttra-laptop" aria-hidden="true"><div><span>do<br><em>more.</em></span></div><i></i></div>
+        <div class="ttra-category-bottom"><div><h3>Notebooks & Macbooks</h3><p>Potencia para lo que imaginás.</p></div><span class="ttra-circle-arrow" aria-hidden="true">↗</span></div>
+      </a>
+      <a class="ttra-category ttra-category-audio" href="#productos" data-category="Accesorios Celulares" data-reveal>
+        <div class="ttra-category-top"><span>LOS DETALLES IMPORTAN</span><span>03</span></div>
+        <div class="ttra-headphones" aria-hidden="true"><i></i><b></b></div>
+        <div class="ttra-category-bottom"><div><h3>Accesorios</h3><p>Pequeños cambios. Gran diferencia.</p></div><span class="ttra-circle-arrow" aria-hidden="true">↗</span></div>
+      </a>
+    </div>
+  </section>
+  <div class="ttra-catalog-heading ttra-editorial ttra-home-only" data-reveal><p class="ttra-eyebrow">02 / EXPLORÁ EL CATÁLOGO</p><h2>Encontrá tu match<span class="ttra-accent">.</span></h2><p>Marcas que conocés. Posibilidades por descubrir.</p></div>
   <div id="rc-categorias-classic-wrap" class="rc-categorias-classic-wrap">
     <div class="rc-header-nav">
       <button id="btn-volver" type="button" class="btn-categoria btn-volver oculto">← Volver</button>
@@ -225,13 +273,13 @@
 
   <div class="fila-principal">
     <div id="columna-izquierda-layout" class="columna-izquierda"></div>
-    <main id="productos"></main>
+    <main id="productos" tabindex="-1"></main>
   </div>
 
   <aside id="panel-carrito" class="oculto">
     <div class="panel-carrito-header">
       <h2>Tu pedido</h2>
-      <button id="btn-cerrar-carrito" type="button">✕</button>
+      <button id="btn-cerrar-carrito" aria-label="Cerrar carrito" type="button">✕</button>
     </div>
     <p class="carrito-nota">Tu pedido se guarda solo en este navegador.</p>
     <div id="items-carrito"></div>
@@ -264,7 +312,7 @@
   <aside id="panel-perfil" class="oculto">
     <div class="panel-carrito-header">
       <h2>Mi perfil</h2>
-      <button id="btn-cerrar-panel-perfil" type="button">✕</button>
+      <button id="btn-cerrar-panel-perfil" aria-label="Cerrar perfil" type="button">✕</button>
     </div>
     <form id="form-perfil" class="form">
       <input id="perfil-nombre" type="text" placeholder="Nombre" autocomplete="given-name" required aria-label="Nombre">
@@ -349,7 +397,13 @@
   </div>
   <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
 
+  <section class="ttra-about ttra-editorial ttra-home-only" aria-labelledby="ttra-about-title">
+    <div class="ttra-about-photo"><img src="/texturas/cordoba-city.jpg" alt="Vista de la ciudad de Córdoba" loading="lazy" width="900" height="600" data-parallax="0.06"><span>DE CÓRDOBA.<br>PARA TU MUNDO.</span></div>
+    <div class="ttra-about-copy" data-reveal><p class="ttra-eyebrow">03 / ESTAMOS CERCA</p><h2 id="ttra-about-title">La tecnología cambia.<br>El trato humano,<br><em>se queda.</em></h2><p>Detrás de cada pantalla, hay alguien de este lado. Te ayudamos a elegir, resolvemos tus dudas y coordinamos tu pedido con vos.</p><a class="ttra-button" href="https://wa.me/543512145217" target="_blank" rel="noopener">Conversemos <span aria-hidden="true">↗</span></a></div>
+  </section>
+  <section class="ttra-service ttra-editorial"><div><span>01</span><h3>Elegí a tu manera.</h3><p>Explorá productos, colores y precios.</p></div><div><span>02</span><h3>Armá tu pedido.</h3><p>Guardá tus favoritos en el carrito.</p></div><div><span>03</span><h3>Lo coordinamos con vos.</h3><p>Confirmá disponibilidad y entrega por WhatsApp.</p></div></section>
   <footer class="rc-pie">
+    <div class="ttra-footer-brand ttra-editorial"><span>THE TECH<br>ROOM ARG<span class="ttra-accent">.</span></span><p>Tu próximo upgrade empieza acá.</p></div>
     <div class="rc-redes">
       <a href="https://instagram.com/thetechroomarg" target="_blank" rel="noopener" aria-label="Instagram" class="rc-red-icono">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -385,5 +439,6 @@
   <script src="landing-pipboy.js"></script>
   <script src="landing.js"></script>
   <script src="perfil.js"></script>
+  <script src="classic-editorial.js"></script>
 </body>
 </html>
