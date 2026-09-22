@@ -1257,6 +1257,16 @@ function cerrarDropdownsColor() {
 }
 document.addEventListener("click", cerrarDropdownsColor);
 
+// Un toque fuera de las tarjetas y de los controles vuelve al catálogo sin
+// ningún producto resaltado. El mismo click que selecciona una card no la
+// deselecciona al propagarse hasta document.
+document.addEventListener("click", (e) => {
+  if (e.target.closest?.(".card, button, a, input, select, textarea, [role='button']")) return;
+  document.querySelectorAll("#productos .card.expandida").forEach((card) => {
+    card.classList.remove("expandida");
+  });
+});
+
 function tarjetaProducto(p) {
   const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
   const listaColores = tieneColores ? p.colores : ["Color único"];
