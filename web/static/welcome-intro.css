@@ -12,13 +12,12 @@ html.ttra-welcome-pending #rc-body-landing > header { display: none !important; 
 .ttra-intro-skip span { margin-left: 12px; color: #f45240; }
 .ttra-intro-skip:hover { color: #fff; border-color: #ffffff70; }
 .ttra-intro-title { position: absolute; margin: 0; left: 50%; top: 50%; width: 100%; text-align: center; transform: translate(-50%, -50%) scale(var(--title-scale, .75)); opacity: var(--title-opacity, 0); filter: blur(var(--title-blur, 12px)); pointer-events: none; }
-.ttra-intro-title > span { display: block; font-size: clamp(11px, 1.2vw, 17px); letter-spacing: .5em; padding-left: .5em; font-weight: 400; margin-bottom: 20px; }
-.ttra-intro-title strong { display: block; font-size: clamp(88px, 19vw, 290px); letter-spacing: -.09em; line-height: .85; font-weight: 900; padding-right: .09em; text-shadow: 0 8px 60px #0008; }
+.ttra-intro-title > span { display: block; font: normal 800 clamp(20px, 3vw, 44px)/.88 Arial, sans-serif; letter-spacing: -.065em; margin-bottom: 22px; }
+.ttra-intro-title strong { display: block; font: normal 800 clamp(88px, 19vw, 290px)/.88 Arial, sans-serif; letter-spacing: -.065em; text-shadow: 0 8px 60px #0008; }
 .ttra-intro-title strong span { color: #f45240; }
 .ttra-intro-entry { position: absolute; inset: 0; display: grid; place-items: center; visibility: hidden; opacity: 0; transition: opacity 1s ease; pointer-events: none; }
-.ttra-intro-entry button { pointer-events: auto; border: 1px solid #f45240; background: #ef4837; color: #fff; border-radius: 100px; padding: 24px 42px; min-width: 220px; font: 700 13px Arial,sans-serif; letter-spacing: .25em; cursor: pointer; box-shadow: 0 0 75px #ef48371a; transition: background .25s, box-shadow .25s, transform .25s; }
-.ttra-intro-entry button span { display: inline-block; margin-left: 40px; font-size: 22px; vertical-align: -2px; }
-.ttra-intro-entry button:hover { background: #ff5d49; transform: scale(1.04); box-shadow: 0 0 100px #ef483740; }
+html[data-modo="classic"] #btn-portada-ingreso { pointer-events: auto; appearance: none; border: 0; background: transparent; background-image: none; color: #f5f3ef; border-radius: 0; padding: 20px; min-width: 0; font: normal 800 clamp(36px, 6vw, 76px)/1 Arial, sans-serif; letter-spacing: -.045em; cursor: pointer; box-shadow: none; text-shadow: none; transform: none; transition: opacity .25s ease; }
+html[data-modo="classic"] #btn-portada-ingreso:hover { background: transparent; color: #fff; opacity: .7; box-shadow: none; transform: none; }
 .ttra-intro button:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
 .ttra-intro[data-phase="ready"] .ttra-intro-entry { opacity: 1; visibility: visible; }
 .ttra-intro[data-phase="ready"] .ttra-intro-skip { display: none; }

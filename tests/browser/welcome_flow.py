@@ -32,6 +32,12 @@ with sync_playwright() as p:
         page.screenshot(path=str(OUT / f'{width}-welcome.png'))
         enter = page.locator('#btn-portada-ingreso')
         expect(enter).to_be_visible(timeout=20000)
+        style = enter.evaluate('(el) => { const s = getComputedStyle(el); return [s.backgroundColor, s.fontStyle, s.fontWeight, s.borderTopWidth]; }')
+        assert style == ['rgba(0, 0, 0, 0)', 'normal', '800', '0px'], style
+        assert enter.inner_text() == 'ENTRAR'
+        brand = page.locator('.rc-logo-linea').first
+        for prop in ['fontFamily', 'fontWeight', 'fontStyle']:
+            assert page.locator('.ttra-intro-title strong').evaluate('(el, prop) => getComputedStyle(el)[prop]', prop) == brand.evaluate('(el, prop) => getComputedStyle(el)[prop]', prop)
         page.wait_for_timeout(1200)
         page.screenshot(path=str(OUT / f'{width}-ready.png'))
         enter.click()

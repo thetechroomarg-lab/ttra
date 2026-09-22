@@ -16,6 +16,7 @@ export function createScene(host) {
   const own = value => { resources.add(value); return value; };
   const mat = (color, metalness = 0, roughness = .4, extra = {}) => own(new T.MeshStandardMaterial({color, metalness, roughness, ...extra}));
   const titanium = mat(0xbcc1c8, .92, .24);
+  const orange = mat(0xe66f32, .72, .3);
   const darkMetal = mat(0x292c32, .8, .28);
   const glass = mat(0x050810, .55, .16);
   const gold = mat(0xd6ad69, .8, .25);
@@ -43,7 +44,7 @@ export function createScene(host) {
   function texture(kind) {
     const canvas = document.createElement('canvas'); canvas.width=768; canvas.height=1536;
     const c = canvas.getContext('2d');
-    c.fillStyle = kind === 'screen' ? '#09090c' : kind === 'battery' ? '#202126' : '#b5b7bb'; c.fillRect(0,0,768,1536);
+    c.fillStyle = kind === 'screen' ? '#09090c' : kind === 'battery' ? '#202126' : '#e87940'; c.fillRect(0,0,768,1536);
     if (kind === 'screen') {
       const glow=c.createRadialGradient(500,870,10,430,850,680);
       glow.addColorStop(0,'#ff8061');glow.addColorStop(.3,'#d52d24');glow.addColorStop(.65,'#441319');glow.addColorStop(1,'#09090c');
@@ -60,7 +61,7 @@ export function createScene(host) {
       c.font='110px Arial';c.fillText('+',65,1370);c.fillText('−',580,1370);
       c.fillStyle='#71747a';for(let i=0;i<70;i++){if(i%3)c.fillRect(72+i*8,1050,3,120);}
     } else {
-      c.fillStyle='#3b3d41';c.textAlign='center';c.font='bold 83px Arial';['THE','TECH','ROOM','ARG.'].forEach((line,i)=>c.fillText(line,384,680+i*92));
+      c.fillStyle='#63321e';c.textAlign='center';c.font='bold 83px Arial';['THE','TECH','ROOM','ARG.'].forEach((line,i)=>c.fillText(line,384,680+i*92));
       c.font='17px Arial';c.fillText('DISEÑADO PARA TU MUNDO',384,1400);
     }
     const t=own(new T.CanvasTexture(canvas));t.colorSpace=T.SRGBColorSpace;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t;
@@ -76,18 +77,18 @@ export function createScene(host) {
     const group=new T.Group();group.position.z=z;phone.add(group);parts.push({group,start:new T.Vector3(0,0,z),target:new T.Vector3(...target)});return group;
   }
   const back=part(-.16,[-.7,.3,-1.85]);
-  slab(back,1.72,3.48,.09,titanium);face(back,1.57,3.28,-.065,texture('back'),true);
-  slab(back,.83,.89,.08,darkMetal,-.37,.99,-.10,.17);
+  slab(back,1.72,3.48,.09,orange);face(back,1.57,3.28,-.065,texture('back'),true);
+  slab(back,.83,.89,.08,orange,-.37,.99,-.10,.17);
   for(const [x,y] of [[-.58,1.23],[-.19,1.03],[-.58,.79]]) {
-    cylinder(back,.168,.08,titanium,x,y,-.18);cylinder(back,.125,.085,glass,x,y,-.22);cylinder(back,.074,.09,lens,x,y,-.23);
+    cylinder(back,.168,.08,orange,x,y,-.18);cylinder(back,.125,.085,glass,x,y,-.22);cylinder(back,.074,.09,lens,x,y,-.23);
   }
   cylinder(back,.055,.09,white,-.16,1.32,-.17);
   const frame=part(0,[0,0,0]);
   // Hollow chassis: narrow rails leave the internal components visible.
-  slab(frame,.055,3.20,.19,titanium,-.85,0,0,.025);slab(frame,.055,3.20,.19,titanium,.85,0,0,.025);
-  slab(frame,1.61,.07,.19,titanium,0,1.70,0,.03);slab(frame,1.61,.07,.19,titanium,0,-1.70,0,.03);
-  slab(frame,.07,.34,.065,titanium,.895,.48,0,.025);
-  slab(frame,.07,.23,.065,titanium,-.895,.62,0,.025);slab(frame,.07,.23,.065,titanium,-.895,.24,0,.025);
+  slab(frame,.055,3.20,.19,orange,-.85,0,0,.025);slab(frame,.055,3.20,.19,orange,.85,0,0,.025);
+  slab(frame,1.61,.07,.19,orange,0,1.70,0,.03);slab(frame,1.61,.07,.19,orange,0,-1.70,0,.03);
+  slab(frame,.07,.34,.065,orange,.895,.48,0,.025);
+  slab(frame,.07,.23,.065,orange,-.895,.62,0,.025);slab(frame,.07,.23,.065,orange,-.895,.24,0,.025);
   slab(frame,.31,.03,.095,black,0,-1.742,0,.01);
   for(let i=0;i<6;i++)slab(frame,.028,.03,.035,black,.35+i*.065,-1.743,0,.01);
   const battery=part(.035,[-.8,-.65,.85]);
@@ -116,6 +117,45 @@ export function createScene(host) {
   const speaker=part(.06,[.35,-1.4,-1]);
   slab(speaker,1.28,.20,.08,darkMetal,0,-1.41,0,.04);
   for(let i=0;i<10;i++)slab(speaker,.045,.12,.015,black,-.47+i*.103,-1.41,.055,.015);
+  // Independent internals remain inside the assembled body until the burst.
+  const coil = part(-.07, [-1.1, -.25, -1.05]);
+  for (let i = 0; i < 10; i++) {
+    const ring = new T.Mesh(own(new T.TorusGeometry(.34+i*.023, .009, 5, 56)), gold);
+    ring.position.y = -.25; coil.add(ring);
+  }
+  slab(coil,.10,.44,.015,gold,.18,-.96,0,.01);
+  const thermal = part(-.10, [.50,-.28,-1.45]);
+  slab(thermal,1.35,2.8,.018,mat(0x9b6540,.8,.3),0,0,0,.12);
+  for(let i=0;i<6;i++) slab(thermal,.035,2.3,.008,gold,-.5+i*.2,0,.02,.01);
+  const haptic = part(.025, [-1.2,-.8,.4]);
+  slab(haptic,.70,.22,.09,titanium,-.24,-1.35,0,.03);
+  for(let i=0;i<5;i++) slab(haptic,.025,.14,.012,darkMetal,-.47+i*.11,-1.35,.06,.005);
+  const port = part(.035, [.8,-1.1,.7]);
+  slab(port,.50,.25,.04,pcb,0,-1.40,0,.015);
+  slab(port,.29,.11,.10,titanium,0,-1.51,.025,.03);
+  slab(port,.22,.065,.015,black,0,-1.53,.09,.02);
+  for(let i=0;i<3;i++) {
+    const chip = part(.08, [i*.65-.65,1.55+i*.18,.6+i*.38]);
+    slab(chip,.27,.24,.04,darkMetal,-.45+i*.43,1.12,0,.018);
+    slab(chip,.18,.15,.006,titanium,-.45+i*.43,1.12,.033,.006);
+    const flex = part(.07,[i*.65-.65,-.4,1.0+i*.35]);
+    slab(flex,.09,.95,.008,gold,-.5+i*.48,-.15,0,.012);
+    slab(flex,.25,.08,.016,black,-.5+i*.48,.34,0,.008);
+  }
+  for(let i=0;i<8;i++) {
+    const x = i%2 ? .76 : -.76, y = 1.45-Math.floor(i/2)*.96;
+    const screw = part(.045,[x*1.7,(y>0?.65:-.65),i%2?.9:-.85]);
+    cylinder(screw,.033,.08,titanium,x,y,0);
+    slab(screw,.04,.009,.005,black,x,y,.047,.001);
+  }
+  // Compress both the local geometry and assembled layer spacing by 60%.
+  // Explosion offsets stay independent of physical thickness.
+  parts.forEach(({group,start,target}) => {
+    group.scale.z = .4;
+    start.z *= .4;
+    target.multiplyScalar(.72);
+    group.position.copy(start);
+  });
   const ambient=new T.HemisphereLight(0xbfd5ff,0x51443d,2);scene.add(ambient);
   function light(color,intensity,x,y,z){const l=new T.DirectionalLight(color,intensity);l.position.set(x,y,z);scene.add(l);}
   light(0xffffff,5,-3,5,5);light(0x91b5ff,3,4,1,-4);light(0xff513b,3,-4,-2,-2);light(0xffffff,2,1,-3,6);
@@ -130,12 +170,15 @@ export function createScene(host) {
   const observer=new ResizeObserver(resize);observer.observe(host);resize();
   return {
     render(t){
-      const explosion=ease((t-3.5)/2.3);const orbit=ease((t-5.8)/4.4);
+      const explosion=ease((t-4.95)/.55);const orbit=ease((t-5.5)/4.7);
       parts.forEach(({group,start,target})=>group.position.lerpVectors(start,target,explosion));
-      phone.rotation.set(.10+ .06*explosion, -.45 + Math.PI*2*ease(t/3.5), -.12);
-      // At 5.8s the phone and every part are frozen; only the camera moves.
+      // Hero hold, acceleration to centrifuge speed, then an abrupt time freeze.
+      const spinTime = T.MathUtils.clamp(t-1.3,0,4.2);
+      const turns = spinTime < 1.1 ? spinTime*spinTime/2.2 : spinTime-.55;
+      phone.rotation.set(.10+.06*explosion, -.45+turns*(Math.PI*16/3.65), -.12);
+      // At 5.5s all components and phone rotation freeze; only the camera moves.
       const angle=orbit*1.7;
-      const distance=T.MathUtils.lerp(Math.max(8.2,5/camera.aspect),Math.max(11.7,13.5/camera.aspect),explosion);
+      const distance=T.MathUtils.lerp(Math.max(8.2,5/camera.aspect),Math.max(10.8,11.8/camera.aspect),explosion);
       camera.position.set(Math.sin(angle)*distance, .25+orbit*1.6, Math.cos(angle)*distance);
       camera.lookAt(0,0,0);
       renderer.render(scene,camera);

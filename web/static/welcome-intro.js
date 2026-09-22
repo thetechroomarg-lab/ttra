@@ -36,7 +36,7 @@
     intro.style.setProperty('--title-opacity', String(reveal * (1 - fade)));
     intro.style.setProperty('--title-scale', String(.72 + .28 * reveal));
     intro.style.setProperty('--title-blur', `${12 * (1 - reveal)}px`);
-    intro.dataset.phase = elapsed < 3.5 ? 'spin' : elapsed < 5.8 ? 'explode' : elapsed < 7.8 ? 'freeze' : elapsed < 10.2 ? 'welcome' : 'fade';
+    intro.dataset.phase = elapsed < 4.95 ? 'spin' : elapsed < 5.5 ? 'explode' : elapsed < 7.8 ? 'freeze' : elapsed < 10.2 ? 'welcome' : 'fade';
     if (elapsed >= 12.2) ready();
     else frame = requestAnimationFrame(tick);
   }
