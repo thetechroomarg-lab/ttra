@@ -273,11 +273,11 @@ function productosAlAzar(n) {
 function bloquePreciosHtml(p) {
   const pr = preciosDe(p);
   return `
-    <strong>Dólares: $${formatearPesos(pr.dolares)}</strong>
-    <span>Dólar banco USA: $${formatearPesos(pr.bancoUsa)}</span>
-    <span>USDT: $${formatearPesos(pr.usdt)}</span>
-    <span>Pesos: $${formatearPesos(pr.pesos)}</span>
-    <span>Pesos transf: $${formatearPesos(pr.pesosTransf)}</span>
+    <strong>U$D ${formatearPesos(pr.dolares)} (contado)</strong>
+    <span>U$D ${formatearPesos(pr.bancoUsa)} (Transf. USA)</span>
+    <span>USDT ${formatearPesos(pr.usdt)}</span>
+    <span>$ ${formatearPesos(pr.pesos)} Pesos contado.</span>
+    <span>$ ${formatearPesos(pr.pesosTransf)} Pesos transf.</span>
   `;
 }
 

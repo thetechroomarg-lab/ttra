@@ -107,8 +107,8 @@ html[data-modo="classic"] .ttra-auth-layout { display: grid; grid-template-colum
 .ttra-auth-story .ttra-page-eyebrow { position: relative; z-index: 1; color: #ad3a2c; }
 .ttra-auth-story .ttra-page-display { position: relative; z-index: 1; max-width: 750px; color: #242720; }
 .ttra-auth-story > p:last-child { position: relative; z-index: 1; max-width: 280px; margin: 40px 0 0; font-size: 14px; line-height: 1.65; }
-.ttra-auth-form-wrap { display: grid; place-items: center; padding: 64px clamp(24px, 4vw, 80px); }
-html[data-modo="classic"] .ttra-auth-form-wrap .tarjeta { width: min(100%, 470px); margin: 0; padding: clamp(28px, 3vw, 42px); border: 1px solid var(--ed-line); border-top: 4px solid var(--ed-accent) !important; border-radius: 2px; background: var(--rc-bg-panel); box-shadow: none; }
+.ttra-auth-form-wrap { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; place-items: center; padding: 64px clamp(24px, 4vw, 80px); }
+html[data-modo="classic"] .ttra-auth-form-wrap .tarjeta { width: min(100%, 470px); min-width: 0; margin: 0; padding: clamp(28px, 3vw, 42px); border: 1px solid var(--ed-line); border-top: 4px solid var(--ed-accent) !important; border-radius: 2px; background: var(--rc-bg-panel); box-shadow: none; }
 html[data-modo="classic"] .ttra-auth-form-wrap .rc-marca-login { display: none; }
 html[data-modo="classic"] .ttra-auth-form-wrap .tarjeta h1 { margin: 0 0 28px; font-size: clamp(28px, 3vw, 42px); line-height: 1.05; }
 html[data-modo="classic"] .ttra-auth-form-wrap .form { gap: 12px; }
@@ -146,7 +146,7 @@ html[data-modo="classic"] .catalog-page .card .precios { padding-top: 16px; bord
 html[data-modo="classic"] .catalog-card-actions { display: grid; gap: 10px; margin-top: auto; padding-top: 10px; }
 html[data-modo="classic"] .catalog-card-actions label { font-size: 12px; color: var(--rc-green-dim); }
 html[data-modo="classic"] .catalog-card-actions select { width: 100%; min-width: 0; min-height: 44px; padding: 10px; border: 1px solid var(--ed-line); border-radius: 2px; background: var(--rc-bg); color: var(--rc-green); font: 13px var(--rc-font); }
-html[data-modo="classic"] .catalog-card-actions .btn-agregar { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 46px; padding: 12px; border: 0; border-radius: 2px; background: #d52f27; color: #fff; font: 700 12px var(--rc-font); cursor: pointer; }
+html[data-modo="classic"] .catalog-card-actions .btn-agregar { display: flex; align-items: center; justify-content: center; text-align: center; gap: 8px; width: 100%; min-height: 46px; padding: 12px; border: 0; border-radius: 2px; background: #d52f27; color: #fff; font: 700 12px var(--rc-font); cursor: pointer; }
 html[data-modo="classic"] .catalog-card-actions .btn-agregar:hover:not(:disabled) { background: #f04433; }
 html[data-modo="classic"] .catalog-card-actions .btn-agregar:disabled { opacity: .5; cursor: not-allowed; }
 html[data-modo="classic"] .catalog-card-status { min-height: 2.6em; margin: 0; color: var(--rc-green-dim); font-size: 11px; line-height: 1.3; }
@@ -194,4 +194,9 @@ html[data-modo="classic"] .catalog-card-status { min-height: 2.6em; margin: 0; c
 }
 @media (prefers-reduced-motion: reduce) {
   html[data-modo="classic"] .ttra-page * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* Form controls must shrink with the registration card on narrow screens. */
+html[data-modo="classic"] .ttra-auth-form-wrap .form :is(input, select, textarea) {
+  width: 100%; min-width: 0; max-width: 100%;
 }

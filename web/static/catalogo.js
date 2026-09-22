@@ -23,6 +23,29 @@ function pintarTabs(activa) {
   });
 }
 
+// Match the existing product-view history used by the administration panel.
+const productosConsultados = new Set();
+function registrarConsultaProducto(producto) {
+  if (!producto?.nombre || productosConsultados.has(producto.nombre)) return;
+  productosConsultados.add(producto.nombre);
+  let anonId;
+  try {
+    anonId = localStorage.getItem('ttra_anon_id');
+    if (!anonId) {
+      anonId = crypto.randomUUID();
+      localStorage.setItem('ttra_anon_id', anonId);
+    }
+  } catch {
+    anonId = `ttra-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+  fetch('/api/interacciones', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-TTRA-ANON-ID': anonId},
+    body: JSON.stringify({tipo_evento: 'view_item', producto_nombre: producto.nombre, session_id: anonId}),
+    keepalive: true,
+  }).catch(() => {});
+}
+
 let SECCIONES_DATA = {};
 let categoriaActiva = "Todos";
 let marcaActiva = "";
@@ -61,10 +84,13 @@ function pintarSeccion(nombre) {
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
   el.querySelectorAll('.card').forEach((card) => {
     const producto = productos[Number(card.dataset.productIndex)];
+    card.addEventListener('click', () => registrarConsultaProducto(producto));
+    card.addEventListener('focusin', () => registrarConsultaProducto(producto));
     const select = card.querySelector('select');
     const button = card.querySelector('.btn-agregar');
     const status = card.querySelector('.catalog-card-status');
     select?.addEventListener('change', () => {
+      registrarConsultaProducto(producto);
       button.disabled = !select.value;
       status.textContent = '';
     });
@@ -111,15 +137,15 @@ function tarjetaProducto(p, indice = 0) {
     <div class="card" data-product-index="${indice}">
       <h3>${escapeHtml(p.nombre)}</h3>
       <p class="precios">
-        <strong>U$D ${monto(precios.dolares)} contado</strong><br>
-        U$D ${monto(precios.bancoUsa)} transferencia banco USA<br>
-        ${monto(precios.usdt)} USDT<br>
-        $ ${monto(p.pesos)} contado<br>
-        $ ${monto(p.transferencia)} transferencia
+        <strong>U$D ${monto(precios.dolares)} (contado)</strong><br>
+        U$D ${monto(precios.bancoUsa)} (Transf. USA)<br>
+        USDT ${monto(precios.usdt)}<br>
+        $ ${monto(p.pesos)} Pesos contado.<br>
+        $ ${monto(p.transferencia)} Pesos transf.
       </p>
       <div class="catalog-card-actions">
         ${colores}
-        <button class="btn-agregar" type="button" ${elegirColor ? 'disabled' : ''}>Agregar al carrito <span aria-hidden="true">↗</span></button>
+        <button class="btn-agregar" type="button" ${elegirColor ? 'disabled' : ''}>Agregar al carrito</button>
         <p class="catalog-card-status" role="status">${elegirColor ? 'Elegí un color para agregar.' : ''}</p>
       </div>
     </div>

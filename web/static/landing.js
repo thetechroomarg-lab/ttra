@@ -912,7 +912,7 @@ async function asegurarSesionParaCarrito(producto, color) {
   const sesion = await obtenerEstadoSesionCliente(true);
   if (sesion && !sesion.debe_cambiar_password) return true;
   guardarPendienteCarrito(producto, color);
-  window.location.href = urlLoginParaCarrito();
+  navegarDesdeCarrito(urlLoginParaCarrito());
   return false;
 }
 
@@ -1812,7 +1812,7 @@ async function asegurarSesionParaCheckout() {
   const sesion = await obtenerEstadoSesionCliente(true);
   if (sesion && !sesion.debe_cambiar_password) return true;
   guardarPendienteCheckout();
-  window.location.href = urlLoginParaCarrito();
+  navegarDesdeCarrito(urlLoginParaCarrito());
   return false;
 }
 
@@ -2013,6 +2013,11 @@ function abrirCarrito() {
   document.getElementById("overlay-carrito").classList.remove("oculto");
 }
 
+function navegarDesdeCarrito(url) {
+  const destino = document.documentElement.classList.contains('ttra-cart-embedded') ? window.parent : window;
+  destino.location.href = url;
+}
+
 function cerrarCarrito() {
   document.getElementById("panel-carrito").classList.add("oculto");
   document.getElementById("overlay-carrito").classList.add("oculto");
@@ -2135,7 +2140,7 @@ async function derivarCheckoutAWhatsapp(carrito) {
   borrarDescuentoMailing();
   borrarRegaloPromo();
   cerrarCarrito();
-  window.location.href = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
+  navegarDesdeCarrito(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`);
   return true;
 }
 

@@ -62,27 +62,95 @@ html[data-modo="classic"] .ttra-site-cart svg { width: 18px; height: 18px; }
 
 /* The public rate uses the same catalog generation as product prices. */
 html[data-modo="classic"] .ttra-site-tools { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-html[data-modo="classic"] .ttra-site-rate { display: block; color: var(--rc-green-dim); font: 500 12px/1.4 var(--rc-font); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: .02em; text-shadow: none; }
+html[data-modo="classic"] .ttra-site-rate { display: block; color: var(--rc-green-dim); font: 700 12px/1.4 var(--rc-font); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: .02em; text-shadow: none; }
 @media (max-width: 700px) {
   html[data-modo="classic"] .ttra-site-rate { font-size: 11px; }
   html[data-modo="classic"] .ttra-site-tools { gap: 8px; }
 }
 html[data-modo="classic"] .ttra-site-header .rc-header-derecha { flex-direction: column; align-items: flex-end; gap: 8px; }
 
-/* Shared two-row layout: exchange rate / theme / account, then the cart. */
+/* Shared three-row layout: rate, theme/account, then cart. */
 html[data-modo="classic"] .ttra-site-header :is(.rc-modo-y-carrito, .ttra-site-actions) {
-  display: grid; grid-template-columns: minmax(0, max-content) 44px 44px;
+  display: grid; grid-template-columns: repeat(2, minmax(44px, 1fr));
   align-items: center; gap: 6px 8px; width: max-content; max-width: 100%;
 }
 html[data-modo="classic"] .ttra-site-header .ttra-site-rate {
-  grid-column: 1; grid-row: 1; max-width: 112px; white-space: normal;
-  text-align: right; margin-right: 4px;
+  grid-column: 1 / -1; grid-row: 1; white-space: nowrap;
+  text-align: center;
 }
-html[data-modo="classic"] .ttra-site-header .ttra-theme { grid-column: 2; grid-row: 1; }
-html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-menu, .ttra-site-account) { grid-column: 3; grid-row: 1; width: 44px; }
+html[data-modo="classic"] .ttra-site-header .ttra-theme { grid-column: 1; grid-row: 2; justify-self: center; }
+html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-menu, .ttra-site-account) { grid-column: 2; grid-row: 2; width: 44px; justify-self: center; }
 html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-initials) { display: none; }
 html[data-modo="classic"] .ttra-site-header :is(#btn-carrito, .ttra-site-cart) {
-  grid-column: 2 / 4; grid-row: 2; justify-self: end; justify-content: center;
-  width: 100%; min-width: 0; padding: 10px 8px; gap: 6px;
+  grid-column: 1 / -1; grid-row: 3; justify-self: center; justify-content: center;
+  width: 100%; min-width: 0; padding: 10px 8px; gap: 6px; font-weight: 700;
 }
-html[data-modo="classic"] .ttra-site-header .indicador-mayorista { grid-column: 1 / -1; grid-row: 3; max-width: 216px; }
+html[data-modo="classic"] .ttra-site-header .indicador-mayorista { grid-column: 1 / -1; grid-row: 4; max-width: 216px; }
+/* The current page stays behind the shared checkout, including its scroll position. */
+.ttra-cart-dialog { position: fixed; inset: 0; margin: 0; padding: 0; border: 0; width: 100%; max-width: none; height: 100dvh; max-height: none; background: transparent; overflow: hidden; }
+.ttra-cart-dialog::backdrop { background: #10141859; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.ttra-cart-dialog iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+.ttra-cart-loading { position: absolute; inset: 20px auto auto 50%; transform: translateX(-50%); width: min(400px,90vw); padding: 24px; background: var(--rc-bg-panel); color: var(--rc-green); border: 1px solid var(--ed-line); text-align: center; }
+.ttra-cart-loading[hidden] { display: none; }
+.ttra-cart-loading button { min-height: 44px; padding: 10px 18px; cursor: pointer; }
+html.ttra-cart-embedded, html.ttra-cart-embedded body#rc-body-landing { background: transparent !important; }
+html.ttra-cart-embedded body#rc-body-landing > :not(aside):not(#overlay-carrito):not(#overlay-perfil):not(.rc-logout-overlay):not(.ttra-cart-feedback):not(script):not(style) { display: none !important; }
+html.ttra-cart-embedded #panel-carrito { top: 16px; bottom: 16px; }
+html.ttra-cart-embedded #overlay-carrito { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+/* Decorative atmosphere: below every content layer, never an input target. */
+html[data-modo="classic"] body.ttra-has-bamboo { isolation: isolate; }
+.ttra-ambient-bamboo { position: fixed; inset: 0; z-index: -1; overflow: hidden; contain: strict; color: #496453; pointer-events: none; user-select: none; }
+.ttra-ambient-bamboo * { pointer-events: none; }
+.ttra-ambient-bamboo svg { display: block; width: 100%; height: 100%; }
+.ttra-ambient-bamboo::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 38%, #0b0e0c44, transparent 75%), linear-gradient(0deg, #080b0970, transparent 40%); }
+.ttra-bamboo-stalk { fill: currentColor; transform-box: view-box; transform-origin: 0 1080px; animation: ttra-bamboo-sway var(--bamboo-duration) ease-in-out var(--bamboo-delay) infinite alternate; }
+.ttra-bamboo-stalk.is-distant { opacity: .22; }
+.ttra-bamboo-stalk.is-near { opacity: .54; }
+.ttra-bamboo-highlight { fill: none; stroke: #9bb29a; stroke-width: 1; opacity: .35; }
+.ttra-bamboo-node { fill: none; stroke: #91a28a; stroke-width: 2.5; opacity: .55; }
+.ttra-bamboo-branch { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.ttra-bamboo-leaves { transform-box: fill-box; transform-origin: left bottom; animation: ttra-bamboo-rustle 6s ease-in-out var(--bamboo-delay) infinite alternate; }
+html[data-classic-theme="light"] .ttra-bamboo-stalk.is-near { opacity: .19; }
+html[data-classic-theme="light"] .ttra-bamboo-stalk.is-distant { opacity: .09; }
+html[data-classic-theme="light"] .ttra-ambient-bamboo::after { opacity: .12; }
+html.ttra-welcome-pending .ttra-ambient-bamboo,
+html.ttra-cart-embedded .ttra-ambient-bamboo { display: none; }
+.ttra-ambient-bamboo.is-paused * { animation-play-state: paused; }
+@keyframes ttra-bamboo-sway {
+  from { transform: rotate(calc(var(--bamboo-lean) - .7deg)); }
+  to { transform: rotate(calc(var(--bamboo-lean) + .9deg)); }
+}
+@keyframes ttra-bamboo-rustle {
+  from { transform: rotate(-2deg); }
+  to { transform: rotate(3deg); }
+}
+@media(prefers-reduced-motion:reduce) { .ttra-ambient-bamboo * { animation: none !important; } }
+html[data-modo="classic"] [data-ttra-menu] { box-sizing: border-box; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; z-index: 10020; background: var(--rc-bg-panel); color: var(--rc-green); }
+html[data-modo="classic"] [data-ttra-menu]::backdrop { background: transparent; pointer-events: none; }
+@media(max-width:700px) {
+  html[data-modo="classic"] body :is(select, input, textarea, .dropdown-color-boton),
+  html[data-modo="classic"] .tarjeta-recomendado .tarjeta-recomendado-acciones .dropdown-color-boton { font-size: 16px; }
+  html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, .sugerencias-direccion) :is(a, button, li) { font-size: 16px; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; color: var(--rc-green); }
+  html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .sugerencias-direccion) :is(a, button),
+  html[data-modo="classic"] .dropdown-color-lista li { min-height: 44px; padding: 12px 14px; }
+}
+@media(max-width:700px) {
+  html[data-modo="classic"] #rc-perfil-dropdown .rc-perfil-opcion { font-size: 16px; line-height: 1.4; min-height: 44px; padding: 12px 14px; color: var(--rc-green); }
+}
+/* Match the logo's typeface, weight and tracking without forcing uppercase. */
+html[data-modo="classic"] .ttra-site-header :is(.ttra-site-rate, #btn-carrito, .ttra-site-cart) {
+  font: normal 800 16px/1.1 Arial, sans-serif;
+  letter-spacing: -.065em;
+  text-transform: none;
+  font-variant-numeric: normal;
+}
+html[data-modo="classic"] .ttra-site-header .ttra-theme {
+  font-family: Arial, sans-serif;
+  font-weight: 800;
+  font-style: normal;
+  text-transform: none;
+}
+/* Let the global forest show through page surfaces, retaining solid UI panels. */
+html[data-modo="classic"] body.ttra-has-bamboo .ttra-scroll-stage,
+html[data-modo="classic"] body.ttra-has-bamboo .ttra-collection { background: transparent; }
+html[data-modo="classic"] body.ttra-has-bamboo .rc-pie { background: color-mix(in srgb, var(--rc-bg) 50%, transparent); }

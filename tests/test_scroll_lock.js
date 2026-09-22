@@ -28,6 +28,7 @@ function fixture() {
     ['rc-terminos-mayorista', { classList: classes() }],
     ['rc-terminos-perfil', { classList: classes() }],
     ['rc-panel-compartir', { hidden: true }],
+    ['native-cart', { open: false }],
   ]);
   elements.get('overlay-carrito').classList.add('oculto');
   elements.get('overlay-perfil').classList.add('oculto');
@@ -40,11 +41,14 @@ function fixture() {
     constructor(callback) { observer = callback; }
     observe() {}
   }
+  const listeners = new Map();
   const document = {
+    addEventListener: (name, callback) => listeners.set(name, callback),
     documentElement: root,
     body,
     getElementById: (id) => elements.get(id),
     querySelector: (selector) => {
+      if (selector.startsWith('dialog[data-ttra-cart]') && elements.get('native-cart').open) return elements.get('native-cart');
       if (selector === '.rc-logout-overlay.visible' &&
         elements.get('rc-terminos-mayorista').classList.contains('visible'))
         return elements.get('rc-terminos-mayorista');
@@ -56,7 +60,7 @@ function fixture() {
   };
   const source = readFileSync(join(__dirname, '../web/static/scroll-lock.js'), 'utf8');
   runInNewContext(source, { document, window, MutationObserver });
-  return { elements, root, body, window, scrollCalls, sync: () => observer() };
+  return { elements, root, body, window, scrollCalls, emit: (name) => listeners.get(name)?.(), sync: () => observer() };
 }
 
 test('profile locks the background and restores its exact scroll position', () => {
@@ -106,5 +110,16 @@ test('standalone profile terms dialog keeps its page fixed', () => {
   assert.equal(page.root.classList.contains('ttra-scroll-locked'), true);
   page.elements.get('rc-terminos-perfil').classList.remove('visible');
   page.sync();
+  assert.deepEqual(page.scrollCalls, [[0, 640]]);
+});
+
+test('shared cart event locks before native dialog autofocus and restores on close', () => {
+  const page = fixture();
+  page.elements.get('native-cart').open = true;
+  page.emit('ttra:overlay-change');
+  assert.equal(page.root.classList.contains('ttra-scroll-locked'), true);
+  page.window.scrollY = 0;
+  page.elements.get('native-cart').open = false;
+  page.emit('ttra:overlay-change');
   assert.deepEqual(page.scrollCalls, [[0, 640]]);
 });

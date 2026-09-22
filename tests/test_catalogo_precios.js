@@ -28,18 +28,18 @@ test('bank USD and USDT use existing fee rules and round upward', () => {
 
 test('catalog renders all five payment amounts, preserving the supplied peso prices', () => {
   const html = context.tarjetaProducto({ usd: 100, pesos: 150000, transferencia: 155000 });
-  assert.match(html, /U\$D 100 contado/);
-  assert.match(html, /U\$D 103 transferencia banco USA/);
-  assert.match(html, /102 USDT/);
-  assert.match(html, /\$ 150\.000 contado/);
-  assert.match(html, /\$ 155\.000 transferencia/);
+  assert.match(html, /<strong>U\$D 100 \(contado\)<\/strong>/);
+  assert.match(html, /U\$D 103 \(Transf\. USA\)/);
+  assert.match(html, /USDT 102/);
+  assert.match(html, /\$ 150\.000 Pesos contado\./);
+  assert.match(html, /\$ 155\.000 Pesos transf\./);
 });
 
 test('missing dollar prices do not become zero or NaN quotes', () => {
   for (const product of [{}, { usd: null }]) {
     const html = context.tarjetaProducto(product);
-    assert.match(html, /U\$D - transferencia banco USA/);
-    assert.match(html, /- USDT/);
+    assert.match(html, /U\$D - \(Transf\. USA\)/);
+    assert.match(html, /USDT -/);
     assert.doesNotMatch(html, /NaN|undefined/);
   }
 });

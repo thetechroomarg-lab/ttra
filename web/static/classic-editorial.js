@@ -15,6 +15,57 @@
   const themeButton = document.getElementById('ttra-theme');
   const glitchWord = document.querySelector('.ttra-glitch-word');
 
+  const heroTitle = document.getElementById('ttra-hero-title');
+  if (heroTitle) {
+    const originalTitle = heroTitle.innerHTML;
+    let played = false;
+    let cleanupTimer;
+    function finishRoll() {
+      clearTimeout(cleanupTimer);
+      heroTitle.innerHTML = originalTitle;
+      heroTitle.classList.remove('ttra-text-rolling');
+      heroTitle.removeAttribute('aria-label');
+    }
+    function startRoll() {
+      if (played || !isClassic() || root.classList.contains('ttra-welcome-pending')) return;
+      played = true;
+      titleObserver.disconnect();
+      if (reducedMotion.matches) return;
+      heroTitle.setAttribute('aria-label', 'Lo Buscás? Lo tenés.');
+      let index = 0;
+      heroTitle.querySelectorAll('.ttra-cat-word').forEach(line => {
+        const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        for (const node of nodes) {
+          const fragment = document.createDocumentFragment();
+          for (const letter of node.textContent) {
+            const glyph = document.createElement('span');
+            glyph.className = 'ttra-roll-glyph';
+            glyph.setAttribute('aria-hidden', 'true');
+            glyph.style.setProperty('--roll-delay', `${.18 + index++ * .055}s`);
+            const outgoing = document.createElement('span');
+            outgoing.className = 'ttra-roll-out';
+            outgoing.textContent = letter === ' ' ? '\u00a0' : letter;
+            const incoming = outgoing.cloneNode(true);
+            incoming.className = 'ttra-roll-in';
+            glyph.append(outgoing, incoming);
+            fragment.append(glyph);
+          }
+          node.replaceWith(fragment);
+        }
+      });
+      heroTitle.classList.add('ttra-text-rolling');
+      // Restore the original text after the flourish: selection and mascot geometry
+      // then use the same unfragmented heading as before.
+      cleanupTimer = setTimeout(finishRoll, 850 + index * 55);
+    }
+    const titleObserver = new MutationObserver(startRoll);
+    titleObserver.observe(root, {attributes: true, attributeFilter: ['class', 'data-modo']});
+    reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) finishRoll(); });
+    startRoll();
+  }
+
   if (glitchWord) {
     let showTu = true;
     window.setInterval(() => {
@@ -99,18 +150,33 @@
   });
   scheduleFrame();
 
-  if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
-        }
+  const revealElements = [...document.querySelectorAll('[data-reveal]')];
+  let revealObserver;
+  function setupReveals() {
+    revealObserver?.disconnect();
+    if (!('IntersectionObserver' in window) || reducedMotion.matches) {
+      revealElements.forEach(element => element.classList.add('is-visible'));
+      return;
+    }
+    // Trigger inside the viewport, with a shorter inset on compact screens.
+    const inset = Math.min(250, Math.round(innerHeight * (mobile.matches ? .16 : .25)));
+    revealObserver = new IntersectionObserver(entries => {
+      const entering = entries.filter(entry => entry.isIntersecting)
+        .sort((a, b) => revealElements.indexOf(a.target) - revealElements.indexOf(b.target));
+      let cardIndex = 0;
+      for (const {target} of entering) {
+        target.style.setProperty('--reveal-delay', `${target.matches('.ttra-category') ? cardIndex++ * .09 : 0}s`);
+        target.classList.add('is-visible');
+        revealObserver.unobserve(target);
       }
-    }, { threshold: .08 });
-    document.querySelectorAll('[data-reveal]').forEach(element => {
+    }, {threshold: .01, rootMargin: `0px 0px -${inset}px 0px`});
+    revealElements.forEach(element => {
+      if (element.classList.contains('is-visible')) return;
       element.classList.add('ttra-reveal-ready');
-      observer.observe(element);
+      revealObserver.observe(element);
     });
   }
+  setupReveals();
+  reducedMotion.addEventListener('change', setupReveals);
+  window.addEventListener('resize', setupReveals, {passive: true});
 })();

@@ -96,9 +96,12 @@ def main():
             expect(page.locator('.ttra-site-count')).to_have_text('4')
             assert page.locator('.ttra-cart-flight').count() == 0
             page.locator('.ttra-site-cart').click()
-            expect(page.locator('#panel-carrito:not(.oculto)')).to_be_visible()
-            expect(page.locator('#items-carrito')).to_contain_text('Teléfono de prueba')
-            expect(page.locator('#items-carrito')).to_contain_text('Cargador de prueba')
+            checkout = page.frame_locator('.ttra-cart-dialog iframe')
+            expect(checkout.locator('#panel-carrito:not(.oculto)')).to_be_visible()
+            expect(checkout.locator('#items-carrito')).to_contain_text('Teléfono de prueba')
+            expect(checkout.locator('#items-carrito')).to_contain_text('Cargador de prueba')
+            assert page.url == BASE + '/catalogo'
+            checkout.locator('#btn-cerrar-carrito').click()
             # Deep links use the original home cards; they must share the same
             # cart and animate without opening a blocking checkout panel.
             page.goto(BASE + '/?producto=Tel%C3%A9fono%20de%20prueba', wait_until='domcontentloaded')

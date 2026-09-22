@@ -129,12 +129,10 @@ html[data-modo="classic"] .ttra-eyebrow { margin: 0 0 30px; font: 600 10px/1.6 v
 html[data-modo="classic"] .ttra-hero h2 { margin: 0 0 28px; color: var(--rc-green-bright); font: 500 clamp(58px, 7.5vw, 126px)/.95 var(--rc-font); letter-spacing: -.075em; }
 html[data-modo="classic"] .ttra-accent { color: var(--ed-accent); }
 html[data-modo="classic"] .ttra-hero-description { margin: 0; color: var(--rc-green-dim); font-size: 16px; line-height: 1.75; }
-html[data-modo="classic"] .ttra-catalog-cta { display: inline-flex; align-items: center; justify-content: space-between; gap: 38px; min-height: 60px; margin-top: 32px; padding: 16px 22px; background: #d52f27; color: #fff; font: 800 13px var(--rc-font); letter-spacing: .08em; text-decoration: none; box-shadow: 0 12px 28px #d52f2740; transition: background .25s, transform .3s var(--ed-ease), box-shadow .3s; }
+html[data-modo="classic"] .ttra-catalog-cta { display: inline-flex; align-items: center; justify-content: center; text-align: center; gap: 0; min-height: 60px; margin-top: 32px; padding: 16px 22px; background: #d52f27; color: #fff; font: 800 13px var(--rc-font); letter-spacing: .08em; text-decoration: none; box-shadow: 0 12px 28px #d52f2740; transition: background .25s, transform .3s var(--ed-ease), box-shadow .3s; }
 html[data-modo="classic"] .ttra-catalog-cta:hover { background: #f04433; transform: translateY(-3px); box-shadow: 0 16px 34px #d52f2755; }
-html[data-modo="classic"] .ttra-catalog-cta span { font-size: 24px; line-height: 1; }
-html[data-modo="classic"] .ttra-button { display: inline-flex; align-items: center; justify-content: space-between; gap: 35px; min-height: 54px; padding: 17px 22px; background: var(--ed-button); color: #191b16; font: 700 13px var(--rc-font); text-decoration: none; transition: background .25s, transform .35s var(--ed-ease); }
+html[data-modo="classic"] .ttra-button { display: inline-flex; align-items: center; justify-content: center; text-align: center; gap: 0; min-height: 54px; padding: 17px 22px; background: var(--ed-button); color: #191b16; font: 700 13px var(--rc-font); text-decoration: none; transition: background .25s, transform .35s var(--ed-ease); }
 html[data-modo="classic"] .ttra-button:hover { background: #ff8468; transform: translateY(-3px); }
-html[data-modo="classic"] .ttra-button span { font-size: 22px; line-height: 1; }
 html[data-modo="classic"] .ttra-stage { position: relative; min-height: 590px; background: #e7e5dc; overflow: hidden; isolation: isolate; color: #31352b; }
 html[data-modo="classic"] .ttra-orbit { position: absolute; width: 87%; aspect-ratio: 1; left: 7%; top: 18%; border-radius: 50%; background: #c9cec0; }
 html[data-modo="classic"] .ttra-stage-word { position: absolute; left: -3%; top: 23%; font: 700 clamp(160px, 19vw, 300px)/1 var(--rc-font); letter-spacing: -.09em; color: #eeeee6; }
@@ -174,8 +172,6 @@ html[data-modo="classic"] .ttra-category-top { display: flex; justify-content: f
 html[data-modo="classic"] .ttra-category-bottom { position: absolute; bottom: 24px; left: 22px; right: 22px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 html[data-modo="classic"] .ttra-category h3 { font-size: clamp(19px, 1.65vw, 25px); font-weight: 500; letter-spacing: -.04em; margin: 0 0 8px; }
 html[data-modo="classic"] .ttra-category p { margin: 0; font-size: 11px; line-height: 1.5; }
-html[data-modo="classic"] .ttra-circle-arrow { display: grid; place-items: center; flex: 0 0 38px; height: 38px; border: 1px solid currentColor; border-radius: 50%; font-size: 23px; transition: transform .4s var(--ed-ease); }
-html[data-modo="classic"] .ttra-category:hover .ttra-circle-arrow { transform: rotate(45deg); }
 html[data-modo="classic"] .ttra-category-laptop { background: #e9e5dc; }
 html[data-modo="classic"] .ttra-category-audio { background: #e8b69b; }
 html[data-modo="classic"] .ttra-category-tablet { background: #c6d4d0; }
@@ -262,6 +258,9 @@ html[data-modo="classic"] .ttra-about h2 { font-size: clamp(30px, 3vw, 46px); fo
 html[data-modo="classic"] .ttra-about h2 em { font-family: Georgia, serif; font-weight: 400; color: var(--ed-accent); }
 html[data-modo="classic"] .ttra-about-copy > p:not(.ttra-eyebrow) { color: var(--rc-green-dim); font-size: 14px; line-height: 1.8; max-width: 350px; margin-bottom: 25px; }
 html[data-modo="classic"] .rc-pie { position: relative; z-index: 3; display: flex; justify-content: center; align-items: center; gap: 20px; padding: 55px var(--ed-gutter); border-top: 1px solid var(--ed-line); background: var(--rc-bg); color: var(--rc-green); box-shadow: 0 -20px 48px #00000022; translate: 0 var(--section-enter-y, 0px); }
+html[data-modo="classic"] .rc-pie { margin-top: auto; flex-shrink: 0; }
+html[data-modo="classic"] .rc-redes { display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; }
+html[data-modo="classic"] .rc-red-icono svg { width: 22px; height: 22px; }
 html[data-modo="classic"] .ttra-footer-title { margin: 0; font: 500 clamp(20px, 2vw, 28px)/1.2 var(--rc-font); letter-spacing: -.035em; }
 html[data-modo="classic"] .rc-red-icono { width: 44px; height: 44px; display: grid; place-items: center; color: var(--rc-green); }
 html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, .rc-logout-tarjeta, .tarjeta) { background: var(--rc-bg-panel); border: 1px solid var(--ed-line); border-radius: 6px; box-shadow: 0 24px 70px #00000030; }
@@ -295,7 +294,6 @@ html[data-modo="classic"] .ttra-hero-description { animation-delay: .12s; }
   html[data-modo="classic"] .ttra-category-bottom { left: 18px; right: 18px; }
   html[data-modo="classic"] .ttra-laptop { top: 85px; width: 80%; left: 0; right: 0; }
   html[data-modo="classic"] .ttra-category h3 { font-size: 19px; }
-  html[data-modo="classic"] .ttra-circle-arrow { flex-basis: 30px; height: 30px; }
   html[data-modo="classic"] .ttra-tablet { padding: 30px 16px; }
   html[data-modo="classic"] .ttra-brand-lens { width: 155px; height: 155px; top: 75px; }
   html[data-modo="classic"] .ttra-brand-lens::after { width: 65px; }
@@ -373,3 +371,99 @@ html[data-modo="classic"][data-classic-theme="light"] .card:hover:not(.expandida
 html[data-modo="classic"][data-classic-theme="light"] .tarjeta-recomendado:hover { box-shadow: none; }
 html[data-modo="classic"][data-classic-theme="light"] .rc-logout-tarjeta { background: var(--rc-bg-panel); }
 html[data-modo="classic"] [data-reveal].ttra-reveal-ready:focus-within { opacity: 1; transform: none; }
+
+/* One viewBox keeps the diagonal arrow safely inside its circle at every size. */
+html[data-modo="classic"] .ttra-category-bottom > div { min-width: 0; }
+html[data-modo="classic"] .ttra-category .ttra-circle-arrow { display: block; flex: 0 0 36px; width: 36px; height: 36px; overflow: hidden; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-category .ttra-circle-arrow { flex-basis: 32px; width: 32px; height: 32px; }
+}
+
+/* A personal introduction, set apart from the storefront's editorial type. */
+html[data-modo="classic"] .ttra-personal-intro {
+  position: relative;
+  box-sizing: border-box;
+  width: min(100%, 470px);
+  margin: 4px 0 0;
+  padding: 23px 28px 24px;
+  border-left: 4px solid #d52f27;
+  border-radius: 2px 14px 14px 2px;
+  background: #eee7d8;
+  color: #252921;
+  font-size: 24px;
+  line-height: 1.3;
+  box-shadow: 0 12px 34px #00000026;
+}
+html[data-modo="classic"] .ttra-intro-name {
+  display: block;
+  margin-bottom: 12px;
+  font: 400 clamp(30px, 3vw, 43px)/1.15 Georgia, 'Times New Roman', serif;
+  letter-spacing: -.045em;
+}
+html[data-modo="classic"] .ttra-intro-name strong {
+  font-weight: 700;
+  color: #ad2e25;
+  text-decoration: underline;
+  text-decoration-color: #ad2e254d;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+html[data-modo="classic"] .ttra-intro-detail {
+  display: block;
+  max-width: 32ch;
+  font: 500 16px/1.8 var(--rc-font);
+  letter-spacing: 0;
+}
+html[data-modo="classic"] .ttra-intro-detail strong {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 4px;
+  background: #252921;
+  color: #fff8e9;
+  font-weight: 800;
+  white-space: nowrap;
+}
+@media(max-width:700px) {
+  html[data-modo="classic"] .ttra-personal-intro { padding: 20px; }
+  html[data-modo="classic"] .ttra-intro-name { font-size: 32px; }
+}
+
+/* In-view card sequence: soft focus and scale resolve once on entry. */
+html[data-modo="classic"] .ttra-category[data-reveal].ttra-reveal-ready {
+  opacity: 0;
+  transform: translateY(24px) scale(.8);
+  filter: blur(10px);
+  transform-origin: center;
+  transition: opacity .65s var(--ed-ease), transform .8s var(--ed-ease), filter .8s var(--ed-ease);
+  transition-delay: var(--reveal-delay, 0s);
+}
+html[data-modo="classic"] .ttra-category[data-reveal].ttra-reveal-ready:is(.is-visible, :focus-within) {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+html[data-modo="classic"] .ttra-category[data-reveal]:focus-within { transition-delay: 0s; }
+@media(prefers-reduced-motion:reduce) {
+  html[data-modo="classic"] .ttra-category[data-reveal].ttra-reveal-ready {
+    opacity: 1; transform: none; filter: none; transition: none;
+  }
+}
+
+/* Per-character vertical roll, preserving the heading's existing colors. */
+html[data-modo="classic"] .ttra-roll-glyph {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  clip-path: inset(-.13em -.015em -.13em);
+  white-space: pre;
+}
+html[data-modo="classic"] .ttra-roll-out { display: inline-block; }
+html[data-modo="classic"] .ttra-roll-in { position: absolute; inset: 0; transform: translateY(140%); }
+html[data-modo="classic"] .ttra-text-rolling .ttra-roll-out { animation: ttra-letter-out .55s cubic-bezier(.65,0,.35,1) var(--roll-delay) both; }
+html[data-modo="classic"] .ttra-text-rolling .ttra-roll-in { animation: ttra-letter-in .55s cubic-bezier(.65,0,.35,1) var(--roll-delay) both; }
+@keyframes ttra-letter-out { to { transform: translateY(-140%); } }
+@keyframes ttra-letter-in { to { transform: translateY(0); } }
+@media(prefers-reduced-motion:reduce) {
+  html[data-modo="classic"] .ttra-text-rolling .ttra-roll-out { animation: none; }
+  html[data-modo="classic"] .ttra-text-rolling .ttra-roll-in { display: none; animation: none; }
+}

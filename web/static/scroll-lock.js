@@ -12,6 +12,7 @@
     return Boolean(
       (cart && !cart.classList.contains("oculto")) ||
       (profile && !profile.classList.contains("oculto")) ||
+      document.querySelector("dialog[data-ttra-cart][open], dialog[data-ttra-cart][data-opening]") ||
       document.querySelector(".rc-logout-overlay.visible") ||
       document.querySelector(".rc-terminos-overlay.visible") ||
       (share && !share.hidden)
@@ -42,9 +43,10 @@
     root.style.scrollBehavior = previousBehavior;
   }
 
+  document.addEventListener('ttra:overlay-change', syncScrollLock);
   new MutationObserver(syncScrollLock).observe(body, {
     attributes: true,
-    attributeFilter: ["class", "hidden"],
+    attributeFilter: ["class", "hidden", "open"],
     childList: true,
     subtree: true,
   });

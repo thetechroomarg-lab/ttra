@@ -161,7 +161,9 @@ html[data-modo="classic"] .catalog-page .card .precios strong { color: var(--ed-
   .catalog-intro { padding-top: 20px; padding-bottom: 14px; }
   .catalog-filter-header { padding-top: 12px; }
   .catalog-filter-header p { font-size: 17px; }
-  .catalog-brand-filter { align-items: flex-start; flex-direction: column; gap: 8px; }
-  .catalog-brand-filter select { width: 100%; }
+  .catalog-brand-filter { align-items: stretch; flex-direction: column; gap: 10px; width: 100%; min-width: 0; }
+  .catalog-brand-filter label { font-size: 14px; }
+  .catalog-brand-filter select { display: block; width: 100%; max-width: 100%; min-width: 0; min-height: 52px; padding: 14px 16px; font-size: 16px; line-height: 1.4; }
+  .catalog-brand-filter option { font-size: 16px; }
   html[data-modo="classic"] .catalog-page main { padding-bottom: 55px; }
 }
