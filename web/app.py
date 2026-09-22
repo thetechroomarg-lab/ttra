@@ -2092,13 +2092,6 @@ def pagina_catalogo(request: Request):
     return FileResponse(str(BASE / "static" / "catalogo.html"))
 
 
-@app.get("/preventa")
-def pagina_preventa(request: Request):
-    if not _sesion_activa(request) or _debe_cambiar_password(request):
-        return RedirectResponse("/login.html")
-    return FileResponse(str(BASE / "static" / "preventa.html"))
-
-
 @app.get("/api/catalogo")
 def api_catalogo(request: Request):
     productos, modo_precio = _catalogo_autorizado(request)
