@@ -87,9 +87,8 @@ html[data-modo="classic"].ttra-scroll-locked body#rc-body-landing:not(.rc-vista-
 html[data-modo="classic"] ::selection { background: var(--ed-accent); color: var(--rc-bg); }
 html[data-modo="classic"] :is(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 5px; }
 html[data-modo="classic"] :is(button, a, input, select) { -webkit-tap-highlight-color: transparent; }
-/* Replace the blocking Classic splash with the actual storefront. */
-html[data-modo="classic"] #rc-portada-ingreso { display: none; }
-html[data-modo="classic"] body.rc-portada-activa > :not(#rc-portada-ingreso) { opacity: 1; filter: none; transform: none; }
+/* The welcome screen is the only storefront view without a masthead. */
+html[data-modo="classic"] #rc-body-landing.rc-portada-activa > header { display: none; }
 html[data-modo="classic"] .ttra-skip { position: fixed; top: -100px; left: 20px; z-index: 10020; padding: 14px 20px; background: var(--rc-bg-panel); color: var(--rc-green); }
 html[data-modo="classic"] .ttra-skip:focus { top: 16px; }
 

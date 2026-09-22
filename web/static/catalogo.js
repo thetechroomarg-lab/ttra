@@ -119,26 +119,10 @@ async function cargarCatalogo() {
   }
 }
 
-document.getElementById("btn-logout").addEventListener("click", async () => {
-  await fetch("/logout", { method: "POST" });
-  window.location.href = "/login.html";
-});
 document.getElementById("marca-filter").addEventListener("change", (event) => {
   marcaActiva = event.target.value;
   pintarSeccion(categoriaActiva);
 });
 
-async function sincronizarSesion() {
-  try {
-    const respuesta = await fetch("/api/me");
-    if (!respuesta.ok) return;
-    document.getElementById("catalog-login").hidden = true;
-    document.getElementById("btn-logout").hidden = false;
-  } catch {
-    // El catálogo público sigue disponible aunque falle la consulta de sesión.
-  }
-}
-
 pintarCarrousel();
-sincronizarSesion();
 cargarCatalogo();

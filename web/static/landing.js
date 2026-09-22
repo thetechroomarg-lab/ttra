@@ -2966,4 +2966,11 @@ cargarCatalogo().then(async () => {
   if (await procesarCheckoutPendiente()) return;
   abrirProductoCompartido();
   await procesarLinkMailing();
+  const parametrosPanel = new URLSearchParams(location.search);
+  if (parametrosPanel.get("panel") === "carrito") {
+    abrirCarrito();
+    parametrosPanel.delete("panel");
+    const query = parametrosPanel.toString();
+    history.replaceState(history.state, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
+  }
 });

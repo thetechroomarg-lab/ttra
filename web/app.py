@@ -2112,6 +2112,9 @@ try { if (localStorage.getItem('ttra_classic_theme') === 'light')
 <link rel="stylesheet" href="/classic.css">
 <link rel="stylesheet" href="/classic-editorial.css">
 <link rel="stylesheet" href="/site-pages.css">
+<link rel="stylesheet" href="/site-header.css">
+<script src="/site-header.js" defer></script>
+<script src="/scroll-lock.js" defer></script>
 """
 
 _PRODUCTO_PUBLICO_HEADER = (

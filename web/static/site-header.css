@@ -1,0 +1,61 @@
+/* One persistent masthead across the customer-facing storefront. */
+html[data-modo="classic"].ttra-welcome-dismissed #rc-portada-ingreso { display: none; }
+html[data-modo="classic"] { scroll-padding-top: calc(var(--ttra-header-height, 180px) + 20px); }
+html[data-modo="classic"] body.ttra-page { overflow-x: clip; overflow-y: visible; }
+html[data-modo="classic"] body > header.ttra-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  flex-shrink: 0;
+}
+/* The body is offset when a modal locks scrolling. Keep the masthead at the
+   viewport edge and reserve its original space until scrolling is restored. */
+html[data-modo="classic"].ttra-scroll-locked body:has(> header.ttra-site-header) { padding-top: var(--ttra-header-height, 180px); }
+html[data-modo="classic"].ttra-scroll-locked body > header.ttra-site-header {
+  position: fixed; left: 0; width: var(--ttra-scroll-lock-width, 100%);
+}
+html[data-modo="classic"].ttra-menu-open body > header.ttra-site-header,
+html[data-modo="classic"] body:has(#rc-perfil-dropdown:not(.oculto)) > header.ttra-site-header { z-index: 9991; }
+html[data-modo="classic"] body.ttra-page > header.ttra-site-header { flex-wrap: nowrap; }
+html[data-modo="classic"] .ttra-site-header .ttra-page-brand { font-size: clamp(30px, 3vw, 42px); line-height: .88; letter-spacing: -.065em; }
+html[data-modo="classic"] .ttra-site-actions { display: flex; align-items: center; gap: 12px; }
+html[data-modo="classic"] .ttra-site-header .rc-perfil-menu { order: 0; }
+html[data-modo="classic"] .ttra-site-header .ttra-theme { box-shadow: none; }
+html[data-modo="classic"] .ttra-site-account { position: relative; }
+html[data-modo="classic"] .ttra-site-profile {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 44px; min-height: 44px; padding: 0; border: 0;
+  background: transparent; color: var(--rc-green); box-shadow: none; cursor: pointer;
+}
+html[data-modo="classic"] .ttra-site-profile svg { width: 22px; height: 22px; }
+html[data-modo="classic"] .ttra-site-initials { font: 600 12px var(--rc-font); }
+html[data-modo="classic"] .ttra-site-initials:empty { display: none; }
+html[data-modo="classic"] .ttra-site-menu {
+  position: absolute; top: calc(100% + 12px); right: 0; width: 230px;
+  max-width: calc(100vw - 40px); max-height: calc(100dvh - var(--ttra-header-height, 180px) - 24px);
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 8px; border: 1px solid var(--ed-line); border-radius: 6px;
+  background: var(--rc-bg-panel); box-shadow: 0 18px 40px #00000030;
+}
+html[data-modo="classic"] .ttra-site-menu :is(a, button) {
+  display: flex; align-items: center; width: 100%; min-height: 44px;
+  padding: 10px 12px; border: 0; background: transparent; color: var(--rc-green);
+  text-align: left; text-decoration: none; font: 500 13px var(--rc-font); cursor: pointer;
+}
+html[data-modo="classic"] .ttra-site-menu :is(a, button):hover { background: var(--rc-bg-panel-2); }
+html[data-modo="classic"] .ttra-site-error { padding: 0 12px; color: var(--ed-accent); font-size: 12px; }
+html[data-modo="classic"] .ttra-site-actions [hidden] { display: none !important; }
+html[data-modo="classic"] .ttra-site-cart {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 10px 14px;
+  border: 1px solid var(--ed-line); background: transparent; color: var(--rc-green);
+  text-decoration: none; font: 500 12px var(--rc-font);
+}
+html[data-modo="classic"] .ttra-site-cart svg { width: 18px; height: 18px; }
+@media (max-width: 700px) {
+  html[data-modo="classic"] body.ttra-page > header.ttra-site-header { padding: 18px 20px; gap: 12px; align-items: center; }
+  html[data-modo="classic"] .ttra-site-header .ttra-page-brand { font-size: 24px; }
+  html[data-modo="classic"] .ttra-site-menu { position: fixed; top: calc(var(--ttra-header-height, 142px) + 8px); left: 20px; right: 20px; width: auto; }
+  html[data-modo="classic"] .ttra-site-actions { gap: 6px; }
+  html[data-modo="classic"] .ttra-site-initials { display: none; }
+  html[data-modo="classic"] .ttra-site-cart { padding: 10px; }
+}

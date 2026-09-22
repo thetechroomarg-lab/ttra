@@ -205,6 +205,7 @@ if ("serviceWorker" in navigator) {
     // sessionStorage no disponible (ej. modo privado estricto): tratamos
     // como si no la hubiera visto, para no romper el flujo de portada.
   }
+  if (new URLSearchParams(location.search).get("panel") === "carrito") yaVioPortada = true;
   if (portada && btnPortada && yaVioPortada) {
     portada.classList.add("oculto");
   } else if (portada && btnPortada) {

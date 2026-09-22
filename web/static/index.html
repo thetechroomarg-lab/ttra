@@ -17,6 +17,14 @@
     } catch {
       // Sin storage, la landing conserva el Classic oscuro por defecto.
     }
+    try {
+      if (sessionStorage.getItem("ttra_portada_vista") === "1" ||
+          new URLSearchParams(location.search).get("panel") === "carrito") {
+        document.documentElement.classList.add("ttra-welcome-dismissed");
+      }
+    } catch {
+      // La bienvenida sigue disponible cuando no hay almacenamiento.
+    }
   </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -55,6 +63,8 @@
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="perfil.css">
   <link rel="stylesheet" href="classic-editorial.css">
+  <link rel="stylesheet" href="/site-header.css">
+  <script src="/site-header.js" defer></script>
 </head>
 <body id="rc-body-landing">
   <a class="ttra-skip ttra-editorial" href="/catalogo">Ir al catálogo</a>
