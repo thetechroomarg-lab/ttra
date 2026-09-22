@@ -68,6 +68,24 @@ html[data-modo="classic"] .carrousel-recomendados-mobile-contador { color: var(-
 html[data-modo="classic"] .rc-pie { flex-direction: row; text-align: left; }
 
 html[data-modo="classic"] body.rc-vista-seccion .ttra-home-only { display: none; }
+/* Freeze the blurred page, while keeping the floating panels independently scrollable. */
+html.ttra-scroll-locked { overflow: hidden; overscroll-behavior: none; }
+html.ttra-scroll-locked body#rc-body-landing,
+html[data-modo="classic"].ttra-scroll-locked body#rc-body-landing:not(.rc-vista-seccion) {
+  position: fixed;
+  top: var(--ttra-scroll-lock-top);
+  left: 0;
+  width: var(--ttra-scroll-lock-width);
+  overflow: hidden;
+}
+#panel-carrito,
+#panel-perfil,
+.rc-terminos-contenido,
+.rc-panel-compartir-contenido {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.rc-panel-compartir-contenido { max-height: calc(100dvh - 40px); overflow-y: auto; }
 html[data-modo="classic"] ::selection { background: var(--ed-accent); color: var(--rc-bg); }
 html[data-modo="classic"] :is(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 5px; }
 html[data-modo="classic"] :is(button, a, input, select) { -webkit-tap-highlight-color: transparent; }
