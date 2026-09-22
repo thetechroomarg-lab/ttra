@@ -119,7 +119,7 @@ def _envios():
             "del viernes 14:00.\n"
             "💵 En pesos por transferencia: se abona el mismo día del pedido. En efectivo al "
             "recibir: cotización del momento. En dólares: el precio no cambia.\n"
-            "🔐 Por seguridad no entrego en zonas peligrosas; si hace falta coordinamos un "
+            "🔐 Por seguridad no entrego en zonas peligrosas; si hace falta coordino un "
             "punto seguro. Siempre prefiero entregar en tu domicilio.")
 
 

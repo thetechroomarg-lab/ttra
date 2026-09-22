@@ -321,9 +321,9 @@ async function cargarFragmentoTerminosMayorista() {
     const r = await fetch("/condiciones-mayorista.html");
     fragmentoTerminosMayoristaCache = r.ok
       ? await r.text()
-      : "<p>No pudimos cargar las condiciones mayoristas. Recargá la página.</p>";
+      : "<p>No pude cargar las condiciones mayoristas. Recargá la página.</p>";
   } catch {
-    fragmentoTerminosMayoristaCache = "<p>No pudimos cargar las condiciones mayoristas. Recargá la página.</p>";
+    fragmentoTerminosMayoristaCache = "<p>No pude cargar las condiciones mayoristas. Recargá la página.</p>";
   }
   return fragmentoTerminosMayoristaCache;
 }
@@ -373,7 +373,7 @@ if (btnTerminosAceptar) {
       }
       ocultarModalTerminosMayorista();
     } catch {
-      alert("No pudimos guardar tu aceptación. Probá de nuevo.");
+      alert("No pude guardar tu aceptación. Probá de nuevo.");
       btnTerminosAceptar.disabled = false;
       btnTerminosAceptar.textContent = "Acepto";
     }
@@ -1610,7 +1610,7 @@ async function cargarCatalogo() {
   } catch {
     ocultarNavegacionCatalogo();
     document.getElementById("productos").innerHTML =
-      '<p class="mensaje-vacio">No pudimos cargar el catálogo. Escribinos por WhatsApp: ' +
+      '<p class="mensaje-vacio">No pude cargar el catálogo. Escribime por WhatsApp: ' +
       '<a href="https://wa.me/543512145217" target="_blank" rel="noopener">wa.me/543512145217</a></p>';
     return false;
   }
@@ -2142,7 +2142,7 @@ async function derivarCheckoutAWhatsapp(carrito) {
     if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;
   } catch (error) {
     console.error("No se pudo guardar el pedido", error);
-    alert("No pudimos guardar tu pedido. Probá nuevamente antes de abrir WhatsApp.");
+    alert("No pude guardar tu pedido. Probá nuevamente antes de abrir WhatsApp.");
     return;
   }
   borrarCheckoutPendiente();
@@ -2373,7 +2373,7 @@ if (btnUsarUbicacion) {
     btnUsarUbicacion.disabled = false;
     btnUsarUbicacion.textContent = textoOriginal;
     if (!resultado) {
-      alert("No pudimos obtener tu ubicación. Revisá el permiso de ubicación del navegador.");
+      alert("No pude obtener tu ubicación. Revisá el permiso de ubicación del navegador.");
       return;
     }
     inputDireccionEntrega.value = resultado.direccion;

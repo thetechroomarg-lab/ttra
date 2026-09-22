@@ -1201,7 +1201,7 @@ def registro(entrada: RegistroIn, request: Request):
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo completar el registro (¿Supabase no disponible?)")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     try:
         domicilios.crear(
             client, cliente["id"], "Principal", entrada.direccion,
@@ -1233,7 +1233,7 @@ def login(entrada: LoginIn, request: Request):
         return JSONResponse({"error": str(e)}, status_code=403)
     except Exception:
         logger.exception("No se pudo completar el login (¿Supabase no disponible?)")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     if cliente is None:
         return JSONResponse({"error": "Usuario o contraseña incorrectos"}, status_code=401)
     request.session["cliente_id"] = cliente["id"]
@@ -1293,7 +1293,7 @@ def cambiar_password_obligatorio(entrada: CambiarPasswordObligatorioIn, request:
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo cambiar la contraseña obligatoria (¿Supabase no disponible?)")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     request.session["debe_cambiar_password"] = False
     return {"ok": True}
 
@@ -1306,7 +1306,7 @@ def api_me(request: Request):
         cliente = cuentas.obtener_cliente(get_client(), request.session["cliente_id"])
     except Exception:
         logger.exception("No se pudo obtener el perfil del cliente")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     if cliente is None:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     tipo_cliente = _tipo_cliente_sesion(request)
@@ -1332,7 +1332,7 @@ def api_me_actualizar(entrada: ActualizarMeIn, request: Request):
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo actualizar el perfil del cliente")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     return cliente
 
 
@@ -1351,7 +1351,7 @@ def api_domicilios_listar(request: Request):
         return domicilios.listar(get_client(), request.session["cliente_id"])
     except Exception:
         logger.exception("No se pudieron obtener los domicilios")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
 
 
 @app.post("/api/domicilios")
@@ -1367,7 +1367,7 @@ def api_domicilios_crear(entrada: DomicilioIn, request: Request):
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo guardar el domicilio")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     return domicilio
 
 
@@ -1384,7 +1384,7 @@ def api_domicilios_actualizar(domicilio_id: str, entrada: DomicilioIn, request: 
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo actualizar el domicilio")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     return domicilio
 
 
@@ -1398,7 +1398,7 @@ def api_domicilios_eliminar(domicilio_id: str, request: Request):
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo eliminar el domicilio")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     return {"ok": True}
 
 
@@ -1412,7 +1412,7 @@ def api_domicilios_predeterminado(domicilio_id: str, request: Request):
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo marcar el domicilio como predeterminado")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     return {"ok": True}
 
 
@@ -1436,7 +1436,7 @@ def api_me_password(entrada: CambiarPasswordPropioIn, request: Request):
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception:
         logger.exception("No se pudo cambiar la contraseña del cliente")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     return {"ok": True}
 
 
@@ -1454,7 +1454,7 @@ def api_aceptar_condiciones_mayorista(request: Request):
         ).eq("id", request.session["cliente_id"]).execute()
     except Exception:
         logger.exception("No se pudo guardar la aceptación de condiciones mayoristas")
-        return JSONResponse({"error": "No pudimos conectar, probá de nuevo en un momento"}, status_code=503)
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     return {"ok": True, "condiciones_mayorista_aceptadas_en": aceptadas_en}
 
 
@@ -1752,12 +1752,12 @@ def api_pedidos(entrada: PedidoIn, request: Request):
                 "No se pudo guardar atomicamente el pedido con promociones"
             )
             return JSONResponse(
-                {"error": "No pudimos confirmar las promociones y guardar el pedido."},
+                {"error": "No pude confirmar las promociones y guardar el pedido."},
                 status_code=503,
             )
         if not isinstance(resultado, dict):
             return JSONResponse(
-                {"error": "No pudimos confirmar las promociones y guardar el pedido."},
+                {"error": "No pude confirmar las promociones y guardar el pedido."},
                 status_code=503,
             )
         if not resultado.get("ok"):
@@ -1778,7 +1778,7 @@ def api_pedidos(entrada: PedidoIn, request: Request):
             )
         if not isinstance(resultado.get("pedido"), dict):
             return JSONResponse(
-                {"error": "No pudimos confirmar las promociones y guardar el pedido."},
+                {"error": "No pude confirmar las promociones y guardar el pedido."},
                 status_code=503,
             )
         # La función guardar_pedido_con_descuento_mailing (RPC en Supabase) no
@@ -2097,7 +2097,7 @@ def api_catalogo(request: Request):
     productos, modo_precio = _catalogo_autorizado(request)
     if not productos:
         return {"secciones": {s: [] for s in catalogo.SECCIONES},
-                "mensaje": "Estamos actualizando los precios",
+                "mensaje": "Estoy actualizando los precios",
                 "modo_precio": modo_precio}
     return {"secciones": catalogo.secciones_catalogo(productos), "modo_precio": modo_precio}
 

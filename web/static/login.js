@@ -295,7 +295,7 @@ if (btnRegistroUsarUbicacion) {
     btnRegistroUsarUbicacion.disabled = false;
     btnRegistroUsarUbicacion.textContent = textoOriginal;
     if (!resultado) {
-      registroErrorEl.textContent = "No pudimos obtener tu ubicación. Revisá el permiso de ubicación del navegador.";
+      registroErrorEl.textContent = "No pude obtener tu ubicación. Revisá el permiso de ubicación del navegador.";
       return;
     }
     registroDireccionInput.value = resultado.direccion;
@@ -401,7 +401,7 @@ formRegistro.addEventListener("submit", async (e) => {
     formRegistro.reset();
     mostrarLogin();
     document.getElementById("login-email").value = email;
-    loginOkEl.textContent = "Te mandamos un mail para verificar tu cuenta. Confirmalo antes de ingresar.";
+    loginOkEl.textContent = "Te mandé un mail para verificar tu cuenta. Confirmalo antes de ingresar.";
     return;
   }
   window.location.href = destinoTrasIngresar;

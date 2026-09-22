@@ -146,9 +146,9 @@ async function cargarFragmentoTerminosMayorista() {
     const r = await fetch("/condiciones-mayorista.html");
     fragmentoTerminosMayoristaCacheLocal = r.ok
       ? await r.text()
-      : "<p>No pudimos cargar las condiciones mayoristas. Probá de nuevo.</p>";
+      : "<p>No pude cargar las condiciones mayoristas. Probá de nuevo.</p>";
   } catch {
-    fragmentoTerminosMayoristaCacheLocal = "<p>No pudimos cargar las condiciones mayoristas. Probá de nuevo.</p>";
+    fragmentoTerminosMayoristaCacheLocal = "<p>No pude cargar las condiciones mayoristas. Probá de nuevo.</p>";
   }
   return fragmentoTerminosMayoristaCacheLocal;
 }
@@ -189,7 +189,7 @@ async function cargarPerfil() {
     }
     const datos = await r.json();
     if (!r.ok) {
-      errorEl.textContent = datos.error || "No pudimos cargar tu perfil";
+      errorEl.textContent = datos.error || "No pude cargar tu perfil";
       return;
     }
     document.getElementById("perfil-nombre").value = datos.nombre || "";
@@ -198,7 +198,7 @@ async function cargarPerfil() {
     document.getElementById("perfil-celular").value = datos.celular || "";
     mostrarSeccionCondicionesMayorista(datos);
   } catch {
-    errorEl.textContent = "No pudimos conectar, probá de nuevo en un momento";
+    errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }
 }
 
@@ -323,12 +323,12 @@ formPerfil.addEventListener("submit", async (e) => {
     });
     const datos = await r.json();
     if (!r.ok) {
-      errorEl.textContent = datos.error || datos.detail || "No pudimos guardar los cambios";
+      errorEl.textContent = datos.error || datos.detail || "No pude guardar los cambios";
       return;
     }
     okEl.textContent = "Datos guardados";
   } catch {
-    errorEl.textContent = "No pudimos conectar, probá de nuevo en un momento";
+    errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }
 });
 
@@ -354,14 +354,14 @@ formDomicilio.addEventListener("submit", async (e) => {
         });
     const datos = await r.json();
     if (!r.ok) {
-      errorEl.textContent = datos.error || datos.detail || "No pudimos guardar el domicilio";
+      errorEl.textContent = datos.error || datos.detail || "No pude guardar el domicilio";
       return;
     }
     okEl.textContent = "Domicilio guardado";
     cancelarEdicionDomicilio();
     cargarDomicilios();
   } catch {
-    errorEl.textContent = "No pudimos conectar, probá de nuevo en un momento";
+    errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }
 });
 
@@ -395,12 +395,12 @@ formPassword.addEventListener("submit", async (e) => {
     });
     const datos = await r.json();
     if (!r.ok) {
-      errorEl.textContent = datos.error || datos.detail || "No pudimos cambiar la contraseña";
+      errorEl.textContent = datos.error || datos.detail || "No pude cambiar la contraseña";
       return;
     }
     okEl.textContent = "Contraseña actualizada";
     formPassword.reset();
   } catch {
-    errorEl.textContent = "No pudimos conectar, probá de nuevo en un momento";
+    errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }
 });

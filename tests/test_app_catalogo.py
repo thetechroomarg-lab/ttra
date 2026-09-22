@@ -59,7 +59,7 @@ def test_api_catalogo_sin_productos(tmp_path, monkeypatch):
     monkeypatch.setattr(appmod, "_cargar_productos", lambda: [])
     r = c.get("/api/catalogo")
     assert r.status_code == 200
-    assert r.json()["mensaje"] == "Estamos actualizando los precios"
+    assert r.json()["mensaje"] == "Estoy actualizando los precios"
 
 
 def test_api_catalogo_con_productos(tmp_path, monkeypatch):
@@ -155,7 +155,7 @@ def test_catalogo_mayorista_con_costos_invalidos_devuelve_actualizacion(tmp_path
     assert r.status_code == 200
     assert r.json() == {
         "secciones": {s: [] for s in appmod.catalogo.SECCIONES},
-        "mensaje": "Estamos actualizando los precios",
+        "mensaje": "Estoy actualizando los precios",
         "modo_precio": "mayorista",
     }
 
@@ -185,7 +185,7 @@ def test_catalogo_mayorista_rechaza_costo_obsoleto_aunque_el_nombre_coincida(
     assert mayorista.status_code == 200
     assert mayorista.json()["modo_precio"] == "mayorista"
     assert mayorista.json()["secciones"]["Celulares"] == []
-    assert mayorista.json()["mensaje"] == "Estamos actualizando los precios"
+    assert mayorista.json()["mensaje"] == "Estoy actualizando los precios"
 
     fake.table("clientes").update({"tipo_cliente": "minorista"}).eq(
         "id", cliente["id"]
@@ -220,7 +220,7 @@ def test_catalogo_mayorista_falla_cerrado_si_crash_deja_manifest_anterior(
 
     assert respuesta.status_code == 200
     assert respuesta.json()["secciones"]["Celulares"] == []
-    assert respuesta.json()["mensaje"] == "Estamos actualizando los precios"
+    assert respuesta.json()["mensaje"] == "Estoy actualizando los precios"
 
 
 def test_catalogo_mayorista_rechaza_version_de_manifest_desconocida(
