@@ -513,7 +513,7 @@ html[data-modo="classic"] .ttra-text-rolling .ttra-roll-in { animation: ttra-let
 .ttra-product-canvas { display: none; }
 html[data-modo="classic"] .ttra-product-canvas { display: block; position: absolute; top: 33px; left: 12px; width: calc(100% - 24px); height: calc(100% - 133px); pointer-events: none; opacity: 0; }
 html[data-modo="classic"] .ttra-3d-ready .ttra-product-canvas { opacity: 1; }
-html[data-modo="classic"] .ttra-3d-ready > :is(.ttra-mini-phone,.ttra-tablet,.ttra-laptop,.ttra-controller,.ttra-headphones) { visibility: hidden; }
+html[data-modo="classic"] .ttra-3d-ready > :is(.ttra-mini-phone,.ttra-tablet,.ttra-laptop,.ttra-controller,.ttra-headphones,.ttra-brand-lens) { visibility: hidden; }
 
 html[data-modo="classic"] .ttra-3d-ready::after { content: ''; position: absolute; left: 24%; right: 24%; bottom: 96px; height: 15px; border-radius: 50%; background: #11182024; filter: blur(9px); pointer-events: none; }
 

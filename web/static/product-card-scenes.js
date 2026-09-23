@@ -144,7 +144,79 @@ export function createProductCardScenes(entries) {
     p.position.y=-.30;
     return {model:p,radius:1.5,halfHeight:1.40,yaw:-.35,tilt:-.04};
   }
-  const makers={phone,tablet,laptop,controller,headphones};
+  // Magnifier: the lens samples the card's own backdrop photo, aligned to where
+  // it sits behind the canvas, so the glass magnifies and bulges the real scene.
+  function magnifier(entry){
+    const p=new T.Group();const R=.95;
+    const lensGroup=new T.Group();p.add(lensGroup);
+    mesh(lensGroup,own(new T.TorusGeometry(R+.02,.085,20,72)),silver);
+    mesh(lensGroup,own(new T.TorusGeometry(R-.045,.022,10,72)),edge,0,0,.06);
+    const backdrop=entry.card.querySelector('.ttra-category-backdrop');
+    const map=own(new T.TextureLoader().load(backdrop.currentSrc||backdrop.src,()=>{uniforms.uReady.value=1;}));
+    map.colorSpace=T.SRGBColorSpace;
+    const uniforms={uMap:{value:map},uMapSize:{value:new T.Vector2(backdrop.naturalWidth||1200,backdrop.naturalHeight||800)},uReady:{value:0},
+      uCanvas:{value:new T.Vector4()},uImg:{value:new T.Vector4()},uCard:{value:new T.Vector4()},uBuffer:{value:new T.Vector2(1,1)},
+      uCenter:{value:new T.Vector2()},uRadius:{value:1},uZoom:{value:1.45}};
+    const glassMat=own(new T.ShaderMaterial({uniforms,
+      vertexShader:`varying vec3 vN;varying vec3 vV;void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);vN=normalize(normalMatrix*normal);vV=mv.xyz;gl_Position=projectionMatrix*mv;}`,
+      fragmentShader:`uniform sampler2D uMap;uniform vec2 uMapSize;uniform float uReady;uniform vec4 uCanvas;uniform vec4 uImg;uniform vec4 uCard;uniform vec2 uBuffer;uniform vec2 uCenter;uniform float uRadius;uniform float uZoom;varying vec3 vN;varying vec3 vV;
+      vec2 coverUV(vec2 s){float k=max(uImg.z/uMapSize.x,uImg.w/uMapSize.y);vec2 d=uMapSize*k;vec2 o=uImg.xy+uImg.zw*.5-d*.5;vec2 uv=(s-o)/d;return vec2(uv.x,1.0-uv.y);}
+      void main(){
+        vec2 P=vec2(uCanvas.x+gl_FragCoord.x/uBuffer.x*uCanvas.z,uCanvas.y+(1.0-gl_FragCoord.y/uBuffer.y)*uCanvas.w);
+        vec2 d=P-uCenter;float r=clamp(length(d)/uRadius,0.0,1.0);
+        float z=uZoom*(1.0+.28*(1.0-r*r));
+        vec3 c=vec3(texture2D(uMap,coverUV(uCenter+d/(z*.982))).r,texture2D(uMap,coverUV(uCenter+d/z)).g,texture2D(uMap,coverUV(uCenter+d/(z*1.018))).b);
+        float g=dot(c,vec3(.2126,.7152,.0722));c=mix(vec3(g),c,.8);
+        float t=clamp((P.y-uCard.y)/uCard.w,0.0,1.0);float a=t<.55?mix(.149,.251,t/.55):mix(.251,.863,(t-.55)/.45);
+        c=mix(c,vec3(.0018,.0033,.0052),a);
+        c=mix(vec3(.012,.015,.02),c,uReady)*vec3(.97,.99,1.0);
+        c*=mix(1.0,.7,smoothstep(.78,1.0,r));
+        vec3 N=normalize(vN);vec3 V=normalize(-vV);
+        float f=pow(1.0-max(dot(N,V),0.0),3.0);c=mix(c,vec3(.75,.82,.9),f*.45);
+        vec3 H=normalize(normalize(vec3(-.55,.65,.75))+V);c+=vec3(1.0)*pow(max(dot(N,H),0.0),120.0)*.9+vec3(.9,.95,1.0)*pow(max(dot(N,H),0.0),14.0)*.06;
+        gl_FragColor=vec4(c,1.0);
+        #include <colorspace_fragment>
+      }`}));
+    // Shallow convex cap: the curved normals give the rim fresnel and highlights.
+    const theta=.36,sphere=R/Math.sin(theta);
+    const cap=mesh(lensGroup,own(new T.SphereGeometry(sphere,56,14,0,Math.PI*2,0,theta)),glassMat,0,0,-sphere*Math.cos(theta)+.02);
+    cap.rotation.x=Math.PI/2;
+    const wood=texture((c,w,h)=>{
+      const base=c.createLinearGradient(0,0,w,0);base.addColorStop(0,'#b98a55');base.addColorStop(.5,'#d2a874');base.addColorStop(1,'#b3834e');
+      c.fillStyle=base;c.fillRect(0,0,w,h);let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+      for(let i=0;i<70;i++){const x0=rnd()*w,amp=4+rnd()*10,freq=.004+rnd()*.01,ph=rnd()*6;c.strokeStyle=`rgba(${120+rnd()*40|0},${80+rnd()*30|0},${40+rnd()*20|0},${.12+rnd()*.28})`;c.lineWidth=.6+rnd()*2.2;c.beginPath();for(let y=0;y<=h;y+=8){const x=x0+Math.sin(y*freq+ph)*amp;y?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();}
+    },512,1024);
+    const woodMat=own(new T.MeshStandardMaterial({map:wood,roughness:.62,metalness:0}));
+    const arm=new T.Group();arm.rotation.z=Math.PI/4;p.add(arm);
+    const neck=R+.06;
+    mesh(arm,own(new T.CylinderGeometry(.075,.085,.12,20)),silver,0,-neck-.06,0);
+    mesh(arm,own(new T.CylinderGeometry(.1,.1,.3,24)),silver,0,-neck-.27,0);
+    for(const y of [-neck-.13,-neck-.41]){const ring=mesh(arm,own(new T.TorusGeometry(.104,.016,8,24)),edge,0,y,0);ring.rotation.x=Math.PI/2;}
+    const profile=[[.09,0],[.11,-.12],[.125,-.35],[.117,-.75],[.13,-1.1],[.142,-1.32],[.132,-1.45],[.096,-1.53],[.04,-1.57],[.001,-1.575]].map(([x,y])=>new T.Vector2(x,y));
+    mesh(arm,own(new T.LatheGeometry(profile,40)),woodMat,0,-neck-.42,0);
+    p.children.forEach(child=>child.position.add(new T.Vector3(-.66,.66,0)));
+    const center=new T.Vector3(),rim=new T.Vector3(),ndc=new T.Vector3();
+    let hover=0;
+    return {model:p,radius:1.78,halfHeight:1.78,yaw:0,tilt:0,
+      animate(time,view){
+        hover+=((view.card.matches(':hover, :focus-visible')?1:0)-hover)*.16;
+        p.rotation.set(.1+Math.sin(time*.7)*.07,-.18+Math.sin(time*.45)*.3,Math.sin(time*.35)*.05);
+        p.position.y=Math.sin(time*.9)*.05;p.scale.setScalar(1+.08*hover);
+        uniforms.uZoom.value=1.45+.3*hover;
+      },
+      beforeRender(view,w,h){
+        const px=(v,rect)=>{ndc.copy(v).project(view.camera);return [rect.left+(ndc.x*.5+.5)*rect.width,rect.top+(.5-ndc.y*.5)*rect.height];};
+        const cr=view.canvas.getBoundingClientRect(),ir=backdrop.getBoundingClientRect(),kr=view.card.getBoundingClientRect();
+        p.updateMatrixWorld(true);view.camera.updateMatrixWorld();
+        lensGroup.getWorldPosition(center);rim.set(R,0,0);lensGroup.localToWorld(rim);
+        const [cx,cy]=px(center,cr),[rx,ry]=px(rim,cr);
+        uniforms.uCenter.value.set(cx,cy);uniforms.uRadius.value=Math.hypot(rx-cx,ry-cy)||1;
+        uniforms.uCanvas.value.set(cr.left,cr.top,cr.width,cr.height);uniforms.uImg.value.set(ir.left,ir.top,ir.width,ir.height);
+        uniforms.uCard.value.set(kr.left,kr.top,kr.width,kr.height);uniforms.uBuffer.value.set(w,h);
+        if(backdrop.naturalWidth)uniforms.uMapSize.value.set(backdrop.naturalWidth,backdrop.naturalHeight);
+      }};
+  }
+  const makers={phone,tablet,laptop,controller,headphones,magnifier};
   // Neutral studio reflections keep dark finishes legible through the full turn.
   const studio=new T.Scene();studio.background=new T.Color(0x646970);
   const studioMaterial=new T.MeshBasicMaterial({color:0xffffff});const studioGeometry=new T.PlaneGeometry(4,7);
@@ -154,7 +226,7 @@ export function createProductCardScenes(entries) {
     const scene=new T.Scene();scene.environment=environment.texture;
     scene.add(new T.HemisphereLight(0xffffff,0x55534c,2.5));
     for(const [x,y,z,power] of [[-3,4,5,4],[4,1,-3,3],[0,-2,4,1]]){const l=new T.DirectionalLight(0xffffff,power);l.position.set(x,y,z);scene.add(l);}
-    const product=makers[entry.kind]();scene.add(product.model);
+    const product=makers[entry.kind](entry);scene.add(product.model);
     return {...entry,...product,scene,camera:new T.PerspectiveCamera(32,1,.1,50),context:entry.canvas.getContext('2d')};
   });
   function render(view,time=0) {
@@ -165,7 +237,8 @@ export function createProductCardScenes(entries) {
     const halfFov=T.MathUtils.degToRad(16);
     const distance=Math.max(view.halfHeight,view.radius/view.camera.aspect)/Math.tan(halfFov)*1.14+.18;
     view.camera.position.set(0,.18,distance);view.camera.lookAt(0,.05,0);view.camera.updateProjectionMatrix();
-    view.model.rotation.set(view.tilt,view.yaw+time*.34,view.kind==='phone'?-.10:0);
+    if(view.animate)view.animate(time,view);else view.model.rotation.set(view.tilt,view.yaw+time*.34,view.kind==='phone'?-.10:0);
+    view.beforeRender?.(view,w,h);
     renderer.render(view.scene,view.camera);view.context.clearRect(0,0,w,h);view.context.drawImage(renderer.domElement,0,0);
     view.card.classList.add('ttra-3d-ready');
   }
