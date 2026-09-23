@@ -114,7 +114,11 @@
       const previousOffset = parseFloat(incoming.style.getPropertyValue('--section-enter-y')) || 0;
       const top = incoming.getBoundingClientRect().top - previousOffset;
       const travel = Math.max(360, window.innerHeight * .82);
-      const progress = Math.max(0, Math.min(1, (window.innerHeight - top) / travel));
+      // A short intro may already reveal the next section at scrollY=0.
+      // Use its initial position as the start, so visible content stays sharp
+      // until the user actually scrolls and becomes sharp again on return.
+      const start = Math.min(window.innerHeight, top + window.scrollY);
+      const progress = Math.max(0, Math.min(1, (start - top) / travel));
       const depth = mobile.matches ? .045 : .10;
       const offset = (1 - progress) * (mobile.matches ? 32 : 96);
       outgoing.style.setProperty('--section-scale', (1 - progress * depth).toFixed(3));

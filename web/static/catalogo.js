@@ -172,7 +172,10 @@ async function cargarCatalogo() {
     }
     const categoriaSolicitada = parametros.get("categoria");
     pintarSeccion(SECCIONES.includes(categoriaSolicitada) ? categoriaSolicitada : "Todos");
-    if (parametros.get("buscar") === "1") document.getElementById("catalog-search").focus();
+    if (parametros.get("buscar") === "1") {
+      document.querySelector('.catalog-search-wrap').hidden = false;
+      document.getElementById("catalog-search").focus();
+    }
     if (parametros.get("filtro") === "marca") selectorMarca.focus({ preventScroll: true });
   } catch {
     document.getElementById("secciones").innerHTML =

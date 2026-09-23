@@ -17,6 +17,9 @@ with sync_playwright() as p:
         page.evaluate('document.fonts.ready')
         page.wait_for_timeout(2200)
         page.evaluate("document.documentElement.style.scrollBehavior='auto'")
+        page.evaluate('window.scrollTo(0,0)')
+        page.wait_for_timeout(250)
+        assert page.locator('.ttra-hero').evaluate("el=>(parseFloat(getComputedStyle(el).getPropertyValue('--section-blur'))||0)===0"), 'Home must start completely sharp'
         for outgoing, incoming in [('.ttra-hero','.ttra-collection'),('.ttra-collection','.ttra-about')]:
             node = page.locator(outgoing)
             anchor = page.locator(incoming).evaluate("el=>el.getBoundingClientRect().top+scrollY-(parseFloat(el.style.getPropertyValue('--section-enter-y'))||0)")
@@ -33,6 +36,9 @@ with sync_playwright() as p:
             assert abs(forward[0]-reverse[-1])<.15,(forward,reverse)
             assert 'blur(' in node.evaluate('(el)=>getComputedStyle(el).filter')
             print(width,outgoing,'forward',forward,'reverse',reverse,flush=True)
+        page.evaluate('window.scrollTo(0,0)')
+        page.wait_for_timeout(250)
+        assert page.locator('.ttra-hero').evaluate("el=>(parseFloat(getComputedStyle(el).getPropertyValue('--section-blur'))||0)===0"), 'Returning to the top must restore full sharpness'
         page.emulate_media(reduced_motion='reduce')
         page.wait_for_timeout(100)
         assert page.locator('.ttra-hero,.ttra-collection,.ttra-about').evaluate_all("els=>els.every(el=>!el.style.getPropertyValue('--section-blur'))")

@@ -11,12 +11,12 @@ export function createScene(host) {
   host.appendChild(renderer.domElement);
   const scene = new T.Scene();
   const camera = new T.PerspectiveCamera(35, 1, .1, 100);
-  const phone = new T.Group(); scene.add(phone);
+  const phone = new T.Group(); phone.scale.x = .96; scene.add(phone);
   const resources = new Set();
   const own = value => { resources.add(value); return value; };
   const mat = (color, metalness = 0, roughness = .4, extra = {}) => own(new T.MeshStandardMaterial({color, metalness, roughness, ...extra}));
   const titanium = mat(0xbcc1c8, .92, .24);
-  const orange = mat(0xe66f32, .72, .3);
+  const burgundy = mat(0x350b14, .72, .34);
   const darkMetal = mat(0x292c32, .8, .28);
   const glass = mat(0x050810, .55, .16);
   const gold = mat(0xd6ad69, .8, .25);
@@ -44,7 +44,7 @@ export function createScene(host) {
   function texture(kind) {
     const canvas = document.createElement('canvas'); canvas.width=768; canvas.height=kind === 'back' ? 1075 : 1536;
     const c = canvas.getContext('2d');
-    c.fillStyle = kind === 'screen' ? '#09090c' : kind === 'battery' ? '#202126' : '#e87940'; c.fillRect(0,0,768,1536);
+    c.fillStyle = kind === 'screen' ? '#09090c' : kind === 'battery' ? '#202126' : '#350b14'; c.fillRect(0,0,768,1536);
     if (kind === 'screen') {
       const glow=c.createRadialGradient(500,870,10,430,850,680);
       glow.addColorStop(0,'#ff8061');glow.addColorStop(.3,'#d52d24');glow.addColorStop(.65,'#441319');glow.addColorStop(1,'#09090c');
@@ -64,7 +64,7 @@ export function createScene(host) {
       // Same vector mark as /logos/apple.svg, drawn without a network dependency.
       c.clearRect(0,0,canvas.width,canvas.height);
       c.save(); c.translate(canvas.width/2-110,canvas.height/2-110); c.scale(220/24,220/24);
-      c.fillStyle='#713c27';
+      c.fillStyle='#17070c';
       c.fill(new Path2D("M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"));
       c.restore();
     }
@@ -81,13 +81,13 @@ export function createScene(host) {
     const group=new T.Group();group.position.z=z;phone.add(group);parts.push({group,start:new T.Vector3(0,0,z),target:new T.Vector3(...target)});return group;
   }
   const back=part(-.16,[-.7,.3,-1.85]);
-  slab(back,1.72,3.48,.09,orange);
+  slab(back,1.72,3.48,.09,burgundy);
   // iPhone 17 Pro Max: full-width plateau, left-side lenses, right-side sensors.
   // Positive local X is the viewer's left when looking at the rear (-Z).
-  slab(back,1.60,1.01,.09,orange,0,1.16,-.10,.18);
+  slab(back,1.60,1.01,.09,burgundy,0,1.16,-.10,.18);
   const rearCameras = [[.48,1.39],[.055,1.16],[.48,.93]];
   for(const [x,y] of rearCameras) {
-    cylinder(back,.218,.055,orange,x,y,-.176);
+    cylinder(back,.218,.055,burgundy,x,y,-.176);
     cylinder(back,.188,.06,black,x,y,-.197);
     cylinder(back,.154,.065,glass,x,y,-.21);
     cylinder(back,.070,.07,lens,x,y,-.225);
@@ -98,7 +98,7 @@ export function createScene(host) {
   cylinder(back,.075,.04,black,-.56,.93,-.18);
   cylinder(back,.012,.04,darkMetal,-.56,1.16,-.18);
   // Separate lower glass inset, with the centered Apple mark.
-  const rearGlass = mat(0xdf7b45,.5,.52);
+  const rearGlass = mat(0x300b12,.65,.42);
   slab(back,1.50,2.10,.015,rearGlass,0,-.52,-.058,.15);
   const rearLogo = face(back,1.40,1.96,-.084,texture('back'),true);
   rearLogo.position.y = -.52;
@@ -107,10 +107,10 @@ export function createScene(host) {
   rearLogo.material.roughness = .6;
   const frame=part(0,[0,0,0]);
   // Hollow chassis: narrow rails leave the internal components visible.
-  slab(frame,.055,3.20,.19,orange,-.85,0,0,.025);slab(frame,.055,3.20,.19,orange,.85,0,0,.025);
-  slab(frame,1.61,.07,.19,orange,0,1.70,0,.03);slab(frame,1.61,.07,.19,orange,0,-1.70,0,.03);
-  slab(frame,.07,.34,.065,orange,.895,.48,0,.025);
-  slab(frame,.07,.23,.065,orange,-.895,.62,0,.025);slab(frame,.07,.23,.065,orange,-.895,.24,0,.025);
+  slab(frame,.055,3.20,.19,burgundy,-.85,0,0,.025);slab(frame,.055,3.20,.19,burgundy,.85,0,0,.025);
+  slab(frame,1.61,.07,.19,burgundy,0,1.70,0,.03);slab(frame,1.61,.07,.19,burgundy,0,-1.70,0,.03);
+  slab(frame,.07,.34,.065,burgundy,.895,.48,0,.025);
+  slab(frame,.07,.23,.065,burgundy,-.895,.62,0,.025);slab(frame,.07,.23,.065,burgundy,-.895,.24,0,.025);
   slab(frame,.31,.03,.095,black,0,-1.742,0,.01);
   for(let i=0;i<6;i++)slab(frame,.028,.03,.035,black,.35+i*.065,-1.743,0,.01);
   const battery=part(.035,[-.8,-.65,.85]);
@@ -135,6 +135,25 @@ export function createScene(host) {
   screen.add(shutdownFlash);
   slab(screen,.46,.10,.011,black,0,1.50,.055,.05);
   cylinder(screen,.028,.012,lens,.13,1.5,.071);
+  // Tiny connector sparks: one short pulse as the display and board detach.
+  const sparkCanvas = document.createElement('canvas');
+  sparkCanvas.width = sparkCanvas.height = 64;
+  const sparkContext = sparkCanvas.getContext('2d');
+  const sparkGlow = sparkContext.createRadialGradient(32,32,0,32,32,30);
+  sparkGlow.addColorStop(0,'rgba(255,255,245,1)');
+  sparkGlow.addColorStop(.15,'rgba(255,228,173,.8)');
+  sparkGlow.addColorStop(.5,'rgba(255,180,105,.15)');
+  sparkGlow.addColorStop(1,'rgba(255,180,105,0)');
+  sparkContext.fillStyle = sparkGlow; sparkContext.fillRect(0,0,64,64);
+  sparkContext.strokeStyle = 'rgba(255,246,216,.85)'; sparkContext.lineWidth = 1.5;
+  sparkContext.beginPath(); sparkContext.moveTo(22,32); sparkContext.lineTo(42,32);
+  sparkContext.moveTo(32,22); sparkContext.lineTo(32,42); sparkContext.stroke();
+  const sparkTexture = own(new T.CanvasTexture(sparkCanvas));
+  const sparks = [[battery,.3,.85,.09],[board,-.35,1.0,.09],[panel,.55,.15,.07]].map(([parent,x,y,z],index) => {
+    const material = own(new T.SpriteMaterial({map:sparkTexture,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));
+    const sprite = new T.Sprite(material); sprite.position.set(x,y,z); sprite.scale.setScalar(.11); sprite.visible = false; parent.add(sprite);
+    return {sprite,delay:index*.025};
+  });
   // Camera assembly detaches independently, visible from both orbit directions.
   const cameras=part(-.24,[-1.45,1.4,-2.5]);
   for(const [x,y] of rearCameras){
@@ -174,6 +193,57 @@ export function createScene(host) {
     cylinder(screw,.033,.08,titanium,x,y,0);
     slab(screw,.04,.009,.005,black,x,y,.047,.001);
   }
+  // Additional independent internals follow their assembled locations outward.
+  // Small modules use low-detail geometry to keep the mobile render lightweight.
+  const tinyBox = own(new T.BoxGeometry(1,1,1));
+  function detail(parent,w,h,d,material,x=0,y=0,z=0) {
+    const mesh = new T.Mesh(tinyBox,material);
+    mesh.scale.set(w,h,d); mesh.position.set(x,y,z); parent.add(mesh); return mesh;
+  }
+  // Shield cans lift away from the logic board, exposing the chips below them.
+  for (let i=0;i<4;i++) {
+    const x=-.48+i*.32;
+    const shield=part(.10,[x*1.8,.9+(i%2)*.3,1.0+i*.18]);
+    detail(shield,.26,.26,.018,titanium,x,1.17,.035);
+    detail(shield,.20,.018,.012,darkMetal,x,1.17,.05);
+  }
+  // Memory, power-management and radio modules remain small and staggered.
+  for (let i=0;i<8;i++) {
+    const x=-.56+(i%4)*.36, y=.90+Math.floor(i/4)*.49;
+    const module=part(.075,[x*2.1, i<4?.5:1.35, (i%2?1:-1)*(.65+i*.065)]);
+    detail(module,.14,.11,.024,black,x,y,.04);
+    for(let pin=0;pin<3;pin++) {
+      detail(module,.018,.025,.012,gold,x-.045+pin*.045,y-.065,.04);
+      detail(module,.018,.025,.012,gold,x-.045+pin*.045,y+.065,.04);
+    }
+  }
+  // Flex connectors and antenna strips peel off along the chassis edges.
+  for(let i=0;i<6;i++) {
+    const side=i%2?1:-1, y=.72-Math.floor(i/2)*.65;
+    const connector=part(.085,[side*(1.1+i*.045),y*.65,.45+(i%3)*.34]);
+    detail(connector,.13,.24,.025,black,side*.66,y,0);
+    detail(connector,.07,.14,.012,gold,side*.66,y,.02);
+  }
+  for(let i=0;i<4;i++) {
+    const side=i%2?1:-1, y=i<2?.68:-.70;
+    const antenna=part(-.025,[side*1.5,y*.6,-.7-(i%2)*.25]);
+    detail(antenna,.04,.52,.018,darkMetal,side*.79,y,0);
+    detail(antenna,.016,.30,.006,gold,side*.79,y,.014);
+  }
+  // Optical rings and sensor filters separate from each rear camera module.
+  const opticalRing = own(new T.TorusGeometry(.17,.015,6,24));
+  rearCameras.forEach(([x,y],i) => {
+    const gasket=part(-.27,[-1.25+i*.4,.8+i*.3,-1.6-i*.23]);
+    const ring=new T.Mesh(opticalRing,black);ring.position.set(x,y,0);gasket.add(ring);
+    const filter=part(-.28,[.7+i*.25,.65+i*.25,-1.35-i*.25]);
+    detail(filter,.14,.14,.012,lens,x,y,0);
+  });
+  for(let i=0;i<4;i++) {
+    const side=i%2?1:-1, y=i<2?1.55:-1.55;
+    const bracket=part(.03,[side*1.35,y*.35,i%2?.55:-.55]);
+    detail(bracket,.18,.055,.018,titanium,side*.58,y,0);
+    detail(bracket,.025,.11,.018,titanium,side*.66,y-.03,0);
+  }
   // Compress both the local geometry and assembled layer spacing by 60%.
   // Explosion offsets stay independent of physical thickness.
   parts.forEach(({group,start,target}) => {
@@ -184,7 +254,7 @@ export function createScene(host) {
   });
   const ambient=new T.HemisphereLight(0xbfd5ff,0x51443d,2);scene.add(ambient);
   function light(color,intensity,x,y,z){const l=new T.DirectionalLight(color,intensity);l.position.set(x,y,z);scene.add(l);}
-  light(0xffffff,5,-3,5,5);light(0x91b5ff,3,4,1,-4);light(0xff513b,3,-4,-2,-2);light(0xffffff,2,1,-3,6);
+  light(0xffffff,5,-3,5,5);light(0x91b5ff,3,4,1,-4);light(0xffc6b5,.8,-4,-2,-2);light(0xffffff,2,1,-3,6);
   // Large luminous studio panels provide real metal reflections.
   const studio=new T.Scene();studio.background=new T.Color(0x292c33);
   for(const [x,y,z,w,h] of [[-4,2,0,3,8],[4,3,1,2,7],[0,5,0,8,3],[0,0,5,5,8]]){
@@ -198,6 +268,12 @@ export function createScene(host) {
     render(t){
       const explosion=ease((t-4.95)/.55);const orbit=ease((t-5.5)/4.7);
       parts.forEach(({group,start,target})=>group.position.lerpVectors(start,target,explosion));
+      for (const {sprite,delay} of sparks) {
+        const pulse = (t - 5.08 - delay) / .24;
+        sprite.visible = pulse > 0 && pulse < 1;
+        sprite.material.opacity = sprite.visible ? .8 * Math.sin(Math.PI*pulse) * (1-pulse) : 0;
+        sprite.scale.setScalar(.08 + .05 * T.MathUtils.clamp(pulse,0,1));
+      }
       // Losing contact: a brief flicker, vertical collapse, then the last line dies.
       // The glass remains in place and completely dark for the entire orbit.
       const shutdown = T.MathUtils.clamp((t-5.12)/.65,0,1);
@@ -212,7 +288,7 @@ export function createScene(host) {
       // Hero hold, acceleration to centrifuge speed, then an abrupt time freeze.
       const spinTime = T.MathUtils.clamp(t-1.3,0,4.2);
       const turns = spinTime < 1.1 ? spinTime*spinTime/2.2 : spinTime-.55;
-      phone.rotation.set(.10+.06*explosion, -.45+turns*(Math.PI*16/3.65), -.12);
+      phone.rotation.set(.10+.06*explosion, -.45+turns*(Math.PI*6/3.65), -.12);
       // At 5.5s all components and phone rotation freeze; only the camera moves.
       const angle=orbit*1.7;
       const distance=T.MathUtils.lerp(Math.max(8.2,5/camera.aspect),Math.max(10.8,11.8/camera.aspect),explosion);

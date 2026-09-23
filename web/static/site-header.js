@@ -178,10 +178,10 @@
     search.innerHTML = svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>') + '<span class="ttra-dock-label">Buscar</span>';
     search.addEventListener('click', event => {
       const input = document.getElementById('catalog-search');
-      if (input) { event.preventDefault(); input.scrollIntoView({block: 'center'}); input.focus({preventScroll: true}); }
+      if (input) { event.preventDefault(); input.closest('.catalog-search-wrap').hidden = false; input.scrollIntoView({block: 'center'}); input.focus({preventScroll: true}); }
     });
     actions.prepend(home, categories, search);
-    actions.querySelector('#btn-carrito, .ttra-site-cart').after(contact);
+    actions.querySelector('#btn-carrito, .ttra-site-cart').before(contact);
     dock.append(actions, panel, contactPanel);
     const dockSection = document.createElement('section');
     dockSection.className = 'ttra-dock-section';

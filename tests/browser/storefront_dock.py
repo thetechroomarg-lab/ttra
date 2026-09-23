@@ -18,7 +18,7 @@ with sync_playwright() as p:
             dock = page.locator('.ttra-dock')
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
             assert page.locator('script[src="/home-cat.js"]').count() == 0
-            assert page.locator('header .ttra-site-rate').is_visible()
+            assert page.locator('header .ttra-site-rate').is_visible() == (path != '/')
             assert page.locator('body > footer').count() == 0
             assert dock.is_visible()
             assert dock.locator('.ttra-dock-control').count() == 5
@@ -48,7 +48,8 @@ with sync_playwright() as p:
             assert not panel.is_visible()
             profile = page.locator('header #btn-perfil-toggle, header .ttra-site-profile')
             assert profile.is_visible()
-            assert profile.bounding_box()['y'] < page.locator('.ttra-site-rate').bounding_box()['y']
+            if path != '/':
+                assert profile.bounding_box()['y'] < page.locator('.ttra-site-rate').bounding_box()['y']
             assert page.locator('.ttra-catalog-cta').count() == 0
             profile.click()
             theme = page.locator('.ttra-theme')
