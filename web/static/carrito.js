@@ -48,6 +48,7 @@
     // Persist first: no successful feedback or animation if storage fails.
     localStorage.setItem(key, JSON.stringify(cart));
     window.dispatchEvent(new Event('ttra:cart-change'));
+    window.dispatchEvent(new Event('ttra:cart-added'));
     notificar(`${producto.nombre} agregado al carrito.`);
     return cart;
   }

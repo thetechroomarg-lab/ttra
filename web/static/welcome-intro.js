@@ -86,7 +86,7 @@
       if (!guest) { dismiss(false); return; }
     }
     if (closed || finished) return;
-    // A visit lasts for this tab: internal navigation and reloads do not replay it.
+    // Internal navigation skips repeats; an ordinary reload checks the session again.
     // A newly opened tab starts fresh; signed-in customers are checked above first.
     try { sessionStorage.setItem('ttra_portada_vista', '1'); } catch {}
     watchdog = setTimeout(() => ready(true), 25000);

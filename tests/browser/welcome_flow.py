@@ -49,7 +49,7 @@ with sync_playwright() as p:
         assert page.locator('#rc-portada-ingreso canvas').count() == 0
         assert 'intro=' not in page.url
         page.reload()
-        expect(intro).to_be_hidden()
+        expect(intro).to_be_visible()
         assert not errors, errors
         context.close()
     for mode in ['reduce', 'failure', 'escape']:

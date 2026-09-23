@@ -224,6 +224,9 @@ async def gate_paginas_html(request: Request, call_next):
     ruta_cruda = request.url.path
     ruta = _normalizar_ruta(ruta_cruda)
 
+    if request.method in {"GET", "HEAD"} and ruta in {"/vaiven", "/vaiven.html"}:
+        return pagina_vaiven(request)
+
     if ruta == "/" and ruta_cruda != "/":
         # "//", "///", "/./", "/foo/../", etc.: StaticFiles las resolvería
         # igual que "/", que ya está gateada por la ruta explícita
@@ -4835,6 +4838,29 @@ def api_codigos_promo_consumir(entrada: CodigoPromoIn, request: Request):
         {"error": "Este endpoint fue retirado; el regalo se consume al guardar el pedido."},
         status_code=410,
     )
+
+
+@app.post("/vaiven/acceso")
+def habilitar_album_vaiven(request: Request):
+    access = secrets.token_urlsafe(24)
+    request.session["vaiven_access"] = {"value": access, "expires": time.time() + 120}
+    return JSONResponse({"access": access}, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/vaiven")
+@app.get("/vaiven/")
+@app.get("/vaiven.html")
+def pagina_vaiven(request: Request):
+    grant = request.session.get("vaiven_access", {})
+    access = request.query_params.get("access", "")
+    allowed = (bool(access) and access.isascii() and isinstance(grant, dict)
+               and grant.get("expires", 0) > time.time()
+               and secrets.compare_digest(access, grant.get("value", "")))
+    if not allowed:
+        return FileResponse(str(BASE / "static" / "vaiven-denied.html"), status_code=403,
+                            headers={"Cache-Control": "no-store"})
+    request.session.pop("vaiven_access", None)
+    return FileResponse(str(BASE / "static" / "vaiven.html"), headers={"Cache-Control": "no-store"})
 
 
 @app.get("/catalogo")

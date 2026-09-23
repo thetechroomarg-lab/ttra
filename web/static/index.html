@@ -21,9 +21,19 @@
     if (window.parent !== window && introParams.get('embed') === 'carrito') {
       document.documentElement.classList.add('ttra-cart-embedded');
     }
-    let introSeen = false;
-    try { introSeen = sessionStorage.getItem("ttra_portada_vista") === "1"; } catch {}
-    const showIntro = introParams.get("intro") === "1" || (!introSeen && introParams.get("panel") !== "carrito");
+    let introSeen = false, albumReturn = null;
+    try {
+      introSeen = sessionStorage.getItem("ttra_portada_vista") === "1";
+      const savedReturn = JSON.parse(sessionStorage.getItem("ttra_vaiven_return_once") || "null");
+      sessionStorage.removeItem("ttra_vaiven_return_once");
+      if (savedReturn && typeof savedReturn.guest === "boolean" && Date.now() - savedReturn.at >= 0 && Date.now() - savedReturn.at < 30000) {
+        albumReturn = savedReturn;
+        sessionStorage.setItem("ttra_portada_vista", "1");
+      }
+    } catch {}
+    window.__TTRA_VAIVEN_RETURN = albumReturn;
+    const isReload = performance.getEntriesByType('navigation')[0]?.type === 'reload';
+    const showIntro = introParams.get("intro") === "1" || (!albumReturn && (!introSeen || isReload) && introParams.get("panel") !== "carrito");
     document.documentElement.classList.add(showIntro ? "ttra-welcome-pending" : "ttra-welcome-dismissed");
   </script>
   <meta charset="utf-8">
@@ -64,6 +74,7 @@
   <link rel="stylesheet" href="perfil.css">
   <link rel="stylesheet" href="classic-editorial.css">
   <link rel="stylesheet" href="/site-header.css">
+  <link rel="stylesheet" href="/disclosure.css">
   <link rel="stylesheet" href="/carrito.css">
   <link rel="stylesheet" href="/welcome-intro.css">
   <script src="/welcome-intro.js" defer></script>
@@ -294,7 +305,8 @@
         <div class="ttra-headphones" aria-hidden="true"><i></i><b></b><span>TTR<em>.</em></span></div>
         <div class="ttra-category-bottom"><div><h3>Accesorios</h3></div><svg class="ttra-circle-arrow" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="14.5"/><path d="M11 21 21 11M11 11h10v10"/></svg></div>
       </a>
-      <a class="ttra-category ttra-category-brands" href="/catalogo?filtro=marca#catalog-filters" data-reveal>
+      <a class="ttra-category ttra-category-brands ttra-category-scene" href="/catalogo?filtro=marca#catalog-filters" data-reveal>
+        <img class="ttra-category-backdrop" src="/category-backgrounds/electronics-shelves.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1200" height="800">
         <div class="ttra-brand-lens" aria-hidden="true"><span>¿cuál<br>elegís<span class="ttra-accent">?</span></span></div>
         <div class="ttra-category-bottom"><div><h3>Búsqueda por Marca</h3></div><svg class="ttra-circle-arrow" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="14.5"/><path d="M11 21 21 11M11 11h10v10"/></svg></div>
       </a>

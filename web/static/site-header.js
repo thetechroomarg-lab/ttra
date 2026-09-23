@@ -1,6 +1,7 @@
 // Shared storefront navigation; the home keeps its existing account/cart panels.
 (() => {
   const root = document.documentElement;
+  if (document.body.classList.contains('vaiven-page') || /^\/vaiven\/?$/.test(location.pathname)) return;
   import('/adaptive-dropdowns.js');
   if (root.classList.contains('ttra-cart-embedded')) {
     const panel = document.getElementById('panel-carrito');
@@ -27,6 +28,11 @@
   const header = document.querySelector('body > header');
   if (!header || root.dataset.modo !== 'classic') return;
   header.classList.add('ttra-site-header');
+  // A cat-enabled host keeps one mascot alive while child pages navigate.
+  let catHost;
+  try { if (window.parent !== window) catHost = window.parent.TTRAHeaderCat; } catch { /* External embeds have no shared host. */ }
+  if (catHost) catHost.attach(document);
+  else import('/header-cat.js');
 
   // Reuse the home contact footer on every storefront page, including products.
   const previousFooter = document.querySelector('body > .ttra-page-footer');
