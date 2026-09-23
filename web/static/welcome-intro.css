@@ -10,14 +10,10 @@ html.ttra-welcome-pending #rc-body-landing > header { display: none !important; 
 .ttra-intro-title > span { display: block; font: normal 800 clamp(20px, 3vw, 44px)/.88 Arial, sans-serif; letter-spacing: -.065em; margin-bottom: 22px; }
 .ttra-intro-title strong { display: block; font: normal 800 clamp(88px, 19vw, 290px)/.88 Arial, sans-serif; letter-spacing: -.065em; text-shadow: 0 8px 60px #0008; }
 .ttra-intro-title strong span { color: #f45240; }
-.ttra-intro-entry { position: absolute; inset: 0; display: grid; place-items: center; visibility: hidden; opacity: 0; transition: opacity 1s ease; pointer-events: none; }
-html[data-modo="classic"] #btn-portada-ingreso { pointer-events: auto; appearance: none; border: 0; background: transparent; background-image: none; color: #f5f3ef; border-radius: 0; padding: 20px; min-width: 0; font: normal 800 clamp(36px, 6vw, 76px)/1 Arial, sans-serif; letter-spacing: -.045em; cursor: pointer; box-shadow: none; text-shadow: none; transform: none; transition: opacity .25s ease; }
-html[data-modo="classic"] #btn-portada-ingreso:hover { background: transparent; color: #fff; opacity: .7; box-shadow: none; transform: none; }
-html[data-modo="classic"] #btn-portada-ingreso:is(:focus, :focus-visible, :active) { outline: none; border: 0; background: transparent; box-shadow: none; }
-html[data-modo="classic"] #btn-portada-ingreso:focus-visible { color: #fff; opacity: .7; }
-.ttra-intro[data-phase="ready"] .ttra-intro-entry { opacity: 1; visibility: visible; }
 .ttra-intro[data-fallback="true"] .ttra-intro-title { top: 40%; --title-opacity: 1; --title-scale: 1; --title-blur: 0px; }
-.ttra-intro[data-fallback="true"] .ttra-intro-entry { padding-top: 250px; }
+/* Tras quedar en negro (scene/title ya en opacity 0), un fade-in automático
+   revela la home debajo, sin CTA: ver dismiss()/fadeInHome() en welcome-intro.js. */
+.ttra-intro[data-phase="leaving"] { transition: opacity .9s ease; opacity: 0; pointer-events: none; }
 @media(prefers-reduced-motion: reduce) { .ttra-intro *, .ttra-intro *::before { transition: none !important; } }
 
 .ttra-intro:focus { outline: none; }

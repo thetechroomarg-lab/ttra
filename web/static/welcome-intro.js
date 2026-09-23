@@ -4,14 +4,12 @@
   const intro = document.getElementById('rc-portada-ingreso');
   if (!intro) return;
   if (!root.classList.contains('ttra-welcome-pending')) { intro.hidden = true; return; }
-  const enter = document.getElementById('btn-portada-ingreso');
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const siblings = [...document.body.children].filter(el => el !== intro && !['SCRIPT', 'STYLE'].includes(el.tagName));
   const inertBefore = siblings.map(el => el.inert);
   siblings.forEach(el => { el.inert = true; });
   document.body.classList.add('rc-portada-activa');
   intro.focus({preventScroll: true});
-  let keyboardNavigation = false;
   let scene, frame, watchdog, finished = false, closed = false, last = 0, elapsed = 0;
   const resetClock = () => { last = 0; };
   document.addEventListener('visibilitychange', resetClock);
@@ -25,7 +23,9 @@
     intro.style.setProperty('--title-opacity', '0');
     if (fallback) intro.dataset.fallback = 'true';
     intro.dataset.phase = 'ready';
-    if (keyboardNavigation && intro.contains(document.activeElement)) enter.focus({preventScroll: true});
+    // Sin CTA: tras quedar en negro, un instante después arranca solo el
+    // fade-in hacia la home (ver fadeInHome).
+    setTimeout(fadeInHome, fallback ? 0 : 550);
   };
   function tick(now) {
     if (closed || finished) return;
@@ -46,11 +46,11 @@
   const reduce = () => { if (motion.matches) ready(true); };
   motion.addEventListener('change', reduce);
   intro.addEventListener('keydown', event => {
-    if (event.key === 'Tab' || event.key === 'Escape') keyboardNavigation = true;
+    // Sin CTA que enfocar: Escape solo adelanta el cierre (salta el resto
+    // de la animación y dispara el fade-in de una).
     if (event.key === 'Escape') ready();
-    if (event.key === 'Tab') { event.preventDefault(); (finished ? enter : intro).focus({preventScroll: true}); }
   });
-  function dismiss(remember = true) {
+  function bookkeepingDismiss(remember) {
     closed = true;
     clearTimeout(watchdog);
     dispose();
@@ -65,15 +65,34 @@
     }
     const url = new URL(location.href); url.searchParams.delete('intro');
     history.replaceState(history.state, '', url);
+  }
+  // Salida instantánea (usuario ya logueado: ni se muestra la animación).
+  function dismiss(remember = true) {
+    bookkeepingDismiss(remember);
     intro.hidden = true;
+    root.classList.remove('ttra-welcome-pending');
+    root.classList.add('ttra-welcome-dismissed');
+    document.body.classList.remove('rc-portada-activa');
+    siblings.forEach((el, i) => { el.inert = inertBefore[i]; });
+  }
+  // Salida con fade: la animación ya terminó en negro (--scene-opacity y
+  // --title-opacity en 0). Se saca el "pending" ya (la home reaparece
+  // detrás, oculta por el overlay negro todavía opaco) y recién ahí se
+  // dispara la transición CSS de opacity que revela la home.
+  function fadeInHome() {
+    if (closed) return;
+    bookkeepingDismiss(true);
     root.classList.remove('ttra-welcome-pending');
     root.classList.add('ttra-welcome-dismissed');
     document.body.classList.remove('rc-portada-activa');
     siblings.forEach((el, i) => { el.inert = inertBefore[i]; });
     const heading = document.getElementById('ttra-hero-title');
     if (heading) { heading.tabIndex = -1; heading.focus({preventScroll: true}); }
+    intro.dataset.phase = 'leaving';
+    if (motion.matches) { intro.hidden = true; return; } // sin transición: corta directo
+    intro.addEventListener('transitionend', () => { intro.hidden = true; }, { once: true });
+    setTimeout(() => { intro.hidden = true; }, 1200); // fallback por si no llega a disparar transitionend
   }
-  enter.addEventListener('click', () => dismiss());
   async function start() {
     const preview = new URLSearchParams(location.search).get('intro') === '1';
     if (!preview) {
