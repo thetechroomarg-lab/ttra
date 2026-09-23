@@ -69,7 +69,10 @@ def install(app, catalog_loader, data_path, client_factory):
         try:
             limiter = app.state.comparison_budget
             peer = request.client.host if request.client else 'unknown'
-            if not limiter.reserve(('comparison', peer), 12, 3600) or not app.state.comparison_global_budget.reserve(('comparison', 'global'), 100, 86400):
+            # Tope bajo a propósito: cada búsqueda con Google Search grounding tiene costo
+            # (gemini-3.5-flash-lite), y cada producto ya queda cacheado 30 días (SpecStore),
+            # así que esto solo limita productos *nuevos* sin comparar todavía.
+            if not limiter.reserve(('comparison', peer), 5, 3600) or not app.state.comparison_global_budget.reserve(('comparison', 'global'), 20, 86400):
                 current.fail(key, owner)
                 return JSONResponse({'status': 'unavailable', 'message': 'Alcancé el límite de consultas. Probá más tarde.'}, status_code=429)
             # Factory creates a dedicated client; do not inherit unbounded SDK retries.

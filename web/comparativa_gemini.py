@@ -5,7 +5,7 @@ import httpx
 from web.catalogo import seccion_de
 from web.comparativa import FIELDS, validate_sheet
 
-MODEL = 'gemini-2.5-flash-lite'
+MODEL = 'gemini-3.5-flash-lite'
 
 
 
@@ -69,7 +69,8 @@ def research_gemini(producto, api_key, client=None):
             'systemInstruction': {'parts': [{'text': prompt}]},
             'contents': [{'role': 'user', 'parts': [{'text': json.dumps(identity, ensure_ascii=False)}]}],
             'tools': [{'google_search': {}}],
-            'generationConfig': {'maxOutputTokens': 2600, 'temperature': 0.1},
+            # Tope justo: máximo 9 atributos × 400 caracteres en castellano + overhead JSON.
+            'generationConfig': {'maxOutputTokens': 1600, 'temperature': 0.1},
         })
     response.raise_for_status()
     candidates = response.json().get('candidates', [])
