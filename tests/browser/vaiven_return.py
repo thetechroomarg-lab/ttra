@@ -1,4 +1,4 @@
-"""Album return skips welcome once; guests put the cat away and reloads show intro."""
+"""Album return skips welcome once and always sends Vaivén running home."""
 import os
 from playwright.sync_api import sync_playwright,expect
 from cart_flow import api
@@ -23,13 +23,11 @@ with sync_playwright() as p:
   expect(home.locator('#ttra-hero-title')).to_be_visible()
   expect(home.locator('#rc-portada-ingreso')).to_be_hidden()
   assert page.evaluate("sessionStorage.getItem('ttra_vaiven_return_once')") is None
-  if active and not signed_in:
+  if active:
    expect(page.locator('#ttra-header-cat')).to_have_attribute('data-behavior','return')
+   expect(page.locator('#ttra-header-cat')).to_have_attribute('data-running','true')
    expect(page.locator('#ttra-header-cat-portal')).to_be_hidden(timeout=7000)
    assert page.evaluate("localStorage.getItem('ttra_header_cat_enabled')")=='0'
-  if active and signed_in:
-   expect(page.locator('#ttra-header-cat-portal')).to_be_visible()
-   assert page.evaluate("localStorage.getItem('ttra_header_cat_enabled')")=='1'
   page.reload(wait_until='networkidle')
   if signed_in:expect(page.locator('#rc-portada-ingreso')).to_be_hidden()
   else:expect(page.locator('#rc-portada-ingreso')).to_be_visible()

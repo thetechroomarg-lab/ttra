@@ -1,4 +1,14 @@
 /* Vaivén's personal photo album, using the storefront's existing theme. */
+/* A static, edge-to-edge photographic backdrop, isolated from the album content. */
+.vaiven-photo-backdrop { isolation: isolate; }
+.vaiven-photo-backdrop::before {
+ content: ""; position: fixed; inset: -16px; z-index: -1; pointer-events: none;
+ background: linear-gradient(#11140fe0,#11140fc9), url('/vaiven/cat-supplies-collage.webp') center / cover no-repeat;
+ filter: blur(5px); animation: none;
+}
+html[data-classic-theme="light"] .vaiven-photo-backdrop::before {
+ background-image: linear-gradient(#f4f0e6e0,#f4f0e6cf), url('/vaiven/cat-supplies-collage.webp');
+}
 .vaiven-page #vaiven-album { width: min(1280px,100%); margin: 0 auto; padding: 64px var(--ed-gutter,24px) 150px; }
 .vaiven-page .vaiven-kicker { display: block; margin: 0 0 22px; font-size: 12px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--ed-accent,#ef6257); }
 .vaiven-intro,.vaiven-confession,.vaiven-goodbye { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: clamp(36px,6vw,100px); }

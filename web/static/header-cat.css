@@ -11,6 +11,9 @@
 #ttra-header-cat .cat-eyes { transform-box: fill-box; transform-origin: center; animation: header-cat-blink 5.8s infinite; animation-delay: var(--cat-clock,0s); }
 #ttra-header-cat[data-state="walk"] .cat-leg-front { animation: header-cat-step .52s ease-in-out infinite; animation-delay: var(--cat-phase,0s); }
 #ttra-header-cat[data-state="walk"] .cat-leg-rear { animation: header-cat-step .52s ease-in-out infinite reverse; animation-delay: var(--cat-phase,0s); }
+@media(prefers-reduced-motion:no-preference) {
+ #ttra-header-cat[data-running="true"] :is(.cat-leg-front,.cat-leg-rear) { animation-duration: .22s; }
+}
 #ttra-header-cat[data-state="scratch"] .cat-scratch-paw { display: block; transform-box: fill-box; transform-origin: left bottom; animation: header-cat-scratch .17s ease-in-out infinite alternate; }
 #ttra-header-cat[data-state="scratch"] .cat-head { transform: rotate(-12deg); }
 #ttra-header-cat:is([data-state="scratch"],[data-state="lick"],[data-state="sleep"],[data-state="joy"]) .cat-eyes { display: none; }
@@ -34,14 +37,14 @@
 .ttra-header-cat-waste { position: absolute; font: 19px/1 sans-serif; bottom: 5px; }
 .ttra-header-cat-waste[data-kind="pee"] { width: 18px; height: 5px; border-radius: 50%; background: #d6b75399; border: 1px solid #d6b753; }
 .ttra-header-cat-waste[data-kind="poop"]::before { content:'〰'; position: absolute; left: 5px; top: -12px; color: #b6aaa1; font-size: 13px; animation: header-cat-zzz 1.7s infinite; }
-html[data-modo="classic"] .ttra-cat-dot-toggle { position: absolute; z-index: 5; display: block; width: 44px; height: 44px; min-width: 44px; padding: 0; margin: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; cursor: pointer; }
-html[data-modo="classic"] .ttra-cat-dot-toggle:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 1px; }
+html[data-modo="classic"] .ttra-cat-logo-toggle { position: absolute; z-index: 5; display: block; min-width: 44px; min-height: 44px; padding: 0; margin: 0; border: 0; border-radius: 4px; background: transparent; box-shadow: none; cursor: pointer; }
+html[data-modo="classic"] .ttra-cat-logo-toggle:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 1px; }
 html[data-modo="classic"] .ttra-cat-door { position: relative; z-index: 3; transform-origin: left center; backface-visibility: hidden; }
 .ttra-cat-house { position: absolute; z-index: 0; background: #080b09; border: 1px solid #ffffff15; box-shadow: inset 4px 0 20px #000; border-radius: 3px; pointer-events: none; }
 .ttra-cat-house[hidden] { display: none; }
 #ttra-storefront-frame { position: fixed; inset: 0; z-index: 100; width: 100%; height: 100dvh; border: 0; background: var(--rc-bg); }
 html.ttra-cat-shell,html.ttra-cat-shell body { height: 100%; overflow: hidden !important; }
-html.ttra-cat-shell body > :not(#ttra-storefront-frame):not(#ttra-header-cat-portal):not(#ttra-cat-introduction):not(script):not(style):not(link) { display: none !important; }
+html.ttra-cat-shell body > :not(#ttra-storefront-frame):not(#ttra-header-cat-portal):not(#ttra-cat-introduction):not(header.ttra-site-header):not(script):not(style):not(link) { display: none !important; }
 @keyframes header-cat-step { 0%,100% { transform: translateX(-3px); } 50% { transform: translate(3px,-4px) rotate(-8deg); } }
 @keyframes header-cat-scratch { from { transform: rotate(-9deg); } to { transform: rotate(12deg); } }
 @keyframes header-cat-lick { 0%,100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
@@ -91,3 +94,13 @@ html.ttra-cat-shell body > :not(#ttra-storefront-frame):not(#ttra-header-cat-por
 #ttra-cat-introduction a { display: flex; min-height: 44px; align-items: center; color: inherit; text-decoration: none; padding: 0 8px; }
 #ttra-cat-introduction button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: transparent; border: 0; border-radius: 50%; color: inherit; font: 24px Arial,sans-serif; cursor: pointer; }
 #ttra-cat-introduction :focus-visible { outline: 2px solid #d6382d; outline-offset: 1px; border-radius: 8px; }
+
+/* The original masthead stays outside page navigation, even with the cat asleep. */
+html.ttra-cat-shell body > header.ttra-site-header {
+ position: fixed !important; inset: 0 0 auto; width: 100%; z-index: 101;
+}
+html.ttra-cat-shell #ttra-storefront-frame {
+ top: var(--ttra-header-height); height: calc(100dvh - var(--ttra-header-height));
+}
+html.ttra-shell-album body > header.ttra-site-header { display: none !important; }
+html.ttra-shell-album #ttra-storefront-frame { top: 0; height: 100dvh; }

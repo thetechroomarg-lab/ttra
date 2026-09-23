@@ -55,9 +55,9 @@ const wasteNodes=new Map();
 const persist=()=>{try{sessionStorage.setItem(KEY,JSON.stringify(state));}catch{}};
 function measure() {
   if(!current?.header.isConnected)return;
-  const {doc,header,brand,dot,button,house}=current;
+  const {doc,header,brand,button,house}=current;
   const transform=brand.style.transform;brand.style.transform='none';
-  const h=header.getBoundingClientRect(),b=brand.getBoundingClientRect(),d=dot.getBoundingClientRect();
+  const h=header.getBoundingClientRect(),b=brand.getBoundingClientRect();
   brand.style.transform=transform;
   if(!h.height)return;
   const controls=header.querySelector('.ttra-header-account');
@@ -68,7 +68,7 @@ function measure() {
   geometry={top:h.top,height:h.height,left,right,size,travel:Math.max(0,right-left-size),floor:h.height-6,doorX:b.right-size*.65,mobile};
   Object.assign(portal.style,{top:`${h.top}px`,height:`${h.height}px`});
   Object.assign(cat.style,{width:`${size}px`,height:`${size*5/6}px`});
-  Object.assign(button.style,{left:`${d.left-h.left+d.width/2-22}px`,top:`${d.top-h.top+d.height/2-22}px`});
+  Object.assign(button.style,{left:`${b.left-h.left}px`,top:`${b.top-h.top}px`,width:`${b.width}px`,height:`${b.height}px`});
   Object.assign(house.style,{left:`${b.left-h.left}px`,top:`${b.top-h.top}px`,width:`${b.width}px`,height:`${b.height}px`});
 }
 function toggle() {
@@ -88,18 +88,26 @@ async function attach(doc) {
     cancelAnimationFrame(raf);raf=0;portal.hidden=true;bubble.hidden=true;
     dismissIntroduction(state,Date.now());persist();return;
   }
+  const pageDoc=doc;
+  if(doc!==document){
+    if(!mounted.has(doc)){
+      doc.defaultView.addEventListener('ttra:cart-added',reward);
+      mounted.set(doc,{delegated:true});
+    }
+    doc=document;
+  }
   await style(doc);
   const header=doc.querySelector('body > header.ttra-site-header');
   const brand=header?.querySelector('.rc-logo, .ttra-page-brand');
-  const dot=brand?.querySelector('.rc-logo-punto') || brand?.querySelector('span:last-child');
-  if(!header||!brand||!dot)return;
+  if(!header||!brand)return;
   let binding=mounted.get(doc);
   if(!binding){
-    const button=doc.createElement('button');button.type='button';button.className='ttra-cat-dot-toggle';
+    const button=doc.createElement('button');button.type='button';button.className='ttra-cat-logo-toggle';
     button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();toggle();});
     const house=doc.createElement('div');house.className='ttra-cat-house';house.hidden=true;house.setAttribute('aria-hidden','true');
+    if(brand.matches('a')){brand.removeAttribute('href');brand.removeAttribute('aria-label');}
     brand.classList.add('ttra-cat-door');header.append(house,button);
-    binding={doc,header,brand,dot,button,house};mounted.set(doc,binding);
+    binding={doc,header,brand,button,house};mounted.set(doc,binding);
     doc.defaultView.addEventListener('ttra:cart-added',reward);
     doc.addEventListener('keydown',event=>{if(event.key==='Escape'&&state.phase.kind==='introduce'){dismiss();cat.focus({preventScroll:true});}});
     doc.addEventListener('pointerdown',event=>{if(state.phase.kind==='introduce'&&!cat.contains(event.target)&&!bubble.contains(event.target))dismiss();});
@@ -112,10 +120,14 @@ async function attach(doc) {
   observer=new MutationObserver(()=>{syncTheme();measure();render();start();});
   observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-classic-theme','class']});
   syncTheme();measure();render();start();
-  if(doc.location.pathname==='/' && doc.defaultView.__TTRA_VAIVEN_RETURN){
-    const {guest}=doc.defaultView.__TTRA_VAIVEN_RETURN;
-    doc.defaultView.__TTRA_VAIVEN_RETURN=null;
-    if(guest&&state.active)toggle();
+  if(pageDoc.location.pathname==='/' && pageDoc.defaultView.__TTRA_VAIVEN_RETURN){
+    pageDoc.defaultView.__TTRA_VAIVEN_RETURN=null;
+    if(state.active)toggle();
+    if(state.phase.kind==='return'){
+      state.phase.duration=Math.min(state.phase.duration,2200);
+      state.phase.running=true;
+      persist();render();start();
+    }
   }
 }
 function syncTheme(){
@@ -123,9 +135,9 @@ function syncTheme(){
   const color=current.doc.defaultView.getComputedStyle(current.doc.documentElement).getPropertyValue('--rc-green');
   portal.style.setProperty('--rc-green',color);
 }
-const navigation=persistentNavigation({active:()=>state.active||state.phase.kind==='return',attach,portal});
+const navigation=persistentNavigation({attach,portal});
 // Frames delegate to this host rather than creating a mascot or behavior engine.
-window.TTRAHeaderCat={attach:doc=>{if(navigation.accepts(doc)&&doc.readyState==='complete')attach(doc);}};
+window.TTRAHeaderCat={ready:doc=>navigation.ready(doc),attach:doc=>{if(navigation.accepts(doc)&&doc.readyState==='complete')attach(doc);}};
 const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
 function render() {
   if(!geometry||!current)return;
@@ -136,6 +148,7 @@ function render() {
   bubble.hidden=!visible||kind!=='introduce';
   cat.setAttribute('aria-expanded',String(!bubble.hidden));
   cat.setAttribute('aria-controls',bubble.id);
+  cat.dataset.running=String(kind==='return'&&Boolean(state.phase.running));
   current.button.setAttribute('aria-label',state.active?'Volver a guardar el gatito':'Dejar salir al gatito');
   current.button.setAttribute('aria-pressed',String(state.active));
   current.house.hidden=kind!=='enter'&&kind!=='return';
@@ -194,4 +207,16 @@ window.addEventListener('pagehide',persist);
 window.addEventListener('pageshow',()=>{measure();render();start();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){render();start();}else persist();});
 motion.addEventListener('change',()=>{render();start();});
+function resetAfterWelcome() {
+  window.__TTRA_CAT_RESET_AFTER_WELCOME=false;
+  cancelAnimationFrame(raf);raf=0;
+  state=createState();lastPose='';lastSerial=-1;
+  for(const node of wasteNodes.values())node.remove();
+  wasteNodes.clear();portal.hidden=true;bubble.hidden=true;
+  try{localStorage.removeItem(PREF);}catch{}
+  persist();render();
+}
+window.addEventListener('ttra:welcome-entered',resetAfterWelcome);
+// The intro may finish before this dynamically imported module has loaded.
+if(window.__TTRA_CAT_RESET_AFTER_WELCOME)resetAfterWelcome();
 await attach(document);

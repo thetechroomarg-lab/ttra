@@ -28,10 +28,14 @@
   const header = document.querySelector('body > header');
   if (!header || root.dataset.modo !== 'classic') return;
   header.classList.add('ttra-site-header');
-  // A cat-enabled host keeps one mascot alive while child pages navigate.
+  // The persistent host owns the masthead and mascot while page content navigates.
   let catHost;
   try { if (window.parent !== window) catHost = window.parent.TTRAHeaderCat; } catch { /* External embeds have no shared host. */ }
-  if (catHost) catHost.attach(document);
+  if (catHost) {
+    catHost.attach(document);
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>catHost.ready?.(document),{once:true});
+    else queueMicrotask(()=>catHost.ready?.(document));
+  }
   else import('/header-cat.js');
 
   // Reuse the home contact footer on every storefront page, including products.

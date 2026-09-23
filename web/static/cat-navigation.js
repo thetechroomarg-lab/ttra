@@ -1,7 +1,18 @@
-// Opt-in persistent host: each storefront document keeps its own scripts and
-// forms while the mascot's single animation loop lives in the top document.
-export function persistentNavigation({active,attach,portal}) {
-  let frame=null,pending=null,timeout=0,first=true;
+// Persistent storefront host: keep the original masthead and mascot mounted.
+// Child documents retain their page-specific scripts, forms and menus.
+export function persistentNavigation({attach,portal}) {
+  const header=document.querySelector("body > header");
+  let pageObserver=null;
+  const profileSelector=".rc-perfil-boton, .ttra-site-profile";
+  header.addEventListener("click",event=>{
+    if(!frame || !event.target.closest(profileSelector))return;
+    event.preventDefault();event.stopImmediatePropagation();
+    frame.contentDocument?.querySelector(profileSelector)?.click();
+  },true);
+  let frame=null,pending=null,timeout=0,first=true,lastDocument=null;
+  document.addEventListener('keydown',event=>{
+    if(frame&&event.key==='Escape')frame.contentDocument?.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+  });
   const bound=new WeakSet();
   const supported=url=>url.origin===location.origin && !url.searchParams.has('embed') &&
     /^(\/|\/catalogo\/?|\/vaiven\/?|\/login(?:\.html)?|\/perfil(?:\.html)?|\/p\/[^/]+)$/.test(url.pathname);
@@ -16,22 +27,42 @@ export function persistentNavigation({active,attach,portal}) {
       // retain their native behavior. Run in the bubbling phase after controls.
       if(url.pathname===doc.location.pathname&&url.search===doc.location.search&&url.hash)return;
       if(!supported(url)){if(frame && url.origin!==location.origin && /^https?:$/.test(url.protocol)){event.preventDefault();location.assign(url.href);}return;}
-      if(!active()) {
-        if(frame){event.preventDefault();location.assign(url.href);}return;
-      }
+      if(url.href===doc.location.href){event.preventDefault();doc.defaultView.scrollTo({top:0,behavior:'smooth'});return;}
       event.preventDefault();navigate(url,'push');
     });
   }
   async function loaded() {
     let doc,url;
     try{doc=frame.contentDocument;url=new URL(frame.contentWindow.location.href);}catch{return;}
-    if(!doc||url.href==='about:blank')return;
+    if(!doc||url.href==='about:blank'||doc===lastDocument)return;
     if(!supported(url)||!doc.querySelector('body > header, body.vaiven-page #vaiven-album')) {
       // Unsupported/error documents fall back to ordinary full-page navigation.
       const target=pending?.url||url;pending=null;location.assign(target.href);return;
     }
+    lastDocument=doc;
     clearTimeout(timeout);
     const transaction=pending;pending=null;
+    const album=doc.body.classList.contains('vaiven-page');
+    document.documentElement.classList.toggle('ttra-shell-album',album);
+    doc.documentElement.classList.add('ttra-shell-content');
+    const sync=()=>{
+      const theme=doc.documentElement.dataset.classicTheme||'dark';
+      document.documentElement.dataset.classicTheme=theme;
+      const source=doc.querySelector('.ttra-site-rate');
+      const rate=header.querySelector('.ttra-site-rate');
+      if(source&&rate)rate.innerHTML=source.innerHTML;
+      if(rate)rate.hidden=url.pathname==='/';
+      const initials=header.querySelector('.rc-perfil-nombre, .ttra-site-initials');
+      const initialsText=doc.querySelector('.rc-perfil-nombre, .ttra-site-initials')?.textContent||'';
+      if(initials&&initials.textContent!==initialsText)initials.textContent=initialsText;
+      const expanded=doc.querySelector(profileSelector)?.getAttribute('aria-expanded')==='true';
+      header.querySelector(profileSelector)?.setAttribute('aria-expanded',String(expanded));
+    };
+    pageObserver?.disconnect();pageObserver=new MutationObserver(sync);
+    pageObserver.observe(doc.documentElement,{attributes:true,attributeFilter:['data-classic-theme']});
+    const account=doc.querySelector('.ttra-header-account');
+    if(account)pageObserver.observe(account,{subtree:true,attributes:true,childList:true,characterData:true});
+    sync();
     await attach(doc);bind(doc);
     if(first){
       const oldY=scrollY;
@@ -48,6 +79,7 @@ export function persistentNavigation({active,attach,portal}) {
     portal.removeAttribute('data-loading');
   }
   function navigate(url,mode,scrollY=0) {
+    try{sessionStorage.setItem("ttra_portada_vista","1");}catch{}
     if(frame?.contentWindow && !pending && mode!=='pop') {
       history.replaceState({...history.state,scrollY:frame.contentWindow.scrollY},'',location.href);
     }
@@ -70,5 +102,5 @@ export function persistentNavigation({active,attach,portal}) {
     else location.assign(url.href);
   });
   bind(document);
-  return {accepts:doc=>doc===document||doc.defaultView===frame?.contentWindow,bind};
+  return {accepts:doc=>doc===document||doc.defaultView===frame?.contentWindow,bind,ready:doc=>{if(doc===frame?.contentDocument)loaded();}};
 }

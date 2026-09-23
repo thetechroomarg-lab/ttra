@@ -58,6 +58,10 @@
     document.removeEventListener('visibilitychange', resetClock);
     if (remember) {
       try { sessionStorage.setItem('ttra_portada_vista', '1'); } catch {}
+      // A completed welcome starts with Vaivén at home, even after a previous visit.
+      window.__TTRA_CAT_RESET_AFTER_WELCOME = true;
+      try { sessionStorage.removeItem('ttra_header_cat_state_v1'); localStorage.removeItem('ttra_header_cat_enabled'); } catch {}
+      window.dispatchEvent(new Event('ttra:welcome-entered'));
     }
     const url = new URL(location.href); url.searchParams.delete('intro');
     history.replaceState(history.state, '', url);
