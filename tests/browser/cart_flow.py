@@ -75,6 +75,7 @@ def main():
             add.click()
             expect(page.locator('.ttra-site-count')).to_have_text('3')
             charger = page.locator('#secciones .card').filter(has_text='Cargador de prueba')
+            charger.get_by_label('Colores disponibles:', exact=True).select_option('Color único')
             charger.get_by_role('button', name='Agregar al carrito').click()
             expect(page.locator('.ttra-site-count')).to_have_text('4')
             page.reload(wait_until='domcontentloaded')
@@ -91,6 +92,7 @@ def main():
                 };
             }""")
             charger = page.locator('#secciones .card').filter(has_text='Cargador de prueba')
+            charger.get_by_label('Colores disponibles:', exact=True).select_option('Color único')
             charger.get_by_role('button', name='Agregar al carrito').click()
             expect(charger.get_by_role('status')).to_contain_text('No pude guardar')
             expect(page.locator('.ttra-site-count')).to_have_text('4')

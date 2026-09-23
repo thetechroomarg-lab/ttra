@@ -15,7 +15,7 @@ export function persistentNavigation({attach,portal}) {
   });
   const bound=new WeakSet();
   const supported=url=>url.origin===location.origin && !url.searchParams.has('embed') &&
-    /^(\/|\/catalogo\/?|\/vaiven\/?|\/login(?:\.html)?|\/perfil(?:\.html)?|\/p\/[^/]+)$/.test(url.pathname);
+    /^(\/|\/catalogo\/?|\/comparativa\/?|\/vaiven\/?|\/login(?:\.html)?|\/perfil(?:\.html)?|\/p\/[^/]+)$/.test(url.pathname);
   const safeURL=url=>url.pathname+url.search+(/token|password|code=/i.test(url.hash)?'':url.hash);
   function bind(doc) {
     if(bound.has(doc))return;bound.add(doc);

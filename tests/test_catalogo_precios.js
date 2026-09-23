@@ -52,3 +52,48 @@ test('home and catalog load shared pricing before their entry script', () => {
     assert.ok(dependency < html.indexOf(`<script src="${entry}">`));
   }
 });
+
+test('catalog cards restore image, specification and share actions', () => {
+  const nombre = 'Samsung S26 Ultra';
+  const html = context.tarjetaProducto({ nombre, usd: 100 });
+  assert.match(html, /aria-label="Ver fotos en Google Imágenes"/);
+  assert.ok(html.includes('https://www.google.com/search?tbm=isch&amp;q=Samsung%20S26%20Ultra'));
+  assert.ok(html.includes('https://www.google.com/search?q=Samsung%20S26%20Ultra%20especificaciones'));
+  assert.match(html, /aria-label="Compartir producto"/);
+});
+
+test('condition filter applies only to Apple phones', () => {
+  assert.equal(context.permiteFiltroCondicion('Celulares', 'Apple'), true);
+  for (const [category, brand] of [['Todos', 'Apple'], ['Tablets', 'Apple'], ['Celulares', 'Samsung'], ['Celulares', '']]) {
+    assert.equal(context.permiteFiltroCondicion(category, brand), false);
+  }
+});
+
+test('used phones include supplier battery information and refurbished models', () => {
+  for (const p of [{nombre:'iPhone 13 USADO'}, {nombre:'iPhone 14', colores:['Blue 87%']}, {nombre:'iPhone reacondicionado'}]) {
+    assert.equal(context.condicionProducto(p), 'usado');
+  }
+  assert.equal(context.condicionProducto({nombre:'iPhone 16 128GB', colores:['Black']}), 'nuevo');
+});
+
+test('CPO stays separate from new and used phones', () => {
+  assert.equal(context.condicionProducto({nombre:'iPhone 11 CPO', colores:['Black']}), 'cpo');
+});
+
+test('single-color products keep a dropdown with exactly their one option', () => {
+  const html = context.tarjetaProducto({nombre:'iPhone 16', colores:['Black']});
+  assert.match(html, /Colores disponibles:/);
+  assert.match(html, /<select/);
+  assert.equal((html.match(/<option /g) || []).length, 2);
+  assert.match(html, /value="" disabled selected hidden>Elegí una opción de color/);
+  assert.match(html, /value="Black">Black/);
+  assert.match(html, /<button class="btn-agregar"[^>]*disabled/);
+});
+
+test('used variants always use the battery label, even with only one option', () => {
+  const html = context.tarjetaProducto({nombre:'iPhone 13 (Usado)', colores:['Blue 93%']});
+  assert.match(html, /Color y % de batería:/);
+  assert.equal((html.match(/<option /g) || []).length, 2);
+  assert.match(html, /value="" disabled selected hidden>Elegí una opción de color/);
+  assert.match(html, /value="Blue 93%">Blue 93%/);
+});

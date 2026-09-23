@@ -1,0 +1,52 @@
+.comparison-page { margin: 0; background: var(--rc-bg); color: var(--rc-green-bright); font-family: var(--rc-font); }
+.comparison-main { max-width: 1240px; margin: auto; padding: 34px var(--ed-gutter, 24px) 140px; }
+.comparison-back { display: inline-flex; align-items: center; min-height: 44px; color: var(--rc-green-dim); font-size: 14px; text-underline-offset: 5px; }
+.comparison-intro { padding: 30px 0 35px; }
+.comparison-eyebrow { color: var(--ed-accent); font-size: 11px; font-weight: 700; letter-spacing: .1em; }
+.comparison-intro h1 { font-size: clamp(30px, 5vw, 60px); font-weight: 500; line-height: 1.08; letter-spacing: -.05em; margin: 14px 0; }
+.comparison-intro h1 span { color: var(--ed-accent); }
+.comparison-intro > p:last-child { color: var(--rc-green-dim); line-height: 1.6; }
+.comparison-products, .comparison-fact-row, .comparison-sources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.comparison-product { border: 1px solid var(--ed-line); border-top: 3px solid var(--ed-accent); background: var(--rc-bg-panel); padding: 24px; min-width: 0; overflow-wrap: anywhere; }
+.comparison-product .comparison-number { color: var(--ed-accent); font-size: 12px; }
+.comparison-product h2 { font-size: clamp(18px, 2.5vw, 30px); line-height: 1.2; letter-spacing: -.04em; font-weight: 600; margin: 18px 0; }
+.comparison-price { font-size: 16px; line-height: 1.8; color: var(--rc-green); }
+.comparison-price strong { color: var(--ed-accent); }
+.comparison-variants { color: var(--rc-green-dim); font-size: 14px; line-height: 1.6; }
+.comparison-product a { display: inline-flex; align-items: center; min-height: 44px; color: var(--rc-green-bright); font-size: 14px; text-underline-offset: 5px; }
+.comparison-facts { margin-top: 30px; }
+.comparison-fact-row { border-top: 1px solid var(--ed-line); }
+.comparison-fact { min-width: 0; padding: 20px 10px; }
+.comparison-fact h3 { margin: 0 0 12px; font-size: 13px; color: var(--rc-green-dim); font-weight: 600; }
+.comparison-fact ul { padding-left: 18px; margin: 0; }
+.comparison-fact li { font-size: 16px; line-height: 1.65; overflow-wrap: anywhere; }
+.comparison-fact a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; font-size: 13px; color: var(--rc-green-dim); }
+.comparison-sources { margin-top: 24px; border-top: 1px solid var(--ed-line); }
+.comparison-source { min-width: 0; padding: 18px 10px; }
+.comparison-source h3 { font-size: 15px; margin: 0 0 10px; }
+.comparison-source p { font-size: 14px; line-height: 1.6; color: var(--rc-green-dim); }
+.comparison-source a { display: block; padding: 10px 0; min-height: 44px; color: var(--rc-green-bright); font-size: 14px; overflow-wrap: anywhere; }
+.comparison-source button { min-height: 44px; padding: 10px 14px; font: inherit; font-size: 14px; cursor: pointer; color: var(--rc-green-bright); background: var(--rc-bg-panel); border: 1px solid var(--ed-line); border-radius: 6px; }
+.comparison-disclaimer { margin-top: 30px; padding: 20px; border: 1px solid var(--ed-line); border-radius: 8px; color: var(--rc-green-dim); font-size: 14px; line-height: 1.7; }
+.comparison-disclaimer p { margin: 0; }
+.comparison-disclaimer p + p { margin-top: 10px; }
+.comparison-main [hidden] { display: none; }
+.comparison-main :is(a,button):focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 4px; }
+@media(max-width: 700px) {
+ .comparison-main { padding: 18px 14px 120px; }
+ .comparison-products, .comparison-fact-row, .comparison-sources { gap: 12px; }
+ .comparison-product { padding: 16px 10px; }
+ .comparison-product h2 { font-size: 19px; }
+ .comparison-price { font-size: 14px; }
+ .comparison-fact { padding: 18px 4px; }
+ .comparison-fact li { font-size: 14px; }
+ .comparison-source { padding: 18px 4px; }
+ .comparison-disclaimer { padding: 16px; }
+}
+
+.comparison-search-suggestions { display: block; width: 100%; height: 200px; border: 0; margin-top: 16px; background: transparent; }
+
+.comparison-return-wrap { display: flex; justify-content: center; margin-top: 36px; }
+.comparison-return { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 14px 28px; border-radius: 12px; background: #d92e26; color: #fff; font-weight: 700; text-decoration: none; text-align: center; }
+.comparison-return:hover { background: #b8241e; }
+.comparison-return:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }

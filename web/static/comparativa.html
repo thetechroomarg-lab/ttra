@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es" data-modo="classic">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comparar productos · The Tech Room Arg</title>
+  <script>try { if (localStorage.getItem('ttra_classic_theme') === 'light') document.documentElement.dataset.classicTheme = 'light'; } catch {}</script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/classic.css">
+  <link rel="stylesheet" href="/classic-editorial.css">
+  <link rel="stylesheet" href="/site-pages.css">
+  <link rel="stylesheet" href="/site-header.css">
+  <link rel="stylesheet" href="/disclosure.css">
+  <link rel="stylesheet" href="/comparativa.css">
+  <script src="/site-header.js" defer></script>
+</head>
+<body class="ttra-page comparison-page">
+  <header class="ttra-page-header">
+    <a class="ttra-page-brand" href="/" aria-label="The Tech Room Arg">THE<br>TECH<br>ROOM<br>ARG<span>.</span></a>
+    <div class="ttra-page-actions"><a href="/login.html" class="catalog-login">Ingresar</a></div>
+  </header>
+  <main class="comparison-main">
+    <a href="/catalogo" class="comparison-back">Volver al catálogo</a>
+    <div class="comparison-intro"><p class="comparison-eyebrow">COMPARATIVA</p><h1>Compará los detalles<span>.</span></h1><p>Las características, una al lado de la otra.</p></div>
+    <p id="comparison-message" role="status">Cargando productos…</p>
+    <section id="comparison-content" aria-label="Comparación de productos" hidden>
+      <div class="comparison-products" id="comparison-products"></div>
+      <div class="comparison-facts" id="comparison-facts" aria-label="Especificaciones técnicas"></div>
+      <div class="comparison-sources" id="comparison-sources"></div>
+      <aside class="comparison-disclaimer"><p>Las especificaciones fueron extraídas de fuentes web y analizadas por una IA. Pueden contener errores o variar según la versión del equipo. Revisá las fuentes antes de decidir.</p><p>La ficha del fabricante no indica el estado ni el porcentaje de batería de una unidad usada.</p></aside>
+    </section>
+    <div class="comparison-return-wrap"><a class="comparison-return" data-comparison-return href="/catalogo">Volver al Listado</a></div>
+  </main>
+  <footer class="ttra-page-footer"></footer>
+  <script src="/precios.js"></script>
+  <script src="/comparar-productos.js"></script>
+  <script src="/comparativa.js"></script>
+  <script src="/scroll-lock.js"></script>
+</body>
+</html>

@@ -5399,4 +5399,15 @@ def pagina_inicio(request: Request):
 # GET "/" ya tiene su propia ruta explícita arriba; los .html reales
 # (index.html, catalogo.html, login.html) se siguen sirviendo igual porque
 # StaticFiles los sirve por nombre de archivo exacto, con o sin html=True.
+# Comparison endpoints must precede the catch-all static mount.
+from web.comparativa_routes import install as install_comparison_routes
+
+
+def _comparison_client():
+    import anthropic
+    return anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=45.0, max_retries=0)
+
+
+install_comparison_routes(app, lambda request: _catalogo_autorizado(request), PRODUCTOS_PATH, lambda: _comparison_client())
+
 app.mount("/", PublicStaticFiles(directory=str(BASE / "static"), html=False), name="static")

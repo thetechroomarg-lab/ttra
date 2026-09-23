@@ -38,6 +38,7 @@
   <link rel="stylesheet" href="/disclosure.css">
   <link rel="stylesheet" href="/carrito.css">
   <script src="/site-header.js" defer></script>
+  <link rel="stylesheet" href="/comparar-productos.css">
 </head>
 <body class="catalog-page ttra-page">
   <div id="rc-boot"></div>
@@ -62,7 +63,10 @@
 
   <div class="catalog-filter-header"><span id="contador-productos" aria-live="polite">Cargando productos…</span></div>
   <div class="catalog-search-wrap" hidden><label for="catalog-search">Buscar productos</label><input id="catalog-search" type="search" placeholder="Buscá por producto o marca" autocomplete="off"></div>
-  <div class="catalog-brand-filter" id="catalog-filters"><label for="marca-filter">Filtrar por marca</label><select id="marca-filter"><option value="">Todas las marcas</option></select></div>
+  <div class="catalog-brand-filter" id="catalog-filters">
+    <div class="catalog-filter-field"><label for="marca-filter">Filtrar por marca</label><select id="marca-filter"><option value="">Todas las marcas</option></select></div>
+    <div class="catalog-filter-field" id="condition-filter-field" hidden><label for="condition-filter">Estado</label><select id="condition-filter"><option value="">Todos</option><option value="nuevo">Nuevo</option><option value="usado">Usado</option><option value="cpo">CPO</option></select></div>
+  </div>
   <main id="secciones"></main>
 
   <footer class="ttra-page-footer"><div class="ttra-page-footer-brand">THE<br>TECH<br>ROOM<br>ARG<span>.</span></div><p>© The Tech Room Arg · Córdoba</p></footer>
@@ -70,6 +74,7 @@
   <script src="boot.js"></script>
   <script src="precios.js"></script>
   <script src="carrito.js"></script>
+  <script src="/comparar-productos.js"></script>
   <script src="catalogo.js"></script>
   <script src="/scroll-lock.js"></script>
 </body>

@@ -1252,10 +1252,10 @@ function tarjetaProducto(p) {
   // que el usuario elija explícitamente una opción de la lista.
   const colores = `
     <div class="selector-colores">
-      <strong>Color:</strong>
+      <strong>${/\busad[oa]s?\b/i.test(p.nombre) || listaColores.some(c => /\d+\s*%/.test(c)) ? "Color y % de batería:" : "Colores disponibles:"}</strong>
       <div class="dropdown-color">
         <button type="button" class="dropdown-color-boton" data-valor="">
-          Elegir color
+          Elegí una opción de color
         </button>
         <ul class="dropdown-color-lista oculto" role="listbox">
           ${listaColores.map((c) => `<li role="option" data-valor="${escapeHtml(c)}">${escapeHtml(c)}</li>`).join("")}
@@ -1271,7 +1271,7 @@ function tarjetaProducto(p) {
       </p>
       ${colores}
       <div class="card-acciones">
-        <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}</span>
+        <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}${typeof TTRAComparar !== "undefined" ? TTRAComparar.buttonHtml() : ""}</span>
         <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="" type="button" disabled>Agregar al carrito</button>
       </div>
     </div>
@@ -1333,6 +1333,10 @@ function pintarGrilla(el, productos, mensajeVacio) {
   const claseModo = (modoVista === "lista" || esMobileClassic) ? "lista" : "";
   const controlesHtml = esMobileClassic ? "" : controlVistaHtml();
   el.innerHTML = `<div class="rc-catalogo-surface">${controlesHtml}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div></div>`;
+  window.TTRAComparar?.bind(el, productos, SECCIONES_DATA, () => ({
+    seccionActiva, filtroMarcaGlobal, subFiltros: [...subFiltrosActivos], criterioOrden, modoVista,
+    query: document.getElementById('input-busqueda').value
+  }));
   el.querySelectorAll(".card").forEach((card) => {
     const producto = productos.find((item) => item.nombre === card.dataset.nombre);
     if (!producto) return;
@@ -2897,7 +2901,17 @@ async function procesarLinkMailing() {
 cargarCatalogo().then(async () => {
   await procesarPendienteCarrito();
   if (await procesarCheckoutPendiente()) return;
-  abrirProductoCompartido();
+  const regresoComparativa = window.TTRAComparar?.readReturn()?.context;
+  if (regresoComparativa) {
+    seccionActiva = regresoComparativa.seccionActiva;
+    filtroMarcaGlobal = regresoComparativa.filtroMarcaGlobal;
+    subFiltrosActivos = new Set(regresoComparativa.subFiltros || []);
+    criterioOrden = regresoComparativa.criterioOrden;
+    modoVista = regresoComparativa.modoVista;
+    document.getElementById('input-busqueda').value = regresoComparativa.query || '';
+    actualizarVista();
+    window.TTRAComparar.restorePosition();
+  } else abrirProductoCompartido();
   await procesarLinkMailing();
   const parametrosPanel = new URLSearchParams(location.search);
   if (parametrosPanel.get("panel") === "carrito") {
