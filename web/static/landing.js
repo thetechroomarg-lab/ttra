@@ -2019,7 +2019,11 @@ function abrirCarrito() {
 
 function navegarDesdeCarrito(url) {
   const destino = document.documentElement.classList.contains('ttra-cart-embedded') ? window.parent : window;
-  destino.location.href = url;
+  // Pestaña nueva en vez de reemplazar la página: si wa.me falla (algunos
+  // firewalls/antivirus de escritorio lo bloquean por ser un acortador),
+  // el cliente no queda varado en una pantalla de error sin poder reintentar.
+  const ventana = destino.open(url, '_blank', 'noopener');
+  if (!ventana) destino.location.href = url; // fallback si el navegador bloqueó el popup
 }
 
 function cerrarCarrito() {
@@ -2144,7 +2148,9 @@ async function derivarCheckoutAWhatsapp(carrito) {
   borrarDescuentoMailing();
   borrarRegaloPromo();
   cerrarCarrito();
-  navegarDesdeCarrito(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`);
+  // api.whatsapp.com en vez de wa.me: mismo destino, pero wa.me es un
+  // acortador que algunos firewalls/antivirus de escritorio bloquean.
+  navegarDesdeCarrito(`https://api.whatsapp.com/send?phone=${WHATSAPP_NUMERO}&text=${encodeURIComponent(mensaje)}`);
   return true;
 }
 
