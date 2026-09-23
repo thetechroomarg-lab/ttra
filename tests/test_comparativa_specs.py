@@ -14,7 +14,9 @@ def test_persistent_cache_lease_and_expiry(tmp_path):
     assert not a.save('phone', 'a', {'data': 'stale'}, now=222)
     assert b.save('phone', 'b', {'data': 'fresh'}, now=223)
     assert a.get('phone', now=224) == {'data': 'fresh'}
-    assert not b.get('phone', now=223 + 31 * 86400)
+    # TTL prácticamente permanente (un modelo lanzado no cambia de specs):
+    # sigue disponible mucho después de lo que antes era el vencimiento a 30 días.
+    assert b.get('phone', now=223 + 31 * 86400) == {'data': 'fresh'}
 
 
 def test_global_concurrency_and_failure_backoff(tmp_path):

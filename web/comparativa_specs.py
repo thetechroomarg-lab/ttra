@@ -10,7 +10,10 @@ from web.comparativa import FIELDS, validate_sheet
 from web.catalogo import seccion_de
 from web.chat import MODELO
 
-TTL = 30 * 86400
+# Prácticamente permanente: las specs de un modelo ya lanzado no cambian.
+# Antes vencía a los 30 días y se reconsultaba la API; ahora se precarga
+# todo el catálogo una sola vez (ver scripts/backfill_specs.py) y queda.
+TTL = 20 * 365 * 86400
 LEASE = 120
 
 
