@@ -82,8 +82,10 @@ def research(producto, client):
         'Si no se verifica, usá "No confirmado" y source_urls vacío. '
         'No incluyas precios, opiniones, recomendaciones de compra ni un ganador. Máximo 400 caracteres por valor.'
     )
-    response = client.messages.create(model=MODELO, max_tokens=2600, system=prompt,
-        tools=[{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 2}],
+    # max_uses=1: cada búsqueda web tiene costo fijo + el token cost del resultado
+    # completo que vuelve como contexto, que es lo que más pesa en la factura.
+    response = client.messages.create(model=MODELO, max_tokens=1600, system=prompt,
+        tools=[{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 1}],
         messages=[{'role': 'user', 'content': json.dumps(identity, ensure_ascii=False)}])
     # Do not resume unfinished tool loops: limits apply to the complete research attempt.
     if response.stop_reason != 'end_turn':
@@ -98,11 +100,15 @@ def research(producto, client):
                         sources[_field(result, 'url')] = _field(result, 'title', '')
         if _field(block, 'type') == 'text':
             texts.append(_field(block, 'text', ''))
-    # A pre-search narration can precede the final JSON in a separate text block.
+    # A pre-search narration, and prose before/after the JSON in the same block,
+    # can surround the answer — extraer el objeto entre la primera '{' y la
+    # última '}' en vez de exigir que el bloque entero sea JSON puro.
     for text in reversed(texts):
-        text = re.sub(r'^```(?:json)?\s*|\s*```$', '', text.strip())
+        start, end = text.find('{'), text.rfind('}')
+        if start == -1 or end == -1 or end < start:
+            continue
         try:
-            payload = json.loads(text)
+            payload = json.loads(text[start:end + 1])
         except (ValueError, TypeError):
             continue
         return validate_sheet(payload, sources, producto)
