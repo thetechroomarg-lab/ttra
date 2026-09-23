@@ -75,12 +75,14 @@ def _notificar_mail_alejo(titulo, cuerpo):
 
 def enviar_push_cadete(client, titulo, cuerpo, url="/admin/cadete"):
     """Manda una notificación a todos los dispositivos suscriptos del
-    cadete. Nunca tira excepción hacia arriba: un fallo de push no puede
-    voltear la asignación del pedido/nota que lo dispara.
+    cadete, y un mail de aviso a alejobiasutto@gmail.com. Nunca tira
+    excepción hacia arriba: un fallo de push/mail no puede voltear la
+    asignación del pedido/nota que lo dispara.
 
-    El aviso por mail a Alejo (_notificar_mail_alejo) queda desactivado por
-    ahora: sumaba al mismo cupo diario de Resend que ya está muy ajustado
-    (ver plan gratis, 100 mails/día). Reactivar solo cuando eso se resuelva."""
+    email_util.enviar_email() se niega a mandar nada real si corre dentro
+    de un test (PYTEST_CURRENT_TEST), así que esto es seguro de dejar sin
+    mockear en los tests existentes que ya ejercitan este camino."""
+    _notificar_mail_alejo(titulo, cuerpo)
     global _avisado_sin_configurar
     if not PUSH_CONFIGURADO:
         if not _avisado_sin_configurar:
