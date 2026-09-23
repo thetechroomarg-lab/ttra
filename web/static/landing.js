@@ -474,10 +474,17 @@ if (linkIrAPerfil) {
       return;
     }
     const destinoPerfil = modoVisual === "fallout" ? "/perfil?modo=fallout" : "/perfil";
+    if (estadoSesionCliente) { window.location.href = destinoPerfil; return; }
     const paramsLogin = new URLSearchParams({ volver: `${location.pathname}${location.search}` });
     if (modoVisual === "fallout") paramsLogin.set("modo", "fallout");
     const destinoLogin = `/login.html?${paramsLogin.toString()}`;
-    window.location.href = estadoSesionCliente ? destinoPerfil : destinoLogin;
+    if (modoVisual === "fallout") { window.location.href = destinoLogin; return; }
+    // Classic + invitado: abre el login en el mismo modal blureado del
+    // carrito/perfil, en vez de navegar a /login.html (pedido explícito).
+    cerrarMenuPerfil();
+    import("/login-drawer.js").then(({ abrirLoginEnPagina }) => {
+      abrirLoginEnPagina(linkIrAPerfil, () => location.reload());
+    });
   });
 }
 

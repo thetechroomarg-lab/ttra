@@ -5,9 +5,17 @@ body {
   font-family: var(--rc-font); background: var(--rc-bg); color: var(--rc-green);
 }
 .tarjeta {
+  position: relative;
   width: min(360px, 90vw); padding: 32px 28px; background: var(--rc-bg-panel); border-radius: 16px;
   border: 1px solid var(--rc-green-dim);
 }
+.ttra-login-cerrar {
+  position: absolute; top: 12px; right: 12px; width: 32px; height: 32px;
+  display: none; align-items: center; justify-content: center;
+  border: 0; border-radius: 50%; background: transparent; color: var(--rc-green-dim);
+  font-size: 22px; line-height: 1; cursor: pointer;
+}
+.ttra-login-cerrar:hover { color: var(--rc-green-bright); }
 h1 { margin: 0 0 20px; font-size: 20px; letter-spacing: .06em; text-transform: uppercase;
      color: var(--rc-green-bright); }
 .form { display: flex; flex-direction: column; gap: 10px; }

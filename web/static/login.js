@@ -31,6 +31,20 @@ function destinoInternoSeguro(valor) {
 const volverTrasIngresar = destinoInternoSeguro(paramsPantalla.get("volver"));
 const destinoTrasIngresar = volverTrasIngresar || (productoCompartido ? `/${location.search}` : (modoFallout ? "/?modo=fallout" : "/"));
 
+// Embebido en el <dialog> de login-drawer.js (ver site-header.js): en vez de
+// navegar esta pestaña (que es un iframe), avisamos al padre para que cierre
+// el modal y siga en la página donde ya estaba, sin recargar nada.
+const modoEmbed = paramsPantalla.get("embed") === "login";
+function irADestinoTrasIngresar() {
+  if (modoEmbed) { parent.postMessage({ type: "ttra:login-done" }, location.origin); return; }
+  window.location.href = destinoTrasIngresar;
+}
+if (modoEmbed) {
+  document.getElementById("btn-cerrar-login").addEventListener("click", () => {
+    parent.postMessage({ type: "ttra:login-close" }, location.origin);
+  });
+}
+
 if (modoFallout) {
   document.documentElement.setAttribute("data-modo", "fallout");
 }
@@ -148,7 +162,7 @@ async function completarSignupVerificado() {
     return false;
   }
   limpiarCallbackSupabaseDeUrl();
-  window.location.href = destinoTrasIngresar;
+  irADestinoTrasIngresar();
   return true;
 }
 
@@ -361,7 +375,7 @@ formLogin.addEventListener("submit", async (e) => {
     mostrarCambioObligatorio();
     return;
   }
-  window.location.href = destinoTrasIngresar;
+  irADestinoTrasIngresar();
 });
 
 formCambiarObligatorio.addEventListener("submit", async (e) => {
@@ -375,7 +389,7 @@ formCambiarObligatorio.addEventListener("submit", async (e) => {
   }
   const datos = await enviar("/cambiar-password-obligatorio", { password }, errorEl);
   if (!datos) return;
-  window.location.href = destinoTrasIngresar;
+  irADestinoTrasIngresar();
 });
 
 formRegistro.addEventListener("submit", async (e) => {
@@ -414,5 +428,5 @@ formRegistro.addEventListener("submit", async (e) => {
     loginOkEl.textContent = "Te mandé un mail para verificar tu cuenta. Confirmalo antes de ingresar.";
     return;
   }
-  window.location.href = destinoTrasIngresar;
+  irADestinoTrasIngresar();
 });

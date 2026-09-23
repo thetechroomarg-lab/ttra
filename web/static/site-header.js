@@ -25,6 +25,10 @@
     });
     return;
   }
+  // login.html corriendo dentro del <dialog> de login-drawer.js: su propio
+  // login.js maneja el postMessage de cierre/éxito, acá no hay nada más que
+  // construir (el header/footer de esta página queda oculto por CSS).
+  if (root.classList.contains('ttra-login-embedded')) return;
   const header = document.querySelector('body > header');
   if (!header || root.dataset.modo !== 'classic') return;
   header.classList.add('ttra-site-header');
@@ -373,11 +377,21 @@
   const loginParams = new URLSearchParams({ volver: location.pathname + location.search });
   profileLink.href = `/login.html?${loginParams}`;
   profileLink.textContent = 'Iniciar sesión';
+  let sesionActiva = false;
+  profileLink.addEventListener('click', (event) => {
+    if (sesionActiva) return; // ya logueado: navega normal a /perfil
+    event.preventDefault();
+    closeMenu();
+    import('/login-drawer.js').then(({ abrirLoginEnPagina }) => {
+      abrirLoginEnPagina(profileLink, updateSession);
+    });
+  });
   async function updateSession() {
     try {
       const response = await fetch('/api/me');
       if (!response.ok) return;
       const account = await response.json();
+      sesionActiva = true;
       profileLink.href = '/perfil';
       profileLink.textContent = 'Ir a perfil';
       accountContainer.querySelector('.ttra-site-initials').textContent =

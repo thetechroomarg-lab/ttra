@@ -101,13 +101,8 @@ html[data-modo="classic"] body.ttra-page .catalog-header-actions :is(.catalog-lo
 .ttra-page-rule { height: 1px; background: var(--ed-line); }
 
 /* Login and registration keep their existing forms but gain a proper page composition. */
-html[data-modo="classic"] .ttra-auth-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr); flex: 1; min-height: 650px; }
-.ttra-auth-story { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 600px; padding: clamp(40px, 6vw, 100px) var(--ed-gutter); overflow: hidden; background: #e7e5dc; color: #242720; }
-.ttra-auth-story::before { content: ""; position: absolute; width: min(68vw, 720px); aspect-ratio: 1; right: -18%; top: 10%; border: 1px solid #a9afa3; border-radius: 50%; box-shadow: 0 0 0 90px #cdd1c624, 0 0 0 180px #cdd1c61d; pointer-events: none; }
-.ttra-auth-story .ttra-page-eyebrow { position: relative; z-index: 1; color: #ad3a2c; }
-.ttra-auth-story .ttra-page-display { position: relative; z-index: 1; max-width: 750px; color: #242720; }
-.ttra-auth-story > p:last-child { position: relative; z-index: 1; max-width: 280px; margin: 40px 0 0; font-size: 14px; line-height: 1.65; }
-.ttra-auth-form-wrap { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; place-items: center; padding: 64px clamp(24px, 4vw, 80px); }
+html[data-modo="classic"] .ttra-auth-layout { display: flex; flex: 1; min-height: 650px; }
+.ttra-auth-form-wrap { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; place-items: center; padding: 64px clamp(24px, 4vw, 80px); }
 html[data-modo="classic"] .ttra-auth-form-wrap .tarjeta { width: min(100%, 470px); min-width: 0; margin: 0; padding: clamp(28px, 3vw, 42px); border: 1px solid var(--ed-line); border-top: 4px solid var(--ed-accent) !important; border-radius: 2px; background: var(--rc-bg-panel); box-shadow: none; }
 html[data-modo="classic"] .ttra-auth-form-wrap .rc-marca-login { display: none; }
 html[data-modo="classic"] .ttra-auth-form-wrap .tarjeta h1 { margin: 0 0 28px; font-size: clamp(28px, 3vw, 42px); line-height: 1.05; }
@@ -168,7 +163,6 @@ html[data-modo="classic"] .catalog-card-status { min-height: 2.6em; margin: 0; c
 .ttra-product-secondary { display: inline-flex; margin: 18px 0 0 20px; color: var(--rc-green-dim); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; }
 
 @media (max-width: 980px) {
-  html[data-modo="classic"] .ttra-auth-layout { grid-template-columns: 1fr 1fr; }
   .ttra-product-main { gap: 30px; }
 }
 @media (max-width: 700px) {
@@ -177,10 +171,6 @@ html[data-modo="classic"] .catalog-card-status { min-height: 2.6em; margin: 0; c
   .ttra-page-actions { width: 100%; justify-content: flex-start; gap: 6px; }
   .ttra-page-link, html[data-modo="classic"] .ttra-page :is(.catalog-back, .catalog-login, #btn-logout) { min-height: 40px; padding: 8px 10px; font-size: 10px; }
   .ttra-page-footer { padding: 35px 20px; }
-  html[data-modo="classic"] .ttra-auth-layout { display: flex; flex-direction: column; }
-  .ttra-auth-story { min-height: 330px; padding: 45px 20px; }
-  .ttra-auth-story::before { width: 430px; right: -190px; top: -60px; }
-  .ttra-auth-story .ttra-page-display { font-size: clamp(43px, 10vw, 70px); }
   .ttra-auth-form-wrap { padding: 55px 20px 80px; }
   .ttra-account-intro { grid-template-columns: 1fr; }
   .ttra-account-grid { grid-template-columns: 1fr; }
