@@ -76,6 +76,8 @@
     try { sessionStorage.setItem('ttra_portada_vista', '1'); } catch {}
   });
   function mountDock(actions) {
+    const profileContainer = actions.querySelector('.rc-perfil-menu, .ttra-site-account');
+    const profileButton = profileContainer.querySelector('button');
     const dock = document.createElement('div');
     dock.className = 'ttra-dock';
     dock.setAttribute('role', 'navigation');
@@ -136,20 +138,20 @@
     contact.addEventListener('click', () => {
       const open = contactPanel.hidden;
       closeCategories();
-      const profile = actions.querySelector('#btn-perfil-toggle, .ttra-site-profile');
+      const profile = profileButton;
       if (profile?.getAttribute('aria-expanded') === 'true') profile.click();
       contactPanel.hidden = !open;
       contact.setAttribute('aria-expanded', String(open));
     });
     const closeCategories = () => { panel.hidden = true; categories.setAttribute('aria-expanded', 'false'); };
-    actions.querySelector('#btn-perfil-toggle, .ttra-site-profile').addEventListener('click', () => {
+    profileButton.addEventListener('click', () => {
       closeCategories();
       closeContact();
     });
     categories.addEventListener('click', () => {
       const open = panel.hidden;
       closeContact();
-      const profile = actions.querySelector('#btn-perfil-toggle, .ttra-site-profile');
+      const profile = profileButton;
       if (profile?.getAttribute('aria-expanded') === 'true') profile.click();
       panel.hidden = !open;
       categories.setAttribute('aria-expanded', String(open));
@@ -165,8 +167,20 @@
     dock.addEventListener('focusout', event => {
       if (event.relatedTarget && !dock.contains(event.relatedTarget)) { closeCategories(); closeContact(); }
     });
-    header.append(rate);
-    actions.prepend(home, categories);
+    const headerAccount = document.createElement('div');
+    headerAccount.className = 'ttra-header-account';
+    headerAccount.append(profileContainer, rate);
+    header.append(headerAccount);
+    const search = document.createElement('a');
+    search.href = '/catalogo?buscar=1#catalog-search';
+    search.className = 'ttra-dock-search ttra-dock-control';
+    search.setAttribute('aria-label', 'Buscar productos');
+    search.innerHTML = svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>') + '<span class="ttra-dock-label">Buscar</span>';
+    search.addEventListener('click', event => {
+      const input = document.getElementById('catalog-search');
+      if (input) { event.preventDefault(); input.scrollIntoView({block: 'center'}); input.focus({preventScroll: true}); }
+    });
+    actions.prepend(home, categories, search);
     actions.querySelector('#btn-carrito, .ttra-site-cart').after(contact);
     dock.append(actions, panel, contactPanel);
     const dockSection = document.createElement('section');
@@ -177,7 +191,7 @@
     if (footer) footer.replaceWith(dockSection);
     else document.body.append(dockSection);
     document.body.classList.add('ttra-has-dock');
-    for (const [selector, label] of [['#btn-carrito, .ttra-site-cart', 'Carrito'], ['#btn-perfil-toggle, .ttra-site-profile', 'Perfil']]) {
+    for (const [selector, label] of [['#btn-carrito, .ttra-site-cart', 'Carrito']]) {
       const control = actions.querySelector(selector);
       control.classList.add('ttra-dock-control');
       const text = document.createElement('span');
@@ -253,6 +267,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
       <span class="ttra-cart-label">Carrito</span> <span class="ttra-site-count">0</span>
     </button>`;
+  const accountContainer = actions.querySelector('.ttra-site-account');
   const tools = document.createElement('div');
   tools.className = 'ttra-site-tools';
   actions.prepend(rate);
@@ -269,7 +284,7 @@
       const {abrirCarritoEnPagina} = await import('/cart-drawer.js');
       abrirCarritoEnPagina(cartButton);
     } catch {
-      const error = actions.querySelector('.ttra-site-error');
+      const error = accountContainer.querySelector('.ttra-site-error');
       error.textContent = 'No pude abrir el carrito. Probá de nuevo.';
       error.hidden = false;
       menu.hidden = false;
@@ -300,16 +315,15 @@
   });
   overlay.addEventListener('click', () => closeMenu(true));
   document.addEventListener('click', (event) => {
-    if (!actions.querySelector('.ttra-site-account').contains(event.target)) closeMenu();
+    if (!accountContainer.contains(event.target)) closeMenu();
   });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !menu.hidden) closeMenu(true);
   });
-  actions.addEventListener('focusout', (event) => {
-    if (actions.querySelector('.ttra-site-account').contains(event.relatedTarget)) return;
-    queueMicrotask(() => {
-      if (!actions.querySelector('.ttra-site-account').contains(document.activeElement)) closeMenu();
-    });
+  accountContainer.addEventListener('focusout', (event) => {
+    // A disabled logout button temporarily loses focus while its request runs.
+    // Keep the menu visible so request errors remain readable.
+    if (event.relatedTarget && !accountContainer.contains(event.relatedTarget)) closeMenu();
   });
 
   const themeButton = actions.querySelector('.ttra-theme');
@@ -356,14 +370,14 @@
       const account = await response.json();
       profileLink.href = '/perfil';
       profileLink.textContent = 'Ir a perfil';
-      actions.querySelector('.ttra-site-initials').textContent =
+      accountContainer.querySelector('.ttra-site-initials').textContent =
         [account.nombre, account.apellido].map((name) => (name || '').trim().charAt(0).toUpperCase()).join('');
       logout.hidden = false;
     } catch { /* Public navigation remains usable if session lookup fails. */ }
   }
   logout.addEventListener('click', async () => {
     logout.disabled = true;
-    const error = actions.querySelector('.ttra-site-error');
+    const error = accountContainer.querySelector('.ttra-site-error');
     error.hidden = true;
     try {
       const response = await fetch('/logout', { method: 'POST' });

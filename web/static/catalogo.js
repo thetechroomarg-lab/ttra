@@ -58,16 +58,21 @@ function pintarSeccion(nombre) {
   const base = nombre === "Todos"
     ? Object.values(SECCIONES_DATA).flat()
     : (SECCIONES_DATA[nombre] || []);
-  const productos = marcaActiva
+  const porMarca = marcaActiva
     ? base.filter((producto) => (producto.marca || "Otras marcas") === marcaActiva)
     : base;
+  const normalizarBusqueda = (texto) => texto.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const consulta = normalizarBusqueda(document.getElementById('catalog-search').value.trim());
+  const productos = consulta ? porMarca.filter(producto => normalizarBusqueda(`${producto.nombre || ''} ${producto.marca || ''}`).includes(consulta)) : porMarca;
   document.getElementById("contador-productos").textContent =
     `${productos.length} ${productos.length === 1 ? "producto" : "productos"}`;
   if (productos.length === 0) {
     const detalle = marcaActiva
       ? ` de ${escapeHtml(marcaActiva)} en ${escapeHtml(nombre)}`
       : ` en ${escapeHtml(nombre)}`;
-    el.innerHTML = `<p class="mensaje-vacio">Todavía no hay productos${detalle}.</p>`;
+    el.innerHTML = consulta
+      ? '<p class="mensaje-vacio">No encontré productos que coincidan con tu búsqueda.</p>'
+      : `<p class="mensaje-vacio">Todavía no hay productos${detalle}.</p>`;
     return;
   }
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
@@ -167,6 +172,7 @@ async function cargarCatalogo() {
     }
     const categoriaSolicitada = parametros.get("categoria");
     pintarSeccion(SECCIONES.includes(categoriaSolicitada) ? categoriaSolicitada : "Todos");
+    if (parametros.get("buscar") === "1") document.getElementById("catalog-search").focus();
     if (parametros.get("filtro") === "marca") selectorMarca.focus({ preventScroll: true });
   } catch {
     document.getElementById("secciones").innerHTML =
@@ -179,6 +185,8 @@ document.getElementById("marca-filter").addEventListener("change", (event) => {
   marcaActiva = event.target.value;
   pintarSeccion(categoriaActiva);
 });
+
+document.getElementById('catalog-search').addEventListener('input', () => pintarSeccion(categoriaActiva));
 
 pintarCarrousel();
 cargarCatalogo();

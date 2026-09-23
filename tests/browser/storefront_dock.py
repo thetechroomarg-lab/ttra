@@ -46,9 +46,12 @@ with sync_playwright() as p:
             assert panel.locator('a').count() == 7
             page.keyboard.press('Escape')
             assert not panel.is_visible()
-            profile = controls.locator('#btn-perfil-toggle, .ttra-site-profile')
+            profile = page.locator('header #btn-perfil-toggle, header .ttra-site-profile')
+            assert profile.is_visible()
+            assert profile.bounding_box()['y'] < page.locator('.ttra-site-rate').bounding_box()['y']
+            assert page.locator('.ttra-catalog-cta').count() == 0
             profile.click()
-            theme = controls.locator('.ttra-theme')
+            theme = page.locator('.ttra-theme')
             theme.wait_for(state='visible')
             before = page.locator('html').get_attribute('data-classic-theme')
             theme.click()
@@ -66,6 +69,14 @@ with sync_playwright() as p:
                 page.locator('.ttra-cart-dialog[open]').wait_for(state='hidden')
             assert page.url == url
             if path == '/catalogo':
+                dock.locator('.ttra-dock-search').click()
+                search = page.locator('#catalog-search')
+                search.fill('Cargador')
+                assert page.locator('#contador-productos').inner_text() == '1 producto'
+                search.fill('inexistentezz')
+                assert page.locator('#contador-productos').inner_text() == '0 productos'
+                search.fill('')
+                assert page.locator('#contador-productos').inner_text() == '2 productos'
                 categories.click()
                 panel.get_by_role('link', name='Gaming', exact=True).click()
                 page.wait_for_url('**/catalogo?categoria=Gaming')
