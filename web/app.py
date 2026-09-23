@@ -185,6 +185,10 @@ async def sin_cache_estaticos(request: Request, call_next):
     """Evita que el navegador se quede con una versión vieja de JS/CSS
     cacheada tras un simple F5 (cada refresh revalida contra el archivo
     real en disco)."""
+    if _session_https_only:
+        # TLS terminates at the platform edge; keep redirects HTTPS without
+        # trusting caller-controlled forwarding headers for client identity.
+        request.scope["scheme"] = "https"
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"

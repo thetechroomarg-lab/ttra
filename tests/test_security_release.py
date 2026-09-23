@@ -81,10 +81,31 @@ def test_login_budget_survives_new_store_and_is_shared(tmp_path):
 def test_cadete_password_rotation_invalidates_existing_sessions(monkeypatch):
     monkeypatch.setattr(appmod, 'get_client', lambda: FakeSupabaseClient())
     monkeypatch.setattr(appmod, 'CADETE_PASSWORD', 'old-fictitious-password')
+    monkeypatch.setenv('CADETE_PASSWORD', 'old-fictitious-password')
     with TestClient(appmod.app, base_url='https://testserver') as c:
         assert c.post('/admin/cadete/login', json={'password': 'old-fictitious-password'}).status_code == 200
         monkeypatch.setattr(appmod, 'CADETE_PASSWORD', 'new-fictitious-password')
+        monkeypatch.setenv('CADETE_PASSWORD', 'new-fictitious-password')
         assert 'type="password"' in c.get('/admin/cadete').text
         assert c.post('/admin/tareas-entrega/missing/completar').status_code == 401
         assert c.post('/admin/cadete/login', json={'password': 'new-fictitious-password'}).status_code == 200
         assert 'type="password"' not in c.get('/admin/cadete').text
+
+
+def test_https_redirects_without_trusting_forwarded_headers(monkeypatch):
+    from starlette.requests import Request
+    from starlette.responses import RedirectResponse
+    from starlette.routing import Route
+
+    async def redirect_to_self(request: Request):
+        return RedirectResponse(str(request.url))
+
+    monkeypatch.setattr(appmod, '_session_https_only', True)
+    monkeypatch.setattr(appmod.app.router, 'routes', [
+        Route('/security-test-scheme', redirect_to_self),
+        *appmod.app.router.routes,
+    ])
+    with TestClient(appmod.app, base_url='http://testserver', follow_redirects=False) as c:
+        r = c.get('/security-test-scheme')
+        assert r.status_code == 307
+        assert r.headers['location'] == 'https://testserver/security-test-scheme'
