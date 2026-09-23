@@ -83,22 +83,16 @@ def test_registrar_cliente_email_duplicado():
         cuentas.registrar_cliente(client, "Otra", "Persona", "3519999999", "ana@x.com", "clave1234")
 
 
-def test_registrar_cliente_vincula_lead_invitado_por_celular():
+def test_registrar_cliente_no_vincula_lead_por_telefono_sin_verificar():
     client = FakeSupabaseClient()
-    # Simula un lead migrado sin cuenta: auth_id ausente.
     client.table("clientes").insert({
         "id": "id-lead-1", "auth_id": None, "nombre": "Ana", "apellido": "",
         "celular": "3511234567", "email": "",
     }).execute()
-
-    cliente = cuentas.registrar_cliente(
-        client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234"
-    )
-    assert cliente["id"] == "id-lead-1"  # se completó la fila existente, no se creó otra
-    filas = client.table("clientes").select("*").eq("celular", "3511234567").execute().data
-    assert len(filas) == 1
-    assert filas[0]["auth_id"] == cliente["auth_id"]
-    assert filas[0]["apellido"] == "Gómez"
+    with pytest.raises(cuentas.CelularDuplicadoError):
+        cuentas.registrar_cliente(client, "Ana", "Gómez", "3511234567", "ana@x.com", "clave1234")
+    row = client.table("clientes").select("*").eq("id", "id-lead-1").execute().data[0]
+    assert row["auth_id"] is None and row["email"] == ""
 
 
 def test_registrar_cliente_hace_rollback_si_falla_el_perfil():

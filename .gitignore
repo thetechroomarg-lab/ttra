@@ -13,3 +13,5 @@ web/clientes.json
 web/clientes.csv
 web/mailing/data/
 .worktrees/
+
+web/.security/

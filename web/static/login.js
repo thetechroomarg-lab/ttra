@@ -18,7 +18,17 @@ const paramsPantalla = new URLSearchParams(location.search);
 const productoCompartido = paramsPantalla.get("producto");
 const forzarRegistro = paramsPantalla.get("registro") === "1";
 const modoFallout = paramsPantalla.get("modo") === "fallout";
-const volverTrasIngresar = paramsPantalla.get("volver");
+function destinoInternoSeguro(valor) {
+  if (!valor) return null;
+  try {
+    const destino = new URL(valor, location.origin);
+    if (!['http:', 'https:'].includes(destino.protocol) || destino.origin !== location.origin || destino.username || destino.password) return null;
+    // Return the validated absolute URL: a pathname beginning // must not turn
+    // into a protocol-relative external redirect when assigned to location.
+    return destino.href;
+  } catch { return null; }
+}
+const volverTrasIngresar = destinoInternoSeguro(paramsPantalla.get("volver"));
 const destinoTrasIngresar = volverTrasIngresar || (productoCompartido ? `/${location.search}` : (modoFallout ? "/?modo=fallout" : "/"));
 
 if (modoFallout) {

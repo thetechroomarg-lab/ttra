@@ -23,11 +23,13 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse, Response
-from fastapi.staticfiles import StaticFiles
+from web.public_static import PublicStaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales
+from web.login_rate_limit import LoginAttemptStore
+from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
 from web.mailing import assets as mailing_assets, campanias, destinatarios, envio as mailing_envio, servicio as mailing_servicio, template as mailing_template
 from web.productos import resolver_proveedor
@@ -114,10 +116,8 @@ CADETE_PASSWORD = os.environ.get("CADETE_PASSWORD")
 if not CADETE_PASSWORD:
     # Mismo criterio que ADMIN_CLIENTES_PASSWORD: el panel de Alejo expone
     # nombre/celular/dirección de clientes con pedidos derivados — un default
-    # hardcodeado en el repo (visible en el historial de git) es un agujero
-    # de seguridad, no una comodidad. Antes de este cambio el valor por
-    # defecto era "Alejo2026"; hay que setearlo como CADETE_PASSWORD en
-    # Railway (y en .env local) antes de deployar esto, o el server no arranca.
+    # Una clave por defecto publicada no protege datos de clientes.
+    # La credencial se configura exclusivamente en el entorno.
     raise RuntimeError("CADETE_PASSWORD no configurado — no se puede iniciar el servidor")
 
 # Tope de gasto por chat/cliente (USD). Al superarlo, se lo deriva al WhatsApp.
@@ -186,6 +186,17 @@ async def sin_cache_estaticos(request: Request, call_next):
     cacheada tras un simple F5 (cada refresh revalida contra el archivo
     real en disco)."""
     response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Content-Security-Policy"] = "frame-ancestors 'self'; base-uri 'self'; object-src 'none'"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if request.url.scheme == "https" or _session_https_only:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000"
+    path = _normalizar_ruta(request.url.path)
+    if (path.startswith(("/api/", "/admin/")) or response.status_code >= 400
+            or "text/html" in response.headers.get("content-type", "")
+            or "application/json" in response.headers.get("content-type", "")):
+        response.headers["Cache-Control"] = "private, no-store"
     if request.url.path.endswith((".js", ".css")):
         response.headers["Cache-Control"] = "no-cache"
     return response
@@ -481,7 +492,9 @@ def _clientes_admin_activo(request: Request):
 
 
 def _cadete_activo(request: Request):
-    return bool(request.session.get("cadete_ok"))
+    return bool(request.session.get("cadete_ok")) and secrets.compare_digest(
+        str(request.session.get("cadete_version", "")), cadete_session_version(CADETE_PASSWORD)
+    )
 
 
 def _puede_operar_entrega(request: Request, fila: dict):
@@ -806,27 +819,20 @@ def _html_mailing_para_cliente(mensaje_html: str, cliente):
 
 _LOGIN_MAX_INTENTOS = 8
 _LOGIN_VENTANA_SEG = 15 * 60
-_intentos_login_fallidos: dict[tuple[str, str], list[float]] = {}
+_intentos_login_fallidos = LoginAttemptStore(
+    os.environ.get("LOGIN_RATE_LIMIT_DB", str(PRODUCTOS_PATH.parent / ".security" / "login-limits.sqlite3"))
+)
 
 
 def _ip_cliente(request: Request):
-    adelante = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
-    if adelante:
-        return adelante
+    # Trust the ASGI peer address, never a caller-provided forwarding header.
     return request.client.host if request.client else "desconocido"
 
 
 def _login_bloqueado(request: Request, ruta: str):
-    clave = (_ip_cliente(request), ruta)
-    ahora = time.time()
-    intentos = [t for t in _intentos_login_fallidos.get(clave, []) if ahora - t < _LOGIN_VENTANA_SEG]
-    _intentos_login_fallidos[clave] = intentos
-    return len(intentos) >= _LOGIN_MAX_INTENTOS
-
-
-def _registrar_login_fallido(request: Request, ruta: str):
-    clave = (_ip_cliente(request), ruta)
-    _intentos_login_fallidos.setdefault(clave, []).append(time.time())
+    return not _intentos_login_fallidos.reserve(
+        (_ip_cliente(request), ruta), _LOGIN_MAX_INTENTOS, _LOGIN_VENTANA_SEG
+    )
 
 
 def _limpiar_login_fallido(request: Request, ruta: str):
@@ -838,7 +844,6 @@ def admin_clientes_login(entrada: ClientesLoginIn, request: Request):
     if _login_bloqueado(request, "clientes"):
         return JSONResponse({"error": "Demasiados intentos. Probá de nuevo en unos minutos."}, status_code=429)
     if not secrets.compare_digest(entrada.password, ADMIN_CLIENTES_PASSWORD):
-        _registrar_login_fallido(request, "clientes")
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
     _limpiar_login_fallido(request, "clientes")
     request.session["clientes_admin_ok"] = True
@@ -856,16 +861,17 @@ def admin_cadete_login(entrada: ClientesLoginIn, request: Request):
     if _login_bloqueado(request, "cadete"):
         return JSONResponse({"error": "Demasiados intentos. Probá de nuevo en unos minutos."}, status_code=429)
     if not secrets.compare_digest(entrada.password, CADETE_PASSWORD):
-        _registrar_login_fallido(request, "cadete")
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
     _limpiar_login_fallido(request, "cadete")
     request.session["cadete_ok"] = True
+    request.session["cadete_version"] = cadete_session_version(CADETE_PASSWORD)
     return {"ok": True}
 
 
 @app.post("/admin/cadete/logout")
 def admin_cadete_logout(request: Request):
     request.session.pop("cadete_ok", None)
+    request.session.pop("cadete_version", None)
     return {"ok": True}
 
 
@@ -5389,4 +5395,4 @@ def pagina_inicio(request: Request):
 # GET "/" ya tiene su propia ruta explícita arriba; los .html reales
 # (index.html, catalogo.html, login.html) se siguen sirviendo igual porque
 # StaticFiles los sirve por nombre de archivo exacto, con o sin html=True.
-app.mount("/", StaticFiles(directory=str(BASE / "static"), html=False), name="static")
+app.mount("/", PublicStaticFiles(directory=str(BASE / "static"), html=False), name="static")

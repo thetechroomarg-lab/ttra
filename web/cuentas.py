@@ -49,15 +49,10 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, provin
     if not provincia:
         raise ValueError("Seleccioná tu provincia")
 
-    # La vinculación de fila "invitada" es SOLO por celular, nunca por email:
-    # el email no prueba que quien se registra sea el dueño real de la
-    # cuenta (cualquiera puede escribir el email de otra persona en el
-    # formulario), así que usarlo como llave de vinculación abriría una
-    # forma de apropiarse de la fila de otro cliente sin verificación real.
-    existentes_celular = client.table("clientes").select("*").eq("celular", celular_norm).execute().data
-    if any(f.get("auth_id") for f in existentes_celular):
-        raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}")
-    lead_invitado = next((f for f in existentes_celular if not f.get("auth_id")), None)
+    # A declared phone number is not proof of ownership of an existing contact.
+    existentes_celular = client.table("clientes").select("id").eq("celular", celular_norm).execute().data
+    if existentes_celular:
+        raise CelularDuplicadoError("No pude crear la cuenta con esos datos. Si ya sos cliente, escribime para verificar tu acceso.")
 
     try:
         credenciales = {"email": email, "password": password}
@@ -83,14 +78,9 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, provin
         "provincia": provincia,
         "direccion": direccion,
     }
-    if lead_invitado:
-        propio_id = lead_invitado["id"]
-        datos["celular"] = celular_norm
-        guardar_datos = lambda: client.table("clientes").update(datos).eq("id", propio_id).execute()
-    else:
-        propio_id = str(uuid.uuid4())
-        datos.update({"id": propio_id, "celular": celular_norm})
-        guardar_datos = lambda: client.table("clientes").insert(datos).execute()
+    propio_id = str(uuid.uuid4())
+    datos.update({"id": propio_id, "celular": celular_norm})
+    guardar_datos = lambda: client.table("clientes").insert(datos).execute()
 
     # Justo después del sign_up, el usuario nuevo puede tardar unos segundos
     # en quedar visible para el chequeo de foreign key de

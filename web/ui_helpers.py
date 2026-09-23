@@ -5,6 +5,10 @@ web/paginas_cadete.py) los puedan importar sin arrastrar el modulo entero.
 El codigo es identico al que estaba inline en app.py.
 """
 
+import hashlib
+import hmac
+import os
+import secrets
 import json
 import re
 from datetime import datetime, timedelta
@@ -33,8 +37,16 @@ def _clientes_admin_activo(request: Request):
     return bool(request.session.get("clientes_admin_ok"))
 
 
+def cadete_session_version(password):
+    return hmac.new(os.environ.get("SESSION_SECRET", "").encode(),
+                    ("cadete:" + password).encode(), hashlib.sha256).hexdigest()
+
+
 def _cadete_activo(request: Request):
-    return bool(request.session.get("cadete_ok"))
+    return bool(request.session.get("cadete_ok")) and secrets.compare_digest(
+        str(request.session.get("cadete_version", "")),
+        cadete_session_version(os.environ.get("CADETE_PASSWORD", "")),
+    )
 
 
 def _puede_operar_entrega(request: Request, fila: dict):
