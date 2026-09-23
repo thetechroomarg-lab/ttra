@@ -80,19 +80,28 @@ function pintarSeccion(nombre) {
   const porMarca = marcaActiva
     ? base.filter((producto) => (producto.marca || "Otras marcas") === marcaActiva)
     : base;
-  const normalizarBusqueda = (texto) => texto.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const consulta = normalizarBusqueda(document.getElementById('catalog-search').value.trim());
+  // Saca emojis y s\u00edmbolos (quedan letras/n\u00fameros/espacios) para que pegar una l\u00ednea
+  // de un listado (que arranca con un emoji por producto) no rompa la b\u00fasqueda.
+  const normalizarBusqueda = (texto) => texto.toLocaleLowerCase('es').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const palabrasBusqueda = normalizarBusqueda(document.getElementById('catalog-search').value.trim())
+    .split(' ').filter(Boolean);
   const porCondicion = filtrarCondicion && condicionActiva
     ? porMarca.filter(producto => condicionProducto(producto) === condicionActiva)
     : porMarca;
-  const productos = consulta ? porCondicion.filter(producto => normalizarBusqueda(`${producto.nombre || ''} ${producto.marca || ''}`).includes(consulta)) : porCondicion;
+  const productos = palabrasBusqueda.length
+    ? porCondicion.filter(producto => {
+        const texto = normalizarBusqueda(`${producto.nombre || ''} ${producto.marca || ''}`);
+        return palabrasBusqueda.every(palabra => texto.includes(palabra));
+      })
+    : porCondicion;
   document.getElementById("contador-productos").textContent =
     `${productos.length} ${productos.length === 1 ? "producto" : "productos"}`;
   if (productos.length === 0) {
     const detalle = marcaActiva
       ? ` de ${escapeHtml(marcaActiva)} en ${escapeHtml(nombre)}`
       : ` en ${escapeHtml(nombre)}`;
-    el.innerHTML = consulta
+    el.innerHTML = palabrasBusqueda.length
       ? '<p class="mensaje-vacio">No encontré productos que coincidan con tu búsqueda.</p>'
       : `<p class="mensaje-vacio">Todavía no hay productos${detalle}.</p>`;
     return;
