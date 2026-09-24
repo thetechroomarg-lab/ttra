@@ -146,9 +146,15 @@ html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-menu, .ttra-site-acco
 html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu) .ttra-theme {
   display: flex; align-items: center; width: 100%; min-height: 48px;
   padding: 12px; border: 0; border-radius: 0; text-align: left;
-  font: 500 16px/1.4 Arial, sans-serif; color: var(--rc-green);
-  background: transparent; cursor: pointer;
+  color: var(--rc-green); background: transparent; cursor: pointer;
 }
+/* Misma tipografía exacta que sus hermanos del menú en cada contexto (home
+   usa .rc-perfil-opcion a 600/13px, el resto usa .ttra-site-menu a 500/13px)
+   -sin esto, el botón de tema (es un <button>, no un <a>) queda con el
+   font-size:24px pensado para el ícono redondo del header, no para texto
+   de una fila de menú, y "Modo claro" se ve más grande que el resto. */
+html[data-modo="classic"] #rc-perfil-dropdown .ttra-theme { font: 600 13px var(--rc-font); }
+html[data-modo="classic"] .ttra-site-menu .ttra-theme { font: 500 13px var(--rc-font); }
 @media (max-width: 700px) {
   html[data-modo="classic"] .ttra-site-header :is(.rc-logo-linea, .ttra-page-brand) { font-size: clamp(32px, 8.5vw, 42px); }
   html[data-modo="classic"] .ttra-site-header :is(.rc-modo-y-carrito, .ttra-site-actions) { grid-template-columns: 48px 48px; gap: 8px 16px; }

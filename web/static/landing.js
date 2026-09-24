@@ -511,12 +511,16 @@ async function cargarInicialesHeader() {
 
 const btnLogoutClassic = document.getElementById("btn-logout-classic");
 const btnLogoutFallout = document.getElementById("btn-logout-fallout");
+const linkIrAPedidos = document.getElementById("link-ir-a-pedidos");
 
 async function sincronizarMenuPerfilSegunSesion(force = false) {
   const sesion = await obtenerEstadoSesionCliente(force);
   await cargarInicialesHeader();
   if (linkIrAPerfil) {
     linkIrAPerfil.textContent = sesion ? "Ir a perfil" : "Iniciar sesión";
+  }
+  if (linkIrAPedidos) {
+    linkIrAPedidos.classList.toggle("oculto", !sesion);
   }
   if (btnLogoutClassic) {
     btnLogoutClassic.classList.toggle("oculto", !sesion);

@@ -272,6 +272,7 @@
       </button>
       <div id="ttra-site-menu" class="ttra-site-menu" hidden>
         <a class="ttra-site-profile-link" href="/perfil">Ir a perfil</a>
+        <a class="ttra-site-pedidos-link" href="/pedidos" hidden>Pedidos</a>
         <button type="button" class="ttra-site-logout" hidden>Cerrar sesión</button>
         <p class="ttra-site-error" role="status" hidden></p>
       </div>
@@ -373,6 +374,7 @@
   });
 
   const profileLink = actions.querySelector('.ttra-site-profile-link');
+  const pedidosLink = actions.querySelector('.ttra-site-pedidos-link');
   const logout = actions.querySelector('.ttra-site-logout');
   const loginParams = new URLSearchParams({ volver: location.pathname + location.search });
   profileLink.href = `/login.html?${loginParams}`;
@@ -396,6 +398,7 @@
       profileLink.textContent = 'Ir a perfil';
       accountContainer.querySelector('.ttra-site-initials').textContent =
         [account.nombre, account.apellido].map((name) => (name || '').trim().charAt(0).toUpperCase()).join('');
+      if (pedidosLink) pedidosLink.hidden = false;
       logout.hidden = false;
     } catch { /* Public navigation remains usable if session lookup fails. */ }
   }

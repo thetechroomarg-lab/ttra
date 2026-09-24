@@ -1,0 +1,21 @@
+/* web/static/pedidos.css — página independiente "Mis pedidos" (ver
+   pedidos.html/pedidos.js). Hereda tarjeta/form/input/button de login.css
+   y las piezas de domicilio/overlay de perfil.css, solo agrega lo propio. */
+
+.pedidos-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.pedidos-tab {
+  height: auto; min-height: 36px; padding: 0 16px; font-size: 12px;
+  background: transparent; border: 1px solid var(--rc-green-faint); color: var(--rc-green-dim);
+}
+.pedidos-tab.activo { color: var(--rc-green-bright); border-color: var(--rc-green); }
+.lista-pedidos { display: flex; flex-direction: column; gap: 10px; }
+.lista-pedidos.oculto { display: none; }
+.item-pedido {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 12px 14px; border: 1px solid var(--rc-green-faint); background: var(--rc-bg-panel);
+}
+.item-pedido-info p { margin: 0 0 4px; font-size: 13px; color: var(--rc-green-bright); }
+.item-pedido-info p:last-child { margin-bottom: 0; }
+.item-pedido-direccion { color: var(--rc-green-dim) !important; }
+.item-pedido .item-domicilio-acciones a { font-size: 11px; }
+#modal-editar-direccion-pedido .rc-terminos-tarjeta { max-width: 420px; }

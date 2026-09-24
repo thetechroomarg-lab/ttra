@@ -1029,3 +1029,115 @@ def test_pedido_guarda_piso_y_depto_con_y_sin_codigo_promo(monkeypatch):
     filas = fake.table("pedidos").select("*").execute().data
     assert len(filas) == 2
     assert all((f["piso_entrega"], f["depto_entrega"]) == ("3", "B") for f in filas)
+
+
+def test_api_pedidos_listar_sin_sesion_devuelve_401(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver")
+    assert c.get("/api/pedidos").status_code == 401
+
+
+def test_api_pedidos_lista_separa_en_curso_e_historial_y_oculta_proveedor(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    }
+    assert c.post("/api/pedidos", json=base).status_code == 200
+    pedido_entregado = fake.table("pedidos").select("*").execute().data[0]
+    fake.table("pedidos").update({
+        "recibo_enviado_en": "2026-08-20T12:00:00+00:00",
+        "recibo_emitido_en": "2026-08-20T12:00:00+00:00",
+    }).eq("id", pedido_entregado["id"]).execute()
+    assert c.post("/api/pedidos", json={**base, "fecha_entrega": "2026-08-25"}).status_code == 200
+
+    r = c.get("/api/pedidos")
+    assert r.status_code == 200
+    datos = r.json()
+    assert len(datos["en_curso"]) == 1
+    assert datos["en_curso"][0]["fecha_entrega"] == "2026-08-25"
+    assert len(datos["historial"]) == 1
+    assert datos["historial"][0]["entregado"] is True
+    for grupo in (datos["en_curso"], datos["historial"]):
+        for pedido in grupo:
+            assert "proveedor" not in str(pedido["detalle"])
+
+
+def test_api_pedido_no_pertenece_a_otro_cliente(monkeypatch):
+    c1, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    }
+    assert c1.post("/api/pedidos", json=base).status_code == 200
+    pedido_id = fake.table("pedidos").select("*").execute().data[0]["id"]
+
+    c2 = TestClient(appmod.app, base_url="https://testserver")
+    c2.post("/registro", json={
+        "nombre": "Otra", "apellido": "Persona", "celular": "3519999999",
+        "email": "otra@x.com", "password": "clave1234",
+        "provincia": "Córdoba", "direccion": "Otra dirección 1",
+    })
+    assert c2.put(f"/api/pedidos/{pedido_id}/direccion", json={"direccion_entrega": "Robada 123"}).status_code == 403
+    assert c2.delete(f"/api/pedidos/{pedido_id}").status_code == 403
+
+
+def test_api_pedido_editar_direccion_actualiza_piso_y_depto(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    }
+    assert c.post("/api/pedidos", json=base).status_code == 200
+    pedido_id = fake.table("pedidos").select("*").execute().data[0]["id"]
+    r = c.put(f"/api/pedidos/{pedido_id}/direccion", json={
+        "direccion_entrega": "Nueva dirección 456", "piso_entrega": "2", "depto_entrega": "A",
+    })
+    assert r.status_code == 200
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert pedido["direccion_entrega"] == "Nueva dirección 456"
+    assert (pedido["piso_entrega"], pedido["depto_entrega"]) == ("2", "A")
+
+
+def test_api_pedido_no_puede_editar_direccion_ni_eliminar_si_ya_fue_entregado(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    }
+    assert c.post("/api/pedidos", json=base).status_code == 200
+    pedido_id = fake.table("pedidos").select("*").execute().data[0]["id"]
+    fake.table("pedidos").update({"recibo_enviado_en": "2026-08-20T12:00:00+00:00"}).eq("id", pedido_id).execute()
+
+    r = c.put(f"/api/pedidos/{pedido_id}/direccion", json={"direccion_entrega": "Otra 789"})
+    assert r.status_code == 400
+    r = c.delete(f"/api/pedidos/{pedido_id}")
+    assert r.status_code == 400
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert pedido["direccion_entrega"] == "Av. Colón 123"
+    assert not pedido.get("borrado_en")
+
+
+def test_api_pedido_eliminar_pedido_en_curso(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    }
+    assert c.post("/api/pedidos", json=base).status_code == 200
+    pedido_id = fake.table("pedidos").select("*").execute().data[0]["id"]
+    assert c.delete(f"/api/pedidos/{pedido_id}").status_code == 200
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert pedido.get("borrado_en")
+    assert c.get("/api/pedidos").json()["en_curso"] == []

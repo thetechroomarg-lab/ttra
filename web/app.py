@@ -4054,6 +4054,13 @@ def pagina_perfil(request: Request):
     return FileResponse(str(BASE / "static" / "perfil.html"))
 
 
+@app.get("/pedidos")
+def pagina_pedidos(request: Request):
+    if not _sesion_activa(request) or _debe_cambiar_password(request):
+        return RedirectResponse("/login.html")
+    return FileResponse(str(BASE / "static" / "pedidos.html"))
+
+
 class DetallePedidoIn(BaseModel):
     nombre: str = Field(min_length=1, max_length=300)
     color: str | None = Field(default=None, max_length=100)
@@ -4409,6 +4416,131 @@ def api_pedidos(entrada: PedidoIn, request: Request):
             depto_entrega=domicilios.opcional(entrada.depto_entrega),
         )
     return {"ok": True}
+
+
+def _detalle_cliente(pedido):
+    return [
+        {
+            "nombre": item.get("nombre"),
+            "color": item.get("color"),
+            "cantidad": item.get("cantidad"),
+            "usd_unitario": item.get("usd_unitario"),
+            "usd_subtotal": item.get("usd_subtotal"),
+        }
+        for item in (pedido.get("detalle") or [])
+    ]
+
+
+def _pedido_cliente(pedido):
+    entregado = bool(pedido.get("recibo_enviado_en"))
+    return {
+        "id": pedido.get("id"),
+        "fecha": pedido.get("fecha"),
+        "fecha_entrega": pedido.get("fecha_entrega"),
+        "direccion_entrega": pedido.get("direccion_entrega"),
+        "piso_entrega": pedido.get("piso_entrega"),
+        "depto_entrega": pedido.get("depto_entrega"),
+        "productos": pedido.get("productos") or [],
+        "detalle": _detalle_cliente(pedido),
+        "total_usd": pedido.get("total_usd"),
+        "descuento_usd": pedido.get("descuento_usd"),
+        "entregado": entregado,
+        "recibo_emitido_en": pedido.get("recibo_emitido_en") if entregado else None,
+        "tiene_recibo": entregado and bool(pedido.get("detalle")) and pedido.get("total_usd") is not None,
+    }
+
+
+@app.get("/api/pedidos")
+def api_pedidos_listar(request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    cliente_id = request.session["cliente_id"]
+    try:
+        filas = get_client().table("pedidos").select("*").eq("cliente_id", cliente_id).execute().data
+        pedidos_cliente = [p for p in filas if _activo(p)]
+    except Exception:
+        logger.exception("No se pudieron obtener los pedidos del cliente")
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
+    en_curso = sorted(
+        (p for p in pedidos_cliente if not p.get("recibo_enviado_en")),
+        key=lambda p: p.get("fecha_entrega") or "",
+    )
+    historial = sorted(
+        (p for p in pedidos_cliente if p.get("recibo_enviado_en")),
+        key=lambda p: p.get("recibo_enviado_en") or "",
+        reverse=True,
+    )
+    return {
+        "en_curso": [_pedido_cliente(p) for p in en_curso],
+        "historial": [_pedido_cliente(p) for p in historial],
+    }
+
+
+def _pedido_propio(client, request, pedido_id):
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas or not _activo(filas[0]):
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    pedido = filas[0]
+    if pedido.get("cliente_id") != request.session.get("cliente_id"):
+        raise HTTPException(status_code=403, detail="Este pedido no te pertenece")
+    return pedido
+
+
+@app.put("/api/pedidos/{pedido_id}/direccion")
+def api_pedido_editar_direccion(pedido_id: str, entrada: EditarDireccionEntregaIn, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    pedido = _pedido_propio(client, request, pedido_id)
+    if pedido.get("recibo_enviado_en"):
+        return JSONResponse({"error": "Este pedido ya fue entregado"}, status_code=400)
+    direccion = entrada.direccion_entrega.strip()
+    if not direccion:
+        return JSONResponse({"error": "Especificá una dirección"}, status_code=400)
+    actualizacion = {
+        "direccion_entrega": direccion,
+        "piso_entrega": domicilios.opcional(entrada.piso_entrega),
+        "depto_entrega": domicilios.opcional(entrada.depto_entrega),
+        "lat": None,
+        "lng": None,
+    }
+    client.table("pedidos").update(actualizacion).eq("id", pedido_id).execute()
+    return {"ok": True}
+
+
+@app.delete("/api/pedidos/{pedido_id}")
+def api_pedido_eliminar(pedido_id: str, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    pedido = _pedido_propio(client, request, pedido_id)
+    if pedido.get("recibo_enviado_en"):
+        return JSONResponse({"error": "Ya fue entregado, no se puede eliminar"}, status_code=400)
+    pedidos.eliminar_pedido(client, pedido_id, request.session["cliente_id"])
+    return {"ok": True}
+
+
+@app.get("/api/pedidos/{pedido_id}/recibo.pdf")
+def api_pedido_pdf_recibo(pedido_id: str, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    pedido = _pedido_propio(client, request, pedido_id)
+    if not pedido.get("recibo_enviado_en"):
+        return JSONResponse({"error": "Este pedido todavía no tiene un recibo emitido"}, status_code=400)
+    if not pedido.get("detalle") or pedido.get("total_usd") is None:
+        return JSONResponse({"error": "Este pedido no tiene el detalle necesario para el recibo"}, status_code=400)
+    emitido_en = pedido.get("recibo_emitido_en") or pedido["recibo_enviado_en"]
+    clientes_fila = client.table("clientes").select("*").eq("id", pedido.get("cliente_id")).execute().data
+    if not clientes_fila:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    contenido = recibos.pdf_recibo(
+        clientes_fila[0],
+        {**pedido, "recibo_emitido_en": emitido_en},
+        fotos=_descargar_fotos_series(client, pedido),
+    )
+    nombre = f"recibo-{pedido.get('recibo_id') or pedido_id}.pdf"
+    return Response(contenido, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{nombre}"'})
 
 
 @app.put("/admin/pedidos/{pedido_id}/fecha-entrega")

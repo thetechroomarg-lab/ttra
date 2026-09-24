@@ -29,11 +29,6 @@
   letter-spacing: .04em;
 }
 
-.rc-perfil-volver {
-  display: inline-block; margin-bottom: 16px; font-size: 13px; text-decoration: none;
-  color: var(--rc-green-dim);
-}
-.rc-perfil-volver:hover { color: var(--rc-green-bright); }
 h2 { margin: 28px 0 16px; font-size: 16px; letter-spacing: .05em; text-transform: uppercase;
      color: var(--rc-green-bright); }
 input:disabled { opacity: .6; cursor: not-allowed; }
