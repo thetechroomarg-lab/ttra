@@ -82,6 +82,7 @@ html[data-modo="classic"].ttra-scroll-locked body#rc-body-landing:not(.rc-vista-
 }
 #panel-carrito,
 #panel-perfil,
+#panel-pedidos,
 .rc-terminos-contenido,
 .rc-panel-compartir-contenido {
   overscroll-behavior: contain;
@@ -267,7 +268,7 @@ html[data-modo="classic"] .rc-redes { display: flex; justify-content: center; fl
 html[data-modo="classic"] .rc-red-icono svg { width: 22px; height: 22px; }
 html[data-modo="classic"] .ttra-footer-title { margin: 0; font: 500 clamp(20px, 2vw, 28px)/1.2 var(--rc-font); letter-spacing: -.035em; }
 html[data-modo="classic"] .rc-red-icono { width: 44px; height: 44px; display: grid; place-items: center; color: var(--rc-green); }
-html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, .rc-logout-tarjeta, .tarjeta) { background: var(--rc-bg-panel); border: 1px solid var(--ed-line); border-radius: 6px; box-shadow: 0 24px 70px #00000030; }
+html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-logout-tarjeta, .tarjeta) { background: var(--rc-bg-panel); border: 1px solid var(--ed-line); border-radius: 6px; box-shadow: 0 24px 70px #00000030; }
 html[data-modo="classic"] .tarjeta { width: min(440px, 92vw); padding: 42px 32px; }
 html[data-modo="classic"] .tarjeta h1 { margin-top: 25px; font-size: 27px; font-weight: 500; letter-spacing: -.04em; }
 html[data-modo="classic"] .form :is(input, select, textarea) { min-height: 46px; border-radius: 2px; border: 1px solid var(--ed-line); background: var(--rc-bg); color: var(--rc-green); }

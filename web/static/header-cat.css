@@ -1,5 +1,14 @@
 /* Only the cat itself accepts petting; the surrounding overlay stays transparent to input. */
 #ttra-header-cat-portal { position: fixed; inset: 0 0 auto; z-index: 10040; overflow: hidden; pointer-events: none; contain: layout style paint; }
+/* Con un panel flotante abierto (carrito/perfil/pedidos) o cualquier otro
+   overlay, el gatito no puede seguir por encima de todo: baja entre
+   #overlay-carrito/#overlay-perfil (9990) y los paneles (9995), así que el
+   panel lo tapa al acercarse, pero SIN caer detrás del tinte oscuro del
+   overlay -eso lo dejaba invisible del todo, no solo desenfocado, porque el
+   sprite es chico y de líneas finas y el tinte al 35% + blur lo apagaba por
+   completo-. El desenfoque propio (filter:blur) le da el mismo lenguaje
+   visual que el resto del fondo sin ese apagón. */
+html.ttra-scroll-locked #ttra-header-cat-portal { z-index: 9992; filter: blur(3px); opacity: .75; transition: filter .2s ease, opacity .2s ease; }
 #ttra-header-cat-portal *, #ttra-header-cat { pointer-events: none; user-select: none; }
 #ttra-header-cat { position: absolute; top: 0; left: 0; width: 92px; height: 77px; will-change: transform; }
 #ttra-header-cat[hidden],#ttra-header-cat-portal[hidden] { display: none; }

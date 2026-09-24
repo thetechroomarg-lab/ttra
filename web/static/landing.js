@@ -426,6 +426,7 @@ const btnPerfilToggle = document.getElementById("btn-perfil-toggle");
 const dropdownPerfil = document.getElementById("rc-perfil-dropdown");
 const overlayPerfil = document.getElementById("overlay-perfil");
 const linkIrAPerfil = document.getElementById("link-ir-a-perfil");
+const linkIrAPedidos = document.getElementById("link-ir-a-pedidos");
 
 function cerrarMenuPerfil() {
   if (!dropdownPerfil) return;
@@ -434,8 +435,21 @@ function cerrarMenuPerfil() {
   // El fondo blureado (overlay-perfil) es un agregado solo de Classic (ver
   // classic.css) — sin CSS propia en Fallout, así que de todos modos no se
   // ve ahí, pero igual la ocultamos siempre para no dejarla "abierta" si el
-  // usuario cambia de modo con el menú desplegado.
-  if (overlayPerfil) overlayPerfil.classList.add("oculto");
+  // usuario cambia de modo con el menú desplegado. EXCEPTO si overlay-perfil
+  // lo sigue usando un panel flotante (perfil/pedidos) que quedó abierto:
+  // este overlay es compartido entre "menú desplegado" y "panel abierto",
+  // y este listener de click-afuera se dispara con CUALQUIER click fuera
+  // del menú -incluido un click adentro del panel mismo, que no es
+  // descendiente de menuPerfil- así que sin este chequeo, tocar cualquier
+  // botón del panel apagaba el blur/scroll-lock aunque el panel siguiera
+  // visible (bug reportado).
+  const panelPerfilAbierto = document.getElementById("panel-perfil") &&
+    !document.getElementById("panel-perfil").classList.contains("oculto");
+  const panelPedidosAbierto = document.getElementById("panel-pedidos") &&
+    !document.getElementById("panel-pedidos").classList.contains("oculto");
+  if (overlayPerfil && !panelPerfilAbierto && !panelPedidosAbierto) {
+    overlayPerfil.classList.add("oculto");
+  }
 }
 
 if (btnPerfilToggle && dropdownPerfil) {
@@ -488,6 +502,21 @@ if (linkIrAPerfil) {
   });
 }
 
+if (linkIrAPedidos) {
+  linkIrAPedidos.addEventListener("click", (e) => {
+    // Con sesión ya es visible (ver sincronizarMenuPerfilSegunSesion más
+    // abajo), así que acá siempre hay sesión. Mismo criterio que "Ir a
+    // perfil": en Classic abre el panel embebido (ver pedidos.js) en vez
+    // de navegar afuera de la landing; Fallout sigue navegando de siempre.
+    if (modoVisual === "fallout") return;
+    if (typeof window.abrirPanelPedidos === "function") {
+      e.preventDefault();
+      cerrarMenuPerfil();
+      window.abrirPanelPedidos();
+    }
+  });
+}
+
 function inicialesDe(nombre, apellido) {
   const inicial = (texto) => (texto || "").trim().charAt(0).toUpperCase();
   return `${inicial(nombre)}${inicial(apellido)}`;
@@ -511,7 +540,6 @@ async function cargarInicialesHeader() {
 
 const btnLogoutClassic = document.getElementById("btn-logout-classic");
 const btnLogoutFallout = document.getElementById("btn-logout-fallout");
-const linkIrAPedidos = document.getElementById("link-ir-a-pedidos");
 
 async function sincronizarMenuPerfilSegunSesion(force = false) {
   const sesion = await obtenerEstadoSesionCliente(force);

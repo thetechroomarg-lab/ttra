@@ -299,6 +299,7 @@ if (panelPerfilEmbebido) {
     // "flotante sobre la home blureada" y no tiene sentido ver ambos
     // superpuestos a la vez.
     if (typeof cerrarCarrito === "function") cerrarCarrito();
+    if (typeof cerrarPanelPedidos === "function") cerrarPanelPedidos();
     // Mismo cálculo que el carrito (separación real del footer, no un
     // valor fijo) — sincronizarLimiteCarrito ya deja el resultado en la
     // variable CSS compartida --rc-carrito-separacion-footer.

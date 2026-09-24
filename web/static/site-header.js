@@ -32,6 +32,34 @@
   const header = document.querySelector('body > header');
   if (!header || root.dataset.modo !== 'classic') return;
   header.classList.add('ttra-site-header');
+  // Scroll progress: a thin fill sitting on the header's own bottom edge
+  // (the "floor" the header-cat mascot walks on), tracking how far down
+  // the page the visitor has scrolled. Lives here -not in a page-specific
+  // script- so it mounts on every real storefront page and skips the
+  // embedded cart/login sub-panels, which return before reaching this line.
+  const scrollProgress = document.createElement('div');
+  scrollProgress.className = 'ttra-scroll-progress';
+  scrollProgress.setAttribute('aria-hidden', 'true');
+  const scrollProgressFill = document.createElement('div');
+  scrollProgressFill.className = 'ttra-scroll-progress-fill';
+  scrollProgress.append(scrollProgressFill);
+  header.append(scrollProgress);
+  let scrollProgressTicking = false;
+  function updateScrollProgress() {
+    scrollProgressTicking = false;
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - doc.clientHeight;
+    const pct = max > 0 ? Math.min(100, Math.max(0, (doc.scrollTop / max) * 100)) : 0;
+    scrollProgressFill.style.width = `${pct}%`;
+  }
+  function queueScrollProgressUpdate() {
+    if (scrollProgressTicking) return;
+    scrollProgressTicking = true;
+    requestAnimationFrame(updateScrollProgress);
+  }
+  window.addEventListener('scroll', queueScrollProgressUpdate, { passive: true });
+  window.addEventListener('resize', queueScrollProgressUpdate);
+  updateScrollProgress();
   // The persistent host owns the masthead and mascot while page content navigates.
   let catHost;
   try { if (window.parent !== window) catHost = window.parent.TTRAHeaderCat; } catch { /* External embeds have no shared host. */ }

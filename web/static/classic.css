@@ -1369,7 +1369,7 @@ html[data-modo="classic"][data-classic-theme="light"] #overlay-perfil {
    flotantes del sitio se sientan como el mismo componente. Solo Classic:
    en Fallout el link "Ir a perfil" nunca llama a abrirPanelPerfil (ver
    landing.js), así que esto no hace falta ahí. */
-html[data-modo="classic"] #panel-perfil {
+html[data-modo="classic"] :is(#panel-perfil, #panel-pedidos) {
   position: fixed;
   top: 24px;
   left: 50%;
@@ -1387,18 +1387,18 @@ html[data-modo="classic"] #panel-perfil {
   padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
 }
-html[data-modo="classic"] #panel-perfil.oculto {
+html[data-modo="classic"] :is(#panel-perfil, #panel-pedidos).oculto {
   display: none;
 }
-html[data-modo="classic"][data-classic-theme="light"] #panel-perfil {
+html[data-modo="classic"][data-classic-theme="light"] :is(#panel-perfil, #panel-pedidos) {
   box-shadow: 0 18px 42px rgba(16, 33, 79, 0.2);
 }
 /* Mismo borde superior coral que .tarjeta (login) y .tarjeta-recomendado/
-   .card (borde rojo): las tres superficies "flotantes" del sitio -carrito,
-   perfil, login- quedan bajo la misma firma visual en vez de sentirse como
-   componentes de sistemas distintos. */
+   .card (borde rojo): las superficies "flotantes" del sitio -carrito,
+   perfil, pedidos, login- quedan bajo la misma firma visual en vez de
+   sentirse como componentes de sistemas distintos. */
 html[data-modo="classic"] #panel-carrito,
-html[data-modo="classic"] #panel-perfil {
+html[data-modo="classic"] :is(#panel-perfil, #panel-pedidos) {
   border-top: 4px solid var(--cl-rojo);
 }
 

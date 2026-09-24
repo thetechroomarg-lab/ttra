@@ -12,7 +12,13 @@
     return Boolean(
       (cart && !cart.classList.contains("oculto")) ||
       (profile && !profile.classList.contains("oculto")) ||
-      document.querySelector("dialog[data-ttra-cart][open], dialog[data-ttra-cart][data-opening]") ||
+      // Genérico a propósito: cualquier <dialog> propio (carrito, login, y
+      // cualquier otro que se agregue después) debe bloquear el scroll de
+      // fondo mientras esté abierto, no solo el que tenga un marcador
+      // puntual -antes solo el carrito lo tenía y el resto quedaba sin
+      // bloqueo real (el blur del ::backdrop nativo se veía, pero atrás se
+      // podía scrollear igual).
+      document.querySelector("dialog[open], dialog[data-opening]") ||
       document.querySelector(".rc-logout-overlay.visible") ||
       document.querySelector(".rc-terminos-overlay.visible") ||
       (share && !share.hidden)

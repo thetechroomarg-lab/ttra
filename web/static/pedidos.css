@@ -1,6 +1,8 @@
-/* web/static/pedidos.css — página independiente "Mis pedidos" (ver
-   pedidos.html/pedidos.js). Hereda tarjeta/form/input/button de login.css
-   y las piezas de domicilio/overlay de perfil.css, solo agrega lo propio. */
+/* web/static/pedidos.css — "Mis pedidos", tanto la página independiente
+   (/pedidos, ver pedidos.html) como el panel flotante embebido en la home
+   (#panel-pedidos en index.html, ver pedidos.js). Hereda tarjeta/form/
+   input/button de login.css y las piezas de domicilio/overlay de
+   perfil.css, solo agrega lo propio. */
 
 .pedidos-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
 .pedidos-tab {

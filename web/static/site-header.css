@@ -17,6 +17,15 @@ html[data-modo="classic"].ttra-scroll-locked body > header.ttra-site-header {
 html[data-modo="classic"].ttra-menu-open body > header.ttra-site-header,
 html[data-modo="classic"] body:has(#rc-perfil-dropdown:not(.oculto)) > header.ttra-site-header { z-index: 9991; }
 html[data-modo="classic"] body.ttra-page > header.ttra-site-header { flex-wrap: nowrap; }
+/* Progreso de scroll de la página, apoyado sobre el borde inferior del
+   header -el mismo "piso" donde camina el gatito (ver header-cat.js). */
+html[data-modo="classic"] .ttra-scroll-progress {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: transparent; overflow: hidden; pointer-events: none;
+}
+html[data-modo="classic"] .ttra-scroll-progress-fill {
+  height: 100%; width: 0%; background: var(--ed-accent);
+}
 html[data-modo="classic"] .ttra-site-header .ttra-page-brand { font-size: clamp(30px, 3vw, 42px); line-height: .88; letter-spacing: -.065em; }
 html[data-modo="classic"] .ttra-site-actions { display: flex; align-items: center; gap: 12px; }
 html[data-modo="classic"] .ttra-site-header .rc-perfil-menu { order: 0; }

@@ -1,3 +1,11 @@
+// Este script sirve dos contextos, igual que perfil.js:
+// 1) /pedidos standalone (link-volver existe): carga apenas corre el script.
+// 2) Panel embebido en index.html (panel-pedidos existe): NO carga nada
+//    hasta que se llama a window.abrirPanelPedidos() (ver landing.js), y
+//    "cerrar" oculta el panel en vez de navegar.
+const panelPedidosEmbebido = document.getElementById("panel-pedidos");
+const btnCerrarPanelPedidos = document.getElementById("btn-cerrar-panel-pedidos");
+const overlayPedidosEmbebido = document.getElementById("overlay-perfil");
 const tabPedidosEnCurso = document.getElementById("tab-pedidos-en-curso");
 const tabPedidosHistorial = document.getElementById("tab-pedidos-historial");
 const listaPedidosEnCurso = document.getElementById("lista-pedidos-en-curso");
@@ -9,6 +17,19 @@ const pedidoPisoInput = document.getElementById("pedido-piso");
 const pedidoDeptoInput = document.getElementById("pedido-depto");
 const btnCancelarEditarDireccionPedido = document.getElementById("btn-cancelar-editar-direccion-pedido");
 let pedidoEnEdicionId = null;
+
+function cerrarPanelPedidos() {
+  if (!panelPedidosEmbebido) return;
+  panelPedidosEmbebido.classList.add("oculto");
+  if (overlayPedidosEmbebido) overlayPedidosEmbebido.classList.add("oculto");
+}
+
+if (btnCerrarPanelPedidos) {
+  btnCerrarPanelPedidos.addEventListener("click", cerrarPanelPedidos);
+}
+if (overlayPedidosEmbebido) {
+  overlayPedidosEmbebido.addEventListener("click", cerrarPanelPedidos);
+}
 
 function formatearMonedaUsd(valor) {
   return `U$D ${Number(valor || 0).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
@@ -166,4 +187,20 @@ formEditarDireccionPedido.addEventListener("submit", async (e) => {
   }
 });
 
-cargarPedidos();
+if (panelPedidosEmbebido) {
+  // Embebido: no se carga nada hasta que el usuario realmente abre el
+  // panel (ver linkIrAPedidos en landing.js).
+  window.abrirPanelPedidos = function abrirPanelPedidos() {
+    // Comparten la misma franja "flotante sobre la home blureada" que el
+    // carrito y el perfil -no tiene sentido ver más de uno a la vez.
+    if (typeof cerrarCarrito === "function") cerrarCarrito();
+    if (typeof cerrarPanelPerfil === "function") cerrarPanelPerfil();
+    if (typeof sincronizarLimiteCarrito === "function") sincronizarLimiteCarrito();
+    panelPedidosEmbebido.classList.remove("oculto");
+    if (overlayPedidosEmbebido) overlayPedidosEmbebido.classList.remove("oculto");
+    cargarPedidos();
+  };
+} else {
+  // Standalone (/pedidos): comportamiento de siempre.
+  cargarPedidos();
+}

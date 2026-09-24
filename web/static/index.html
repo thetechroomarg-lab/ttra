@@ -72,6 +72,7 @@
   <link rel="stylesheet" href="landing.css">
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="perfil.css">
+  <link rel="stylesheet" href="pedidos.css">
   <link rel="stylesheet" href="classic-editorial.css">
   <link rel="stylesheet" href="/site-header.css">
   <link rel="stylesheet" href="/disclosure.css">
@@ -415,6 +416,35 @@
       <p class="ok" id="password-ok"></p>
     </form>
   </aside>
+  <aside id="panel-pedidos" class="oculto">
+    <div class="panel-carrito-header">
+      <h2>Mis pedidos</h2>
+      <button id="btn-cerrar-panel-pedidos" aria-label="Cerrar pedidos" type="button">✕</button>
+    </div>
+    <div class="pedidos-tabs">
+      <button type="button" id="tab-pedidos-en-curso" class="pedidos-tab activo">En curso</button>
+      <button type="button" id="tab-pedidos-historial" class="pedidos-tab">Historial</button>
+    </div>
+    <div id="lista-pedidos-en-curso" class="lista-pedidos"></div>
+    <div id="lista-pedidos-historial" class="lista-pedidos oculto"></div>
+  </aside>
+  <div id="modal-editar-direccion-pedido" class="rc-terminos-overlay">
+    <div class="rc-terminos-tarjeta">
+      <h2>Editar dirección de entrega</h2>
+      <form id="form-editar-direccion-pedido" class="form">
+        <input id="pedido-direccion" type="text" placeholder="Dirección" maxlength="500" required>
+        <div class="piso-depto-fila">
+          <input id="pedido-piso" type="text" placeholder="Piso (opcional)" maxlength="20" aria-label="Piso (opcional)">
+          <input id="pedido-depto" type="text" placeholder="Depto (opcional)" maxlength="20" aria-label="Departamento (opcional)">
+        </div>
+        <p class="error" id="pedido-direccion-error"></p>
+        <div class="rc-terminos-acciones" style="gap:10px">
+          <button type="submit">Guardar</button>
+          <button type="button" id="btn-cancelar-editar-direccion-pedido">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
   <div id="overlay-carrito" class="oculto"></div>
   <div id="overlay-perfil" class="oculto"></div>
 
@@ -502,6 +532,7 @@
   <script src="/comparar-productos.js"></script>
   <script src="landing.js"></script>
   <script src="perfil.js"></script>
+  <script src="pedidos.js"></script>
   <script src="classic-editorial.js"></script>
   <script src="scroll-lock.js"></script>
 </body>
