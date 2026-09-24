@@ -2,6 +2,8 @@
 (() => {
   const root = document.documentElement;
   if (document.body.classList.contains('vaiven-page') || /^\/vaiven\/?$/.test(location.pathname)) return;
+  if (document.body.classList.contains('bitu-page') || /^\/bitu\/?$/.test(location.pathname)) return;
+  if (document.body.classList.contains('fendi-page') || /^\/fendi\/?$/.test(location.pathname)) return;
   import('/adaptive-dropdowns.js');
   if (root.classList.contains('ttra-cart-embedded')) {
     const panel = document.getElementById('panel-carrito');
@@ -44,22 +46,38 @@
   scrollProgressFill.className = 'ttra-scroll-progress-fill';
   scrollProgress.append(scrollProgressFill);
   header.append(scrollProgress);
-  let scrollProgressTicking = false;
-  function updateScrollProgress() {
-    scrollProgressTicking = false;
-    const doc = document.documentElement;
-    const max = doc.scrollHeight - doc.clientHeight;
-    const pct = max > 0 ? Math.min(100, Math.max(0, (doc.scrollTop / max) * 100)) : 0;
-    scrollProgressFill.style.width = `${pct}%`;
-  }
-  function queueScrollProgressUpdate() {
-    if (scrollProgressTicking) return;
-    scrollProgressTicking = true;
-    requestAnimationFrame(updateScrollProgress);
-  }
-  window.addEventListener('scroll', queueScrollProgressUpdate, { passive: true });
-  window.addEventListener('resize', queueScrollProgressUpdate);
-  updateScrollProgress();
+  // Después de la primera navegación interna, cat-navigation.js mete el
+  // resto del sitio dentro de un <iframe id="ttra-storefront-frame">
+  // persistente -el header que se ve queda fijo afuera, con este script
+  // corriendo en el documento de arriba, pero el scroll real pasa DENTRO
+  // del iframe-. Enganchar listeners de scroll/resize al contentWindow de
+  // ese iframe resultó poco confiable (cada navegación interna lo puede
+  // reemplazar, y el evento 'load' no siempre llega a tiempo para
+  // re-engancharlos), así que en vez de perseguir eventos entre ventanas
+  // esto simplemente LEE el scroll actual en cada frame -mismo patrón que
+  // ya usa el gatito del header (requestAnimationFrame continuo)-, que es
+  // correcto sin importar qué documento sea el que scrollea de verdad.
+  (function tick() {
+    // Durante el instante de una navegación interna, el documento del
+    // iframe puede quedar momentáneamente null/inaccesible -sin el
+    // try/catch, esa excepción cortaba el loop entero (nunca se volvía a
+    // pedir el próximo frame) y la barra quedaba congelada para siempre,
+    // no solo desactualizada-.
+    try {
+      const frame = document.getElementById('ttra-storefront-frame');
+      let doc = document.documentElement;
+      if (frame && root.classList.contains('ttra-cat-shell') && frame.contentDocument) {
+        doc = frame.contentDocument.documentElement;
+      }
+      const max = doc.scrollHeight - doc.clientHeight;
+      const pct = max > 0 ? Math.min(100, Math.max(0, (doc.scrollTop / max) * 100)) : 0;
+      scrollProgressFill.style.width = `${pct}%`;
+      // header-cat.js lee esto para que los gatitos giren la cabeza y
+      // sigan la puntita de la línea roja mientras avanza.
+      window.__ttraScrollPct = pct;
+    } catch {}
+    requestAnimationFrame(tick);
+  })();
   // The persistent host owns the masthead and mascot while page content navigates.
   let catHost;
   try { if (window.parent !== window) catHost = window.parent.TTRAHeaderCat; } catch { /* External embeds have no shared host. */ }

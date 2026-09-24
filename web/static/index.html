@@ -21,7 +21,7 @@
     if (window.parent !== window && introParams.get('embed') === 'carrito') {
       document.documentElement.classList.add('ttra-cart-embedded');
     }
-    let introSeen = false, albumReturn = null;
+    let introSeen = false, albumReturn = null, bituAlbumReturn = null, fendiAlbumReturn = null;
     try {
       introSeen = sessionStorage.getItem("ttra_portada_vista") === "1";
       const savedReturn = JSON.parse(sessionStorage.getItem("ttra_vaiven_return_once") || "null");
@@ -30,10 +30,24 @@
         albumReturn = savedReturn;
         sessionStorage.setItem("ttra_portada_vista", "1");
       }
+      const savedBituReturn = JSON.parse(sessionStorage.getItem("ttra_bitu_return_once") || "null");
+      sessionStorage.removeItem("ttra_bitu_return_once");
+      if (savedBituReturn && typeof savedBituReturn.guest === "boolean" && Date.now() - savedBituReturn.at >= 0 && Date.now() - savedBituReturn.at < 30000) {
+        bituAlbumReturn = savedBituReturn;
+        sessionStorage.setItem("ttra_portada_vista", "1");
+      }
+      const savedFendiReturn = JSON.parse(sessionStorage.getItem("ttra_fendi_return_once") || "null");
+      sessionStorage.removeItem("ttra_fendi_return_once");
+      if (savedFendiReturn && typeof savedFendiReturn.guest === "boolean" && Date.now() - savedFendiReturn.at >= 0 && Date.now() - savedFendiReturn.at < 30000) {
+        fendiAlbumReturn = savedFendiReturn;
+        sessionStorage.setItem("ttra_portada_vista", "1");
+      }
     } catch {}
     window.__TTRA_VAIVEN_RETURN = albumReturn;
+    window.__TTRA_BITU_RETURN = bituAlbumReturn;
+    window.__TTRA_FENDI_RETURN = fendiAlbumReturn;
     const isReload = performance.getEntriesByType('navigation')[0]?.type === 'reload';
-    const showIntro = introParams.get("intro") === "1" || (!albumReturn && (!introSeen || isReload) && introParams.get("panel") !== "carrito");
+    const showIntro = introParams.get("intro") === "1" || (!albumReturn && !bituAlbumReturn && !fendiAlbumReturn && (!introSeen || isReload) && introParams.get("panel") !== "carrito");
     document.documentElement.classList.add(showIntro ? "ttra-welcome-pending" : "ttra-welcome-dismissed");
   </script>
   <meta charset="utf-8">

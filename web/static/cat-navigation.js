@@ -15,7 +15,7 @@ export function persistentNavigation({attach,portal}) {
   });
   const bound=new WeakSet();
   const supported=url=>url.origin===location.origin && !url.searchParams.has('embed') &&
-    /^(\/|\/catalogo\/?|\/comparativa\/?|\/vaiven\/?|\/login(?:\.html)?|\/perfil(?:\.html)?|\/p\/[^/]+)$/.test(url.pathname);
+    /^(\/|\/catalogo\/?|\/comparativa\/?|\/vaiven\/?|\/bitu\/?|\/fendi\/?|\/login(?:\.html)?|\/perfil(?:\.html)?|\/p\/[^/]+)$/.test(url.pathname);
   const safeURL=url=>url.pathname+url.search+(/token|password|code=/i.test(url.hash)?'':url.hash);
   function bind(doc) {
     if(bound.has(doc))return;bound.add(doc);
@@ -35,14 +35,14 @@ export function persistentNavigation({attach,portal}) {
     let doc,url;
     try{doc=frame.contentDocument;url=new URL(frame.contentWindow.location.href);}catch{return;}
     if(!doc||url.href==='about:blank'||doc===lastDocument)return;
-    if(!supported(url)||!doc.querySelector('body > header, body.vaiven-page #vaiven-album')) {
+    if(!supported(url)||!doc.querySelector('body > header, body.vaiven-page #vaiven-album, body.bitu-page #bitu-album, body.fendi-page #fendi-album')) {
       // Unsupported/error documents fall back to ordinary full-page navigation.
       const target=pending?.url||url;pending=null;location.assign(target.href);return;
     }
     lastDocument=doc;
     clearTimeout(timeout);
     const transaction=pending;pending=null;
-    const album=doc.body.classList.contains('vaiven-page');
+    const album=doc.body.classList.contains('vaiven-page')||doc.body.classList.contains('bitu-page')||doc.body.classList.contains('fendi-page');
     document.documentElement.classList.toggle('ttra-shell-album',album);
     doc.documentElement.classList.add('ttra-shell-content');
     const sync=()=>{

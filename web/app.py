@@ -241,6 +241,10 @@ async def gate_paginas_html(request: Request, call_next):
 
     if request.method in {"GET", "HEAD"} and ruta in {"/vaiven", "/vaiven.html"}:
         return pagina_vaiven(request)
+    if request.method in {"GET", "HEAD"} and ruta in {"/bitu", "/bitu.html"}:
+        return pagina_bitu(request)
+    if request.method in {"GET", "HEAD"} and ruta in {"/fendi", "/fendi.html"}:
+        return pagina_fendi(request)
 
     if ruta == "/" and ruta_cruda != "/":
         # "//", "///", "/./", "/foo/../", etc.: StaticFiles las resolvería
@@ -5069,6 +5073,52 @@ def pagina_vaiven(request: Request):
                             headers={"Cache-Control": "no-store"})
     request.session.pop("vaiven_access", None)
     return FileResponse(str(BASE / "static" / "vaiven.html"), headers={"Cache-Control": "no-store"})
+
+
+@app.post("/bitu/acceso")
+def habilitar_album_bitu(request: Request):
+    access = secrets.token_urlsafe(24)
+    request.session["bitu_access"] = {"value": access, "expires": time.time() + 120}
+    return JSONResponse({"access": access}, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/bitu")
+@app.get("/bitu/")
+@app.get("/bitu.html")
+def pagina_bitu(request: Request):
+    grant = request.session.get("bitu_access", {})
+    access = request.query_params.get("access", "")
+    allowed = (bool(access) and access.isascii() and isinstance(grant, dict)
+               and grant.get("expires", 0) > time.time()
+               and secrets.compare_digest(access, grant.get("value", "")))
+    if not allowed:
+        return FileResponse(str(BASE / "static" / "vaiven-denied.html"), status_code=403,
+                            headers={"Cache-Control": "no-store"})
+    request.session.pop("bitu_access", None)
+    return FileResponse(str(BASE / "static" / "bitu.html"), headers={"Cache-Control": "no-store"})
+
+
+@app.post("/fendi/acceso")
+def habilitar_album_fendi(request: Request):
+    access = secrets.token_urlsafe(24)
+    request.session["fendi_access"] = {"value": access, "expires": time.time() + 120}
+    return JSONResponse({"access": access}, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/fendi")
+@app.get("/fendi/")
+@app.get("/fendi.html")
+def pagina_fendi(request: Request):
+    grant = request.session.get("fendi_access", {})
+    access = request.query_params.get("access", "")
+    allowed = (bool(access) and access.isascii() and isinstance(grant, dict)
+               and grant.get("expires", 0) > time.time()
+               and secrets.compare_digest(access, grant.get("value", "")))
+    if not allowed:
+        return FileResponse(str(BASE / "static" / "vaiven-denied.html"), status_code=403,
+                            headers={"Cache-Control": "no-store"})
+    request.session.pop("fendi_access", None)
+    return FileResponse(str(BASE / "static" / "fendi.html"), headers={"Cache-Control": "no-store"})
 
 
 @app.get("/catalogo")

@@ -25,7 +25,7 @@ try {
 function restoreCompanion(key) {
   try {
     const saved=JSON.parse(sessionStorage.getItem(key)||'null');
-    if(saved?.version===1 && typeof saved.active==='boolean' && Number.isFinite(saved.epoch) && Number.isFinite(saved.seed) && Number.isFinite(saved.x) && saved.phase && ['off','enter','return','walk','idle','jump','sniff','funny','sleep','pee','poop','bury-walk','bury'].includes(saved.phase.kind) && [saved.phase.start,saved.phase.duration,saved.phase.from,saved.phase.to].every(Number.isFinite) && Array.isArray(saved.waste))return saved;
+    if(saved?.version===1 && typeof saved.active==='boolean' && Number.isFinite(saved.epoch) && Number.isFinite(saved.seed) && Number.isFinite(saved.x) && saved.phase && ['off','enter','return','walk','idle','jump','sniff','funny','sleep','pee','poop','bury-walk','bury','introduce'].includes(saved.phase.kind) && [saved.phase.start,saved.phase.duration,saved.phase.from,saved.phase.to].every(Number.isFinite) && Array.isArray(saved.waste))return saved;
   } catch {}
   return null;
 }
@@ -50,41 +50,61 @@ cat.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){
 // alegría, o ataque juguetón a los 3 clicks seguidos) pero SIN la escalada
 // a "introduce" -el globito que linkea al álbum de fotos es cosa de Vaiven
 // nada más, todavía no armamos esa parte para ellas-.
-function makeCompanion(id, artwork, label, s, persistFn) {
+// Bitu, igual que Vaiven, escala a "introduce" (el globito con el link al
+// álbum) a los 10 clicks/taps seguidos -por eso usa interact(), no solo
+// pet()-. Fendi todavía no tiene esa escalada, a propósito.
+function makeCompanion(id, artwork, label, s, persistFn, useInteract, getBubble) {
   const el=document.createElement('div');el.id=id;el.setAttribute('role','button');el.tabIndex=0;
   el.setAttribute('aria-label',label);el.innerHTML=artwork+'<span class="ttra-cat-zzz"><span>Z</span><span>Z</span><span>Z</span></span>';
-  el.addEventListener('click',event=>{event.stopPropagation();pet(s,Date.now());persistFn();render();renderFendi();renderBitu();start();});
-  el.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&!event.repeat){event.preventDefault();pet(s,Date.now());persistFn();render();renderFendi();renderBitu();start();}});
+  let pointerKindLocal='mouse';
+  el.addEventListener('pointerdown',event=>{pointerKindLocal=event.pointerType;});
+  function react(pointer='keyboard',detail=1) {
+    const now=Date.now();
+    if(useInteract)interact(s,now,pointer,detail);else pet(s,now);
+    persistFn();render();renderFendi();renderBitu();start();
+    if(useInteract && s.phase.kind==='introduce')getBubble().querySelector('a').focus({preventScroll:true});
+  }
+  el.addEventListener('click',event=>{event.stopPropagation();react(event.pointerType||pointerKindLocal,event.detail);});
+  el.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&!event.repeat){event.preventDefault();react();}});
   return el;
 }
-const catFendi=makeCompanion('ttra-header-cat-fendi',fendiArtwork,'Acariciar a Fendi',fendiState,()=>persistFendi());
-const catBitu=makeCompanion('ttra-header-cat-bitu',bituArtwork,'Acariciar a Bitu',bituState,()=>persistBitu());
+const catFendi=makeCompanion('ttra-header-cat-fendi',fendiArtwork,'Acariciar a Fendi',fendiState,()=>persistFendi(),true,()=>bubbleFendi);
+const catBitu=makeCompanion('ttra-header-cat-bitu',bituArtwork,'Acariciar a Bitu',bituState,()=>persistBitu(),true,()=>bubbleBitu);
 portal.append(cat,catFendi,catBitu);document.body.append(portal);
 const door3d=createDoor();
-const bubble=document.createElement('div');bubble.id='ttra-cat-introduction';bubble.hidden=true;
-bubble.innerHTML='<a href="/vaiven">Mirá, este soy yo</a><button type="button" aria-label="Cerrar el globo">×</button>';
-document.body.append(bubble);
-const dismiss=()=>{dismissIntroduction(state,Date.now());persist();render();start();};
-bubble.querySelector('button').addEventListener('click',()=>{dismiss();cat.focus({preventScroll:true});});
-const albumLink=bubble.querySelector('a');
-let albumLinkReady=false,albumLinkPending=false;
-albumLink.addEventListener('click',async event=>{
-  if(albumLinkReady){albumLinkReady=false;dismiss();return;}
-  event.preventDefault();event.stopImmediatePropagation();
-  if(albumLinkPending)return;
-  albumLinkPending=true;albumLink.setAttribute('aria-busy','true');
-  const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),5000);
-  try {
-    const response=await fetch('/vaiven/acceso',{method:'POST',signal:controller.signal});
-    if(!response.ok)throw new Error('album-access');
-    const {access}=await response.json();
-    if(typeof access!=='string'||!access)throw new Error('album-access');
-    if(state.phase.kind!=='introduce')return;
-    albumLink.href=`/vaiven?access=${encodeURIComponent(access)}`;
-    albumLink.textContent='Mirá, este soy yo';albumLinkReady=true;albumLink.click();
-  } catch { albumLink.textContent='No pude abrirlo. Tocá para reintentar.'; }
-  finally {clearTimeout(timeout);albumLinkPending=false;albumLink.removeAttribute('aria-busy');}
-});
+// Globito de "encontraste mi álbum secreto" a los 10 clicks/taps seguidos
+// (ver interact() en header-cat-state.mjs). Fábrica reusada por Vaiven y
+// Bitu -Fendi todavía no tiene esta escalada, a propósito-.
+function makeIntroBubble(id,s,persistFn,renderFn,focusEl,albumPath,accessPath) {
+  const el=document.createElement('div');el.id=id;el.className='ttra-cat-introduction';el.hidden=true;
+  el.innerHTML='<a href="'+albumPath+'">Mirá, este soy yo</a><button type="button" aria-label="Cerrar el globo">×</button>';
+  document.body.append(el);
+  const dismiss=()=>{dismissIntroduction(s,Date.now());persistFn();renderFn();start();};
+  el.querySelector('button').addEventListener('click',()=>{dismiss();focusEl.focus({preventScroll:true});});
+  const albumLink=el.querySelector('a');
+  let albumLinkReady=false,albumLinkPending=false;
+  albumLink.addEventListener('click',async event=>{
+    if(albumLinkReady){albumLinkReady=false;dismiss();return;}
+    event.preventDefault();event.stopImmediatePropagation();
+    if(albumLinkPending)return;
+    albumLinkPending=true;albumLink.setAttribute('aria-busy','true');
+    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),5000);
+    try {
+      const response=await fetch(accessPath,{method:'POST',signal:controller.signal});
+      if(!response.ok)throw new Error('album-access');
+      const {access}=await response.json();
+      if(typeof access!=='string'||!access)throw new Error('album-access');
+      if(s.phase.kind!=='introduce')return;
+      albumLink.href=`${albumPath}?access=${encodeURIComponent(access)}`;
+      albumLink.textContent='Mirá, este soy yo';albumLinkReady=true;albumLink.click();
+    } catch { albumLink.textContent='No pude abrirlo. Tocá para reintentar.'; }
+    finally {clearTimeout(timeout);albumLinkPending=false;albumLink.removeAttribute('aria-busy');}
+  });
+  return el;
+}
+const bubble=makeIntroBubble('ttra-cat-introduction',state,()=>persist(),()=>render(),cat,'/vaiven','/vaiven/acceso');
+const bubbleBitu=makeIntroBubble('ttra-cat-introduction-bitu',bituState,()=>persistBitu(),()=>renderBitu(),catBitu,'/bitu','/bitu/acceso');
+const bubbleFendi=makeIntroBubble('ttra-cat-introduction-fendi',fendiState,()=>persistFendi(),()=>renderFendi(),catFendi,'/fendi','/fendi/acceso');
 let current=null,geometry=null,resize=null,observer=null,raf=0,lastSave=0,lastPose='',lastSerial=-1;
 let lastPoseFendi='',lastSerialFendi=-1;
 let lastPoseBitu='',lastSerialBitu=-1;
@@ -106,7 +126,9 @@ function measure() {
   const left=b.right+10;
   const mobile=doc.defaultView.innerWidth<=700;
   const size=Math.min(mobile?72:92,Math.max(28,right-left));
-  geometry={top:h.top,height:h.height,left,right,size,travel:Math.max(0,right-left-size),floor:h.height-6,doorX:b.right-size*.65,mobile};
+  // Sin el margen que había antes (h.height-6): las tres deben pisar
+  // justo el borde inferior del header, no flotar unos px arriba.
+  geometry={top:h.top,height:h.height,left,right,size,travel:Math.max(0,right-left-size),floor:h.height,doorX:b.right-size*.65,mobile,headerLeft:h.left,headerWidth:h.width};
   Object.assign(portal.style,{top:`${h.top}px`,height:`${h.height}px`});
   Object.assign(cat.style,{width:`${size}px`,height:`${size*5/6}px`});
   const sizeFendi=size*.9;
@@ -122,6 +144,15 @@ const companions=[
   {s:()=>fendiState,activateOnly:true},
   {s:()=>bituState,activateOnly:true},
 ];
+// Manda a casa a la(s) que estén afuera en este momento -no asume que están
+// todas afuera (ver __TTRA_FENDI_RETURN: se puede volver de su álbum
+// habiendo salido solo ella y Vaiven, sin Bitu)-.
+function sendAllHome(now) {
+  for(const c of companions){
+    if(c.s().active){advance(c.s(),now,geometry||{});toggleState(c.s(),now,geometry?.travel||0);}
+  }
+  duet=null;
+}
 function toggle() {
   // La puerta es un ciclo de 4 toques: 1) sale Vaiven, 2) sale Fendi, 3)
   // sale Bitu, 4) las tres vuelven adentro juntas. Ninguna vuelve a entrar
@@ -139,8 +170,7 @@ function toggle() {
   if(next) {
     advance(next.s(),now,geometry||{});toggleState(next.s(),now,geometry?.travel||0);
   } else {
-    for(const c of companions){advance(c.s(),now,geometry||{});toggleState(c.s(),now,geometry?.travel||0);}
-    duet=null;
+    sendAllHome(now);
   }
   try{localStorage.setItem(PREF,state.active?'1':'0');}catch{}
   persist();persistFendi();persistBitu();lastPose='';lastPoseFendi='';lastPoseBitu='';render();renderFendi();renderBitu();start();
@@ -152,10 +182,11 @@ function caress(pointer='keyboard',detail=1) {
 function reward() { celebrate(state,Date.now());persist();start(); }
 async function attach(doc) {
   if(doc!==document && !navigation.accepts(doc))return;
-  if(doc.querySelector('body.vaiven-page #vaiven-album')){
+  if(doc.querySelector('body.vaiven-page #vaiven-album, body.bitu-page #bitu-album, body.fendi-page #fendi-album')){
     resize?.disconnect();observer?.disconnect();current=null;geometry=null;
-    cancelAnimationFrame(raf);raf=0;portal.hidden=true;bubble.hidden=true;
-    dismissIntroduction(state,Date.now());persist();return;
+    cancelAnimationFrame(raf);raf=0;portal.hidden=true;bubble.hidden=true;bubbleBitu.hidden=true;bubbleFendi.hidden=true;
+    dismissIntroduction(state,Date.now());dismissIntroduction(bituState,Date.now());dismissIntroduction(fendiState,Date.now());
+    persist();persistBitu();persistFendi();return;
   }
   const pageDoc=doc;
   if(doc!==document){
@@ -178,8 +209,17 @@ async function attach(doc) {
     brand.classList.add('ttra-cat-door');header.append(house,door3d.canvas,button);
     binding={doc,header,brand,button,house};mounted.set(doc,binding);
     doc.defaultView.addEventListener('ttra:cart-added',reward);
-    doc.addEventListener('keydown',event=>{if(event.key==='Escape'&&state.phase.kind==='introduce'){dismiss();cat.focus({preventScroll:true});}});
-    doc.addEventListener('pointerdown',event=>{if(state.phase.kind==='introduce'&&!cat.contains(event.target)&&!bubble.contains(event.target))dismiss();});
+    doc.addEventListener('keydown',event=>{
+      if(event.key!=='Escape')return;
+      if(state.phase.kind==='introduce'){dismissIntroduction(state,Date.now());persist();render();cat.focus({preventScroll:true});}
+      if(bituState.phase.kind==='introduce'){dismissIntroduction(bituState,Date.now());persistBitu();renderBitu();catBitu.focus({preventScroll:true});}
+      if(fendiState.phase.kind==='introduce'){dismissIntroduction(fendiState,Date.now());persistFendi();renderFendi();catFendi.focus({preventScroll:true});}
+    });
+    doc.addEventListener('pointerdown',event=>{
+      if(state.phase.kind==='introduce'&&!cat.contains(event.target)&&!bubble.contains(event.target)){dismissIntroduction(state,Date.now());persist();render();}
+      if(bituState.phase.kind==='introduce'&&!catBitu.contains(event.target)&&!bubbleBitu.contains(event.target)){dismissIntroduction(bituState,Date.now());persistBitu();renderBitu();}
+      if(fendiState.phase.kind==='introduce'&&!catFendi.contains(event.target)&&!bubbleFendi.contains(event.target)){dismissIntroduction(fendiState,Date.now());persistFendi();renderFendi();}
+    });
     doc.defaultView.addEventListener('scroll',measure,{passive:true});
     doc.defaultView.addEventListener('resize',measure,{passive:true});
   }
@@ -191,12 +231,42 @@ async function attach(doc) {
   syncTheme();measure();render();renderFendi();renderBitu();start();
   if(pageDoc.location.pathname==='/' && pageDoc.defaultView.__TTRA_VAIVEN_RETURN){
     pageDoc.defaultView.__TTRA_VAIVEN_RETURN=null;
-    if(state.active)toggle();
-    if(state.phase.kind==='return'){
-      state.phase.duration=Math.min(state.phase.duration,2200);
-      state.phase.running=true;
-      persist();render();start();
+    // toggle() asume el orden secuencial de la puerta (activaría a la
+    // siguiente inactiva en vez de mandar a Vaiven a casa si él salió
+    // solo); sendAllHome() manda a casa solo a quien esté afuera de verdad.
+    if(state.active)sendAllHome(Date.now());
+    for(const s of [state,fendiState,bituState]) {
+      if(s.phase.kind==='return') {
+        s.phase.duration=Math.min(s.phase.duration,2200);
+        s.phase.running=true;
+      }
     }
+    persist();persistFendi();persistBitu();render();renderFendi();renderBitu();start();
+  }
+  if(pageDoc.location.pathname==='/' && pageDoc.defaultView.__TTRA_BITU_RETURN){
+    pageDoc.defaultView.__TTRA_BITU_RETURN=null;
+    if(bituState.active)sendAllHome(Date.now());
+    for(const s of [state,fendiState,bituState]) {
+      if(s.phase.kind==='return') {
+        s.phase.duration=Math.min(s.phase.duration,2200);
+        s.phase.running=true;
+      }
+    }
+    persist();persistFendi();persistBitu();render();renderFendi();renderBitu();start();
+  }
+  if(pageDoc.location.pathname==='/' && pageDoc.defaultView.__TTRA_FENDI_RETURN){
+    pageDoc.defaultView.__TTRA_FENDI_RETURN=null;
+    // Fendi puede estar afuera sin que Bitu lo esté (el ciclo de la puerta
+    // es secuencial, Bitu es la última en salir), así que acá manda a casa
+    // a quien esté afuera en vez de asumir que están las tres.
+    if(fendiState.active)sendAllHome(Date.now());
+    for(const s of [state,fendiState,bituState]) {
+      if(s.phase.kind==='return') {
+        s.phase.duration=Math.min(s.phase.duration,2200);
+        s.phase.running=true;
+      }
+    }
+    persist();persistFendi();persistBitu();render();renderFendi();renderBitu();start();
   }
 }
 function syncTheme(){
@@ -282,6 +352,20 @@ function stepDuet(now,g) {
 }
 // Compartido por Vaiven y Fendi -misma frecuencia de pis/caca, mapa de
 // nodos DOM aparte para cada una porque los ids de waste son por gato.
+// Mientras están quietas/caminando (nunca durante una pose ya armada a
+// propósito: dormir, oler, cara graciosa, etc.) giran apenas la cabeza
+// hacia la puntita de la línea roja de scroll y la siguen a medida que
+// avanza -window.__ttraScrollPct lo actualiza site-header.js en cada frame-.
+function applyScrollLook(el,x,kind,facing,g) {
+  if(motion.matches || (kind!=='idle'&&kind!=='walk') || typeof window.__ttraScrollPct!=='number' || !g.headerWidth) {
+    el.style.setProperty('--cat-look','0deg');
+    return;
+  }
+  const tipX=g.headerLeft+(window.__ttraScrollPct/100)*g.headerWidth;
+  const dx=tipX-x;
+  const look=Math.max(-9,Math.min(9,dx/50))*facing;
+  el.style.setProperty('--cat-look',`${look.toFixed(1)}deg`);
+}
 function renderWaste(s,nodes,pose,g,now) {
   for(const w of s.waste){
     let node=nodes.get(w.id);
@@ -331,6 +415,7 @@ function render() {
   if(motion.matches && !['enter','return'].includes(kind))x=g.left;
   const facing=kind==='return'?-1:state.phase.direction||(kind==='poop'&&state.x>.5?-1:state.phase.to<state.phase.from?-1:1);
   cat.style.setProperty('--cat-facing',String(facing));
+  applyScrollLook(cat,x,kind,facing,g);
   const visual=['enter','return','bury-walk'].includes(pose.kind)?'walk':pose.kind;
   if(lastPose!==visual||lastSerial!==state.phase.serial){
     cat.dataset.state=visual;cat.dataset.behavior=kind;
@@ -355,7 +440,10 @@ function renderFendi() {
   const pose=advance(fendiState,now,g),p=pose.progress,kind=fendiState.phase.kind;
   const visible=kind!=='off' && !current.doc.documentElement.classList.contains('ttra-welcome-pending');
   catFendi.hidden=!visible;
-  if(!visible){angleFendi=0;if(now-lastSave>1000)persistFendi();door3d.setAngle(Math.max(angleVaiven,angleFendi));door3d.render();return;}
+  bubbleFendi.hidden=!visible||kind!=='introduce';
+  catFendi.setAttribute('aria-expanded',String(!bubbleFendi.hidden));
+  catFendi.setAttribute('aria-controls',bubbleFendi.id);
+  if(!visible){angleFendi=0;if(now-lastSave>1000)persistFendi();door3d.setAngle(Math.max(angleVaiven,angleFendi,angleBitu));door3d.render();return;}
   let x=g.left+pose.x*g.travel,y=g.floor-size*5/6*.92;
   angleFendi=0;
   if(kind==='enter') {
@@ -377,9 +465,14 @@ function renderFendi() {
       const dx=otherX-x;
       if(Math.abs(dx)<minGap)x-=(minGap-Math.abs(dx))/2*(dx>=0?1:-1);
     }
+    // El empujón de separación no puede mandarla más allá de la puerta -sin
+    // esto, con otro gato pegado al borde izquierdo, el empujón la podía
+    // dejar caminando encima del logo-.
+    x=Math.max(g.left,Math.min(g.left+g.travel,x));
   }
   const facing=kind==='return'?-1:(kind==='poop'&&fendiState.x>.5?-1:(fendiState.phase.to<fendiState.phase.from?-1:1));
   catFendi.style.setProperty('--cat-facing',String(facing));
+  applyScrollLook(catFendi,x,kind,facing,g);
   const visual=['enter','return','bury-walk'].includes(pose.kind)?'walk':pose.kind;
   if(lastPoseFendi!==visual||lastSerialFendi!==fendiState.phase.serial){
     catFendi.dataset.state=visual;
@@ -388,6 +481,12 @@ function renderFendi() {
   }
   lastFendiX=x;
   catFendi.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
+  if(!bubbleFendi.hidden){
+    const width=bubbleFendi.getBoundingClientRect().width;
+    const left=clamp(x+size/2-width/2,12,innerWidth-width-12);
+    bubbleFendi.style.left=`${left}px`;bubbleFendi.style.top=`${g.top+g.height+8}px`;
+    bubbleFendi.style.setProperty('--bubble-pointer',`${clamp(x+size/2-left,18,width-18)}px`);
+  }
   renderWaste(fendiState,wasteNodesFendi,pose,g,now);
   if(now-lastSave>1000)persistFendi();
   door3d.setAngle(Math.max(angleVaiven,angleFendi,angleBitu));
@@ -399,6 +498,9 @@ function renderBitu() {
   const pose=advance(bituState,now,g),p=pose.progress,kind=bituState.phase.kind;
   const visible=kind!=='off' && !current.doc.documentElement.classList.contains('ttra-welcome-pending');
   catBitu.hidden=!visible;
+  bubbleBitu.hidden=!visible||kind!=='introduce';
+  catBitu.setAttribute('aria-expanded',String(!bubbleBitu.hidden));
+  catBitu.setAttribute('aria-controls',bubbleBitu.id);
   if(!visible){angleBitu=0;if(now-lastSave>1000)persistBitu();door3d.setAngle(Math.max(angleVaiven,angleFendi,angleBitu));door3d.render();return;}
   let x=g.left+pose.x*g.travel,y=g.floor-size*5/6*.92;
   angleBitu=0;
@@ -419,9 +521,11 @@ function renderBitu() {
       const dx=otherX-x;
       if(Math.abs(dx)<minGap)x-=(minGap-Math.abs(dx))/2*(dx>=0?1:-1);
     }
+    x=Math.max(g.left,Math.min(g.left+g.travel,x));
   }
   const facing=kind==='return'?-1:(kind==='poop'&&bituState.x>.5?-1:(bituState.phase.to<bituState.phase.from?-1:1));
   catBitu.style.setProperty('--cat-facing',String(facing));
+  applyScrollLook(catBitu,x,kind,facing,g);
   const visual=['enter','return','bury-walk'].includes(pose.kind)?'walk':pose.kind;
   if(lastPoseBitu!==visual||lastSerialBitu!==bituState.phase.serial){
     catBitu.dataset.state=visual;
@@ -430,6 +534,12 @@ function renderBitu() {
   }
   lastBituX=x;
   catBitu.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
+  if(!bubbleBitu.hidden){
+    const width=bubbleBitu.getBoundingClientRect().width;
+    const left=clamp(x+size/2-width/2,12,innerWidth-width-12);
+    bubbleBitu.style.left=`${left}px`;bubbleBitu.style.top=`${g.top+g.height+8}px`;
+    bubbleBitu.style.setProperty('--bubble-pointer',`${clamp(x+size/2-left,18,width-18)}px`);
+  }
   renderWaste(bituState,wasteNodesBitu,pose,g,now);
   if(now-lastSave>1000)persistBitu();
   door3d.setAngle(Math.max(angleVaiven,angleFendi,angleBitu));
@@ -451,7 +561,7 @@ function resetAfterWelcome() {
   for(const node of wasteNodesFendi.values())node.remove();
   for(const node of wasteNodesBitu.values())node.remove();
   wasteNodes.clear();wasteNodesFendi.clear();wasteNodesBitu.clear();
-  portal.hidden=true;bubble.hidden=true;catFendi.hidden=true;catBitu.hidden=true;
+  portal.hidden=true;bubble.hidden=true;bubbleBitu.hidden=true;bubbleFendi.hidden=true;catFendi.hidden=true;catBitu.hidden=true;
   try{localStorage.removeItem(PREF);}catch{}
   persist();persistFendi();persistBitu();render();renderFendi();renderBitu();
 }

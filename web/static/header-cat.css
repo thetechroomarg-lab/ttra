@@ -16,6 +16,7 @@ html.ttra-scroll-locked #ttra-header-cat-portal { z-index: 9992; filter: blur(3p
 #ttra-header-cat .cat-shadow,#ttra-header-cat .cat-back,#ttra-header-cat .cat-scratch-paw,#ttra-header-cat .cat-strain-face,#ttra-header-cat .cat-tongue,#ttra-header-cat .cat-happy-eyes { display: none; }
 #ttra-header-cat .cat-pose { transform-box: view-box; transform-origin: 62px 91px; }
 #ttra-header-cat :is(.cat-head,.cat-leg-front,.cat-leg-rear) { transform-box: fill-box; transform-origin: center bottom; }
+#ttra-header-cat:is([data-state="idle"],[data-state="walk"]) .cat-head { transform: rotate(var(--cat-look,0deg)); }
 #ttra-header-cat .cat-tail { transform-box: view-box; transform-origin: 39px 75px; animation: header-cat-tail 4.4s ease-in-out infinite; animation-delay: var(--cat-clock,0s); }
 #ttra-header-cat .cat-eyes { transform-box: fill-box; transform-origin: center; animation: header-cat-blink 5.8s infinite; animation-delay: var(--cat-clock,0s); }
 #ttra-header-cat[data-state="walk"] .cat-leg-front { animation: header-cat-step .52s ease-in-out infinite; animation-delay: var(--cat-phase,0s); }
@@ -27,7 +28,9 @@ html.ttra-scroll-locked #ttra-header-cat-portal { z-index: 9992; filter: blur(3p
 #ttra-header-cat[data-state="scratch"] .cat-head { transform: rotate(-12deg); }
 #ttra-header-cat:is([data-state="scratch"],[data-state="lick"],[data-state="sleep"],[data-state="joy"]) .cat-eyes { display: none; }
 #ttra-header-cat:is([data-state="scratch"],[data-state="lick"],[data-state="sleep"],[data-state="joy"]) .cat-happy-eyes { display: block; }
-#ttra-header-cat[data-state="lick"] .cat-tongue { display: block; animation: header-cat-lick .55s ease-in-out infinite; }
+/* La lengua flickeaba justo al lado de la nariz -de lejos se leía como si
+   la nariz misma temblara-. Se deja quieta, la pose de asearse sigue. */
+#ttra-header-cat[data-state="lick"] .cat-tongue { display: block; }
 #ttra-header-cat[data-state="lick"] .cat-leg-front { transform: translate(3px,-15px) rotate(-26deg); }
 #ttra-header-cat[data-state="lick"] .cat-head { transform: rotate(10deg) translateY(3px); }
 #ttra-header-cat[data-state="poop"] .cat-eyes,#ttra-header-cat[data-state="poop"] .cat-mouth { visibility: hidden; }
@@ -35,7 +38,7 @@ html.ttra-scroll-locked #ttra-header-cat-portal { z-index: 9992; filter: blur(3p
 #ttra-header-cat[data-state="poop"] .cat-pose { transform: scale(1.06,.82); }
 #ttra-header-cat[data-state="pee"] .cat-leg-rear { transform: rotate(-38deg) translateY(-4px); }
 #ttra-header-cat[data-state="pee"] .cat-tail { transform: rotate(28deg); animation: none; }
-#ttra-header-cat[data-state="sleep"] .cat-pose { transform: translateY(9px) scale(1.05,.68); }
+#ttra-header-cat[data-state="sleep"] .cat-pose { transform: scale(1.05,.68); }
 #ttra-header-cat[data-state="sleep"] .cat-head { transform: rotate(-12deg) translate(-7px,5px); }
 #ttra-header-cat[data-state="sleep"] .cat-tail { animation-duration: 12s; }
 .ttra-cat-zzz { display: none; position: absolute; top: 12%; left: 60%; color: var(--rc-green); font: 700 13px Arial,sans-serif; }
@@ -61,7 +64,7 @@ html[data-modo="classic"] .ttra-cat-door { opacity: 0; }
 .ttra-cat-door-3d { position: absolute; z-index: 2; display: block; pointer-events: none; }
 #ttra-storefront-frame { position: fixed; inset: 0; z-index: 100; width: 100%; height: 100dvh; border: 0; background: var(--rc-bg); }
 html.ttra-cat-shell,html.ttra-cat-shell body { height: 100%; overflow: hidden !important; }
-html.ttra-cat-shell body > :not(#ttra-storefront-frame):not(#ttra-header-cat-portal):not(#ttra-cat-introduction):not(header.ttra-site-header):not(script):not(style):not(link) { display: none !important; }
+html.ttra-cat-shell body > :not(#ttra-storefront-frame):not(#ttra-header-cat-portal):not(.ttra-cat-introduction):not(header.ttra-site-header):not(script):not(style):not(link) { display: none !important; }
 @keyframes header-cat-step { 0%,100% { transform: translateX(-3px); } 50% { transform: translate(3px,-4px) rotate(-8deg); } }
 @keyframes header-cat-scratch { from { transform: rotate(-9deg); } to { transform: rotate(12deg); } }
 @keyframes header-cat-lick { 0%,100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
@@ -105,12 +108,12 @@ html.ttra-cat-shell body > :not(#ttra-storefront-frame):not(#ttra-header-cat-por
 @keyframes header-cat-dig-body { 0%,100% { transform: translateY(0); } 45% { transform: translateY(1px); } }
 @keyframes header-cat-earth { 0% { opacity: 0; transform: translate(0,0); } 15% { opacity: 1; } 50% { opacity: .9; transform: translate(-14px,-13px); } 100% { opacity: 0; transform: translate(-27px,2px); } }
 
-#ttra-cat-introduction { position: fixed; z-index: 10041; display: flex; align-items: center; gap: 3px; max-width: calc(100vw - 24px); padding: 5px 6px 5px 10px; border: 1px solid #d4c8b5; border-radius: 16px; background: #fff9eb; color: #292820; box-shadow: 0 8px 24px #0003; font: 700 16px/1.3 Arial,sans-serif; }
-#ttra-cat-introduction[hidden] { display: none; }
-#ttra-cat-introduction::before { content: ''; position: absolute; left: var(--bubble-pointer,24px); top: -7px; width: 12px; height: 12px; transform: rotate(45deg); background: #fff9eb; border-top: 1px solid #d4c8b5; border-left: 1px solid #d4c8b5; }
-#ttra-cat-introduction a { display: flex; min-height: 44px; align-items: center; color: inherit; text-decoration: none; padding: 0 8px; }
-#ttra-cat-introduction button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: transparent; border: 0; border-radius: 50%; color: inherit; font: 24px Arial,sans-serif; cursor: pointer; }
-#ttra-cat-introduction :focus-visible { outline: 2px solid #d6382d; outline-offset: 1px; border-radius: 8px; }
+.ttra-cat-introduction { position: fixed; z-index: 10041; display: flex; align-items: center; gap: 3px; max-width: calc(100vw - 24px); padding: 5px 6px 5px 10px; border: 1px solid #d4c8b5; border-radius: 16px; background: #fff9eb; color: #292820; box-shadow: 0 8px 24px #0003; font: 700 16px/1.3 Arial,sans-serif; }
+.ttra-cat-introduction[hidden] { display: none; }
+.ttra-cat-introduction::before { content: ''; position: absolute; left: var(--bubble-pointer,24px); top: -7px; width: 12px; height: 12px; transform: rotate(45deg); background: #fff9eb; border-top: 1px solid #d4c8b5; border-left: 1px solid #d4c8b5; }
+.ttra-cat-introduction a { display: flex; min-height: 44px; align-items: center; color: inherit; text-decoration: none; padding: 0 8px; }
+.ttra-cat-introduction button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: transparent; border: 0; border-radius: 50%; color: inherit; font: 24px Arial,sans-serif; cursor: pointer; }
+.ttra-cat-introduction :focus-visible { outline: 2px solid #d6382d; outline-offset: 1px; border-radius: 8px; }
 
 /* The original masthead stays outside page navigation, even with the cat asleep. */
 html.ttra-cat-shell body > header.ttra-site-header {
@@ -133,6 +136,7 @@ html.ttra-shell-album #ttra-storefront-frame { top: 0; height: 100dvh; }
 #ttra-header-cat-fendi :is(.cat-shadow,.cat-back,.cat-scratch-paw,.cat-strain-face,.cat-tongue,.cat-happy-eyes,.cat-belly,.cat-angry-face,.cat-attack-paw,.cat-claw-streaks) { display: none; }
 #ttra-header-cat-fendi .cat-pose { transform-box: view-box; transform-origin: 62px 91px; }
 #ttra-header-cat-fendi :is(.cat-head,.cat-leg-front,.cat-leg-rear) { transform-box: fill-box; transform-origin: center bottom; }
+#ttra-header-cat-fendi:is([data-state="idle"],[data-state="walk"]) .cat-head { transform: rotate(var(--cat-look,0deg)); }
 #ttra-header-cat-fendi .cat-tail { transform-box: view-box; transform-origin: 39px 75px; animation: header-cat-tail 4.1s ease-in-out infinite; animation-delay: var(--cat-clock,0s); }
 #ttra-header-cat-fendi .cat-eyes { transform-box: fill-box; transform-origin: center; animation: header-cat-blink 6.4s infinite; animation-delay: var(--cat-clock,0s); }
 #ttra-header-cat-fendi[data-state="walk"] .cat-leg-front { animation: header-cat-step .48s ease-in-out infinite; animation-delay: var(--cat-phase,0s); }
@@ -152,7 +156,7 @@ html.ttra-shell-album #ttra-storefront-frame { top: 0; height: 100dvh; }
 #ttra-header-cat-fendi[data-state="bury"] .cat-pose { animation: header-cat-dig-body .46s ease-in-out infinite; }
 /* Fendi se va a dormir a upa rincón cuando Vaiven y Bitu se ponen a jugar
    (ver stepDuet en header-cat.js) -mismo pose "ovillado" que ya tenía Vaiven-. */
-#ttra-header-cat-fendi[data-state="sleep"] .cat-pose { transform: translateY(9px) scale(1.05,.68); }
+#ttra-header-cat-fendi[data-state="sleep"] .cat-pose { transform: scale(1.05,.68); }
 #ttra-header-cat-fendi[data-state="sleep"] .cat-head { transform: rotate(-12deg) translate(-7px,5px); }
 #ttra-header-cat-fendi[data-state="sleep"] .cat-eyes { display: none; }
 #ttra-header-cat-fendi[data-state="sleep"] .cat-happy-eyes { display: block; }
@@ -177,6 +181,7 @@ html.ttra-shell-album #ttra-storefront-frame { top: 0; height: 100dvh; }
 #ttra-header-cat-bitu :is(.cat-shadow,.cat-back,.cat-scratch-paw,.cat-strain-face,.cat-tongue,.cat-happy-eyes,.cat-belly,.cat-angry-face,.cat-attack-paw,.cat-claw-streaks) { display: none; }
 #ttra-header-cat-bitu .cat-pose { transform-box: view-box; transform-origin: 62px 91px; }
 #ttra-header-cat-bitu :is(.cat-head,.cat-leg-front,.cat-leg-rear) { transform-box: fill-box; transform-origin: center bottom; }
+#ttra-header-cat-bitu:is([data-state="idle"],[data-state="walk"]) .cat-head { transform: rotate(var(--cat-look,0deg)); }
 #ttra-header-cat-bitu .cat-tail { transform-box: view-box; transform-origin: 39px 75px; animation: header-cat-tail 4.3s ease-in-out infinite; animation-delay: var(--cat-clock,0s); }
 #ttra-header-cat-bitu .cat-eyes { transform-box: fill-box; transform-origin: center; animation: header-cat-blink 6.1s infinite; animation-delay: var(--cat-clock,0s); }
 #ttra-header-cat-bitu[data-state="walk"] .cat-leg-front { animation: header-cat-step .46s ease-in-out infinite; animation-delay: var(--cat-phase,0s); }
@@ -192,7 +197,7 @@ html.ttra-shell-album #ttra-storefront-frame { top: 0; height: 100dvh; }
 #ttra-header-cat-bitu[data-state="bury"] .cat-leg-rear { transform-origin: 42px 73px; transform-box: view-box; animation: header-cat-bury .46s ease-in-out infinite; }
 #ttra-header-cat-bitu[data-state="bury"] .cat-head { transform: rotate(12deg) translateY(3px); }
 #ttra-header-cat-bitu[data-state="bury"] .cat-pose { animation: header-cat-dig-body .46s ease-in-out infinite; }
-#ttra-header-cat-bitu[data-state="sleep"] .cat-pose { transform: translateY(9px) scale(1.05,.68); }
+#ttra-header-cat-bitu[data-state="sleep"] .cat-pose { transform: scale(1.05,.68); }
 #ttra-header-cat-bitu[data-state="sleep"] .cat-head { transform: rotate(-12deg) translate(-7px,5px); }
 #ttra-header-cat-bitu[data-state="sleep"] .cat-eyes { display: none; }
 #ttra-header-cat-bitu[data-state="sleep"] .cat-happy-eyes { display: block; }

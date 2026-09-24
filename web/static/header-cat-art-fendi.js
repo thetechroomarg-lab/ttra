@@ -1,25 +1,31 @@
-// Fendi: misma anatomía que catArtwork (header-cat-art.js), recoloreada a
-// carey (marrón oscuro de base, parches marrón medio y marrón claro, ojos
-// amarillos -éstos ya venían así en el original, no hizo falta tocarlos-).
-// Recolor puro por reemplazo de color, sin tocar ningún path/geometría.
+// Fendi: misma anatomía que catArtwork, recoloreada a dos tonos -cabeza,
+// patitas y torso en marrón oscuro; orejas, cola y cachetes en marrón
+// claro-, con ojos amarillos -ya venían así en el dibujo base, no hizo
+// falta tocarlos-. Recolor puro por reemplazo de color, sin tocar ningún
+// path/geometría.
 import {catArtwork} from './header-cat-art.js';
 
+const DARK = '#3c2a1d';   // cabeza, torso, patitas
+const LIGHT = '#c99a68';  // orejas, cola, cachetes
+
 const RECOLOR = [
-  // Base del cuerpo/patas/orejas internas "blanco" -> carey oscuro.
-  ['#fffdf8', '#3c2a1d'], ['#fffdf9', '#3c2a1d'],
-  // Contorno claro sobre el blanco -> contorno oscuro que se note sobre el carey.
+  // Cabeza/torso/patas (incluye el pecho, antes un círculo claro que
+  // quedaba raro sobre la patita: ahora es del mismo marrón oscuro).
+  ['#fffdf8', DARK], ['#fffdf9', DARK], ['#f1eee7', DARK],
   ['#d8cfc4', '#22160e'],
-  // Parches de orejas/cabeza/cola "canela" -> marrón medio (segundo tono carey).
-  ['#c9a581', '#8a5a34'], ['#c4a07c', '#8a5a34'], ['#b68e6b', '#6b3f22'],
-  // Pecho/vientre y raya del lomo, más claros -> marrón claro (tercer tono carey).
-  ['#f1eee7', '#c99a68'], ['#eee8df', '#c99a68'], ['#f1dfd6', '#a9764a'],
-  ['#eac5b5', '#b97a68'], ['#e9e3d9', '#4a3524'],
-  // Rosas de nariz/lengua/mejillas -> tonos cálidos apagados, coherentes con pelaje oscuro.
-  ['#efd2c9', '#a9674a'], ['#c98c89', '#8a4f4a'], ['#e5a0a1', '#b06a5f'],
-  ['#e2b0aa', '#8a4f4a'],
-  // Trazos/rayas de bigotes y contornos oscuros -> más oscuros todavía.
-  ['#775c4c', '#2c1c12'], ['#705343', '#2c1c12'], ['#8f7971', '#4a3524'],
-  ['#ab9b8d', '#6b4a34'], ['#e5b7a0', '#7a4a30'], ['#302a25', '#1a100a'],
+  // Orejas y cola: marrón claro.
+  ['#c9a581', LIGHT], ['#c4a07c', LIGHT],
+  ['#b68e6b', '#6b3f22'], ['#eac5b5', LIGHT],
+  // Raya del lomo / sombra del vientre (ocultas salvo en poses que Fendi no usa).
+  ['#eee8df', LIGHT], ['#f1dfd6', LIGHT],
+  // Cachetes: marrón claro (igual que orejas/cola).
+  ['#efd2c9', LIGHT],
+  ['#e9e3d9', '#000000'],
+  // Nariz/lengua/almohadillas: tonos cálidos oscuros, no puro negro.
+  ['#c98c89', '#5a3428'], ['#e5a0a1', '#b06a5f'], ['#e2b0aa', '#3a1f1f'],
+  // Trazos/contornos -> oscuros.
+  ['#775c4c', '#000000'], ['#705343', '#000000'], ['#8f7971', '#22160e'],
+  ['#ab9b8d', '#4a3524'], ['#e5b7a0', '#6b3f22'], ['#302a25', '#000000'],
 ];
 
 export const fendiArtwork = RECOLOR.reduce(

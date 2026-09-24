@@ -1,0 +1,76 @@
+/* Bitu's personal photo album, using the storefront's existing theme. */
+/* A static, edge-to-edge photographic backdrop, isolated from the album content. */
+.bitu-photo-backdrop { isolation: isolate; }
+.bitu-photo-backdrop::before {
+ content: ""; position: fixed; inset: -16px; z-index: -1; pointer-events: none;
+ background: linear-gradient(#11140fe0,#11140fc9), url('/vaiven/cat-supplies-collage.webp') center / cover no-repeat;
+ filter: blur(5px); animation: none;
+}
+html[data-classic-theme="light"] .bitu-photo-backdrop::before {
+ background-image: linear-gradient(#f4f0e6e0,#f4f0e6cf), url('/vaiven/cat-supplies-collage.webp');
+}
+.bitu-page #bitu-album { width: min(1280px,100%); margin: 0 auto; padding: 64px var(--ed-gutter,24px) 150px; }
+.bitu-page .bitu-kicker { display: block; margin: 0 0 22px; font-size: 12px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--ed-accent,#ef6257); }
+.bitu-intro,.bitu-confession,.bitu-goodbye { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: clamp(36px,6vw,100px); }
+.bitu-page h1 { margin: 0 0 28px; font-size: clamp(68px,8vw,120px); line-height: .98; letter-spacing: -.065em; font-weight: 500; }
+.bitu-page h1 em { font-family: 'TTRA Handwriting',cursive; font-style: normal; letter-spacing: -.04em; color: var(--ed-accent,#ef6257); }
+.bitu-page h2 { margin: 0 0 26px; font-size: clamp(36px,4.5vw,64px); line-height: 1.05; letter-spacing: -.045em; font-weight: 500; }
+.bitu-page p:not(.bitu-kicker):not(.bitu-note) { max-width: 48ch; font-size: clamp(17px,1.5vw,20px); line-height: 1.7; }
+.bitu-page .bitu-lead { font-weight: 700; }
+.bitu-page .bitu-note,.bitu-signature { display: block; margin: 24px 0 0; font-family: 'TTRA Handwriting',cursive; font-size: clamp(28px,3vw,38px); line-height: 1.2; }
+.bitu-page .bitu-photo { margin: 0; padding: 12px 12px 18px; background: #f5efe2; color: #34312c; border: 1px solid #c9bda84d; box-shadow: 0 10px 30px #0002; border-radius: 3px; }
+.bitu-photo img { display: block; width: 100%; height: auto; border-radius: 1px; }
+.bitu-page .bitu-photo figcaption { margin: 15px 8px 0; font-family: 'TTRA Handwriting',cursive; font-size: clamp(23px,2.1vw,29px); line-height: 1.15; text-align: center; }
+.bitu-portrait { transform: rotate(2deg); max-width: 440px; justify-self: center; }
+.bitu-memories { margin-top: 120px; }
+.bitu-section-heading { margin-bottom: 48px; }
+.bitu-photo-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); align-items: start; gap: 28px; }
+.bitu-photo-grid figure:nth-child(2) { margin-top: 54px; }
+.bitu-confession,.bitu-goodbye { margin-top: 120px; }
+.bitu-confession { grid-template-columns: .8fr 1.1fr; }
+.bitu-confession .bitu-photo { max-width: 380px; transform: rotate(-2deg); }
+.bitu-goodbye .bitu-photo { max-width: 320px; justify-self: center; transform: rotate(2deg); }
+.bitu-page .bitu-back { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; margin-top: 20px; padding: 14px 26px; background: var(--ed-accent,#ef6257); border-radius: 999px; color: #fff; text-decoration: none; font-size: 16px; font-weight: 700; text-align: center; }
+.bitu-page .bitu-back:hover { filter: brightness(1.1); }
+@media(min-width:701px) { .bitu-ready [data-bitu-reveal] { transition: opacity .7s ease, translate .7s ease; } .bitu-ready [data-bitu-reveal]:not(.is-visible) { opacity: 0; translate: 0 22px; } }
+@media(max-width:700px) {
+ .bitu-page #bitu-album { padding: 40px 22px 125px; }
+ .bitu-intro,.bitu-confession,.bitu-goodbye { grid-template-columns: minmax(0,1fr); gap: 32px; }
+ .bitu-portrait { max-width: 360px; margin-inline: 8px !important; }
+ .bitu-memories,.bitu-confession,.bitu-goodbye { margin-top: 70px; }
+ .bitu-photo-grid { grid-template-columns: minmax(0,1fr); gap: 28px; }
+ .bitu-photo-grid figure:nth-child(2) { margin-top: 0; }
+ .bitu-confession-copy { grid-row: 1; }
+ .bitu-confession .bitu-photo,.bitu-goodbye .bitu-photo { margin-inline: 8px; }
+ .bitu-page .bitu-back { width: 100%; }
+}
+@media(prefers-reduced-motion:reduce) { .bitu-ready [data-bitu-reveal] { opacity: 1 !important; translate: none !important; transition: none !important; } }
+
+/* A quiet mascot occupies the former logo footprint; no storefront header or dock. */
+.bitu-masthead { padding: 8px var(--ed-gutter,24px); }
+#bitu-mascot { width: 116px; height: 131.2px; pointer-events: none; }
+#bitu-mascot svg { display: block; width: 100%; height: 100%; overflow: visible; }
+#bitu-mascot .cat-head { transform-origin: 79px 72px; animation: bitu-seated-head 17s ease-in-out infinite; }
+#bitu-mascot .cat-eyes { transform-box: fill-box; transform-origin: center; animation: bitu-seated-blink 6s infinite; }
+#bitu-mascot .bitu-scratch-paw { opacity: 0; transform-origin: 82px 117px; animation: bitu-seated-scratch 17s linear infinite; }
+@keyframes bitu-seated-head { 0%,79%,94%,100% { transform: rotate(0); } 82%,91% { transform: rotate(10deg); } }
+@keyframes bitu-seated-scratch {
+  0%,79%,94%,100% { opacity: 0; transform: rotate(0); }
+  81%,83%,85%,87%,89%,91% { opacity: 1; transform: rotate(-9deg); }
+  82%,84%,86%,88%,90%,92% { opacity: 1; transform: rotate(7deg); }
+}
+@keyframes bitu-seated-blink { 0%,44%,48%,100% { transform: scaleY(1); } 46% { transform: scaleY(.08); } }
+@media(max-width:700px) {
+ .bitu-masthead { padding: 8px 20px; }
+ #bitu-mascot { width: calc(clamp(28px,8vw,32px)*2.9); height: calc(clamp(28px,8vw,32px)*3.28); }
+}
+@media(prefers-reduced-motion:reduce) { #bitu-mascot * { animation: none !important; } }
+
+/* Bitu's album never reserves space for, or displays, the storefront dock. */
+html[data-modo="classic"] body.bitu-page :is(.ttra-dock-section,.ttra-dock) { display: none !important; }
+html[data-modo="classic"] body.bitu-page #bitu-album { padding-bottom: 72px; }
+
+.bitu-return { margin-top: clamp(40px,6vw,80px); text-align: center; }
+.bitu-page .bitu-return .bitu-back { margin-top: 0; }
+.bitu-page #bitu-album.bitu-denied { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; max-width: 1000px; padding-block: 70px; }
+.bitu-page .bitu-denied h1 { font-size: clamp(48px,8vw,104px); line-height: 1.05; }
