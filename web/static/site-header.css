@@ -166,10 +166,10 @@ html[data-modo="classic"] .ttra-dock-section { flex: none; height: calc(112px + 
 html[data-modo="classic"] .ttra-dock {
   position: fixed; z-index: 60; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   translate: -50% 0; width: max-content; max-width: calc(100vw - 24px); padding: 10px;
-  border: 1px solid color-mix(in srgb, #2a2410 20%, transparent); border-radius: 28px;
-  background: color-mix(in srgb, #f5d76e 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rc-green) 20%, transparent); border-radius: 28px;
+  background: color-mix(in srgb, var(--rc-bg-panel) 90%, transparent);
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 14px 44px #00000045, inset 0 1px 0 #ffffff30;
+  box-shadow: 0 14px 44px #00000045, inset 0 1px 0 #ffffff12;
 }
 html[data-modo="classic"] .ttra-dock :is(.rc-modo-y-carrito, .ttra-site-actions) {
   display: grid; grid-template-columns: repeat(5, 48px); gap: 8px;
@@ -178,19 +178,19 @@ html[data-modo="classic"] .ttra-dock :is(.rc-modo-y-carrito, .ttra-site-actions)
 html[data-modo="classic"] .ttra-dock .ttra-dock-control {
   position: relative; display: flex; align-items: center; justify-content: center;
   width: 48px; height: 48px; min-width: 48px; min-height: 48px; padding: 0; margin: 0;
-  border: 1px solid #2a241033; border-radius: 50%; background: #ffffffb3;
-  color: #262110; text-decoration: none; box-shadow: none; cursor: pointer;
+  border: 1px solid var(--ed-line); border-radius: 50%; background: var(--rc-bg-panel-2);
+  color: var(--rc-green); text-decoration: none; box-shadow: none; cursor: pointer;
   transform: translateY(calc(var(--dock-lift, 0) * -7px));
   transition: transform .18s ease, background .18s ease;
 }
 html[data-modo="classic"] .ttra-dock .ttra-dock-control svg { display: block; width: 24px; height: 24px; flex: 0 0 24px; transform: scale(calc(1 + var(--dock-lift, 0) * .18)); }
 html[data-modo="classic"] .ttra-dock .ttra-dock-home { grid-column: 1; grid-row: 1; }
 html[data-modo="classic"] .ttra-dock .ttra-dock-categories { grid-column: 2; grid-row: 1; }
-html[data-modo="classic"] .ttra-dock :is(#btn-carrito, .ttra-site-cart) { grid-column: 5; grid-row: 1; background: #ffffffb3; border-color: #2a241033; color: #262110; }
+html[data-modo="classic"] .ttra-dock :is(#btn-carrito, .ttra-site-cart) { grid-column: 5; grid-row: 1; background: var(--rc-bg-panel-2); border-color: var(--ed-line); color: var(--rc-green); }
 html[data-modo="classic"] .ttra-dock :is(.rc-perfil-menu, .ttra-site-account) { grid-column: 5; grid-row: 1; justify-self: center; width: 48px; margin: 0; }
 html[data-modo="classic"] .ttra-dock :is(.rc-perfil-nombre, .ttra-site-initials, .ttra-cart-label, .indicador-mayorista, .btn-modo) { display: none; }
 html[data-modo="classic"] .ttra-dock :is(#carrito-contador, .ttra-site-count) { position: absolute; top: -4px; right: -3px; min-width: 18px; padding: 0 3px; border-radius: 10px; background: var(--rc-green); color: var(--rc-bg); font: 700 11px/18px Arial, sans-serif; }
-html[data-modo="classic"] .ttra-dock-label { position: absolute; left: 50%; bottom: calc(100% + 12px); translate: -50% 0; padding: 7px 10px; border: 1px solid var(--ed-line); border-radius: 8px; background: var(--rc-bg-panel); color: var(--rc-green); font: 600 13px/1.2 Arial, sans-serif; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 1; }
+html[data-modo="classic"] .ttra-dock-label { position: absolute; left: 50%; bottom: calc(100% + 12px); translate: -50% 0; padding: 7px 10px; border: 1px solid var(--ed-line); border-radius: 8px; background: var(--rc-bg-panel); color: var(--rc-green); font: 600 13px/1.2 Arial, sans-serif; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; }
 html[data-modo="classic"] .ttra-dock-control:is(:hover, :focus-visible) > .ttra-dock-label { opacity: 1; }
 html[data-modo="classic"] .ttra-dock-control:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 4px; }
 html[data-modo="classic"] .ttra-dock-category-panel { position: absolute; bottom: calc(100% + 12px); left: 0; right: 0; padding: 8px; max-height: min(420px, calc(100dvh - 135px - env(safe-area-inset-bottom, 0px))); overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--ed-line); border-radius: 18px; background: var(--rc-bg-panel); box-shadow: 0 12px 40px #00000040; }
