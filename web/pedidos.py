@@ -89,6 +89,8 @@ def guardar_pedido(
     origen="whatsapp",
     lat=None,
     lng=None,
+    piso_entrega=None,
+    depto_entrega=None,
 ):
     fecha_iso = fecha_entrega.isoformat() if fecha_entrega else None
     detalle = _normalizar_detalles(detalle)
@@ -109,6 +111,8 @@ def guardar_pedido(
                 and pedido.get("total_usd") is not None
                 and pedido.get("modo_precio", "minorista") == modo_precio
                 and pedido.get("direccion_entrega") == direccion_entrega
+                and (pedido.get("piso_entrega") or None) == (piso_entrega or None)
+                and (pedido.get("depto_entrega") or None) == (depto_entrega or None)
             ),
             None,
         )
@@ -146,6 +150,8 @@ def guardar_pedido(
         "fecha": datetime.now(timezone.utc).isoformat(),
         "lat": lat,
         "lng": lng,
+        "piso_entrega": piso_entrega or None,
+        "depto_entrega": depto_entrega or None,
     }
     client.table("pedidos").insert(fila).execute()
     return fila
@@ -175,6 +181,8 @@ def editar_fecha_entrega(client, pedido_id, fecha_entrega):
             and pedido.get("total_usd") is not None
             and otro.get("modo_precio", "minorista") == pedido.get("modo_precio", "minorista")
             and otro.get("direccion_entrega") == pedido.get("direccion_entrega")
+            and (otro.get("piso_entrega") or None) == (pedido.get("piso_entrega") or None)
+            and (otro.get("depto_entrega") or None) == (pedido.get("depto_entrega") or None)
         ),
         None,
     )

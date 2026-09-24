@@ -136,6 +136,11 @@ alter table domicilios_cliente enable row level security;
 -- Coordenadas exactas del domicilio (ver comentario análogo en pedidos).
 alter table domicilios_cliente add column if not exists lat double precision;
 alter table domicilios_cliente add column if not exists lng double precision;
+-- Piso y departamento: opcionales y aparte de la calle, así el link a Maps
+-- ("Vamos" en los paneles de admin/cadete) usa solo la dirección y el piso/depto
+-- se muestra como aclaración.
+alter table domicilios_cliente add column if not exists piso text;
+alter table domicilios_cliente add column if not exists depto text;
 
 -- Migra el domicilio único que ya tenían las cuentas de clientes reales
 -- (columna clientes.direccion) como su primer domicilio guardado,
@@ -174,6 +179,8 @@ alter table pedidos add column if not exists recibo_id text;
 alter table pedidos add column if not exists recibo_emitido_en timestamptz;
 alter table pedidos add column if not exists recibo_enviado_en timestamptz;
 alter table pedidos add column if not exists direccion_entrega text;
+alter table pedidos add column if not exists piso_entrega text;
+alter table pedidos add column if not exists depto_entrega text;
 alter table pedidos add column if not exists orden_entrega integer;
 alter table pedidos add column if not exists fotos_series jsonb not null default '[]'::jsonb;
 -- Slug del cadete al que se derivó la entrega (ej. "alejo"), o null si la

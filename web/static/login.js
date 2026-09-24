@@ -415,6 +415,8 @@ formRegistro.addEventListener("submit", async (e) => {
       password,
       provincia: document.getElementById("registro-provincia").value,
       direccion: registroDireccionInput.value,
+      piso: document.getElementById("registro-piso").value,
+      depto: document.getElementById("registro-depto").value,
       lat: coordsRegistroDireccionActual?.lat ?? null,
       lng: coordsRegistroDireccionActual?.lng ?? null,
     },

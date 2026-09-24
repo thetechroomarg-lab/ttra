@@ -27,6 +27,9 @@ input {
 }
 .registro-direccion-wrap { position: relative; display: flex; flex-direction: column; gap: 6px; }
 .registro-direccion-wrap input { width: 100%; }
+/* Piso y depto: opcionales, lado a lado debajo de la dirección. */
+.piso-depto-fila { display: flex; gap: 10px; }
+.piso-depto-fila input { flex: 1; min-width: 0; width: auto !important; }
 .btn-usar-ubicacion {
   font-size: 12px;
   padding: 6px 10px;

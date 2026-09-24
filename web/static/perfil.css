@@ -40,6 +40,9 @@ input:disabled { opacity: .6; cursor: not-allowed; }
 .ok { min-height: 16px; margin: 6px 0 0; font-size: 12px; color: var(--rc-green-bright); }
 .perfil-direccion-wrap { position: relative; }
 .perfil-direccion-wrap input { width: 100%; }
+/* Piso y depto: opcionales, lado a lado debajo de la dirección. */
+.piso-depto-fila { display: flex; gap: 10px; }
+.piso-depto-fila input { flex: 1; min-width: 0; width: auto !important; }
 .perfil-sugerencias-direccion {
   position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; right: 0;
   max-height: 180px; overflow-y: auto; margin: 0; padding: 0; list-style: none;

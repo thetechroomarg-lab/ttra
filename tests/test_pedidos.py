@@ -242,3 +242,28 @@ def test_restaurar_pedido_limpia_borrado():
     fila = fake.table("pedidos").select("*").eq("id", "p1").execute().data[0]
     assert fila["borrado_en"] is None
     assert fila["borrado_por"] is None
+
+
+def test_guardar_pedido_guarda_piso_y_depto_opcionales():
+    client = FakeSupabaseClient()
+    pedido = pedidos.guardar_pedido(
+        client, "cliente-1", ["iPhone 13"], date(2026, 8, 24),
+        direccion_entrega="Av. Colón 123", piso_entrega="3", depto_entrega="B",
+    )
+    assert pedido["piso_entrega"] == "3"
+    assert pedido["depto_entrega"] == "B"
+    sin = pedidos.guardar_pedido(client, "cliente-2", ["iPhone 13"])
+    assert sin["piso_entrega"] is None and sin["depto_entrega"] is None
+
+
+def test_guardar_pedido_no_consolida_deptos_distintos_del_mismo_edificio():
+    client = FakeSupabaseClient()
+    detalle = [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}]
+    for depto in ("A", "B"):
+        pedidos.guardar_pedido(
+            client, "cliente-1", ["Elegible"], date(2026, 8, 24),
+            direccion_entrega="Av. Colón 123", detalle=detalle, total_usd=180,
+            piso_entrega="3", depto_entrega=depto,
+        )
+    filas = client.table("pedidos").select("*").execute().data
+    assert sorted(f["depto_entrega"] for f in filas) == ["A", "B"]

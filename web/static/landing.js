@@ -2176,6 +2176,8 @@ const panelSelectorDomicilio = document.getElementById("selector-domicilio-entre
 const panelCodigoPromocional = document.getElementById("modal-codigo");
 const inputDireccionEntrega = document.getElementById("direccion-entrega");
 const inputDireccionAlias = document.getElementById("direccion-alias");
+const inputPisoEntrega = document.getElementById("piso-entrega");
+const inputDeptoEntrega = document.getElementById("depto-entrega");
 const sugerenciasDireccion = document.getElementById("sugerencias-direccion");
 const listaDomiciliosEntrega = document.getElementById("lista-domicilios-entrega");
 let temporizadorSugerenciasDireccion;
@@ -2327,6 +2329,8 @@ function abrirFormularioNuevaDireccion() {
   inputDireccionAlias.classList.toggle("oculto", !puedeGuardar);
   inputDireccionAlias.value = "";
   inputDireccionEntrega.value = "";
+  inputPisoEntrega.value = "";
+  inputDeptoEntrega.value = "";
   coordsDireccionEntregaActual = null;
   abrirPanelSecundario("direccion-entrega-wrap");
 }
@@ -2355,6 +2359,8 @@ async function abrirSelectorDireccion() {
   listaDomiciliosEntrega.replaceChildren(
     ...domiciliosCliente.map((domicilio) => itemDomicilioEntregaHtml(`${domicilio.alias} — ${domicilio.direccion}`, () => {
       inputDireccionEntrega.value = domicilio.direccion;
+      inputPisoEntrega.value = domicilio.piso || "";
+      inputDeptoEntrega.value = domicilio.depto || "";
       coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
         ? { lat: domicilio.lat, lng: domicilio.lng }
         : null;
@@ -2402,6 +2408,7 @@ document.getElementById("btn-guardar-direccion").addEventListener("click", async
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         alias, direccion,
+        piso: inputPisoEntrega.value, depto: inputDeptoEntrega.value,
         lat: coordsDireccionEntregaActual?.lat ?? null,
         lng: coordsDireccionEntregaActual?.lng ?? null,
       }),
@@ -2491,6 +2498,8 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
     body: JSON.stringify({
       productos, fecha_entrega, direccion_entrega, detalle, total_usd,
       codigo_descuento, codigo_promo,
+      piso_entrega: inputPisoEntrega.value.trim() || null,
+      depto_entrega: inputDeptoEntrega.value.trim() || null,
       lat: coordsDireccion?.lat ?? null,
       lng: coordsDireccion?.lng ?? null,
     }),

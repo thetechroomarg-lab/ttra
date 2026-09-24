@@ -563,3 +563,19 @@ def test_panel_cadete_tiene_link_a_papelera(monkeypatch):
     cliente.post("/admin/cadete/login", json={"password": "clave-cadete"})
 
     assert 'href="/admin/cadete/papelera"' in cliente.get("/admin/cadete").text
+
+
+def test_cadete_ve_piso_y_depto_del_pedido(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("clientes").insert({"id": "c1", "nombre": "Ana", "apellido": "Lopez", "celular": "3511234567"}).execute()
+    fake.table("pedidos").insert({
+        "id": "pedido-1", "cliente_id": "c1", "productos": ["iPhone 13"], "fecha_entrega": "2026-09-20",
+        "direccion_entrega": "Av. Colón 123", "piso_entrega": "7", "depto_entrega": "A",
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}], "total_usd": 500,
+    }).execute()
+    admin.put("/admin/pedidos/pedido-1/derivar", json={"derivado": True})
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 9, 20, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    panel = _cadete_logueado().get("/admin/cadete").text
+    assert '<span class="piso-depto">Piso 7 · Depto A</span>' in panel
+    assert 'id="piso-cadete-input"' in panel

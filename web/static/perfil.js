@@ -12,6 +12,11 @@ const btnCerrarPanelPerfil = document.getElementById("btn-cerrar-panel-perfil");
 const overlayPerfilEmbebido = document.getElementById("overlay-perfil");
 const domicilioDireccionInput = document.getElementById("domicilio-direccion");
 const domicilioAliasInput = document.getElementById("domicilio-alias");
+const domicilioPisoInput = document.getElementById("domicilio-piso");
+const domicilioDeptoInput = document.getElementById("domicilio-depto");
+function textoPisoDepto(domicilio) {
+  return [domicilio.piso && `Piso ${domicilio.piso}`, domicilio.depto && `Depto ${domicilio.depto}`].filter(Boolean).join(" · ");
+}
 const perfilSugerenciasDireccion = document.getElementById("perfil-sugerencias-direccion");
 const listaDomicilios = document.getElementById("lista-domicilios");
 const btnGuardarDomicilio = document.getElementById("btn-guardar-domicilio");
@@ -206,6 +211,8 @@ function cancelarEdicionDomicilio() {
   domicilioEnEdicionId = null;
   domicilioAliasInput.value = "";
   domicilioDireccionInput.value = "";
+  domicilioPisoInput.value = "";
+  domicilioDeptoInput.value = "";
   btnGuardarDomicilio.textContent = "Agregar domicilio";
   btnCancelarEdicionDomicilio.classList.add("oculto");
 }
@@ -214,7 +221,8 @@ function itemDomicilioHtml(domicilio) {
   const item = document.createElement("div");
   item.className = "item-domicilio";
   const info = document.createElement("p");
-  info.textContent = `${domicilio.alias}${domicilio.predeterminado ? " · Predeterminado" : ""} — ${domicilio.direccion}`;
+  const pisoDepto = textoPisoDepto(domicilio);
+  info.textContent = `${domicilio.alias}${domicilio.predeterminado ? " · Predeterminado" : ""} — ${domicilio.direccion}${pisoDepto ? ` (${pisoDepto})` : ""}`;
   item.append(info);
 
   const acciones = document.createElement("div");
@@ -238,6 +246,8 @@ function itemDomicilioHtml(domicilio) {
     domicilioEnEdicionId = domicilio.id;
     domicilioAliasInput.value = domicilio.alias;
     domicilioDireccionInput.value = domicilio.direccion;
+    domicilioPisoInput.value = domicilio.piso || "";
+    domicilioDeptoInput.value = domicilio.depto || "";
     btnGuardarDomicilio.textContent = "Guardar cambios";
     btnCancelarEdicionDomicilio.classList.remove("oculto");
     domicilioAliasInput.focus();
@@ -339,7 +349,10 @@ formDomicilio.addEventListener("submit", async (e) => {
   const okEl = document.getElementById("domicilio-ok");
   errorEl.textContent = "";
   okEl.textContent = "";
-  const cuerpo = { alias: domicilioAliasInput.value, direccion: domicilioDireccionInput.value };
+  const cuerpo = {
+    alias: domicilioAliasInput.value, direccion: domicilioDireccionInput.value,
+    piso: domicilioPisoInput.value, depto: domicilioDeptoInput.value,
+  };
   try {
     const r = domicilioEnEdicionId
       ? await fetch(`/api/domicilios/${domicilioEnEdicionId}`, {

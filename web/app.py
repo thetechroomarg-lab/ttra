@@ -560,6 +560,16 @@ def _formatear_entero_ar(valor):
     return f"{int(valor):,}".replace(",", ".")
 
 
+def _aclaracion_piso_depto(pedido):
+    """'Piso 3 · Depto B' para mostrar junto a la dirección; vacío si no hay."""
+    partes = []
+    if (pedido.get("piso_entrega") or "").strip():
+        partes.append(f"Piso {pedido['piso_entrega'].strip()}")
+    if (pedido.get("depto_entrega") or "").strip():
+        partes.append(f"Depto {pedido['depto_entrega'].strip()}")
+    return " · ".join(partes)
+
+
 def _query_maps(direccion, lat, lng):
     # Con coordenadas exactas (geolocalización del cliente al pedir, o el
     # punto elegido en el autocomplete) el link va directo a la casa puntual
@@ -1448,6 +1458,10 @@ _ADMIN_CLIENTES_ESTILO = """
   .modal-direccion input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); font:inherit; }
   .modal-fecha-entrega input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); color-scheme:dark; font:inherit; }
   .direccion-acciones { display:flex; gap:8px; margin-top:12px; }
+  .piso-depto-fila { display:flex; gap:8px; margin-top:8px; }
+  .piso-depto-fila[hidden] { display:none; }
+  .piso-depto-fila input { flex:1; min-width:0; }
+  .piso-depto { color:var(--op-text); font-weight:700; }
   .fecha-entrega-acciones { display:flex; gap:8px; margin-top:12px; }
   .direccion-acciones button { border:0; border-radius:var(--op-r-sm); color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; transition:background-color var(--op-dur) var(--op-ease); }
   .fecha-entrega-acciones button { border:0; border-radius:var(--op-r-sm); color:#fff; cursor:pointer; font-weight:700; min-height:42px; padding:0 12px; transition:background-color var(--op-dur) var(--op-ease); }
@@ -1662,6 +1676,10 @@ _CADETE_ESTILO = """
   .modal-direccion-cadete h2 { font-size:var(--op-fs-title); margin:0 0 12px; }
   .modal-direccion-cadete input { box-sizing:border-box; width:100%; min-height:42px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); font:inherit; }
   .modal-direccion-cadete .direccion-acciones { display:flex; gap:8px; margin-top:14px; }
+  .piso-depto-fila { display:flex; gap:8px; margin-top:8px; }
+  .piso-depto-fila[hidden] { display:none; }
+  .piso-depto-fila input { flex:1; min-width:0; }
+  .piso-depto { color:var(--op-text); font-weight:700; }
   .modal-direccion-cadete .direccion-acciones button { flex:1; min-height:44px; border-radius:var(--op-r-sm); font-weight:700; cursor:pointer; }
   .modal-recibo-manual { position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:20px; }
   .modal-recibo-manual[hidden] { display:none; }
@@ -1841,7 +1859,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         boton_direcciones = (
             f'<button class="btn-direcciones" type="button" '
             f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": _query_maps(direccion, pedido.get("lat"), pedido.get("lng"))}))}">Vamos</button>'
-            f'<button class="btn-editar-direccion" type="button" data-id="{pedido_id}" data-direccion="{html.escape(direccion)}">Editar dirección</button>'
+            f'<button class="btn-editar-direccion" type="button" data-id="{pedido_id}" data-direccion="{html.escape(direccion)}" '
+            f'data-piso="{html.escape(pedido.get("piso_entrega") or "")}" data-depto="{html.escape(pedido.get("depto_entrega") or "")}">Editar dirección</button>'
             if direccion else f'<button class="btn-agregar-direccion" type="button" data-id="{pedido_id}">Agregar dirección</button>'
         )
         return (
@@ -1899,10 +1918,15 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                 f'<button class="btn-reenviar-recibo" type="button" data-id="{pedido_id}" title="Reenviar recibo" aria-label="Reenviar recibo">{reenvio}</button>'
                 f'<button class="btn-eliminar-historial" type="button" data-id="{pedido_id}" title="Eliminar del historial" aria-label="Eliminar del historial">{tacho}</button></span>')
 
+    def _linea_piso_depto(pedido):
+        aclaracion = _aclaracion_piso_depto(pedido)
+        return f'<br><span class="piso-depto">{html.escape(aclaracion)}</span>' if aclaracion else ""
+
     def _tarjeta_pedido(pedido):
         return (
             f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}" data-tipo-entrega="pedido" data-entrega-id="{html.escape(pedido.get("id", ""))}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar pedido">≡</button><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
-            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
+            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span>'
+            f'{_linea_piso_depto(pedido)}</div>'
             f'{_controles_entrega(pedido)}</div>'
         )
 
@@ -2015,7 +2039,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   {pendientes_hoy_seccion_html}
 </div>
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
-<div class="modal-direccion" id="modal-direccion" hidden><div class="modal-direccion-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-titulo"><h2 id="direccion-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-entrega-admin" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-entrega-admin-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="direccion-acciones"><button id="direccion-cancelar" type="button">Cancelar</button><button id="direccion-guardar" type="button">Guardar dirección</button></div></div></div>
+<div class="modal-direccion" id="modal-direccion" hidden><div class="modal-direccion-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-titulo"><h2 id="direccion-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-entrega-admin" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-entrega-admin-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="piso-depto-fila" id="piso-depto-admin"><input id="piso-entrega-admin" type="text" maxlength="20" placeholder="Piso (opcional)" aria-label="Piso"><input id="depto-entrega-admin" type="text" maxlength="20" placeholder="Depto (opcional)" aria-label="Departamento"></div><div class="direccion-acciones"><button id="direccion-cancelar" type="button">Cancelar</button><button id="direccion-guardar" type="button">Guardar dirección</button></div></div></div>
 <div class="modal-fecha-entrega" id="modal-fecha-entrega" hidden><div class="modal-fecha-contenido" role="dialog" aria-modal="true" aria-labelledby="fecha-entrega-titulo"><h2 id="fecha-entrega-titulo">Editar fecha de entrega</h2><input id="fecha-entrega-admin" type="date"><div class="fecha-entrega-acciones"><button id="fecha-entrega-cancelar" type="button">Cancelar</button><button id="fecha-entrega-guardar" type="button">Guardar fecha</button></div></div></div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
@@ -2074,11 +2098,21 @@ let pedidoDireccionActivo = null;
 let tareaDireccionActiva = null;
 const modalDireccion = document.getElementById("modal-direccion");
 const campoDireccion = document.getElementById("direccion-entrega-admin");
+const filaPisoDepto = document.getElementById("piso-depto-admin");
+const campoPiso = document.getElementById("piso-entrega-admin");
+const campoDepto = document.getElementById("depto-entrega-admin");
+// Piso/depto solo aplican a pedidos (las tareas manuales no los guardan).
+function prepararPisoDepto(esPedido, btn) {{
+  filaPisoDepto.hidden = !esPedido;
+  campoPiso.value = esPedido ? (btn.dataset.piso || "") : "";
+  campoDepto.value = esPedido ? (btn.dataset.depto || "") : "";
+}}
 document.querySelectorAll(".btn-agregar-direccion").forEach((btn) => {{
   btn.addEventListener("click", () => {{
     pedidoDireccionActivo = btn.dataset.id;
     tareaDireccionActiva = null;
     campoDireccion.value = "";
+    prepararPisoDepto(true, btn);
     modalDireccion.hidden = false;
     document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
     campoDireccion.focus();
@@ -2089,6 +2123,7 @@ document.querySelectorAll(".btn-agregar-direccion-tarea").forEach((btn) => {{
     tareaDireccionActiva = btn.dataset.id;
     pedidoDireccionActivo = null;
     campoDireccion.value = "";
+    prepararPisoDepto(false, btn);
     modalDireccion.hidden = false;
     document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
     campoDireccion.focus();
@@ -2102,6 +2137,7 @@ document.querySelectorAll(".btn-editar-direccion").forEach((btn) => {{
     pedidoDireccionActivo = btn.dataset.id;
     tareaDireccionActiva = null;
     campoDireccion.value = btn.dataset.direccion || "";
+    prepararPisoDepto(true, btn);
     modalDireccion.hidden = false;
     document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
     campoDireccion.focus();
@@ -2112,6 +2148,7 @@ document.querySelectorAll(".btn-editar-direccion-tarea").forEach((btn) => {{
     tareaDireccionActiva = btn.dataset.id;
     pedidoDireccionActivo = null;
     campoDireccion.value = btn.dataset.direccion || "";
+    prepararPisoDepto(false, btn);
     modalDireccion.hidden = false;
     document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
     campoDireccion.focus();
@@ -2132,7 +2169,9 @@ document.getElementById("direccion-guardar").addEventListener("click", async () 
     : `/admin/pedidos/${{pedidoDireccionActivo}}/direccion`;
   const r = await fetch(destino, {{
     method: "PUT", headers: {{"Content-Type": "application/json"}},
-    body: JSON.stringify({{direccion_entrega: direccion}}),
+    body: JSON.stringify(tareaDireccionActiva
+      ? {{direccion_entrega: direccion}}
+      : {{direccion_entrega: direccion, piso_entrega: campoPiso.value.trim(), depto_entrega: campoDepto.value.trim()}}),
   }});
   const datos = await r.json().catch(() => ({{}}));
   if (!r.ok) {{ alert(datos.error || "No se pudo guardar la dirección."); boton.disabled = false; return; }}
@@ -2910,6 +2949,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<br><span class="observacion-cadete">Observaciones: {html.escape(observaciones)}</span>'
             if observaciones else ""
         )
+        aclaracion = _aclaracion_piso_depto(pedido)
+        piso_depto = f'<br><span class="piso-depto">{html.escape(aclaracion)}</span>' if aclaracion else ""
         fecha = html.escape(pedido.get("fecha_entrega", ""))
         boton_fecha = (
             f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}" '
@@ -2921,7 +2962,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}</strong> · '
             f'{html.escape(cliente.get("celular") or "—")}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
-            f'{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
+            f'{piso_depto}{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"), cliente.get("celular"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}{boton_derivar_vlad}</div></div>'
         )
 
@@ -3024,7 +3065,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   {seccion_proximos}
 </div>
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
-<div class="modal-direccion-cadete" id="modal-direccion-cadete" hidden><div class="modal-direccion-cadete-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-cadete-titulo"><h2 id="direccion-cadete-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-cadete-input" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-cadete-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="direccion-acciones"><button id="direccion-cadete-cancelar" type="button">Cancelar</button><button id="direccion-cadete-guardar" type="button">Guardar dirección</button></div></div></div>
+<div class="modal-direccion-cadete" id="modal-direccion-cadete" hidden><div class="modal-direccion-cadete-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-cadete-titulo"><h2 id="direccion-cadete-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-cadete-input" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-cadete-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="piso-depto-fila" id="piso-depto-cadete"><input id="piso-cadete-input" type="text" maxlength="20" placeholder="Piso (opcional)" aria-label="Piso"><input id="depto-cadete-input" type="text" maxlength="20" placeholder="Depto (opcional)" aria-label="Departamento"></div><div class="direccion-acciones"><button id="direccion-cadete-cancelar" type="button">Cancelar</button><button id="direccion-cadete-guardar" type="button">Guardar dirección</button></div></div></div>
 <div class="modal-recibo-manual" id="modal-recibo-manual" hidden><div class="modal-recibo-manual-contenido" role="dialog" aria-modal="true" aria-labelledby="recibo-manual-titulo">
   <button id="recibo-manual-cerrar" class="modal-recibo-manual-cerrar" type="button" aria-label="Cerrar" title="Cerrar">✕</button>
   <h2 id="recibo-manual-titulo">Generar recibo</h2>
@@ -3093,6 +3134,10 @@ document.querySelectorAll(".btn-agregar-direccion-cadete").forEach((btn) => {{
   btn.addEventListener("click", () => {{
     direccionCadeteActiva = {{ id: btn.dataset.id, tipo: btn.dataset.tipo }};
     campoDireccionCadete.value = "";
+    // Piso/depto solo para pedidos: las notas manuales no los guardan.
+    document.getElementById("piso-depto-cadete").hidden = btn.dataset.tipo === "tarea";
+    document.getElementById("piso-cadete-input").value = "";
+    document.getElementById("depto-cadete-input").value = "";
     document.getElementById("direccion-cadete-sugerencias").hidden = true;
     modalDireccionCadete.hidden = false;
     campoDireccionCadete.focus();
@@ -3113,7 +3158,9 @@ document.getElementById("direccion-cadete-guardar").addEventListener("click", as
     : `/admin/pedidos/${{direccionCadeteActiva.id}}/direccion`;
   const r = await fetch(destino, {{
     method: "PUT", headers: {{"Content-Type": "application/json"}},
-    body: JSON.stringify({{direccion_entrega: direccion}}),
+    body: JSON.stringify(direccionCadeteActiva.tipo === "tarea"
+      ? {{direccion_entrega: direccion}}
+      : {{direccion_entrega: direccion, piso_entrega: document.getElementById("piso-cadete-input").value.trim(), depto_entrega: document.getElementById("depto-cadete-input").value.trim()}}),
   }});
   const datos = await r.json().catch(() => ({{}}));
   if (!r.ok) {{ alert(datos.error || "No se pudo guardar la dirección."); boton.disabled = false; return; }}
@@ -3634,6 +3681,8 @@ class RegistroIn(BaseModel):
     password: str = Field(min_length=8)
     provincia: str = Field(min_length=2, max_length=80)
     direccion: str = Field(min_length=3, max_length=500)
+    piso: str | None = Field(default=None, max_length=20)
+    depto: str | None = Field(default=None, max_length=20)
     lat: float | None = None
     lng: float | None = None
 
@@ -3743,6 +3792,7 @@ def registro(entrada: RegistroIn, request: Request):
         domicilios.crear(
             client, cliente["id"], "Principal", entrada.direccion,
             lat=entrada.lat, lng=entrada.lng, predeterminado=True,
+            piso=entrada.piso, depto=entrada.depto,
         )
     except Exception:
         logger.exception("No se pudo guardar el domicilio inicial del registro")
@@ -3876,6 +3926,8 @@ def api_me_actualizar(entrada: ActualizarMeIn, request: Request):
 class DomicilioIn(BaseModel):
     alias: str = Field(min_length=1, max_length=80)
     direccion: str = Field(min_length=3, max_length=500)
+    piso: str | None = Field(default=None, max_length=20)
+    depto: str | None = Field(default=None, max_length=20)
     lat: float | None = None
     lng: float | None = None
 
@@ -3898,7 +3950,7 @@ def api_domicilios_crear(entrada: DomicilioIn, request: Request):
     try:
         domicilio = domicilios.crear(
             get_client(), request.session["cliente_id"], entrada.alias, entrada.direccion,
-            lat=entrada.lat, lng=entrada.lng,
+            lat=entrada.lat, lng=entrada.lng, piso=entrada.piso, depto=entrada.depto,
         )
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
@@ -3915,7 +3967,7 @@ def api_domicilios_actualizar(domicilio_id: str, entrada: DomicilioIn, request: 
     try:
         domicilio = domicilios.actualizar(
             get_client(), request.session["cliente_id"], domicilio_id, entrada.alias, entrada.direccion,
-            lat=entrada.lat, lng=entrada.lng,
+            lat=entrada.lat, lng=entrada.lng, piso=entrada.piso, depto=entrada.depto,
         )
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
@@ -4014,6 +4066,8 @@ class PedidoIn(BaseModel):
     productos: list[str] = Field(min_length=1)
     fecha_entrega: date | None = None
     direccion_entrega: str | None = Field(default=None, max_length=500)
+    piso_entrega: str | None = Field(default=None, max_length=20)
+    depto_entrega: str | None = Field(default=None, max_length=20)
     detalle: list[DetallePedidoIn] = Field(default_factory=list)
     total_usd: Decimal | None = Field(default=None, ge=0)
     descuento_usd: Decimal = Field(default=0, ge=0)
@@ -4029,6 +4083,8 @@ class EditarFechaEntregaIn(BaseModel):
 
 class EditarDireccionEntregaIn(BaseModel):
     direccion_entrega: str = Field(max_length=500)
+    piso_entrega: str | None = Field(default=None, max_length=20)
+    depto_entrega: str | None = Field(default=None, max_length=20)
 
 
 class TareaEntregaIn(BaseModel):
@@ -4319,17 +4375,20 @@ def api_pedidos(entrada: PedidoIn, request: Request):
                 status_code=503,
             )
         # La función guardar_pedido_con_descuento_mailing (RPC en Supabase) no
-        # conoce lat/lng: se completan acá con un update aparte para no tener
-        # que tocar esa función en la base.
+        # conoce lat/lng ni piso/depto: se completan acá con un update aparte
+        # para no tener que tocar esa función en la base.
+        extras = {}
         if entrada.lat is not None and entrada.lng is not None:
-            pedido_id_rpc = resultado["pedido"].get("id")
-            if pedido_id_rpc:
-                try:
-                    client.table("pedidos").update(
-                        {"lat": entrada.lat, "lng": entrada.lng}
-                    ).eq("id", pedido_id_rpc).execute()
-                except Exception:
-                    logger.exception("No se pudo guardar lat/lng del pedido %s", pedido_id_rpc)
+            extras.update({"lat": entrada.lat, "lng": entrada.lng})
+        piso, depto = domicilios.opcional(entrada.piso_entrega), domicilios.opcional(entrada.depto_entrega)
+        if piso or depto:
+            extras.update({"piso_entrega": piso, "depto_entrega": depto})
+        pedido_id_rpc = resultado["pedido"].get("id")
+        if extras and pedido_id_rpc:
+            try:
+                client.table("pedidos").update(extras).eq("id", pedido_id_rpc).execute()
+            except Exception:
+                logger.exception("No se pudieron guardar lat/lng/piso del pedido %s", pedido_id_rpc)
     else:
         pedidos.guardar_pedido(
             client,
@@ -4346,6 +4405,8 @@ def api_pedidos(entrada: PedidoIn, request: Request):
             ),
             lat=entrada.lat,
             lng=entrada.lng,
+            piso_entrega=domicilios.opcional(entrada.piso_entrega),
+            depto_entrega=domicilios.opcional(entrada.depto_entrega),
         )
     return {"ok": True}
 
@@ -4513,8 +4574,13 @@ def admin_pedido_agregar_direccion(pedido_id: str, entrada: EditarDireccionEntre
         raise HTTPException(status_code=403, detail="Esta entrega no está asignada a tu usuario")
     if filas[0].get("recibo_enviado_en"):
         return JSONResponse({"error": "No se puede editar una entrega con recibo emitido"}, status_code=400)
-    client.table("pedidos").update({"direccion_entrega": direccion}).eq("id", pedido_id).execute()
-    return {"ok": True, "pedido_id": pedido_id, "direccion_entrega": direccion}
+    cambios = {
+        "direccion_entrega": direccion,
+        "piso_entrega": domicilios.opcional(entrada.piso_entrega),
+        "depto_entrega": domicilios.opcional(entrada.depto_entrega),
+    }
+    client.table("pedidos").update(cambios).eq("id", pedido_id).execute()
+    return {"ok": True, "pedido_id": pedido_id, **cambios}
 
 
 @app.put("/admin/pedidos/{pedido_id}/derivar")

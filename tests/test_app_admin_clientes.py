@@ -818,3 +818,31 @@ def test_panel_pedidos_tiene_link_a_papelera(monkeypatch):
 
     assert 'href="/admin/papelera"' in cliente.get("/admin/clientes").text
     assert 'href="/admin/papelera"' in cliente.get("/admin/clientes/lista").text
+
+
+def test_admin_ve_piso_y_depto_como_aclaracion_y_puede_editarlos(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "con-depto", "cliente_id": cliente["id"], "productos": ["Galaxy A56"],
+        "fecha_entrega": "2026-08-24", "direccion_entrega": "Av. Colón 123, Córdoba",
+        "piso_entrega": "3", "depto_entrega": "B",
+        "detalle": [{"nombre": "Galaxy A56", "cantidad": 1, "usd_unitario": 300, "usd_subtotal": 300}],
+        "total_usd": 300,
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    panel = c.get("/admin/clientes").text
+    assert '<span class="piso-depto">Piso 3 · Depto B</span>' in panel
+    assert 'data-piso="3" data-depto="B"' in panel
+    assert 'id="piso-entrega-admin"' in panel and 'id="depto-entrega-admin"' in panel
+    # El link a Maps usa solo la calle: el piso/depto confundiría la búsqueda.
+    assert "Piso+3" not in panel
+
+    r = c.put("/admin/pedidos/con-depto/direccion", json={
+        "direccion_entrega": "Av. Colón 123, Córdoba", "piso_entrega": "", "depto_entrega": "C",
+    })
+    assert r.status_code == 200
+    fila = fake.table("pedidos").select("*").eq("id", "con-depto").execute().data[0]
+    assert (fila["piso_entrega"], fila["depto_entrega"]) == (None, "C")

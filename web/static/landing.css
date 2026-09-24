@@ -1543,6 +1543,9 @@ html[data-modo="fallout"] .card:focus-within::before {
   padding: 0 12px;
 }
 #direccion-alias.oculto { display: none; }
+/* Piso y depto: opcionales, lado a lado debajo de la dirección. */
+#direccion-entrega-wrap .piso-depto-fila { display: flex; gap: 8px; }
+#direccion-entrega-wrap .piso-depto-fila input { flex: 1; min-width: 0; }
 .btn-usar-ubicacion {
   font-size: 12px;
   padding: 6px 10px;

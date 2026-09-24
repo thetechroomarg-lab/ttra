@@ -346,6 +346,10 @@
         <label for="direccion-entrega" class="rc-codigo-titulo">Especificá dirección de entrega</label>
         <input id="direccion-alias" type="text" maxlength="80" placeholder="Nombre para guardar (ej. Casa)" class="oculto">
         <input id="direccion-entrega" type="text" maxlength="500" autocomplete="street-address" placeholder="Calle, número, barrio y ciudad">
+        <div class="piso-depto-fila">
+          <input id="piso-entrega" type="text" maxlength="20" placeholder="Piso (opcional)" aria-label="Piso (opcional)">
+          <input id="depto-entrega" type="text" maxlength="20" placeholder="Depto (opcional)" aria-label="Departamento (opcional)">
+        </div>
         <button id="btn-usar-ubicacion" type="button" class="btn-usar-ubicacion">📍 Usar mi ubicación</button>
         <ul id="sugerencias-direccion" class="sugerencias-direccion oculto" role="listbox" aria-label="Sugerencias de dirección"></ul>
         <button id="btn-guardar-direccion" type="button">APLICAR</button>
@@ -389,6 +393,10 @@
       <div class="perfil-direccion-wrap">
         <input id="domicilio-direccion" type="text" placeholder="Dirección" autocomplete="street-address" maxlength="500" required aria-label="Dirección">
         <ul id="perfil-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
+      </div>
+      <div class="piso-depto-fila">
+        <input id="domicilio-piso" type="text" placeholder="Piso (opcional)" maxlength="20" aria-label="Piso (opcional)">
+        <input id="domicilio-depto" type="text" placeholder="Depto (opcional)" maxlength="20" aria-label="Departamento (opcional)">
       </div>
       <button type="submit" id="btn-guardar-domicilio">Agregar domicilio</button>
       <button type="button" id="btn-cancelar-edicion-domicilio" class="oculto">Cancelar</button>

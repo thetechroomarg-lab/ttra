@@ -1012,3 +1012,20 @@ def test_eliminar_pedido_es_recuperable_y_desaparece_de_listas(monkeypatch):
 
     respuesta_doble_borrado = cliente.delete("/admin/pedidos/p1")
     assert respuesta_doble_borrado.status_code == 404
+
+
+def test_pedido_guarda_piso_y_depto_con_y_sin_codigo_promo(monkeypatch):
+    """Catches piso/depto lost on either save path (direct insert or promo RPC)."""
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    _insertar_regalo(fake)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180, "piso_entrega": "3", "depto_entrega": "B",
+    }
+    assert c.post("/api/pedidos", json=base).status_code == 200
+    assert c.post("/api/pedidos", json={**base, "fecha_entrega": "2026-08-25", "codigo_promo": "regalo-test"}).status_code == 200
+    filas = fake.table("pedidos").select("*").execute().data
+    assert len(filas) == 2
+    assert all((f["piso_entrega"], f["depto_entrega"]) == ("3", "B") for f in filas)
