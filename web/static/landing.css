@@ -255,6 +255,14 @@ html[data-modo="fallout"] .rc-perfil-nombre {
   display: flex; align-items: center; width: 100%;
   padding: 0 12px; font-size: 13px; text-align: left;
 }
+/* La regla de arriba fuerza "display:flex" con más especificidad que
+   ".oculto{display:none}" sola -por eso "Cerrar sesión"/"Pedidos" seguían
+   visibles para un invitado aunque JS les hubiera puesto la clase "oculto"
+   (bug real, no solo de "Pedidos"). Esta gana por tener un componente más
+   de especificidad que la de arriba. */
+#rc-perfil-dropdown.rc-perfil-dropdown .rc-perfil-opcion.oculto {
+  display: none;
+}
 
 /* "Cerrar sesión" del menú de perfil solo existe en Modo Classic. */
 #btn-logout-classic { display: block; }

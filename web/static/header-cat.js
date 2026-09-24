@@ -1,15 +1,36 @@
-import {createState,advance,toggleState,celebrate,interact,dismissIntroduction,clamp} from './header-cat-state.mjs';
+import {createState,advance,toggleState,setPhase,celebrate,pet,interact,dismissIntroduction,clamp} from './header-cat-state.mjs';
 import {catArtwork} from './header-cat-art.js';
+import {fendiArtwork} from './header-cat-art-fendi.js';
+import {bituArtwork} from './header-cat-art-bitu.js';
+import {createDoor} from './header-cat-door.js';
 import {persistentNavigation} from './cat-navigation.js';
 
 const KEY='ttra_header_cat_state_v1',PREF='ttra_header_cat_enabled';
+const KEY_FENDI='ttra_header_cat_fendi_state_v1';
+const KEY_BITU='ttra_header_cat_bitu_state_v1';
 const motion=matchMedia('(prefers-reduced-motion: reduce)');
 let state=createState();
+let fendiState=createState();
+let bituState=createState();
 try {
   const saved=JSON.parse(sessionStorage.getItem(KEY)||'null');
   if(saved?.version===1 && typeof saved.active==='boolean' && Number.isFinite(saved.epoch) && Number.isFinite(saved.seed) && Number.isFinite(saved.x) && saved.phase && ['off','enter','return','walk','idle','scratch','lick','jump','pee','poop','sleep','belly','attack','bury-walk','bury','introduce'].includes(saved.phase.kind) && [saved.phase.start,saved.phase.duration,saved.phase.from,saved.phase.to].every(Number.isFinite) && Array.isArray(saved.waste))state=saved;
   else if(localStorage.getItem(PREF)==='1')toggleState(state,Date.now());
 } catch {}
+// Fendi y Bitu son más simples -nunca hacen scratch/lick/belly/attack/
+// introduce- pero comparten el mismo formato de estado genérico, así que la
+// validación de guardado es la misma sin el chequeo de PREF (nunca quedan
+// "recordadas afuera" solas: siempre salen por la puerta después de Vaiven,
+// ver toggle()).
+function restoreCompanion(key) {
+  try {
+    const saved=JSON.parse(sessionStorage.getItem(key)||'null');
+    if(saved?.version===1 && typeof saved.active==='boolean' && Number.isFinite(saved.epoch) && Number.isFinite(saved.seed) && Number.isFinite(saved.x) && saved.phase && ['off','enter','return','walk','idle','jump','sniff','funny','sleep','pee','poop','bury-walk','bury'].includes(saved.phase.kind) && [saved.phase.start,saved.phase.duration,saved.phase.from,saved.phase.to].every(Number.isFinite) && Array.isArray(saved.waste))return saved;
+  } catch {}
+  return null;
+}
+fendiState=restoreCompanion(KEY_FENDI)||fendiState;
+bituState=restoreCompanion(KEY_BITU)||bituState;
 const styles=new WeakMap(),mounted=new WeakMap();
 function style(doc) {
   if(styles.has(doc))return styles.get(doc);
@@ -25,7 +46,21 @@ let pointerKind='mouse';
 cat.addEventListener('pointerdown',event=>{pointerKind=event.pointerType;});
 cat.addEventListener('click',event=>{event.stopPropagation();caress(event.pointerType||pointerKind,event.detail);});
 cat.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();if(!event.repeat)caress();}});
-portal.append(cat);document.body.append(portal);
+// Fendi y Bitu se acarician igual que Vaiven (mismo pet(): salto de
+// alegría, o ataque juguetón a los 3 clicks seguidos) pero SIN la escalada
+// a "introduce" -el globito que linkea al álbum de fotos es cosa de Vaiven
+// nada más, todavía no armamos esa parte para ellas-.
+function makeCompanion(id, artwork, label, s, persistFn) {
+  const el=document.createElement('div');el.id=id;el.setAttribute('role','button');el.tabIndex=0;
+  el.setAttribute('aria-label',label);el.innerHTML=artwork+'<span class="ttra-cat-zzz"><span>Z</span><span>Z</span><span>Z</span></span>';
+  el.addEventListener('click',event=>{event.stopPropagation();pet(s,Date.now());persistFn();render();renderFendi();renderBitu();start();});
+  el.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&!event.repeat){event.preventDefault();pet(s,Date.now());persistFn();render();renderFendi();renderBitu();start();}});
+  return el;
+}
+const catFendi=makeCompanion('ttra-header-cat-fendi',fendiArtwork,'Acariciar a Fendi',fendiState,()=>persistFendi());
+const catBitu=makeCompanion('ttra-header-cat-bitu',bituArtwork,'Acariciar a Bitu',bituState,()=>persistBitu());
+portal.append(cat,catFendi,catBitu);document.body.append(portal);
+const door3d=createDoor();
 const bubble=document.createElement('div');bubble.id='ttra-cat-introduction';bubble.hidden=true;
 bubble.innerHTML='<a href="/vaiven">Mirá, este soy yo</a><button type="button" aria-label="Cerrar el globo">×</button>';
 document.body.append(bubble);
@@ -51,8 +86,14 @@ albumLink.addEventListener('click',async event=>{
   finally {clearTimeout(timeout);albumLinkPending=false;albumLink.removeAttribute('aria-busy');}
 });
 let current=null,geometry=null,resize=null,observer=null,raf=0,lastSave=0,lastPose='',lastSerial=-1;
+let lastPoseFendi='',lastSerialFendi=-1;
+let lastPoseBitu='',lastSerialBitu=-1;
 const wasteNodes=new Map();
+const wasteNodesFendi=new Map();
+const wasteNodesBitu=new Map();
 const persist=()=>{try{sessionStorage.setItem(KEY,JSON.stringify(state));}catch{}};
+const persistFendi=()=>{try{sessionStorage.setItem(KEY_FENDI,JSON.stringify(fendiState));}catch{}};
+const persistBitu=()=>{try{sessionStorage.setItem(KEY_BITU,JSON.stringify(bituState));}catch{}};
 function measure() {
   if(!current?.header.isConnected)return;
   const {doc,header,brand,button,house}=current;
@@ -68,13 +109,41 @@ function measure() {
   geometry={top:h.top,height:h.height,left,right,size,travel:Math.max(0,right-left-size),floor:h.height-6,doorX:b.right-size*.65,mobile};
   Object.assign(portal.style,{top:`${h.top}px`,height:`${h.height}px`});
   Object.assign(cat.style,{width:`${size}px`,height:`${size*5/6}px`});
+  const sizeFendi=size*.9;
+  Object.assign(catFendi.style,{width:`${sizeFendi}px`,height:`${sizeFendi*5/6}px`});
+  Object.assign(catBitu.style,{width:`${sizeFendi}px`,height:`${sizeFendi*5/6}px`});
   Object.assign(button.style,{left:`${b.left-h.left}px`,top:`${b.top-h.top}px`,width:`${b.width}px`,height:`${b.height}px`});
   Object.assign(house.style,{left:`${b.left-h.left}px`,top:`${b.top-h.top}px`,width:`${b.width}px`,height:`${b.height}px`});
+  Object.assign(door3d.canvas.style,{left:`${b.left-h.left}px`,top:`${b.top-h.top}px`});
+  door3d.setSize(b.width,b.height);
 }
+const companions=[
+  {s:()=>state,activateOnly:false},
+  {s:()=>fendiState,activateOnly:true},
+  {s:()=>bituState,activateOnly:true},
+];
 function toggle() {
-  advance(state,Date.now(),geometry||{});toggleState(state,Date.now(),geometry?.travel||0);
+  // La puerta es un ciclo de 4 toques: 1) sale Vaiven, 2) sale Fendi, 3)
+  // sale Bitu, 4) las tres vuelven adentro juntas. Ninguna vuelve a entrar
+  // sola mientras otra sigue afuera -no tendría sentido dejarla "sola en
+  // la calle"-, así que el último toque las manda a las tres.
+  // Mientras cualquiera está entrando o volviendo, la puerta no responde
+  // -tocarla ahí reiniciaba a la que ya estaba "afuera según el estado" de
+  // vuelta a 'enter' desde x=0, aunque en pantalla todavía estuviera a
+  // mitad de camino del 'return', y el salto se veía como que el gato
+  // desaparecía-. Vuelve a responder recién cuando las tres terminaron de
+  // entrar/volver del todo.
+  if([state,fendiState,bituState].some(s=>['enter','return'].includes(s.phase.kind)))return;
+  const now=Date.now();
+  const next=companions.find(c=>!c.s().active);
+  if(next) {
+    advance(next.s(),now,geometry||{});toggleState(next.s(),now,geometry?.travel||0);
+  } else {
+    for(const c of companions){advance(c.s(),now,geometry||{});toggleState(c.s(),now,geometry?.travel||0);}
+    duet=null;
+  }
   try{localStorage.setItem(PREF,state.active?'1':'0');}catch{}
-  persist();lastPose='';render();start();
+  persist();persistFendi();persistBitu();lastPose='';lastPoseFendi='';lastPoseBitu='';render();renderFendi();renderBitu();start();
 }
 function caress(pointer='keyboard',detail=1) {
   const now=Date.now();advance(state,now,geometry||{});interact(state,now,pointer,detail);persist();render();start();
@@ -106,7 +175,7 @@ async function attach(doc) {
     button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();toggle();});
     const house=doc.createElement('div');house.className='ttra-cat-house';house.hidden=true;house.setAttribute('aria-hidden','true');
     if(brand.matches('a')){brand.removeAttribute('href');brand.removeAttribute('aria-label');}
-    brand.classList.add('ttra-cat-door');header.append(house,button);
+    brand.classList.add('ttra-cat-door');header.append(house,door3d.canvas,button);
     binding={doc,header,brand,button,house};mounted.set(doc,binding);
     doc.defaultView.addEventListener('ttra:cart-added',reward);
     doc.addEventListener('keydown',event=>{if(event.key==='Escape'&&state.phase.kind==='introduce'){dismiss();cat.focus({preventScroll:true});}});
@@ -117,9 +186,9 @@ async function attach(doc) {
   current=binding;resize?.disconnect();observer?.disconnect();
   resize=new ResizeObserver(measure);resize.observe(header);
   const account=header.querySelector('.ttra-header-account');if(account)resize.observe(account);
-  observer=new MutationObserver(()=>{syncTheme();measure();render();start();});
+  observer=new MutationObserver(()=>{syncTheme();measure();render();renderFendi();renderBitu();start();});
   observer.observe(doc.documentElement,{attributes:true,attributeFilter:['data-classic-theme','class']});
-  syncTheme();measure();render();start();
+  syncTheme();measure();render();renderFendi();renderBitu();start();
   if(pageDoc.location.pathname==='/' && pageDoc.defaultView.__TTRA_VAIVEN_RETURN){
     pageDoc.defaultView.__TTRA_VAIVEN_RETURN=null;
     if(state.active)toggle();
@@ -139,9 +208,103 @@ const navigation=persistentNavigation({attach,portal});
 // Frames delegate to this host rather than creating a mascot or behavior engine.
 window.TTRAHeaderCat={ready:doc=>navigation.ready(doc),attach:doc=>{if(navigation.accepts(doc)&&doc.readyState==='complete')attach(doc);}};
 const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
+// Dúo Vaiven+Fendi: cuando las dos están afuera y libres (no enter/return/
+// jump/sniff/funny), cada tanto se dispara UN gesto guionado -perseguirse
+// (Fendi corre, Vaiven salta hacia donde va) o el gag de olerle la cola-
+// en vez de dejarlas 100% al azar. setPhase pisa lo que advance() hubiera
+// elegido random para esa transición puntual; el resto del tiempo siguen
+// deambulando solas con la máquina de estados de siempre.
+let duet=null,nextDuetCheck=0,lastVaivenX=0,lastFendiX=0,lastBituX=0,angleVaiven=0,angleFendi=0,angleBitu=0;
+function stepDuet(now,g) {
+  if(!state.active||!fendiState.active||!bituState.active){duet=null;return;}
+  const free=['idle','walk'];
+  if(duet) {
+    if(duet.kind==='sniff') {
+      // Oler la cola: Vaiven+Fendi nada más -Bitu sigue a lo suyo-.
+      if(duet.stage==='approach' && now>=duet.until) {
+        setPhase(state,'sniff',now,900,state.x);
+        duet={kind:'sniff',stage:'sniff',until:now+900};
+      } else if(duet.stage==='sniff' && now>=duet.until) {
+        setPhase(state,'funny',now,1100,state.x);
+        duet={kind:'sniff',stage:'funny',until:now+1100};
+      } else if(duet.stage==='funny' && now>=duet.until) {
+        setPhase(state,'idle',now,1400,state.x);
+        duet=null;
+      }
+    } else if(duet.kind==='chase') {
+      // Vaiven+Bitu se persiguen a las corridas -Bitu nunca es la que
+      // "juega" con Fendi, siempre es con Vaiven- mientras Fendi se va
+      // caminando (no deslizando dormida) hasta el rincón y ahí sí duerme.
+      if(duet.fendiStage==='walk' && now>=duet.fendiUntil) {
+        setPhase(fendiState,'sleep',now,3600,fendiState.x);
+        duet.fendiStage='sleep';
+      }
+      if(now>=duet.until) {
+        duet.leg=(duet.leg||0)+1;
+        if(duet.leg>3) {
+          setPhase(state,'idle',now,1000,state.x);
+          setPhase(bituState,'idle',now,1000,bituState.x);
+          if(fendiState.phase.kind==='sleep')setPhase(fendiState,'idle',now,1200,fendiState.x);
+          duet=null;
+        } else {
+          const target=clamp(Math.random());
+          const dur=700+Math.random()*450;
+          setPhase(bituState,'walk',now,dur,target);
+          const gapFrac=g.travel?(g.size*.9*.55)/g.travel:0;
+          setPhase(state,duet.leg%2===0?'jump':'walk',now,dur,clamp(target+(target<state.x?gapFrac:-gapFrac)));
+          duet.until=now+dur;
+        }
+      }
+    }
+    return;
+  }
+  if(now<nextDuetCheck)return;
+  nextDuetCheck=now+4500+Math.random()*3500;
+  if(!free.includes(state.phase.kind)||!free.includes(fendiState.phase.kind)||!free.includes(bituState.phase.kind))return;
+  const r=Math.random();
+  if(r<.35) {
+    // Vaiven+Bitu se ponen a jugar: Fendi se retira caminando al rincón
+    // más cercano y recién ahí se duerme, mientras corren de acá para allá.
+    const corner=fendiState.x<.5?0:1;
+    // Sin tope, si Fendi estaba lejos del rincón (todo el ancho del piso)
+    // tardaba varios segundos en llegar y recién ahí se dormía -acá se
+    // apura un poco, no tiene que caminar a paso normal para esto-.
+    const walkDur=Math.min(2200,Math.max(500,Math.abs(corner-fendiState.x)*g.travel/(g.mobile?20:42)*1000));
+    setPhase(fendiState,'walk',now,walkDur,corner);
+    duet={kind:'chase',leg:0,until:now,fendiStage:'walk',fendiUntil:now+walkDur};
+  } else if(r<.55) {
+    // Oler la cola: Vaiven camina hasta quedar justo detrás de Fendi.
+    const facingFendi=fendiState.phase.to<fendiState.phase.from?-1:1;
+    const gapFrac=g.travel?(g.size*.9*.32)/g.travel:0;
+    setPhase(state,'walk',now,1100,clamp(fendiState.x-facingFendi*gapFrac));
+    duet={kind:'sniff',stage:'approach',until:now+1100};
+  }
+}
+// Compartido por Vaiven y Fendi -misma frecuencia de pis/caca, mapa de
+// nodos DOM aparte para cada una porque los ids de waste son por gato.
+function renderWaste(s,nodes,pose,g,now) {
+  for(const w of s.waste){
+    let node=nodes.get(w.id);
+    if(!node){node=document.createElement('span');node.className='ttra-header-cat-waste';node.dataset.kind=w.kind;if(w.kind==='poop'){
+      const emoji=document.createElement('span');emoji.className='cat-poop-emoji';emoji.textContent='💩';
+      const earth=document.createElement('span');earth.className='cat-earth-mound';
+      const particles=document.createElement('span');particles.className='cat-earth-particles';
+      for(let i=0;i<5;i++){const grain=document.createElement('i');grain.style.setProperty('--grain',i);particles.append(grain);}
+      node.append(emoji,earth,particles);
+    }portal.prepend(node);nodes.set(w.id,node);}
+    node.style.left=`${clamp(g.left+w.x*g.travel+g.size*(w.offset??.18)-9,g.left+5,Math.max(g.left+5,g.right-26))}px`;
+    node.style.opacity=String(clamp(((w.expires??w.created+5000)-now)/1000));
+    node.style.setProperty('--earth-cover',String(w.buryAt?clamp((now-w.buryAt)/2400):0));
+    node.style.setProperty('--earth-direction',String(w.offset>.5?-1:1));
+    node.dataset.burying=String(pose.kind==='bury'&&s.phase.wasteId===w.id);
+    node.dataset.covered=String(Boolean(w.buryAt&&now-w.buryAt>1800));
+  }
+  for(const [id,node]of nodes)if(!s.waste.some(w=>w.id===id)){node.remove();nodes.delete(id);}
+}
 function render() {
   if(!geometry||!current)return;
   const now=Date.now();const g=geometry;
+  stepDuet(now,g);
   const pose=advance(state,now,g),p=pose.progress,kind=state.phase.kind;
   const visible=kind!=='off' && !current.doc.documentElement.classList.contains('ttra-welcome-pending');
   portal.hidden=!visible;
@@ -162,7 +325,7 @@ function render() {
     x=p<.65?g.left+state.phase.from*g.travel*(1-ease(p/.65)):g.left+(g.doorX-g.left)*ease((p-.65)/.22);
     cat.hidden=p>.88;
   } else cat.hidden=false;
-  current.brand.style.transform=angle?`perspective(650px) rotateY(${-angle}deg)`:'';
+  angleVaiven=angle;
   if(pose.kind==='jump'&&!motion.matches)y-=Math.sin(p*Math.PI)*12;
   if(pose.kind==='joy'&&!motion.matches)y-=Math.sin(pose.joyProgress*Math.PI)*18;
   if(motion.matches && !['enter','return'].includes(kind))x=g.left;
@@ -174,6 +337,7 @@ function render() {
     cat.style.setProperty('--cat-phase',`${-(now-state.phase.start)/1000}s`);
     lastPose=visual;lastSerial=state.phase.serial;
   }
+  lastVaivenX=x;
   cat.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
   cat.dataset.sequence=String(state.serial);
   if(!bubble.hidden){
@@ -182,39 +346,114 @@ function render() {
     bubble.style.left=`${left}px`;bubble.style.top=`${g.top+g.height+8}px`;
     bubble.style.setProperty('--bubble-pointer',`${clamp(x+g.size/2-left,18,width-18)}px`);
   }
-  for(const w of state.waste){
-    let node=wasteNodes.get(w.id);
-    if(!node){node=document.createElement('span');node.className='ttra-header-cat-waste';node.dataset.kind=w.kind;if(w.kind==='poop'){
-      const emoji=document.createElement('span');emoji.className='cat-poop-emoji';emoji.textContent='💩';
-      const earth=document.createElement('span');earth.className='cat-earth-mound';
-      const particles=document.createElement('span');particles.className='cat-earth-particles';
-      for(let i=0;i<5;i++){const grain=document.createElement('i');grain.style.setProperty('--grain',i);particles.append(grain);}
-      node.append(emoji,earth,particles);
-    }portal.prepend(node);wasteNodes.set(w.id,node);}
-    node.style.left=`${clamp(g.left+w.x*g.travel+g.size*(w.offset??.18)-9,g.left+5,Math.max(g.left+5,g.right-26))}px`;
-    node.style.opacity=String(clamp(((w.expires??w.created+5000)-now)/1000));
-    node.style.setProperty('--earth-cover',String(w.buryAt?clamp((now-w.buryAt)/2400):0));
-    node.style.setProperty('--earth-direction',String(w.offset>.5?-1:1));
-    node.dataset.burying=String(pose.kind==='bury'&&state.phase.wasteId===w.id);
-    node.dataset.covered=String(Boolean(w.buryAt&&now-w.buryAt>1800));
-  }
-  for(const [id,node]of wasteNodes)if(!state.waste.some(w=>w.id===id)){node.remove();wasteNodes.delete(id);}
+  renderWaste(state,wasteNodes,pose,g,now);
   if(now-lastSave>1000){lastSave=now;persist();}
 }
-function tick(){raf=0;render();if(state.phase.kind!=='off')raf=requestAnimationFrame(tick);}
+function renderFendi() {
+  if(!geometry||!current)return;
+  const now=Date.now();const g=geometry,size=g.size*.9;
+  const pose=advance(fendiState,now,g),p=pose.progress,kind=fendiState.phase.kind;
+  const visible=kind!=='off' && !current.doc.documentElement.classList.contains('ttra-welcome-pending');
+  catFendi.hidden=!visible;
+  if(!visible){angleFendi=0;if(now-lastSave>1000)persistFendi();door3d.setAngle(Math.max(angleVaiven,angleFendi));door3d.render();return;}
+  let x=g.left+pose.x*g.travel,y=g.floor-size*5/6*.92;
+  angleFendi=0;
+  if(kind==='enter') {
+    angleFendi=p<.25?ease(p/.25)*105:p<.7?105:(1-ease((p-.7)/.3))*105;
+    x=g.doorX+(g.left-g.doorX)*ease((p-.2)/.5);
+    catFendi.hidden=p<.19;
+  } else if(kind==='return') {
+    angleFendi=p<.3?0:p<.5?ease((p-.3)/.2)*105:p<.8?105:(1-ease((p-.8)/.2))*105;
+    x=p<.65?g.left+fendiState.phase.from*g.travel*(1-ease(p/.65)):g.left+(g.doorX-g.left)*ease((p-.65)/.22);
+    catFendi.hidden=p>.88;
+  }
+  if(pose.kind==='jump'&&!motion.matches)y-=Math.sin(p*Math.PI)*10;
+  if(motion.matches && !['enter','return'].includes(kind))x=g.left;
+  // Separación mínima para que no se apilen los sprites (glitch visual)
+  // -salvo durante el gag armado a propósito, donde el acercamiento es la gracia-.
+  if(!duet && kind!=='enter' && kind!=='return') {
+    for(const otherX of [lastVaivenX,lastBituX]) {
+      const minGap=(g.size+size)*.34;
+      const dx=otherX-x;
+      if(Math.abs(dx)<minGap)x-=(minGap-Math.abs(dx))/2*(dx>=0?1:-1);
+    }
+  }
+  const facing=kind==='return'?-1:(kind==='poop'&&fendiState.x>.5?-1:(fendiState.phase.to<fendiState.phase.from?-1:1));
+  catFendi.style.setProperty('--cat-facing',String(facing));
+  const visual=['enter','return','bury-walk'].includes(pose.kind)?'walk':pose.kind;
+  if(lastPoseFendi!==visual||lastSerialFendi!==fendiState.phase.serial){
+    catFendi.dataset.state=visual;
+    catFendi.style.setProperty('--cat-phase',`${-(now-fendiState.phase.start)/1000}s`);
+    lastPoseFendi=visual;lastSerialFendi=fendiState.phase.serial;
+  }
+  lastFendiX=x;
+  catFendi.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
+  renderWaste(fendiState,wasteNodesFendi,pose,g,now);
+  if(now-lastSave>1000)persistFendi();
+  door3d.setAngle(Math.max(angleVaiven,angleFendi,angleBitu));
+  door3d.render();
+}
+function renderBitu() {
+  if(!geometry||!current)return;
+  const now=Date.now();const g=geometry,size=g.size*.9;
+  const pose=advance(bituState,now,g),p=pose.progress,kind=bituState.phase.kind;
+  const visible=kind!=='off' && !current.doc.documentElement.classList.contains('ttra-welcome-pending');
+  catBitu.hidden=!visible;
+  if(!visible){angleBitu=0;if(now-lastSave>1000)persistBitu();door3d.setAngle(Math.max(angleVaiven,angleFendi,angleBitu));door3d.render();return;}
+  let x=g.left+pose.x*g.travel,y=g.floor-size*5/6*.92;
+  angleBitu=0;
+  if(kind==='enter') {
+    angleBitu=p<.25?ease(p/.25)*105:p<.7?105:(1-ease((p-.7)/.3))*105;
+    x=g.doorX+(g.left-g.doorX)*ease((p-.2)/.5);
+    catBitu.hidden=p<.19;
+  } else if(kind==='return') {
+    angleBitu=p<.3?0:p<.5?ease((p-.3)/.2)*105:p<.8?105:(1-ease((p-.8)/.2))*105;
+    x=p<.65?g.left+bituState.phase.from*g.travel*(1-ease(p/.65)):g.left+(g.doorX-g.left)*ease((p-.65)/.22);
+    catBitu.hidden=p>.88;
+  }
+  if(pose.kind==='jump'&&!motion.matches)y-=Math.sin(p*Math.PI)*10;
+  if(motion.matches && !['enter','return'].includes(kind))x=g.left;
+  if(!duet && kind!=='enter' && kind!=='return') {
+    for(const otherX of [lastVaivenX,lastFendiX]) {
+      const minGap=(g.size+size)*.34;
+      const dx=otherX-x;
+      if(Math.abs(dx)<minGap)x-=(minGap-Math.abs(dx))/2*(dx>=0?1:-1);
+    }
+  }
+  const facing=kind==='return'?-1:(kind==='poop'&&bituState.x>.5?-1:(bituState.phase.to<bituState.phase.from?-1:1));
+  catBitu.style.setProperty('--cat-facing',String(facing));
+  const visual=['enter','return','bury-walk'].includes(pose.kind)?'walk':pose.kind;
+  if(lastPoseBitu!==visual||lastSerialBitu!==bituState.phase.serial){
+    catBitu.dataset.state=visual;
+    catBitu.style.setProperty('--cat-phase',`${-(now-bituState.phase.start)/1000}s`);
+    lastPoseBitu=visual;lastSerialBitu=bituState.phase.serial;
+  }
+  lastBituX=x;
+  catBitu.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
+  renderWaste(bituState,wasteNodesBitu,pose,g,now);
+  if(now-lastSave>1000)persistBitu();
+  door3d.setAngle(Math.max(angleVaiven,angleFendi,angleBitu));
+  door3d.render();
+}
+function tick(){raf=0;render();renderFendi();renderBitu();if(state.phase.kind!=='off')raf=requestAnimationFrame(tick);}
 function start(){if(!raf&&state.phase.kind!=='off')raf=requestAnimationFrame(tick);}
-window.addEventListener('pagehide',persist);
-window.addEventListener('pageshow',()=>{measure();render();start();});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){render();start();}else persist();});
-motion.addEventListener('change',()=>{render();start();});
+window.addEventListener('pagehide',()=>{persist();persistFendi();persistBitu();});
+window.addEventListener('pageshow',()=>{measure();render();renderFendi();renderBitu();start();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){render();renderFendi();renderBitu();start();}else{persist();persistFendi();persistBitu();}});
+motion.addEventListener('change',()=>{render();renderFendi();renderBitu();start();});
 function resetAfterWelcome() {
   window.__TTRA_CAT_RESET_AFTER_WELCOME=false;
   cancelAnimationFrame(raf);raf=0;
   state=createState();lastPose='';lastSerial=-1;
+  fendiState=createState();lastPoseFendi='';lastSerialFendi=-1;duet=null;
+  bituState=createState();lastPoseBitu='';lastSerialBitu=-1;
   for(const node of wasteNodes.values())node.remove();
-  wasteNodes.clear();portal.hidden=true;bubble.hidden=true;
+  for(const node of wasteNodesFendi.values())node.remove();
+  for(const node of wasteNodesBitu.values())node.remove();
+  wasteNodes.clear();wasteNodesFendi.clear();wasteNodesBitu.clear();
+  portal.hidden=true;bubble.hidden=true;catFendi.hidden=true;catBitu.hidden=true;
   try{localStorage.removeItem(PREF);}catch{}
-  persist();render();
+  persist();persistFendi();persistBitu();render();renderFendi();renderBitu();
 }
 window.addEventListener('ttra:welcome-entered',resetAfterWelcome);
 // The intro may finish before this dynamically imported module has loaded.

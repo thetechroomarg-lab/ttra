@@ -22,7 +22,7 @@ export function pet(s,now) {
   s.petTimes=(Array.isArray(s.petTimes)?s.petTimes:[]).filter(t=>Number.isFinite(t)&&now-t>=0&&now-t<=1500);
   s.petTimes.push(now);
   if(s.petTimes.length>=3){s.petTimes=[];setPhase(s,'attack',now,2400,s.x);}
-  else setPhase(s,'belly',now,3000,s.x);
+  else s.joyAt=now;
 }
 export function interact(s,now,pointer='mouse',detail=1) {
   if(!s.active||['enter','return','off','introduce'].includes(s.phase.kind))return;
