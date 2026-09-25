@@ -978,5 +978,8 @@ def test_tarjeta_de_fidelidad_en_perfil_standalone_y_embebido():
     perfil_js = (appmod.BASE / "static" / "perfil.js").read_text(encoding="utf-8")
     assert "mostrarTarjetaFidelidad(datos);" in perfil_js
     assert "datos.fidelidad_ultimo_codigo" in perfil_js
+    inicio = perfil_js.index("function mostrarTarjetaFidelidad(datos)")
+    funcion = perfil_js[inicio:perfil_js.index("\nfunction ", inicio + 1)]
+    assert 'seccion.classList.toggle("oculto", datos.tipo_cliente === "mayorista")' in funcion
     # El código viene de la base: se escribe con textContent, nunca innerHTML.
     assert "mensajePremio.innerHTML" not in perfil_js
