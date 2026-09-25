@@ -114,6 +114,12 @@ class _FakeQuery:
         self._filtros.append((campo, valor))
         return self
 
+    def is_(self, campo, valor):
+        if valor != "null":
+            raise ValueError(valor)
+        self._filtros.append((campo, None))
+        return self
+
     def _filtrar(self, filas):
         for campo, valor in self._filtros:
             filas = [f for f in filas if f.get(campo) == valor]
@@ -260,8 +266,14 @@ class FakeSupabaseClient:
                     return {"ok": False, "error": "montos_invalidos"}
                 bruto += subtotal
                 cantidad += unidades
-                if codigo and item.get("nombre") in elegibles:
+                if codigo and (
+                    codigo.get("tope_total_usd") is not None or item.get("nombre") in elegibles
+                ):
                     descuento_mailing += min(descuento_unitario, unitario) * unidades
+            if codigo and codigo.get("tope_total_usd") is not None:
+                descuento_mailing = min(
+                    descuento_mailing, pedidos.decimal_monetario(codigo["tope_total_usd"])
+                )
 
             descuento_cantidad = Decimal("0")
             if modo_precio == "minorista":
