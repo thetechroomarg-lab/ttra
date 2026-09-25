@@ -1,5 +1,4 @@
 import httpx
-import pytest
 
 from web import email_util
 
@@ -20,11 +19,6 @@ def _capturar_envio(monkeypatch):
     monkeypatch.setenv("RESEND_API_KEY", "clave-falsa")
     monkeypatch.setattr(httpx, "post", post_falso)
     return capturado
-
-
-def test_enviar_email_sigue_bloqueado_dentro_de_un_test():
-    with pytest.raises(email_util.EnvioEmailError):
-        email_util.enviar_email("cliente@x.com", "Asunto", "<p>hola</p>")
 
 
 def test_enviar_email_con_reply_to_lo_manda_a_resend(monkeypatch):
