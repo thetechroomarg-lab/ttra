@@ -538,18 +538,30 @@ html[data-modo="classic"] .ttra-category-scene .ttra-product-canvas { top: 12px;
 /* The home introduction now flows directly into the categories. */
 html[data-modo="classic"] .ttra-hero { grid-template-columns: 1fr; min-height: auto; gap: 0; }
 
-/* Desktop pairs the headline with Vlad's introduction; mobile stays stacked. */
-@media (min-width: 1024px) {
+/* Desktop-only: big centered awwwards-style headline with the sticker card
+   below it, same size as always. Mobile (<=700px) keeps its original
+   left-aligned stacked layout untouched (see the max-width:700px block). */
+@media (min-width: 701px) {
   html[data-modo="classic"] .ttra-hero-copy {
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    column-gap: clamp(48px, 6vw, 112px);
+    text-align: center;
+    max-width: 1240px;
+    margin: 0 auto;
   }
-  html[data-modo="classic"] .ttra-hero-copy h2 { margin-bottom: 0; }
+  html[data-modo="classic"] .ttra-hero-copy h2 {
+    text-align: center;
+    text-transform: uppercase;
+    font: 800 clamp(24px, 4.6vw, 110px)/.98 var(--rc-font);
+    letter-spacing: -.03em;
+    margin: 0;
+    white-space: nowrap;
+  }
+  html[data-modo="classic"] .ttra-hero-copy h2 br { display: none; }
   html[data-modo="classic"] .ttra-hero-copy .ttra-personal-intro {
     justify-self: center;
     width: min(100%, 410px);
-    margin: 0;
+    margin: 32px auto 10px;
   }
 }

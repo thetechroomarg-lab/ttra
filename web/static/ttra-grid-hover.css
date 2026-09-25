@@ -1,0 +1,81 @@
+/* Grilla decorativa con "+" que reaccionan al pasar el mouse (o el dedo en
+   touch), debajo de la sección "DE CÓRDOBA. PARA TU MUNDO." Solo Classic,
+   fully responsive: la cantidad de columnas/filas se recalcula por JS según
+   el tamaño real de la sección (ver ttra-grid-hover.js). */
+html[data-modo="classic"] .ttra-grid-hover {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  margin: 0 var(--ed-gutter) 35px;
+  background: var(--rc-bg-panel);
+}
+html[data-modo="classic"] .ttra-grid-hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  --size: 42px;
+  background:
+    linear-gradient(90deg, var(--ed-line) 1px, transparent 1px var(--size)) 0 0 / var(--size) var(--size),
+    linear-gradient(var(--ed-line) 1px, transparent 1px var(--size)) 0 0 / var(--size) var(--size);
+  opacity: .5;
+  mask: linear-gradient(-20deg, transparent 45%, #fff);
+}
+html[data-modo="classic"] .ttra-grid-hover-title {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  pointer-events: none;
+  color: color-mix(in srgb, var(--rc-green) 78%, var(--rc-bg) 22%);
+  font: 800 clamp(52px, 11vw, 150px)/.9 var(--rc-font);
+  letter-spacing: -.03em;
+  text-transform: lowercase;
+}
+html[data-modo="classic"] .ttra-grid-hover-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  touch-action: none;
+  display: grid;
+  grid-template: repeat(var(--rows, 10), 1fr) / repeat(var(--cols, 10), 1fr);
+  font: 600 clamp(16px, 2.4vw, 28px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+html[data-modo="classic"] .ttra-grid-hover-grid div {
+  touch-action: none;
+  padding: 2px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  opacity: calc(var(--opacity, .1) + .2);
+  scale: 1.5;
+  filter: grayscale(1);
+  color: hsl(var(--hue, 10) 80% 50%);
+  transition-property: opacity, rotate, filter;
+  transition-duration: .8s, .4s, .6s;
+  transition-timing-function: ease-in, ease-out, ease-out;
+}
+html[data-modo="classic"][data-classic-theme="light"] .ttra-grid-hover-grid div { opacity: calc(var(--opacity, .1) * .8); }
+html[data-modo="classic"] .ttra-grid-hover-grid div[data-hover],
+html[data-modo="classic"] .ttra-grid-hover-grid div:is(:hover) {
+  transition-duration: 0s;
+  rotate: calc(var(--grade, 0) * 90deg);
+  filter: grayscale(0) brightness(1.5);
+  opacity: 1;
+}
+@media (hover: none) and (pointer: coarse) {
+  html[data-modo="classic"] .ttra-grid-hover-grid { cursor: default; }
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .ttra-grid-hover-grid { cursor: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .ttra-grid-hover-grid div { transition: none; }
+}
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-grid-hover { min-height: 240px; margin: 0 20px 25px; }
+  html[data-modo="classic"] .ttra-grid-hover-title { font-size: clamp(38px, 15vw, 70px); }
+}
