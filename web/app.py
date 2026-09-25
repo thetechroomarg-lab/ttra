@@ -1804,6 +1804,11 @@ def api_pedidos(entrada: PedidoIn, request: Request):
                     ).eq("id", pedido_id_rpc).execute()
                 except Exception:
                     logger.exception("No se pudo guardar lat/lng del pedido %s", pedido_id_rpc)
+        if fila_descuento:
+            try:
+                fidelidad.marcar_codigo_fidelidad_usado(client, cliente_id, fila_descuento["code"])
+            except Exception:
+                logger.exception("No se pudo resetear el ciclo de fidelidad de %s", cliente_id)
     else:
         pedidos.guardar_pedido(
             client,
