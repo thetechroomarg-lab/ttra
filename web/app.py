@@ -27,7 +27,7 @@ from web.public_static import PublicStaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, domicilios, entregas, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales
+from web import buscador, catalogo, cuentas, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -1096,7 +1096,18 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             actualizacion_pedido["observaciones_cadete"] = (
                 f"{observacion_previa} · Entregado por Alejo" if observacion_previa else "Entregado por Alejo"
             )
+    # Solo el primer envío cuenta como entrega: reenviar el recibo no suma otro sello.
+    primer_envio = not pedido.get("recibo_enviado_en")
     client.table("pedidos").update(actualizacion_pedido).eq("id", pedido_id).execute()
+    if pedido.get("cliente_id") and primer_envio:
+        try:
+            fidelidad.registrar_entrega_completada(
+                client, pedido["cliente_id"],
+                [p.get("nombre") for p in _cargar_productos() if p.get("nombre")],
+            )
+        except Exception:
+            # El recibo ya salió: perder un sello es preferible a mostrar un error.
+            logger.exception("No se pudo registrar el sello de fidelidad del pedido %s", pedido_id)
     return {"ok": True, "recibo_id": recibo_id, "reenviado": bool(pedido.get("recibo_enviado_en"))}
 
 

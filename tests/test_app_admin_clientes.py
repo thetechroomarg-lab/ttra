@@ -247,6 +247,51 @@ def test_admin_envia_recibo_y_marca_el_pedido(monkeypatch):
     assert enviados[0][3][0]["filename"] == "recibo-0001-1993.pdf"
 
 
+def test_enviar_recibo_suma_un_sello_de_fidelidad(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("clientes").update({"sellos_fidelidad": 1}).eq("id", cliente["id"]).execute()
+    fake.table("pedidos").insert({
+        "id": "pedido-fidelidad", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{
+            "nombre": "iPhone 13", "color": "Negro", "cantidad": 1,
+            "usd_unitario": 500, "usd_subtotal": 500,
+        }],
+        "total_usd": 500,
+        "descuento_usd": 0,
+    }).execute()
+    monkeypatch.setattr(appmod, "enviar_email", lambda *args: None)
+
+    r = c.post("/admin/pedidos/pedido-fidelidad/recibo")
+
+    assert r.status_code == 200
+    actualizado = fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]
+    assert actualizado["sellos_fidelidad"] == 2
+
+
+def test_reenviar_recibo_no_suma_otro_sello(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("clientes").update({"sellos_fidelidad": 1}).eq("id", cliente["id"]).execute()
+    fake.table("pedidos").insert({
+        "id": "pedido-reenvio-sello", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-24", "recibo_id": "0001-1993",
+        "recibo_enviado_en": "2026-08-24T15:00:00+00:00",
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
+        "total_usd": 500,
+    }).execute()
+    monkeypatch.setattr(appmod, "enviar_email", lambda *args: None)
+
+    r = c.post("/admin/pedidos/pedido-reenvio-sello/recibo")
+
+    assert r.status_code == 200
+    actualizado = fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]
+    assert actualizado["sellos_fidelidad"] == 1
+
+
 def test_admin_incluye_fotos_de_serie_en_el_pdf_del_recibo(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     fake = appmod.get_client()
