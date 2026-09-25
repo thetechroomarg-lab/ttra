@@ -8,7 +8,7 @@ DIAS_HASTA_SEGUIMIENTO = 7
 # Pasado este plazo ya no se manda: evita mailear pedidos viejos (ej. la
 # primera corrida) y acota los reintentos si Resend falla varios días.
 DIAS_MAXIMOS_SEGUIMIENTO = 14
-REPLY_TO_SEGUIMIENTO = os.environ.get("MAIL_SEGUIMIENTO_REPLY_TO", "contacto@thetechroomarg.com")
+REPLY_TO_SEGUIMIENTO = os.environ.get("MAIL_SEGUIMIENTO_REPLY_TO", "thetechroomarg@gmail.com")
 
 
 def _fecha_entrega_argentina(recibo_enviado_en):
