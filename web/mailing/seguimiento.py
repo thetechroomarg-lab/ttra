@@ -47,6 +47,9 @@ def _html_seguimiento(nombre, producto):
 
 def enviar_seguimientos(client, hoy=None, enviar_email_fn=None):
     enviar_email_fn = enviar_email_fn or email_util.enviar_email
+    # Si la columna todavía no existe en la base, esto falla antes de mandar
+    # nada: sin poder marcar los pedidos, cada corrida volvería a mailearlos.
+    client.table("pedidos").select("id, seguimiento_enviado_en").execute()
     enviados = 0
     fallidos = 0
     for pedido in pedidos_para_notificar(client, hoy=hoy):
