@@ -21,7 +21,10 @@
     <div class="ttra-page-actions"><a href="/login.html" class="catalog-login">Ingresar</a></div>
   </header>
   <main class="comparison-main">
-    <a href="/catalogo" class="ttra-back">Volver al catálogo</a>
+    <div class="comparison-toolbar">
+      <a href="/catalogo" class="comparison-back">Volver al catálogo</a>
+      <button type="button" id="comparison-share" class="comparison-share" hidden>Compartir comparativa</button>
+    </div>
     <div class="comparison-intro"><p class="comparison-eyebrow">COMPARATIVA</p><h1>Compará los detalles<span>.</span></h1><p>Las características, una al lado de la otra.</p></div>
     <p id="comparison-message" role="status">Cargando productos…</p>
     <section id="comparison-content" aria-label="Comparación de productos" hidden>
@@ -29,12 +32,14 @@
       <div class="comparison-facts" id="comparison-facts" aria-label="Especificaciones técnicas"></div>
       <div class="comparison-sources" id="comparison-sources"></div>
       <aside class="comparison-disclaimer"><p>Las especificaciones fueron extraídas de fuentes web y analizadas por una IA. Pueden contener errores o variar según la versión del equipo. Revisá las fuentes antes de decidir.</p><p>La ficha del fabricante no indica el estado ni el porcentaje de batería de una unidad usada.</p></aside>
+      <section class="comparison-cart" id="comparison-cart" aria-label="Agregar al carrito"></section>
     </section>
     <div class="comparison-return-wrap"><a class="comparison-return" data-comparison-return href="/catalogo">Volver al Listado</a></div>
   </main>
   <footer class="ttra-page-footer"></footer>
   <script src="/precios.js"></script>
   <script src="/comparar-productos.js"></script>
+  <script src="/carrito.js"></script>
   <script src="/comparativa.js"></script>
   <script src="/scroll-lock.js"></script>
 </body>

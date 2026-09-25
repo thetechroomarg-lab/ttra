@@ -64,6 +64,44 @@
     } catch (error) { if (error.name === 'AbortError') return; states[index] = 'No pude cargar la ficha. Probá nuevamente.'; }
     renderFacts();
   }
+  function setupShare() {
+    const button = document.getElementById('comparison-share');
+    const title = `Comparativa: ${products[0].nombre} vs ${products[1].nombre} — The Tech Room Arg`;
+    button.hidden = false;
+    button.addEventListener('click', async () => {
+      const url = location.href;
+      if (navigator.share) {
+        try { await navigator.share({title, text: title, url}); return; }
+        catch (error) { if (error.name === 'AbortError') return; }
+      }
+      try { await navigator.clipboard.writeText(url); window.TTRACarrito?.notificar('Link copiado. Ya lo podés pegar donde quieras.'); }
+      catch { window.prompt('Copiá este link para compartir la comparativa:', url); }
+    });
+  }
+  function renderCart() {
+    const section = document.getElementById('comparison-cart'); section.replaceChildren();
+    products.forEach(p => {
+      const block = el('div', null, 'comparison-cart-item');
+      block.append(el('h3', p.nombre));
+      const colores = Array.isArray(p.colores) ? p.colores : [];
+      let select = null;
+      if (colores.length > 1) {
+        select = el('select'); select.setAttribute('aria-label', `Color de ${p.nombre}`);
+        select.append(el('option', 'Elegí un color')); select.options[0].value = '';
+        colores.forEach(color => { const option = el('option', color); option.value = color; select.append(option); });
+        block.append(select);
+      }
+      const button = el('button', 'Agregar al carrito', 'comparison-add'); button.type = 'button';
+      button.addEventListener('click', () => {
+        if (!window.TTRACarrito) return;
+        const color = select ? select.value : (colores[0] || null);
+        if (select && !color) { window.TTRACarrito.notificar(`Elegí un color para ${p.nombre}.`, true); select.focus(); return; }
+        try { window.TTRACarrito.agregar(p, color); window.TTRACarrito.animar(button); }
+        catch { window.TTRACarrito.notificar('No pude guardar el producto en el carrito. Probá de nuevo.', true); }
+      });
+      block.append(button); section.append(block);
+    });
+  }
   async function init() {
     if (!/^[a-f0-9]{64}$/.test(a || '') || !/^[a-f0-9]{64}$/.test(b || '') || a === b) { message.textContent = 'Elegí dos productos de la misma categoría desde el catálogo.'; return; }
     try {
@@ -83,7 +121,7 @@
         if(p.colores?.length) card.append(el('p', p.colores.join(' · '), 'comparison-variants'));
         const link = el('a', 'Ver en el catálogo'); link.href = '/catalogo?' + new URLSearchParams({categoria:p.seccion, buscar:'1', q:p.nombre}); card.append(link); cards.append(card);
       });
-      message.hidden = true; content.hidden = false; renderFacts();
+      message.hidden = true; content.hidden = false; renderFacts(); renderCart(); setupShare();
       products.forEach((p, i) => { if (!p.sheet) loadSheet(i); });
     } catch (error) { if (error.name !== 'AbortError') message.textContent = error.message || 'No pude cargar los productos.'; }
   }

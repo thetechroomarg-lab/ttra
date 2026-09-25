@@ -83,3 +83,28 @@ def test_cached_sheets_work_without_provider_configuration(setup_comparison, mon
     store.save(key, 'test', {'model': PHONE['nombre'], 'attributes': [], 'sources': [], 'fetched_at': 123})
     with TestClient(appmod.app) as c:
         assert c.post('/api/comparativa/ficha', json=setup_comparison).json()['status'] == 'ready'
+
+
+def test_la_api_trae_lo_que_necesita_el_carrito(setup_comparison, monkeypatch):
+    completos = [{**PHONE, 'pesos': 780000, 'transferencia': 800000, 'colores': ['Negro', 'Azul']},
+                 {**OTHER, 'usd': 700, 'pesos': 1090000, 'transferencia': 1120000}]
+    monkeypatch.setattr(appmod, '_catalogo_autorizado', lambda request: (completos, 'public'))
+    c = TestClient(appmod.app, base_url='https://testserver')
+    r = c.get('/api/comparativa', params={'a': setup_comparison['a'], 'b': setup_comparison['b']})
+    for producto in r.json()['products']:
+        assert {'nombre', 'usd', 'pesos', 'transferencia'} <= producto.keys()
+    assert r.json()['products'][0]['colores'] == ['Negro', 'Azul']
+
+
+def test_pagina_de_comparativa_tiene_compartir_y_agregar_al_final():
+    html = (appmod.BASE / 'static' / 'comparativa.html').read_text(encoding='utf-8')
+    js = (appmod.BASE / 'static' / 'comparativa.js').read_text(encoding='utf-8')
+    assert 'id="comparison-share"' in html
+    # El carrito va al final: después del aviso de fuentes.
+    assert html.index('comparison-disclaimer') < html.index('id="comparison-cart"')
+    assert html.index('src="/carrito.js"') < html.index('src="/comparativa.js"')
+    assert 'navigator.share' in js
+    assert 'navigator.clipboard.writeText' in js
+    assert 'AbortError' in js  # cancelar el menú de compartir no es un error
+    assert 'TTRACarrito.agregar(' in js
+    assert "'Elegí un color'" in js

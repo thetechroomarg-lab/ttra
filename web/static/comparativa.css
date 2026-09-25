@@ -6,7 +6,7 @@
 .comparison-intro h1 { font-size: clamp(30px, 5vw, 60px); font-weight: 500; line-height: 1.08; letter-spacing: -.05em; margin: 14px 0; }
 .comparison-intro h1 span { color: var(--ed-accent); }
 .comparison-intro > p:last-child { color: var(--rc-green-dim); line-height: 1.6; }
-.comparison-products, .comparison-fact-row, .comparison-sources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.comparison-products, .comparison-fact-row, .comparison-sources, .comparison-cart { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .comparison-product { border: 1px solid var(--ed-line); border-top: 3px solid var(--ed-accent); background: var(--rc-bg-panel); padding: 24px; min-width: 0; overflow-wrap: anywhere; }
 .comparison-product .comparison-number { color: var(--ed-accent); font-size: 12px; }
 .comparison-product h2 { font-size: clamp(18px, 2.5vw, 30px); line-height: 1.2; letter-spacing: -.04em; font-weight: 600; margin: 18px 0; }
@@ -32,7 +32,18 @@
 .comparison-disclaimer p + p { margin-top: 10px; }
 .comparison-main [hidden] { display: none; }
 .comparison-main :is(a,button):focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 4px; }
+.comparison-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.comparison-share, .comparison-add { min-height: 44px; padding: 0 18px; border: 1px solid var(--ed-accent); background: transparent; color: var(--rc-green-bright); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.comparison-add { width: 100%; background: var(--ed-accent); color: var(--rc-bg); }
+.comparison-share:hover, .comparison-add:hover { filter: brightness(1.08); }
+.comparison-share:focus-visible, .comparison-add:focus-visible, .comparison-cart-item select:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 2px; }
+.comparison-cart { margin-top: 32px; }
+.comparison-cart-item { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 20px; border: 1px solid var(--ed-line); background: var(--rc-bg-panel); overflow-wrap: anywhere; }
+.comparison-cart-item h3 { margin: 0; font-size: 16px; }
+.comparison-cart-item select { min-height: 44px; padding: 0 12px; border: 1px solid var(--ed-line); background: var(--rc-bg); color: var(--rc-green-bright); font: inherit; }
 @media(max-width: 700px) {
+ .comparison-cart { gap: 12px; }
+ .comparison-cart-item { padding: 14px 10px; }
  .comparison-main { padding: 18px 14px 120px; }
  .comparison-products, .comparison-fact-row, .comparison-sources { gap: 12px; }
  .comparison-product { padding: 16px 10px; }
