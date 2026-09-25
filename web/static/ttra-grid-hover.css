@@ -8,7 +8,8 @@ html[data-modo="classic"] .ttra-grid-hover {
   overflow: hidden;
   min-height: 320px;
   display: grid;
-  place-items: center;
+  place-items: center start;
+  padding-left: clamp(20px, 5vw, 72px);
   margin: 0 var(--ed-gutter) 35px;
   background: var(--rc-bg-panel);
 }
@@ -76,6 +77,6 @@ html[data-modo="classic"] .ttra-grid-hover-grid div:is(:hover) {
   html[data-modo="classic"] .ttra-grid-hover-grid div { transition: none; }
 }
 @media (max-width: 700px) {
-  html[data-modo="classic"] .ttra-grid-hover { min-height: 240px; margin: 0 20px 25px; }
+  html[data-modo="classic"] .ttra-grid-hover { min-height: 240px; margin: 0 20px 25px; padding-left: 20px; }
   html[data-modo="classic"] .ttra-grid-hover-title { font-size: clamp(38px, 15vw, 70px); }
 }
