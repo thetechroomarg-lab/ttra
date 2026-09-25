@@ -65,7 +65,7 @@ export function createProductCardScenes(entries) {
     decal(p,.92,.92,0,0,-.05,apple,true);for(let i=0;i<3;i++)disc(p,.019,.005,edge,-.075+i*.075,-.8,-.05);
     for(let side of [-1,1])for(let i=0;i<8;i++)box(p,.012,.035,.02,black,side*1.39,.4-i*.07,0);
     slab(p,.18,.024,.04,silver,-.98,1.03,0,.01);
-    return {model:p,radius:1.83,halfHeight:1.12,yaw:Math.PI+.38,tilt:.04};
+    return {model:p,radius:2.10,halfHeight:1.29,yaw:Math.PI+.38,tilt:.04};
   }
   function laptop(){
     const p=new T.Group();const base=slab(p,2.9,1.92,.12,black,0,-.60,.12,.09);base.rotation.x=-Math.PI/2;
