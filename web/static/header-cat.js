@@ -39,6 +39,10 @@ function style(doc) {
   });styles.set(doc,promise);return promise;
 }
 await style(document);
+// El globito de "10 clicks -> álbum de fotos" es solo para clientes logueados;
+// invitados siguen viendo el resto de las reacciones (joy, ataque a los 3 clicks).
+let ttraLoggedIn=false;
+fetch('/api/me').then(r=>{ttraLoggedIn=r.ok;}).catch(()=>{});
 const portal=document.createElement('div');portal.id='ttra-header-cat-portal';
 const cat=document.createElement('div');cat.id='ttra-header-cat';cat.setAttribute('role','button');cat.tabIndex=0;cat.setAttribute('aria-label','Acariciar al gatito');cat.innerHTML=catArtwork+'<span class="ttra-cat-zzz"><span>Z</span><span>Z</span><span>Z</span></span>';
 cat.style.setProperty('--cat-clock',`${-(Date.now()-state.epoch)/1000}s`);
@@ -47,12 +51,10 @@ cat.addEventListener('pointerdown',event=>{pointerKind=event.pointerType;});
 cat.addEventListener('click',event=>{event.stopPropagation();caress(event.pointerType||pointerKind,event.detail);});
 cat.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();if(!event.repeat)caress();}});
 // Fendi y Bitu se acarician igual que Vaiven (mismo pet(): salto de
-// alegría, o ataque juguetón a los 3 clicks seguidos) pero SIN la escalada
-// a "introduce" -el globito que linkea al álbum de fotos es cosa de Vaiven
-// nada más, todavía no armamos esa parte para ellas-.
-// Bitu, igual que Vaiven, escala a "introduce" (el globito con el link al
-// álbum) a los 10 clicks/taps seguidos -por eso usa interact(), no solo
-// pet()-. Fendi todavía no tiene esa escalada, a propósito.
+// alegría, o ataque juguetón a los 3 clicks seguidos). Las tres escalan a
+// "introduce" (el globito con el link al álbum) a los 10 clicks/taps
+// seguidos, pero SOLO si hay un cliente logueado (ttraLoggedIn) -un
+// invitado sigue viendo el resto de las reacciones, nunca el globito-.
 function makeCompanion(id, artwork, label, s, persistFn, useInteract, getBubble) {
   const el=document.createElement('div');el.id=id;el.setAttribute('role','button');el.tabIndex=0;
   el.setAttribute('aria-label',label);el.innerHTML=artwork+'<span class="ttra-cat-zzz"><span>Z</span><span>Z</span><span>Z</span></span>';
@@ -60,7 +62,7 @@ function makeCompanion(id, artwork, label, s, persistFn, useInteract, getBubble)
   el.addEventListener('pointerdown',event=>{pointerKindLocal=event.pointerType;});
   function react(pointer='keyboard',detail=1) {
     const now=Date.now();
-    if(useInteract)interact(s,now,pointer,detail);else pet(s,now);
+    if(useInteract && ttraLoggedIn)interact(s,now,pointer,detail);else pet(s,now);
     persistFn();render();renderFendi();renderBitu();start();
     if(useInteract && s.phase.kind==='introduce')getBubble().querySelector('a').focus({preventScroll:true});
   }
@@ -176,7 +178,7 @@ function toggle() {
   persist();persistFendi();persistBitu();lastPose='';lastPoseFendi='';lastPoseBitu='';render();renderFendi();renderBitu();start();
 }
 function caress(pointer='keyboard',detail=1) {
-  const now=Date.now();advance(state,now,geometry||{});interact(state,now,pointer,detail);persist();render();start();
+  const now=Date.now();advance(state,now,geometry||{});if(ttraLoggedIn)interact(state,now,pointer,detail);else pet(state,now);persist();render();start();
   if(state.phase.kind==='introduce')bubble.querySelector('a').focus({preventScroll:true});
 }
 function reward() { celebrate(state,Date.now());persist();start(); }
