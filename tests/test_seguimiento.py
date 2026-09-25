@@ -1,5 +1,7 @@
 from datetime import date
 
+import pytest
+
 from tests.fakes_supabase import FakeSupabaseClient
 from web import email_util
 from web.mailing import seguimiento
@@ -125,3 +127,60 @@ def test_escapa_el_nombre_del_cliente_en_el_html():
     seguimiento.enviar_seguimientos(fake, hoy=HOY, enviar_email_fn=lambda *a, **k: enviados.append(a))
 
     assert "<b>Juan</b>" not in enviados[0][2]
+
+
+class _SinColumnaSeguimiento:
+    """Supabase de producción antes de correr la migración: pedir la columna
+    nueva por nombre falla; select("*") sigue andando."""
+
+    def __init__(self, fake):
+        self._fake = fake
+
+    def table(self, nombre):
+        tabla = self._fake.table(nombre)
+        if nombre != "pedidos":
+            return tabla
+
+        class Envoltorio:
+            def select(_self, columnas="*", *args, **kwargs):
+                if "seguimiento_enviado_en" in columnas:
+                    raise Exception('column pedidos.seguimiento_enviado_en does not exist')
+                return tabla.select(columnas, *args, **kwargs)
+
+            def __getattr__(_self, atributo):
+                return getattr(tabla, atributo)
+
+        return Envoltorio()
+
+
+def test_sin_la_columna_en_la_base_no_manda_ningun_mail():
+    fake = FakeSupabaseClient()
+    _cliente(fake)
+    _pedido(fake, "2026-09-18T15:00:00+00:00")
+    enviados = []
+
+    with pytest.raises(Exception, match="seguimiento_enviado_en"):
+        seguimiento.enviar_seguimientos(
+            _SinColumnaSeguimiento(fake), hoy=HOY, enviar_email_fn=lambda *a, **k: enviados.append(a),
+        )
+
+    assert enviados == []
+
+
+def test_si_no_se_puede_marcar_el_pedido_corta_la_corrida():
+    fake = FakeSupabaseClient()
+    _cliente(fake)
+    _pedido(fake, "2026-09-18T15:00:00+00:00")
+    _pedido(fake, "2026-09-18T16:00:00+00:00", id_="pedido-2")
+    enviados = []
+    tabla = fake.table("pedidos")
+
+    def update_que_falla(_payload):
+        raise Exception("Supabase caído")
+
+    tabla.update = update_que_falla
+
+    with pytest.raises(Exception, match="Supabase caído"):
+        seguimiento.enviar_seguimientos(fake, hoy=HOY, enviar_email_fn=lambda *a, **k: enviados.append(a))
+
+    assert len(enviados) == 1
