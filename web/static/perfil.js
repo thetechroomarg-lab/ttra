@@ -148,7 +148,10 @@ function mostrarSeccionCondicionesMayorista(datos) {
 function mostrarTarjetaFidelidad(datos) {
   const contenedorSellos = document.getElementById("fidelidad-sellos");
   const mensajePremio = document.getElementById("fidelidad-premio");
-  if (!contenedorSellos || !mensajePremio) return;
+  const seccion = document.getElementById("seccion-fidelidad");
+  if (!contenedorSellos || !mensajePremio || !seccion) return;
+  // Los mayoristas no participan: su precio ya es especial.
+  seccion.classList.toggle("oculto", datos.tipo_cliente === "mayorista");
   contenedorSellos.replaceChildren();
   if (datos.fidelidad_ultimo_codigo) {
     mensajePremio.textContent =
