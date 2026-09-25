@@ -666,7 +666,13 @@ def _descuento_codigo_row(client, cliente_id, codigo):
 
 def _resolver_descuento_codigo(productos_catalogo, descuento_row, items):
     disponibles = {p.get("nombre", "").strip(): p for p in productos_catalogo if p.get("nombre")}
-    elegibles = set(descuento_row.get("productos") or [])
+    # Con tope (premio de fidelidad) el código vale para cualquier producto y
+    # descuenta como máximo el tope en total, no por unidad.
+    tope_total_usd = descuento_row.get("tope_total_usd")
+    elegibles = (
+        set(disponibles) if tope_total_usd is not None
+        else set(descuento_row.get("productos") or [])
+    )
     items_norm = []
     vistos = set()
     for item in items:
@@ -712,12 +718,25 @@ def _resolver_descuento_codigo(productos_catalogo, descuento_row, items):
     if cantidad_total == 0:
         return None
 
+    if tope_total_usd is not None:
+        tope = pedidos.decimal_monetario(tope_total_usd)
+        if descuento_total["usd"] > tope:
+            proporcion = tope / descuento_total["usd"]
+            descuento_total = {
+                "usd": tope,
+                "pesos": round(descuento_total["pesos"] * proporcion),
+                "transferencia": round(descuento_total["transferencia"] * proporcion),
+            }
+
     return {
         "codigo": descuento_row["code"],
         "productos": sorted(productos_aplicables),
         "cantidad": cantidad_total,
         "descuento_usd_por_item": pedidos.numero_monetario_db(
             descuento_row.get("descuento_usd") or _DESCUENTO_MAILING_USD
+        ),
+        "tope_total_usd": (
+            None if tope_total_usd is None else pedidos.numero_monetario_db(tope_total_usd)
         ),
         "descuento": {
             moneda: pedidos.numero_monetario_db(valor)
@@ -1101,10 +1120,7 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     client.table("pedidos").update(actualizacion_pedido).eq("id", pedido_id).execute()
     if pedido.get("cliente_id") and primer_envio:
         try:
-            fidelidad.registrar_entrega_completada(
-                client, pedido["cliente_id"],
-                [p.get("nombre") for p in _cargar_productos() if p.get("nombre")],
-            )
+            fidelidad.registrar_entrega_completada(client, pedido["cliente_id"])
         except Exception:
             # El recibo ya salió: perder un sello es preferible a mostrar un error.
             logger.exception("No se pudo registrar el sello de fidelidad del pedido %s", pedido_id)

@@ -959,6 +959,16 @@ def test_chat_con_sesion_sigue_funcionando(monkeypatch):
     assert "respuesta" in r.json()
 
 
+def test_carrito_respeta_el_tope_total_del_codigo_de_fidelidad():
+    landing_js = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    inicio = landing_js.index("function descuentoMailingAplicado(carrito)")
+    funcion = landing_js[inicio:landing_js.index("\nfunction ", inicio + 1)]
+    assert "descuento.tope_total_usd" in funcion
+    assert "usd = tope;" in funcion
+    # Con tope vale para cualquier producto del carrito, no solo los validados.
+    assert "const conTope =" in funcion
+
+
 def test_tarjeta_de_fidelidad_en_perfil_standalone_y_embebido():
     for nombre in ("perfil.html", "index.html"):
         html = (appmod.BASE / "static" / nombre).read_text(encoding="utf-8")

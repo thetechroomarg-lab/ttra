@@ -55,6 +55,38 @@ def test_validar_descuento_mail_aplica_solo_a_items_elegibles(monkeypatch):
     assert body["descuento"]["transferencia"] == 16082
 
 
+def test_validar_codigo_de_fidelidad_descuenta_el_tope_en_total(monkeypatch):
+    c, fake, cliente_id = _cliente_con_codigo(monkeypatch)
+    fake.table("codigos_descuento").insert({
+        "cliente_id": cliente_id, "code": "TTRA-PREMIO03", "productos": [],
+        "descuento_usd": 20, "tope_total_usd": 20, "activo": True,
+    }).execute()
+
+    r = c.post("/api/descuentos/validar", json={
+        "codigo": "TTRA-PREMIO03",
+        "items": [
+            {"nombre": "iPhone 13", "cantidad": 2},
+            {"nombre": "MacBook Air", "cantidad": 1},
+        ],
+    })
+
+    assert r.status_code == 200
+    body = r.json()
+    assert body["tope_total_usd"] == 20
+    assert body["descuento"]["usd"] == 20
+    assert body["productos"] == ["MacBook Air", "iPhone 13"]
+
+
+def test_validar_codigo_de_mailing_no_trae_tope(monkeypatch):
+    c, _fake, _cliente_id = _cliente_con_codigo(monkeypatch)
+
+    r = c.post("/api/descuentos/validar", json={
+        "codigo": "TTRA-TEST1234", "items": [{"nombre": "iPhone 13", "cantidad": 1}],
+    })
+
+    assert r.json()["tope_total_usd"] is None
+
+
 def test_validar_descuento_mail_falla_si_no_aplica(monkeypatch):
     c, _fake, _cliente_id = _cliente_con_codigo(monkeypatch)
 

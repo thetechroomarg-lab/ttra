@@ -287,6 +287,9 @@ create table if not exists codigos_descuento (
   usado_en timestamptz,
   creado_en timestamptz not null default now()
 );
+-- Tope total del descuento (premio de fidelidad). Null = código de mailing de
+-- siempre: descuento por unidad, solo sobre los productos de la lista.
+alter table codigos_descuento add column if not exists tope_total_usd numeric;
 
 -- Códigos promo genéricos (no atados a un cliente): al aplicarse suman un
 -- producto de regalo a $0 al pedido, hasta agotar usos_maximos usos totales.
@@ -400,16 +403,21 @@ begin
     end if;
     v_cantidad_total := v_cantidad_total + v_cantidad_item;
     v_total_bruto := v_total_bruto + v_subtotal;
-    if p_codigo is not null and exists (
+    if p_codigo is not null and (v_codigo.tope_total_usd is not null or exists (
       select 1
       from jsonb_array_elements_text(coalesce(v_codigo.productos, '[]'::jsonb)) elegible(nombre)
       where elegible.nombre = v_item ->> 'nombre'
-    ) then
+    )) then
       v_descuento_mailing := v_descuento_mailing
         + least(coalesce(nullif(v_codigo.descuento_usd, 0), 5)::numeric, v_unitario)
           * v_cantidad_item;
     end if;
   end loop;
+  -- Código con tope (premio de fidelidad): vale para cualquier producto y
+  -- descuenta como máximo el tope en total, no por unidad.
+  if p_codigo is not null and v_codigo.tope_total_usd is not null then
+    v_descuento_mailing := least(v_descuento_mailing, v_codigo.tope_total_usd);
+  end if;
 
   if p_modo_precio = 'minorista' then
     if v_cantidad_total >= 6 then

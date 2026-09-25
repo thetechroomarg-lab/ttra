@@ -455,6 +455,31 @@ def test_usar_codigo_de_fidelidad_resetea_el_ciclo(monkeypatch):
     assert cliente["fidelidad_ultimo_codigo"] is None
 
 
+def test_codigo_de_fidelidad_descuenta_veinte_en_total_aunque_haya_varias_unidades(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
+    fake.table("codigos_descuento").insert({
+        "cliente_id": cliente_id, "code": "TTRA-PREMIO02",
+        "productos": [], "descuento_usd": 20, "tope_total_usd": 20, "activo": True,
+    }).execute()
+
+    r = c.post("/api/pedidos", json={
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{
+            "nombre": "Elegible", "cantidad": 3,
+            "usd_unitario": 180, "usd_subtotal": 540,
+        }],
+        # 540 - 15 (5 por unidad por cantidad) - 20 (premio, una sola vez)
+        "total_usd": 505,
+        "codigo_descuento": "TTRA-PREMIO02",
+    })
+
+    assert r.status_code == 200, r.text
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert pedido["descuento_usd"] == 35
+
+
 def test_pedido_fallido_no_consume_codigo_mailing(monkeypatch):
     c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
     cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]

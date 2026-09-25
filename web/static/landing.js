@@ -1761,7 +1761,10 @@ function descuentoMailingAplicado(carrito) {
   if (!catalogoListo) return null;
   if (modoPrecioActual === "mayorista") return null;
   const descuento = cargarDescuentoMailing();
-  if (!descuento || !Array.isArray(descuento.productos) || !descuento.productos.length) return null;
+  // Con tope (premio de fidelidad) vale para cualquier producto y descuenta
+  // como máximo el tope en total, igual que el servidor.
+  const conTope = descuento && descuento.tope_total_usd != null;
+  if (!descuento || !Array.isArray(descuento.productos) || (!conTope && !descuento.productos.length)) return null;
 
   const productosElegibles = new Set(descuento.productos);
   let cantidad = 0;
@@ -1770,7 +1773,7 @@ function descuentoMailingAplicado(carrito) {
   let transferencia = 0;
 
   carrito.forEach((it) => {
-    if (!productosElegibles.has(it.nombre) || !it.usd) return;
+    if ((!conTope && !productosElegibles.has(it.nombre)) || !it.usd) return;
     const descuentoUsdUnit = Math.min(Number(descuento.descuento_usd_por_item) || 0, Number(it.usd) || 0);
     if (descuentoUsdUnit <= 0) return;
     cantidad += it.cantidad;
@@ -1780,6 +1783,13 @@ function descuentoMailingAplicado(carrito) {
   });
 
   if (!cantidad) return null;
+  const tope = Number(descuento.tope_total_usd);
+  if (conTope && usd > tope) {
+    const proporcion = tope / usd;
+    usd = tope;
+    pesos = Math.round(pesos * proporcion);
+    transferencia = Math.round(transferencia * proporcion);
+  }
   return { codigo: descuento.codigo, cantidad, usd, pesos, transferencia, productos: descuento.productos };
 }
 
