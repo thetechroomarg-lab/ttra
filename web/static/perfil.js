@@ -145,6 +145,32 @@ function mostrarSeccionCondicionesMayorista(datos) {
   }
 }
 
+function mostrarTarjetaFidelidad(datos) {
+  const contenedorSellos = document.getElementById("fidelidad-sellos");
+  const mensajePremio = document.getElementById("fidelidad-premio");
+  if (!contenedorSellos || !mensajePremio) return;
+  contenedorSellos.replaceChildren();
+  if (datos.fidelidad_ultimo_codigo) {
+    mensajePremio.textContent =
+      `¡Tenés un premio! Usá el código ${datos.fidelidad_ultimo_codigo} en tu próxima compra: US$20 de descuento.`;
+    mensajePremio.classList.remove("oculto");
+    return;
+  }
+  mensajePremio.classList.add("oculto");
+  const sellos = Math.min(Number(datos.sellos_fidelidad) || 0, 5);
+  contenedorSellos.setAttribute("aria-label", `${sellos} de 5 compras`);
+  for (let i = 0; i < 5; i++) {
+    const sello = document.createElement("span");
+    sello.className = "fidelidad-sello" + (i < sellos ? " lleno" : "");
+    sello.textContent = i < sellos ? "★" : "☆";
+    contenedorSellos.append(sello);
+  }
+  const ayuda = document.createElement("p");
+  ayuda.className = "fidelidad-ayuda";
+  ayuda.textContent = `${sellos} de 5 compras. A la quinta te regalo US$20 de descuento.`;
+  contenedorSellos.append(ayuda);
+}
+
 async function cargarFragmentoTerminosMayorista() {
   if (fragmentoTerminosMayoristaCacheLocal) return fragmentoTerminosMayoristaCacheLocal;
   try {
@@ -202,6 +228,7 @@ async function cargarPerfil() {
     document.getElementById("perfil-email").value = datos.email || "";
     document.getElementById("perfil-celular").value = datos.celular || "";
     mostrarSeccionCondicionesMayorista(datos);
+    mostrarTarjetaFidelidad(datos);
   } catch {
     errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }

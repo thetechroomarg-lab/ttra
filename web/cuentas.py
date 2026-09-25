@@ -183,7 +183,9 @@ def obtener_cliente(client, cliente_id):
             "celular": perfil.get("celular"), "email": perfil.get("email"),
             "direccion": perfil.get("direccion"),
             "debe_cambiar_password": bool(perfil.get("debe_cambiar_password")),
-            "condiciones_mayorista_aceptadas_en": perfil.get("condiciones_mayorista_aceptadas_en")}
+            "condiciones_mayorista_aceptadas_en": perfil.get("condiciones_mayorista_aceptadas_en"),
+            "sellos_fidelidad": int(perfil.get("sellos_fidelidad") or 0),
+            "fidelidad_ultimo_codigo": perfil.get("fidelidad_ultimo_codigo")}
 
 
 def actualizar_cliente(client, cliente_id, nombre, apellido, celular):

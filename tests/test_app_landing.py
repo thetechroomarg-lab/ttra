@@ -957,3 +957,16 @@ def test_chat_con_sesion_sigue_funcionando(monkeypatch):
     r = c.post("/chat", json={"mensaje": "hola", "sesion": "s1"})
     assert r.status_code == 200
     assert "respuesta" in r.json()
+
+
+def test_tarjeta_de_fidelidad_en_perfil_standalone_y_embebido():
+    for nombre in ("perfil.html", "index.html"):
+        html = (appmod.BASE / "static" / nombre).read_text(encoding="utf-8")
+        assert 'id="seccion-fidelidad"' in html, nombre
+        assert 'id="fidelidad-sellos"' in html, nombre
+        assert 'id="fidelidad-premio"' in html, nombre
+    perfil_js = (appmod.BASE / "static" / "perfil.js").read_text(encoding="utf-8")
+    assert "mostrarTarjetaFidelidad(datos);" in perfil_js
+    assert "datos.fidelidad_ultimo_codigo" in perfil_js
+    # El código viene de la base: se escribe con textContent, nunca innerHTML.
+    assert "mensajePremio.innerHTML" not in perfil_js

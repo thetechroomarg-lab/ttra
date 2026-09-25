@@ -283,3 +283,26 @@ def test_cambiar_password_obligatorio_cliente_inexistente():
     client = FakeSupabaseClient()
     with pytest.raises(ValueError):
         cuentas.cambiar_password_obligatorio(client, "id-que-no-existe", "claveNueva1")
+
+
+def test_obtener_cliente_incluye_estado_de_fidelidad():
+    fake = FakeSupabaseClient()
+    fake.table("clientes").insert({
+        "id": "cliente-1", "nombre": "Juan", "apellido": "Pérez",
+        "sellos_fidelidad": 3, "fidelidad_ultimo_codigo": "TTRA-X",
+    }).execute()
+
+    perfil = cuentas.obtener_cliente(fake, "cliente-1")
+
+    assert perfil["sellos_fidelidad"] == 3
+    assert perfil["fidelidad_ultimo_codigo"] == "TTRA-X"
+
+
+def test_obtener_cliente_sin_columnas_de_fidelidad_arranca_en_cero():
+    fake = FakeSupabaseClient()
+    fake.table("clientes").insert({"id": "cliente-1", "nombre": "Juan", "apellido": "Pérez"}).execute()
+
+    perfil = cuentas.obtener_cliente(fake, "cliente-1")
+
+    assert perfil["sellos_fidelidad"] == 0
+    assert perfil["fidelidad_ultimo_codigo"] is None

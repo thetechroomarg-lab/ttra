@@ -99,3 +99,8 @@ input:disabled { opacity: .6; cursor: not-allowed; }
   color: var(--rc-green-bright); border-color: var(--rc-green);
   box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
 }
+
+.fidelidad-sellos { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.fidelidad-sello { font-size: 28px; line-height: 1; color: var(--rc-green-faint); }
+.fidelidad-sello.lleno { color: var(--rc-green-bright); }
+.fidelidad-ayuda { flex-basis: 100%; margin: 4px 0 0; font-size: 12px; color: var(--rc-green-dim); }
