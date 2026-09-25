@@ -41,8 +41,13 @@ function style(doc) {
 await style(document);
 // El globito de "10 clicks -> álbum de fotos" es solo para clientes logueados;
 // invitados siguen viendo el resto de las reacciones (joy, ataque a los 3 clicks).
-let ttraLoggedIn=false;
-fetch('/api/me').then(r=>{ttraLoggedIn=r.ok;}).catch(()=>{});
+// La sesión puede cambiar sin recargar esta página (login en el panel o
+// navegando dentro del shell), así que se vuelve a consultar al navegar y al
+// empezar cada ráfaga de toques; para el décimo toque ya está resuelta.
+let ttraLoggedIn=false,lastTap=0;
+function refreshSession(){fetch('/api/me',{cache:'no-store'}).then(r=>{ttraLoggedIn=r.ok;}).catch(()=>{});}
+function noteTap(now){if(now-lastTap>1500)refreshSession();lastTap=now;}
+refreshSession();
 const portal=document.createElement('div');portal.id='ttra-header-cat-portal';
 const cat=document.createElement('div');cat.id='ttra-header-cat';cat.setAttribute('role','button');cat.tabIndex=0;cat.setAttribute('aria-label','Acariciar al gatito');cat.innerHTML=catArtwork+'<span class="ttra-cat-zzz"><span>Z</span><span>Z</span><span>Z</span></span>';
 cat.style.setProperty('--cat-clock',`${-(Date.now()-state.epoch)/1000}s`);
@@ -61,8 +66,8 @@ function makeCompanion(id, artwork, label, s, persistFn, useInteract, getBubble)
   let pointerKindLocal='mouse';
   el.addEventListener('pointerdown',event=>{pointerKindLocal=event.pointerType;});
   function react(pointer='keyboard',detail=1) {
-    const now=Date.now();
-    if(useInteract && ttraLoggedIn)interact(s,now,pointer,detail);else pet(s,now);
+    const now=Date.now();noteTap(now);
+    if(useInteract)interact(s,now,pointer,detail,ttraLoggedIn);else pet(s,now);
     persistFn();render();renderFendi();renderBitu();start();
     if(useInteract && s.phase.kind==='introduce')getBubble().querySelector('a').focus({preventScroll:true});
   }
@@ -75,8 +80,7 @@ const catBitu=makeCompanion('ttra-header-cat-bitu',bituArtwork,'Acariciar a Bitu
 portal.append(cat,catFendi,catBitu);document.body.append(portal);
 const door3d=createDoor();
 // Globito de "encontraste mi álbum secreto" a los 10 clicks/taps seguidos
-// (ver interact() en header-cat-state.mjs). Fábrica reusada por Vaiven y
-// Bitu -Fendi todavía no tiene esta escalada, a propósito-.
+// (ver interact() en header-cat-state.mjs). Fábrica reusada por los tres gatos.
 function makeIntroBubble(id,s,persistFn,renderFn,focusEl,albumPath,accessPath) {
   const el=document.createElement('div');el.id=id;el.className='ttra-cat-introduction';el.hidden=true;
   el.innerHTML='<a href="'+albumPath+'">Mirá, este soy yo</a><button type="button" aria-label="Cerrar el globo">×</button>';
@@ -178,12 +182,13 @@ function toggle() {
   persist();persistFendi();persistBitu();lastPose='';lastPoseFendi='';lastPoseBitu='';render();renderFendi();renderBitu();start();
 }
 function caress(pointer='keyboard',detail=1) {
-  const now=Date.now();advance(state,now,geometry||{});if(ttraLoggedIn)interact(state,now,pointer,detail);else pet(state,now);persist();render();start();
+  const now=Date.now();noteTap(now);advance(state,now,geometry||{});interact(state,now,pointer,detail,ttraLoggedIn);persist();render();start();
   if(state.phase.kind==='introduce')bubble.querySelector('a').focus({preventScroll:true});
 }
 function reward() { celebrate(state,Date.now());persist();start(); }
 async function attach(doc) {
   if(doc!==document && !navigation.accepts(doc))return;
+  refreshSession();
   if(doc.querySelector('body.vaiven-page #vaiven-album, body.bitu-page #bitu-album, body.fendi-page #fendi-album')){
     resize?.disconnect();observer?.disconnect();current=null;geometry=null;
     cancelAnimationFrame(raf);raf=0;portal.hidden=true;bubble.hidden=true;bubbleBitu.hidden=true;bubbleFendi.hidden=true;

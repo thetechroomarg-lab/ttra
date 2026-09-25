@@ -5086,6 +5086,9 @@ def api_codigos_promo_consumir(entrada: CodigoPromoIn, request: Request):
 
 @app.post("/vaiven/acceso")
 def habilitar_album_vaiven(request: Request):
+    if not _sesion_activa(request):
+        return JSONResponse({"error": "Sesión requerida"}, status_code=401,
+                            headers={"Cache-Control": "no-store"})
     access = secrets.token_urlsafe(24)
     request.session["vaiven_access"] = {"value": access, "expires": time.time() + 120}
     return JSONResponse({"access": access}, headers={"Cache-Control": "no-store"})
@@ -5097,7 +5100,7 @@ def habilitar_album_vaiven(request: Request):
 def pagina_vaiven(request: Request):
     grant = request.session.get("vaiven_access", {})
     access = request.query_params.get("access", "")
-    allowed = (bool(access) and access.isascii() and isinstance(grant, dict)
+    allowed = (_sesion_activa(request) and bool(access) and access.isascii() and isinstance(grant, dict)
                and grant.get("expires", 0) > time.time()
                and secrets.compare_digest(access, grant.get("value", "")))
     if not allowed:
@@ -5109,6 +5112,9 @@ def pagina_vaiven(request: Request):
 
 @app.post("/bitu/acceso")
 def habilitar_album_bitu(request: Request):
+    if not _sesion_activa(request):
+        return JSONResponse({"error": "Sesión requerida"}, status_code=401,
+                            headers={"Cache-Control": "no-store"})
     access = secrets.token_urlsafe(24)
     request.session["bitu_access"] = {"value": access, "expires": time.time() + 120}
     return JSONResponse({"access": access}, headers={"Cache-Control": "no-store"})
@@ -5120,7 +5126,7 @@ def habilitar_album_bitu(request: Request):
 def pagina_bitu(request: Request):
     grant = request.session.get("bitu_access", {})
     access = request.query_params.get("access", "")
-    allowed = (bool(access) and access.isascii() and isinstance(grant, dict)
+    allowed = (_sesion_activa(request) and bool(access) and access.isascii() and isinstance(grant, dict)
                and grant.get("expires", 0) > time.time()
                and secrets.compare_digest(access, grant.get("value", "")))
     if not allowed:
@@ -5132,6 +5138,9 @@ def pagina_bitu(request: Request):
 
 @app.post("/fendi/acceso")
 def habilitar_album_fendi(request: Request):
+    if not _sesion_activa(request):
+        return JSONResponse({"error": "Sesión requerida"}, status_code=401,
+                            headers={"Cache-Control": "no-store"})
     access = secrets.token_urlsafe(24)
     request.session["fendi_access"] = {"value": access, "expires": time.time() + 120}
     return JSONResponse({"access": access}, headers={"Cache-Control": "no-store"})
@@ -5143,7 +5152,7 @@ def habilitar_album_fendi(request: Request):
 def pagina_fendi(request: Request):
     grant = request.session.get("fendi_access", {})
     access = request.query_params.get("access", "")
-    allowed = (bool(access) and access.isascii() and isinstance(grant, dict)
+    allowed = (_sesion_activa(request) and bool(access) and access.isascii() and isinstance(grant, dict)
                and grant.get("expires", 0) > time.time()
                and secrets.compare_digest(access, grant.get("value", "")))
     if not allowed:
