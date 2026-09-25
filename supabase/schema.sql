@@ -31,6 +31,11 @@ alter table clientes add column if not exists direccion text;
 -- Fecha en que una cuenta mayorista aceptó las condiciones comerciales
 -- para revendedores (popup obligatorio en la landing). Null = no aceptadas.
 alter table clientes add column if not exists condiciones_mayorista_aceptadas_en timestamptz;
+-- Programa de fidelización: sube de a 1 por cada entrega completada de un
+-- pedido con cuenta. Llega a 5 y se congela ahí hasta que el cliente use el
+-- código de fidelidad_ultimo_codigo; recién entonces vuelve a 0.
+alter table clientes add column if not exists sellos_fidelidad integer not null default 0;
+alter table clientes add column if not exists fidelidad_ultimo_codigo text;
 
 -- Domicilios guardados por cliente para el checkout (hasta 5, uno
 -- predeterminado). La columna clientes.direccion se mantiene aparte: la
@@ -98,6 +103,9 @@ alter table pedidos add column if not exists observaciones_cadete text;
 -- solo buscar el texto de la dirección. Null si no se pudo capturar.
 alter table pedidos add column if not exists lat double precision;
 alter table pedidos add column if not exists lng double precision;
+-- Marca cuándo se mandó el mail de seguimiento post-entrega (7 días después
+-- de enviar el recibo). Null hasta que el envío tiene éxito.
+alter table pedidos add column if not exists seguimiento_enviado_en timestamptz;
 create unique index if not exists pedidos_recibo_id_unico
   on pedidos (recibo_id) where recibo_id is not null;
 create index if not exists pedidos_fecha_orden_entrega_idx
