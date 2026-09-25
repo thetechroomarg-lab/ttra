@@ -10,7 +10,7 @@ class EnvioEmailError(Exception):
     pass
 
 
-def enviar_email(destinatario, asunto, html, adjuntos=None):
+def enviar_email(destinatario, asunto, html, adjuntos=None, reply_to=None):
     api_key = os.environ.get("RESEND_API_KEY")
     if not api_key:
         raise EnvioEmailError("RESEND_API_KEY no configurado")
@@ -19,6 +19,7 @@ def enviar_email(destinatario, asunto, html, adjuntos=None):
         headers={"Authorization": f"Bearer {api_key}"},
         json={
             "from": REMITENTE, "to": [destinatario], "subject": asunto, "html": html,
+            **({"reply_to": [reply_to]} if reply_to else {}),
             "attachments": [
                 {"filename": adjunto["filename"], "content": base64.b64encode(adjunto["content"]).decode("ascii")}
                 for adjunto in (adjuntos or [])
