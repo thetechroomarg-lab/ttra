@@ -427,6 +427,34 @@ def test_pedido_aplica_y_consume_codigo_mailing_despues_de_guardar(monkeypatch):
     assert fake.rpc_calls[-1][0] == "guardar_pedido_con_descuento_mailing"
 
 
+def test_usar_codigo_de_fidelidad_resetea_el_ciclo(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
+    fake.table("clientes").update({
+        "sellos_fidelidad": 5, "fidelidad_ultimo_codigo": "TTRA-PREMIO01",
+    }).eq("id", cliente_id).execute()
+    fake.table("codigos_descuento").insert({
+        "cliente_id": cliente_id, "code": "TTRA-PREMIO01",
+        "productos": ["Elegible"], "descuento_usd": 20, "activo": True,
+    }).execute()
+
+    r = c.post("/api/pedidos", json={
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{
+            "nombre": "Elegible", "cantidad": 1,
+            "usd_unitario": 180, "usd_subtotal": 180,
+        }],
+        "total_usd": 160,
+        "codigo_descuento": "TTRA-PREMIO01",
+    })
+
+    assert r.status_code == 200
+    cliente = fake.table("clientes").select("*").eq("id", cliente_id).execute().data[0]
+    assert cliente["sellos_fidelidad"] == 0
+    assert cliente["fidelidad_ultimo_codigo"] is None
+
+
 def test_pedido_fallido_no_consume_codigo_mailing(monkeypatch):
     c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
     cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
