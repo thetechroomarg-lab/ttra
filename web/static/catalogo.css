@@ -205,6 +205,10 @@ body.catalog-share-open { overflow: hidden; }
 .catalog-brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); gap: 14px; }
 .catalog-brand-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 140px; padding: 22px 16px; border: 1px solid var(--ed-line); background: var(--rc-bg-panel); color: var(--rc-green-bright); font: 600 13px var(--rc-font); text-decoration: none; transition: border-color .2s, transform .2s; }
 .catalog-brand-card img { width: 48px; height: 48px; object-fit: contain; }
+/* Backlight tenue, en la familia de --ed-halo; al hover sube al halo completo. */
+html[data-modo="classic"] .catalog-brand-card { box-shadow: 0 0 0 1px #fff6e01a, 0 0 30px -8px #fff6e02e, 0 12px 32px #0000006b; transition: border-color .2s, transform .2s, box-shadow .2s; }
+html[data-modo="classic"][data-classic-theme="light"] .catalog-brand-card { box-shadow: 0 0 0 1px #20231e0a, 0 0 24px -8px #20231e1a, 0 10px 28px #20231e14; }
+html[data-modo="classic"] .catalog-brand-card:hover { box-shadow: var(--ed-halo); }
 .catalog-brand-card:hover { border-color: var(--ed-accent); transform: translateY(-3px); }
 .catalog-brand-card:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .catalog-brand-card, .catalog-brand-card:hover { transition: none; transform: none; } }
