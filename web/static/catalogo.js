@@ -111,9 +111,27 @@ function pintarFiltrosDeSeccion(nombre) {
   return base;
 }
 
+// Mismos nombres que el menú de Categorías.
+const TITULOS_SECCION = { "Todos": "Todo el catálogo", "Accesorios Celulares": "Accesorios" };
+
+// El título refleja dónde está el cliente: la categoría, o la marca si vino
+// desde "Búsqueda por marca" (catálogo completo filtrado por una marca).
+function pintarTitulo(nombre) {
+  const titulo = nombre === "Todos" && marcaActiva
+    ? etiquetaMarca(marcaActiva)
+    : (TITULOS_SECCION[nombre] || nombre);
+  const h1 = document.getElementById("catalog-title");
+  h1.textContent = titulo;
+  const punto = document.createElement("span");
+  punto.textContent = ".";
+  h1.append(punto);
+  document.title = `THE TECH ROOM ARG — ${titulo}`;
+}
+
 function pintarSeccion(nombre) {
   categoriaActiva = nombre;
   const base = pintarFiltrosDeSeccion(nombre);
+  pintarTitulo(nombre);
   const filtrarCondicion = permiteFiltroCondicion(nombre, marcaActiva);
   document.getElementById("condition-filter-field").hidden = !filtrarCondicion;
   if (!filtrarCondicion) {
