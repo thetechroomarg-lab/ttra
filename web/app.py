@@ -4078,18 +4078,18 @@ def api_aceptar_condiciones_mayorista(request: Request):
     return {"ok": True, "condiciones_mayorista_aceptadas_en": aceptadas_en}
 
 
+# Perfil y pedidos ya no tienen pantalla propia: son paneles flotantes de la
+# home. Los links viejos (favoritos, mails) abren el panel correspondiente.
 @app.get("/perfil")
-def pagina_perfil(request: Request):
-    if not _sesion_activa(request) or _debe_cambiar_password(request):
-        return RedirectResponse("/login.html")
-    return FileResponse(str(BASE / "static" / "perfil.html"))
+@app.get("/perfil.html")
+def pagina_perfil():
+    return RedirectResponse("/?panel=perfil")
 
 
 @app.get("/pedidos")
-def pagina_pedidos(request: Request):
-    if not _sesion_activa(request) or _debe_cambiar_password(request):
-        return RedirectResponse("/login.html")
-    return FileResponse(str(BASE / "static" / "pedidos.html"))
+@app.get("/pedidos.html")
+def pagina_pedidos():
+    return RedirectResponse("/?panel=pedidos")
 
 
 class DetallePedidoIn(BaseModel):

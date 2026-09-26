@@ -6,17 +6,20 @@
   if (document.body.classList.contains('fendi-page') || /^\/fendi\/?$/.test(location.pathname)) return;
   import('/adaptive-dropdowns.js');
   if (root.classList.contains('ttra-cart-embedded')) {
-    const panel = document.getElementById('panel-carrito');
+    // Home inside cart-drawer.js: whichever floating panel is open (carrito,
+    // perfil or pedidos) drives the parent dialog; all closed means close it.
+    const panels = ['panel-carrito', 'panel-perfil', 'panel-pedidos'].map((id) => document.getElementById(id));
     let opened = false;
     const syncPanel = () => {
-      if (!panel.classList.contains('oculto')) {
+      if (panels.some((panel) => !panel.classList.contains('oculto'))) {
+        if (!opened) parent.postMessage({type:'ttra:cart-ready'}, location.origin);
         opened = true;
-        parent.postMessage({type:'ttra:cart-ready'}, location.origin);
       } else if (opened) parent.postMessage({type:'ttra:cart-close'}, location.origin);
     };
-    new MutationObserver(syncPanel).observe(panel, {attributes:true,attributeFilter:['class']});
+    const observer = new MutationObserver(() => queueMicrotask(syncPanel));
+    for (const panel of panels) observer.observe(panel, {attributes:true,attributeFilter:['class']});
     syncPanel();
-    for (const id of ['btn-cerrar-carrito', 'overlay-carrito']) {
+    for (const id of ['btn-cerrar-carrito', 'overlay-carrito', 'btn-cerrar-panel-perfil', 'btn-cerrar-panel-pedidos', 'overlay-perfil']) {
       document.getElementById(id).addEventListener('click', () => parent.postMessage({type:'ttra:cart-close'}, location.origin));
     }
     document.addEventListener('keydown', (event) => {
@@ -317,8 +320,8 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="9.5" r="3.6" fill="currentColor"/><path d="M4.8 19.2c1.1-3.4 3.9-5.2 7.2-5.2s6.1 1.8 7.2 5.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
       </button>
       <div id="ttra-site-menu" class="ttra-site-menu" hidden>
-        <a class="ttra-site-profile-link" href="/perfil">Ir a perfil</a>
-        <a class="ttra-site-pedidos-link" href="/pedidos" hidden>Pedidos</a>
+        <a class="ttra-site-profile-link" href="/?panel=perfil">Ir a perfil</a>
+        <a class="ttra-site-pedidos-link" href="/?panel=pedidos" hidden>Pedidos</a>
         <button type="button" class="ttra-site-logout" hidden>Cerrar sesión</button>
         <p class="ttra-site-error" role="status" hidden></p>
       </div>
@@ -426,21 +429,39 @@
   profileLink.href = `/login.html?${loginParams}`;
   profileLink.textContent = 'Iniciar sesión';
   let sesionActiva = false;
+  // Perfil y pedidos son siempre paneles flotantes sobre esta misma página.
+  async function openPanel(panel) {
+    closeMenu();
+    try {
+      const {abrirPanelEnPagina} = await import('/cart-drawer.js');
+      abrirPanelEnPagina(toggle, panel);
+    } catch {
+      const error = accountContainer.querySelector('.ttra-site-error');
+      error.textContent = 'No pude abrir el panel. Probá de nuevo.';
+      error.hidden = false;
+      menu.hidden = false;
+    }
+  }
   profileLink.addEventListener('click', (event) => {
-    if (sesionActiva) return; // ya logueado: navega normal a /perfil
     event.preventDefault();
+    if (sesionActiva) { openPanel('perfil'); return; }
     closeMenu();
     import('/login-drawer.js').then(({ abrirLoginEnPagina }) => {
       abrirLoginEnPagina(profileLink, updateSession);
     });
   });
+  pedidosLink.addEventListener('click', (event) => {
+    event.preventDefault();
+    openPanel('pedidos');
+  });
+  window.addEventListener('ttra:session-change', updateSession);
   async function updateSession() {
     try {
       const response = await fetch('/api/me');
       if (!response.ok) return;
       const account = await response.json();
       sesionActiva = true;
-      profileLink.href = '/perfil';
+      profileLink.href = '/?panel=perfil';
       profileLink.textContent = 'Ir a perfil';
       accountContainer.querySelector('.ttra-site-initials').textContent =
         [account.nombre, account.apellido].map((name) => (name || '').trim().charAt(0).toUpperCase()).join('');

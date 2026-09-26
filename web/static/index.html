@@ -18,7 +18,7 @@
       // Sin storage, la landing conserva el Classic oscuro por defecto.
     }
     const introParams = new URLSearchParams(location.search);
-    if (window.parent !== window && introParams.get('embed') === 'carrito') {
+    if (window.parent !== window && ['carrito', 'perfil', 'pedidos'].includes(introParams.get('embed'))) {
       document.documentElement.classList.add('ttra-cart-embedded');
     }
     let introSeen = false, albumReturn = null, bituAlbumReturn = null, fendiAlbumReturn = null;
@@ -176,7 +176,7 @@
             </button>
             <div id="rc-perfil-dropdown" class="rc-perfil-dropdown oculto" role="menu">
               <a id="link-ir-a-perfil" class="rc-perfil-opcion" role="menuitem">Ir a perfil</a>
-              <a id="link-ir-a-pedidos" class="rc-perfil-opcion oculto" href="/pedidos" role="menuitem">Pedidos</a>
+              <a id="link-ir-a-pedidos" class="rc-perfil-opcion oculto" href="/?panel=pedidos" role="menuitem">Pedidos</a>
               <button id="btn-logout-classic" type="button" class="rc-perfil-opcion rc-perfil-opcion-salir" role="menuitem">Cerrar sesión</button>
             </div>
           </div>

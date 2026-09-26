@@ -477,18 +477,13 @@ if (btnPerfilToggle && dropdownPerfil) {
 if (linkIrAPerfil) {
   linkIrAPerfil.addEventListener("click", (e) => {
     e.preventDefault();
-    // Classic + con sesión: abre el panel embebido (ver perfil.js) en vez
-    // de navegar a /perfil — así queda la home blureada detrás, igual que
-    // el carrito. Fallout sigue navegando a la página completa de siempre
-    // (pedido explícito: no tocar ese modo) y un invitado sigue yendo a
-    // login, en los dos casos no hay panel que abrir.
-    if (modoVisual !== "fallout" && estadoSesionCliente && typeof window.abrirPanelPerfil === "function") {
+    // Con sesión: el perfil es siempre el panel flotante (ver perfil.js),
+    // con la home blureada detrás. No existe una pantalla de perfil aparte.
+    if (estadoSesionCliente) {
       cerrarMenuPerfil();
       window.abrirPanelPerfil();
       return;
     }
-    const destinoPerfil = modoVisual === "fallout" ? "/perfil?modo=fallout" : "/perfil";
-    if (estadoSesionCliente) { window.location.href = destinoPerfil; return; }
     const paramsLogin = new URLSearchParams({ volver: `${location.pathname}${location.search}` });
     if (modoVisual === "fallout") paramsLogin.set("modo", "fallout");
     const destinoLogin = `/login.html?${paramsLogin.toString()}`;
@@ -504,16 +499,11 @@ if (linkIrAPerfil) {
 
 if (linkIrAPedidos) {
   linkIrAPedidos.addEventListener("click", (e) => {
-    // Con sesión ya es visible (ver sincronizarMenuPerfilSegunSesion más
-    // abajo), así que acá siempre hay sesión. Mismo criterio que "Ir a
-    // perfil": en Classic abre el panel embebido (ver pedidos.js) en vez
-    // de navegar afuera de la landing; Fallout sigue navegando de siempre.
-    if (modoVisual === "fallout") return;
-    if (typeof window.abrirPanelPedidos === "function") {
-      e.preventDefault();
-      cerrarMenuPerfil();
-      window.abrirPanelPedidos();
-    }
+    // Solo es visible con sesión (ver sincronizarMenuPerfilSegunSesion).
+    // Igual que el perfil: siempre el panel flotante (ver pedidos.js).
+    e.preventDefault();
+    cerrarMenuPerfil();
+    window.abrirPanelPedidos();
   });
 }
 
@@ -2978,8 +2968,10 @@ cargarCatalogo().then(async () => {
   } else abrirProductoCompartido();
   await procesarLinkMailing();
   const parametrosPanel = new URLSearchParams(location.search);
-  if (parametrosPanel.get("panel") === "carrito") {
-    abrirCarrito();
+  const panelPedido = parametrosPanel.get("panel");
+  const abrirPanel = { carrito: abrirCarrito, perfil: window.abrirPanelPerfil, pedidos: window.abrirPanelPedidos }[panelPedido];
+  if (abrirPanel) {
+    abrirPanel();
     parametrosPanel.delete("panel");
     const query = parametrosPanel.toString();
     history.replaceState(history.state, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);

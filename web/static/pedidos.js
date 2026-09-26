@@ -1,8 +1,5 @@
-// Este script sirve dos contextos, igual que perfil.js:
-// 1) /pedidos standalone (link-volver existe): carga apenas corre el script.
-// 2) Panel embebido en index.html (panel-pedidos existe): NO carga nada
-//    hasta que se llama a window.abrirPanelPedidos() (ver landing.js), y
-//    "cerrar" oculta el panel en vez de navegar.
+// Panel flotante de pedidos (#panel-pedidos en index.html), igual que
+// perfil.js: no carga nada hasta que se llama a window.abrirPanelPedidos().
 const panelPedidosEmbebido = document.getElementById("panel-pedidos");
 const btnCerrarPanelPedidos = document.getElementById("btn-cerrar-panel-pedidos");
 const overlayPedidosEmbebido = document.getElementById("overlay-perfil");
@@ -112,7 +109,7 @@ async function cargarPedidos() {
   try {
     const r = await fetch("/api/pedidos");
     if (r.status === 401) {
-      window.location.href = "/login.html";
+      pedirLoginDesdePanel("pedidos");
       return;
     }
     if (!r.ok) return;
@@ -188,8 +185,6 @@ formEditarDireccionPedido.addEventListener("submit", async (e) => {
 });
 
 if (panelPedidosEmbebido) {
-  // Embebido: no se carga nada hasta que el usuario realmente abre el
-  // panel (ver linkIrAPedidos en landing.js).
   window.abrirPanelPedidos = function abrirPanelPedidos() {
     // Comparten la misma franja "flotante sobre la home blureada" que el
     // carrito y el perfil -no tiene sentido ver más de uno a la vez.
@@ -200,7 +195,4 @@ if (panelPedidosEmbebido) {
     if (overlayPedidosEmbebido) overlayPedidosEmbebido.classList.remove("oculto");
     cargarPedidos();
   };
-} else {
-  // Standalone (/pedidos): comportamiento de siempre.
-  cargarPedidos();
 }

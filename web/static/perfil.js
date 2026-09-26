@@ -1,13 +1,8 @@
-// Este script sirve dos contextos:
-// 1) /perfil.html standalone (link-volver existe): se comporta como
-//    siempre, cargando el perfil apenas el script corre.
-// 2) Panel embebido en index.html (panel-perfil existe, ver
-//    #panel-perfil/landing.js): NO carga nada hasta que se llama a
-//    window.abrirPanelPerfil() -evita pegarle a /api/me y redirigir a un
-//    invitado a login.html solo porque este script está en la página-, y
-//    "cerrar" oculta el panel en vez de navegar.
+// Panel flotante de perfil (#panel-perfil en index.html). No carga nada
+// hasta que se llama a window.abrirPanelPerfil(), para no pegarle a /api/me
+// en cada carga de la home. En otras páginas se abre dentro del <dialog> de
+// cart-drawer.js, con la home embebida en un iframe.
 const panelPerfilEmbebido = document.getElementById("panel-perfil");
-const linkVolver = document.getElementById("link-volver");
 const btnCerrarPanelPerfil = document.getElementById("btn-cerrar-panel-perfil");
 const overlayPerfilEmbebido = document.getElementById("overlay-perfil");
 const domicilioDireccionInput = document.getElementById("domicilio-direccion");
@@ -24,8 +19,25 @@ const btnCancelarEdicionDomicilio = document.getElementById("btn-cancelar-edicio
 let temporizadorPerfilDireccion;
 let apiPlacesPerfil;
 let domicilioEnEdicionId = null;
-if (linkVolver && document.documentElement.getAttribute("data-modo") === "fallout") {
-  linkVolver.href = "/?modo=fallout";
+
+// Sesión vencida con un panel abierto (p. ej. el celular quedó horas en
+// pausa): se pide el login en el modal y se vuelve al mismo panel, nunca a
+// una pantalla completa.
+function pedirLoginDesdePanel(panel) {
+  if (document.documentElement.classList.contains("ttra-cart-embedded")) {
+    parent.postMessage({ type: "ttra:panel-login", panel }, location.origin);
+    return;
+  }
+  cerrarPanelPerfil();
+  if (typeof cerrarPanelPedidos === "function") cerrarPanelPedidos();
+  const disparador = document.getElementById("btn-perfil-toggle") || document.body;
+  import("/login-drawer.js").then(({ abrirLoginEnPagina }) => {
+    abrirLoginEnPagina(disparador, () => {
+      const url = new URL(location.href);
+      url.searchParams.set("panel", panel);
+      location.href = url.toString();
+    });
+  });
 }
 
 function cerrarPanelPerfil() {
@@ -253,7 +265,7 @@ async function cargarPerfil() {
   try {
     const r = await fetch("/api/me");
     if (r.status === 401) {
-      window.location.href = "/login.html";
+      pedirLoginDesdePanel("perfil");
       return;
     }
     const datos = await r.json();
@@ -355,10 +367,6 @@ async function cargarDomicilios() {
 }
 
 if (panelPerfilEmbebido) {
-  // Embebido: no se carga nada hasta que el usuario realmente abre el
-  // panel (ver btn-perfil-toggle -> linkIrAPerfil en landing.js), para no
-  // pegarle a /api/me -y de paso redirigir a un invitado a login.html- en
-  // cada carga de la home solo porque este script está en la página.
   window.abrirPanelPerfil = function abrirPanelPerfil() {
     // Cierra el carrito si estaba abierto: los dos comparten la franja
     // "flotante sobre la home blureada" y no tiene sentido ver ambos
@@ -374,10 +382,6 @@ if (panelPerfilEmbebido) {
     cargarPerfil();
     cargarDomicilios();
   };
-} else {
-  // Standalone (/perfil.html): comportamiento de siempre.
-  cargarPerfil();
-  cargarDomicilios();
 }
 
 const formPerfil = document.getElementById("form-perfil");
