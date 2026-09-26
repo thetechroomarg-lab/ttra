@@ -159,11 +159,37 @@ function sendAllHome(now) {
   }
   duet=null;
 }
+// Salida automática: a los 10 s de estar en la web sale Vaiven y después
+// otra cada 5 s. El reloj arranca con la visita (o al terminar la bienvenida)
+// y sigue entre páginas vía sessionStorage.
+const AUTO_KEY='ttra_header_cat_auto_v1',AUTO_FIRST=10000,AUTO_GAP=5000;
+let auto=null,autoTimer=0;
+try{const saved=JSON.parse(sessionStorage.getItem(AUTO_KEY)||'null');if(Number.isFinite(saved?.t0)&&typeof saved.stopped==='boolean')auto=saved;}catch{}
+function persistAuto(){try{sessionStorage.setItem(AUTO_KEY,JSON.stringify(auto));}catch{}}
+function welcomePending(){const c=document.documentElement.classList;return c.contains('ttra-welcome-pending')&&!c.contains('ttra-welcome-dismissed');}
+function refreshCats(){persist();persistFendi();persistBitu();lastPose='';lastPoseFendi='';lastPoseBitu='';render();renderFendi();renderBitu();start();}
+function scheduleAuto(){
+  clearTimeout(autoTimer);autoTimer=0;
+  if(!current||welcomePending())return;
+  // Cuenta desde que se abrió la página, no desde que cargó este módulo.
+  if(!auto){auto={t0:Math.round(performance.timeOrigin)||Date.now(),stopped:false};persistAuto();}
+  const out=companions.filter(c=>c.s().active).length;
+  if(auto.stopped||out>=companions.length)return;
+  autoTimer=setTimeout(releaseNext,Math.max(0,auto.t0+AUTO_FIRST+out*AUTO_GAP-Date.now()));
+}
+function releaseNext(){
+  autoTimer=0;
+  const next=companions.find(c=>!c.s().active);
+  if(!current||auto?.stopped||!next)return;
+  if(companions.some(c=>c.s().phase.kind==='return')){autoTimer=setTimeout(releaseNext,500);return;}
+  const now=Date.now();
+  advance(next.s(),now,geometry||{});toggleState(next.s(),now,geometry?.travel||0);
+  refreshCats();scheduleAuto();
+}
 function toggle() {
-  // La puerta es un ciclo de 4 toques: 1) sale Vaiven, 2) sale Fendi, 3)
-  // sale Bitu, 4) las tres vuelven adentro juntas. Ninguna vuelve a entrar
-  // sola mientras otra sigue afuera -no tendría sentido dejarla "sola en
-  // la calle"-, así que el último toque las manda a las tres.
+  // Con alguna afuera, el logo manda a las tres a casa juntas y corta la
+  // salida automática por el resto de la visita. Con las tres adentro, el
+  // logo las vuelve a sacar: una ya y las otras cada 5 s.
   // Mientras cualquiera está entrando o volviendo, la puerta no responde
   // -tocarla ahí reiniciaba a la que ya estaba "afuera según el estado" de
   // vuelta a 'enter' desde x=0, aunque en pantalla todavía estuviera a
@@ -172,14 +198,16 @@ function toggle() {
   // entrar/volver del todo.
   if([state,fendiState,bituState].some(s=>['enter','return'].includes(s.phase.kind)))return;
   const now=Date.now();
-  const next=companions.find(c=>!c.s().active);
-  if(next) {
-    advance(next.s(),now,geometry||{});toggleState(next.s(),now,geometry?.travel||0);
+  clearTimeout(autoTimer);autoTimer=0;
+  if(companions.some(c=>c.s().active)) {
+    sendAllHome(now);auto={t0:auto?.t0??now,stopped:true};
   } else {
-    sendAllHome(now);
+    auto={t0:now-AUTO_FIRST,stopped:false};
+    advance(state,now,geometry||{});toggleState(state,now,geometry?.travel||0);
   }
+  persistAuto();
   try{localStorage.setItem(PREF,state.active?'1':'0');}catch{}
-  persist();persistFendi();persistBitu();lastPose='';lastPoseFendi='';lastPoseBitu='';render();renderFendi();renderBitu();start();
+  refreshCats();scheduleAuto();
 }
 function caress(pointer='keyboard',detail=1) {
   const now=Date.now();noteTap(now);advance(state,now,geometry||{});interact(state,now,pointer,detail,ttraLoggedIn);persist();render();start();
@@ -191,6 +219,7 @@ async function attach(doc) {
   refreshSession();
   if(doc.querySelector('body.vaiven-page #vaiven-album, body.bitu-page #bitu-album, body.fendi-page #fendi-album')){
     resize?.disconnect();observer?.disconnect();current=null;geometry=null;
+    clearTimeout(autoTimer);autoTimer=0;
     cancelAnimationFrame(raf);raf=0;portal.hidden=true;bubble.hidden=true;bubbleBitu.hidden=true;bubbleFendi.hidden=true;
     dismissIntroduction(state,Date.now());dismissIntroduction(bituState,Date.now());dismissIntroduction(fendiState,Date.now());
     persist();persistBitu();persistFendi();return;
@@ -238,6 +267,7 @@ async function attach(doc) {
   syncTheme();measure();render();renderFendi();renderBitu();start();
   if(pageDoc.location.pathname==='/' && pageDoc.defaultView.__TTRA_VAIVEN_RETURN){
     pageDoc.defaultView.__TTRA_VAIVEN_RETURN=null;
+    auto={t0:auto?.t0??Date.now(),stopped:true};persistAuto();
     // toggle() asume el orden secuencial de la puerta (activaría a la
     // siguiente inactiva en vez de mandar a Vaiven a casa si él salió
     // solo); sendAllHome() manda a casa solo a quien esté afuera de verdad.
@@ -252,6 +282,7 @@ async function attach(doc) {
   }
   if(pageDoc.location.pathname==='/' && pageDoc.defaultView.__TTRA_BITU_RETURN){
     pageDoc.defaultView.__TTRA_BITU_RETURN=null;
+    auto={t0:auto?.t0??Date.now(),stopped:true};persistAuto();
     if(bituState.active)sendAllHome(Date.now());
     for(const s of [state,fendiState,bituState]) {
       if(s.phase.kind==='return') {
@@ -263,6 +294,7 @@ async function attach(doc) {
   }
   if(pageDoc.location.pathname==='/' && pageDoc.defaultView.__TTRA_FENDI_RETURN){
     pageDoc.defaultView.__TTRA_FENDI_RETURN=null;
+    auto={t0:auto?.t0??Date.now(),stopped:true};persistAuto();
     // Fendi puede estar afuera sin que Bitu lo esté (el ciclo de la puerta
     // es secuencial, Bitu es la última en salir), así que acá manda a casa
     // a quien esté afuera en vez de asumir que están las tres.
@@ -275,6 +307,7 @@ async function attach(doc) {
     }
     persist();persistFendi();persistBitu();render();renderFendi();renderBitu();start();
   }
+  scheduleAuto();
 }
 function syncTheme(){
   if(!current)return;
@@ -571,6 +604,10 @@ function resetAfterWelcome() {
   portal.hidden=true;bubble.hidden=true;bubbleBitu.hidden=true;bubbleFendi.hidden=true;catFendi.hidden=true;catBitu.hidden=true;
   try{localStorage.removeItem(PREF);}catch{}
   persist();persistFendi();persistBitu();render();renderFendi();renderBitu();
+  auto={t0:Date.now(),stopped:false};persistAuto();
+  clearTimeout(autoTimer);autoTimer=0;
+  // Puede correr antes de que la raíz marque la bienvenida como cerrada.
+  if(current)autoTimer=setTimeout(releaseNext,AUTO_FIRST);
 }
 window.addEventListener('ttra:welcome-entered',resetAfterWelcome);
 // The intro may finish before this dynamically imported module has loaded.
