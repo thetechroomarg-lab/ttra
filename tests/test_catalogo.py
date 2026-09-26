@@ -98,3 +98,11 @@ def test_marca_de_notebooks_por_nombre():
     assert marca_de(_prod("MSI CYBORG 15 GAMING", "Notebook")) == "MSI"
     assert marca_de(_prod("A16 3VHK3US894SH Gigabyte GAMING A16", "Notebook")) == "Gigabyte"
     assert marca_de(_prod("MacBook Air M2 8GB 256GB", "Mac")) == "Apple"
+
+
+def test_marca_de_relojes_no_apple_en_categoria_watch():
+    assert marca_de(_prod("APPLEWATCH S10 42MM GPS", "Apple - Watch")) == "Apple"
+    assert marca_de(_prod("Apple Watch Series 11 42 mm GPS", "Apple - Watch")) == "Apple"
+    assert marca_de(_prod("Xiaomi Redmi Watch 6", "Apple - Watch")) == "Xiaomi"
+    assert marca_de(_prod("Watch Xiaomi Band 7", "Apple - Watch")) == "Xiaomi"
+    assert marca_de(_prod("Haylou Watch 4", "Apple - Watch")) == "Otras marcas"

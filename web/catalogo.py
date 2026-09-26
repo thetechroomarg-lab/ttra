@@ -110,9 +110,12 @@ _MARCA_POR_CATEGORIA = {
 
 def marca_de(producto):
     categoria = producto.get("categoria", "")
-    if categoria in _MARCA_POR_CATEGORIA:
-        return _MARCA_POR_CATEGORIA[categoria]
     nombre = producto.get("nombre", "")
+    # El pipeline manda todo reloj a "Apple - Watch" (Xiaomi, Haylou, ...):
+    # ahí solo es Apple si el nombre lo dice.
+    ambigua = categoria == "Apple - Watch" and not re.search(r"(?i)apple", nombre)
+    if categoria in _MARCA_POR_CATEGORIA and not ambigua:
+        return _MARCA_POR_CATEGORIA[categoria]
     for patron, marca in _MARCA_POR_PALABRA:
         if patron.search(nombre):
             return marca
