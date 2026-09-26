@@ -583,3 +583,13 @@ html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc
 html[data-modo="classic"][data-classic-theme="light"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-logout-tarjeta, .rc-terminos-tarjeta, #rc-perfil-dropdown) {
   box-shadow: var(--ed-halo);
 }
+/* Confirmation dialogs (logout, session closed, terms, edit address) get the
+   same blurred scrim as the cart so the page steps back behind the choice. */
+html[data-modo="classic"] :is(.rc-logout-overlay, .rc-terminos-overlay) {
+  background: rgba(16, 20, 24, .35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+html[data-modo="classic"][data-classic-theme="light"] :is(.rc-logout-overlay, .rc-terminos-overlay) {
+  background: rgba(16, 33, 79, .18);
+}
