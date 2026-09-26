@@ -184,7 +184,7 @@ html[data-modo="classic"] .ttra-dock {
   border: 1px solid color-mix(in srgb, var(--rc-green) 20%, transparent); border-radius: 28px;
   background: color-mix(in srgb, var(--rc-bg-panel) 90%, transparent);
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 14px 44px #00000045, inset 0 1px 0 #ffffff12;
+  box-shadow: var(--ed-halo, 0 14px 44px #00000045), inset 0 1px 0 #ffffff12;
 }
 html[data-modo="classic"] .ttra-dock :is(.rc-modo-y-carrito, .ttra-site-actions) {
   display: grid; grid-template-columns: repeat(5, 48px); gap: 8px;

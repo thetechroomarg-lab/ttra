@@ -565,3 +565,21 @@ html[data-modo="classic"] .ttra-hero { grid-template-columns: 1fr; min-height: a
     margin: 32px auto 10px;
   }
 }
+
+/* Floating surfaces: a faint warm backlight separates panels, menus and
+   dialogs from the near-black page. The ring defines the edge; the glow and
+   the deep shadow give lift without turning into a neon effect. */
+html[data-modo="classic"] {
+  --ed-halo: 0 0 0 1px #fff6e026, 0 0 44px -6px #fff6e038, 0 0 110px -24px #fff6e024, 0 22px 60px #000000a6;
+  --ed-halo-reach: -48px;
+}
+html[data-modo="classic"][data-classic-theme="light"] {
+  --ed-halo: 0 0 0 1px #20231e0f, 0 0 30px -8px #20231e1f, 0 18px 48px #20231e24;
+}
+html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-logout-tarjeta, .rc-terminos-tarjeta, .ttra-auth-form-wrap .tarjeta,
+  #rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, #sugerencias-direccion, #perfil-sugerencias-direccion, .registro-sugerencias-direccion,
+  .ttra-dock-category-panel, .ttra-dock-label, .ttra-cart-loading, .ttra-login-loading, .rc-panel-compartir-contenido, #catalog-share,
+  #rc-aviso-flotante, .ttra-cart-feedback, .ttra-cart-flight),
+html[data-modo="classic"][data-classic-theme="light"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-logout-tarjeta, .rc-terminos-tarjeta, #rc-perfil-dropdown) {
+  box-shadow: var(--ed-halo);
+}

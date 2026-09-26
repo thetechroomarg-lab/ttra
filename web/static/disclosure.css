@@ -1,8 +1,9 @@
 /* Shared disclosure motion. Existing controls keep their state and events. */
 html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, #sugerencias-direccion, #perfil-sugerencias-direccion, .ttra-dock-category-panel) {
-  --disclosure-closed: inset(0 0 100% 0 round 8px);
+  /* Clip extends past the box so the floating halo is not cut off. */
+  --disclosure-closed: inset(var(--ed-halo-reach, 0px) var(--ed-halo-reach, 0px) 100% var(--ed-halo-reach, 0px) round 8px);
   opacity: 1;
-  clip-path: inset(0 round 8px);
+  clip-path: inset(var(--ed-halo-reach, 0px) round 8px);
   border: 1px solid var(--ed-line);
   border-radius: 8px;
   background: var(--rc-bg-panel);
@@ -10,7 +11,7 @@ html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-co
   transition: opacity .22s ease, clip-path .26s cubic-bezier(.22,1,.36,1), display .26s allow-discrete, overlay .26s allow-discrete;
 }
 html[data-modo="classic"] :is([data-ttra-menu][data-placement="top"], .ttra-dock-category-panel) {
-  --disclosure-closed: inset(100% 0 0 0 round 8px);
+  --disclosure-closed: inset(100% var(--ed-halo-reach, 0px) var(--ed-halo-reach, 0px) var(--ed-halo-reach, 0px) round 8px);
 }
 html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, #sugerencias-direccion, #perfil-sugerencias-direccion, .ttra-dock-category-panel):is([hidden], .oculto) {
   opacity: 0;
@@ -62,14 +63,14 @@ html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-co
     border-radius: 8px;
     background: var(--rc-bg-panel);
     color: var(--rc-green);
-    box-shadow: 0 10px 28px #0003;
+    box-shadow: var(--ed-halo, 0 10px 28px #0003);
     opacity: 0;
-    clip-path: inset(0 0 100% 0 round 8px);
+    clip-path: inset(var(--ed-halo-reach, 0px) var(--ed-halo-reach, 0px) 100% var(--ed-halo-reach, 0px) round 8px);
     transition: opacity .22s ease, clip-path .26s cubic-bezier(.22,1,.36,1), display .26s allow-discrete, overlay .26s allow-discrete;
   }
-  html[data-modo="classic"] select:not([multiple]):not([size]):open::picker(select) { opacity: 1; clip-path: inset(0 round 8px); }
+  html[data-modo="classic"] select:not([multiple]):not([size]):open::picker(select) { opacity: 1; clip-path: inset(var(--ed-halo-reach, 0px) round 8px); }
   @starting-style {
-    html[data-modo="classic"] select:not([multiple]):not([size]):open::picker(select) { opacity: 0; clip-path: inset(0 0 100% 0 round 8px); }
+    html[data-modo="classic"] select:not([multiple]):not([size]):open::picker(select) { opacity: 0; clip-path: inset(var(--ed-halo-reach, 0px) var(--ed-halo-reach, 0px) 100% var(--ed-halo-reach, 0px) round 8px); }
   }
   html[data-modo="classic"] select:not([multiple]):not([size]) option {
     min-height: 44px;
