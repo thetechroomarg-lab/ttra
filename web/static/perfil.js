@@ -145,6 +145,28 @@ function mostrarSeccionCondicionesMayorista(datos) {
   }
 }
 
+// Sello de goma "LEALTAD": borde dentado, anillo, cinta cruzada y tinta gastada.
+// Se define una sola vez por página y cada sello lo reusa con <use>.
+function asegurarDibujoSello() {
+  if (document.getElementById("ttra-sello-lealtad")) return;
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  defs.setAttribute("aria-hidden", "true");
+  defs.setAttribute("class", "fidelidad-defs");
+  defs.innerHTML =
+    '<defs><filter id="ttra-sello-tinta" x="0" y="0" width="100%" height="100%">' +
+    '<feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="2" seed="11" result="ruido"/>' +
+    '<feColorMatrix in="ruido" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -22 0 0 0 15.6" result="gastado"/>' +
+    '<feComposite in="SourceGraphic" in2="gastado" operator="in"/></filter>' +
+    '<symbol id="ttra-sello-lealtad" viewBox="0 0 100 100"><g filter="url(#ttra-sello-tinta)">' +
+    '<path fill-rule="evenodd" style="fill:var(--sello-tinta)" d="M50 2L55.12 7.81L61.49 3.39L65.07 10.26L72.31 7.5L74.14 15.02L81.83 14.07L81.81 21.82L89.5 22.73L87.63 30.25L94.88 32.98L91.27 39.83L97.65 44.21L92.5 50L97.65 55.79L91.27 60.17L94.88 67.02L87.63 69.75L89.5 77.27L81.81 78.18L81.83 85.93L74.14 84.98L72.31 92.5L65.07 89.74L61.49 96.61L55.12 92.19L50 98L44.88 92.19L38.51 96.61L34.93 89.74L27.69 92.5L25.86 84.98L18.17 85.93L18.19 78.18L10.5 77.27L12.37 69.75L5.12 67.02L8.73 60.17L2.35 55.79L7.5 50L2.35 44.21L8.73 39.83L5.12 32.98L12.37 30.25L10.5 22.73L18.19 21.82L18.17 14.07L25.86 15.02L27.69 7.5L34.93 10.26L38.51 3.39L44.88 7.81ZM13 50a37 37 0 1 0 74 0a37 37 0 1 0-74 0ZM19 50a31 31 0 1 0 62 0a31 31 0 1 0-62 0Z"/>' +
+    '<g style="fill:var(--sello-papel)"><path d="M50 26l1.8 3.7 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z"/>' +
+    '<path d="M50 64l1.8 3.7 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z"/></g>' +
+    '<g transform="rotate(-14 50 50)"><path style="fill:var(--sello-cinta)" d="M-2 40.5H102L96 50L102 59.5H-2L4 50Z"/>' +
+    '<text x="50" y="54.6" text-anchor="middle" style="fill:var(--sello-papel);font:900 13px/1 Arial Black,Arial,sans-serif;letter-spacing:.5px">LEALTAD</text></g>' +
+    '</g></symbol></defs>';
+  document.body.append(defs);
+}
+
 function mostrarTarjetaFidelidad(datos) {
   const contenedorSellos = document.getElementById("fidelidad-sellos");
   const mensajePremio = document.getElementById("fidelidad-premio");
@@ -161,13 +183,26 @@ function mostrarTarjetaFidelidad(datos) {
   }
   mensajePremio.classList.add("oculto");
   const sellos = Math.min(Number(datos.sellos_fidelidad) || 0, 5);
-  contenedorSellos.setAttribute("aria-label", `${sellos} de 5 compras`);
+  asegurarDibujoSello();
+  const fila = document.createElement("div");
+  fila.className = "fidelidad-fila";
+  fila.setAttribute("role", "img");
+  fila.setAttribute("aria-label", `${sellos} de 5 sellos`);
   for (let i = 0; i < 5; i++) {
     const sello = document.createElement("span");
-    sello.className = "fidelidad-sello" + (i < sellos ? " lleno" : "");
-    sello.textContent = i < sellos ? "★" : "☆";
-    contenedorSellos.append(sello);
+    // El último sello ganado entra "estampado" y queda girando.
+    sello.className = "fidelidad-sello" + (i < sellos ? " lleno" : "") + (i === sellos - 1 ? " nuevo" : "");
+    if (i < sellos) {
+      // Dos caras iguales: al girar en 3D se lee derecho de ambos lados.
+      sello.innerHTML =
+        '<span class="fidelidad-sello-giro"><svg class="cara" viewBox="0 0 100 100"><use href="#ttra-sello-lealtad"/></svg>' +
+        '<svg class="dorso" viewBox="0 0 100 100"><use href="#ttra-sello-lealtad"/></svg></span>';
+    } else {
+      sello.textContent = String(i + 1);
+    }
+    fila.append(sello);
   }
+  contenedorSellos.append(fila);
   const ayuda = document.createElement("p");
   ayuda.className = "fidelidad-ayuda";
   ayuda.textContent = `${sellos} de 5 compras. A la quinta te regalo US$20 de descuento.`;

@@ -96,6 +96,15 @@ def test_pedido_con_sesion_guarda_fecha_entrega_valida(monkeypatch):
     assert pedido["fecha_entrega"] == "2026-08-24"
 
 
+
+def test_hacer_un_pedido_no_suma_sello_de_fidelidad(monkeypatch):
+    # La venta recién está asegurada cuando sale el recibo: ahí se suma el sello.
+    c, fake = _cliente_con_catalogo(monkeypatch)
+    r = c.post("/api/pedidos", json={"productos": ["Elegible"], "fecha_entrega": "2026-08-24"})
+    assert r.status_code == 200
+    cliente = fake.table("clientes").select("*").execute().data[0]
+    assert int(cliente.get("sellos_fidelidad") or 0) == 0
+
 def test_pedido_guarda_el_detalle_y_total_usd_del_checkout(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
