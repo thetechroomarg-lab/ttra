@@ -119,7 +119,9 @@ const TITULOS_SECCION = { "Todos": "Todo el catálogo", "Accesorios Celulares": 
 function pintarTitulo(nombre) {
   const titulo = nombre === "Todos" && marcaActiva
     ? etiquetaMarca(marcaActiva)
-    : (TITULOS_SECCION[nombre] || nombre);
+    : nombre === SECCION_NOTEBOOKS && tipoActivo
+      ? (tipoActivo === "Mac" ? "Macbooks" : "Notebooks")
+      : (TITULOS_SECCION[nombre] || nombre);
   const h1 = document.getElementById("catalog-title");
   h1.textContent = titulo;
   const punto = document.createElement("span");
