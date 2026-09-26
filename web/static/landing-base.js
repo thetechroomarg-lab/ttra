@@ -62,7 +62,9 @@ const MARCA_LOGO = {
   "Motorola": "motorola", "Realme": "realme", "Oppo": "oppo",
   "Honor": "honor", "Infinix": "infinix", "Nokia": "nokia",
   "PlayStation": "sony", "Nintendo": "nintendo", "JBL": "jbl",
-  "Logitech": "logitech", "Itel": "itel", "Otras marcas": "otras-marcas",
+  "Logitech": "logitech", "Itel": "itel", "HP": "hp", "Lenovo": "lenovo",
+  "Asus": "asus", "Acer": "acer", "Dell": "dell", "MSI": "msi",
+  "Gigabyte": "gigabyte", "Xtrem": "xtrem", "Otras marcas": "otras-marcas",
 };
 
 // El catálogo clasifica las consolas bajo la marca "PlayStation" (viene así

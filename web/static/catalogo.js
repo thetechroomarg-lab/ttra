@@ -40,6 +40,40 @@ let SECCIONES_DATA = {};
 let categoriaActiva = "Todos";
 let marcaActiva = "";
 let condicionActiva = "";
+// Solo en "Notebooks y Macbooks": "" (todos), "Notebook" o "Mac", igual que la categoría del producto.
+let tipoActivo = "";
+
+const SECCION_NOTEBOOKS = "Notebooks y Macbooks";
+
+// Mismos logos que la "Búsqueda por Marca" de la landing (landing-base.js).
+const MARCA_LOGO = {
+  "Apple": "apple", "Samsung": "samsung", "Xiaomi": "xiaomi",
+  "Motorola": "motorola", "Realme": "realme", "Oppo": "oppo",
+  "Honor": "honor", "Infinix": "infinix", "Nokia": "nokia",
+  "PlayStation": "sony", "Nintendo": "nintendo", "JBL": "jbl",
+  "Logitech": "logitech", "Itel": "itel", "HP": "hp", "Lenovo": "lenovo",
+  "Asus": "asus", "Acer": "acer", "Dell": "dell", "MSI": "msi",
+  "Gigabyte": "gigabyte", "Xtrem": "xtrem", "Otras marcas": "otras-marcas",
+};
+const MARCA_ETIQUETA = { "PlayStation": "Sony" };
+const etiquetaMarca = (marca) => MARCA_ETIQUETA[marca] || marca;
+const marcaDe = (producto) => producto.marca || "Otras marcas";
+
+// Marcas presentes en los productos, alfabéticas y con "Otras marcas" al final.
+function marcasDe(productos) {
+  const marcas = [...new Set(productos.map(marcaDe))].filter((m) => m !== "Otras marcas")
+    .sort((a, b) => etiquetaMarca(a).localeCompare(etiquetaMarca(b), "es"));
+  return productos.some((p) => marcaDe(p) === "Otras marcas") ? [...marcas, "Otras marcas"] : marcas;
+}
+
+function productosDeCategoria(nombre) {
+  const base = nombre === "Todos"
+    ? Object.values(SECCIONES_DATA).flat()
+    : (SECCIONES_DATA[nombre] || []);
+  return nombre === SECCION_NOTEBOOKS && tipoActivo
+    ? base.filter((producto) => producto.categoria === tipoActivo)
+    : base;
+}
 
 function permiteFiltroCondicion(categoria, marca) {
   return categoria === "Celulares" && marca.toLocaleLowerCase("es") === "apple";
@@ -53,20 +87,33 @@ function condicionProducto(producto) {
 }
 
 
-function pintarMarcas() {
+// El dropdown solo ofrece las marcas de la sección (y del tipo, en notebooks).
+function pintarMarcas(productos) {
   const selector = document.getElementById("marca-filter");
-  const marcas = [...new Set(Object.values(SECCIONES_DATA).flat()
-    .map((producto) => producto.marca || "Otras marcas"))].sort((a, b) => a.localeCompare(b, "es"));
-  for (const marca of marcas) {
-    const opcion = document.createElement("option");
-    opcion.value = marca;
-    opcion.textContent = marca;
-    selector.appendChild(opcion);
-  }
+  const marcas = marcasDe(productos);
+  if (!marcas.includes(marcaActiva)) marcaActiva = "";
+  selector.replaceChildren(new Option("Todas las marcas", ""),
+    ...marcas.map((marca) => new Option(etiquetaMarca(marca), marca)));
+  selector.value = marcaActiva;
+}
+
+// En Notebooks y Macbooks primero se elige el tipo; la marca aparece solo para Notebooks.
+function pintarFiltrosDeSeccion(nombre) {
+  const esNotebooks = nombre === SECCION_NOTEBOOKS;
+  if (!esNotebooks) tipoActivo = "";
+  document.getElementById("tipo-filter-field").hidden = !esNotebooks;
+  document.getElementById("tipo-filter").value = tipoActivo;
+  const mostrarMarca = !esNotebooks || tipoActivo === "Notebook";
+  document.getElementById("marca-filter-field").hidden = !mostrarMarca;
+  if (!mostrarMarca) marcaActiva = "";
+  const base = productosDeCategoria(nombre);
+  pintarMarcas(base);
+  return base;
 }
 
 function pintarSeccion(nombre) {
   categoriaActiva = nombre;
+  const base = pintarFiltrosDeSeccion(nombre);
   const filtrarCondicion = permiteFiltroCondicion(nombre, marcaActiva);
   document.getElementById("condition-filter-field").hidden = !filtrarCondicion;
   if (!filtrarCondicion) {
@@ -74,9 +121,6 @@ function pintarSeccion(nombre) {
     document.getElementById("condition-filter").value = "";
   }
   const el = document.getElementById("secciones");
-  const base = nombre === "Todos"
-    ? Object.values(SECCIONES_DATA).flat()
-    : (SECCIONES_DATA[nombre] || []);
   const porMarca = marcaActiva
     ? base.filter((producto) => (producto.marca || "Otras marcas") === marcaActiva)
     : base;
@@ -99,7 +143,7 @@ function pintarSeccion(nombre) {
     `${productos.length} ${productos.length === 1 ? "producto" : "productos"}`;
   if (productos.length === 0) {
     const detalle = marcaActiva
-      ? ` de ${escapeHtml(marcaActiva)} en ${escapeHtml(nombre)}`
+      ? ` de ${escapeHtml(etiquetaMarca(marcaActiva))} en ${escapeHtml(nombre)}`
       : ` en ${escapeHtml(nombre)}`;
     el.innerHTML = palabrasBusqueda.length
       ? '<p class="mensaje-vacio">No encontré productos que coincidan con tu búsqueda.</p>'
@@ -108,7 +152,7 @@ function pintarSeccion(nombre) {
   }
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
   window.TTRAComparar?.bind(el, productos, SECCIONES_DATA, () => ({
-    categoria: categoriaActiva, marca: marcaActiva, condicion: condicionActiva,
+    categoria: categoriaActiva, marca: marcaActiva, condicion: condicionActiva, tipo: tipoActivo,
     query: document.getElementById('catalog-search').value,
     searchVisible: !document.querySelector('.catalog-search-wrap').hidden
   }));
@@ -285,17 +329,16 @@ async function cargarCatalogo() {
       document.getElementById("contador-productos").textContent = "0 productos";
       return;
     }
-    pintarMarcas();
     const parametros = new URLSearchParams(window.location.search);
     const regreso = window.TTRAComparar?.readReturn()?.context;
-    const marcaSolicitada = regreso ? regreso.marca : parametros.get("marca");
-    document.getElementById("catalog-search").value = regreso ? regreso.query : parametros.get("q") || "";
-    const selectorMarca = document.getElementById("marca-filter");
-    if (marcaSolicitada && [...selectorMarca.options].some((opcion) => opcion.value === marcaSolicitada)) {
-      selectorMarca.value = marcaSolicitada;
-      marcaActiva = marcaSolicitada;
-    }
     const categoriaSolicitada = regreso ? regreso.categoria : parametros.get("categoria");
+    if (!regreso && parametros.get("filtro") === "marca" && !categoriaSolicitada && !parametros.get("marca")) {
+      pintarLandingMarcas();
+      return;
+    }
+    marcaActiva = (regreso ? regreso.marca : parametros.get("marca")) || "";
+    tipoActivo = ["Notebook", "Mac"].includes(regreso?.tipo) ? regreso.tipo : "";
+    document.getElementById("catalog-search").value = regreso ? regreso.query : parametros.get("q") || "";
     if (regreso) {
       condicionActiva = regreso.condicion || '';
       document.getElementById('condition-filter').value = condicionActiva;
@@ -305,7 +348,6 @@ async function cargarCatalogo() {
       document.querySelector('.catalog-search-wrap').hidden = false;
       document.getElementById("catalog-search").focus();
     }
-    if (parametros.get("filtro") === "marca" && !regreso) selectorMarca.focus({ preventScroll: true });
     window.TTRAComparar?.restorePosition();
   } catch {
     document.getElementById("secciones").innerHTML =
@@ -313,6 +355,28 @@ async function cargarCatalogo() {
     document.getElementById("contador-productos").textContent = "Catálogo no disponible";
   }
 }
+
+// "Búsqueda por marca": una grilla con el logo de cada marca del catálogo;
+// cada logo abre el catálogo completo filtrado por esa marca.
+function pintarLandingMarcas() {
+  const marcas = marcasDe(Object.values(SECCIONES_DATA).flat());
+  document.getElementById("catalog-title").innerHTML = "Búsqueda por marca<span>.</span>";
+  document.querySelector(".catalog-intro > p").textContent = "Elegí una marca para ver todos sus productos.";
+  document.getElementById("catalog-filters").hidden = true;
+  document.getElementById("contador-productos").textContent =
+    `${marcas.length} ${marcas.length === 1 ? "marca" : "marcas"}`;
+  document.getElementById("secciones").innerHTML = `<nav class="catalog-brand-grid" aria-label="Marcas">${marcas.map((marca) => {
+    const logo = MARCA_LOGO[marca] || MARCA_LOGO["Otras marcas"];
+    return `<a class="catalog-brand-card" href="/catalogo?marca=${encodeURIComponent(marca)}">`
+      + `<img class="marca-logo-selector" src="/logos/${logo}.svg" alt="">`
+      + `<span>${escapeHtml(etiquetaMarca(marca))}</span></a>`;
+  }).join("")}</nav>`;
+}
+
+document.getElementById("tipo-filter").addEventListener("change", (event) => {
+  tipoActivo = event.target.value;
+  pintarSeccion(categoriaActiva);
+});
 
 document.getElementById("marca-filter").addEventListener("change", (event) => {
   marcaActiva = event.target.value;

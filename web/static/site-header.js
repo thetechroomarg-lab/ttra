@@ -168,7 +168,7 @@
       ['Notebooks y Macbooks', '/catalogo?categoria=Notebooks%20y%20Macbooks'],
       ['Gaming', '/catalogo?categoria=Gaming'],
       ['Accesorios', '/catalogo?categoria=Accesorios%20Celulares'],
-      ['Búsqueda por marca', '/catalogo?filtro=marca#catalog-filters'],
+      ['Búsqueda por marca', '/catalogo?filtro=marca'],
     ];
     for (const [title, href] of links) {
       const link = document.createElement('a');
