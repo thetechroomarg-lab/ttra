@@ -350,7 +350,20 @@
       <h2>Tu pedido</h2>
       <button id="btn-cerrar-carrito" aria-label="Cerrar carrito" type="button">✕</button>
     </div>
-    <p class="carrito-nota">Tu pedido se guarda solo en este navegador.</p>
+    <section id="pedido-confirmado" hidden aria-labelledby="pedido-confirmado-titulo">
+      <p class="pedido-confirmado-etiqueta">PEDIDO REGISTRADO</p>
+      <h3 id="pedido-confirmado-titulo" tabindex="-1">Recibimos tu pedido</h3>
+      <p>Enviá el mensaje por WhatsApp para coordinar y confirmar la disponibilidad. También podés copiar el resumen.</p>
+      <label for="pedido-confirmado-texto">Resumen del pedido</label>
+      <textarea id="pedido-confirmado-texto" readonly rows="10"></textarea>
+      <div class="pedido-confirmado-acciones">
+        <a id="btn-whatsapp-pedido" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>
+        <button id="btn-copiar-pedido" type="button">Copiar pedido</button>
+        <button id="btn-compartir-pedido" type="button" hidden>Compartir</button>
+      </div>
+      <p id="pedido-confirmado-estado" role="status" aria-live="polite"></p>
+    </section>
+    <p class="carrito-nota">Los productos del carrito se guardan en este navegador hasta confirmar el pedido.</p>
     <div id="items-carrito"></div>
     <div class="panel-carrito-footer">
       <p id="total-carrito"></p>
@@ -378,7 +391,7 @@
         <input id="input-codigo-mailing" type="text" maxlength="40" placeholder="Ingresá o pegá tu código" autocomplete="off">
         <button id="btn-aplicar-codigo" type="button">APLICAR</button>
       </div>
-      <button id="btn-whatsapp" type="button">Cerrar pedido por WhatsApp</button>
+      <button id="btn-whatsapp" type="button">Confirmar pedido</button>
       <p class="carrito-disclaimer">Este pedido no garantiza la reserva de los productos. La disponibilidad y los detalles finales se confirman por WhatsApp.</p>
     </div>
   </aside>

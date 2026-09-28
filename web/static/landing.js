@@ -1846,7 +1846,7 @@ async function procesarCheckoutPendiente() {
     borrarCheckoutPendiente();
     return false;
   }
-  await derivarCheckoutAWhatsapp(carrito);
+  await confirmarPedidoCarrito(carrito);
   return true;
 }
 
@@ -2051,6 +2051,7 @@ function abrirCarrito() {
   // superpuestos a la vez.
   if (typeof cerrarPanelPerfil === "function") cerrarPanelPerfil();
   cargarOpcionesEntrega().catch(() => {});
+  mostrarResumenPedidoGuardado();
   sincronizarLimiteCarrito();
   document.getElementById("panel-carrito").classList.remove("oculto");
   document.getElementById("overlay-carrito").classList.remove("oculto");
@@ -2165,32 +2166,99 @@ async function aplicarCodigoMailingPorValor(codigo) {
   return true;
 }
 
-async function derivarCheckoutAWhatsapp(carrito) {
+let confirmandoPedido = false;
+let ultimoResumenPedido = "";
+
+function mostrarResumenPedidoGuardado() {
+  try { ultimoResumenPedido = sessionStorage.getItem("ttra_ultimo_resumen_pedido") || ultimoResumenPedido; } catch {}
+  const panel = document.getElementById("pedido-confirmado");
+  panel.hidden = !ultimoResumenPedido;
+  document.getElementById("pedido-confirmado-texto").value = ultimoResumenPedido;
+  document.getElementById("btn-whatsapp-pedido").href = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMERO}&text=${encodeURIComponent(ultimoResumenPedido)}`;
+  document.getElementById("btn-compartir-pedido").hidden = typeof navigator.share !== "function";
+  // An empty cart with a saved receipt only needs the confirmation panel.
+  const soloResumen = Boolean(ultimoResumenPedido) && cargarCarrito().length === 0;
+  document.querySelector("#panel-carrito .panel-carrito-footer").hidden = soloResumen;
+  document.getElementById("items-carrito").hidden = soloResumen;
+}
+
+async function copiarResumenPedido() {
+  const texto = document.getElementById("pedido-confirmado-texto");
+  const estado = document.getElementById("pedido-confirmado-estado");
+  try {
+    await navigator.clipboard.writeText(texto.value);
+    estado.textContent = "Copiado. Ya podés pegar tu pedido donde quieras.";
+  } catch {
+    texto.focus();
+    texto.select();
+    estado.textContent = "Texto seleccionado. Mantené pulsado o usá Ctrl+C / ⌘C para copiar.";
+  }
+}
+
+async function compartirResumenPedido() {
+  const boton = document.getElementById("btn-compartir-pedido");
+  if (boton.disabled) return;
+  boton.disabled = true;
+  const estado = document.getElementById("pedido-confirmado-estado");
+  estado.textContent = "";
+  try {
+    await navigator.share({title: "Mi pedido — The Tech Room Arg", text: document.getElementById("pedido-confirmado-texto").value});
+  } catch (error) {
+    if (error.name !== "AbortError") estado.textContent = "No se pudo abrir el menú para compartir. Podés copiar el pedido.";
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+document.getElementById("btn-copiar-pedido").addEventListener("click", copiarResumenPedido);
+document.getElementById("btn-compartir-pedido").addEventListener("click", compartirResumenPedido);
+
+async function confirmarPedidoCarrito(carrito) {
   if (!catalogoListo) return false;
-  registrarInteraccion("complete_checkout", {
-    metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
-  });
+  if (confirmandoPedido || !carrito.length) return false;
   const fechaEntrega = document.getElementById("fecha-entrega").value;
   const direccionEntrega = document.getElementById("direccion-entrega").value.trim();
-  if (!direccionEntrega) { alert("Especificá dirección de entrega."); return; }
+  if (!direccionEntrega) { alert("Especificá dirección de entrega."); return false; }
+  if (!fechaEntrega) { alert("Elegí una fecha de entrega."); return false; }
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
   if (!mensaje) return false;
+  const boton = document.getElementById("btn-whatsapp");
+  confirmandoPedido = true;
+  boton.disabled = true;
+  boton.textContent = "Guardando pedido…";
   try {
-    if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;
-  } catch (error) {
-    console.error("No se pudo guardar el pedido", error);
-    alert("No pude guardar tu pedido. Probá nuevamente antes de abrir WhatsApp.");
-    return;
+    try {
+      if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;
+    } catch (error) {
+      console.error("No se pudo guardar el pedido", error);
+      alert("No pude guardar tu pedido. Tu carrito sigue disponible para reintentar.");
+      return false;
+    }
+    ultimoResumenPedido = `${mensaje}\nDirección de entrega: ${direccionEntrega}`;
+    try { sessionStorage.setItem("ttra_ultimo_resumen_pedido", ultimoResumenPedido); } catch {}
+    borrarCheckoutPendiente();
+    vaciarCarrito();
+    borrarDescuentoMailing();
+    borrarRegaloPromo();
+    abrirCarrito();
+    document.getElementById("pedido-confirmado-estado").textContent = "Si WhatsApp no se abrió, tocá Abrir WhatsApp. El resumen queda disponible para copiar.";
+    document.getElementById("pedido-confirmado-titulo").focus();
+    // Keep the receipt in this tab even when the browser blocks the popup.
+    // A regular link in the panel retries with a fresh user gesture.
+    try {
+      window.open(document.getElementById("btn-whatsapp-pedido").href, "_blank", "noopener,noreferrer");
+    } catch {
+      // The visible link and copy action remain available.
+    }
+    registrarInteraccion("complete_checkout", {
+      metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
+    });
+    return true;
+  } finally {
+    confirmandoPedido = false;
+    boton.disabled = false;
+    boton.textContent = "Confirmar pedido";
   }
-  borrarCheckoutPendiente();
-  vaciarCarrito();
-  borrarDescuentoMailing();
-  borrarRegaloPromo();
-  cerrarCarrito();
-  // api.whatsapp.com en vez de wa.me: mismo destino, pero wa.me es un
-  // acortador que algunos firewalls/antivirus de escritorio bloquean.
-  navegarDesdeCarrito(`https://api.whatsapp.com/send?phone=${WHATSAPP_NUMERO}&text=${encodeURIComponent(mensaje)}`);
-  return true;
 }
 
 document.getElementById("btn-carrito").addEventListener("click", abrirCarrito);
@@ -2553,15 +2621,25 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
   return true;
 }
 
+let checkoutSolicitado = false;
 document.getElementById("btn-whatsapp").addEventListener("click", async () => {
   if (!catalogoListo) return;
+  if (checkoutSolicitado) return;
   const carrito = cargarCarrito();
   if (carrito.length === 0) return;
-  registrarInteraccion("begin_checkout", {
-    metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
-  });
-  if (!(await asegurarSesionParaCheckout())) return;
-  await derivarCheckoutAWhatsapp(carrito);
+  checkoutSolicitado = true;
+  const boton = document.getElementById("btn-whatsapp");
+  boton.disabled = true;
+  try {
+    registrarInteraccion("begin_checkout", {
+      metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
+    });
+    if (!(await asegurarSesionParaCheckout())) return;
+    await confirmarPedidoCarrito(carrito);
+  } finally {
+    checkoutSolicitado = false;
+    boton.disabled = false;
+  }
 });
 document.getElementById("btn-volver").addEventListener("click", volverUnPaso);
 document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);

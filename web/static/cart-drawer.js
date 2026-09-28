@@ -20,6 +20,7 @@ export function abrirPanelEnPagina(trigger, panel) {
   status.innerHTML = `<p role="status">${textos.cargando}</p><button type="button">${textos.cerrar}</button>`;
   const frame = document.createElement('iframe');
   frame.title = textos.titulo;
+  frame.allow = 'web-share; clipboard-write';
   frame.src = `/?panel=${panel}&embed=${panel}`;
   dialog.append(frame, status);
   document.body.append(dialog);

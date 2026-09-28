@@ -27,6 +27,7 @@ from web.public_static import PublicStaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
+from web.historial_importado import tarjeta_importada
 from web import buscador, catalogo, cuentas, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import cadete_session_version
@@ -1833,22 +1834,21 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     fecha_hoy = entregas.ahora_argentina().date().isoformat()
     pedidos = [] if mostrar_clientes else client.table("pedidos").select("*").execute().data
     pedidos = [p for p in pedidos if _activo(p)]
-    tareas = [] if mostrar_clientes else client.table("tareas_entrega").select("*").execute().data
-    tareas = [t for t in tareas if _activo(t)]
-    tareas_hoy = [
-        tarea for tarea in tareas
-        if tarea.get("fecha_entrega") == fecha_hoy and not tarea.get("completada_en")
-    ]
-    tareas_hoy.sort(key=lambda tarea: int(tarea.get("orden") or 0))
-    pedidos_hoy = [
-        pedido for pedido in pedidos
-        if pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
-    ]
     fecha_historial = request.query_params.get("fecha_pedidos") or fecha_hoy
     try:
         fecha_historial = date.fromisoformat(fecha_historial).isoformat()
     except ValueError:
         fecha_historial = fecha_hoy
+    pedidos_hoy = [p for p in pedidos if p.get("fecha_entrega") == fecha_hoy and not p.get("recibo_enviado_en")]
+    # Filter in the database: the historical import exceeds PostgREST's
+    # default 1,000-row page. Only these two dates are needed by this view.
+    tareas = []
+    if not mostrar_clientes:
+        for fecha_tareas in sorted({fecha_hoy, fecha_historial}):
+            tareas.extend(client.table("tareas_entrega").select("*").eq("fecha_entrega", fecha_tareas).execute().data)
+    tareas = [t for t in tareas if _activo(t)]
+    tareas_hoy = [t for t in tareas if t.get("fecha_entrega") == fecha_hoy and not t.get("completada_en")]
+    tareas_hoy.sort(key=lambda tarea: int(tarea.get("orden") or 0))
     pedidos_historial = [
         pedido for pedido in pedidos
         if pedido.get("fecha_entrega") == fecha_historial
@@ -2003,6 +2003,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             )
 
         def _tarea_historial_html(tarea):
+            importada = tarjeta_importada(tarea)
+            if importada is not None:
+                return importada
             nombre_cliente = tarea.get("cliente_nombre") or clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
             titulo = tarea.get("titulo") or "Tarea sin título"
             nota = tarea.get("nota") or ""

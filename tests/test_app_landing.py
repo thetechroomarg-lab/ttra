@@ -145,7 +145,7 @@ def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
         "async function aplicarCodigoMailingPorValor(codigo)",
         "async function procesarCheckoutPendiente()",
         "async function asegurarSesionParaCheckout()",
-        "async function derivarCheckoutAWhatsapp(carrito)",
+        "async function confirmarPedidoCarrito(carrito)",
         "async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega, coordsDireccion)",
     ):
         assert "if (!catalogoListo)" in cuerpo_de(funcion)
@@ -156,7 +156,7 @@ def test_acciones_monetarias_esperan_catalogo_reconciliado_antes_de_abrirse():
     inicio_checkout = js.index('document.getElementById("btn-whatsapp").addEventListener')
     fin_checkout = js.index('document.getElementById("btn-volver")', inicio_checkout)
     assert "if (!catalogoListo) return;" in js[inicio_checkout:fin_checkout]
-    assert "if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;" in cuerpo_de("async function derivarCheckoutAWhatsapp(carrito)")
+    assert "if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;" in cuerpo_de("async function confirmarPedidoCarrito(carrito)")
 
 
 def test_render_y_mutaciones_del_carrito_esperan_catalogo_listo():
