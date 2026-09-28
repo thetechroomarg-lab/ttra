@@ -8,3 +8,5 @@ Regla permanente del usuario (28/09/2026): conservar y reutilizar la base de im�
 - Crear solo las imágenes que falten. Las correcciones de imágenes defectuosas se versionan conservando el original. Una imagen pendiente de revisión no se considera aprobada por haber sido reutilizada.
 - Para productos sin color informado, usar una imagen de referencia sin selector de color, según la decisión del usuario.
 - Mantener el formato de card aprobado, con precios programáticos, logo e interacciones independientes de la imagen. La base aún está incompleta; no declarar cobertura total sin verificar el manifest.
+
+- Una sola imagen por modelo físico exacto y color: NEW/nuevo, usado/USED, activado, CPO, porcentaje de batería, RAM y almacenamiento no crean variantes visuales. Por ejemplo, todos los iPhone 15 azules reutilizan la misma imagen. Ejecutar `reutilizar.py` antes de armar lotes; generar solo identificadores canónicos faltantes, nunca sus alias. Conservar imágenes anteriores aunque se unifiquen asociaciones.

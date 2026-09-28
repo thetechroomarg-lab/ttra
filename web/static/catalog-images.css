@@ -14,3 +14,9 @@ html body .ai-face .btn-foto svg{width:28.8px!important;height:28.8px!important}
 html body .card.ai-card>.catalog-card-actions,html body .card.ai-card>.card-acciones,html body .card.ai-card>.selector-colores{display:flex!important;flex-wrap:wrap;gap:10px;padding:12px!important;margin:0!important;position:relative!important;width:100%!important}
 html body .card.ai-card .btn-agregar{min-height:44px}.ai-notice{font-size:12px;color:var(--rc-green-dim,#999);margin:12px 0 20px}.ai-card .compare-picker{z-index:30}
 @media(prefers-reduced-motion:reduce){.ai-picture img{transition:none}}
+
+/* Backlight follows the existing coral accent without affecting layout. */
+html body .grilla .card.ai-card{border:1px solid rgba(255,80,60,.26)!important;box-shadow:0 0 18px rgba(255,80,60,.10),0 0 42px rgba(255,80,60,.06)!important;transition:box-shadow 220ms ease,border-color 220ms ease}
+html body .grilla .card.ai-card:focus-within{border-color:rgba(255,80,60,.52)!important;box-shadow:0 0 22px rgba(255,80,60,.20),0 0 50px rgba(255,80,60,.10)!important}
+@media(hover:hover){html body .grilla .card.ai-card:hover{border-color:rgba(255,80,60,.52)!important;box-shadow:0 0 22px rgba(255,80,60,.20),0 0 50px rgba(255,80,60,.10)!important}}
+@media(prefers-reduced-motion:reduce){html body .grilla .card.ai-card{transition:none}}
