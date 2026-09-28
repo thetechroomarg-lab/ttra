@@ -1433,6 +1433,7 @@ function pintarGrilla(el, productos, mensajeVacio) {
       seleccionarCard();
     });
   });
+  window.TTRACatalogImages?.enhance(el, productos);
   el.querySelectorAll(".btn-vista[data-modo]").forEach((btn) => {
     btn.addEventListener("click", () => {
       modoVista = btn.dataset.modo;

@@ -176,6 +176,7 @@ function pintarSeccion(nombre) {
     query: document.getElementById('catalog-search').value,
     searchVisible: !document.querySelector('.catalog-search-wrap').hidden
   }));
+  window.TTRACatalogImages?.enhance(el, productos);
   el.querySelectorAll('.card').forEach((card) => {
     const producto = productos[Number(card.dataset.productIndex)];
     card.addEventListener('click', () => registrarConsultaProducto(producto));
@@ -190,8 +191,8 @@ function pintarSeccion(nombre) {
       status.textContent = '';
     });
     button.addEventListener('click', async () => {
-      const color = select ? select.value : (producto.colores?.[0] || null);
-      if (select && !color) return;
+      const color = select?.isConnected ? select.value : (producto.colores?.[0] || null);
+      if (select?.isConnected && !color) return;
       button.disabled = true;
       try {
         TTRACarrito.agregar(producto, color);
@@ -204,7 +205,7 @@ function pintarSeccion(nombre) {
       try {
         await TTRACarrito.animar(card);
       } finally {
-        button.disabled = Boolean(select && !select.value);
+        button.disabled = Boolean(select?.isConnected && !select.value);
       }
     });
   });
