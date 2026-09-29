@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from web import entregas
 from web.ui_helpers import (
+    _html_direccion_entrega,
     CADETE_SLUG,
     _ADMIN_CLIENTES_PWA_SCRIPT,
     _CADETE_ESTILO,
@@ -143,7 +144,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         )
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}</strong> · '
-            f'{html.escape(cliente.get("celular") or "—")}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
+            f'{html.escape(cliente.get("celular") or "—")}{_html_direccion_entrega(direccion)}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
             f'{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido.get("lat"), pedido.get("lng"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}</div></div>'
         )
@@ -170,7 +171,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
-            f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
+            f'{_html_direccion_entrega(direccion)}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion)}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
             f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}</div></div>'
         )

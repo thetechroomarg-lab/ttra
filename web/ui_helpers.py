@@ -23,6 +23,15 @@ _UI_DIR = BASE / "ui"
 CADETE_SLUG = "alejo"
 
 
+def _html_direccion_entrega(direccion):
+    """Línea visible con la dirección de destino dentro de una tarjeta de entrega."""
+    import html
+    direccion = (direccion or "").strip()
+    if not direccion:
+        return ""
+    return f'<br><span class="direccion-entrega">Dirección: {html.escape(direccion)}</span>'
+
+
 def _leer_ui(nombre):
     """Lee un fragmento estatico de HTML/CSS desde web/ui/.
 
