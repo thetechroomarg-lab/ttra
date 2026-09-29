@@ -28,7 +28,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import buscador, catalogo, cuentas, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales
+from web import buscador, catalogo, cuentas, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales, saldo_cadete
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -37,6 +37,7 @@ from web.productos import resolver_proveedor
 from web.slugs import slug as slug_producto
 from web.supabase_client import get_client
 from web.ui_helpers import (
+    _html_direccion_entrega,
     CADETE_SLUG,
     _ADMIN_CLIENTES_ESTILO,
     _ADMIN_CLIENTES_PWA_HEAD,
@@ -1125,6 +1126,9 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
         except Exception:
             # El recibo ya salió: perder un sello es preferible a mostrar un error.
             logger.exception("No se pudo registrar el sello de fidelidad del pedido %s", pedido_id)
+    if primer_envio and pedido.get("asignado_a") == CADETE_SLUG:
+        nombre = f"{cliente.get('nombre') or ''} {cliente.get('apellido') or ''}".strip() or "cliente"
+        saldo_cadete.registrar(client, "pedido", pedido, f"Entrega a {nombre}")
     return {"ok": True, "recibo_id": recibo_id, "reenviado": bool(pedido.get("recibo_enviado_en"))}
 
 
@@ -1439,6 +1443,9 @@ _ADMIN_CLIENTES_ESTILO = """
   .btn-eliminar-entrega:hover, .btn-eliminar-tarea:hover { background:var(--op-accent-bg); }
   .btn-quitar-derivacion { background:var(--op-success-bg); border-color:var(--op-success-border); color:var(--op-success); }
   .btn-quitar-derivacion:hover { background:var(--op-surface-3); }
+  .saldo-cadete-resumen { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 16px; margin:0 0 16px; padding:14px 16px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); color:var(--op-text); text-decoration:none; font-size:15px; }
+  .saldo-cadete-resumen:hover { background:var(--op-surface-2); }
+  .direccion-entrega { font-weight:600; }
   .observacion-cadete { color:var(--op-warning); }
   .total-cadete { font-weight:700; }
   .btn-whatsapp-cliente { display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--op-success-border); border-radius:var(--op-r-sm); padding:8px 10px; background:var(--op-success-bg); color:var(--op-success); cursor:pointer; font-weight:700; text-decoration:none; text-align:center; transition:background-color var(--op-dur) var(--op-ease); }
@@ -1684,6 +1691,7 @@ _CADETE_ESTILO = """
   .proximos-dia h3 { margin:0 0 8px; color:var(--op-text-dim); font-size:var(--op-fs-small); font-weight:700; text-transform:capitalize; }
   .pedido-hoy { display:flex; flex-direction:column; gap:12px; padding:16px; margin-bottom:12px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); box-shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -8px rgba(0,0,0,.55); }
   .pedido-hoy-detalle { font-size:var(--op-fs-body); line-height:1.55; overflow-wrap:anywhere; word-break:break-word; }
+  .direccion-entrega { font-weight:600; }
   .observacion-cadete { color:var(--op-warning); }
   .total-cadete { font-weight:700; font-size:16px; }
   .pedido-acciones { display:flex; flex-wrap:wrap; gap:8px; }
@@ -1931,7 +1939,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         return (
             f'<div class="pedido-hoy" data-tipo-entrega="tarea" data-entrega-id="{tarea_id}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar tarea">≡</button><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
-            f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
+            f'{_html_direccion_entrega(tarea.get("direccion"))}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
             f'{_acciones_tarea(tarea)}</div>'
         )
 
@@ -1956,7 +1964,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     def _tarjeta_pedido(pedido):
         return (
             f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}" data-tipo-entrega="pedido" data-entrega-id="{html.escape(pedido.get("id", ""))}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar pedido">≡</button><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
-            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span>'
+            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}{_html_direccion_entrega(pedido.get("direccion_entrega"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span>'
             f'{_linea_piso_depto(pedido)}</div>'
             f'{_controles_entrega(pedido)}</div>'
         )
@@ -2062,6 +2070,13 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     )
 
     if not mostrar_clientes:
+        resumen_saldo = saldo_cadete.resumen(saldo_cadete.listar(client))
+        saldo_resumen_html = (
+            f'<a class="saldo-cadete-resumen" href="/admin/cadete/saldo"><span>Movimientos de Alejo: '
+            f'<strong>{resumen_saldo["movimientos_pendientes"]}</strong> sin pagar '
+            f'({resumen_saldo["movimientos_total"]} en total)</span><span>Saldo a pagar: '
+            f'<strong>$ {_formatear_entero_ar(resumen_saldo["saldo_pendiente"])}</strong></span></a>'
+        )
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
 <div class="panel">
@@ -2069,6 +2084,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <h1>Pedidos y recibos</h1>
     <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
   </div>
+  {saldo_resumen_html}
   <section class="historial-pedidos"><h2>Historial de pedidos</h2><input id="filtro-historial-pedidos" type="search" placeholder="Buscar por cliente o producto"><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
   {pendientes_hoy_seccion_html}
 </div>
@@ -2995,7 +3011,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         )
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}</strong> · '
-            f'{html.escape(cliente.get("celular") or "—")}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
+            f'{html.escape(cliente.get("celular") or "—")}{_html_direccion_entrega(direccion)}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
             f'{piso_depto}{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"), cliente.get("celular"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}{boton_derivar_vlad}</div></div>'
         )
@@ -3026,7 +3042,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
-            f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
+            f'{_html_direccion_entrega(direccion)}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion, tarea_id, "tarea", celular=cliente_tarea.get("celular"))}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
             f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}{boton_recibo_manual}</div></div>'
         )
@@ -3076,7 +3092,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <h1>Entregas asignadas</h1>
     <div class="panel-header-acciones">
       <button id="btn-notificaciones" type="button" hidden>🔔 Activar notificaciones</button>
-      <a class="btn-clientes" href="/admin/cadete/papelera">Borrados</a><button id="salir">Cerrar sesión</button>
+      <a class="btn-clientes" href="/admin/cadete/saldo">Saldo</a><a class="btn-clientes" href="/admin/cadete/papelera">Borrados</a><button id="salir">Cerrar sesión</button>
     </div>
   </div>
   <div class="selector-fecha-cadete">
@@ -4137,6 +4153,8 @@ class TareaEntregaIn(BaseModel):
     direccion: str | None = Field(default=None, max_length=500)
     enviar_a_alejo: bool = False
     derivar_a_vlad: bool = False
+    # Lo que se le paga a Alejo por esta tarea; sin valor, rige el monto fijo.
+    monto_cadete: int | None = Field(default=None, ge=0, le=10_000_000)
 
 
 class OrdenEntregaItemIn(BaseModel):
@@ -4842,6 +4860,8 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
         "orden": orden,
         "asignado_a": asignado_a,
     }
+    if entrada.monto_cadete is not None:
+        tarea["monto_cadete"] = entrada.monto_cadete
     client.table("tareas_entrega").insert(tarea).execute()
     if es_admin and asignado_a == CADETE_SLUG:
         push_cadete.enviar_push_cadete(client, "📝 Nueva nota asignada", tarea["titulo"])
@@ -4867,6 +4887,8 @@ def admin_completar_tarea_entrega(tarea_id: str, request: Request):
                 f"{observacion_previa} · Entregado por Alejo" if observacion_previa else "Entregado por Alejo"
             )
     client.table("tareas_entrega").update(actualizacion_tarea).eq("id", tarea_id).execute()
+    if filas[0].get("asignado_a") == CADETE_SLUG:
+        saldo_cadete.registrar(client, "tarea", filas[0], filas[0].get("titulo"))
     return {"ok": True, "tarea_id": tarea_id, "completada_en": completada_en}
 
 
@@ -5691,6 +5713,135 @@ def pagina_inicio(request: Request):
 # GET "/" ya tiene su propia ruta explícita arriba; los .html reales
 # (index.html, catalogo.html, login.html) se siguen sirviendo igual porque
 # StaticFiles los sirve por nombre de archivo exacto, con o sin html=True.
+class MovimientoCadeteIn(BaseModel):
+    descripcion: str = Field(min_length=1, max_length=300)
+    monto_ars: int = Field(ge=0, le=10_000_000)
+
+
+class MontoMovimientoCadeteIn(BaseModel):
+    monto_ars: int = Field(ge=0, le=10_000_000)
+
+
+_SALDO_CADETE_ESTILO = """
+<style>
+  .saldo-total { padding:16px; margin:0 0 16px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); }
+  .saldo-total p { margin:0; color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .saldo-total strong { display:block; font-size:28px; margin:4px 0; color:var(--op-text); }
+  .movimiento { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:12px 14px; margin-bottom:8px; background:var(--op-surface); border:1px solid var(--op-border); border-radius:var(--op-r-sm); font-size:var(--op-fs-body); }
+  .movimiento.pagado { opacity:.55; }
+  .movimiento small { display:block; color:var(--op-text-dim); font-size:var(--op-fs-micro); margin-top:2px; }
+  .movimiento-monto { font-weight:700; white-space:nowrap; text-align:right; }
+  .movimiento-acciones { display:flex; gap:6px; margin-top:6px; justify-content:flex-end; }
+  .movimiento-acciones button, .saldo-admin button, .saldo-admin input { min-height:40px; border-radius:var(--op-r-sm); border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); font:inherit; padding:0 10px; }
+  .saldo-admin { display:grid; gap:8px; margin:0 0 16px; }
+  .saldo-admin form { display:grid; grid-template-columns:minmax(0,1fr) 84px auto; gap:8px; }
+  .saldo-admin input { width:100%; min-width:0; box-sizing:border-box; }
+  .saldo-admin #pagar { background:var(--op-accent); border:0; color:#fff; font-weight:700; cursor:pointer; min-height:44px; }
+  .saldo-admin #pagar:disabled { opacity:.5; cursor:not-allowed; }
+  a.volver { color:var(--op-text-dim); text-decoration:none; font-weight:700; }
+</style>
+"""
+
+
+@app.get("/admin/cadete/saldo", response_class=HTMLResponse)
+def admin_cadete_saldo(request: Request):
+    es_admin = _clientes_admin_activo(request)
+    if not (es_admin or _cadete_activo(request)):
+        return RedirectResponse("/admin/cadete", status_code=303)
+    movimientos = saldo_cadete.listar(get_client())
+    resumen = saldo_cadete.resumen(movimientos)
+
+    def _fila(m):
+        fecha, dia, hora = _formatear_fecha_ar(m.get("creado_en"))
+        estado = f"Pagado {_formatear_fecha_ar(m.get('pagado_en'))[0]}" if m.get("pagado_en") else "Pendiente"
+        mid = html.escape(m.get("id") or "")
+        acciones = ""
+        if es_admin and not m.get("pagado_en"):
+            acciones = (f'<div class="movimiento-acciones"><button type="button" class="btn-monto" data-id="{mid}" '
+                        f'data-monto="{int(m.get("monto_ars") or 0)}">Editar monto</button>'
+                        f'<button type="button" class="btn-borrar-mov" data-id="{mid}">Borrar</button></div>')
+        return (f'<div class="movimiento{" pagado" if m.get("pagado_en") else ""}"><div>{html.escape(m.get("descripcion") or "")}'
+                f'<small>{fecha} {hora} · {estado}</small></div><div class="movimiento-monto">$ {_formatear_entero_ar(m.get("monto_ars"))}{acciones}</div></div>')
+
+    lista = "".join(_fila(m) for m in movimientos) or '<p class="vacio">Todavía no hay movimientos.</p>'
+    admin_html = ""
+    if es_admin:
+        admin_html = (
+            '<div class="saldo-admin"><form id="form-mov"><input id="mov-desc" required maxlength="300" placeholder="Movimiento manual">'
+            f'<input id="mov-monto" type="number" min="0" required value="{saldo_cadete.MONTO_POR_MOVIMIENTO}"><button type="submit">Sumar</button></form>'
+            f'<button id="pagar" type="button"{" disabled" if not resumen["saldo_pendiente"] else ""}>Registrar pago de $ {_formatear_entero_ar(resumen["saldo_pendiente"])}</button></div>'
+        )
+    volver = "/admin/clientes" if es_admin else "/admin/cadete"
+    titulo_total = "Saldo a pagar" if es_admin else "Total a cobrar"
+    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Saldo</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}{_SALDO_CADETE_ESTILO}</head><body class="op-cadete">
+<div class="panel">
+  <div class="panel-header"><h1>Saldo</h1><a class="volver" href="{volver}">← Volver</a></div>
+  <div class="saldo-total"><p>{titulo_total}</p><strong>$ {_formatear_entero_ar(resumen["saldo_pendiente"])}</strong>
+    <p>{resumen["movimientos_pendientes"]} movimientos sin pagar · {resumen["movimientos_total"]} en total</p></div>
+  {admin_html}
+  <section>{lista}</section>
+</div>
+<script>
+async function enviar(url, method, body) {{
+  const r = await fetch(url, {{method, headers: {{"Content-Type": "application/json"}}, body: body ? JSON.stringify(body) : undefined}});
+  if (!r.ok) {{ alert("No se pudo guardar"); return; }}
+  location.reload();
+}}
+document.getElementById("form-mov")?.addEventListener("submit", (e) => {{
+  e.preventDefault();
+  enviar("/admin/cadete/movimientos", "POST", {{descripcion: document.getElementById("mov-desc").value, monto_ars: Number(document.getElementById("mov-monto").value)}});
+}});
+document.getElementById("pagar")?.addEventListener("click", () => {{
+  if (confirm("¿Marcar todo el saldo pendiente como pagado?")) enviar("/admin/cadete/movimientos/pagar", "POST");
+}});
+document.querySelectorAll(".btn-monto").forEach((b) => b.addEventListener("click", () => {{
+  const v = prompt("Nuevo monto en pesos", b.dataset.monto);
+  if (v !== null && v.trim() !== "" && !isNaN(Number(v))) enviar("/admin/cadete/movimientos/" + b.dataset.id, "PUT", {{monto_ars: Math.round(Number(v))}});
+}}));
+document.querySelectorAll(".btn-borrar-mov").forEach((b) => b.addEventListener("click", () => {{
+  if (confirm("¿Borrar este movimiento?")) enviar("/admin/cadete/movimientos/" + b.dataset.id, "DELETE");
+}}));
+</script>
+</body></html>"""
+
+
+def _exigir_admin(request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+
+
+@app.post("/admin/cadete/movimientos")
+def admin_cadete_sumar_movimiento(entrada: MovimientoCadeteIn, request: Request):
+    _exigir_admin(request)
+    fila = {"id": f"manual-{uuid.uuid4()}", "monto_cadete": entrada.monto_ars,
+            "fecha_entrega": entregas.ahora_argentina().date().isoformat()}
+    movimiento = saldo_cadete.registrar(get_client(), "ajuste", fila, entrada.descripcion)
+    if not movimiento:
+        return JSONResponse({"error": "No se pudo guardar el movimiento"}, status_code=500)
+    return {"ok": True, "movimiento": movimiento}
+
+
+@app.put("/admin/cadete/movimientos/{movimiento_id}")
+def admin_cadete_editar_movimiento(movimiento_id: str, entrada: MontoMovimientoCadeteIn, request: Request):
+    _exigir_admin(request)
+    get_client().table(saldo_cadete.TABLA).update({"monto_ars": entrada.monto_ars}).eq("id", movimiento_id).execute()
+    return {"ok": True}
+
+
+@app.delete("/admin/cadete/movimientos/{movimiento_id}")
+def admin_cadete_borrar_movimiento(movimiento_id: str, request: Request):
+    _exigir_admin(request)
+    get_client().table(saldo_cadete.TABLA).delete().eq("id", movimiento_id).execute()
+    return {"ok": True}
+
+
+@app.post("/admin/cadete/movimientos/pagar")
+def admin_cadete_registrar_pago(request: Request):
+    _exigir_admin(request)
+    return {"ok": True, **saldo_cadete.registrar_pago(get_client())}
+
+
 # Comparison endpoints must precede the catch-all static mount.
 from web.comparativa_routes import install as install_comparison_routes
 

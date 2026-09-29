@@ -609,3 +609,22 @@ create table if not exists cadete_push_suscripciones (
   creada_en timestamptz not null default now()
 );
 alter table cadete_push_suscripciones enable row level security;
+
+-- Saldo del cadete: cada entrega completada por Alejo suma un movimiento
+-- ($ 6000 salvo que el pedido/tarea traiga monto_cadete). pagado_en queda
+-- null hasta que el admin registra el pago.
+create table if not exists movimientos_cadete (
+  id text primary key,
+  tipo text not null,
+  referencia_id text not null,
+  descripcion text,
+  fecha_entrega date,
+  monto_ars integer not null default 6000,
+  creado_en timestamptz not null default now(),
+  pagado_en timestamptz
+);
+create unique index if not exists movimientos_cadete_referencia_unica
+  on movimientos_cadete (tipo, referencia_id);
+alter table movimientos_cadete enable row level security;
+alter table tareas_entrega add column if not exists monto_cadete integer;
+alter table pedidos add column if not exists monto_cadete integer;
