@@ -2,22 +2,34 @@
 (() => {
   const manifest = fetch('/catalog-images/index.json').then(r => r.ok ? r.json() : {}).catch(() => ({}));
   const norm = s => String(s || '').normalize('NFC').trim().toLocaleLowerCase('es');
+  // Spelling-tolerant keys so a catalog refresh (another supplier wins) does not drop the artwork.
+  const plain = s => norm(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const colorKey = s => plain(s).replace(/\b(pantone|awesome|awesomw|cosmic|deep)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  const FILLER = new Set(['apple', 'samsung', 'xiaomi', 'redmi', 'motorola', 'moto', 'celular', 'smartphone', 'original', 'nuevo', 'dual']);
+  const nameKey = s => plain(s).replace(/[^a-z0-9+]+/g, ' ').split(' ').filter(t => t && !FILLER.has(t)).sort().join(' ');
+  const byKey = manifest.then(index => {
+    const m = {};
+    for (const k in index) { const kk = nameKey(k); if (!(kk in m)) m[kk] = index[k]; }
+    return m;
+  });
   const labels = ['Dólar contado', 'Dólar transf. USA', 'USDT', 'Pesos contado', 'Pesos transf.'];
   const text = (tag, cls, value) => { const e=document.createElement(tag); e.className=cls; e.textContent=value; return e; };
   const renders=new WeakMap();
   async function enhance(container, products) {
     const render={}; renders.set(container,render);
-    const index = await manifest;
+    const index = await manifest, keyed = await byKey;
     if (!container.isConnected || renders.get(container)!==render) return;
     container.querySelectorAll('.card').forEach((card, i) => {
-      const p = products[i], entry = p && index[p.nombre];
+      const p = products[i], entry = p && (index[p.nombre] || keyed[nameKey(p.nombre)]);
       if (!entry || card.classList.contains('ai-card')) return;
       const grid=card.closest('.grilla');
       if (grid?.classList.contains('lista') && innerWidth>700) return;
       const colors = p.colores?.length ? p.colores : [null];
-      // Never show a different color or a guessed model when an exact association is missing.
-      if (!colors.every(c => entry.some(v => norm(v.color)===norm(c)))) return;
-      const variants = colors.map(c => entry.find(v => norm(v.color)===norm(c)));
+      // Never show a different color: colors with their own artwork get the new card; picking one without it falls back.
+      let variants = colors.map(c => entry.find(v => colorKey(v.color)===colorKey(c))).filter(Boolean);
+      // A product without colors can reuse its model's only artwork.
+      if (!variants.length && !p.colores?.length && entry.length === 1) variants = [entry[0]];
+      if (!variants.length) return;
       const title=card.querySelector('h3'), oldPrices=card.querySelector('.precios');
       const links=card.querySelector('.catalog-product-links, .tarjeta-recomendado-iconos');
       if (!title || !oldPrices || !links) return;
@@ -40,7 +52,7 @@
         if(!grid?.querySelector('.ai-card'))grid?.classList.remove('has-ai-cards');
       }
       function selectColor(c, initial=false){
-        const v=variants.find(v=>norm(v.color)===norm(c==='Color único'?null:c)) || (initial?variants[0]:null);
+        const v=variants.find(v=>colorKey(v.color)===colorKey(c==='Color único'?null:c)) || (initial?variants[0]:null);
         if(!v){fallback();return;}
         const token=++serial;
         if(initial){img.src=v.src;img.alt=p.nombre+' · '+(v.color||'Imagen de referencia');img.onerror=fallback;color.textContent=v.color||'Imagen de referencia';return;}
