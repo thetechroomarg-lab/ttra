@@ -18,8 +18,32 @@ const paramsPantalla = new URLSearchParams(location.search);
 const productoCompartido = paramsPantalla.get("producto");
 const forzarRegistro = paramsPantalla.get("registro") === "1";
 const modoFallout = paramsPantalla.get("modo") === "fallout";
-const volverTrasIngresar = paramsPantalla.get("volver");
+function destinoInternoSeguro(valor) {
+  if (!valor) return null;
+  try {
+    const destino = new URL(valor, location.origin);
+    if (!['http:', 'https:'].includes(destino.protocol) || destino.origin !== location.origin || destino.username || destino.password) return null;
+    // Return the validated absolute URL: a pathname beginning // must not turn
+    // into a protocol-relative external redirect when assigned to location.
+    return destino.href;
+  } catch { return null; }
+}
+const volverTrasIngresar = destinoInternoSeguro(paramsPantalla.get("volver"));
 const destinoTrasIngresar = volverTrasIngresar || (productoCompartido ? `/${location.search}` : (modoFallout ? "/?modo=fallout" : "/"));
+
+// Embebido en el <dialog> de login-drawer.js (ver site-header.js): en vez de
+// navegar esta pestaña (que es un iframe), avisamos al padre para que cierre
+// el modal y siga en la página donde ya estaba, sin recargar nada.
+const modoEmbed = paramsPantalla.get("embed") === "login";
+function irADestinoTrasIngresar() {
+  if (modoEmbed) { parent.postMessage({ type: "ttra:login-done" }, location.origin); return; }
+  window.location.href = destinoTrasIngresar;
+}
+if (modoEmbed) {
+  document.getElementById("btn-cerrar-login").addEventListener("click", () => {
+    parent.postMessage({ type: "ttra:login-close" }, location.origin);
+  });
+}
 
 if (modoFallout) {
   document.documentElement.setAttribute("data-modo", "fallout");
@@ -138,7 +162,7 @@ async function completarSignupVerificado() {
     return false;
   }
   limpiarCallbackSupabaseDeUrl();
-  window.location.href = destinoTrasIngresar;
+  irADestinoTrasIngresar();
   return true;
 }
 
@@ -351,7 +375,7 @@ formLogin.addEventListener("submit", async (e) => {
     mostrarCambioObligatorio();
     return;
   }
-  window.location.href = destinoTrasIngresar;
+  irADestinoTrasIngresar();
 });
 
 formCambiarObligatorio.addEventListener("submit", async (e) => {
@@ -365,7 +389,7 @@ formCambiarObligatorio.addEventListener("submit", async (e) => {
   }
   const datos = await enviar("/cambiar-password-obligatorio", { password }, errorEl);
   if (!datos) return;
-  window.location.href = destinoTrasIngresar;
+  irADestinoTrasIngresar();
 });
 
 formRegistro.addEventListener("submit", async (e) => {
@@ -404,5 +428,5 @@ formRegistro.addEventListener("submit", async (e) => {
     loginOkEl.textContent = "Te mandé un mail para verificar tu cuenta. Confirmalo antes de ingresar.";
     return;
   }
-  window.location.href = destinoTrasIngresar;
+  irADestinoTrasIngresar();
 });

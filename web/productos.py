@@ -257,6 +257,7 @@ def escribir_productos_json(items, cotizacion, ruta):
     _escribir_json_atomico(manifiesto_ruta, {
         "version": CATALOGO_MANIFEST_VERSION,
         "generacion": str(uuid.uuid4()),
+        "cotizacion": cotizacion,
         "productos_sha256": productos_hash,
         "costos_sha256": costos_hash,
     })

@@ -10,3 +10,4 @@ email-validator
 reportlab==4.2.2
 supabase>=2.31,<3
 python-multipart
+pywebpush

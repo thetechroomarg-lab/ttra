@@ -143,6 +143,7 @@ def test_escribir_productos_json_publica_manifest_con_hashes_y_version_al_final(
     ]
     assert manifiesto["version"] == 1
     assert manifiesto["generacion"]
+    assert manifiesto["cotizacion"] == 1540
     assert manifiesto["productos_sha256"] == hashlib.sha256(ruta.read_bytes()).hexdigest()
     assert manifiesto["costos_sha256"] == hashlib.sha256(
         (tmp_path / "costos.json").read_bytes()

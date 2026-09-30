@@ -62,27 +62,227 @@ html[data-modo="classic"] .ttra-site-cart svg { width: 18px; height: 18px; }
 
 /* The public rate uses the same catalog generation as product prices. */
 html[data-modo="classic"] .ttra-site-tools { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-html[data-modo="classic"] .ttra-site-rate { display: block; color: var(--rc-green-dim); font: 500 12px/1.4 var(--rc-font); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: .02em; text-shadow: none; }
+html[data-modo="classic"] .ttra-site-rate { display: block; color: var(--rc-green-dim); font: 700 12px/1.4 var(--rc-font); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: .02em; text-shadow: none; }
 @media (max-width: 700px) {
   html[data-modo="classic"] .ttra-site-rate { font-size: 11px; }
   html[data-modo="classic"] .ttra-site-tools { gap: 8px; }
 }
 html[data-modo="classic"] .ttra-site-header .rc-header-derecha { flex-direction: column; align-items: flex-end; gap: 8px; }
 
-/* Shared two-row layout: exchange rate / theme / account, then the cart. */
+/* Shared three-row layout: rate, theme/account, then cart. */
 html[data-modo="classic"] .ttra-site-header :is(.rc-modo-y-carrito, .ttra-site-actions) {
-  display: grid; grid-template-columns: minmax(0, max-content) 44px 44px;
+  display: grid; grid-template-columns: repeat(2, minmax(44px, 1fr));
   align-items: center; gap: 6px 8px; width: max-content; max-width: 100%;
 }
 html[data-modo="classic"] .ttra-site-header .ttra-site-rate {
-  grid-column: 1; grid-row: 1; max-width: 112px; white-space: normal;
-  text-align: right; margin-right: 4px;
+  grid-column: 1 / -1; grid-row: 1; white-space: nowrap;
+  text-align: center;
 }
-html[data-modo="classic"] .ttra-site-header .ttra-theme { grid-column: 2; grid-row: 1; }
-html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-menu, .ttra-site-account) { grid-column: 3; grid-row: 1; width: 44px; }
+html[data-modo="classic"] .ttra-site-header .ttra-theme { grid-column: 1; grid-row: 2; justify-self: center; }
+html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-menu, .ttra-site-account) { grid-column: 2; grid-row: 2; width: 44px; justify-self: center; }
 html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-initials) { display: none; }
 html[data-modo="classic"] .ttra-site-header :is(#btn-carrito, .ttra-site-cart) {
-  grid-column: 2 / 4; grid-row: 2; justify-self: end; justify-content: center;
-  width: 100%; min-width: 0; padding: 10px 8px; gap: 6px;
+  grid-column: 1 / -1; grid-row: 3; justify-self: center; justify-content: center;
+  width: 100%; min-width: 0; padding: 10px 8px; gap: 6px; font-weight: 700;
 }
-html[data-modo="classic"] .ttra-site-header .indicador-mayorista { grid-column: 1 / -1; grid-row: 3; max-width: 216px; }
+html[data-modo="classic"] .ttra-site-header .indicador-mayorista { grid-column: 1 / -1; grid-row: 4; max-width: 216px; }
+/* The current page stays behind the shared checkout, including its scroll position. */
+.ttra-cart-dialog { position: fixed; inset: 0; margin: 0; padding: 0; border: 0; width: 100%; max-width: none; height: 100dvh; max-height: none; background: transparent; overflow: hidden; }
+.ttra-cart-dialog::backdrop { background: #10141859; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.ttra-cart-dialog iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+.ttra-cart-loading { position: absolute; inset: 20px auto auto 50%; transform: translateX(-50%); width: min(400px,90vw); padding: 24px; background: var(--rc-bg-panel); color: var(--rc-green); border: 1px solid var(--ed-line); text-align: center; }
+.ttra-cart-loading[hidden] { display: none; }
+.ttra-cart-loading button { min-height: 44px; padding: 10px 18px; cursor: pointer; }
+html.ttra-cart-embedded, html.ttra-cart-embedded body#rc-body-landing { background: transparent !important; }
+html.ttra-cart-embedded body#rc-body-landing > :not(aside):not(#overlay-carrito):not(#overlay-perfil):not(.rc-logout-overlay):not(.ttra-cart-feedback):not(script):not(style) { display: none !important; }
+html.ttra-cart-embedded #panel-carrito { top: 16px; bottom: 16px; }
+html.ttra-cart-embedded #overlay-carrito { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+/* Login embebido en un <dialog> (ver login-drawer.js): mismo patrón que el carrito. */
+.ttra-login-dialog { position: fixed; inset: 0; margin: 0; padding: 0; border: 0; width: 100%; max-width: none; height: 100dvh; max-height: none; background: transparent; overflow: hidden; }
+.ttra-login-dialog::backdrop { background: #10141859; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.ttra-login-dialog iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+.ttra-login-loading { position: absolute; inset: 20px auto auto 50%; transform: translateX(-50%); width: min(400px,90vw); padding: 24px; background: var(--rc-bg-panel); color: var(--rc-green); border: 1px solid var(--ed-line); text-align: center; }
+.ttra-login-loading[hidden] { display: none; }
+.ttra-login-loading button { min-height: 44px; padding: 10px 18px; cursor: pointer; }
+html.ttra-login-embedded, html.ttra-login-embedded body { background: transparent !important; }
+html.ttra-login-embedded body > :not(.ttra-auth-layout):not(script):not(style) { display: none !important; }
+html.ttra-login-embedded .ttra-auth-layout { min-height: 100dvh; }
+html.ttra-login-embedded .ttra-login-cerrar { display: flex !important; }
+/* Decorative atmosphere: below every content layer, never an input target. */
+html[data-modo="classic"] [data-ttra-menu] { box-sizing: border-box; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; z-index: 10020; background: var(--rc-bg-panel); color: var(--rc-green); }
+html[data-modo="classic"] [data-ttra-menu]::backdrop { background: transparent; pointer-events: none; }
+@media(max-width:700px) {
+  html[data-modo="classic"] body :is(select, input, textarea, .dropdown-color-boton),
+  html[data-modo="classic"] .tarjeta-recomendado .tarjeta-recomendado-acciones .dropdown-color-boton { font-size: 16px; }
+  html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, .sugerencias-direccion) :is(a, button, li) { font-size: 16px; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; color: var(--rc-green); }
+  html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .sugerencias-direccion) :is(a, button),
+  html[data-modo="classic"] .dropdown-color-lista li { min-height: 44px; padding: 12px 14px; }
+}
+@media(max-width:700px) {
+  html[data-modo="classic"] #rc-perfil-dropdown .rc-perfil-opcion { font-size: 16px; line-height: 1.4; min-height: 44px; padding: 12px 14px; color: var(--rc-green); }
+}
+/* Match the logo's typeface, weight and tracking without forcing uppercase. */
+html[data-modo="classic"] .ttra-site-header .ttra-site-rate,
+html[data-modo="classic"] .ttra-site-header :is(#btn-carrito, .ttra-site-cart) {
+  font: normal 800 16px/1.1 Arial, sans-serif;
+  letter-spacing: -.065em;
+  text-transform: none;
+  font-variant-numeric: normal;
+}
+html[data-modo="classic"] .ttra-site-header .ttra-theme {
+  font-family: Arial, sans-serif;
+  font-weight: 800;
+  font-style: normal;
+  text-transform: none;
+}
+/* Solid framing tones distinguish navigation and contact from page content. */
+html[data-modo="classic"] body > header.ttra-site-header,
+html[data-modo="classic"] body.ttra-page > header.ttra-site-header { background: var(--ed-header-bg); }
+html[data-modo="classic"] body > .rc-pie { background: var(--ed-footer-bg); }
+
+/* Account preferences live inside the profile menu. */
+html[data-modo="classic"] .ttra-site-header :is(.rc-logo-linea, .ttra-page-brand) { font-size: clamp(36px, 3.8vw, 52px); }
+html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-menu, .ttra-site-account) { grid-column: 1 / -1; }
+html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu) .ttra-theme {
+  display: flex; align-items: center; width: 100%; min-height: 48px;
+  padding: 12px; border: 0; border-radius: 0; text-align: left;
+  font: 500 16px/1.4 Arial, sans-serif; color: var(--rc-green);
+  background: transparent; cursor: pointer;
+}
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-site-header :is(.rc-logo-linea, .ttra-page-brand) { font-size: clamp(32px, 8.5vw, 42px); }
+  html[data-modo="classic"] .ttra-site-header :is(.rc-modo-y-carrito, .ttra-site-actions) { grid-template-columns: 48px 48px; gap: 8px 16px; }
+  html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-menu, .ttra-site-account) { grid-column: 1; grid-row: 2; width: 48px; }
+  html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-boton, .ttra-site-profile) { width: 48px; height: 48px; min-width: 48px; padding: 0; }
+  html[data-modo="classic"] .ttra-site-header :is(#btn-carrito, .ttra-site-cart) { grid-column: 2; grid-row: 2; width: 48px; height: 48px; padding: 10px; border: 0; position: relative; }
+  html[data-modo="classic"] .ttra-site-header :is(#btn-carrito, .ttra-site-cart) svg { display: block; width: 25px; height: 25px; flex: 0 0 25px; }
+  html[data-modo="classic"] .ttra-site-header .ttra-cart-label { display: none; }
+  html[data-modo="classic"] .ttra-site-header :is(#carrito-contador, .ttra-site-count) { position: absolute; top: 0; right: 0; font: 700 11px/16px Arial, sans-serif; min-width: 16px; border-radius: 8px; background: var(--rc-bg-panel-2); text-align: center; }
+  html[data-modo="classic"] .ttra-site-header .ttra-site-rate { font-size: 14px; }
+}
+
+/* Reserve space for the viewport-anchored navigation, including phone safe areas. */
+html[data-modo="classic"] .ttra-dock-section { flex: none; height: calc(112px + env(safe-area-inset-bottom, 0px)); }
+html[data-modo="classic"] .ttra-dock {
+  position: fixed; z-index: 60; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  translate: -50% 0; width: max-content; max-width: calc(100vw - 24px); padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--rc-green) 20%, transparent); border-radius: 28px;
+  background: color-mix(in srgb, var(--rc-bg-panel) 90%, transparent);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 14px 44px #00000045, inset 0 1px 0 #ffffff12;
+}
+html[data-modo="classic"] .ttra-dock :is(.rc-modo-y-carrito, .ttra-site-actions) {
+  display: grid; grid-template-columns: repeat(5, 48px); gap: 8px;
+  align-items: center; width: auto; margin: 0;
+}
+html[data-modo="classic"] .ttra-dock .ttra-dock-control {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; min-width: 48px; min-height: 48px; padding: 0; margin: 0;
+  border: 1px solid var(--ed-line); border-radius: 50%; background: var(--rc-bg-panel-2);
+  color: var(--rc-green); text-decoration: none; box-shadow: none; cursor: pointer;
+  transform: translateY(calc(var(--dock-lift, 0) * -7px));
+  transition: transform .18s ease, background .18s ease;
+}
+html[data-modo="classic"] .ttra-dock .ttra-dock-control svg { display: block; width: 24px; height: 24px; flex: 0 0 24px; transform: scale(calc(1 + var(--dock-lift, 0) * .18)); }
+html[data-modo="classic"] .ttra-dock .ttra-dock-home { grid-column: 1; grid-row: 1; }
+html[data-modo="classic"] .ttra-dock .ttra-dock-categories { grid-column: 2; grid-row: 1; }
+html[data-modo="classic"] .ttra-dock :is(#btn-carrito, .ttra-site-cart) { grid-column: 5; grid-row: 1; background: var(--rc-bg-panel-2); border-color: var(--ed-line); color: var(--rc-green); }
+html[data-modo="classic"] .ttra-dock :is(.rc-perfil-menu, .ttra-site-account) { grid-column: 5; grid-row: 1; justify-self: center; width: 48px; margin: 0; }
+html[data-modo="classic"] .ttra-dock :is(.rc-perfil-nombre, .ttra-site-initials, .ttra-cart-label, .indicador-mayorista, .btn-modo) { display: none; }
+html[data-modo="classic"] .ttra-dock :is(#carrito-contador, .ttra-site-count) { position: absolute; top: -4px; right: -3px; min-width: 18px; padding: 0 3px; border-radius: 10px; background: var(--rc-green); color: var(--rc-bg); font: 700 11px/18px Arial, sans-serif; }
+html[data-modo="classic"] .ttra-dock-label { position: absolute; left: 50%; bottom: calc(100% + 12px); translate: -50% 0; padding: 7px 10px; border: 1px solid var(--ed-line); border-radius: 8px; background: var(--rc-bg-panel); color: var(--rc-green); font: 600 13px/1.2 Arial, sans-serif; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; }
+html[data-modo="classic"] .ttra-dock-control:is(:hover, :focus-visible) > .ttra-dock-label { opacity: 1; }
+html[data-modo="classic"] .ttra-dock-control:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 4px; }
+html[data-modo="classic"] .ttra-dock-category-panel { position: absolute; bottom: calc(100% + 12px); left: 0; right: 0; padding: 8px; max-height: min(420px, calc(100dvh - 135px - env(safe-area-inset-bottom, 0px))); overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--ed-line); border-radius: 18px; background: var(--rc-bg-panel); box-shadow: 0 12px 40px #00000040; }
+html[data-modo="classic"] .ttra-dock-category-panel a { display: flex; align-items: center; min-height: 48px; padding: 10px 12px; color: var(--rc-green); font: 500 16px/1.3 Arial, sans-serif; text-decoration: none; border-radius: 10px; }
+html[data-modo="classic"] .ttra-dock-category-panel a:is(:hover, :focus-visible) { background: var(--rc-bg-panel-2); }
+html[data-modo="classic"] .ttra-dock [hidden] { display: none !important; }
+html[data-modo="classic"] .ttra-site-header .ttra-site-rate { grid-column: -2 / -1; justify-self: end; margin-left: auto; font-size: 16px; }
+html[data-modo="classic"] body.ttra-has-dock .ttra-site-header .rc-header-derecha,
+html[data-modo="classic"] body.ttra-has-dock .ttra-site-header .ttra-site-tools:empty { display: none; }
+html[data-modo="classic"] body:has(#rc-perfil-dropdown:not(.oculto)) .ttra-dock,
+html[data-modo="classic"].ttra-menu-open .ttra-dock { z-index: 9991; }
+html.ttra-welcome-pending .ttra-dock, html.ttra-cart-embedded .ttra-dock { display: none; }
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-site-header .ttra-site-rate { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .ttra-dock .ttra-dock-control,
+  html[data-modo="classic"] .ttra-dock .ttra-dock-control svg { transform: none; transition: none; }
+}
+html[data-modo="classic"] .ttra-dock :is(#btn-carrito, .ttra-site-cart) { border-radius: 50%; }
+html[data-modo="classic"] .ttra-dock .rc-perfil-icono { width: 24px; height: 24px; }
+html[data-modo="classic"] .ttra-dock .ttra-dock-control .rc-perfil-icono-fallout { display: none; }
+
+html[data-modo="classic"] .ttra-dock .ttra-dock-contact { grid-column: 4; grid-row: 1; }
+html[data-modo="classic"] #ttra-dock-contact a { gap: 12px; }
+html[data-modo="classic"] #ttra-dock-contact svg { width: 24px; height: 24px; flex: 0 0 24px; }
+
+/* Compact masthead with a larger, high-contrast live exchange rate. */
+html[data-modo="classic"] #rc-body-landing > header.ttra-site-header,
+html[data-modo="classic"] body.ttra-page > header.ttra-site-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 8px var(--ed-gutter); gap: 16px; align-items: center;
+  background: var(--ed-header-bg);
+}
+html[data-modo="classic"] .ttra-site-header .rc-header-centro { display: none; }
+html[data-modo="classic"] .ttra-site-header :is(.rc-logo-linea, .ttra-page-brand) { font-size: 40px; line-height: .82; color: var(--rc-green-bright); }
+html[data-modo="classic"] .ttra-site-header .ttra-site-rate { font-size: 22.4px; line-height: 1.1; color: var(--rc-green-bright); text-align: right; letter-spacing: 0; }
+@media (max-width: 700px) {
+  html[data-modo="classic"] #rc-body-landing > header.ttra-site-header,
+  html[data-modo="classic"] body.ttra-page > header.ttra-site-header { padding: 8px 20px; gap: 12px; }
+  html[data-modo="classic"] .ttra-site-header :is(.rc-logo-linea, .ttra-page-brand) { font-size: clamp(28px, 8vw, 32px); }
+  html[data-modo="classic"] .ttra-site-header .ttra-site-rate { font-size: 22.4px; }
+  html[data-modo="classic"] .ttra-site-rate .ttra-rate-amount { display: block; }
+}
+
+html[data-modo="classic"] .ttra-rate-label::after { content: ': '; white-space: pre; }
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-site-rate .ttra-rate-label { display: block; font-size: clamp(12.6px, 3.36vw, 19.6px); line-height: 1.3; }
+  html[data-modo="classic"] .ttra-rate-label::after { content: none; }
+}
+
+html[data-modo="classic"] .ttra-header-account { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; grid-column: 2; }
+html[data-modo="classic"] .ttra-header-account :is(.rc-perfil-menu, .ttra-site-account) { position: relative; width: 44px; margin: 0; }
+html[data-modo="classic"] .ttra-header-account :is(.rc-perfil-boton, .ttra-site-profile) { display: flex; align-items: center; justify-content: center; width: 44px; min-height: 44px; padding: 0; color: var(--rc-green-bright); }
+html[data-modo="classic"] .ttra-header-account [hidden] { display: none !important; }
+html[data-modo="classic"] .ttra-dock .ttra-dock-search { grid-column: 3; grid-row: 1; background: #d52f27; border-color: #ed635a; color: #fff; }
+html[data-modo="classic"] .ttra-dock :is(#btn-carrito, .ttra-site-cart) { grid-column: 5; }
+html[data-modo="classic"] .ttra-dock .ttra-dock-contact { grid-column: 4; }
+
+/* Unframed profile glyph; retain a comfortable touch target. */
+html[data-modo="classic"] .ttra-header-account :is(.rc-perfil-boton, .ttra-site-profile) {
+  border: 0; background: transparent; box-shadow: none;
+}
+html[data-modo="classic"] .ttra-header-account .rc-perfil-icono,
+html[data-modo="classic"] .ttra-header-account .ttra-site-profile svg { width: 25.3px; height: 25.3px; }
+html[data-modo="classic"] .ttra-header-account .rc-perfil-icono-classic > circle:first-child,
+html[data-modo="classic"] .ttra-header-account .ttra-site-profile svg > circle:first-child { display: none; }
+
+/* Hide the quote on the home only; shared and in-page catalog headers retain it. */
+body#rc-body-landing:not(.rc-vista-seccion) :is(.ttra-site-rate, #dolar-linea) { display: none; }
+
+/* Embedded pages keep their account logic, but only the host paints a header. */
+html.ttra-shell-content body > header.ttra-site-header {
+ position: fixed !important; top: 0; left: 0; width: 100%;
+ height: 0 !important; min-height: 0 !important; padding-block: 0 !important;
+ border: 0; visibility: hidden; pointer-events: none;
+}
+html.ttra-shell-content body > header :is(.ttra-site-menu, #rc-perfil-dropdown) {
+ position: fixed !important; top: 8px !important; right: 20px !important;
+ visibility: visible; pointer-events: auto;
+}
+html.ttra-shell-content { scroll-padding-top: 20px; }
+
+/* Account initials stay beside the profile glyph at every viewport width. */
+html[data-modo="classic"] .ttra-site-header .ttra-header-account :is(.rc-perfil-menu, .ttra-site-account) {
+ width: auto; min-width: 44px;
+}
+html[data-modo="classic"] .ttra-site-header .ttra-header-account :is(.rc-perfil-boton, .ttra-site-profile) {
+ width: auto; min-width: 44px; gap: 9px;
+}
+html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-initials):not(:empty) {
+ display: inline-block; order: -1; flex: 0 0 auto;
+ font: 700 16px/1 var(--rc-font); color: inherit;
+}
+html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-initials):empty { display: none; }

@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from web import entregas
 from web.ui_helpers import (
+    _html_direccion_entrega,
     CADETE_SLUG,
     _ADMIN_CLIENTES_ESTILO,
     _ADMIN_CLIENTES_PWA_HEAD,
@@ -198,7 +199,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         return (
             f'<div class="pedido-hoy" data-tipo-entrega="tarea" data-entrega-id="{tarea_id}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar tarea">≡</button><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
-            f'{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
+            f'{_html_direccion_entrega(tarea.get("direccion"))}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
             f'{_acciones_tarea(tarea)}</div>'
         )
 
@@ -219,7 +220,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     def _tarjeta_pedido(pedido):
         return (
             f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}" data-tipo-entrega="pedido" data-entrega-id="{html.escape(pedido.get("id", ""))}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar pedido">≡</button><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
-            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
+            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}{_html_direccion_entrega(pedido.get("direccion_entrega"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
             f'{_controles_entrega(pedido)}</div>'
         )
 

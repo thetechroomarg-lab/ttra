@@ -1,0 +1,79 @@
+[
+  {
+    "nombre": "Pencil PRO ( con iPad )",
+    "costo": 150.0,
+    "motivo": "precio condicionado a compra con iPad; no usar como precio unitario independiente"
+  },
+  {
+    "nombre": "Pencil USB C ( con iPad )",
+    "costo": 140.0,
+    "motivo": "precio condicionado a compra con iPad; no usar como precio unitario independiente"
+  },
+  {
+    "nombre": "iPhone 17 PRO 256GB",
+    "motivo": "costos distintos por color; conservar asociación exacta sin promediar",
+    "opciones": [
+      {
+        "nombre": "iPhone 17 PRO 256GB",
+        "costo": 1210.0,
+        "proveedor": "em",
+        "colores": [
+          "Silver"
+        ]
+      },
+      {
+        "nombre": "iPhone 17 PRO 256GB",
+        "costo": 1200.0,
+        "proveedor": "em",
+        "colores": [
+          "Blue"
+        ]
+      }
+    ]
+  },
+  {
+    "nombre": "MacBook Neo A18 Pro 6 Core CPU 256GB 8GB",
+    "motivo": "costos distintos por color; conservar asociación exacta sin promediar",
+    "opciones": [
+      {
+        "nombre": "MacBook Neo A18 Pro 6 Core CPU 256GB 8GB",
+        "costo": 870.0,
+        "proveedor": "em",
+        "colores": [
+          "Silver",
+          "Indigo"
+        ]
+      },
+      {
+        "nombre": "MacBook Neo A18 Pro 6 Core CPU 256GB 8GB",
+        "costo": 850.0,
+        "proveedor": "em",
+        "colores": [
+          "Citrus"
+        ]
+      }
+    ]
+  },
+  {
+    "nombre": "Magic Mouse 2",
+    "motivo": "costos distintos por color; conservar asociación exacta sin promediar",
+    "opciones": [
+      {
+        "nombre": "Magic Mouse 2",
+        "costo": 140.0,
+        "proveedor": "em",
+        "colores": [
+          "Black"
+        ]
+      },
+      {
+        "nombre": "Magic Mouse 2",
+        "costo": 120.0,
+        "proveedor": "em",
+        "colores": [
+          "silver"
+        ]
+      }
+    ]
+  }
+]

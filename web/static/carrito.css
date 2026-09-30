@@ -31,3 +31,27 @@ html[data-modo="classic"] .ttra-card-adding { opacity: .6; }
 @media (prefers-reduced-motion: reduce) {
   .ttra-cart-feedback { transition: none; }
 }
+
+#panel-carrito [hidden] { display: none !important; }
+#pedido-confirmado { padding: 20px 0; border-bottom: 1px solid currentColor; }
+#pedido-confirmado h3 { margin: 8px 0; font-size: 24px; line-height: 1.15; }
+#pedido-confirmado p { line-height: 1.5; }
+.pedido-confirmado-etiqueta { font-size: 11px; letter-spacing: .12em; }
+#pedido-confirmado-texto {
+  display: block; box-sizing: border-box; width: 100%; margin: 12px 0;
+  min-height: 180px; max-height: 35dvh; resize: vertical;
+  padding: 12px; border: 1px solid currentColor; border-radius: 6px;
+  background: var(--rc-bg-panel, #101910); color: inherit;
+  font: inherit; font-size: 14px; line-height: 1.5;
+}
+.pedido-confirmado-acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+#pedido-confirmado button { min-height: 44px; flex: 1; padding: 10px 16px; }
+#pedido-confirmado-estado { min-height: 1.5em; font-size: 13px; }
+
+#btn-whatsapp-pedido {
+  display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+  flex: 1 0 100%; min-height: 44px; padding: 10px 16px;
+  border: 1px solid currentColor; border-radius: 8px; color: inherit;
+  font: inherit; font-weight: 600; text-decoration: none;
+}
+#btn-whatsapp-pedido:hover { text-decoration: underline; }

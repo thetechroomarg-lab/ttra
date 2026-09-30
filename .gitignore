@@ -12,3 +12,6 @@ web/*.db
 web/clientes.json
 web/clientes.csv
 .worktrees/
+
+web/.security/
+outputs/

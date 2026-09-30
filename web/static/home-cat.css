@@ -1,6 +1,6 @@
 /* Decorative only: neither the overlay nor any SVG descendant can intercept input. */
 #ttra-home-cat, #ttra-home-cat * { pointer-events: none !important; user-select: none !important; -webkit-user-select: none !important; }
-#ttra-home-cat { position: fixed; top: 0; left: 0; z-index: 8; width: 76px; height: 64px; opacity: 0; visibility: hidden; contain: layout style; transition: opacity .18s ease; will-change: transform; }
+#ttra-home-cat { position: fixed; top: 0; left: 0; z-index: 8; width: 76px; height: 64px; opacity: 0; visibility: hidden; contain: layout style; will-change: transform; }
 #ttra-home-cat.is-visible { opacity: 1; visibility: visible; }
 #ttra-home-cat svg { width: 100%; height: 100%; display: block; overflow: visible; transform: scaleX(var(--cat-facing, 1)); }
 #ttra-home-cat .cat-pose { transform-box: view-box; transform-origin: 62px 91px; transition: transform .16s ease; }
@@ -16,5 +16,74 @@ html.ttra-scroll-locked #ttra-home-cat,
 body.rc-vista-seccion #ttra-home-cat { opacity: 0; visibility: hidden; }
 @keyframes cat-tail { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(8deg); } }
 @keyframes cat-blink { 0%,43%,47%,100% { transform: scaleY(1); } 45% { transform: scaleY(.08); } }
-@media(max-width:700px) { #ttra-home-cat { width: 60px; height: 50px; } }
+@media(max-width:700px) { #ttra-home-cat { width: 120px; height: 100px; } }
 @media(prefers-reduced-motion:reduce) { #ttra-home-cat, #ttra-home-cat * { animation: none !important; transition: none !important; } }
+/* Articulated poses: feet stay at the support; only shoulders and legs move. */
+#ttra-home-cat .cat-shadow { display: none; }
+#ttra-home-cat .cat-back, #ttra-home-cat .cat-scratch-paw { display: none; }
+#ttra-home-cat .cat-leg-front, #ttra-home-cat .cat-leg-rear, #ttra-home-cat .cat-head { transform-box: fill-box; transform-origin: center bottom; }
+#ttra-home-cat[data-state="walk"] .cat-leg-front { animation: cat-step .52s ease-in-out infinite; }
+#ttra-home-cat[data-state="walk"] .cat-leg-rear { animation: cat-step .52s ease-in-out -.26s infinite; }
+#ttra-home-cat[data-state="walk"] .cat-head { animation: cat-curious 1.04s ease-in-out infinite; }
+#ttra-home-cat[data-state="scratch"] .cat-scratch-paw { display: block; transform-box: fill-box; transform-origin: left bottom; animation: cat-scratch .17s ease-in-out infinite alternate; }
+#ttra-home-cat[data-state="scratch"] .cat-head { transform: rotate(-12deg); }
+#ttra-home-cat[data-state="scratch"] .cat-eyes { transform: scaleY(.12); animation: none; }
+#ttra-home-cat[data-state="look"] .cat-head { animation: cat-look 1.2s ease-in-out; }
+#ttra-home-cat[data-state="climb"] .cat-pose > :not(.cat-back) { visibility: hidden; }
+#ttra-home-cat[data-state="climb"] .cat-back { display: block; }
+#ttra-home-cat[data-state="climb"] .cat-climb-left { animation: cat-pull .32s ease-in-out infinite alternate; }
+#ttra-home-cat[data-state="climb"] .cat-climb-right { animation: cat-pull .32s ease-in-out -.32s infinite alternate; }
+#ttra-home-cat[data-state="peek"] .cat-pose { transform-origin: 60px 50px; transform: rotate(180deg); }
+#ttra-home-cat[data-state="peek"] svg { overflow: hidden; }
+#ttra-home-cat[data-state="drop"] .cat-pose { transform: scale(.92,1.04); }
+@keyframes cat-step { 0%,100% { transform: translateX(-3px); } 50% { transform: translate(3px,-4px) rotate(-8deg); } }
+@keyframes cat-curious { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.5px) rotate(2deg); } }
+@keyframes cat-scratch { from { transform: rotate(-9deg); } to { transform: rotate(12deg); } }
+@keyframes cat-look { 0%,100% { transform: rotate(0); } 40% { transform: rotate(-9deg); } 75% { transform: rotate(5deg); } }
+@keyframes cat-pull { from { transform: translateY(-3px); } to { transform: translateY(4px); } }
+#ttra-cat-layer { position: fixed; inset: 0; z-index: 8; pointer-events: none; overflow: hidden; contain: layout paint; }
+#ttra-home-cat[data-state="look"] .cat-pose > :not(.cat-back) { visibility: hidden; }
+#ttra-home-cat[data-state="look"] .cat-back { display: block; animation: cat-curious 1.2s ease-in-out; }
+#ttra-home-cat[data-state="walk"][data-gait="climb"] .cat-pose > :not(.cat-back) { visibility: hidden; }
+#ttra-home-cat[data-state="walk"][data-gait="climb"] .cat-back { display: block; }
+#ttra-home-cat[data-state="walk"][data-gait="climb"] .cat-climb-left { animation: cat-pull .38s ease-in-out infinite alternate; }
+#ttra-home-cat[data-state="walk"][data-gait="climb"] .cat-climb-right { animation: cat-pull .38s ease-in-out -.38s infinite alternate; }
+#ttra-home-cat[data-state="grip"] .cat-pose > :not(.cat-back) { visibility: hidden; }
+#ttra-home-cat[data-state="grip"] .cat-back { display: block; }
+#ttra-home-cat[data-state="grip"] .cat-climb-left { animation: cat-pull .34s ease-in-out infinite alternate; }
+#ttra-home-cat[data-state="grip"] .cat-climb-right { animation: cat-pull .34s ease-in-out -.34s infinite alternate; }
+.ttra-cat-claws { position: absolute; top: 0; left: 0; width: 18px; height: 22px; pointer-events: none; animation: cat-claws-fade 4s ease-out forwards; }
+.ttra-cat-claws svg { width: 100%; height: 100%; overflow: visible; }
+.ttra-cat-claws path { fill: none; stroke: #fff5dc; stroke-width: 1.3; stroke-linecap: round; filter: drop-shadow(1px 1px 0 #66482b99); }
+@keyframes cat-claws-fade { 0% { opacity: 0; } 10%,45% { opacity: .8; } 100% { opacity: 0; } }
+@media(prefers-reduced-motion:reduce) { .ttra-cat-claws { display: none; } }
+#ttra-home-cat .cat-strain-face { display: none; }
+#ttra-home-cat[data-state="poop"] .cat-eyes,
+#ttra-home-cat[data-state="poop"] .cat-mouth { visibility: hidden; }
+#ttra-home-cat[data-state="poop"] .cat-strain-face { display: block; }
+#ttra-home-cat[data-state="poop"] .cat-pose { transform: scale(1.06,.83); }
+#ttra-home-cat[data-state="poop"] .cat-head { animation: cat-strain .22s ease-in-out infinite alternate; }
+#ttra-home-cat[data-state="poop"] .cat-tail { animation: none; transform: rotate(22deg); }
+.ttra-cat-poop { position: absolute; top: 0; left: 0; width: 30px; height: 44px; pointer-events: none; animation: cat-poop-fade 5s linear forwards; }
+.ttra-cat-poop svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.cat-steam path { transform-box: fill-box; transform-origin: center; animation: cat-steam 1.5s ease-out infinite; }
+.cat-steam path:nth-child(2) { animation-delay: -.5s; }
+.cat-steam path:nth-child(3) { animation-delay: -1s; }
+@keyframes cat-strain { from { transform: translateX(-.7px) rotate(-3deg); } to { transform: translateX(.7px) rotate(-1deg); } }
+@keyframes cat-steam { from { opacity: .65; transform: translateY(2px) scaleX(.85); } to { opacity: 0; transform: translateY(-7px) scaleX(1.2); } }
+@keyframes cat-poop-fade { 0% { opacity: 0; } 5%,75% { opacity: 1; } 100% { opacity: 0; } }
+@media(prefers-reduced-motion:reduce) { .ttra-cat-poop { display: none; } }
+/* Keep the mascot proportionate to compact buttons and supporting copy. */
+#ttra-home-cat svg { transform-origin: 50% 95%; transform: scale(calc(var(--cat-facing, 1) * var(--cat-scale, 1)), var(--cat-scale, 1)); }
+
+/* On upward scrolling the ears appear from the lower edge before the hop. */
+#ttra-home-cat[data-state="peek"][data-entry-side="bottom"] .cat-pose { transform: none; }
+#ttra-home-cat[data-state="pee"] .cat-pose { transform: scale(1.03,.91); }
+#ttra-home-cat[data-state="pee"] .cat-leg-rear { transform: rotate(-38deg) translateY(-4px); }
+#ttra-home-cat[data-state="pee"] .cat-tail { animation: none; transform: rotate(28deg); }
+.ttra-cat-pee { position: absolute; top: 0; left: 0; width: 30px; height: 44px; pointer-events: none; animation: cat-poop-fade 5s linear forwards; }
+.ttra-cat-pee svg { display: block; width: 100%; height: 100%; }
+.cat-pee-stream { stroke-dasharray: 3 4; animation: cat-pee-stream .25s linear 3, cat-pee-stop .8s forwards; }
+@keyframes cat-pee-stream { to { stroke-dashoffset: -7; } }
+@keyframes cat-pee-stop { 0%,80% { opacity: .7; } 100% { opacity: 0; } }
+@media(prefers-reduced-motion:reduce) { .ttra-cat-pee { display: none; } }

@@ -1,0 +1,262 @@
+[
+  {
+    "codigo": "15-FA2013DX",
+    "nombre": "HP VICTUS 15-FA2013 GAMING Core i5-13420H 512GB SSD 8GB 15.6\" FHD 144Hz WIN11 NVIDIA RTX 3050 6GB Backlit Keyboard",
+    "stock": 4,
+    "costo": 980,
+    "colores": [
+      "Mica Silver"
+    ]
+  },
+  {
+    "codigo": "15-FC0037WM",
+    "nombre": "HP 15-FC0037 AMD Ryzen 5 7520U 256GB SSD 8GB 15.6\" FHD WIN11",
+    "stock": 1,
+    "costo": 600,
+    "colores": [
+      "Midnight Blue"
+    ]
+  },
+  {
+    "codigo": "BZ3K5AT",
+    "nombre": "NOTEBOOK HP G9 250RT INTEL N150 8GB RAM 256GB SSD 15.6\" HD FREEDOS ESPAÑOL BZ3K5AT",
+    "stock": 6,
+    "costo": 370,
+    "colores": []
+  },
+  {
+    "codigo": "15-FC0146DX",
+    "nombre": "HP 15-FC0146DX AMD Ryzen 5-7520U 512GB SSD 8GB RAM 15.6\"",
+    "stock": 1,
+    "costo": 575,
+    "colores": [
+      "Plata"
+    ]
+  },
+  {
+    "codigo": "B2HWFKG-006US",
+    "nombre": "MSI CYBORG 15 GAMING AMD Ryzen 9 270 1TB SSD 16GB 15.6\" FHD 144Hz WIN11 NVIDIA RTX 5060 8GB RGB Backlit Keyboard",
+    "stock": 1,
+    "costo": 1790,
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "codigo": "B2RWGKG-409US",
+    "nombre": "NOTEBOOK MSI CYBORG 15 GAMING INTEL ULTRA 7 240H 16GB RAM 1TB SSD NVIDIA RTX 5070 8GB 15.6\" 144Hz",
+    "stock": 1,
+    "costo": 1850,
+    "colores": []
+  },
+  {
+    "codigo": "A2XWIG-400US",
+    "nombre": "NOTEBOOK MSI VECTOR 16 HX AI 400 GAMING INTEL CORE ULTRA 9 275HX 16GB RAM 1TB SSD NVIDIA RTX 5080 16GB 16\" QHD+ 240Hz",
+    "stock": 0,
+    "costo": 2950,
+    "colores": []
+  },
+  {
+    "codigo": "CYBORG15B2071",
+    "nombre": "MSI Cyborg 15 GAMING Core 7-240H 512GB SSD 16GB 15.6\" FHD 144Hz IPS WIN11 NVIDIA RTX 5060 Backlit Keyboard",
+    "stock": 2,
+    "costo": 1640,
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "codigo": "LDC15255-A391BLK-PUS",
+    "nombre": "NOTEBOOK DELL INSPIRON 15 RYZEN 5-7520U 8GB RAM 512GB SSD 15.6\" FHD",
+    "stock": 2,
+    "costo": 630,
+    "colores": []
+  },
+  {
+    "codigo": "X1404VA-I512256",
+    "nombre": "Asus Vivobook 14 X1404VA-I512256 Core i5-1334U 256GB SSD 12GB 14\" FHD WIN11",
+    "stock": 1,
+    "costo": 610,
+    "colores": [
+      "Quiet Blue"
+    ]
+  },
+  {
+    "codigo": "X1404VA-V14.I38128",
+    "nombre": "Asus VivoBook X1404VA-I38128 Intel Core i3-1315U 128GB SSD 8GB RAM 14\"",
+    "stock": 0,
+    "costo": 399,
+    "colores": [
+      "Azul"
+    ]
+  },
+  {
+    "codigo": "V3607VP-DS74",
+    "nombre": "NOTEBOOK ASUS VIVOBOOK V16 GAMING INTEL CORE ULTRA 7 240H 16GB RAM 1TB SSD NVIDIA RTX 5070 8GB 16\" WUXGA 144Hz",
+    "stock": 1,
+    "costo": 1980,
+    "colores": []
+  },
+  {
+    "codigo": "83JG000JUS",
+    "nombre": "LENOVO LOQ 15AHP10 GAMING RYZEN 5 220 16GB 512GB SSD NVIDIA RTX 5050 8GB 15.6\" 144Hz",
+    "stock": 1,
+    "costo": 1340,
+    "colores": []
+  },
+  {
+    "codigo": "83UH0001US",
+    "nombre": "NOTEBOOK LENOVO IDEAPAD 5 14AGP11 2-EN-1 AMD AI 5 430 16GB RAM 512GB SSD 14\" WUXGA TACTIL",
+    "stock": 1,
+    "costo": 1015,
+    "colores": []
+  },
+  {
+    "codigo": "82X700KEUS",
+    "nombre": "NOTEBOOK LENOVO IDEAPAD SLIM INTEL CORE I5-1335U 16GB RAM 256GB SSD 15.6\" FHD",
+    "stock": 2,
+    "costo": 665,
+    "colores": []
+  },
+  {
+    "codigo": "NH.QHMAA.001",
+    "nombre": "Acer Predator Triton 300 SE PT314-52S-747P 14\" Intel Core i7-12700H 512GB SSD 16GB RAM NVIDIA GeForce RTX 3060 6GB Windows 11 Home",
+    "stock": 2,
+    "costo": 1370,
+    "colores": []
+  },
+  {
+    "codigo": "AG15-42P-R917",
+    "nombre": "Acer Aspire Go 15 AG15-42P-R917 Ryzen 7 7730U 512GB SSD 16GB 15.6\" FHD WIN11",
+    "stock": 7,
+    "costo": 770,
+    "colores": [
+      "Pure Silver"
+    ]
+  },
+  {
+    "codigo": "A16 3VHK3US894SH",
+    "nombre": "Gigabyte GAMING A16 AMD Ryzen 7 260 1TB SSD 16GB 16\" 1920x1200 165Hz WIN11 NVIDIA RTX 5060 8GB Backlit Keyboard",
+    "stock": 2,
+    "costo": 1560,
+    "colores": [
+      "Black Steel"
+    ]
+  },
+  {
+    "codigo": "558867",
+    "nombre": "GMKtec Mini PC M8 AMD Ryzen 5 PRO 6650H 6C/12T 4.50GHz Dual NIC LAN 2.5GbE 16GB LPDDR5 RAM 512GB PCIe SSD Oculink USB4 HDMI USB-C",
+    "stock": 3,
+    "costo": 560,
+    "colores": []
+  },
+  {
+    "codigo": "",
+    "nombre": "MINI PC ACEMAGIC KRON K1 AMD RYZEN 7 7730U 16GB RAM 1TB SSD WINDOWS 11",
+    "stock": 2,
+    "costo": 670,
+    "colores": []
+  },
+  {
+    "codigo": "",
+    "nombre": "SONY JOYSTICK PS5 DUALSENSE WIRELESS",
+    "stock": 3,
+    "costo": 80,
+    "colores": []
+  },
+  {
+    "codigo": "",
+    "nombre": "SAMSUNG ODYSSEY ARK 2 MONITOR GAMER 55\" 4K ULTRA HD ULTRAWIDE CURVO 165Hz 1MS",
+    "stock": 1,
+    "costo": 2055,
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "codigo": "P27FDA-RAGL",
+    "nombre": "MONITOR GAMER XIAOMI MI A27I 2026 27\" FHD 144Hz IPS P27FDA-RAGL",
+    "stock": 5,
+    "costo": 115,
+    "colores": []
+  },
+  {
+    "codigo": "",
+    "nombre": "MONITOR GAMER 27\" 2K QUAD HD 180Hz IPS G27QI 2026 ELA5593EU",
+    "stock": 3,
+    "costo": 215,
+    "colores": []
+  },
+  {
+    "codigo": "A2321",
+    "nombre": "AMAZFIT ANILLO INTELIGENTE HELIO RING 12\" A2321",
+    "stock": 1,
+    "costo": 170,
+    "colores": [
+      "Titanio"
+    ]
+  },
+  {
+    "codigo": "",
+    "nombre": "XIAOMI MONOPATIN ELECTRICO 4 PRO 2GEN",
+    "stock": 1,
+    "costo": 550,
+    "colores": []
+  },
+  {
+    "codigo": "",
+    "nombre": "TABLET DOOGEE U13 PRO 6GB RAM 256GB SSD 13.4\"",
+    "stock": 7,
+    "costo": 230,
+    "colores": [
+      "Gris",
+      "Azul"
+    ]
+  },
+  {
+    "codigo": "JBL",
+    "nombre": "PARLANTE JBL CHARGE 6 BT 5.4",
+    "stock": 2,
+    "costo": 135,
+    "colores": []
+  },
+  {
+    "codigo": "JBL",
+    "nombre": "PARLANTE JBL FLIP 7 BT 5.4",
+    "stock": 8,
+    "costo": 100,
+    "colores": []
+  },
+  {
+    "codigo": "JBL",
+    "nombre": "PARLANTE JBL BOOMBOX 4 BT 5.4",
+    "stock": 2,
+    "costo": 415,
+    "colores": []
+  },
+  {
+    "codigo": "JBL",
+    "nombre": "PARLANTE JBL GRIP BT 5.4 IP68 JBL PRO SOUND",
+    "stock": 10,
+    "costo": 60,
+    "colores": []
+  },
+  {
+    "codigo": "",
+    "nombre": "TABLET XIAOMI REDMI PAD SE 8GB RAM 128GB SSD 11\" FHD",
+    "stock": 3,
+    "costo": 215,
+    "colores": [
+      "Púrpura"
+    ]
+  },
+  {
+    "codigo": "",
+    "nombre": "TABLET DOOGEE U13 PRO 6GB RAM 256GB SSD 13.4\"",
+    "stock": 1,
+    "costo": 230,
+    "colores": [
+      "Azul"
+    ]
+  }
+]

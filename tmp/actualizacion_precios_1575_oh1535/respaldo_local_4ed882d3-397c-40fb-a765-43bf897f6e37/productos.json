@@ -1,0 +1,5849 @@
+[
+  {
+    "nombre": "IPHONE 17 PRO 256GB",
+    "categoria": "Apple - iPhone",
+    "usd": 1265,
+    "pesos": 1992375,
+    "transferencia": 2053995,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+17+PRO+256GB",
+    "colores": [
+      "Cosmic Orange",
+      "Deep Blue"
+    ]
+  },
+  {
+    "nombre": "IPHONE 17 PRO MAX 256GB",
+    "categoria": "Apple - iPhone",
+    "usd": 1355,
+    "pesos": 2134125,
+    "transferencia": 2200129,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+17+PRO+MAX+256GB",
+    "colores": [
+      "Cosmic Orange",
+      "Deep Blue",
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "MacMini M1 8CPU 8GPU 512GB 8GB",
+    "categoria": "Mac",
+    "usd": 700,
+    "pesos": 1102500,
+    "transferencia": 1136598,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MacMini+M1+8CPU+8GPU+512GB+8GB",
+    "colores": [
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "MacBook Neo A18 Pro 6 Core CPU 256GB 8GB",
+    "categoria": "Mac",
+    "usd": 915,
+    "pesos": 1441125,
+    "transferencia": 1485696,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MacBook+Neo+A18+Pro+6+Core+CPU+256GB+8GB",
+    "colores": [
+      "Silver",
+      "Indigo",
+      "Citrus"
+    ]
+  },
+  {
+    "nombre": "MacBook Neo A18 Pro 6 Core CPU 512GB 8GB",
+    "categoria": "Mac",
+    "usd": 1040,
+    "pesos": 1638000,
+    "transferencia": 1688660,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MacBook+Neo+A18+Pro+6+Core+CPU+512GB+8GB",
+    "colores": [
+      "Silver",
+      "Indigo",
+      "Blush",
+      "Citrus"
+    ]
+  },
+  {
+    "nombre": "Macbook Air 13 M5 10CPU 8GPU 512GB 16GB",
+    "categoria": "Mac",
+    "usd": 1635,
+    "pesos": 2575125,
+    "transferencia": 2654768,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Macbook+Air+13+M5+10CPU+8GPU+512GB+16GB",
+    "colores": [
+      "Silver",
+      "Midnight",
+      "Starlight"
+    ]
+  },
+  {
+    "nombre": "Macbook Air 15 M5 10CPU 10GPU 512GB 16GB",
+    "categoria": "Mac",
+    "usd": 1880,
+    "pesos": 2961000,
+    "transferencia": 3052577,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Macbook+Air+15+M5+10CPU+10GPU+512GB+16GB",
+    "colores": [
+      "Midnight"
+    ]
+  },
+  {
+    "nombre": "MacBook Pro 14 M5 10CPU 10GPU 1TB 16GB",
+    "categoria": "Mac",
+    "usd": 2340,
+    "pesos": 3685500,
+    "transferencia": 3799485,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MacBook+Pro+14+M5+10CPU+10GPU+1TB+16GB",
+    "colores": [
+      "Space Black",
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "MacBook Pro 14 M5 10CPU 10GPU 1TB 24GB",
+    "categoria": "Mac",
+    "usd": 2620,
+    "pesos": 4126500,
+    "transferencia": 4254124,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MacBook+Pro+14+M5+10CPU+10GPU+1TB+24GB",
+    "colores": [
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "MacBook Pro 14 M5 PRO 15CPU 16GPU 1TB 24GB",
+    "categoria": "Mac",
+    "usd": 3050,
+    "pesos": 4803750,
+    "transferencia": 4952320,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MacBook+Pro+14+M5+PRO+15CPU+16GPU+1TB+24GB",
+    "colores": [
+      "Space Black",
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "iPad Mini 7ma gen 128GB",
+    "categoria": "Apple - iPad",
+    "usd": 590,
+    "pesos": 929250,
+    "transferencia": 957990,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+Mini+7ma+gen+128GB",
+    "colores": [
+      "Space Gray"
+    ]
+  },
+  {
+    "nombre": "iPad A16 11\" 2025 128GB",
+    "categoria": "Apple - iPad",
+    "usd": 550,
+    "pesos": 866250,
+    "transferencia": 893041,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+A16+11%22+2025+128GB",
+    "colores": [
+      "Blue",
+      "Pink"
+    ]
+  },
+  {
+    "nombre": "iPad A16 11\" 2025 256GB",
+    "categoria": "Apple - iPad",
+    "usd": 660,
+    "pesos": 1039500,
+    "transferencia": 1071649,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+A16+11%22+2025+256GB",
+    "colores": [
+      "Silver",
+      "Pink",
+      "Yellow"
+    ]
+  },
+  {
+    "nombre": "iPad Air M4 11\" 128GB",
+    "categoria": "Apple - iPad",
+    "usd": 870,
+    "pesos": 1370250,
+    "transferencia": 1412629,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+Air+M4+11%22+128GB",
+    "colores": [
+      "Space Gray",
+      "Purple",
+      "Blue",
+      "Starlight"
+    ]
+  },
+  {
+    "nombre": "iPad Air M4 11\" 256GB",
+    "categoria": "Apple - iPad",
+    "usd": 990,
+    "pesos": 1559250,
+    "transferencia": 1607474,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+Air+M4+11%22+256GB",
+    "colores": [
+      "Space Gray",
+      "Purple",
+      "Blue",
+      "Starlight"
+    ]
+  },
+  {
+    "nombre": "iPad Air M3 13\" 128GB",
+    "categoria": "Apple - iPad",
+    "usd": 870,
+    "pesos": 1370250,
+    "transferencia": 1412629,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+Air+M3+13%22+128GB",
+    "colores": [
+      "Purple"
+    ]
+  },
+  {
+    "nombre": "iPad Air M4 13\" 128GB",
+    "categoria": "Apple - iPad",
+    "usd": 1090,
+    "pesos": 1716750,
+    "transferencia": 1769845,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+Air+M4+13%22+128GB",
+    "colores": [
+      "Purple"
+    ]
+  },
+  {
+    "nombre": "iPad Air M3 13\" 256GB",
+    "categoria": "Apple - iPad",
+    "usd": 1020,
+    "pesos": 1606500,
+    "transferencia": 1656186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+Air+M3+13%22+256GB",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "iPad Air M4 13\" 256GB",
+    "categoria": "Apple - iPad",
+    "usd": 1220,
+    "pesos": 1921500,
+    "transferencia": 1980928,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+Air+M4+13%22+256GB",
+    "colores": [
+      "Space Gray",
+      "Purple"
+    ]
+  },
+  {
+    "nombre": "iPad Pro 11 M5 256GB",
+    "categoria": "Apple - iPad",
+    "usd": 1310,
+    "pesos": 2063250,
+    "transferencia": 2127062,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+Pro+11+M5+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "iPad Pro 13\" M5 256GB",
+    "categoria": "Apple - iPad",
+    "usd": 1515,
+    "pesos": 2386125,
+    "transferencia": 2459923,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+Pro+13%22+M5+256GB",
+    "colores": [
+      "Space Black"
+    ]
+  },
+  {
+    "nombre": "Watch Xiaomi Band 7",
+    "categoria": "Apple - Watch",
+    "usd": 55,
+    "pesos": 86625,
+    "transferencia": 89304,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Watch+Xiaomi+Band+7",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Se 3ra Gen 40mm",
+    "categoria": "Otros",
+    "usd": 360,
+    "pesos": 567000,
+    "transferencia": 584536,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Se+3ra+Gen+40mm",
+    "colores": [
+      "Starlight Aluminium Case with Starlight Sport Band",
+      "midnight Aluminium Case with midnight Sport Band"
+    ]
+  },
+  {
+    "nombre": "Se 3ra Gen 44mm",
+    "categoria": "Otros",
+    "usd": 370,
+    "pesos": 582750,
+    "transferencia": 600773,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Se+3ra+Gen+44mm",
+    "colores": [
+      "Starlight Aluminium Case with Starlight Sport Band",
+      "midnight Aluminium Case with midnight Sport Band"
+    ]
+  },
+  {
+    "nombre": "Serie 10 + CELL 42mm",
+    "categoria": "Otros",
+    "usd": 750,
+    "pesos": 1181250,
+    "transferencia": 1217784,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Serie+10+%2B+CELL+42mm",
+    "colores": [
+      "Titanium Milanese Loop Gold"
+    ]
+  },
+  {
+    "nombre": "Serie 10 + CELL 46mm",
+    "categoria": "Otros",
+    "usd": 800,
+    "pesos": 1260000,
+    "transferencia": 1298969,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Serie+10+%2B+CELL+46mm",
+    "colores": [
+      "Titanium Milanese Loop Natural"
+    ]
+  },
+  {
+    "nombre": "Serie 11 42mm",
+    "categoria": "Otros",
+    "usd": 440,
+    "pesos": 693000,
+    "transferencia": 714433,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Serie+11+42mm",
+    "colores": [
+      "Rose Gold Al LB Sport Band"
+    ]
+  },
+  {
+    "nombre": "Serie 11 46mm",
+    "categoria": "Otros",
+    "usd": 470,
+    "pesos": 740250,
+    "transferencia": 763144,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Serie+11+46mm",
+    "colores": [
+      "Silver Al purple fog Sport Band",
+      "Space Gray Al Black Sport Band"
+    ]
+  },
+  {
+    "nombre": "Ultra 3 GPS + CELL 49mm",
+    "categoria": "Otros",
+    "usd": 875,
+    "pesos": 1378125,
+    "transferencia": 1420747,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Ultra+3+GPS+%2B+CELL+49mm",
+    "colores": [
+      "Titanium Black Ti Black Alpine Loop",
+      "Titanium Natural Case with Anchor Blue Ocean Band"
+    ]
+  },
+  {
+    "nombre": "AirPods Max 2 USB-C",
+    "categoria": "Apple - AirPods",
+    "usd": 670,
+    "pesos": 1055250,
+    "transferencia": 1087887,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=AirPods+Max+2+USB-C",
+    "colores": [
+      "Purple",
+      "Midnight",
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "AirPods 4 NOISE Cancellation",
+    "categoria": "Apple - AirPods",
+    "usd": 230,
+    "pesos": 362250,
+    "transferencia": 373454,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=AirPods+4+NOISE+Cancellation",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "AirPods Pro 3ra G",
+    "categoria": "Apple - AirPods",
+    "usd": 310,
+    "pesos": 488250,
+    "transferencia": 503351,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=AirPods+Pro+3ra+G",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Beats Studio 3",
+    "categoria": "Otros",
+    "usd": 230,
+    "pesos": 362250,
+    "transferencia": 373454,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Beats+Studio+3",
+    "colores": [
+      "Rojo",
+      "Azul"
+    ]
+  },
+  {
+    "nombre": "Magic Mouse 2 Black",
+    "categoria": "Otros",
+    "usd": 170,
+    "pesos": 267750,
+    "transferencia": 276031,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Magic+Mouse+2+Black",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Magic Mouse 2",
+    "categoria": "Otros",
+    "usd": 150,
+    "pesos": 236250,
+    "transferencia": 243557,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Magic+Mouse+2",
+    "colores": [
+      "silver"
+    ]
+  },
+  {
+    "nombre": "Airtag x 4",
+    "categoria": "Otros",
+    "usd": 160,
+    "pesos": 252000,
+    "transferencia": 259794,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Airtag+x+4"
+  },
+  {
+    "nombre": "Apple Magic Keyboard iPad A16",
+    "categoria": "Apple - iPad",
+    "usd": 390,
+    "pesos": 614250,
+    "transferencia": 633247,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Apple+Magic+Keyboard+iPad+A16",
+    "colores": [
+      "white"
+    ]
+  },
+  {
+    "nombre": "MAGIC KEYBOARD 11\" iPad Pro M1 - M2 / iPad Air M4 Español",
+    "categoria": "Apple - iPad",
+    "usd": 465,
+    "pesos": 732375,
+    "transferencia": 755026,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MAGIC+KEYBOARD+11%22+iPad+Pro+M1+-+M2+%2F+iPad+Air+M4+Espa%C3%B1ol",
+    "colores": [
+      "white"
+    ]
+  },
+  {
+    "nombre": "MAGIC KEYBOARD 11\" iPad Pro M1 - M2 / iPad Air M4",
+    "categoria": "Apple - iPad",
+    "usd": 465,
+    "pesos": 732375,
+    "transferencia": 755026,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MAGIC+KEYBOARD+11%22+iPad+Pro+M1+-+M2+%2F+iPad+Air+M4",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "MAGIC KEYBOARD 12.9” Pro M4 / Pro M5",
+    "categoria": "Otros",
+    "usd": 490,
+    "pesos": 771750,
+    "transferencia": 795619,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MAGIC+KEYBOARD+12.9%E2%80%9D+Pro+M4+%2F+Pro+M5",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Cargador Original en caja MacBook 67W USB C Enchufe Argentino",
+    "categoria": "Mac",
+    "usd": 90,
+    "pesos": 141750,
+    "transferencia": 146134,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Cargador+Original+en+caja+MacBook+67W+USB+C+Enchufe+Argentino"
+  },
+  {
+    "nombre": "Cable USB-C a USB-C Original Thunderbolt 3",
+    "categoria": "Otros",
+    "usd": 55,
+    "pesos": 86625,
+    "transferencia": 89304,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Cable+USB-C+a+USB-C+Original+Thunderbolt+3"
+  },
+  {
+    "nombre": "Pencil PRO ( con iPad )",
+    "categoria": "Apple - iPad",
+    "usd": 180,
+    "pesos": 283500,
+    "transferencia": 292268,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Pencil+PRO+%28+con+iPad+%29"
+  },
+  {
+    "nombre": "Pencil USB C ( con iPad )",
+    "categoria": "Apple - iPad",
+    "usd": 170,
+    "pesos": 267750,
+    "transferencia": 276031,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Pencil+USB+C+%28+con+iPad+%29"
+  },
+  {
+    "nombre": "Pencil PRO ( sin iPad )",
+    "categoria": "Apple - iPad",
+    "usd": 190,
+    "pesos": 299250,
+    "transferencia": 308505,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Pencil+PRO+%28+sin+iPad+%29"
+  },
+  {
+    "nombre": "Pencil USB C ( sin iPad )",
+    "categoria": "Apple - iPad",
+    "usd": 180,
+    "pesos": 283500,
+    "transferencia": 292268,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Pencil+USB+C+%28+sin+iPad+%29"
+  },
+  {
+    "nombre": "IPHONE 11 128GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 425,
+    "pesos": 669375,
+    "transferencia": 690077,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+11+128GB+CPO",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "IPHONE 11 PRO 64GB CPO (Caja con cargador)",
+    "categoria": "Apple - iPhone",
+    "usd": 405,
+    "pesos": 637875,
+    "transferencia": 657603,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+11+PRO+64GB+CPO+%28Caja+con+cargador%29",
+    "colores": [
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "IPHONE 15 128GB",
+    "categoria": "Apple - iPhone",
+    "usd": 740,
+    "pesos": 1165500,
+    "transferencia": 1201546,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+15+128GB",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "IPHONE 16 128GB",
+    "categoria": "Apple - iPhone",
+    "usd": 840,
+    "pesos": 1323000,
+    "transferencia": 1363918,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+16+128GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "IPHONE 16 128GB activado",
+    "categoria": "Apple - iPhone",
+    "usd": 780,
+    "pesos": 1228500,
+    "transferencia": 1266495,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+16+128GB+activado",
+    "colores": [
+      "Teal",
+      "White"
+    ]
+  },
+  {
+    "nombre": "iPhone 17 256GB",
+    "categoria": "Apple - iPhone",
+    "usd": 1030,
+    "pesos": 1622250,
+    "transferencia": 1672423,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+17+256GB",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "IPHONE 17 PRO 512GB",
+    "categoria": "Apple - iPhone",
+    "usd": 1470,
+    "pesos": 2315250,
+    "transferencia": 2386856,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+17+PRO+512GB",
+    "colores": [
+      "Cosmic Orange"
+    ]
+  },
+  {
+    "nombre": "IPHONE 17 PRO MAX 1TB nuevo sin activar, sin caja",
+    "categoria": "Apple - iPhone",
+    "usd": 1615,
+    "pesos": 2543625,
+    "transferencia": 2622294,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+17+PRO+MAX+1TB+nuevo+sin+activar%2C+sin+caja",
+    "colores": [
+      "Cosmic Orange",
+      "Deep Blue"
+    ]
+  },
+  {
+    "nombre": "AIRPODS PRO 2DA GENERACIÓN",
+    "categoria": "Apple - AirPods",
+    "usd": 270,
+    "pesos": 425250,
+    "transferencia": 438402,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=AIRPODS+PRO+2DA+GENERACI%C3%93N",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "APPLE AIRTAGS RASTREADOR 4 PACK",
+    "categoria": "Otros",
+    "usd": 125,
+    "pesos": 196875,
+    "transferencia": 202964,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLE+AIRTAGS+RASTREADOR+4+PACK",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "APPLE PENCIL 2",
+    "categoria": "Otros",
+    "usd": 115,
+    "pesos": 181125,
+    "transferencia": 186727,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLE+PENCIL+2",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "APPLEWATCH S10 42MM GPS Aluminum Case",
+    "categoria": "Apple - Watch",
+    "usd": 395,
+    "pesos": 622125,
+    "transferencia": 641366,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLEWATCH+S10+42MM+GPS+Aluminum+Case",
+    "colores": [
+      "Rose Gold Al Lb Sport Band S/M"
+    ]
+  },
+  {
+    "nombre": "APPLEWATCH S10 46MM GPS Aluminum Case",
+    "categoria": "Apple - Watch",
+    "usd": 380,
+    "pesos": 598500,
+    "transferencia": 617010,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLEWATCH+S10+46MM+GPS+Aluminum+Case",
+    "colores": [
+      "Rose Gold Al Lb Sport Band M/L",
+      "Rose Gold Al Plum Sl"
+    ]
+  },
+  {
+    "nombre": "APPLEWATCH S11 42MM GPS Aluminum Case",
+    "categoria": "Apple - Watch",
+    "usd": 445,
+    "pesos": 700875,
+    "transferencia": 722552,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLEWATCH+S11+42MM+GPS+Aluminum+Case",
+    "colores": [
+      "Jet Black Al Black Sport Band S/m"
+    ]
+  },
+  {
+    "nombre": "APPLEWATCH SE 3 40MM GPS",
+    "categoria": "Apple - Watch",
+    "usd": 355,
+    "pesos": 559125,
+    "transferencia": 576418,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLEWATCH+SE+3+40MM+GPS",
+    "colores": [
+      "Midnight Al Midnight Sport Band S/m",
+      "Midnight Al Midnight Sport Band S/m Gps"
+    ]
+  },
+  {
+    "nombre": "APPLEWATCH ULTRA 2 49MM CEL GPS",
+    "categoria": "Apple - Watch",
+    "usd": 700,
+    "pesos": 1102500,
+    "transferencia": 1136598,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLEWATCH+ULTRA+2+49MM+CEL+GPS",
+    "colores": [
+      "Black Ti Black Ocean Band",
+      "Black Ti Dark Green Alp Lp L",
+      "Black Titanium Ocean Band"
+    ]
+  },
+  {
+    "nombre": "IPAD PRO M4 11¨ 512GB + celular 5G",
+    "categoria": "Apple - iPad",
+    "usd": 1435,
+    "pesos": 2260125,
+    "transferencia": 2330026,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPAD+PRO+M4+11%C2%A8+512GB+%2B+celular+5G",
+    "colores": [
+      "Silver",
+      "Space Black"
+    ]
+  },
+  {
+    "nombre": "IPAD PRO M4 13¨ 512GB WIFI+5G celular",
+    "categoria": "Apple - iPad",
+    "usd": 1685,
+    "pesos": 2653875,
+    "transferencia": 2735954,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPAD+PRO+M4+13%C2%A8+512GB+WIFI%2B5G+celular",
+    "colores": [
+      "Space Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14 5G 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 295,
+    "pesos": 464625,
+    "transferencia": 478995,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTE+14+5G+8GB+256GB",
+    "colores": [
+      "Lavender Purple"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 275,
+    "pesos": 433125,
+    "transferencia": 446521,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTE+14+8GB+256GB",
+    "colores": [
+      "Mist Purple",
+      "Ocean Blue"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14 PRO 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 380,
+    "pesos": 598500,
+    "transferencia": 617010,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTE+14+PRO+5G+12GB+512GB",
+    "colores": [
+      "Coral Green"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14 PRO 5G 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 320,
+    "pesos": 504000,
+    "transferencia": 519588,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTE+14+PRO+5G+8GB+256GB",
+    "colores": [
+      "Coral Green"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14 PRO PLUS 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 435,
+    "pesos": 685125,
+    "transferencia": 706314,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTE+14+PRO+PLUS+5G+12GB+512GB",
+    "colores": [
+      "Midnight Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14 PRO PLUS 5g 256gb/8gb",
+    "categoria": "Xiaomi",
+    "usd": 340,
+    "pesos": 535500,
+    "transferencia": 552062,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+14+PRO+PLUS+5g+256gb%2F8gb",
+    "colores": [
+      "Gold"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14S 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 315,
+    "pesos": 496125,
+    "transferencia": 511469,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTE+14S+12GB+512GB",
+    "colores": [
+      "Midnight Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14S 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 275,
+    "pesos": 433125,
+    "transferencia": 446521,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTE+14S+8GB+256GB",
+    "colores": [
+      "Midnight Black"
+    ]
+  },
+  {
+    "nombre": "POCO C71 3GB 64GB",
+    "categoria": "Xiaomi",
+    "usd": 165,
+    "pesos": 259875,
+    "transferencia": 267912,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+C71+3GB+64GB",
+    "colores": [
+      "Black",
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "POCO C71 4GB 128GB",
+    "categoria": "Xiaomi",
+    "usd": 175,
+    "pesos": 275625,
+    "transferencia": 284149,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+C71+4GB+128GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "POCO C81 PRO 4GB 128GB",
+    "categoria": "Xiaomi",
+    "usd": 180,
+    "pesos": 283500,
+    "transferencia": 292268,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+C81+PRO+4GB+128GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "POCO C81 PRO 4GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 205,
+    "pesos": 322875,
+    "transferencia": 332861,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+C81+PRO+4GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "POCO C81 PRO 4GB 64GB",
+    "categoria": "Xiaomi",
+    "usd": 165,
+    "pesos": 259875,
+    "transferencia": 267912,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+C81+PRO+4GB+64GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO C85 128gb/6gb",
+    "categoria": "Xiaomi",
+    "usd": 200,
+    "pesos": 315000,
+    "transferencia": 324742,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+C85+128gb%2F6gb",
+    "colores": [
+      "Black",
+      "Green",
+      "Violet"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO C85 256gb/8gb",
+    "categoria": "Xiaomi",
+    "usd": 225,
+    "pesos": 354375,
+    "transferencia": 365335,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+C85+256gb%2F8gb",
+    "colores": [
+      "Black",
+      "Violet"
+    ]
+  },
+  {
+    "nombre": "POCO F6 PRO 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 420,
+    "pesos": 661500,
+    "transferencia": 681959,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+F6+PRO+5G+12GB+512GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "POCO F7 5G 12GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 485,
+    "pesos": 763875,
+    "transferencia": 787500,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+F7+5G+12GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "POCO F7 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 520,
+    "pesos": 819000,
+    "transferencia": 844330,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+F7+5G+12GB+512GB",
+    "colores": [
+      "Silver",
+      "White"
+    ]
+  },
+  {
+    "nombre": "POCO F7 ULTRA 5G 12GB 256GB (s/ cargador)",
+    "categoria": "Xiaomi",
+    "usd": 590,
+    "pesos": 929250,
+    "transferencia": 957990,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+F7+ULTRA+5G+12GB+256GB+%28s%2F+cargador%29",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "POCO F8 PRO 5G 12GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 640,
+    "pesos": 1008000,
+    "transferencia": 1039175,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+F8+PRO+5G+12GB+256GB",
+    "colores": [
+      "Black",
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "Poco F8 Pro 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 730,
+    "pesos": 1149750,
+    "transferencia": 1185309,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Poco+F8+Pro+5G+12GB+512GB",
+    "colores": [
+      "Plata titanio"
+    ]
+  },
+  {
+    "nombre": "POCO F8 ULTRA 5G 16GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 945,
+    "pesos": 1488375,
+    "transferencia": 1534407,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+F8+ULTRA+5G+16GB+512GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "POCO F9 PRO 5G 12GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 860,
+    "pesos": 1354500,
+    "transferencia": 1396392,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+F9+PRO+5G+12GB+256GB",
+    "colores": [
+      "Aurora Green",
+      "Black",
+      "White"
+    ]
+  },
+  {
+    "nombre": "POCO F9 PRO 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 935,
+    "pesos": 1472625,
+    "transferencia": 1518170,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+F9+PRO+5G+12GB+512GB",
+    "colores": [
+      "Aurora Green",
+      "Black",
+      "White"
+    ]
+  },
+  {
+    "nombre": "POCO M7 6GB 128GB",
+    "categoria": "Xiaomi",
+    "usd": 230,
+    "pesos": 362250,
+    "transferencia": 373454,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+M7+6GB+128GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "POCO M7 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 250,
+    "pesos": 393750,
+    "transferencia": 405928,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+M7+8GB+256GB",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO M8 5g 512gb/8gb",
+    "categoria": "Xiaomi",
+    "usd": 315,
+    "pesos": 496125,
+    "transferencia": 511469,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+M8+5g+512gb%2F8gb",
+    "colores": [
+      "Black",
+      "Green",
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO M8 PRO 5g 256gb/8gb",
+    "categoria": "Xiaomi",
+    "usd": 375,
+    "pesos": 590625,
+    "transferencia": 608892,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+M8+PRO+5g+256gb%2F8gb",
+    "colores": [
+      "Green"
+    ]
+  },
+  {
+    "nombre": "POCO X7 PRO 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 430,
+    "pesos": 677250,
+    "transferencia": 698196,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+X7+PRO+5G+12GB+512GB",
+    "colores": [
+      "Green",
+      "Yellow"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO x7 PRO 5g 256gb/8gb",
+    "categoria": "Xiaomi",
+    "usd": 365,
+    "pesos": 574875,
+    "transferencia": 592655,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+x7+PRO+5g+256gb%2F8gb",
+    "colores": [
+      "Green"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO x8 PRO 512gb/12gb 5G",
+    "categoria": "Xiaomi",
+    "usd": 480,
+    "pesos": 756000,
+    "transferencia": 779381,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+x8+PRO+512gb%2F12gb+5G",
+    "colores": [
+      "Mint Green",
+      "White"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO x8 PRO 256gb/8gb 5G",
+    "categoria": "Xiaomi",
+    "usd": 415,
+    "pesos": 653625,
+    "transferencia": 673840,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+x8+PRO+256gb%2F8gb+5G",
+    "colores": [
+      "Yellow"
+    ]
+  },
+  {
+    "nombre": "POCO X8 PRO 5G 8GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 465,
+    "pesos": 732375,
+    "transferencia": 755026,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+X8+PRO+5G+8GB+512GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "POCO X8 PRO MAX 5G 12GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 585,
+    "pesos": 921375,
+    "transferencia": 949871,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+X8+PRO+MAX+5G+12GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "POCO X8 PRO MAX 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 630,
+    "pesos": 992250,
+    "transferencia": 1022938,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=POCO+X8+PRO+MAX+5G+12GB+512GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "REDMI 14C 4GB 128GB (4GB+4GB)",
+    "categoria": "Xiaomi",
+    "usd": 180,
+    "pesos": 283500,
+    "transferencia": 292268,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+14C+4GB+128GB+%284GB%2B4GB%29",
+    "colores": [
+      "Midnight Black"
+    ]
+  },
+  {
+    "nombre": "REDMI 15 6GB 128GB",
+    "categoria": "Xiaomi",
+    "usd": 220,
+    "pesos": 346500,
+    "transferencia": 357216,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+15+6GB+128GB",
+    "colores": [
+      "Midnight Black",
+      "Titan Gray"
+    ]
+  },
+  {
+    "nombre": "REDMI 15 8GB 128GB",
+    "categoria": "Xiaomi",
+    "usd": 225,
+    "pesos": 354375,
+    "transferencia": 365335,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+15+8GB+128GB",
+    "colores": [
+      "Midnight Black"
+    ]
+  },
+  {
+    "nombre": "Redmi 15 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 255,
+    "pesos": 401625,
+    "transferencia": 414046,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+15+8GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "REDMI 15C 4GB 128GB (4GB+4GB)",
+    "categoria": "Xiaomi",
+    "usd": 190,
+    "pesos": 299250,
+    "transferencia": 308505,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+15C+4GB+128GB+%284GB%2B4GB%29",
+    "colores": [
+      "Midnight Black",
+      "Mint Green",
+      "Moonlight Blue"
+    ]
+  },
+  {
+    "nombre": "REDMI 15C 4GB 256GB (4GB+4GB)",
+    "categoria": "Xiaomi",
+    "usd": 220,
+    "pesos": 346500,
+    "transferencia": 357216,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+15C+4GB+256GB+%284GB%2B4GB%29",
+    "colores": [
+      "Midnight Black",
+      "Moonlight Blue"
+    ]
+  },
+  {
+    "nombre": "REDMI 15C 8GB 256GB (8GB+8GB)",
+    "categoria": "Xiaomi",
+    "usd": 230,
+    "pesos": 362250,
+    "transferencia": 373454,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+15C+8GB+256GB+%288GB%2B8GB%29",
+    "colores": [
+      "Midnight Black",
+      "Moonlight Blue"
+    ]
+  },
+  {
+    "nombre": "REDMI 17 4GB 128GB",
+    "categoria": "Xiaomi",
+    "usd": 240,
+    "pesos": 378000,
+    "transferencia": 389691,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+17+4GB+128GB",
+    "colores": [
+      "Lotus Purple"
+    ]
+  },
+  {
+    "nombre": "REDMI 17 4GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 265,
+    "pesos": 417375,
+    "transferencia": 430284,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+17+4GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "REDMI A5 3GB 64GB",
+    "categoria": "Xiaomi",
+    "usd": 150,
+    "pesos": 236250,
+    "transferencia": 243557,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+A5+3GB+64GB",
+    "colores": [
+      "Lake Green"
+    ]
+  },
+  {
+    "nombre": "REDMI A5 3GB 64GB (3GB + 3GB)",
+    "categoria": "Xiaomi",
+    "usd": 150,
+    "pesos": 236250,
+    "transferencia": 243557,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+A5+3GB+64GB+%283GB+%2B+3GB%29",
+    "colores": [
+      "Midnight Black",
+      "Sandy Gold"
+    ]
+  },
+  {
+    "nombre": "REDMI A5 4GB 128GB",
+    "categoria": "Xiaomi",
+    "usd": 185,
+    "pesos": 291375,
+    "transferencia": 300387,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+A5+4GB+128GB",
+    "colores": [
+      "Lake Green",
+      "Midnight Black",
+      "Ocean Blue",
+      "Sandy Gold"
+    ]
+  },
+  {
+    "nombre": "REDMI A5 4GB 128GB (4GB + 4GB)",
+    "categoria": "Xiaomi",
+    "usd": 185,
+    "pesos": 291375,
+    "transferencia": 300387,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+A5+4GB+128GB+%284GB+%2B+4GB%29",
+    "colores": [
+      "Midnight Black"
+    ]
+  },
+  {
+    "nombre": "REDMI A7 PRO 4GB 128GB",
+    "categoria": "Xiaomi",
+    "usd": 185,
+    "pesos": 291375,
+    "transferencia": 300387,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+A7+PRO+4GB+128GB",
+    "colores": [
+      "Black",
+      "Mist Blue",
+      "Palm Green"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 256gb/8gb 5g",
+    "categoria": "Xiaomi",
+    "usd": 320,
+    "pesos": 504000,
+    "transferencia": 519588,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+15+256gb%2F8gb+5g",
+    "colores": [
+      "Black",
+      "Glacier Blue"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 6GB 128GB",
+    "categoria": "Xiaomi",
+    "usd": 250,
+    "pesos": 393750,
+    "transferencia": 405928,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+15+6GB+128GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 275,
+    "pesos": 433125,
+    "transferencia": 446521,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+15+8GB+256GB",
+    "colores": [
+      "Black",
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 PRO 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 435,
+    "pesos": 685125,
+    "transferencia": 706314,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+15+PRO+5G+12GB+512GB",
+    "colores": [
+      "Black",
+      "Glacier Blue"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 Pro 5G 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 380,
+    "pesos": 598500,
+    "transferencia": 617010,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+15+Pro+5G+8GB+256GB",
+    "colores": [
+      "Black",
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 PRO 512gb/8gb 5g",
+    "categoria": "Xiaomi",
+    "usd": 405,
+    "pesos": 637875,
+    "transferencia": 657603,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+15+PRO+512gb%2F8gb+5g",
+    "colores": [
+      "Titanium"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 PRO 256gb/8gb",
+    "categoria": "Xiaomi",
+    "usd": 335,
+    "pesos": 527625,
+    "transferencia": 543943,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+15+PRO+256gb%2F8gb",
+    "colores": [
+      "Black",
+      "Glacier Blue"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 PRO+ 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 485,
+    "pesos": 763875,
+    "transferencia": 787500,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+15+PRO%2B+5G+12GB+512GB",
+    "colores": [
+      "Black",
+      "Glacier Blue",
+      "Mocha Brown"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 PRO+ 5G 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 430,
+    "pesos": 677250,
+    "transferencia": 698196,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+15+PRO%2B+5G+8GB+256GB",
+    "colores": [
+      "Black",
+      "Glacier Blue"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 4GB 128GB",
+    "categoria": "Xiaomi",
+    "usd": 275,
+    "pesos": 433125,
+    "transferencia": 446521,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+17+4GB+128GB",
+    "colores": [
+      "Sky Teal"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 5G 6GB 128GB NFC (6GB+6GB)",
+    "categoria": "Xiaomi",
+    "usd": 315,
+    "pesos": 496125,
+    "transferencia": 511469,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+17+5G+6GB+128GB+NFC+%286GB%2B6GB%29",
+    "colores": [
+      "Black",
+      "Celestial Purple",
+      "Sky Teal"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 6GB 128GB (6GB+6GB)",
+    "categoria": "Xiaomi",
+    "usd": 290,
+    "pesos": 456750,
+    "transferencia": 470876,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+17+6GB+128GB+%286GB%2B6GB%29",
+    "colores": [
+      "Black",
+      "Celestial Purple"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 6GB 256GB (6GB+6GB)",
+    "categoria": "Xiaomi",
+    "usd": 305,
+    "pesos": 480375,
+    "transferencia": 495232,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+17+6GB+256GB+%286GB%2B6GB%29",
+    "colores": [
+      "Black",
+      "Sky Teal"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 325,
+    "pesos": 511875,
+    "transferencia": 527706,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+17+8GB+256GB",
+    "colores": [
+      "Black",
+      "Celestial Purple",
+      "Sky Teal"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 PRO 5G 8GB 256GB NFC (8GB+8GB)",
+    "categoria": "Xiaomi",
+    "usd": 430,
+    "pesos": 677250,
+    "transferencia": 698196,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+17+PRO+5G+8GB+256GB+NFC+%288GB%2B8GB%29",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 PRO MAX 5G 8GB 256GB NFC (8GB+8GB)",
+    "categoria": "Xiaomi",
+    "usd": 515,
+    "pesos": 811125,
+    "transferencia": 836211,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+17+PRO+MAX+5G+8GB+256GB+NFC+%288GB%2B8GB%29",
+    "colores": [
+      "Cloud Blush",
+      "Green"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 PRO MAX 5G 8GB 512GB NFC (8GB+8GB)",
+    "categoria": "Xiaomi",
+    "usd": 585,
+    "pesos": 921375,
+    "transferencia": 949871,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REDMI+NOTE+17+PRO+MAX+5G+8GB+512GB+NFC+%288GB%2B8GB%29",
+    "colores": [
+      "Black",
+      "Cloud Blush",
+      "Green",
+      "Purple"
+    ]
+  },
+  {
+    "nombre": "XIAOMI 15 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 885,
+    "pesos": 1393875,
+    "transferencia": 1436985,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+15+5G+12GB+512GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "XIAOMI 15 5G 12GB 512GB (s/ cargador)",
+    "categoria": "Xiaomi",
+    "usd": 800,
+    "pesos": 1260000,
+    "transferencia": 1298969,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+15+5G+12GB+512GB+%28s%2F+cargador%29",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "XIAOMI 15t PRO 5G 256/12gb",
+    "categoria": "Xiaomi",
+    "usd": 740,
+    "pesos": 1165500,
+    "transferencia": 1201546,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+15t+PRO+5G+256%2F12gb",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "XIAOMI 15T PRO 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 810,
+    "pesos": 1275750,
+    "transferencia": 1315206,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+15T+PRO+5G+12GB+512GB",
+    "colores": [
+      "Mocha Gold"
+    ]
+  },
+  {
+    "nombre": "XIAOMI 17 12GB 512GB (s/ cargador)",
+    "categoria": "Xiaomi",
+    "usd": 915,
+    "pesos": 1441125,
+    "transferencia": 1485696,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+17+12GB+512GB+%28s%2F+cargador%29",
+    "colores": [
+      "Black",
+      "Ice Blue"
+    ]
+  },
+  {
+    "nombre": "A06 4GB 128GB",
+    "categoria": "Samsung",
+    "usd": 185,
+    "pesos": 291375,
+    "transferencia": 300387,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A06+4GB+128GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "A06 4GB 64GB",
+    "categoria": "Samsung",
+    "usd": 165,
+    "pesos": 259875,
+    "transferencia": 267912,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A06+4GB+64GB",
+    "colores": [
+      "Gold",
+      "Light Blue"
+    ]
+  },
+  {
+    "nombre": "A07 4GB 128GB",
+    "categoria": "Samsung",
+    "usd": 205,
+    "pesos": 322875,
+    "transferencia": 332861,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A07+4GB+128GB",
+    "colores": [
+      "Black",
+      "Green"
+    ]
+  },
+  {
+    "nombre": "A07 4GB 128GB con cargador",
+    "categoria": "Samsung",
+    "usd": 190,
+    "pesos": 299250,
+    "transferencia": 308505,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A07+4GB+128GB+con+cargador",
+    "colores": [
+      "Black",
+      "Green"
+    ]
+  },
+  {
+    "nombre": "A07 4GB 64GB",
+    "categoria": "Samsung",
+    "usd": 170,
+    "pesos": 267750,
+    "transferencia": 276031,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A07+4GB+64GB",
+    "colores": [
+      "Black",
+      "Green",
+      "Light Violet"
+    ]
+  },
+  {
+    "nombre": "A16 4GB 128GB",
+    "categoria": "Samsung",
+    "usd": 200,
+    "pesos": 315000,
+    "transferencia": 324742,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A16+4GB+128GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "A17 4GB 128GB",
+    "categoria": "Samsung",
+    "usd": 220,
+    "pesos": 346500,
+    "transferencia": 357216,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A17+4GB+128GB",
+    "colores": [
+      "Black",
+      "Gray",
+      "Light Blue"
+    ]
+  },
+  {
+    "nombre": "A17 5G 8GB 256GB",
+    "categoria": "Samsung",
+    "usd": 360,
+    "pesos": 567000,
+    "transferencia": 584536,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A17+5G+8GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "A17 6GB 128GB",
+    "categoria": "Samsung",
+    "usd": 260,
+    "pesos": 409500,
+    "transferencia": 422165,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A17+6GB+128GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "A17 8GB 256GB",
+    "categoria": "Samsung",
+    "usd": 300,
+    "pesos": 472500,
+    "transferencia": 487113,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A17+8GB+256GB",
+    "colores": [
+      "Black",
+      "Gray",
+      "Light Blue"
+    ]
+  },
+  {
+    "nombre": "A26 5G 6GB 128GB",
+    "categoria": "Samsung",
+    "usd": 295,
+    "pesos": 464625,
+    "transferencia": 478995,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A26+5G+6GB+128GB",
+    "colores": [
+      "Peach Pink"
+    ]
+  },
+  {
+    "nombre": "A27 5G 6GB 128GB",
+    "categoria": "Samsung",
+    "usd": 310,
+    "pesos": 488250,
+    "transferencia": 503351,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A27+5G+6GB+128GB",
+    "colores": [
+      "Black",
+      "Blue",
+      "Light Pink"
+    ]
+  },
+  {
+    "nombre": "A27 5G 8GB 256GB",
+    "categoria": "Samsung",
+    "usd": 400,
+    "pesos": 630000,
+    "transferencia": 649485,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A27+5G+8GB+256GB",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "A36 5G 8GB 128GB",
+    "categoria": "Samsung",
+    "usd": 355,
+    "pesos": 559125,
+    "transferencia": 576418,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A36+5G+8GB+128GB",
+    "colores": [
+      "Awesome Black",
+      "Awesome Lime",
+      "Awesome White"
+    ]
+  },
+  {
+    "nombre": "A36 5G 8GB 256GB",
+    "categoria": "Samsung",
+    "usd": 370,
+    "pesos": 582750,
+    "transferencia": 600773,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A36+5G+8GB+256GB",
+    "colores": [
+      "Awesome Black",
+      "Awesome Lavender",
+      "Awesome Lime"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG A37 5g 128/6GB Dual",
+    "categoria": "Samsung",
+    "usd": 355,
+    "pesos": 559125,
+    "transferencia": 576418,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+A37+5g+128%2F6GB+Dual",
+    "colores": [
+      "Negro",
+      "Violeta",
+      "Blanco",
+      "Verde"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG A37 5g 256/8GB Dual",
+    "categoria": "Samsung",
+    "usd": 415,
+    "pesos": 653625,
+    "transferencia": 673840,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+A37+5g+256%2F8GB+Dual",
+    "colores": [
+      "Negro",
+      "Violeta",
+      "Blanco",
+      "Verde"
+    ]
+  },
+  {
+    "nombre": "A56 5G 12GB 256GB",
+    "categoria": "Samsung",
+    "usd": 480,
+    "pesos": 756000,
+    "transferencia": 779381,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A56+5G+12GB+256GB",
+    "colores": [
+      "Awesome Olive"
+    ]
+  },
+  {
+    "nombre": "A56 5G 8GB 128GB",
+    "categoria": "Samsung",
+    "usd": 405,
+    "pesos": 637875,
+    "transferencia": 657603,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A56+5G+8GB+128GB",
+    "colores": [
+      "Awesome Graphite",
+      "Awesome Olive",
+      "Awesome Pink"
+    ]
+  },
+  {
+    "nombre": "A56 5G 8GB 256GB",
+    "categoria": "Samsung",
+    "usd": 435,
+    "pesos": 685125,
+    "transferencia": 706314,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A56+5G+8GB+256GB",
+    "colores": [
+      "Awesome Graphite",
+      "Awesome Olive"
+    ]
+  },
+  {
+    "nombre": "A57 5G 8GB 256GB",
+    "categoria": "Samsung",
+    "usd": 450,
+    "pesos": 708750,
+    "transferencia": 730670,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A57+5G+8GB+256GB",
+    "colores": [
+      "Awesome Gray",
+      "Awesome Navy"
+    ]
+  },
+  {
+    "nombre": "S25 FE 5G 8GB 256GB",
+    "categoria": "Samsung",
+    "usd": 635,
+    "pesos": 1000125,
+    "transferencia": 1031057,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S25+FE+5G+8GB+256GB",
+    "colores": [
+      "Navy"
+    ]
+  },
+  {
+    "nombre": "S25 FE 5G 8GB 512GB",
+    "categoria": "Samsung",
+    "usd": 680,
+    "pesos": 1071000,
+    "transferencia": 1104124,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S25+FE+5G+8GB+512GB",
+    "colores": [
+      "Icyblue",
+      "Jetblack",
+      "Navy"
+    ]
+  },
+  {
+    "nombre": "S25 ULTRA 5G 12GB 256GB",
+    "categoria": "Samsung",
+    "usd": 875,
+    "pesos": 1378125,
+    "transferencia": 1420747,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S25+ULTRA+5G+12GB+256GB",
+    "colores": [
+      "Titanium Silverblue",
+      "Titanium Whitesilver"
+    ]
+  },
+  {
+    "nombre": "S25 ULTRA 5G 12GB 512GB",
+    "categoria": "Samsung",
+    "usd": 980,
+    "pesos": 1543500,
+    "transferencia": 1591237,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S25+ULTRA+5G+12GB+512GB",
+    "colores": [
+      "Titanium Silverblue"
+    ]
+  },
+  {
+    "nombre": "S26 5G 12GB 512GB",
+    "categoria": "Samsung",
+    "usd": 910,
+    "pesos": 1433250,
+    "transferencia": 1477577,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S26+5G+12GB+512GB",
+    "colores": [
+      "Cobalt Violet"
+    ]
+  },
+  {
+    "nombre": "S26 PLUS 5G 12GB 256GB",
+    "categoria": "Samsung",
+    "usd": 950,
+    "pesos": 1496250,
+    "transferencia": 1542526,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S26+PLUS+5G+12GB+256GB",
+    "colores": [
+      "Black",
+      "Cobalt Violet"
+    ]
+  },
+  {
+    "nombre": "S26 PLUS 5G 12GB 512GB",
+    "categoria": "Samsung",
+    "usd": 1170,
+    "pesos": 1842750,
+    "transferencia": 1899742,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S26+PLUS+5G+12GB+512GB",
+    "colores": [
+      "Black",
+      "White"
+    ]
+  },
+  {
+    "nombre": "S26 ULTRA 5G 12GB 256GB",
+    "categoria": "Samsung",
+    "usd": 1050,
+    "pesos": 1653750,
+    "transferencia": 1704897,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S26+ULTRA+5G+12GB+256GB",
+    "colores": [
+      "Colbat Violet"
+    ]
+  },
+  {
+    "nombre": "S26 ULTRA 5G 12GB 512GB",
+    "categoria": "Samsung",
+    "usd": 1190,
+    "pesos": 1874250,
+    "transferencia": 1932216,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S26+ULTRA+5G+12GB+512GB",
+    "colores": [
+      "Colbat Violet",
+      "Sky Blue"
+    ]
+  },
+  {
+    "nombre": "MOTO E15 2GB 64GB",
+    "categoria": "Motorola",
+    "usd": 165,
+    "pesos": 259875,
+    "transferencia": 267912,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+E15+2GB+64GB",
+    "colores": [
+      "Quarry Blue"
+    ]
+  },
+  {
+    "nombre": "MOTO EDGE 60 FUSION 5G 12GB 256GB",
+    "categoria": "Motorola",
+    "usd": 370,
+    "pesos": 582750,
+    "transferencia": 600773,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+EDGE+60+FUSION+5G+12GB+256GB",
+    "colores": [
+      "Pantone Amazonite (Blue)"
+    ]
+  },
+  {
+    "nombre": "MOTO EDGE 60 FUSION 5G 8GB 256GB (s/ cargador)",
+    "categoria": "Motorola",
+    "usd": 305,
+    "pesos": 480375,
+    "transferencia": 495232,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+EDGE+60+FUSION+5G+8GB+256GB+%28s%2F+cargador%29",
+    "colores": [
+      "Pantone Amazonite (Blue)"
+    ]
+  },
+  {
+    "nombre": "MOTO EDGE 60 PRO 5G 12GB 512GB (s/ cargador)",
+    "categoria": "Motorola",
+    "usd": 540,
+    "pesos": 850500,
+    "transferencia": 876804,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+EDGE+60+PRO+5G+12GB+512GB+%28s%2F+cargador%29",
+    "colores": [
+      "Pantone Shadow (Green)"
+    ]
+  },
+  {
+    "nombre": "MOTO EDGE 70 5G 8GB 256GB",
+    "categoria": "Motorola",
+    "usd": 460,
+    "pesos": 724500,
+    "transferencia": 746907,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+EDGE+70+5G+8GB+256GB",
+    "colores": [
+      "Pantone Bronze Green"
+    ]
+  },
+  {
+    "nombre": "MOTO Edge 70 FUSION 5g 256/8gb",
+    "categoria": "Motorola",
+    "usd": 435,
+    "pesos": 685125,
+    "transferencia": 706314,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+Edge+70+FUSION+5g+256%2F8gb",
+    "colores": [
+      "Verde",
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "MOTO G04S 4GB 256GB",
+    "categoria": "Motorola",
+    "usd": 180,
+    "pesos": 283500,
+    "transferencia": 292268,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G04S+4GB+256GB",
+    "colores": [
+      "Aurora Green",
+      "Satin Blue"
+    ]
+  },
+  {
+    "nombre": "MOTO G05 4GB 128GB",
+    "categoria": "Motorola",
+    "usd": 175,
+    "pesos": 275625,
+    "transferencia": 284149,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G05+4GB+128GB",
+    "colores": [
+      "Red"
+    ]
+  },
+  {
+    "nombre": "MOTO G06 128/4GB Dual",
+    "categoria": "Motorola",
+    "usd": 180,
+    "pesos": 283500,
+    "transferencia": 292268,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G06+128%2F4GB+Dual",
+    "colores": [
+      "PANTONE Tapestri (AZUL)"
+    ]
+  },
+  {
+    "nombre": "MOTO G06 256/4GB Dual",
+    "categoria": "Motorola",
+    "usd": 205,
+    "pesos": 322875,
+    "transferencia": 332861,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G06+256%2F4GB+Dual",
+    "colores": [
+      "Blue",
+      "khaky"
+    ]
+  },
+  {
+    "nombre": "MOTO G06 4GB 64GB",
+    "categoria": "Motorola",
+    "usd": 155,
+    "pesos": 244125,
+    "transferencia": 251675,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G06+4GB+64GB",
+    "colores": [
+      "Pantone Arabesque (Orange)",
+      "Pantone Tapestry (Blue)",
+      "Pantone Tendril (Green)"
+    ]
+  },
+  {
+    "nombre": "MOTO G06 POWER 4GB 64GB (s/ cargador)",
+    "categoria": "Motorola",
+    "usd": 160,
+    "pesos": 252000,
+    "transferencia": 259794,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G06+POWER+4GB+64GB+%28s%2F+cargador%29",
+    "colores": [
+      "Pantone Laurel Oak (Khaki)",
+      "Pantone Tapestry (Blue)"
+    ]
+  },
+  {
+    "nombre": "MOTO G15 4GB 128GB",
+    "categoria": "Motorola",
+    "usd": 190,
+    "pesos": 299250,
+    "transferencia": 308505,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G15+4GB+128GB",
+    "colores": [
+      "Gray"
+    ]
+  },
+  {
+    "nombre": "MOTO G15 4GB 256GB",
+    "categoria": "Motorola",
+    "usd": 210,
+    "pesos": 330750,
+    "transferencia": 340979,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G15+4GB+256GB",
+    "colores": [
+      "Gray",
+      "Green"
+    ]
+  },
+  {
+    "nombre": "MOTO G15 4GB 512GB",
+    "categoria": "Motorola",
+    "usd": 220,
+    "pesos": 346500,
+    "transferencia": 357216,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G15+4GB+512GB",
+    "colores": [
+      "Blue",
+      "Light Blue"
+    ]
+  },
+  {
+    "nombre": "MOTO G17 4GB 256GB",
+    "categoria": "Motorola",
+    "usd": 250,
+    "pesos": 393750,
+    "transferencia": 405928,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G17+4GB+256GB",
+    "colores": [
+      "Pantone Alaskan Blue (Light Blue)",
+      "Pantone Evening Blue (Blueberry)"
+    ]
+  },
+  {
+    "nombre": "MOTO G17 POWER 8GB 256GB",
+    "categoria": "Motorola",
+    "usd": 285,
+    "pesos": 448875,
+    "transferencia": 462758,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G17+POWER+8GB+256GB",
+    "colores": [
+      "Pantone Evening Blue (Blueberry)"
+    ]
+  },
+  {
+    "nombre": "MOTO G35 5G 4GB 256GB",
+    "categoria": "Motorola",
+    "usd": 230,
+    "pesos": 362250,
+    "transferencia": 373454,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G35+5G+4GB+256GB",
+    "colores": [
+      "Black",
+      "Orange"
+    ]
+  },
+  {
+    "nombre": "MOTO G47 5G 8GB 128GB (s/ cargador)",
+    "categoria": "Motorola",
+    "usd": 235,
+    "pesos": 370125,
+    "transferencia": 381572,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G47+5G+8GB+128GB+%28s%2F+cargador%29",
+    "colores": [
+      "Pantone Impenetrable (Grey)",
+      "Pantone Nautical Blue"
+    ]
+  },
+  {
+    "nombre": "MOTO G56 5G 12GB 256GB",
+    "categoria": "Motorola",
+    "usd": 305,
+    "pesos": 480375,
+    "transferencia": 495232,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G56+5G+12GB+256GB",
+    "colores": [
+      "Pantone Dill (Green)"
+    ]
+  },
+  {
+    "nombre": "MOTO G56 5G 8GB 256GB",
+    "categoria": "Motorola",
+    "usd": 295,
+    "pesos": 464625,
+    "transferencia": 478995,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G56+5G+8GB+256GB",
+    "colores": [
+      "Pantone Black Oyster (Black)"
+    ]
+  },
+  {
+    "nombre": "MOTO G67 4GB 256GB",
+    "categoria": "Motorola",
+    "usd": 320,
+    "pesos": 504000,
+    "transferencia": 519588,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G67+4GB+256GB",
+    "colores": [
+      "Pantone Nile (Lime)"
+    ]
+  },
+  {
+    "nombre": "MOTO G77 8GB 256GB",
+    "categoria": "Motorola",
+    "usd": 315,
+    "pesos": 496125,
+    "transferencia": 511469,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G77+8GB+256GB",
+    "colores": [
+      "Pantone Black Olive (Coffee)",
+      "Pantone Shaded Spruce (Green)"
+    ]
+  },
+  {
+    "nombre": "MOTO G86 5G 8GB 256GB",
+    "categoria": "Motorola",
+    "usd": 335,
+    "pesos": 527625,
+    "transferencia": 543943,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G86+5G+8GB+256GB",
+    "colores": [
+      "Pantone Chrysanthemum (Pink)",
+      "Pantone Spellbound (Blue)"
+    ]
+  },
+  {
+    "nombre": "MOTO G86 5G 8GB 256GB (s/ cargador)",
+    "categoria": "Motorola",
+    "usd": 290,
+    "pesos": 456750,
+    "transferencia": 470876,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G86+5G+8GB+256GB+%28s%2F+cargador%29",
+    "colores": [
+      "Pantone Chrysanthemum (Pink)",
+      "Pantone Cosmic Sky (Lilac Blue)",
+      "Pantone Spellbound (Dark Blue)"
+    ]
+  },
+  {
+    "nombre": "MOTO G96 5g 128/8GB Dual",
+    "categoria": "Motorola",
+    "usd": 280,
+    "pesos": 441000,
+    "transferencia": 454639,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G96+5g+128%2F8GB+Dual",
+    "colores": [
+      "Pink",
+      "Green"
+    ]
+  },
+  {
+    "nombre": "REALME C71 4GB 128GB (4gb+8gb)",
+    "categoria": "Realme",
+    "usd": 165,
+    "pesos": 259875,
+    "transferencia": 267912,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REALME+C71+4GB+128GB+%284gb%2B8gb%29",
+    "colores": [
+      "Forest Owl",
+      "White Swan"
+    ]
+  },
+  {
+    "nombre": "REALME C71 8GB 256GB (8gb+16gb)",
+    "categoria": "Realme",
+    "usd": 200,
+    "pesos": 315000,
+    "transferencia": 324742,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REALME+C71+8GB+256GB+%288gb%2B16gb%29",
+    "colores": [
+      "White Swan"
+    ]
+  },
+  {
+    "nombre": "REALME C75X 8GB 256GB",
+    "categoria": "Realme",
+    "usd": 180,
+    "pesos": 283500,
+    "transferencia": 292268,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REALME+C75X+8GB+256GB",
+    "colores": [
+      "Oceanic Blue"
+    ]
+  },
+  {
+    "nombre": "REALME C85 8GB 256GB",
+    "categoria": "Realme",
+    "usd": 280,
+    "pesos": 441000,
+    "transferencia": 454639,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REALME+C85+8GB+256GB",
+    "colores": [
+      "Kingfisher Blue",
+      "Swan Black"
+    ]
+  },
+  {
+    "nombre": "REALME C85 PRO 8GB 256GB",
+    "categoria": "Realme",
+    "usd": 305,
+    "pesos": 480375,
+    "transferencia": 495232,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REALME+C85+PRO+8GB+256GB",
+    "colores": [
+      "Peacock Green"
+    ]
+  },
+  {
+    "nombre": "REALME NOTE 60X 4GB 128GB",
+    "categoria": "Realme",
+    "usd": 170,
+    "pesos": 267750,
+    "transferencia": 276031,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REALME+NOTE+60X+4GB+128GB",
+    "colores": [
+      "Marble Black"
+    ]
+  },
+  {
+    "nombre": "REALME NOTE 70 4GB 128GB (4gb+8gb)",
+    "categoria": "Realme",
+    "usd": 160,
+    "pesos": 252000,
+    "transferencia": 259794,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REALME+NOTE+70+4GB+128GB+%284gb%2B8gb%29",
+    "colores": [
+      "Obsidian Black"
+    ]
+  },
+  {
+    "nombre": "REALME NOTE 70 4GB 256GB (4gb+8gb)",
+    "categoria": "Realme",
+    "usd": 180,
+    "pesos": 283500,
+    "transferencia": 292268,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REALME+NOTE+70+4GB+256GB+%284gb%2B8gb%29",
+    "colores": [
+      "Beach Gold"
+    ]
+  },
+  {
+    "nombre": "INFINIX HOT 60 PRO+ 8GB 256GB",
+    "categoria": "Otros",
+    "usd": 285,
+    "pesos": 448875,
+    "transferencia": 462758,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=INFINIX+HOT+60+PRO%2B+8GB+256GB",
+    "colores": [
+      "Sleek Black",
+      "Titanium Silver"
+    ]
+  },
+  {
+    "nombre": "ADAPTADOR MULTIFUNCION 6 EN 1 TIPO-C HDTV",
+    "categoria": "Otros",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=ADAPTADOR+MULTIFUNCION+6+EN+1+TIPO-C+HDTV",
+    "colores": [
+      "Gray"
+    ]
+  },
+  {
+    "nombre": "ADAPTADOR MULTIFUNCION 7 EN 1 TIPO-C HDTV",
+    "categoria": "Otros",
+    "usd": 40,
+    "pesos": 63000,
+    "transferencia": 64948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=ADAPTADOR+MULTIFUNCION+7+EN+1+TIPO-C+HDTV",
+    "colores": [
+      "Gray"
+    ]
+  },
+  {
+    "nombre": "Cámara Instax Mini 12tm Instant Camera Bundle",
+    "categoria": "Otros",
+    "usd": 170,
+    "pesos": 267750,
+    "transferencia": 276031,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=C%C3%A1mara+Instax+Mini+12tm+Instant+Camera+Bundle",
+    "colores": [
+      "."
+    ]
+  },
+  {
+    "nombre": "Cargador Apple Usb-c De 140w CERTIFICADO",
+    "categoria": "Otros",
+    "usd": 150,
+    "pesos": 236250,
+    "transferencia": 243557,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Cargador+Apple+Usb-c+De+140w+CERTIFICADO",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "CARTUCHO DE TINTA HP 667 3YM78AL 2ML COLOR",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=CARTUCHO+DE+TINTA+HP+667+3YM78AL+2ML+COLOR",
+    "colores": [
+      "Tricolor"
+    ]
+  },
+  {
+    "nombre": "CELULAR ITEL 2GB 32GB",
+    "categoria": "Otros",
+    "usd": 95,
+    "pesos": 149625,
+    "transferencia": 154253,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=CELULAR+ITEL+2GB+32GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "CELULAR LUSH MINT 2GB 16GB",
+    "categoria": "Otros",
+    "usd": 85,
+    "pesos": 133875,
+    "transferencia": 138015,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=CELULAR+LUSH+MINT+2GB+16GB",
+    "colores": [
+      "Yellow"
+    ]
+  },
+  {
+    "nombre": "CELULAR NOKIA 110 4g",
+    "categoria": "Otros",
+    "usd": 75,
+    "pesos": 118125,
+    "transferencia": 121778,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=CELULAR+NOKIA+110+4g",
+    "colores": [
+      "Black",
+      "Midnight Blue"
+    ]
+  },
+  {
+    "nombre": "GALAXY SMART TAG 2 (2023) 1 PACK LOCALIZADOR BLUETOOTH",
+    "categoria": "Samsung",
+    "usd": 70,
+    "pesos": 110250,
+    "transferencia": 113660,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=GALAXY+SMART+TAG+2+%282023%29+1+PACK+LOCALIZADOR+BLUETOOTH",
+    "colores": [
+      "."
+    ]
+  },
+  {
+    "nombre": "GAME CONSOLE R36S",
+    "categoria": "Otros",
+    "usd": 70,
+    "pesos": 110250,
+    "transferencia": 113660,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=GAME+CONSOLE+R36S",
+    "colores": [
+      "Black",
+      "Purple",
+      "White"
+    ]
+  },
+  {
+    "nombre": "INSTAX WIDE PELICULA INSTANTANEA",
+    "categoria": "Otros",
+    "usd": 70,
+    "pesos": 110250,
+    "transferencia": 113660,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=INSTAX+WIDE+PELICULA+INSTANTANEA",
+    "colores": [
+      "."
+    ]
+  },
+  {
+    "nombre": "JOYSTICK PS5 INALÁMBRICO SONY PLAYSTATION 5 DUALSENSE",
+    "categoria": "Otros",
+    "usd": 115,
+    "pesos": 181125,
+    "transferencia": 186727,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=JOYSTICK+PS5+INAL%C3%81MBRICO+SONY+PLAYSTATION+5+DUALSENSE",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "MICRO SD 32GB CLASE 10",
+    "categoria": "Otros",
+    "usd": 40,
+    "pesos": 63000,
+    "transferencia": 64948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MICRO+SD+32GB+CLASE+10",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "MUSIC HEADBAND DIADEMA",
+    "categoria": "Otros",
+    "usd": 40,
+    "pesos": 63000,
+    "transferencia": 64948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MUSIC+HEADBAND+DIADEMA",
+    "colores": [
+      "Black",
+      "Gray"
+    ]
+  },
+  {
+    "nombre": "NINTENDO SWITCH OLED 64GB",
+    "categoria": "Otros",
+    "usd": 420,
+    "pesos": 661500,
+    "transferencia": 681959,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NINTENDO+SWITCH+OLED+64GB",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "PARLANTE JBL FLIP 7",
+    "categoria": "Otros",
+    "usd": 125,
+    "pesos": 196875,
+    "transferencia": 202964,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=PARLANTE+JBL+FLIP+7",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Repetidor Extensor de rango Wi-Fi TP-Link TL-WA850RE V7",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Repetidor+Extensor+de+rango+Wi-Fi+TP-Link+TL-WA850RE+V7",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "SELFIE RING LIGHT",
+    "categoria": "Otros",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SELFIE+RING+LIGHT",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "TARJETA DE MEMORIA MICRO SD KINGSTON 32GB + ADAPTADOR SD.",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=TARJETA+DE+MEMORIA+MICRO+SD+KINGSTON+32GB+%2B+ADAPTADOR+SD.",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "VOLANTE LOGITECH G29 RACING PC PS3 PS4 PS5 220V",
+    "categoria": "Otros",
+    "usd": 325,
+    "pesos": 511875,
+    "transferencia": 527706,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=VOLANTE+LOGITECH+G29+RACING+PC+PS3+PS4+PS5+220V",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "WIRELESS MUSIC GOGGLES",
+    "categoria": "Otros",
+    "usd": 40,
+    "pesos": 63000,
+    "transferencia": 64948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=WIRELESS+MUSIC+GOGGLES",
+    "colores": [
+      "Black",
+      "Gray"
+    ]
+  },
+  {
+    "nombre": "XIAOMI MI BAND 9",
+    "categoria": "Xiaomi",
+    "usd": 60,
+    "pesos": 94500,
+    "transferencia": 97423,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+MI+BAND+9",
+    "colores": [
+      "Pink"
+    ]
+  },
+  {
+    "nombre": "XIAOMI MI BAND 9 ACTIVE",
+    "categoria": "Xiaomi",
+    "usd": 60,
+    "pesos": 94500,
+    "transferencia": 97423,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+MI+BAND+9+ACTIVE",
+    "colores": [
+      "Beige White",
+      "Green",
+      "Pink",
+      "Purple"
+    ]
+  },
+  {
+    "nombre": "IPHONE 15 PRO 128GB USADO SIN FACE ID",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 555,
+    "pesos": 874125,
+    "transferencia": 901160,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+15+PRO+128GB+USADO+SIN+FACE+ID",
+    "colores": [
+      "Space Black Grado A+ 90%"
+    ]
+  },
+  {
+    "nombre": "IPHONE XR 256GB USADO",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 230,
+    "pesos": 362250,
+    "transferencia": 373454,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=IPHONE+XR+256GB+USADO",
+    "colores": [
+      "White 100%"
+    ]
+  },
+  {
+    "nombre": "iPhone 13 128GB",
+    "categoria": "Apple - iPhone",
+    "usd": 575,
+    "pesos": 905625,
+    "transferencia": 933634,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+13+128GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "iPhone 15 Pro Max 256GB",
+    "categoria": "Apple - iPhone",
+    "usd": 1165,
+    "pesos": 1834875,
+    "transferencia": 1891624,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+15+Pro+Max+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "iPhone 16e 128GB",
+    "categoria": "Apple - iPhone",
+    "usd": 670,
+    "pesos": 1055250,
+    "transferencia": 1087887,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+16e+128GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "iPhone 17 Air 256GB",
+    "categoria": "Apple - iPhone",
+    "usd": 1065,
+    "pesos": 1677375,
+    "transferencia": 1729253,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+17+Air+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "iPhone 17 Pro Max 512GB",
+    "categoria": "Apple - iPhone",
+    "usd": 1675,
+    "pesos": 2638125,
+    "transferencia": 2719716,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+17+Pro+Max+512GB",
+    "colores": [
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "iPhone 18 Pro 256GB",
+    "categoria": "Apple - iPhone",
+    "usd": 1725,
+    "pesos": 2716875,
+    "transferencia": 2800902,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+18+Pro+256GB",
+    "colores": [
+      "Black",
+      "Burgundy"
+    ]
+  },
+  {
+    "nombre": "iPhone 18 Pro Max 256GB",
+    "categoria": "Apple - iPhone",
+    "usd": 1930,
+    "pesos": 3039750,
+    "transferencia": 3133763,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+18+Pro+Max+256GB",
+    "colores": [
+      "Burgundy",
+      "Black",
+      "Glacier",
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "iPhone 18 Pro Max 512GB",
+    "categoria": "Apple - iPhone",
+    "usd": 2080,
+    "pesos": 3276000,
+    "transferencia": 3377320,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+18+Pro+Max+512GB",
+    "colores": [
+      "Glacier"
+    ]
+  },
+  {
+    "nombre": "iPhone 11 Pro 64GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 425,
+    "pesos": 669375,
+    "transferencia": 690077,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+11+Pro+64GB+CPO",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "iPhone 13 128GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 555,
+    "pesos": 874125,
+    "transferencia": 901160,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+13+128GB+CPO",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "iPhone 13 256GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 615,
+    "pesos": 968625,
+    "transferencia": 998582,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+13+256GB+CPO",
+    "colores": [
+      "Black",
+      "Pink",
+      "Starlight"
+    ]
+  },
+  {
+    "nombre": "iPhone 13 Pro 128GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 680,
+    "pesos": 1071000,
+    "transferencia": 1104124,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+13+Pro+128GB+CPO",
+    "colores": [
+      "Grafito"
+    ]
+  },
+  {
+    "nombre": "iPhone 13 Pro Max 128GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 760,
+    "pesos": 1197000,
+    "transferencia": 1234021,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+13+Pro+Max+128GB+CPO",
+    "colores": [
+      "Grafito",
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "iPhone 14 Pro 128GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 800,
+    "pesos": 1260000,
+    "transferencia": 1298969,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+14+Pro+128GB+CPO",
+    "colores": [
+      "Purple",
+      "Black",
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "iPhone 14 Pro 256GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 885,
+    "pesos": 1393875,
+    "transferencia": 1436985,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+14+Pro+256GB+CPO",
+    "colores": [
+      "Silver",
+      "Black"
+    ]
+  },
+  {
+    "nombre": "iPhone 14 Pro Max 128GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 880,
+    "pesos": 1386000,
+    "transferencia": 1428866,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+14+Pro+Max+128GB+CPO",
+    "colores": [
+      "Black",
+      "Gold",
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "iPhone 15 Pro 128GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 880,
+    "pesos": 1386000,
+    "transferencia": 1428866,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+15+Pro+128GB+CPO",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "iPhone 15 Pro 256GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 960,
+    "pesos": 1512000,
+    "transferencia": 1558763,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+15+Pro+256GB+CPO",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "iPhone 15 Pro Max 256GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 1025,
+    "pesos": 1614375,
+    "transferencia": 1664304,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+15+Pro+Max+256GB+CPO",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "iPhone 16 Pro Max 256GB CPO",
+    "categoria": "Apple - iPhone",
+    "usd": 1165,
+    "pesos": 1834875,
+    "transferencia": 1891624,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+16+Pro+Max+256GB+CPO",
+    "colores": [
+      "Black",
+      "White"
+    ]
+  },
+  {
+    "nombre": "Apple AirPods Max",
+    "categoria": "Apple - AirPods",
+    "usd": 570,
+    "pesos": 897750,
+    "transferencia": 925515,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Apple+AirPods+Max",
+    "colores": [
+      "Black",
+      "Orange"
+    ]
+  },
+  {
+    "nombre": "Apple AirPods 4",
+    "categoria": "Apple - AirPods",
+    "usd": 200,
+    "pesos": 315000,
+    "transferencia": 324742,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Apple+AirPods+4",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "Apple AirPods 4 with Active Noise Cancellation",
+    "categoria": "Apple - AirPods",
+    "usd": 210,
+    "pesos": 330750,
+    "transferencia": 340979,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Apple+AirPods+4+with+Active+Noise+Cancellation",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "Apple Watch Series 11 42 mm GPS – Aluminum Case",
+    "categoria": "Apple - Watch",
+    "usd": 440,
+    "pesos": 693000,
+    "transferencia": 714433,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Apple+Watch+Series+11+42+mm+GPS+%E2%80%93+Aluminum+Case",
+    "colores": [
+      "Jet Black - Black S/M",
+      "Rose Gold S/M"
+    ]
+  },
+  {
+    "nombre": "Apple Watch Series 11 46 mm GPS – Aluminum Case",
+    "categoria": "Apple - Watch",
+    "usd": 470,
+    "pesos": 740250,
+    "transferencia": 763144,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Apple+Watch+Series+11+46+mm+GPS+%E2%80%93+Aluminum+Case",
+    "colores": [
+      "Space Gray - Black M/L"
+    ]
+  },
+  {
+    "nombre": "iPad 10ª Generación A14 – 64GB Wi-Fi",
+    "categoria": "Apple - iPad",
+    "usd": 440,
+    "pesos": 693000,
+    "transferencia": 714433,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+10%C2%AA+Generaci%C3%B3n+A14+%E2%80%93+64GB+Wi-Fi",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "iPad 11ª Generación A16 – 128GB Wi-Fi",
+    "categoria": "Apple - iPad",
+    "usd": 560,
+    "pesos": 882000,
+    "transferencia": 909278,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+11%C2%AA+Generaci%C3%B3n+A16+%E2%80%93+128GB+Wi-Fi",
+    "colores": [
+      "Blue",
+      "Yellow",
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "iPad 11ª Generación A16 – 256GB Wi-Fi",
+    "categoria": "Apple - iPad",
+    "usd": 670,
+    "pesos": 1055250,
+    "transferencia": 1087887,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+11%C2%AA+Generaci%C3%B3n+A16+%E2%80%93+256GB+Wi-Fi",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "iPad Air M4 11 pulgadas 256GB Wi-Fi",
+    "categoria": "Apple - iPad",
+    "usd": 1010,
+    "pesos": 1590750,
+    "transferencia": 1639948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPad+Air+M4+11+pulgadas+256GB+Wi-Fi",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "MacBook Air M5 13 pulgadas – 16GB RAM / 512GB SSD",
+    "categoria": "Mac",
+    "usd": 1555,
+    "pesos": 2449125,
+    "transferencia": 2524871,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MacBook+Air+M5+13+pulgadas+%E2%80%93+16GB+RAM+%2F+512GB+SSD",
+    "colores": [
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "MacBook Neo 13 A18 Pro – 8GB RAM / 256GB SSD",
+    "categoria": "Mac",
+    "usd": 875,
+    "pesos": 1378125,
+    "transferencia": 1420747,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MacBook+Neo+13+A18+Pro+%E2%80%93+8GB+RAM+%2F+256GB+SSD",
+    "colores": [
+      "Citrus"
+    ]
+  },
+  {
+    "nombre": "Cable USB-C a USB-C Original Apple 1m",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Cable+USB-C+a+USB-C+Original+Apple+1m",
+    "colores": [
+      "Orange",
+      "White"
+    ]
+  },
+  {
+    "nombre": "Cable USB-C a Lightning Original Apple 1m",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Cable+USB-C+a+Lightning+Original+Apple+1m"
+  },
+  {
+    "nombre": "Cable USB-A a Lightning Original Apple 1m",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Cable+USB-A+a+Lightning+Original+Apple+1m"
+  },
+  {
+    "nombre": "S25 Edge 5G 12GB 256GB",
+    "categoria": "Samsung",
+    "usd": 790,
+    "pesos": 1244250,
+    "transferencia": 1282732,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S25+Edge+5G+12GB+256GB",
+    "colores": [
+      "Icyblue",
+      "Black"
+    ]
+  },
+  {
+    "nombre": "S25FE 5G 8GB 512GB",
+    "categoria": "Otros",
+    "usd": 680,
+    "pesos": 1071000,
+    "transferencia": 1104124,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S25FE+5G+8GB+512GB",
+    "colores": [
+      "icyblue"
+    ]
+  },
+  {
+    "nombre": "S25FE 5G 8GB 256GB",
+    "categoria": "Otros",
+    "usd": 630,
+    "pesos": 992250,
+    "transferencia": 1022938,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=S25FE+5G+8GB+256GB",
+    "colores": [
+      "Navy",
+      "Jetblack",
+      "White",
+      "Icyblue"
+    ]
+  },
+  {
+    "nombre": "A57 5G 12GB 512GB",
+    "categoria": "Samsung",
+    "usd": 635,
+    "pesos": 1000125,
+    "transferencia": 1031057,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A57+5G+12GB+512GB",
+    "colores": [
+      "Navy"
+    ]
+  },
+  {
+    "nombre": "A26 5G 8GB 256GB",
+    "categoria": "Samsung",
+    "usd": 345,
+    "pesos": 543375,
+    "transferencia": 560180,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A26+5G+8GB+256GB",
+    "colores": [
+      "Pink"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG A17 128/4GB Dual 5G",
+    "categoria": "Samsung",
+    "usd": 225,
+    "pesos": 354375,
+    "transferencia": 365335,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+A17+128%2F4GB+Dual+5G",
+    "colores": [
+      "Grey"
+    ]
+  },
+  {
+    "nombre": "Alcatel 1 Ultra 32GB",
+    "categoria": "Otros",
+    "usd": 80,
+    "pesos": 126000,
+    "transferencia": 129897,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Alcatel+1+Ultra+32GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Cat B30 4G",
+    "categoria": "Otros",
+    "usd": 85,
+    "pesos": 133875,
+    "transferencia": 138015,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Cat+B30+4G",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "SMart 20 4GB 128GB",
+    "categoria": "Otros",
+    "usd": 185,
+    "pesos": 291375,
+    "transferencia": 300387,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SMart+20+4GB+128GB",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "GT 30 Pro 5G 12GB 256GB + KIT GAMER",
+    "categoria": "Otros",
+    "usd": 440,
+    "pesos": 693000,
+    "transferencia": 714433,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=GT+30+Pro+5G+12GB+256GB+%2B+KIT+GAMER",
+    "colores": [
+      "Dark Flare",
+      "Shadow ASH"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 50 Pro 8GB 256GB + MagCharge Wireless",
+    "categoria": "Xiaomi",
+    "usd": 310,
+    "pesos": 488250,
+    "transferencia": 503351,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Note+50+Pro+8GB+256GB+%2B+MagCharge+Wireless",
+    "colores": [
+      "Purple"
+    ]
+  },
+  {
+    "nombre": "Hot 60 Pro PLus 256/8gb",
+    "categoria": "Otros",
+    "usd": 255,
+    "pesos": 401625,
+    "transferencia": 414046,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Hot+60+Pro+PLus+256%2F8gb",
+    "colores": [
+      "Yellow",
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 40 Pro 5G 8GB 256GB + MagCharge Wireless",
+    "categoria": "Xiaomi",
+    "usd": 295,
+    "pesos": 464625,
+    "transferencia": 478995,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Note+40+Pro+5G+8GB+256GB+%2B+MagCharge+Wireless",
+    "colores": [
+      "Grey",
+      "Gold"
+    ]
+  },
+  {
+    "nombre": "Moto Signature 5G 16GB 1TB",
+    "categoria": "Motorola",
+    "usd": 1220,
+    "pesos": 1921500,
+    "transferencia": 1980928,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Moto+Signature+5G+16GB+1TB",
+    "colores": [
+      "Martine Olive"
+    ]
+  },
+  {
+    "nombre": "Moto Edge 70 Pro 5G 12GB 512GB",
+    "categoria": "Motorola",
+    "usd": 875,
+    "pesos": 1378125,
+    "transferencia": 1420747,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Moto+Edge+70+Pro+5G+12GB+512GB",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "Moto Edge 70 5G 12GB 512GB (s/ cargador)",
+    "categoria": "Motorola",
+    "usd": 580,
+    "pesos": 913500,
+    "transferencia": 941753,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Moto+Edge+70+5G+12GB+512GB+%28s%2F+cargador%29",
+    "colores": [
+      "Grey"
+    ]
+  },
+  {
+    "nombre": "Moto Edge 60 Fusion 5G 8GB 256GB",
+    "categoria": "Motorola",
+    "usd": 345,
+    "pesos": 543375,
+    "transferencia": 560180,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Moto+Edge+60+Fusion+5G+8GB+256GB",
+    "colores": [
+      "Pink",
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "Moto Edge 50 5G 12GB 512GB",
+    "categoria": "Motorola",
+    "usd": 380,
+    "pesos": 598500,
+    "transferencia": 617010,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Moto+Edge+50+5G+12GB+512GB",
+    "colores": [
+      "Verde"
+    ]
+  },
+  {
+    "nombre": "Moto Edge 50 Fusion 5G 8GB 256GB (s/ cargador)",
+    "categoria": "Motorola",
+    "usd": 280,
+    "pesos": 441000,
+    "transferencia": 454639,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Moto+Edge+50+Fusion+5G+8GB+256GB+%28s%2F+cargador%29",
+    "colores": [
+      "Green"
+    ]
+  },
+  {
+    "nombre": "Moto G77 5G 8GB 256GB",
+    "categoria": "Motorola",
+    "usd": 325,
+    "pesos": 511875,
+    "transferencia": 527706,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Moto+G77+5G+8GB+256GB",
+    "colores": [
+      "Café"
+    ]
+  },
+  {
+    "nombre": "MOTO G67 5G 256/4GB Dual",
+    "categoria": "Motorola",
+    "usd": 315,
+    "pesos": 496125,
+    "transferencia": 511469,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G67+5G+256%2F4GB+Dual",
+    "colores": [
+      "Gris",
+      "Lima"
+    ]
+  },
+  {
+    "nombre": "Moto G86 Power 5G 8GB 256GB",
+    "categoria": "Motorola",
+    "usd": 335,
+    "pesos": 527625,
+    "transferencia": 543943,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Moto+G86+Power+5G+8GB+256GB",
+    "colores": [
+      "Cereza"
+    ]
+  },
+  {
+    "nombre": "Moto E15 2GB 64GB con Cargador",
+    "categoria": "Motorola",
+    "usd": 155,
+    "pesos": 244125,
+    "transferencia": 251675,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Moto+E15+2GB+64GB+con+Cargador",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "Pixel 10 5G 12GB 256GB",
+    "categoria": "Otros",
+    "usd": 900,
+    "pesos": 1417500,
+    "transferencia": 1461340,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Pixel+10+5G+12GB+256GB",
+    "colores": [
+      "Índigo"
+    ]
+  },
+  {
+    "nombre": "A40 4GB 256GB – Grado militar",
+    "categoria": "Samsung",
+    "usd": 180,
+    "pesos": 283500,
+    "transferencia": 292268,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A40+4GB+256GB+%E2%80%93+Grado+militar",
+    "colores": [
+      "Purple"
+    ]
+  },
+  {
+    "nombre": "Tablet Xiaomi Redmi Pad 2 Pro 8GB 256GB Wifi",
+    "categoria": "Xiaomi",
+    "usd": 380,
+    "pesos": 598500,
+    "transferencia": 617010,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Tablet+Xiaomi+Redmi+Pad+2+Pro+8GB+256GB+Wifi",
+    "colores": [
+      "Gray"
+    ]
+  },
+  {
+    "nombre": "Tablet Xiaomi Redmi Pad 2 4GB 256GB wifi",
+    "categoria": "Xiaomi",
+    "usd": 270,
+    "pesos": 425250,
+    "transferencia": 438402,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Tablet+Xiaomi+Redmi+Pad+2+4GB+256GB+wifi",
+    "colores": [
+      "Gray"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi 17 Ultra 5G 16GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 1395,
+    "pesos": 2197125,
+    "transferencia": 2265077,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+17+Ultra+5G+16GB+512GB",
+    "colores": [
+      "Green"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi 17 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 985,
+    "pesos": 1551375,
+    "transferencia": 1599356,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+17+5G+12GB+512GB",
+    "colores": [
+      "Black",
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi 17T Pro 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 905,
+    "pesos": 1425375,
+    "transferencia": 1469459,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+17T+Pro+5G+12GB+512GB",
+    "colores": [
+      "Black",
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi 17T Pro 5G 12GB 1TB",
+    "categoria": "Xiaomi",
+    "usd": 1015,
+    "pesos": 1598625,
+    "transferencia": 1648067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+17T+Pro+5G+12GB+1TB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi 15 5G 12GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 830,
+    "pesos": 1307250,
+    "transferencia": 1347680,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+15+5G+12GB+256GB",
+    "colores": [
+      "Green"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi 15T Pro 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 810,
+    "pesos": 1275750,
+    "transferencia": 1315206,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+15T+Pro+5G+12GB+512GB",
+    "colores": [
+      "Grey"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi 15T 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 690,
+    "pesos": 1086750,
+    "transferencia": 1120361,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+15T+5G+12GB+512GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi 15T 5G 12GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 545,
+    "pesos": 858375,
+    "transferencia": 884923,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+15T+5G+12GB+256GB",
+    "colores": [
+      "Gray"
+    ]
+  },
+  {
+    "nombre": "Poco F9 Ultra 5G 12GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 965,
+    "pesos": 1519875,
+    "transferencia": 1566881,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Poco+F9+Ultra+5G+12GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO F8 ULTRA 5g 256gb/12gb",
+    "categoria": "Xiaomi",
+    "usd": 815,
+    "pesos": 1283625,
+    "transferencia": 1323325,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+F8+ULTRA+5g+256gb%2F12gb",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Poco M8 Pro 5G 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 440,
+    "pesos": 693000,
+    "transferencia": 714433,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Poco+M8+Pro+5G+12GB+512GB",
+    "colores": [
+      "Green"
+    ]
+  },
+  {
+    "nombre": "Poco M8S 5G 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 295,
+    "pesos": 464625,
+    "transferencia": 478995,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Poco+M8S+5G+8GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 Pro Max 5G 8GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 585,
+    "pesos": 921375,
+    "transferencia": 949871,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+17+Pro+Max+5G+8GB+512GB",
+    "colores": [
+      "Black",
+      "White"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 Pro Max 5G 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 515,
+    "pesos": 811125,
+    "transferencia": 836211,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+17+Pro+Max+5G+8GB+256GB",
+    "colores": [
+      "Green"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 Pro 5G 8GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 425,
+    "pesos": 669375,
+    "transferencia": 690077,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+17+Pro+5G+8GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 6GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 305,
+    "pesos": 480375,
+    "transferencia": 495232,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+17+6GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 5G 6GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 340,
+    "pesos": 535500,
+    "transferencia": 552062,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+17+5G+6GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 Pro 12GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 390,
+    "pesos": 614250,
+    "transferencia": 633247,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+15+Pro+12GB+512GB",
+    "colores": [
+      "Blue",
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14 Pro 5G 12GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 335,
+    "pesos": 527625,
+    "transferencia": 543943,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+14+Pro+5G+12GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14 Pro+ 5G 12GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 370,
+    "pesos": 582750,
+    "transferencia": 600773,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+14+Pro%2B+5G+12GB+256GB",
+    "colores": [
+      "Black",
+      "Blue",
+      "Green"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14 Pro+ 5G 16GB 512GB",
+    "categoria": "Xiaomi",
+    "usd": 460,
+    "pesos": 724500,
+    "transferencia": 746907,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+Note+14+Pro%2B+5G+16GB+512GB",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "Redmi 17 6GB 256GB",
+    "categoria": "Xiaomi",
+    "usd": 285,
+    "pesos": 448875,
+    "transferencia": 462758,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+17+6GB+256GB",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Redmi A7 Pro 4GB 128GB (4GB+4GB)",
+    "categoria": "Xiaomi",
+    "usd": 185,
+    "pesos": 291375,
+    "transferencia": 300387,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Redmi+A7+Pro+4GB+128GB+%284GB%2B4GB%29",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "GARMIN FORERUNNER 55 – RELOJ GPS PARA RUNNING",
+    "categoria": "Otros",
+    "usd": 225,
+    "pesos": 354375,
+    "transferencia": 365335,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=GARMIN+FORERUNNER+55+%E2%80%93+RELOJ+GPS+PARA+RUNNING",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Buds 6 Play",
+    "categoria": "Xiaomi",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Buds+6+Play",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "JBL Tune 730BT White",
+    "categoria": "Otros",
+    "usd": 90,
+    "pesos": 141750,
+    "transferencia": 146134,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=JBL+Tune+730BT+White"
+  },
+  {
+    "nombre": "Parlante JBL Boombox 4",
+    "categoria": "Otros",
+    "usd": 500,
+    "pesos": 787500,
+    "transferencia": 811856,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Parlante+JBL+Boombox+4",
+    "colores": [
+      "Camuflado",
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Parlante JBL Xtreme 4",
+    "categoria": "Otros",
+    "usd": 310,
+    "pesos": 488250,
+    "transferencia": 503351,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Parlante+JBL+Xtreme+4",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Parlante JBL Charge 6",
+    "categoria": "Otros",
+    "usd": 185,
+    "pesos": 291375,
+    "transferencia": 300387,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Parlante+JBL+Charge+6"
+  },
+  {
+    "nombre": "Parlante JBL Charge 5",
+    "categoria": "Otros",
+    "usd": 170,
+    "pesos": 267750,
+    "transferencia": 276031,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Parlante+JBL+Charge+5",
+    "colores": [
+      "Red"
+    ]
+  },
+  {
+    "nombre": "Amazon Fire TV Stick 4K Select 8GB Wi-Fi 5",
+    "categoria": "Otros",
+    "usd": 75,
+    "pesos": 118125,
+    "transferencia": 121778,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Amazon+Fire+TV+Stick+4K+Select+8GB+Wi-Fi+5"
+  },
+  {
+    "nombre": "Amazon Kindle Gen 11 – 16GB",
+    "categoria": "Otros",
+    "usd": 195,
+    "pesos": 307125,
+    "transferencia": 316624,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Amazon+Kindle+Gen+11+%E2%80%93+16GB",
+    "colores": [
+      "black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi 33W Magnetic Power Bank 10000mAh",
+    "categoria": "Xiaomi",
+    "usd": 70,
+    "pesos": 110250,
+    "transferencia": 113660,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+33W+Magnetic+Power+Bank+10000mAh"
+  },
+  {
+    "nombre": "Xiaomi Sports Fanny Pack",
+    "categoria": "Xiaomi",
+    "usd": 60,
+    "pesos": 94500,
+    "transferencia": 97423,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Sports+Fanny+Pack",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "EA Sports FC 26 – PS5",
+    "categoria": "Otros",
+    "usd": 80,
+    "pesos": 126000,
+    "transferencia": 129897,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=EA+Sports+FC+26+%E2%80%93+PS5",
+    "colores": [
+      "Físico"
+    ]
+  },
+  {
+    "nombre": "Xbox 360 Stingray 4GB – Nueva, sin juegos",
+    "categoria": "Otros",
+    "usd": 230,
+    "pesos": 362250,
+    "transferencia": 373454,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xbox+360+Stingray+4GB+%E2%80%93+Nueva%2C+sin+juegos"
+  },
+  {
+    "nombre": "PlayStation 5 Pro 2TB Digital",
+    "categoria": "Otros",
+    "usd": 1465,
+    "pesos": 2307375,
+    "transferencia": 2378737,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=PlayStation+5+Pro+2TB+Digital"
+  },
+  {
+    "nombre": "PlayStation 5 Slim 825GB Digital",
+    "categoria": "Otros",
+    "usd": 770,
+    "pesos": 1212750,
+    "transferencia": 1250258,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=PlayStation+5+Slim+825GB+Digital"
+  },
+  {
+    "nombre": "Joystick PlayStation 5 Original",
+    "categoria": "Otros",
+    "usd": 115,
+    "pesos": 181125,
+    "transferencia": 186727,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Joystick+PlayStation+5+Original",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "Nintendo Switch 2 256GB + Mario Kart World",
+    "categoria": "Otros",
+    "usd": 780,
+    "pesos": 1228500,
+    "transferencia": 1266495,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Nintendo+Switch+2+256GB+%2B+Mario+Kart+World"
+  },
+  {
+    "nombre": "Nintendo Switch OLED 64GB + Mario Wonder",
+    "categoria": "Otros",
+    "usd": 495,
+    "pesos": 779625,
+    "transferencia": 803737,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Nintendo+Switch+OLED+64GB+%2B+Mario+Wonder"
+  },
+  {
+    "nombre": "Patinete Elétrico Xiaomi Mi Scooter Electric 6 Max BHR08QMUS Grey",
+    "categoria": "Xiaomi",
+    "usd": 790,
+    "pesos": 1244250,
+    "transferencia": 1282732,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Patinete+El%C3%A9trico+Xiaomi+Mi+Scooter+Electric+6+Max+BHR08QMUS+Grey"
+  },
+  {
+    "nombre": "Patinete Elétrico Xiaomi Mi Scooter Electric 6 Ultra BHR08PZUS Yellow",
+    "categoria": "Xiaomi",
+    "usd": 1020,
+    "pesos": 1606500,
+    "transferencia": 1656186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Patinete+El%C3%A9trico+Xiaomi+Mi+Scooter+Electric+6+Ultra+BHR08PZUS+Yellow"
+  },
+  {
+    "nombre": "Patinete Elétrico Xiaomi Mi Scooter 5 Pro GL DDHBC45ZM BHR9611GL Black",
+    "categoria": "Xiaomi",
+    "usd": 575,
+    "pesos": 905625,
+    "transferencia": 933634,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Patinete+El%C3%A9trico+Xiaomi+Mi+Scooter+5+Pro+GL+DDHBC45ZM+BHR9611GL+Black"
+  },
+  {
+    "nombre": "Xiaomi Electric Shaver S700",
+    "categoria": "Xiaomi",
+    "usd": 120,
+    "pesos": 189000,
+    "transferencia": 194845,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Electric+Shaver+S700"
+  },
+  {
+    "nombre": "Xiaomi Electric Shaver S200",
+    "categoria": "Xiaomi",
+    "usd": 65,
+    "pesos": 102375,
+    "transferencia": 105541,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Electric+Shaver+S200"
+  },
+  {
+    "nombre": "Xiaomi Mi 5-Blade Electric Shaver",
+    "categoria": "Xiaomi",
+    "usd": 120,
+    "pesos": 189000,
+    "transferencia": 194845,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+5-Blade+Electric+Shaver"
+  },
+  {
+    "nombre": "Nokia 106",
+    "categoria": "Otros",
+    "usd": 60,
+    "pesos": 94500,
+    "transferencia": 97423,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Nokia+106",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Cerradura inteligente Xiaomi Self-Install Smart Lock con keypad incluido",
+    "categoria": "Xiaomi",
+    "usd": 180,
+    "pesos": 283500,
+    "transferencia": 292268,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Cerradura+inteligente+Xiaomi+Self-Install+Smart+Lock+con+keypad+incluido"
+  },
+  {
+    "nombre": "Cámara de seguridad Xiaomi Smart C700 8MP | 4K | Wi-Fi",
+    "categoria": "Xiaomi",
+    "usd": 105,
+    "pesos": 165375,
+    "transferencia": 170490,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=C%C3%A1mara+de+seguridad+Xiaomi+Smart+C700+8MP+%7C+4K+%7C+Wi-Fi"
+  },
+  {
+    "nombre": "Compresor de aire portátil Xiaomi 2 Pro – Inflador digital recargable",
+    "categoria": "Xiaomi",
+    "usd": 105,
+    "pesos": 165375,
+    "transferencia": 170490,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Compresor+de+aire+port%C3%A1til+Xiaomi+2+Pro+%E2%80%93+Inflador+digital+recargable"
+  },
+  {
+    "nombre": "Compresor de aire portátil Xiaomi 2 – Inflador digital recargable",
+    "categoria": "Xiaomi",
+    "usd": 85,
+    "pesos": 133875,
+    "transferencia": 138015,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Compresor+de+aire+port%C3%A1til+Xiaomi+2+%E2%80%93+Inflador+digital+recargable"
+  },
+  {
+    "nombre": "Xiaomi Mi Vacuum Cleaner Mini",
+    "categoria": "Xiaomi",
+    "usd": 90,
+    "pesos": 141750,
+    "transferencia": 146134,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+Vacuum+Cleaner+Mini"
+  },
+  {
+    "nombre": "Aspiradora Xiaomi Robot Vacuum S40",
+    "categoria": "Xiaomi",
+    "usd": 280,
+    "pesos": 441000,
+    "transferencia": 454639,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Aspiradora+Xiaomi+Robot+Vacuum+S40"
+  },
+  {
+    "nombre": "Aspiradora Xiaomi Robot Vacuum S40 Pro",
+    "categoria": "Xiaomi",
+    "usd": 440,
+    "pesos": 693000,
+    "transferencia": 714433,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Aspiradora+Xiaomi+Robot+Vacuum+S40+Pro"
+  },
+  {
+    "nombre": "Aspiradora Xiaomi Robot Vacuum X20 Pro",
+    "categoria": "Xiaomi",
+    "usd": 750,
+    "pesos": 1181250,
+    "transferencia": 1217784,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Aspiradora+Xiaomi+Robot+Vacuum+X20+Pro"
+  },
+  {
+    "nombre": "Robot limpiavidrios ECOVACS WINBOT MINI",
+    "categoria": "Otros",
+    "usd": 325,
+    "pesos": 511875,
+    "transferencia": 527706,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Robot+limpiavidrios+ECOVACS+WINBOT+MINI",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "Anthbot Genie 600 – Robot cortacésped inteligente",
+    "categoria": "Otros",
+    "usd": 1270,
+    "pesos": 2000250,
+    "transferencia": 2062113,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Anthbot+Genie+600+%E2%80%93+Robot+cortac%C3%A9sped+inteligente"
+  },
+  {
+    "nombre": "iPhone 8 Plus 256GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 160,
+    "pesos": 252000,
+    "transferencia": 259794,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+8+Plus+256GB+%28Usado%29",
+    "colores": [
+      "Black 100%"
+    ]
+  },
+  {
+    "nombre": "iPhone 13 128GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 375,
+    "pesos": 590625,
+    "transferencia": 608892,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+13+128GB+%28Usado%29",
+    "colores": [
+      "Midnight 100%",
+      "Green 100%",
+      "Blue 100%",
+      "White 89% a 93%",
+      "Pink 89% a 94%"
+    ]
+  },
+  {
+    "nombre": "iPhone 14 128GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 405,
+    "pesos": 637875,
+    "transferencia": 657603,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+14+128GB+%28Usado%29",
+    "colores": [
+      "Black 100%",
+      "Purple 95% a 99%",
+      "Purple 90% a 94%",
+      "Red 89%",
+      "White 93% a 98%",
+      "Blue 90% a 98%"
+    ]
+  },
+  {
+    "nombre": "iPhone 13 Pro 128GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 475,
+    "pesos": 748125,
+    "transferencia": 771263,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+13+Pro+128GB+%28Usado%29",
+    "colores": [
+      "Blue 100%",
+      "White 100%",
+      "Grafito 100%",
+      "Gold 100%"
+    ]
+  },
+  {
+    "nombre": "iPhone 13 Pro 256GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 525,
+    "pesos": 826875,
+    "transferencia": 852448,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+13+Pro+256GB+%28Usado%29",
+    "colores": [
+      "Blue 100%",
+      "Green 100%"
+    ]
+  },
+  {
+    "nombre": "iPhone 13 Pro Max 128GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 540,
+    "pesos": 850500,
+    "transferencia": 876804,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+13+Pro+Max+128GB+%28Usado%29",
+    "colores": [
+      "Blue 93%",
+      "Grafito 95%",
+      "Green 95%",
+      "Green 100%"
+    ]
+  },
+  {
+    "nombre": "iPhone 14 Pro 128GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 535,
+    "pesos": 842625,
+    "transferencia": 868686,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+14+Pro+128GB+%28Usado%29",
+    "colores": [
+      "Silver 97%",
+      "Black 100%",
+      "Purple 95% a 100%",
+      "Black 88%",
+      "Black 93%"
+    ]
+  },
+  {
+    "nombre": "iPhone 14 Pro 256GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 595,
+    "pesos": 937125,
+    "transferencia": 966108,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+14+Pro+256GB+%28Usado%29",
+    "colores": [
+      "Gold 92%",
+      "Black 92%",
+      "Silver 91%",
+      "Silver 100%",
+      "Purple 91% a 96%",
+      "Black 100% con caja original"
+    ]
+  },
+  {
+    "nombre": "iPhone 14 Pro Max 128GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 635,
+    "pesos": 1000125,
+    "transferencia": 1031057,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+14+Pro+Max+128GB+%28Usado%29",
+    "colores": [
+      "Gold 89% a 91%",
+      "Gold 92% a 97%",
+      "Silver 91% a 100%",
+      "Black 92% a 97%",
+      "Purple 90% a 100%"
+    ]
+  },
+  {
+    "nombre": "iPhone 14 Pro Max 256GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 760,
+    "pesos": 1197000,
+    "transferencia": 1234021,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+14+Pro+Max+256GB+%28Usado%29",
+    "colores": [
+      "Black 100%"
+    ]
+  },
+  {
+    "nombre": "iPhone 15 128GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 525,
+    "pesos": 826875,
+    "transferencia": 852448,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+15+128GB+%28Usado%29",
+    "colores": [
+      "Pink 100%",
+      "Pink 88% a 92%",
+      "Blue 90% a 96%"
+    ]
+  },
+  {
+    "nombre": "iPhone 15 256GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 585,
+    "pesos": 921375,
+    "transferencia": 949871,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+15+256GB+%28Usado%29",
+    "colores": [
+      "Blue 89%",
+      "Pink 89% a 91%",
+      "Pink 95% a 100%"
+    ]
+  },
+  {
+    "nombre": "iPhone 15 Pro 128GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 645,
+    "pesos": 1015875,
+    "transferencia": 1047294,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+15+Pro+128GB+%28Usado%29",
+    "colores": [
+      "Blue 100%"
+    ]
+  },
+  {
+    "nombre": "iPhone 15 Pro Max 256GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 770,
+    "pesos": 1212750,
+    "transferencia": 1250258,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+15+Pro+Max+256GB+%28Usado%29",
+    "colores": [
+      "White 100%",
+      "Black 100%",
+      "Natural 100%"
+    ]
+  },
+  {
+    "nombre": "iPhone 16 Pro 256GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 860,
+    "pesos": 1354500,
+    "transferencia": 1396392,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+16+Pro+256GB+%28Usado%29",
+    "colores": [
+      "Black 91%"
+    ]
+  },
+  {
+    "nombre": "iPhone 16 Pro Max 256GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 920,
+    "pesos": 1449000,
+    "transferencia": 1493814,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+16+Pro+Max+256GB+%28Usado%29",
+    "colores": [
+      "Black 93%",
+      "Desert 96%",
+      "Desert 93%",
+      "Desert 92%",
+      "Desert 90%",
+      "Natural 92%",
+      "White 90%",
+      "Black 90%",
+      "Black 91%"
+    ]
+  },
+  {
+    "nombre": "iPhone 17 256GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 880,
+    "pesos": 1386000,
+    "transferencia": 1428866,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+17+256GB+%28Usado%29",
+    "colores": [
+      "Green 91%"
+    ]
+  },
+  {
+    "nombre": "iPhone 17 Pro Max 256GB (Usado)",
+    "categoria": "Apple - iPhone Usado",
+    "usd": 1215,
+    "pesos": 1913625,
+    "transferencia": 1972809,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=iPhone+17+Pro+Max+256GB+%28Usado%29",
+    "colores": [
+      "Silver 91%"
+    ]
+  },
+  {
+    "nombre": "MacBook Air M2 A2681 8GB RAM / 256GB SSD (Usadas) S/ Cargador.",
+    "categoria": "Mac",
+    "usd": 805,
+    "pesos": 1267875,
+    "transferencia": 1307088,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MacBook+Air+M2+A2681+8GB+RAM+%2F+256GB+SSD+%28Usadas%29+S%2F+Cargador."
+  },
+  {
+    "nombre": "MacBook Air M2 A2681 8GB RAM / 256GB SSD (Usadas) C/ Cargador Orig.",
+    "categoria": "Mac",
+    "usd": 845,
+    "pesos": 1330875,
+    "transferencia": 1372036,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MacBook+Air+M2+A2681+8GB+RAM+%2F+256GB+SSD+%28Usadas%29+C%2F+Cargador+Orig.",
+    "colores": [
+      "Midnight 93%",
+      "Space Gray 91%"
+    ]
+  },
+  {
+    "nombre": "MOTO E15 64GB",
+    "categoria": "Motorola",
+    "usd": 170,
+    "pesos": 267750,
+    "transferencia": 276031,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+E15+64GB",
+    "colores": [
+      "Quarry Blue"
+    ]
+  },
+  {
+    "nombre": "MOTO Edge 60 fusion 5g 256/12gb (s/ cargador)",
+    "categoria": "Motorola",
+    "usd": 365,
+    "pesos": 574875,
+    "transferencia": 592655,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+Edge+60+fusion+5g+256%2F12gb+%28s%2F+cargador%29",
+    "colores": [
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "MOTO G35 256/4GB Dual",
+    "categoria": "Motorola",
+    "usd": 230,
+    "pesos": 362250,
+    "transferencia": 373454,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MOTO+G35+256%2F4GB+Dual",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG X526 TAB S10 FE 128GB WIFI+5g 10.9¨+PEN",
+    "categoria": "Samsung",
+    "usd": 605,
+    "pesos": 952875,
+    "transferencia": 982345,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+X526+TAB+S10+FE+128GB+WIFI%2B5g+10.9%C2%A8%2BPEN",
+    "colores": [
+      "Gray"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG A07 128/4GB Dual (s/ cargador)",
+    "categoria": "Samsung",
+    "usd": 185,
+    "pesos": 291375,
+    "transferencia": 300387,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+A07+128%2F4GB+Dual+%28s%2F+cargador%29",
+    "colores": [
+      "Black",
+      "Green",
+      "Ligth Violet"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG A07 64/4GB Dual (s/ cargador)",
+    "categoria": "Samsung",
+    "usd": 165,
+    "pesos": 259875,
+    "transferencia": 267912,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+A07+64%2F4GB+Dual+%28s%2F+cargador%29",
+    "colores": [
+      "Black",
+      "Green",
+      "Ligth Violet"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG A27 128/6GB Dual",
+    "categoria": "Samsung",
+    "usd": 315,
+    "pesos": 496125,
+    "transferencia": 511469,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+A27+128%2F6GB+Dual",
+    "colores": [
+      "Black",
+      "Blue",
+      "Light Pink"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG A27 256/8GB Dual",
+    "categoria": "Samsung",
+    "usd": 405,
+    "pesos": 637875,
+    "transferencia": 657603,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+A27+256%2F8GB+Dual",
+    "colores": [
+      "Black",
+      "Blue"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG S25 ULTRA 5g 1tb/12GB Dual",
+    "categoria": "Samsung",
+    "usd": 1090,
+    "pesos": 1716750,
+    "transferencia": 1769845,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+S25+ULTRA+5g+1tb%2F12GB+Dual",
+    "colores": [
+      "Titanium grey",
+      "WhiteSilver",
+      "Silver Blue",
+      "Titanium Black"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG S26 FE 5g 256/8GB Dual",
+    "categoria": "Samsung",
+    "usd": 720,
+    "pesos": 1134000,
+    "transferencia": 1169072,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+S26+FE+5g+256%2F8GB+Dual",
+    "colores": [
+      "Graphite"
+    ]
+  },
+  {
+    "nombre": "SAMSUNG S26 5g 256/12GB Dual",
+    "categoria": "Samsung",
+    "usd": 790,
+    "pesos": 1244250,
+    "transferencia": 1282732,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+S26+5g+256%2F12GB+Dual",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "Oppo Reno 14F DARK SIDE 5g 256/12gb",
+    "categoria": "Otros",
+    "usd": 605,
+    "pesos": 952875,
+    "transferencia": 982345,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Oppo+Reno+14F+DARK+SIDE+5g+256%2F12gb",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "ZTE BLADE A76 5G 128GB/4GB 5G",
+    "categoria": "Samsung",
+    "usd": 160,
+    "pesos": 252000,
+    "transferencia": 259794,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=ZTE+BLADE+A76+5G+128GB%2F4GB+5G",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "APPLEWATCH S10 42MM GPS ALUMINIUM CASE",
+    "categoria": "Apple - Watch",
+    "usd": 405,
+    "pesos": 637875,
+    "transferencia": 657603,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLEWATCH+S10+42MM+GPS+ALUMINIUM+CASE",
+    "colores": [
+      "Jetblack",
+      "RoseGold"
+    ]
+  },
+  {
+    "nombre": "APPLEWATCH S10 46MM GPS ALUMINIUM CASE",
+    "categoria": "Apple - Watch",
+    "usd": 390,
+    "pesos": 614250,
+    "transferencia": 633247,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLEWATCH+S10+46MM+GPS+ALUMINIUM+CASE",
+    "colores": [
+      "Jetblack",
+      "RoseGold"
+    ]
+  },
+  {
+    "nombre": "APPLEWATCH S11 42MM GPS ALUMINIUM CASE",
+    "categoria": "Apple - Watch",
+    "usd": 455,
+    "pesos": 716625,
+    "transferencia": 738789,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLEWATCH+S11+42MM+GPS+ALUMINIUM+CASE",
+    "colores": [
+      "Jetblack",
+      "Space Gray"
+    ]
+  },
+  {
+    "nombre": "APPLEWATCH S11 46MM GPS ALUMINIUM CASE",
+    "categoria": "Apple - Watch",
+    "usd": 490,
+    "pesos": 771750,
+    "transferencia": 795619,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLEWATCH+S11+46MM+GPS+ALUMINIUM+CASE",
+    "colores": [
+      "Jetblack"
+    ]
+  },
+  {
+    "nombre": "APPLEWATCH SE3 40MM GPS",
+    "categoria": "Apple - Watch",
+    "usd": 365,
+    "pesos": 574875,
+    "transferencia": 592655,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=APPLEWATCH+SE3+40MM+GPS",
+    "colores": [
+      "Midnight",
+      "Starlight"
+    ]
+  },
+  {
+    "nombre": "REALME C75X 256/8GB (8GB + 16GB)",
+    "categoria": "Realme",
+    "usd": 185,
+    "pesos": 291375,
+    "transferencia": 300387,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=REALME+C75X+256%2F8GB+%288GB+%2B+16GB%29",
+    "colores": [
+      "Oceanic Blue"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO x7 PRO 512gb/12gb",
+    "categoria": "Xiaomi",
+    "usd": 435,
+    "pesos": 685125,
+    "transferencia": 706314,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+x7+PRO+512gb%2F12gb",
+    "colores": [
+      "Black",
+      "Yellow",
+      "Green"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO x8 PRO 512gb/8gb",
+    "categoria": "Xiaomi",
+    "usd": 460,
+    "pesos": 724500,
+    "transferencia": 746907,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+x8+PRO+512gb%2F8gb",
+    "colores": [
+      "Mint Green",
+      "Black"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO X8 PRO MAX 256gb/12gb",
+    "categoria": "Xiaomi",
+    "usd": 595,
+    "pesos": 937125,
+    "transferencia": 966108,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+X8+PRO+MAX+256gb%2F12gb",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "XIAOMI POCO X8 PRO MAX 512gb/12gb",
+    "categoria": "Xiaomi",
+    "usd": 640,
+    "pesos": 1008000,
+    "transferencia": 1039175,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+POCO+X8+PRO+MAX+512gb%2F12gb",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "XIAOMI REDMI15 128gb/6gb",
+    "categoria": "Xiaomi",
+    "usd": 230,
+    "pesos": 362250,
+    "transferencia": 373454,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+REDMI15+128gb%2F6gb",
+    "colores": [
+      "Titan Gray",
+      "Midnight Black"
+    ]
+  },
+  {
+    "nombre": "XIAOMI REDMI15 128gb/8gb",
+    "categoria": "Xiaomi",
+    "usd": 230,
+    "pesos": 362250,
+    "transferencia": 373454,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+REDMI15+128gb%2F8gb",
+    "colores": [
+      "Midnight Black"
+    ]
+  },
+  {
+    "nombre": "XIAOMI REDMI15 256gb/8gb",
+    "categoria": "Xiaomi",
+    "usd": 255,
+    "pesos": 401625,
+    "transferencia": 414046,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+REDMI15+256gb%2F8gb",
+    "colores": [
+      "Titan Gray",
+      "Purple Sand",
+      "Midnight Black"
+    ]
+  },
+  {
+    "nombre": "XIAOMI REDMI15c 128gb/4gb (4+4)",
+    "categoria": "Xiaomi",
+    "usd": 205,
+    "pesos": 322875,
+    "transferencia": 332861,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+REDMI15c+128gb%2F4gb+%284%2B4%29",
+    "colores": [
+      "Midnight Black",
+      "Mint Green",
+      "Moonligth Blue"
+    ]
+  },
+  {
+    "nombre": "XIAOMI REDMI15c 256gb/4gb (4+4)",
+    "categoria": "Xiaomi",
+    "usd": 225,
+    "pesos": 354375,
+    "transferencia": 365335,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+REDMI15c+256gb%2F4gb+%284%2B4%29",
+    "colores": [
+      "Midnight Black",
+      "Moonligth Blue"
+    ]
+  },
+  {
+    "nombre": "XIAOMI REDMI15c 256gb/8gb (8+8)",
+    "categoria": "Xiaomi",
+    "usd": 235,
+    "pesos": 370125,
+    "transferencia": 381572,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+REDMI15c+256gb%2F8gb+%288%2B8%29",
+    "colores": [
+      "Midnight Black",
+      "Mint Green",
+      "Moonligth Blue"
+    ]
+  },
+  {
+    "nombre": "XIAOMI REDMI A5 64gb/3gb (3+3)",
+    "categoria": "Xiaomi",
+    "usd": 155,
+    "pesos": 244125,
+    "transferencia": 251675,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+REDMI+A5+64gb%2F3gb+%283%2B3%29",
+    "colores": [
+      "Midnight Black",
+      "Ocean Blue",
+      "Sandy Gold"
+    ]
+  },
+  {
+    "nombre": "XIAOMI REDMI A5 128gb/4gb (4+4)",
+    "categoria": "Xiaomi",
+    "usd": 205,
+    "pesos": 322875,
+    "transferencia": 332861,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+REDMI+A5+128gb%2F4gb+%284%2B4%29",
+    "colores": [
+      "Midnight Black",
+      "Ocean Blue"
+    ]
+  },
+  {
+    "nombre": "XIAOMI REDMI A7 pro 64gb/4gb",
+    "categoria": "Xiaomi",
+    "usd": 160,
+    "pesos": 252000,
+    "transferencia": 259794,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+REDMI+A7+pro+64gb%2F4gb",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 15 512gb/8gb 5g",
+    "categoria": "Xiaomi",
+    "usd": 330,
+    "pesos": 519750,
+    "transferencia": 535825,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+15+512gb%2F8gb+5g",
+    "colores": [
+      "Glacier Blue"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 5g 128/6gb NFC (6+6)",
+    "categoria": "Xiaomi",
+    "usd": 320,
+    "pesos": 504000,
+    "transferencia": 519588,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+17+5g+128%2F6gb+NFC+%286%2B6%29",
+    "colores": [
+      "Sky Teal",
+      "Black",
+      "Purple"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 128/6gb (6+6)",
+    "categoria": "Xiaomi",
+    "usd": 295,
+    "pesos": 464625,
+    "transferencia": 478995,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+17+128%2F6gb+%286%2B6%29",
+    "colores": [
+      "Black",
+      "Purple"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 256/6gb (6+6)",
+    "categoria": "Xiaomi",
+    "usd": 310,
+    "pesos": 488250,
+    "transferencia": 503351,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+17+256%2F6gb+%286%2B6%29",
+    "colores": [
+      "Black",
+      "Sky Teal"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 PRO 5g 256/8gb NFC (8+8)",
+    "categoria": "Xiaomi",
+    "usd": 435,
+    "pesos": 685125,
+    "transferencia": 706314,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+17+PRO+5g+256%2F8gb+NFC+%288%2B8%29",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 PRO MAX 5g 256/8gb NFC (8+8)",
+    "categoria": "Xiaomi",
+    "usd": 520,
+    "pesos": 819000,
+    "transferencia": 844330,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+17+PRO+MAX+5g+256%2F8gb+NFC+%288%2B8%29",
+    "colores": [
+      "Cloud Blush",
+      "Green"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 17 PRO MAX 5g 512/8gb NFC (8+8)",
+    "categoria": "Xiaomi",
+    "usd": 590,
+    "pesos": 929250,
+    "transferencia": 957990,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+NOTE+17+PRO+MAX+5g+512%2F8gb+NFC+%288%2B8%29",
+    "colores": [
+      "Cloud Blush",
+      "Green",
+      "Black",
+      "Purple"
+    ]
+  },
+  {
+    "nombre": "XIAOMI 15T 5G 256/12gb",
+    "categoria": "Xiaomi",
+    "usd": 555,
+    "pesos": 874125,
+    "transferencia": 901160,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+15T+5G+256%2F12gb",
+    "colores": [
+      "Gray"
+    ]
+  },
+  {
+    "nombre": "XIAOMI 17 512gb/12gb 5g (s/ cargador)",
+    "categoria": "Xiaomi",
+    "usd": 925,
+    "pesos": 1456875,
+    "transferencia": 1501933,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+17+512gb%2F12gb+5g+%28s%2F+cargador%29",
+    "colores": [
+      "Black",
+      "IceBlue"
+    ]
+  },
+  {
+    "nombre": "XIAOMI 17t 256gb/12gb 5g (s/ cargador) + Parlante 30w",
+    "categoria": "Xiaomi",
+    "usd": 660,
+    "pesos": 1039500,
+    "transferencia": 1071649,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+17t+256gb%2F12gb+5g+%28s%2F+cargador%29+%2B+Parlante+30w",
+    "colores": [
+      "Black"
+    ]
+  },
+  {
+    "nombre": "Genérico Cable iPhone USB C a USB C Mallado 3,0 Premium",
+    "categoria": "Apple - iPhone",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Gen%C3%A9rico+Cable+iPhone+USB+C+a+USB+C+Mallado+3%2C0+Premium",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Generico Malla Silicona 20mm",
+    "categoria": "Otros",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Generico+Malla+Silicona+20mm",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Generico Malla Silicona 22mm",
+    "categoria": "Otros",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Generico+Malla+Silicona+22mm",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Noax Dispensador Vinos Noax Flux",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Noax+Dispensador+Vinos+Noax+Flux",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "NOAX Adaptador Noax Connect Hub 8 en 1 HB8",
+    "categoria": "Otros",
+    "usd": 40,
+    "pesos": 63000,
+    "transferencia": 64948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOAX+Adaptador+Noax+Connect+Hub+8+en+1+HB8",
+    "colores": [
+      "Plateado"
+    ]
+  },
+  {
+    "nombre": "NOAX Adaptador USB Wi-Fi y Bluetooth Noax ADP01",
+    "categoria": "Otros",
+    "usd": 40,
+    "pesos": 63000,
+    "transferencia": 64948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOAX+Adaptador+USB+Wi-Fi+y+Bluetooth+Noax+ADP01",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "NOAX Cafetera Espresso Portatil Noax Express 20 Bar",
+    "categoria": "Otros",
+    "usd": 70,
+    "pesos": 110250,
+    "transferencia": 113660,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOAX+Cafetera+Espresso+Portatil+Noax+Express+20+Bar",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Noax Compresor Portatil Noax AirGo",
+    "categoria": "Otros",
+    "usd": 55,
+    "pesos": 86625,
+    "transferencia": 89304,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Noax+Compresor+Portatil+Noax+AirGo",
+    "colores": [
+      "Verde Oscuro"
+    ]
+  },
+  {
+    "nombre": "NOAX Lapiz Optico Noax Graph",
+    "categoria": "Otros",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOAX+Lapiz+Optico+Noax+Graph",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Noax Microfono Noax K9 Pro",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Noax+Microfono+Noax+K9+Pro",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Noax Sacacorchos Noax Sco1",
+    "categoria": "Otros",
+    "usd": 40,
+    "pesos": 63000,
+    "transferencia": 64948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Noax+Sacacorchos+Noax+Sco1",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "NOAX Transmisor Hdmi Inalámbrico Noax Cnv01 FullHD",
+    "categoria": "Otros",
+    "usd": 80,
+    "pesos": 126000,
+    "transferencia": 129897,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOAX+Transmisor+Hdmi+Inal%C3%A1mbrico+Noax+Cnv01+FullHD",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Remax Cable Remax Tipo C a C PD 65W",
+    "categoria": "Otros",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Remax+Cable+Remax+Tipo+C+a+C+PD+65W",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Compresor de Aire Mijia Compact Portable",
+    "categoria": "Xiaomi",
+    "usd": 80,
+    "pesos": 126000,
+    "transferencia": 129897,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Compresor+de+Aire+Mijia+Compact+Portable",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Compresor de Aire Xiaomi 2 Pro",
+    "categoria": "Xiaomi",
+    "usd": 110,
+    "pesos": 173250,
+    "transferencia": 178608,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Compresor+de+Aire+Xiaomi+2+Pro",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Localizador Xiaomi Tag Bluetooth M2543T1",
+    "categoria": "Xiaomi",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Localizador+Xiaomi+Tag+Bluetooth+M2543T1",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Humidifier 2 Lite",
+    "categoria": "Xiaomi",
+    "usd": 70,
+    "pesos": 110250,
+    "transferencia": 113660,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Humidifier+2+Lite",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi Body Composition Scale S400",
+    "categoria": "Xiaomi",
+    "usd": 65,
+    "pesos": 102375,
+    "transferencia": 105541,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+Body+Composition+Scale+S400",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi Portable Air Pump 2",
+    "categoria": "Xiaomi",
+    "usd": 85,
+    "pesos": 133875,
+    "transferencia": 138015,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+Portable+Air+Pump+2",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi Portable Photo Printer 1S",
+    "categoria": "Xiaomi",
+    "usd": 115,
+    "pesos": 181125,
+    "transferencia": 186727,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+Portable+Photo+Printer+1S",
+    "colores": [
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi Portable Photo Printer Paper",
+    "categoria": "Xiaomi",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+Portable+Photo+Printer+Paper",
+    "colores": [
+      "White"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mouse Xiaomi Wireless Comfort Edition",
+    "categoria": "Xiaomi",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mouse+Xiaomi+Wireless+Comfort+Edition",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Pack 10 Pilas Xiaomi AA Alkaline",
+    "categoria": "Xiaomi",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Pack+10+Pilas+Xiaomi+AA+Alkaline"
+  },
+  {
+    "nombre": "Xiaomi Routers Xiaomi Mesh System WiFi Dual Band AC1200 5 GHz 867 Mbps Pack 2",
+    "categoria": "Xiaomi",
+    "usd": 75,
+    "pesos": 118125,
+    "transferencia": 121778,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Routers+Xiaomi+Mesh+System+WiFi+Dual+Band+AC1200+5+GHz+867+Mbps+Pack+2",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Wireless Mouse 3",
+    "categoria": "Xiaomi",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Wireless+Mouse+3",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Generico TWS F9-5",
+    "categoria": "Otros",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Generico+TWS+F9-5",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Haylou S30 Pro",
+    "categoria": "Otros",
+    "usd": 75,
+    "pesos": 118125,
+    "transferencia": 121778,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Haylou+S30+Pro",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "JBL T520BT",
+    "categoria": "Otros",
+    "usd": 70,
+    "pesos": 110250,
+    "transferencia": 113660,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=JBL+T520BT",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "JBL Tour Pro 2 Wireless",
+    "categoria": "Otros",
+    "usd": 210,
+    "pesos": 330750,
+    "transferencia": 340979,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=JBL+Tour+Pro+2+Wireless",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "JBL Tune Flex 2",
+    "categoria": "Otros",
+    "usd": 110,
+    "pesos": 173250,
+    "transferencia": 178608,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=JBL+Tune+Flex+2",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "KZ EDX PRO",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=KZ+EDX+PRO",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "KZ KZ EDX PRO",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=KZ+KZ+EDX+PRO",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Lenovo Auricular Bt Lenovo Xt62",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Lenovo+Auricular+Bt+Lenovo+Xt62",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Lenovo He05 Ipx6",
+    "categoria": "Otros",
+    "usd": 40,
+    "pesos": 63000,
+    "transferencia": 64948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Lenovo+He05+Ipx6",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Noax Auriculares Bluetooth Noax Vox",
+    "categoria": "Otros",
+    "usd": 55,
+    "pesos": 86625,
+    "transferencia": 89304,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Noax+Auriculares+Bluetooth+Noax+Vox",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Noax Auriculares Inalámbricos Noax Zen",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Noax+Auriculares+Inal%C3%A1mbricos+Noax+Zen",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "QCY H3 Lite",
+    "categoria": "Otros",
+    "usd": 75,
+    "pesos": 118125,
+    "transferencia": 121778,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=QCY+H3+Lite",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "QCY T13 ANC2",
+    "categoria": "Otros",
+    "usd": 60,
+    "pesos": 94500,
+    "transferencia": 97423,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=QCY+T13+ANC2",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Buds 6 Active",
+    "categoria": "Xiaomi",
+    "usd": 55,
+    "pesos": 86625,
+    "transferencia": 89304,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Redmi+Buds+6+Active",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Noax Camara De Seguridad Exterior PTZ A6",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Noax+Camara+De+Seguridad+Exterior+PTZ+A6",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Noax Camara De Seguridad Interior PTZ A7",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Noax+Camara+De+Seguridad+Interior+PTZ+A7",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Noax Camara Seguridad Interior Noax PTZ Q6",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Noax+Camara+Seguridad+Interior+Noax+PTZ+Q6",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Camara Mi Home Security C300 Dual",
+    "categoria": "Xiaomi",
+    "usd": 85,
+    "pesos": 133875,
+    "transferencia": 138015,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Camara+Mi+Home+Security+C300+Dual",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Réplica Certificada Cable Lightning Tipo C",
+    "categoria": "Otros",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=R%C3%A9plica+Certificada+Cable+Lightning+Tipo+C"
+  },
+  {
+    "nombre": "Xiaomi Enchufe Inteligente Xiaomi Smart Plug 2 WiFi",
+    "categoria": "Xiaomi",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Enchufe+Inteligente+Xiaomi+Smart+Plug+2+WiFi",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Genérico Funda Silicona Joystick PS4",
+    "categoria": "Otros",
+    "usd": 35,
+    "pesos": 55125,
+    "transferencia": 56830,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Gen%C3%A9rico+Funda+Silicona+Joystick+PS4",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Desk Lamp Lite",
+    "categoria": "Xiaomi",
+    "usd": 60,
+    "pesos": 94500,
+    "transferencia": 97423,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Desk+Lamp+Lite",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Flexible Rechargeable Lamp",
+    "categoria": "Xiaomi",
+    "usd": 60,
+    "pesos": 94500,
+    "transferencia": 97423,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Flexible+Rechargeable+Lamp",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Tira LED Xiaomi Smart Lightstrip BHR5933GL RGB",
+    "categoria": "Xiaomi",
+    "usd": 80,
+    "pesos": 126000,
+    "transferencia": 129897,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Tira+LED+Xiaomi+Smart+Lightstrip+BHR5933GL+RGB",
+    "colores": [
+      "Blanco"
+    ]
+  },
+  {
+    "nombre": "Kingston Pendrive 128Gb Usb C 3.2 Kingston Data Traveler 70",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Kingston+Pendrive+128Gb+Usb+C+3.2+Kingston+Data+Traveler+70"
+  },
+  {
+    "nombre": "Generico Mochila Antirrobo 35L",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Generico+Mochila+Antirrobo+35L",
+    "colores": [
+      "Gris"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi Casual Daypack 13.3",
+    "categoria": "Xiaomi",
+    "usd": 40,
+    "pesos": 63000,
+    "transferencia": 64948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+Casual+Daypack+13.3",
+    "colores": [
+      "Azul Oscuro - Rosa"
+    ]
+  },
+  {
+    "nombre": "Xtrem Mochila Notebook Xtrem Force 15.6''",
+    "categoria": "Notebook",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xtrem+Mochila+Notebook+Xtrem+Force+15.6%27%27",
+    "colores": [
+      "Burdeau - Azul"
+    ]
+  },
+  {
+    "nombre": "Xtrem Mochila Notebook Xtrem Montreal 15.6''",
+    "categoria": "Notebook",
+    "usd": 55,
+    "pesos": 86625,
+    "transferencia": 89304,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xtrem+Mochila+Notebook+Xtrem+Montreal+15.6%27%27",
+    "colores": [
+      "Negro - Rosa"
+    ]
+  },
+  {
+    "nombre": "Xtrem Mochila Notebook Xtrem Nebraska 16''",
+    "categoria": "Notebook",
+    "usd": 60,
+    "pesos": 94500,
+    "transferencia": 97423,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xtrem+Mochila+Notebook+Xtrem+Nebraska+16%27%27",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Electric Scooter 6 Max",
+    "categoria": "Xiaomi",
+    "usd": 810,
+    "pesos": 1275750,
+    "transferencia": 1315206,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Electric+Scooter+6+Max",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Lenovo Parlante Bluetooth Lenovo K3 Pro",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Lenovo+Parlante+Bluetooth+Lenovo+K3+Pro",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mini Asm01g",
+    "categoria": "Xiaomi",
+    "usd": 75,
+    "pesos": 118125,
+    "transferencia": 121778,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mini+Asm01g",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Parlante Bluetooth Xiaomi Outdoor 30W",
+    "categoria": "Xiaomi",
+    "usd": 80,
+    "pesos": 126000,
+    "transferencia": 129897,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Parlante+Bluetooth+Xiaomi+Outdoor+30W",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Parlante Bluetooth Xiaomi Sound Pocket 5W",
+    "categoria": "Xiaomi",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Parlante+Bluetooth+Xiaomi+Sound+Pocket+5W",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "SKMEI Reloj Deportivo Skmei 0990",
+    "categoria": "Otros",
+    "usd": 55,
+    "pesos": 86625,
+    "transferencia": 89304,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SKMEI+Reloj+Deportivo+Skmei+0990",
+    "colores": [
+      "Negro / Agujas Verdes"
+    ]
+  },
+  {
+    "nombre": "SKMEI Reloj Skmei 1243",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SKMEI+Reloj+Skmei+1243",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "SKMEI Reloj Skmei 1251",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SKMEI+Reloj+Skmei+1251",
+    "colores": [
+      "Verde"
+    ]
+  },
+  {
+    "nombre": "SKMEI Reloj Skmei 1270",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SKMEI+Reloj+Skmei+1270",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "SKMEI Reloj Skmei 1548",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SKMEI+Reloj+Skmei+1548",
+    "colores": [
+      "Azul"
+    ]
+  },
+  {
+    "nombre": "SKMEI Skmei 1068",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SKMEI+Skmei+1068",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Band 10 Pro",
+    "categoria": "Xiaomi",
+    "usd": 115,
+    "pesos": 181125,
+    "transferencia": 186727,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Band+10+Pro",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi Band 10",
+    "categoria": "Xiaomi",
+    "usd": 80,
+    "pesos": 126000,
+    "transferencia": 129897,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+Band+10",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Mi Band 11 Active",
+    "categoria": "Xiaomi",
+    "usd": 65,
+    "pesos": 102375,
+    "transferencia": 105541,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Mi+Band+11+Active",
+    "colores": [
+      "Negro - Rosa"
+    ]
+  },
+  {
+    "nombre": "Amazfit Active 2 Square Premium",
+    "categoria": "Otros",
+    "usd": 170,
+    "pesos": 267750,
+    "transferencia": 276031,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Amazfit+Active+2+Square+Premium",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Amazfit Amazfit Active Max",
+    "categoria": "Otros",
+    "usd": 200,
+    "pesos": 315000,
+    "transferencia": 324742,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Amazfit+Amazfit+Active+Max",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Amazfit Bip Max A2568",
+    "categoria": "Otros",
+    "usd": 140,
+    "pesos": 220500,
+    "transferencia": 227320,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Amazfit+Bip+Max+A2568",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Haylou LS02 PRO",
+    "categoria": "Otros",
+    "usd": 55,
+    "pesos": 86625,
+    "transferencia": 89304,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Haylou+LS02+PRO",
+    "colores": [
+      "Dark Blue"
+    ]
+  },
+  {
+    "nombre": "Haylou S6",
+    "categoria": "Otros",
+    "usd": 50,
+    "pesos": 78750,
+    "transferencia": 81186,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Haylou+S6",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Haylou Solar 2 Lite",
+    "categoria": "Otros",
+    "usd": 55,
+    "pesos": 86625,
+    "transferencia": 89304,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Haylou+Solar+2+Lite",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Haylou Solar 5",
+    "categoria": "Otros",
+    "usd": 75,
+    "pesos": 118125,
+    "transferencia": 121778,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Haylou+Solar+5",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Haylou Vibe LS30",
+    "categoria": "Otros",
+    "usd": 65,
+    "pesos": 102375,
+    "transferencia": 105541,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Haylou+Vibe+LS30",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Haylou Watch 4",
+    "categoria": "Apple - Watch",
+    "usd": 60,
+    "pesos": 94500,
+    "transferencia": 97423,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Haylou+Watch+4",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Haylou Watch 4s",
+    "categoria": "Apple - Watch",
+    "usd": 65,
+    "pesos": 102375,
+    "transferencia": 105541,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Haylou+Watch+4s",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Amazfit Balance 2 A2430GL",
+    "categoria": "Xiaomi",
+    "usd": 305,
+    "pesos": 480375,
+    "transferencia": 495232,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Amazfit+Balance+2+A2430GL",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Amazfit T-Rex 3 Pro 48mm A2444",
+    "categoria": "Xiaomi",
+    "usd": 415,
+    "pesos": 653625,
+    "transferencia": 673840,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Amazfit+T-Rex+3+Pro+48mm+A2444",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Amazfit T-Rex Ultra 2 A2550 44mm",
+    "categoria": "Xiaomi",
+    "usd": 550,
+    "pesos": 866250,
+    "transferencia": 893041,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Amazfit+T-Rex+Ultra+2+A2550+44mm",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Watch 5 Active",
+    "categoria": "Apple - Watch",
+    "usd": 70,
+    "pesos": 110250,
+    "transferencia": 113660,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Redmi+Watch+5+Active",
+    "colores": [
+      "Silver"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Watch 6",
+    "categoria": "Apple - Watch",
+    "usd": 125,
+    "pesos": 196875,
+    "transferencia": 202964,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Redmi+Watch+6",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Watch 6 Active",
+    "categoria": "Apple - Watch",
+    "usd": 75,
+    "pesos": 118125,
+    "transferencia": 121778,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Redmi+Watch+6+Active",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Redmi Watch 6 Lite",
+    "categoria": "Apple - Watch",
+    "usd": 100,
+    "pesos": 157500,
+    "transferencia": 162371,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Redmi+Watch+6+Lite",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Xiaomi Watch S5 46mm BHR08IVGL",
+    "categoria": "Apple - Watch",
+    "usd": 200,
+    "pesos": 315000,
+    "transferencia": 324742,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Xiaomi+Watch+S5+46mm+BHR08IVGL",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Watch ONN Conversor Watch ONN Con Google Tv Full HD",
+    "categoria": "Apple - Watch",
+    "usd": 85,
+    "pesos": 133875,
+    "transferencia": 138015,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Watch+ONN+Conversor+Watch+ONN+Con+Google+Tv+Full+HD",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Noax E-Reader Aura con cover",
+    "categoria": "Otros",
+    "usd": 145,
+    "pesos": 228375,
+    "transferencia": 235438,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Noax+E-Reader+Aura+con+cover",
+    "colores": [
+      "Negro"
+    ]
+  },
+  {
+    "nombre": "Generico BOLSO MATERO NORDICO C/ SET MATE",
+    "categoria": "Otros",
+    "usd": 45,
+    "pesos": 70875,
+    "transferencia": 73067,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Generico+BOLSO+MATERO+NORDICO+C%2F+SET+MATE"
+  },
+  {
+    "nombre": "Genérico TERMO ACERO 1 LITRO / COLOR",
+    "categoria": "Otros",
+    "usd": 40,
+    "pesos": 63000,
+    "transferencia": 64948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Gen%C3%A9rico+TERMO+ACERO+1+LITRO+%2F+COLOR",
+    "colores": [
+      "Plateado"
+    ]
+  },
+  {
+    "nombre": "HP VICTUS 15-FA2013 GAMING Core™ i5-13420H 512GB SSD 8GB 15.6\" (1920x1080) 144Hz WIN11 NVIDIA® RTX 3050 6144MB MICA SILVER Backlit Keyboard",
+    "categoria": "Notebook",
+    "usd": 1050,
+    "pesos": 1653750,
+    "transferencia": 1704897,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=HP+VICTUS+15-FA2013+GAMING+Core%E2%84%A2+i5-13420H+512GB+SSD+8GB+15.6%22+%281920x1080%29+144Hz+WIN11+NVIDIA%C2%AE+RTX+3050+6144MB+MICA+SILVER+Backlit+Keyboard"
+  },
+  {
+    "nombre": "HP 15-FC0037 AMD Ryzen™ 5 7520U 256GB SSD 8GB 15.6\" (1920x1080) WIN11 MIDNIGHT BLUE",
+    "categoria": "Notebook",
+    "usd": 640,
+    "pesos": 1008000,
+    "transferencia": 1039175,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=HP+15-FC0037+AMD+Ryzen%E2%84%A2+5+7520U+256GB+SSD+8GB+15.6%22+%281920x1080%29+WIN11+MIDNIGHT+BLUE"
+  },
+  {
+    "nombre": "NOTEBOOK HP G9 250RT INTEL N150 8GB RAM 256GB SSD 15.6\" HD FREEDOS - ESPAÑOL BZ3K5AT",
+    "categoria": "Notebook",
+    "usd": 410,
+    "pesos": 645750,
+    "transferencia": 665722,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTEBOOK+HP+G9+250RT+INTEL+N150+8GB+RAM+256GB+SSD+15.6%22+HD+FREEDOS+-+ESPA%C3%91OL+BZ3K5AT"
+  },
+  {
+    "nombre": "HP 15-FC0146DX de 15,6\" con procesador AMD Ryzen 5-7520U, SSD de 512 GB y 8 GB de RAM - Plata",
+    "categoria": "Notebook",
+    "usd": 615,
+    "pesos": 968625,
+    "transferencia": 998582,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=HP+15-FC0146DX+de+15%2C6%22+con+procesador+AMD+Ryzen+5-7520U%2C+SSD+de+512+GB+y+8+GB+de+RAM+-+Plata"
+  },
+  {
+    "nombre": "MSI CYBORG 15 GAMING AMD Ryzen™ 9 270 1TB SSD 16GB 15.6\" (1920x1080) 144Hz WIN11 NVIDIA® RTX 5060 8192MB BLACK RGB Backlit Keyboard.",
+    "categoria": "Notebook",
+    "usd": 1920,
+    "pesos": 3024000,
+    "transferencia": 3117526,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MSI+CYBORG+15+GAMING+AMD+Ryzen%E2%84%A2+9+270+1TB+SSD+16GB+15.6%22+%281920x1080%29+144Hz+WIN11+NVIDIA%C2%AE+RTX+5060+8192MB+BLACK+RGB+Backlit+Keyboard."
+  },
+  {
+    "nombre": "NOTEBOOK MSI CYBORG 15 GAMING INTEL™ ULTRA 7 240H 16GB RAM 1TB SSD NVIDIA® RTX 5070 8GB 15.6\" 144Hz",
+    "categoria": "Notebook",
+    "usd": 1980,
+    "pesos": 3118500,
+    "transferencia": 3214948,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTEBOOK+MSI+CYBORG+15+GAMING+INTEL%E2%84%A2+ULTRA+7+240H+16GB+RAM+1TB+SSD+NVIDIA%C2%AE+RTX+5070+8GB+15.6%22+144Hz"
+  },
+  {
+    "nombre": "MSI Cyborg 15 GAMING Core™ 7-240H 512GB SSD 16GB 15.6\" (1920x1080) 144Hz IPS WIN11 NVIDIA® RTX 5060 BLACK Backlit Keyboard.",
+    "categoria": "Notebook",
+    "usd": 1770,
+    "pesos": 2787750,
+    "transferencia": 2873969,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MSI+Cyborg+15+GAMING+Core%E2%84%A2+7-240H+512GB+SSD+16GB+15.6%22+%281920x1080%29+144Hz+IPS+WIN11+NVIDIA%C2%AE+RTX+5060+BLACK+Backlit+Keyboard."
+  },
+  {
+    "nombre": "NOTEBOOK DELL INSPIRON 15 RYZEN 5-7520U 8GB RAM 512GB SSD 15.6\" FHD",
+    "categoria": "Notebook",
+    "usd": 680,
+    "pesos": 1071000,
+    "transferencia": 1104124,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTEBOOK+DELL+INSPIRON+15+RYZEN+5-7520U+8GB+RAM+512GB+SSD+15.6%22+FHD"
+  },
+  {
+    "nombre": "Asus Vivobook 14 X1404VA-I512256 Core™ i5-1334U 256GB SSD 12GB 14\" (1920x1080) WIN11 QUIET BLUE.",
+    "categoria": "Notebook",
+    "usd": 660,
+    "pesos": 1039500,
+    "transferencia": 1071649,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Asus+Vivobook+14+X1404VA-I512256+Core%E2%84%A2+i5-1334U+256GB+SSD+12GB+14%22+%281920x1080%29+WIN11+QUIET+BLUE."
+  },
+  {
+    "nombre": "NOTEBOOK ASUS VIVOBOOK V16 GAMING INTEL CORE™ ULTRA 7 240H 16GB RAM 1TB SSD NVIDIA® RTX 5070 8GB 16\" WUXGA 144Hz",
+    "categoria": "Notebook",
+    "usd": 2110,
+    "pesos": 3323250,
+    "transferencia": 3426031,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTEBOOK+ASUS+VIVOBOOK+V16+GAMING+INTEL+CORE%E2%84%A2+ULTRA+7+240H+16GB+RAM+1TB+SSD+NVIDIA%C2%AE+RTX+5070+8GB+16%22+WUXGA+144Hz"
+  },
+  {
+    "nombre": "LENOVO LOQ 15AHP10 GAMING RYZEN™ 5 220 16GB 512GB SSD NVIDIA® RTX 5050 8GB 15.6\" 144Hz",
+    "categoria": "Notebook",
+    "usd": 1425,
+    "pesos": 2244375,
+    "transferencia": 2313789,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=LENOVO+LOQ+15AHP10+GAMING+RYZEN%E2%84%A2+5+220+16GB+512GB+SSD+NVIDIA%C2%AE+RTX+5050+8GB+15.6%22+144Hz"
+  },
+  {
+    "nombre": "NOTEBOOK LENOVO IDEAPAD 5 14AGP11 2-EN-1 AMD ™ AI 5 430 16GB RAM 512GB SSD 14\" WUXGA TACTIL",
+    "categoria": "Notebook",
+    "usd": 1085,
+    "pesos": 1708875,
+    "transferencia": 1761727,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTEBOOK+LENOVO+IDEAPAD+5+14AGP11+2-EN-1+AMD+%E2%84%A2+AI+5+430+16GB+RAM+512GB+SSD+14%22+WUXGA+TACTIL"
+  },
+  {
+    "nombre": "NOTEBOOK LENOVO IDEAPAD SLIM INTEL CORE I5-1335U 16GB RAM 256GB SSD 15.6\" FHD",
+    "categoria": "Notebook",
+    "usd": 715,
+    "pesos": 1126125,
+    "transferencia": 1160954,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=NOTEBOOK+LENOVO+IDEAPAD+SLIM+INTEL+CORE+I5-1335U+16GB+RAM+256GB+SSD+15.6%22+FHD"
+  },
+  {
+    "nombre": "Acer Predator Triton 300 SE PT314-52S-747P 14 Intel Core i7-12700H 512GB SSD 16GB RAM NVIDIA GeForce RTX 3060 6 GB Winddows 11 home",
+    "categoria": "Notebook",
+    "usd": 1455,
+    "pesos": 2291625,
+    "transferencia": 2362500,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Acer+Predator+Triton+300+SE+PT314-52S-747P+14+Intel+Core+i7-12700H+512GB+SSD+16GB+RAM+NVIDIA+GeForce+RTX+3060+6+GB+Winddows+11+home"
+  },
+  {
+    "nombre": "Acer Aspire Go 15 AG15-42P-R917 Ryzen™ 7 7730U 512GB SSD 16GB 15.6\" (1920x1080) WIN11 PURE SILVER",
+    "categoria": "Notebook",
+    "usd": 820,
+    "pesos": 1291500,
+    "transferencia": 1331443,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=Acer+Aspire+Go+15+AG15-42P-R917+Ryzen%E2%84%A2+7+7730U+512GB+SSD+16GB+15.6%22+%281920x1080%29+WIN11+PURE+SILVER"
+  },
+  {
+    "nombre": "A16 3VHK3US894SH Gigabyte GAMING A16 AMD Ryzen™ 7 260 1TB SSD 16GB 16\" (1920x1200) 165Hz WIN11 NVIDIA® RTX 5060 8192MB BLACK STEEL Backlit Keyboard",
+    "categoria": "Notebook",
+    "usd": 1645,
+    "pesos": 2590875,
+    "transferencia": 2671005,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=A16+3VHK3US894SH+Gigabyte+GAMING+A16+AMD+Ryzen%E2%84%A2+7+260+1TB+SSD+16GB+16%22+%281920x1200%29+165Hz+WIN11+NVIDIA%C2%AE+RTX+5060+8192MB+BLACK+STEEL+Backlit+Keyboard"
+  },
+  {
+    "nombre": "GMKtec Mini PC M8 AMD Ryzen 5 PRO 6650H (6C/12T 4.50Ghz) Dual NIC LAN 2.5GbE, 16GB LPDDR5 RAM + 512GB Disco Duro PCIe SSD, Oculink, USB4, HDMI, USB-C",
+    "categoria": "Otros",
+    "usd": 600,
+    "pesos": 945000,
+    "transferencia": 974227,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=GMKtec+Mini+PC+M8+AMD+Ryzen+5+PRO+6650H+%286C%2F12T+4.50Ghz%29+Dual+NIC+LAN+2.5GbE%2C+16GB+LPDDR5+RAM+%2B+512GB+Disco+Duro+PCIe+SSD%2C+Oculink%2C+USB4%2C+HDMI%2C+USB-C"
+  },
+  {
+    "nombre": "MINI PC ACEMAGIC KRON K1 AMD RYZEN 7 7730U 16GB RAM 1TB SSD WINDOWS 11",
+    "categoria": "Otros",
+    "usd": 720,
+    "pesos": 1134000,
+    "transferencia": 1169072,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MINI+PC+ACEMAGIC+KRON+K1+AMD+RYZEN+7+7730U+16GB+RAM+1TB+SSD+WINDOWS+11"
+  },
+  {
+    "nombre": "SONY JOYSTICK PS5 DUALSENSE WIRELESS",
+    "categoria": "Otros",
+    "usd": 110,
+    "pesos": 173250,
+    "transferencia": 178608,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SONY+JOYSTICK+PS5+DUALSENSE+WIRELESS"
+  },
+  {
+    "nombre": "SAMSUNG ODYSSEY ARK 2 MONITOR GAMER 55\" 4K ULTRA HD ULTRAWIDE CURVO 165Hz 1MS NEGRO",
+    "categoria": "Samsung",
+    "usd": 2215,
+    "pesos": 3488625,
+    "transferencia": 3596521,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=SAMSUNG+ODYSSEY+ARK+2+MONITOR+GAMER+55%22+4K+ULTRA+HD+ULTRAWIDE+CURVO+165Hz+1MS+NEGRO"
+  },
+  {
+    "nombre": "MONITOR GAMER XIOAMI MI A27I 2026 27\" FHD 144Hz IPS P27FDA-RAGL",
+    "categoria": "Otros",
+    "usd": 140,
+    "pesos": 220500,
+    "transferencia": 227320,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=MONITOR+GAMER+XIOAMI+MI+A27I+2026+27%22+FHD+144Hz+IPS+P27FDA-RAGL"
+  },
+  {
+    "nombre": "AMAZFIT ANILLO INTELIGENTE HELIO RING 12\" A2321 - TITANIO A2321",
+    "categoria": "Otros",
+    "usd": 200,
+    "pesos": 315000,
+    "transferencia": 324742,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=AMAZFIT+ANILLO+INTELIGENTE+HELIO+RING+12%22+A2321+-+TITANIO+A2321"
+  },
+  {
+    "nombre": "XIAOMI MONOPATIN ELECTRICO 4 PRO 2GEN",
+    "categoria": "Xiaomi",
+    "usd": 590,
+    "pesos": 929250,
+    "transferencia": 957990,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=XIAOMI+MONOPATIN+ELECTRICO+4+PRO+2GEN"
+  },
+  {
+    "nombre": "TABLET DOOGEE U13 PRO 6GB RAM 256GB SSD 13.4\" GRIS",
+    "categoria": "Otros",
+    "usd": 260,
+    "pesos": 409500,
+    "transferencia": 422165,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=TABLET+DOOGEE+U13+PRO+6GB+RAM+256GB+SSD+13.4%22+GRIS"
+  },
+  {
+    "nombre": "PARLANTE JBL CHARGE 6 BT 5.4 + COLORES VARIOS",
+    "categoria": "Otros",
+    "usd": 165,
+    "pesos": 259875,
+    "transferencia": 267912,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=PARLANTE+JBL+CHARGE+6+BT+5.4+%2B+COLORES+VARIOS"
+  },
+  {
+    "nombre": "PARLANTE JBL FLIP 7 BT 5.4 + COLORES VARIOS",
+    "categoria": "Otros",
+    "usd": 130,
+    "pesos": 204750,
+    "transferencia": 211082,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=PARLANTE+JBL+FLIP+7+BT+5.4+%2B+COLORES+VARIOS"
+  },
+  {
+    "nombre": "PARLANTE JBL BOOMBOX 4 BT 5.4 COLORES VARIOS",
+    "categoria": "Otros",
+    "usd": 455,
+    "pesos": 716625,
+    "transferencia": 738789,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=PARLANTE+JBL+BOOMBOX+4+BT+5.4+COLORES+VARIOS"
+  },
+  {
+    "nombre": "PARLANTE JBL GRIP BT 5.4 IP68 JBL PRO SOUND COLORES VARIOS",
+    "categoria": "Otros",
+    "usd": 90,
+    "pesos": 141750,
+    "transferencia": 146134,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=PARLANTE+JBL+GRIP+BT+5.4+IP68+JBL+PRO+SOUND+COLORES+VARIOS"
+  },
+  {
+    "nombre": "TABLET DOOGEE U13 PRO 6GB RAM 256GB SSD 13.4\" AZUL",
+    "categoria": "Otros",
+    "usd": 260,
+    "pesos": 409500,
+    "transferencia": 422165,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=TABLET+DOOGEE+U13+PRO+6GB+RAM+256GB+SSD+13.4%22+AZUL"
+  },
+  {
+    "nombre": "TABLET XIAOMI REDMI PAD SE 8GB RAM 128GB SSD 11\" FHD - PURPURA",
+    "categoria": "Xiaomi",
+    "usd": 245,
+    "pesos": 385875,
+    "transferencia": 397809,
+    "link_imagen": "https://www.google.com/search?tbm=isch&q=TABLET+XIAOMI+REDMI+PAD+SE+8GB+RAM+128GB+SSD+11%22+FHD+-+PURPURA"
+  }
+]

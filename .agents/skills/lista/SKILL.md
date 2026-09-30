@@ -16,8 +16,35 @@ Convierte los precios de proveedores (archivos adjuntos y/o texto pegado) en un 
 2. **Filtros — NO van a la lista, van a `filtrados`:** ítems con "caja abollada", "caja
    manchada", "sin stock", o stock 0. Anotar el motivo.
 3. **Unificación:** si el mismo modelo exacto se repite (distintos colores) → una sola fila.
-   En **iPhones usados**, agrupar los porcentajes de batería entre paréntesis en el nombre:
-   `iPhone 13 128GB (84%) (87%)`.
+   **Excepción — iPhones usados:** conservar cada combinación real de **color y
+   porcentaje de batería** informada por el proveedor. En el dropdown de variantes,
+   cada opción debe mostrar ambos datos juntos, por ejemplo: `Negro · batería 84%`
+   y `Blanco · batería 87%`. No agrupar colores y porcentajes por separado ni generar
+   combinaciones que el proveedor no ofreció.
+   **Título limpio:** el nombre debe contener solo modelo, capacidad y condición,
+   por ejemplo `iPhone 13 Pro Max 128GB (Usado)`. Nunca añadir porcentajes de batería
+   al título. Guardar las opciones en `colores`/variantes: por ejemplo
+   `Blue 93%`, `Gold 100%`, `Grafito 95%`, `Green 95%`, `Green 100%`.
+   Conservar colores distintos aunque compartan porcentaje. Si la fuente solo
+   informa porcentajes, usarlos como opciones sin inventar colores. Preservar estas
+   variantes separadas al generar el listado y al cargar/publicar el catálogo.
+   No inventar colores ni porcentajes faltantes:
+   señalar el dato no informado para revisión. Esta regla rige para todos los
+   próximos listados de iPhones usados.
+   **Dropdown obligatorio (regla general, todos los productos):** si hay colores o
+   variantes informados, mostrar siempre el dropdown, incluso cuando exista una
+   única opción. No preseleccionar ninguna variante: el selector debe iniciar con
+   **Elegí una opción de color** como placeholder, y **Agregar al carrito** desactivado.
+   Al abrirlo, mostrar solo las opciones reales disponibles; si existe un único color,
+   será la única opción seleccionable. Activar el CTA únicamente después de que el
+   usuario seleccione explícitamente una opción. Nunca reemplazar el selector por
+   texto fijo. Para nuevos, el título es
+   **Colores disponibles:**; para usados, **Color y % de batería:**.
+   Conservar la combinación original de color y batería y no inventar datos.
+   **Fechas de cobertura:** conservarlas completas dentro de su variante (por ejemplo,
+   `Mist Blue 89% Grado A+ Cobertura 1/02/27`). Nunca dividir una fecha por sus barras
+   ni convertir día, mes o año en opciones de color. Para separar variantes de texto,
+   usar `normalize.separar_variantes` y contrastar el resultado con la fuente.
 4. **Regla "slim":**
    - Celular (Motorola, Xiaomi, POCO, etc.) que dice "slim" → borrar "slim" y poner
      `(s/ cargador)`.

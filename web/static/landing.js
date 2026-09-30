@@ -474,10 +474,17 @@ if (linkIrAPerfil) {
       return;
     }
     const destinoPerfil = modoVisual === "fallout" ? "/perfil?modo=fallout" : "/perfil";
+    if (estadoSesionCliente) { window.location.href = destinoPerfil; return; }
     const paramsLogin = new URLSearchParams({ volver: `${location.pathname}${location.search}` });
     if (modoVisual === "fallout") paramsLogin.set("modo", "fallout");
     const destinoLogin = `/login.html?${paramsLogin.toString()}`;
-    window.location.href = estadoSesionCliente ? destinoPerfil : destinoLogin;
+    if (modoVisual === "fallout") { window.location.href = destinoLogin; return; }
+    // Classic + invitado: abre el login en el mismo modal blureado del
+    // carrito/perfil, en vez de navegar a /login.html (pedido explícito).
+    cerrarMenuPerfil();
+    import("/login-drawer.js").then(({ abrirLoginEnPagina }) => {
+      abrirLoginEnPagina(linkIrAPerfil, () => location.reload());
+    });
   });
 }
 
@@ -912,7 +919,7 @@ async function asegurarSesionParaCarrito(producto, color) {
   const sesion = await obtenerEstadoSesionCliente(true);
   if (sesion && !sesion.debe_cambiar_password) return true;
   guardarPendienteCarrito(producto, color);
-  window.location.href = urlLoginParaCarrito();
+  navegarDesdeCarrito(urlLoginParaCarrito());
   return false;
 }
 
@@ -1252,10 +1259,10 @@ function tarjetaProducto(p) {
   // que el usuario elija explícitamente una opción de la lista.
   const colores = `
     <div class="selector-colores">
-      <strong>Color:</strong>
+      <strong>${/\busad[oa]s?\b/i.test(p.nombre) || listaColores.some(c => /\d+\s*%/.test(c)) ? "Color y % de batería:" : "Colores disponibles:"}</strong>
       <div class="dropdown-color">
         <button type="button" class="dropdown-color-boton" data-valor="">
-          Elegir color
+          Elegí una opción de color
         </button>
         <ul class="dropdown-color-lista oculto" role="listbox">
           ${listaColores.map((c) => `<li role="option" data-valor="${escapeHtml(c)}">${escapeHtml(c)}</li>`).join("")}
@@ -1271,7 +1278,7 @@ function tarjetaProducto(p) {
       </p>
       ${colores}
       <div class="card-acciones">
-        <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}</span>
+        <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}${typeof TTRAComparar !== "undefined" ? TTRAComparar.buttonHtml() : ""}</span>
         <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="" type="button" disabled>Agregar al carrito</button>
       </div>
     </div>
@@ -1333,6 +1340,10 @@ function pintarGrilla(el, productos, mensajeVacio) {
   const claseModo = (modoVista === "lista" || esMobileClassic) ? "lista" : "";
   const controlesHtml = esMobileClassic ? "" : controlVistaHtml();
   el.innerHTML = `<div class="rc-catalogo-surface">${controlesHtml}<div class="grilla ${claseModo}">${productos.map(tarjetaProducto).join("")}</div></div>`;
+  window.TTRAComparar?.bind(el, productos, SECCIONES_DATA, () => ({
+    seccionActiva, filtroMarcaGlobal, subFiltros: [...subFiltrosActivos], criterioOrden, modoVista,
+    query: document.getElementById('input-busqueda').value
+  }));
   el.querySelectorAll(".card").forEach((card) => {
     const producto = productos.find((item) => item.nombre === card.dataset.nombre);
     if (!producto) return;
@@ -1400,6 +1411,7 @@ function pintarGrilla(el, productos, mensajeVacio) {
       seleccionarCard();
     });
   });
+  window.TTRACatalogImages?.enhance(el, productos);
   el.querySelectorAll(".btn-vista[data-modo]").forEach((btn) => {
     btn.addEventListener("click", () => {
       modoVista = btn.dataset.modo;
@@ -1813,7 +1825,7 @@ async function procesarCheckoutPendiente() {
     borrarCheckoutPendiente();
     return false;
   }
-  await derivarCheckoutAWhatsapp(carrito);
+  await confirmarPedidoCarrito(carrito);
   return true;
 }
 
@@ -1822,7 +1834,7 @@ async function asegurarSesionParaCheckout() {
   const sesion = await obtenerEstadoSesionCliente(true);
   if (sesion && !sesion.debe_cambiar_password) return true;
   guardarPendienteCheckout();
-  window.location.href = urlLoginParaCarrito();
+  navegarDesdeCarrito(urlLoginParaCarrito());
   return false;
 }
 
@@ -2018,9 +2030,17 @@ function abrirCarrito() {
   // superpuestos a la vez.
   if (typeof cerrarPanelPerfil === "function") cerrarPanelPerfil();
   cargarOpcionesEntrega().catch(() => {});
+  mostrarResumenPedidoGuardado();
   sincronizarLimiteCarrito();
   document.getElementById("panel-carrito").classList.remove("oculto");
   document.getElementById("overlay-carrito").classList.remove("oculto");
+}
+
+function navegarDesdeCarrito(url) {
+  // El acceso a la cuenta conserva su navegación fuera del carrito incrustado.
+  const destino = document.documentElement.classList.contains('ttra-cart-embedded') ? window.parent : window;
+  const ventana = destino.open(url, '_blank', 'noopener');
+  if (!ventana) destino.location.href = url;
 }
 
 function cerrarCarrito() {
@@ -2123,30 +2143,99 @@ async function aplicarCodigoMailingPorValor(codigo) {
   return true;
 }
 
-async function derivarCheckoutAWhatsapp(carrito) {
+let confirmandoPedido = false;
+let ultimoResumenPedido = "";
+
+function mostrarResumenPedidoGuardado() {
+  try { ultimoResumenPedido = sessionStorage.getItem("ttra_ultimo_resumen_pedido") || ultimoResumenPedido; } catch {}
+  const panel = document.getElementById("pedido-confirmado");
+  panel.hidden = !ultimoResumenPedido;
+  document.getElementById("pedido-confirmado-texto").value = ultimoResumenPedido;
+  document.getElementById("btn-whatsapp-pedido").href = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMERO}&text=${encodeURIComponent(ultimoResumenPedido)}`;
+  document.getElementById("btn-compartir-pedido").hidden = typeof navigator.share !== "function";
+  // An empty cart with a saved receipt only needs the confirmation panel.
+  const soloResumen = Boolean(ultimoResumenPedido) && cargarCarrito().length === 0;
+  document.querySelector("#panel-carrito .panel-carrito-footer").hidden = soloResumen;
+  document.getElementById("items-carrito").hidden = soloResumen;
+}
+
+async function copiarResumenPedido() {
+  const texto = document.getElementById("pedido-confirmado-texto");
+  const estado = document.getElementById("pedido-confirmado-estado");
+  try {
+    await navigator.clipboard.writeText(texto.value);
+    estado.textContent = "Copiado. Ya podés pegar tu pedido donde quieras.";
+  } catch {
+    texto.focus();
+    texto.select();
+    estado.textContent = "Texto seleccionado. Mantené pulsado o usá Ctrl+C / ⌘C para copiar.";
+  }
+}
+
+async function compartirResumenPedido() {
+  const boton = document.getElementById("btn-compartir-pedido");
+  if (boton.disabled) return;
+  boton.disabled = true;
+  const estado = document.getElementById("pedido-confirmado-estado");
+  estado.textContent = "";
+  try {
+    await navigator.share({title: "Mi pedido — The Tech Room Arg", text: document.getElementById("pedido-confirmado-texto").value});
+  } catch (error) {
+    if (error.name !== "AbortError") estado.textContent = "No se pudo abrir el menú para compartir. Podés copiar el pedido.";
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+document.getElementById("btn-copiar-pedido").addEventListener("click", copiarResumenPedido);
+document.getElementById("btn-compartir-pedido").addEventListener("click", compartirResumenPedido);
+
+async function confirmarPedidoCarrito(carrito) {
   if (!catalogoListo) return false;
-  registrarInteraccion("complete_checkout", {
-    metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
-  });
+  if (confirmandoPedido || !carrito.length) return false;
   const fechaEntrega = document.getElementById("fecha-entrega").value;
   const direccionEntrega = document.getElementById("direccion-entrega").value.trim();
-  if (!direccionEntrega) { alert("Especificá dirección de entrega."); return; }
+  if (!direccionEntrega) { alert("Especificá dirección de entrega."); return false; }
+  if (!fechaEntrega) { alert("Elegí una fecha de entrega."); return false; }
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
   if (!mensaje) return false;
+  const boton = document.getElementById("btn-whatsapp");
+  confirmandoPedido = true;
+  boton.disabled = true;
+  boton.textContent = "Guardando pedido…";
   try {
-    if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;
-  } catch (error) {
-    console.error("No se pudo guardar el pedido", error);
-    alert("No pude guardar tu pedido. Probá nuevamente antes de abrir WhatsApp.");
-    return;
+    try {
+      if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;
+    } catch (error) {
+      console.error("No se pudo guardar el pedido", error);
+      alert("No pude guardar tu pedido. Tu carrito sigue disponible para reintentar.");
+      return false;
+    }
+    ultimoResumenPedido = `${mensaje}\nDirección de entrega: ${direccionEntrega}`;
+    try { sessionStorage.setItem("ttra_ultimo_resumen_pedido", ultimoResumenPedido); } catch {}
+    borrarCheckoutPendiente();
+    vaciarCarrito();
+    borrarDescuentoMailing();
+    borrarRegaloPromo();
+    abrirCarrito();
+    document.getElementById("pedido-confirmado-estado").textContent = "Si WhatsApp no se abrió, tocá Abrir WhatsApp. El resumen queda disponible para copiar.";
+    document.getElementById("pedido-confirmado-titulo").focus();
+    // Keep the receipt in this tab even when the browser blocks the popup.
+    // A regular link in the panel retries with a fresh user gesture.
+    try {
+      window.open(document.getElementById("btn-whatsapp-pedido").href, "_blank", "noopener,noreferrer");
+    } catch {
+      // The visible link and copy action remain available.
+    }
+    registrarInteraccion("complete_checkout", {
+      metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
+    });
+    return true;
+  } finally {
+    confirmandoPedido = false;
+    boton.disabled = false;
+    boton.textContent = "Confirmar pedido";
   }
-  borrarCheckoutPendiente();
-  vaciarCarrito();
-  borrarDescuentoMailing();
-  borrarRegaloPromo();
-  cerrarCarrito();
-  window.location.href = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
-  return true;
 }
 
 document.getElementById("btn-carrito").addEventListener("click", abrirCarrito);
@@ -2500,15 +2589,25 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
   return true;
 }
 
+let checkoutSolicitado = false;
 document.getElementById("btn-whatsapp").addEventListener("click", async () => {
   if (!catalogoListo) return;
+  if (checkoutSolicitado) return;
   const carrito = cargarCarrito();
   if (carrito.length === 0) return;
-  registrarInteraccion("begin_checkout", {
-    metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
-  });
-  if (!(await asegurarSesionParaCheckout())) return;
-  await derivarCheckoutAWhatsapp(carrito);
+  checkoutSolicitado = true;
+  const boton = document.getElementById("btn-whatsapp");
+  boton.disabled = true;
+  try {
+    registrarInteraccion("begin_checkout", {
+      metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
+    });
+    if (!(await asegurarSesionParaCheckout())) return;
+    await confirmarPedidoCarrito(carrito);
+  } finally {
+    checkoutSolicitado = false;
+    boton.disabled = false;
+  }
 });
 document.getElementById("btn-volver").addEventListener("click", volverUnPaso);
 document.getElementById("titulo-inicio").addEventListener("click", volverAPantallaPrincipal);
@@ -2547,12 +2646,7 @@ function animarCara() {
 
 setInterval(animarCara, 380);
 
-// --- Fecha, hora, ciudad y temperatura del usuario, a la izquierda del carrito ---
-// La ciudad y la temperatura corresponden a la ubicación real del visitante
-// (pide permiso de geolocalización al navegador); si lo rechaza o no está
-// disponible, se usa Córdoba Capital como respaldo.
-
-const COORD_RESPALDO = { lat: -31.4201, lon: -64.1888 };
+// --- Compatibilidad con el reloj del header anterior, sin geolocalización ---
 let temperaturaActual = null;
 let ciudadActual = null;
 
@@ -2677,9 +2771,7 @@ function barajar(lista) {
   return copia;
 }
 
-// Se resuelve una sola vez por carga de página (no se vuelve a barajar en
-// los refrescos de clima cada 15 min, para no reiniciar el carrousel si el
-// visitante lo está mirando).
+// Se resuelve una sola vez por carga de página, sin consultar la ubicación.
 let provinciaImagenesResueltas = false;
 
 function actualizarImagenesSegunProvincia(codigoIso) {
@@ -2709,54 +2801,6 @@ function actualizarImagenesSegunProvincia(codigoIso) {
       pintarCarrouselCiudad(productosEl);
     }
   }
-}
-
-async function cargarClimaYCiudad(lat, lon, ubicacionReal) {
-  let codigoIso = null;
-  try {
-    const [climaR, ciudadR, pronosticoR] = await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`),
-      fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`),
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`),
-    ]);
-    if (climaR.ok) {
-      const datosClima = await climaR.json();
-      temperaturaActual = Math.round(datosClima.current.temperature_2m);
-    }
-    if (ciudadR.ok) {
-      const datosCiudad = await ciudadR.json();
-      ciudadActual = datosCiudad.locality || datosCiudad.city || null;
-      codigoIso = datosCiudad.principalSubdivisionCode || null;
-    }
-    if (pronosticoR.ok) {
-      const datosPronostico = await pronosticoR.json();
-      const max = Math.round(datosPronostico.daily.temperature_2m_max[1]);
-      const min = Math.round(datosPronostico.daily.temperature_2m_min[1]);
-      const codigo = datosPronostico.daily.weathercode[1];
-      const desc = descripcionClima(codigo);
-      pronosticoManana = `Mañana en ${ciudadActual || "Córdoba"}: máxima de ${max}°, mínima de ${min}°, ${desc}`;
-      pronosticoConsejo = consejoClima(codigo, min, max);
-    }
-  } catch {
-    // se mantiene lo último cargado si algo falla
-  }
-  // Solo confiamos en la provincia si la ubicación vino de geolocalización
-  // real aceptada por el visitante; si no (permiso denegado, no soportado,
-  // etc.), el default es Córdoba ("AR-X"), no fotos de todo el país.
-  actualizarImagenesSegunProvincia(ubicacionReal ? codigoIso : "AR-X");
-  pintarFechaHoraTemp();
-}
-
-function iniciarUbicacionYClima() {
-  if (!("geolocation" in navigator)) {
-    cargarClimaYCiudad(COORD_RESPALDO.lat, COORD_RESPALDO.lon, false);
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    (posicion) => cargarClimaYCiudad(posicion.coords.latitude, posicion.coords.longitude, true),
-    () => cargarClimaYCiudad(COORD_RESPALDO.lat, COORD_RESPALDO.lon, false),
-    { timeout: 8000 }
-  );
 }
 
 pintarFechaHoraTemp();
@@ -2879,8 +2923,8 @@ async function iniciarNoticiero() {
 }
 
 iniciarNoticiero();
-iniciarUbicacionYClima();
-setInterval(iniciarUbicacionYClima, 15 * 60 * 1000);
+// Legacy city artwork uses Córdoba without requesting the visitor’s location.
+actualizarImagenesSegunProvincia("AR-X");
 
 // El recuadro de noticias nace y termina exactamente a la altura del logo:
 // misma altura, mismo tope y mismo pie. Se re-sincroniza si cambia la fuente
@@ -2957,7 +3001,17 @@ async function procesarLinkMailing() {
 cargarCatalogo().then(async () => {
   await procesarPendienteCarrito();
   if (await procesarCheckoutPendiente()) return;
-  abrirProductoCompartido();
+  const regresoComparativa = window.TTRAComparar?.readReturn()?.context;
+  if (regresoComparativa) {
+    seccionActiva = regresoComparativa.seccionActiva;
+    filtroMarcaGlobal = regresoComparativa.filtroMarcaGlobal;
+    subFiltrosActivos = new Set(regresoComparativa.subFiltros || []);
+    criterioOrden = regresoComparativa.criterioOrden;
+    modoVista = regresoComparativa.modoVista;
+    document.getElementById('input-busqueda').value = regresoComparativa.query || '';
+    actualizarVista();
+    window.TTRAComparar.restorePosition();
+  } else abrirProductoCompartido();
   await procesarLinkMailing();
   const parametrosPanel = new URLSearchParams(location.search);
   if (parametrosPanel.get("panel") === "carrito") {

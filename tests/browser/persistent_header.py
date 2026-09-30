@@ -1,0 +1,52 @@
+"""The same masthead survives navigation, with and without the mascot enabled."""
+from playwright.sync_api import sync_playwright, expect
+from cart_flow import api
+import os
+BASE=os.environ.get('TTRA_TEST_URL','http://127.0.0.1:8027')
+with sync_playwright() as p:
+ browser=p.chromium.launch()
+ for width in (390,1440):
+  ctx=browser.new_context(viewport={'width':width,'height':900},service_workers='block')
+  ctx.route('**/api/**',api)
+  page=ctx.new_page(); errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+  page.goto(BASE+'/catalogo',wait_until='networkidle')
+  page.locator('.ttra-cat-logo-toggle').wait_for()
+  page.evaluate('window.originalHeader=document.querySelector("body > header");window.originalCat=document.querySelector("#ttra-header-cat")')
+  page.get_by_role('link',name='Inicio',exact=True).click()
+  frame=page.frame_locator('#ttra-storefront-frame')
+  expect(frame.locator('#ttra-hero-title')).to_be_visible()
+  assert page.evaluate('originalHeader===document.querySelector("body > header")')
+  expect(page.locator('body > header')).to_be_visible()
+  expect(page.locator('body > header .ttra-site-rate')).to_be_hidden()
+  page.locator('body > header .rc-perfil-boton, body > header .ttra-site-profile').click()
+  expect(frame.locator('#rc-perfil-dropdown')).to_be_visible()
+  frame.locator('#rc-perfil-dropdown .ttra-theme').click()
+  assert page.locator('html').get_attribute('data-classic-theme')=='light'
+  page.locator('body > header .rc-perfil-boton, body > header .ttra-site-profile').click()
+  page.locator('.ttra-cat-logo-toggle').click()
+  page.wait_for_timeout(2200)
+  frame.get_by_role('button',name='Categorías',exact=True).click()
+  frame.get_by_role('link',name='Todo el catálogo',exact=True).click()
+  expect(frame.locator('body')).to_have_class(__import__('re').compile('ttra-page'))
+  page.wait_for_url(BASE+'/catalogo')
+  assert page.evaluate('originalHeader===document.querySelector("body > header") && originalCat===document.querySelector("#ttra-header-cat")')
+  expect(page.locator('body > header .ttra-site-rate')).to_be_visible()
+  frame.get_by_role('link',name='Inicio',exact=True).click()
+  expect(frame.locator('#ttra-hero-title')).to_be_visible()
+  assert page.evaluate('originalHeader===document.querySelector("body > header")')
+  frame.locator('body').evaluate('()=>window.homeVisit=123')
+  frame.get_by_role('link',name='Inicio',exact=True).click()
+  assert frame.locator('body').evaluate('()=>window.homeVisit')==123
+  page.go_back()
+  page.wait_for_url(BASE+'/catalogo')
+  expect(page.locator('body > header .ttra-site-rate')).to_be_visible()
+  page.go_forward()
+  page.wait_for_url(BASE+'/')
+  expect(frame.locator('#ttra-hero-title')).to_be_visible()
+  assert page.evaluate('originalHeader===document.querySelector("body > header")')
+  assert not errors,errors
+  page.wait_for_timeout(1800)
+  page.screenshot(path=f'outputs/persistent-header-{width}.png')
+  print('PASS persistent header, home navigation, profile, theme, cat',width,flush=True)
+  ctx.close()
+ browser.close()

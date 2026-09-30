@@ -31,3 +31,25 @@ def normalizar(nombre):
 
     caps = sorted(set(caps), key=_tamano)
     return " ".join(resto + caps)
+
+
+def separar_variantes(valor):
+    """Separate supplier colors without breaking numeric dates such as 1/02/27."""
+    return [parte.strip() for parte in re.split(r"\s*(?:,|(?<!\d)/|/(?!\d))\s*", valor)
+            if parte.strip()]
+
+
+def variantes_usadas_desde_detalles(lineas):
+    """Preserve each supplier color/battery pair, excluding stock and cost notes."""
+    variantes = []
+    for linea in lineas:
+        detalle = linea.split("\t")[0].strip()
+        if not re.search(r"\d{2,3}\s*%", detalle):
+            continue
+        detalle = re.sub(r"\s+\d+\s+unida\w*.*$", "", detalle, flags=re.I)
+        detalle = re.sub(r"\s+\d+(?:[.,]\d+)?\s*(?:DOLARES|USD|U\$D).*$", "", detalle, flags=re.I)
+        detalle = re.sub(r"(\d+)\s+%", r"\1%", detalle)
+        detalle = re.sub(r"\s+", " ", detalle).strip()
+        if detalle and detalle not in variantes:
+            variantes.append(detalle)
+    return variantes

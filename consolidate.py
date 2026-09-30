@@ -29,8 +29,12 @@ def _clave(nombre):
     # Clave de producto: tokens normalizados sin palabras de relleno/marca ni núcleos
     # de CPU/GPU, ordenados. Así el mismo producto escrito distinto (marca de más,
     # specs en otro orden, "SSD"/"10CPU 10GPU" de más) cae en la misma clave.
-    toks = {t for t in normalizar(nombre).split()
-            if t not in _RELLENO and not _NUCLEOS.match(t)}
+    # Lista (no set): "MacBook Pro" + chip "M5 Pro" no deben perder la palabra "pro"
+    # repetida — un set la colapsaría a una sola aparición y confundiría el chip base
+    # (M5) con su variante Pro/Max (ver bug 2026-09-25: MacBook Pro M5 Pro se perdía
+    # porque su clave quedaba igual a la del MacBook Pro M5 a secas).
+    toks = [t for t in normalizar(nombre).split()
+            if t not in _RELLENO and not _NUCLEOS.match(t)]
     return " ".join(sorted(toks))
 
 
