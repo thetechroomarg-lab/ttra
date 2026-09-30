@@ -358,7 +358,7 @@ def test_tarea_completada_desaparece_de_pendientes_de_hoy(monkeypatch):
     r = cliente.get("/admin/clientes")
 
     assert "Tarea completada: Retirar packaging" in r.text
-    assert "No hay pedidos pendientes para hoy." in r.text
+    assert "No tenés entregas pendientes para hoy." in r.text
 
 
 def test_tarea_manual_completada_aparece_en_el_historial_de_su_dia(monkeypatch):
@@ -423,3 +423,14 @@ def test_eliminar_tarea_es_recuperable(monkeypatch):
 
     respuesta_doble_borrado = cliente.delete("/admin/tareas-entrega/t1")
     assert respuesta_doble_borrado.status_code == 404
+
+
+def test_panel_admin_separa_mis_entregas_de_las_de_alejo(monkeypatch):
+    cliente, fake = _admin_con_fecha_fija(monkeypatch)
+    fake.table("tareas_entrega").insert({"id": "m1", "fecha_entrega": "2026-08-24", "titulo": "Tarea mía", "orden": 1}).execute()
+    fake.table("tareas_entrega").insert({"id": "a1", "fecha_entrega": "2026-08-24", "titulo": "Tarea de Alejo", "orden": 2, "asignado_a": "alejo"}).execute()
+    html = cliente.get("/admin/clientes").text
+    mias = html.index("Mis entregas (1)")
+    alejo = html.index("Entregas de Alejo (1)")
+    assert mias < html.index("Tarea mía") < alejo < html.index("Tarea de Alejo")
+    assert "Editar tarea" in html

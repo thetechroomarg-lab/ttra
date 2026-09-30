@@ -1426,14 +1426,16 @@ _ADMIN_CLIENTES_ESTILO = """
   .pedido-hoy-detalle { min-width:0; flex:1 1 auto; }
   .pedido-hoy.arrastrando { opacity:.5; }
   .arrastrar-entrega { flex:0 0 auto; width:32px; min-height:36px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); cursor:grab; font:700 20px/1 sans-serif; touch-action:none; transition:background-color var(--op-dur) var(--op-ease); }
+  .grupo-entregas { margin:0 0 18px; }
+  .grupo-entregas h3 { margin:0 0 10px; font-size:16px; color:var(--op-text-dim); text-transform:uppercase; letter-spacing:.06em; }
   .arrastrar-entrega:hover { background:var(--op-surface-3); }
   .arrastrar-entrega:active { cursor:grabbing; }
   .pedido-hoy-detalle span { color:var(--op-text-dim); }
   .pedido-acciones { display:flex; align-items:center; gap:7px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
-  .btn-enviar-recibo, .btn-recibo-nota, .btn-direcciones, .btn-agregar-direccion, .btn-agregar-direccion-tarea, .btn-editar-direccion, .btn-editar-direccion-tarea,
+  .btn-enviar-recibo, .btn-recibo-nota, .btn-direcciones, .btn-agregar-direccion, .btn-agregar-direccion-tarea, .btn-editar-direccion, .btn-editar-direccion-tarea, .btn-editar-texto-tarea,
   .btn-editar-entrega, .btn-eliminar-entrega, .btn-completar-tarea, .btn-editar-tarea, .btn-eliminar-tarea,
   .btn-derivar-entrega, .btn-quitar-derivacion { flex:0 0 auto; box-sizing:border-box; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:8px 10px; background:var(--op-surface-2); color:var(--op-text); cursor:pointer; font-weight:700; display:inline-flex; align-items:center; justify-content:center; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
-  .btn-direcciones:hover, .btn-agregar-direccion:hover, .btn-agregar-direccion-tarea:hover, .btn-editar-direccion:hover, .btn-editar-direccion-tarea:hover,
+  .btn-direcciones:hover, .btn-agregar-direccion:hover, .btn-agregar-direccion-tarea:hover, .btn-editar-direccion:hover, .btn-editar-direccion-tarea:hover, .btn-editar-texto-tarea:hover,
   .btn-editar-entrega:hover, .btn-editar-tarea:hover, .btn-derivar-entrega:hover { background:var(--op-surface-3); }
   .btn-enviar-recibo, .btn-completar-tarea, .btn-recibo-nota { background:var(--op-accent); border:0; color:#fff; }
   .btn-enviar-recibo:hover, .btn-completar-tarea:hover, .btn-recibo-nota:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
@@ -1927,6 +1929,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'{boton_direcciones}'
             f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>'
             f'<button class="btn-editar-tarea" type="button" data-id="{tarea_id}" data-fecha="{fecha}" data-tipo="tarea">Editar fecha</button>'
+            f'<button class="btn-editar-texto-tarea" type="button" data-id="{tarea_id}" '
+            f'data-titulo="{html.escape(tarea.get("titulo") or "")}" data-nota="{html.escape(tarea.get("nota") or "")}">Editar tarea</button>'
             f'{_control_derivar(tarea_id, "tarea", tarea.get("asignado_a") == CADETE_SLUG)}'
             f'<button class="btn-eliminar-tarea" type="button" data-id="{tarea_id}">Eliminar tarea</button>'
             '</div>'
@@ -1976,14 +1980,20 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     ]
     if entregas_pendientes and all(orden is not None for _, _, orden in entregas_pendientes):
         entregas_pendientes.sort(key=lambda entrega: int(entrega[2]))
-    tarjetas_pendientes_hoy = [
-        _tarjeta_pedido(entrega) if tipo == "pedido" else _tarjeta_tarea(entrega)
-        for tipo, entrega, _ in entregas_pendientes
-    ]
-    if tarjetas_pendientes_hoy:
-        pedidos_hoy_html = "".join(tarjetas_pendientes_hoy)
-    else:
-        pedidos_hoy_html = '<p class="vacio">No hay pedidos pendientes para hoy.</p>'
+    def _grupo_entregas(titulo, entregas, vacio):
+        tarjetas = "".join(
+            _tarjeta_pedido(entrega) if tipo == "pedido" else _tarjeta_tarea(entrega)
+            for tipo, entrega, _ in entregas
+        ) or f'<p class="vacio">{vacio}</p>'
+        return (f'<div class="grupo-entregas"><h3>{titulo} ({len(entregas)})</h3>'
+                f'<div class="grupo-entregas-lista">{tarjetas}</div></div>')
+
+    entregas_mias = [e for e in entregas_pendientes if e[1].get("asignado_a") != CADETE_SLUG]
+    entregas_alejo = [e for e in entregas_pendientes if e[1].get("asignado_a") == CADETE_SLUG]
+    pedidos_hoy_html = (
+        _grupo_entregas("Mis entregas", entregas_mias, "No tenés entregas pendientes para hoy.")
+        + _grupo_entregas("Entregas de Alejo", entregas_alejo, "Alejo no tiene entregas pendientes para hoy.")
+    )
     if pedidos_historial or tareas_historial:
         def _pedido_historial_html(pedido):
             cliente_pedido = clientes_por_id.get(pedido.get("cliente_id"), {})
@@ -2191,6 +2201,22 @@ document.querySelectorAll(".btn-editar-direccion").forEach((btn) => {{
     modalDireccion.hidden = false;
     document.getElementById("direccion-entrega-admin-sugerencias").hidden = true;
     campoDireccion.focus();
+  }});
+}});
+document.querySelectorAll(".btn-editar-texto-tarea").forEach((btn) => {{
+  btn.addEventListener("click", async (event) => {{
+    const titulo = prompt("Tarea:", btn.dataset.titulo || "");
+    if (titulo === null) return;
+    if (!titulo.trim()) {{ alert("La tarea no puede quedar vacía."); return; }}
+    const nota = prompt("Descripción (opcional):", btn.dataset.nota || "");
+    if (nota === null) return;
+    btn.disabled = true;
+    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/texto`, {{
+      method: "PUT", headers: {{"Content-Type": "application/json"}},
+      body: JSON.stringify({{titulo: titulo.trim(), nota: nota.trim()}}),
+    }});
+    if (r.ok) location.reload();
+    else {{ const d = await r.json().catch(() => ({{}})); alert(d.error || d.detail || "No se pudo editar la tarea."); btn.disabled = false; }}
   }});
 }});
 document.querySelectorAll(".btn-editar-direccion-tarea").forEach((btn) => {{
@@ -2432,9 +2458,9 @@ document.querySelectorAll(".arrastrar-entrega").forEach((tirador) => {{
     tirador.setPointerCapture(evento.pointerId);
     const mover = (movimiento) => {{
       const destino = document.elementFromPoint(movimiento.clientX, movimiento.clientY)?.closest(".pedido-hoy[data-tipo-entrega]");
-      if (!destino || destino === entrega || !listaEntregas.contains(destino)) return;
+      if (!destino || destino === entrega || destino.parentNode !== entrega.parentNode) return;
       const mitad = destino.getBoundingClientRect().top + destino.offsetHeight / 2;
-      listaEntregas.insertBefore(entrega, movimiento.clientY < mitad ? destino : destino.nextSibling);
+      destino.parentNode.insertBefore(entrega, movimiento.clientY < mitad ? destino : destino.nextSibling);
     }};
     const soltar = async () => {{
       entrega.classList.remove("arrastrando");
@@ -2463,10 +2489,10 @@ document.querySelectorAll(".arrastrar-entrega").forEach((tirador) => {{
 }});
 document.querySelectorAll(".pedido-hoy[data-tipo-entrega]").forEach((destino) => {{
   destino.addEventListener("dragover", (evento) => {{
-    if (!entregaNativaArrastrada || entregaNativaArrastrada === destino) return;
+    if (!entregaNativaArrastrada || entregaNativaArrastrada === destino || destino.parentNode !== entregaNativaArrastrada.parentNode) return;
     evento.preventDefault();
     const mitad = destino.getBoundingClientRect().top + destino.offsetHeight / 2;
-    listaEntregas.insertBefore(entregaNativaArrastrada, evento.clientY < mitad ? destino : destino.nextSibling);
+    destino.parentNode.insertBefore(entregaNativaArrastrada, evento.clientY < mitad ? destino : destino.nextSibling);
   }});
   destino.addEventListener("drop", async (evento) => {{
     if (!entregaNativaArrastrada) return;
@@ -2889,6 +2915,10 @@ document.getElementById("btn-eliminar-masivo").addEventListener("click", async (
 
 
 _CADETE_ESTILO += _leer_ui("operations_editorial.css.html")
+_CADETE_ESTILO += """<style>
+  .saldo-cadete-titulo { display:block; margin:0 0 16px; padding:14px 16px; border-radius:var(--op-r-md, 12px); background:var(--op-surface); border:1px solid var(--op-border-strong); color:var(--op-text); text-decoration:none; font-size:18px; }
+  .saldo-cadete-titulo strong { font-size:26px; margin-left:6px; }
+</style>"""
 
 
 @app.get("/admin/cadete", response_class=HTMLResponse)
@@ -3085,6 +3115,15 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                 f'<h2>Próximos días ({total_proximos})</h2></div>{proximos_html}</section>'
             )
 
+    try:
+        saldo_alejo = saldo_cadete.resumen(saldo_cadete.listar(client))["saldo_pendiente"]
+        saldo_alejo_html = (
+            f'<a class="saldo-cadete-titulo" href="/admin/cadete/saldo">Te debo: '
+            f'<strong>$ {_formatear_entero_ar(saldo_alejo)}</strong></a>'
+        )
+    except Exception:
+        logger.exception("No se pudo calcular el saldo del cadete")
+        saldo_alejo_html = ""
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Entregas asignadas</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
 <div class="panel">
@@ -3095,6 +3134,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
       <a class="btn-clientes" href="/admin/cadete/saldo">Saldo</a><a class="btn-clientes" href="/admin/cadete/papelera">Borrados</a><button id="salir">Cerrar sesión</button>
     </div>
   </div>
+  {saldo_alejo_html}
   <div class="selector-fecha-cadete">
     <label for="fecha-cadete">Ver entregas del día</label>
     <input id="fecha-cadete" type="date" value="{fecha_consulta}">
@@ -4907,6 +4947,27 @@ def admin_tarea_agregar_direccion(tarea_id: str, entrada: EditarDireccionEntrega
         raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
     client.table("tareas_entrega").update({"direccion": direccion}).eq("id", tarea_id).execute()
     return {"ok": True, "tarea_id": tarea_id, "direccion": direccion}
+
+
+class EditarTextoTareaIn(BaseModel):
+    titulo: str = Field(max_length=200)
+    nota: str = Field(default="", max_length=1000)
+
+
+@app.put("/admin/tareas-entrega/{tarea_id}/texto")
+def admin_tarea_editar_texto(tarea_id: str, entrada: EditarTextoTareaIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    titulo = entrada.titulo.strip()
+    if not titulo:
+        return JSONResponse({"error": "La tarea no puede quedar vacía"}, status_code=400)
+    nota = entrada.nota.strip() or None
+    client = get_client()
+    filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
+    if not filas or not _activo(filas[0]):
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    client.table("tareas_entrega").update({"titulo": titulo, "nota": nota}).eq("id", tarea_id).execute()
+    return {"ok": True, "tarea_id": tarea_id, "titulo": titulo, "nota": nota}
 
 
 @app.put("/admin/tareas-entrega/{tarea_id}/derivar")

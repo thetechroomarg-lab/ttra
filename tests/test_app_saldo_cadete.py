@@ -129,3 +129,32 @@ def test_tarjetas_muestran_la_direccion_debajo_del_titulo(monkeypatch):
 
     for html in (cadete.get("/admin/cadete").text, admin.get("/admin/clientes").text):
         assert 'Llevar pago</strong><br><span class="direccion-entrega">Dirección: Estrada 18, Córdoba</span>' in html
+
+
+def test_panel_cadete_muestra_cuanto_le_debo(monkeypatch):
+    fake, _, cadete = _clientes(monkeypatch)
+    for i in range(2):
+        fake.table("tareas_entrega").insert({
+            "id": f"d{i}", "fecha_entrega": "2026-09-30", "titulo": "Entrega", "asignado_a": "alejo",
+        }).execute()
+        cadete.post(f"/admin/tareas-entrega/d{i}/completar")
+    html = cadete.get("/admin/cadete").text
+    assert 'class="saldo-cadete-titulo"' in html
+    assert "Te debo:" in html and "$ 12.000" in html
+
+
+def test_solo_el_admin_edita_el_texto_de_una_tarea(monkeypatch):
+    fake, admin, cadete = _clientes(monkeypatch)
+    fake.table("tareas_entrega").insert({
+        "id": "e1", "fecha_entrega": "2026-09-30", "titulo": "Viejo", "nota": "nota vieja", "asignado_a": "alejo",
+    }).execute()
+
+    assert cadete.put("/admin/tareas-entrega/e1/texto", json={"titulo": "Hack"}).status_code == 401
+    assert 'btn-editar-texto-tarea' not in cadete.get("/admin/cadete").text
+
+    r = admin.put("/admin/tareas-entrega/e1/texto", json={"titulo": "  Nuevo  ", "nota": "otra"})
+    assert r.status_code == 200
+    tarea = fake.table("tareas_entrega").select("*").eq("id", "e1").execute().data[0]
+    assert tarea["titulo"] == "Nuevo" and tarea["nota"] == "otra"
+    assert admin.put("/admin/tareas-entrega/e1/texto", json={"titulo": "   "}).status_code == 400
+    assert admin.put("/admin/tareas-entrega/nope/texto", json={"titulo": "x"}).status_code == 404
