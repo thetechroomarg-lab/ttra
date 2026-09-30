@@ -1,6 +1,7 @@
 /* Optional artwork layer. Catalog data, prices and action handlers remain authoritative. */
 (() => {
   const manifest = fetch('/catalog-images/index.json').then(r => r.ok ? r.json() : {}).catch(() => ({}));
+  const placeholder='/catalog-images/placeholder-ttra.png';
   const norm = s => String(s || '').normalize('NFC').trim().toLocaleLowerCase('es');
   // Spelling-tolerant keys so a catalog refresh (another supplier wins) does not drop the artwork.
   const plain = s => norm(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -21,15 +22,13 @@
     if (!container.isConnected || renders.get(container)!==render) return;
     container.querySelectorAll('.card').forEach((card, i) => {
       const p = products[i], entry = p && (index[p.nombre] || keyed[nameKey(p.nombre)]);
-      if (!entry || card.classList.contains('ai-card')) return;
+      if (!p || card.classList.contains('ai-card')) return;
       const grid=card.closest('.grilla');
       if (grid?.classList.contains('lista') && innerWidth>700) return;
       const colors = p.colores?.length ? p.colores : [null];
-      // Never show a different color: colors with their own artwork get the new card; picking one without it falls back.
-      let variants = colors.map(c => entry.find(v => colorKey(v.color)===colorKey(c))).filter(Boolean);
-      // A product without colors can reuse its model's only artwork.
-      if (!variants.length && !p.colores?.length && entry.length === 1) variants = [entry[0]];
-      if (!variants.length) return;
+      // Keep shared model matching while giving missing colors the common placeholder.
+      const variants = colors.map(c => entry?.find(v => colorKey(v.color)===colorKey(c))
+        || (!p.colores?.length && entry?.length===1 ? {...entry[0],color:null} : {color:c,src:placeholder}));
       const title=card.querySelector('h3'), oldPrices=card.querySelector('.precios');
       const links=card.querySelector('.catalog-product-links, .tarjeta-recomendado-iconos');
       if (!title || !oldPrices || !links) return;
@@ -51,11 +50,16 @@
         if(!alive)return;alive=false;marker.replaceWith(links);face.remove();title.hidden=false;oldPrices.hidden=false;card.classList.remove('ai-card');
         if(!grid?.querySelector('.ai-card'))grid?.classList.remove('has-ai-cards');
       }
+      function showPlaceholder(c){
+        if(!alive)return;
+        const replacement=new Image(); replacement.alt='Imagen no disponible'; replacement.src=placeholder; replacement.onerror=fallback;
+        picture.replaceChildren(replacement); color.textContent=c||'Imagen de referencia';
+      }
       function selectColor(c, initial=false){
         const v=variants.find(v=>colorKey(v.color)===colorKey(c==='Color único'?null:c)) || (initial?variants[0]:null);
         if(!v){fallback();return;}
         const token=++serial;
-        if(initial){img.src=v.src;img.alt=p.nombre+' · '+(v.color||'Imagen de referencia');img.onerror=fallback;color.textContent=v.color||'Imagen de referencia';return;}
+        if(initial){img.src=v.src;img.alt=p.nombre+' · '+(v.color||'Imagen de referencia');img.onerror=()=>v.src===placeholder?fallback():showPlaceholder(v.color);color.textContent=v.color||'Imagen de referencia';return;}
         const next=new Image(); next.src=v.src;
         next.decode().then(()=>{
           if(!alive||token!==serial)return;
@@ -63,7 +67,7 @@
           requestAnimationFrame(()=>requestAnimationFrame(()=>next.classList.remove('ai-enter')));
           setTimeout(()=>{if(alive) [...picture.children].filter(n=>n!==picture.lastElementChild).forEach(n=>n.remove());},480);
           color.textContent=v.color||'Imagen de referencia';
-        }).catch(()=>{if(token===serial)fallback();});
+        }).catch(()=>{if(token===serial)showPlaceholder(v.color);});
       }
       const select=card.querySelector('select'), dropdown=card.querySelector('.dropdown-color-boton');
       selectColor(select?.value||dropdown?.dataset.valor,true);
