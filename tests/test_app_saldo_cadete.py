@@ -128,7 +128,7 @@ def test_tarjetas_muestran_la_direccion_debajo_del_titulo(monkeypatch):
                                          "direccion": "Estrada 18, Córdoba", "asignado_a": "alejo", "orden": 1}).execute()
 
     for html in (cadete.get("/admin/cadete").text, admin.get("/admin/clientes").text):
-        assert 'Llevar pago</strong><br><span class="direccion-entrega">Dirección: Estrada 18, Córdoba</span>' in html
+        assert 'Llevar pago - $ 6.000</strong><br><span class="direccion-entrega">Dirección: Estrada 18, Córdoba</span>' in html
 
 
 def test_panel_cadete_muestra_cuanto_le_debo(monkeypatch):
@@ -158,3 +158,18 @@ def test_solo_el_admin_edita_el_texto_de_una_tarea(monkeypatch):
     assert tarea["titulo"] == "Nuevo" and tarea["nota"] == "otra"
     assert admin.put("/admin/tareas-entrega/e1/texto", json={"titulo": "   "}).status_code == 400
     assert admin.put("/admin/tareas-entrega/nope/texto", json={"titulo": "x"}).status_code == 404
+
+
+def test_titulo_de_la_tarea_de_alejo_muestra_el_monto_del_viaje(monkeypatch):
+    fake, admin, cadete = _clientes(monkeypatch)
+    hoy = appmod.entregas.ahora_argentina().date().isoformat()
+    fake.table("tareas_entrega").insert({"id": "t1", "fecha_entrega": hoy, "titulo": "Buscar Xiaomi",
+                                         "asignado_a": "alejo", "monto_cadete": 10000, "orden": 1}).execute()
+    fake.table("tareas_entrega").insert({"id": "t2", "fecha_entrega": hoy, "titulo": "Pago NexPhone",
+                                         "asignado_a": "alejo", "orden": 2}).execute()
+    fake.table("tareas_entrega").insert({"id": "t3", "fecha_entrega": hoy, "titulo": "Mía", "orden": 3}).execute()
+
+    for html in (cadete.get("/admin/cadete").text, admin.get("/admin/clientes").text):
+        assert "Tarea: Buscar Xiaomi - $ 10.000</strong>" in html
+        assert "Tarea: Pago NexPhone - $ 6.000</strong>" in html
+    assert "Tarea: Mía</strong>" in admin.get("/admin/clientes").text

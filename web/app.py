@@ -507,6 +507,13 @@ def _cadete_activo(request: Request):
     )
 
 
+def _monto_viaje(tarea):
+    """" - $ 6.000" al final del título, solo si la tarea es de Alejo."""
+    if tarea.get("asignado_a") != CADETE_SLUG:
+        return ""
+    return f" - $ {_formatear_entero_ar(saldo_cadete.monto_de(tarea))}"
+
+
 def _puede_operar_entrega(request: Request, fila: dict):
     if _clientes_admin_activo(request):
         return True
@@ -1942,7 +1949,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         detalle_cliente = f'<br><span>Cliente: {html.escape(nombre_cliente)}</span>' if nombre_cliente else ""
         return (
             f'<div class="pedido-hoy" data-tipo-entrega="tarea" data-entrega-id="{tarea_id}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar tarea">≡</button><div class="pedido-hoy-detalle">'
-            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
+            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}{_monto_viaje(tarea)}</strong>'
             f'{_html_direccion_entrega(tarea.get("direccion"))}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
             f'{_acciones_tarea(tarea)}</div>'
         )
@@ -3071,7 +3078,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         )
         return (
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
-            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
+            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}{_monto_viaje(tarea)}</strong>'
             f'{_html_direccion_entrega(direccion)}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion, tarea_id, "tarea", celular=cliente_tarea.get("celular"))}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
             f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}{boton_recibo_manual}</div></div>'
