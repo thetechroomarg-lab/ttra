@@ -40,7 +40,7 @@
         if(!grid?.querySelector('.ai-card'))grid?.classList.remove('has-ai-cards');
       }
       function selectColor(c, initial=false){
-        const v=variants.find(v=>norm(v.color)===norm(c)) || (initial?variants[0]:null);
+        const v=variants.find(v=>norm(v.color)===norm(c==='Color único'?null:c)) || (initial?variants[0]:null);
         if(!v){fallback();return;}
         const token=++serial;
         if(initial){img.src=v.src;img.alt=p.nombre+' · '+(v.color||'Imagen de referencia');img.onerror=fallback;color.textContent=v.color||'Imagen de referencia';return;}
@@ -57,13 +57,6 @@
       selectColor(select?.value||dropdown?.dataset.valor,true);
       select?.addEventListener('change',()=>selectColor(select.value));
       card.querySelectorAll('.dropdown-color-lista li').forEach(li=>li.addEventListener('click',()=>selectColor(li.dataset.valor)));
-      // No invented color selector for reference-only products.
-      if(!p.colores?.length){
-        if(select){const label=card.querySelector(`label[for="${select.id}"]`);if(label)label.hidden=true;select.remove();}
-        card.querySelector('.selector-colores')?.remove();
-        const add=card.querySelector('.btn-agregar');if(add){add.disabled=false;add.dataset.color='';}
-        const status=card.querySelector('.catalog-card-status');if(status)status.textContent='';
-      }
       // Keep original photo/specification links and all existing comparison/share handlers.
       const spec=[...links.querySelectorAll('a')].find(a=>a.href.includes('especificaciones'));
       if(spec)links.prepend(spec);

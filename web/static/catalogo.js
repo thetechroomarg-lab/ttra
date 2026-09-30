@@ -304,14 +304,15 @@ function abrirCompartirCatalogo(producto) {
 function tarjetaProducto(p, indice = 0) {
   const precios = preciosDe(p);
   const monto = (valor) => valor == null ? "-" : Number(valor).toLocaleString("es-AR");
-  const opciones = Array.isArray(p.colores) && p.colores.length ? p.colores : ["Color único"];
-  const elegirColor = true;
+  const sinColores = !(Array.isArray(p.colores) && p.colores.length);
+  const opciones = sinColores ? ["Color único"] : p.colores;
+  const elegirColor = !sinColores;
   const etiqueta = condicionProducto(p) === "usado" ? "variante" : "color";
   const colores = opciones.length > 0
     ? `<label for="catalog-color-${indice}">${etiqueta === "variante" ? "Color y % de batería:" : "Colores disponibles:"}</label>
        <select id="catalog-color-${indice}" required>
-         <option value="" disabled selected hidden>Elegí una opción de color</option>
-         ${opciones.map((color) => `<option value="${escapeHtml(color).replaceAll('"', '&quot;')}">${escapeHtml(color)}</option>`).join('')}
+         <option value="" disabled ${sinColores ? '' : 'selected'} hidden>Elegí una opción de color</option>
+         ${opciones.map((color) => `<option value="${escapeHtml(color).replaceAll('"', '&quot;')}"${sinColores ? ' selected' : ''}>${escapeHtml(color)}</option>`).join('')}
        </select>`
     : `<p class="colores">${escapeHtml(opciones[0] || 'Color único')}</p>`;
   return `
