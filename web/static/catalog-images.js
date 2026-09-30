@@ -1,7 +1,7 @@
 /* Optional artwork layer. Catalog data, prices and action handlers remain authoritative. */
 (() => {
   const manifest = fetch('/catalog-images/index.json').then(r => r.ok ? r.json() : {}).catch(() => ({}));
-  const placeholder='/catalog-images/placeholder-ttra-v3.png';
+  const placeholder='/catalog-images/placeholder-ttra-v4.png';
   const norm = s => String(s || '').normalize('NFC').trim().toLocaleLowerCase('es');
   // Spelling-tolerant keys so a catalog refresh (another supplier wins) does not drop the artwork.
   const plain = s => norm(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
