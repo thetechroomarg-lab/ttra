@@ -173,3 +173,19 @@ def test_titulo_de_la_tarea_de_alejo_muestra_el_monto_del_viaje(monkeypatch):
         assert "Tarea: Buscar Xiaomi - $ 10.000</strong>" in html
         assert "Tarea: Pago NexPhone - $ 6.000</strong>" in html
     assert "Tarea: Mía</strong>" in admin.get("/admin/clientes").text
+
+
+def test_pedido_de_alejo_vale_10_dolares_a_la_cotizacion_del_dia(monkeypatch):
+    fake, admin, cadete = _clientes(monkeypatch)
+    monkeypatch.setattr(appmod, "_cargar_cotizacion_catalogo", lambda: 1570)
+    hoy = appmod.entregas.ahora_argentina().date().isoformat()
+    fake.table("clientes").insert({"id": "c1", "nombre": "Juan", "celular": "351", "email": "j@x.com"}).execute()
+    fake.table("pedidos").insert({"id": "p1", "cliente_id": "c1", "fecha_entrega": hoy, "asignado_a": "alejo",
+                                  "detalle": [], "total_usd": 100, "orden_entrega": 1}).execute()
+
+    for html in (cadete.get("/admin/cadete").text, admin.get("/admin/clientes").text):
+        assert "Juan - $ 15.700</strong>" in html
+
+    appmod.saldo_cadete.registrar(fake, "pedido", {"id": "p1"}, "Entrega a Juan",
+                                  appmod.saldo_cadete.monto_pedido_ars(appmod._cargar_cotizacion_catalogo()))
+    assert _movimientos(fake)[0]["monto_ars"] == 15700

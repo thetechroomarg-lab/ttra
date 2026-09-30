@@ -15,20 +15,27 @@ from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
 MONTO_POR_MOVIMIENTO = 6000
+# Los pedidos se pagan en dólares pero el saldo se lleva en pesos: al registrar
+# el movimiento se pasan a pesos con la cotización de ese día.
+MONTO_PEDIDO_USD = 10
+
+
+def monto_pedido_ars(cotizacion):
+    return round(MONTO_PEDIDO_USD * cotizacion)
 TABLA = "movimientos_cadete"
 
 
-def monto_de(fila):
+def monto_de(fila, por_defecto=MONTO_POR_MOVIMIENTO):
     monto = fila.get("monto_cadete")
     if monto is None:
-        return MONTO_POR_MOVIMIENTO
+        return por_defecto
     try:
         return max(0, int(monto))
     except (TypeError, ValueError):
-        return MONTO_POR_MOVIMIENTO
+        return por_defecto
 
 
-def registrar(client, tipo, fila, descripcion):
+def registrar(client, tipo, fila, descripcion, por_defecto=MONTO_POR_MOVIMIENTO):
     """Suma un movimiento por la entrega `fila`. No duplica si ya existe."""
     referencia_id = fila.get("id")
     try:
@@ -43,7 +50,7 @@ def registrar(client, tipo, fila, descripcion):
             "referencia_id": referencia_id,
             "descripcion": (descripcion or "").strip()[:300] or tipo.capitalize(),
             "fecha_entrega": fila.get("fecha_entrega"),
-            "monto_ars": monto_de(fila),
+            "monto_ars": monto_de(fila, por_defecto),
             "creado_en": datetime.now(timezone.utc).isoformat(),
         }
         client.table(TABLA).insert(movimiento).execute()

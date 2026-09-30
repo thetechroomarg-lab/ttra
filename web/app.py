@@ -514,6 +514,13 @@ def _monto_viaje(tarea):
     return f" - $ {_formatear_entero_ar(saldo_cadete.monto_de(tarea))}"
 
 
+def _monto_viaje_pedido(pedido):
+    if pedido.get("asignado_a") != CADETE_SLUG:
+        return ""
+    monto = saldo_cadete.monto_de(pedido, saldo_cadete.monto_pedido_ars(_cargar_cotizacion_catalogo()))
+    return f" - $ {_formatear_entero_ar(monto)}"
+
+
 def _puede_operar_entrega(request: Request, fila: dict):
     if _clientes_admin_activo(request):
         return True
@@ -1135,7 +1142,8 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             logger.exception("No se pudo registrar el sello de fidelidad del pedido %s", pedido_id)
     if primer_envio and pedido.get("asignado_a") == CADETE_SLUG:
         nombre = f"{cliente.get('nombre') or ''} {cliente.get('apellido') or ''}".strip() or "cliente"
-        saldo_cadete.registrar(client, "pedido", pedido, f"Entrega a {nombre}")
+        saldo_cadete.registrar(client, "pedido", pedido, f"Entrega a {nombre}",
+                               saldo_cadete.monto_pedido_ars(_cargar_cotizacion_catalogo()))
     return {"ok": True, "recibo_id": recibo_id, "reenviado": bool(pedido.get("recibo_enviado_en"))}
 
 
@@ -1974,7 +1982,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 
     def _tarjeta_pedido(pedido):
         return (
-            f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}" data-tipo-entrega="pedido" data-entrega-id="{html.escape(pedido.get("id", ""))}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar pedido">≡</button><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}</strong> · '
+            f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}" data-tipo-entrega="pedido" data-entrega-id="{html.escape(pedido.get("id", ""))}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar pedido">≡</button><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}{_monto_viaje_pedido(pedido)}</strong> · '
             f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}{_html_direccion_entrega(pedido.get("direccion_entrega"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span>'
             f'{_linea_piso_depto(pedido)}</div>'
             f'{_controles_entrega(pedido)}</div>'
@@ -3047,7 +3055,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<button class="btn-derivar-vlad" type="button" data-id="{pedido_id}" data-tipo="pedido">Derivar a Vlad</button>'
         )
         return (
-            f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}</strong> · '
+            f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}{_monto_viaje_pedido(pedido)}</strong> · '
             f'{html.escape(cliente.get("celular") or "—")}{_html_direccion_entrega(direccion)}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
             f'{piso_depto}{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"), cliente.get("celular"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}{boton_derivar_vlad}</div></div>'
