@@ -1789,3 +1789,9 @@ html[data-modo="fallout"] .card:focus-within::before {
 @media (max-width: 420px) {
   .rc-panel-compartir-acciones { flex-direction: column; }
 }
+
+/* Carrito sin sesión: solo los productos, el total y "Confirmar pedido". */
+#panel-carrito.carrito-invitado :is(label[for="fecha-entrega"], #fecha-entrega, #nota-entrega, #btn-abrir-direccion,
+  #selector-domicilio-entrega, #direccion-entrega-wrap, #btn-vaciar-carrito, #btn-abrir-codigo, #modal-codigo) {
+  display: none !important;
+}

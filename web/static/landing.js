@@ -401,9 +401,13 @@ function restringirFalloutSegunSesion(sesion) {
   }
 }
 
+// Al cerrar sesión el carrito no sobrevive: si no, quien entra después (u otra
+// cuenta en el mismo navegador) suma productos sobre el carrito anterior.
+const CLAVES_SESION_CLIENTE = ["ttra_cliente", "ttra_carrito", "ttra_carrito_pendiente", "ttra_checkout_pendiente", "ttra_descuento_mailing", "ttra_regalo_promo"];
+
 async function cerrarSesionCliente() {
   try {
-    localStorage.removeItem("ttra_cliente");
+    CLAVES_SESION_CLIENTE.forEach((clave) => localStorage.removeItem(clave));
   } catch {
     // Sin localStorage no había nada que borrar: no es crítico.
   }
@@ -2045,6 +2049,16 @@ function sincronizarLimiteCarrito() {
   document.documentElement.style.setProperty("--rc-carrito-separacion-footer", `${separacion}px`);
 }
 
+// Sin sesión el carrito muestra los productos y solo "Confirmar pedido", que
+// lleva a crear la cuenta (asegurarSesionParaCheckout). Entrega, dirección y
+// códigos se completan una vez logueado.
+async function actualizarCarritoInvitado() {
+  const panel = document.getElementById("panel-carrito");
+  if (!panel) return;
+  const sesion = await obtenerEstadoSesionCliente();
+  panel.classList.toggle("carrito-invitado", !sesion);
+}
+
 function abrirCarrito() {
   if (!catalogoListo) return;
   // Cierra el panel de perfil si estaba abierto: los dos comparten la
@@ -2052,6 +2066,7 @@ function abrirCarrito() {
   // superpuestos a la vez.
   if (typeof cerrarPanelPerfil === "function") cerrarPanelPerfil();
   cargarOpcionesEntrega().catch(() => {});
+  actualizarCarritoInvitado();
   mostrarResumenPedidoGuardado();
   sincronizarLimiteCarrito();
   document.getElementById("panel-carrito").classList.remove("oculto");
