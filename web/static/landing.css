@@ -1791,7 +1791,7 @@ html[data-modo="fallout"] .card:focus-within::before {
 }
 
 /* Carrito sin sesión: productos, total, "Aplicar código" y "Confirmar pedido". */
-#panel-carrito.carrito-invitado :is(label[for="fecha-entrega"], #fecha-entrega, #nota-entrega, #btn-abrir-direccion,
+#panel-carrito.carrito-invitado :is(label[for="fecha-entrega"], #fecha-entrega, #nota-entrega, #direccion-entrega-actual, #btn-abrir-direccion,
   #selector-domicilio-entrega, #direccion-entrega-wrap, #btn-vaciar-carrito) {
   display: none !important;
 }

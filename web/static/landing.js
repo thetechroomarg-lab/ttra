@@ -2069,6 +2069,7 @@ function abrirCarrito() {
   if (typeof cerrarPanelPerfil === "function") cerrarPanelPerfil();
   cargarOpcionesEntrega().catch(() => {});
   actualizarCarritoInvitado();
+  precargarDireccionEntrega().catch(() => {});
   mostrarResumenPedidoGuardado();
   sincronizarLimiteCarrito();
   document.getElementById("panel-carrito").classList.remove("oculto");
@@ -2453,6 +2454,45 @@ function abrirFormularioNuevaDireccion() {
   abrirPanelSecundario("direccion-entrega-wrap");
 }
 
+// La dirección elegida queda escrita arriba del botón, que pasa a decir
+// "Modificar dirección de entrega".
+function mostrarDireccionEntregaActual(alias = null) {
+  const actual = document.getElementById("direccion-entrega-actual");
+  const boton = document.getElementById("btn-abrir-direccion");
+  const direccion = inputDireccionEntrega.value.trim();
+  const pisoDepto = [inputPisoEntrega.value.trim() && `Piso ${inputPisoEntrega.value.trim()}`,
+    inputDeptoEntrega.value.trim() && `Depto ${inputDeptoEntrega.value.trim()}`].filter(Boolean).join(" · ");
+  if (actual) {
+    actual.textContent = direccion ? `Entrega en: ${alias ? `${alias} — ` : ""}${direccion}${pisoDepto ? ` (${pisoDepto})` : ""}` : "";
+    actual.hidden = !direccion;
+  }
+  boton.textContent = direccion ? "Modificar dirección de entrega" : "Dirección de entrega";
+}
+
+// Por defecto se entrega en el domicilio que cargó al crear la cuenta
+// ("Principal"); si no está, el primero guardado.
+async function precargarDireccionEntrega() {
+  if (inputDireccionEntrega.value.trim()) return;
+  const cliente = await obtenerEstadoSesionCliente();
+  if (!cliente) return;
+  const r = await fetch("/api/domicilios").catch(() => null);
+  domiciliosCliente = r?.ok ? await r.json() : [];
+  const domicilio = domiciliosCliente.find((d) => d.alias === "Principal") || domiciliosCliente[0];
+  if (inputDireccionEntrega.value.trim()) return;
+  if (domicilio) {
+    inputDireccionEntrega.value = domicilio.direccion;
+    inputPisoEntrega.value = domicilio.piso || "";
+    inputDeptoEntrega.value = domicilio.depto || "";
+    coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
+      ? { lat: domicilio.lat, lng: domicilio.lng }
+      : null;
+    mostrarDireccionEntregaActual(domicilio.alias);
+  } else if (cliente.direccion) {
+    inputDireccionEntrega.value = cliente.direccion;
+    mostrarDireccionEntregaActual();
+  }
+}
+
 async function abrirSelectorDireccion() {
   const cliente = await obtenerEstadoSesionCliente(true);
   if (!cliente) {
@@ -2482,7 +2522,7 @@ async function abrirSelectorDireccion() {
       coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
         ? { lat: domicilio.lat, lng: domicilio.lng }
         : null;
-      document.getElementById("btn-abrir-direccion").textContent = `Entrega: ${domicilio.alias}`;
+      mostrarDireccionEntregaActual(domicilio.alias);
       cerrarPanelSecundario();
     })),
     itemDomicilioEntregaHtml("+ Agregar nueva dirección", abrirFormularioNuevaDireccion),
@@ -2537,7 +2577,7 @@ document.getElementById("btn-guardar-direccion").addEventListener("click", async
       aliasGuardado = domicilio.alias;
     }
   }
-  document.getElementById("btn-abrir-direccion").textContent = aliasGuardado ? `Entrega: ${aliasGuardado}` : "Dirección de entrega";
+  mostrarDireccionEntregaActual(aliasGuardado);
   cerrarPanelSecundario();
 });
 

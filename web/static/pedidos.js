@@ -107,7 +107,7 @@ function tarjetaPedidoEnCurso(pedido) {
 
   const btnEditarDireccion = document.createElement("button");
   btnEditarDireccion.type = "button";
-  btnEditarDireccion.textContent = "Editar dirección de entrega";
+  btnEditarDireccion.textContent = "Modificar dirección de entrega";
   btnEditarDireccion.addEventListener("click", () => {
     pedidoEnEdicionId = pedido.id;
     pedidoDireccionInput.value = pedido.direccion_entrega || "";
