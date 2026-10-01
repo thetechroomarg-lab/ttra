@@ -86,6 +86,7 @@
   <link rel="stylesheet" href="landing.css">
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="perfil.css">
+  <link rel="stylesheet" href="mapa-pin.css">
   <link rel="stylesheet" href="pedidos.css">
   <link rel="stylesheet" href="classic-editorial.css">
   <link rel="stylesheet" href="ttra-grid-hover.css">
@@ -432,6 +433,7 @@
         <input id="domicilio-direccion" type="text" placeholder="Dirección" autocomplete="street-address" maxlength="500" required aria-label="Dirección">
         <ul id="perfil-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
       </div>
+      <div id="domicilio-mapa" class="mapa-pin" hidden><div class="mapa-pin-lienzo"></div><p class="mapa-pin-ayuda">Mové el pin hasta tu puerta para que la entrega llegue justo.</p></div>
       <div class="piso-depto-fila">
         <input id="domicilio-piso" type="text" placeholder="Piso (opcional)" maxlength="20" aria-label="Piso (opcional)">
         <input id="domicilio-depto" type="text" placeholder="Depto (opcional)" maxlength="20" aria-label="Departamento (opcional)">
@@ -575,6 +577,7 @@
   <script src="/comparar-productos.js"></script>
   <script src="/catalog-images.js?v=1"></script>
   <script src="landing.js"></script>
+  <script src="mapa-pin.js"></script>
   <script src="perfil.js"></script>
   <script src="pedidos.js"></script>
   <script src="classic-editorial.js"></script>

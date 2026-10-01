@@ -1,0 +1,5 @@
+/* Mini mapa para marcar la puerta exacta (mapa-pin.js). */
+.mapa-pin { margin: 8px 0 12px; }
+.mapa-pin[hidden] { display: none; }
+.mapa-pin-lienzo { width: 100%; height: 200px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(127, 127, 127, .35); }
+.mapa-pin-ayuda { margin: 6px 0 0; font-size: 12px; opacity: .75; }

@@ -57,6 +57,10 @@ const registroErrorEl = document.getElementById("registro-error");
 const registroOkEl = document.getElementById("registro-ok");
 const CLAVE_ANON_ID = "ttra_anon_id";
 const registroDireccionInput = document.getElementById("registro-direccion");
+// El pin del mapa ajusta las coordenadas que se guardan con el domicilio.
+const mapaRegistro = window.TTRAMapaPin.crear(document.getElementById("registro-mapa"), (coords) => {
+  coordsRegistroDireccionActual = coords;
+});
 const registroSugerenciasDireccion = document.getElementById("registro-sugerencias-direccion");
 let temporizadorRegistroDireccion;
 let apiPlacesRegistro;
@@ -302,6 +306,7 @@ async function mostrarSugerenciasRegistroDireccion(texto) {
         ? { lat: place.location.lat(), lng: place.location.lng() }
         : null;
       ocultarSugerenciasRegistroDireccion();
+      if (coordsRegistroDireccionActual) mapaRegistro.mostrar(coordsRegistroDireccionActual.lat, coordsRegistroDireccionActual.lng);
     });
     item.append(boton);
     return item;
@@ -325,12 +330,15 @@ if (btnRegistroUsarUbicacion) {
     registroDireccionInput.value = resultado.direccion;
     coordsRegistroDireccionActual = { lat: resultado.lat, lng: resultado.lng };
     ocultarSugerenciasRegistroDireccion();
+    // "Usar mi ubicación" carga la API recién acá si todavía no se había usado el autocompletado.
+    cargarApiPlacesRegistro().then(() => mapaRegistro.mostrar(resultado.lat, resultado.lng)).catch(() => {});
   });
 }
 
 registroDireccionInput.addEventListener("input", () => {
   clearTimeout(temporizadorRegistroDireccion);
   coordsRegistroDireccionActual = null;
+  mapaRegistro.ocultar();
   const texto = registroDireccionInput.value.trim();
   if (texto.length < 3) {
     ocultarSugerenciasRegistroDireccion();

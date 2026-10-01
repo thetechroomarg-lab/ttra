@@ -35,6 +35,7 @@
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="login.css">
+  <link rel="stylesheet" href="mapa-pin.css">
   <link rel="stylesheet" href="classic-editorial.css">
   <link rel="stylesheet" href="site-pages.css">
   <link rel="stylesheet" href="/site-header.css">
@@ -96,6 +97,7 @@
         <button id="btn-registro-usar-ubicacion" type="button" class="btn-usar-ubicacion">📍 Usar mi ubicación</button>
         <ul id="registro-sugerencias-direccion" class="registro-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
       </div>
+      <div id="registro-mapa" class="mapa-pin" hidden><div class="mapa-pin-lienzo"></div><p class="mapa-pin-ayuda">Mové el pin hasta tu puerta para que la entrega llegue justo.</p></div>
       <div class="piso-depto-fila">
         <input type="text" id="registro-piso" placeholder="Piso (opcional)" maxlength="20" aria-label="Piso (opcional)">
         <input type="text" id="registro-depto" placeholder="Depto (opcional)" maxlength="20" aria-label="Departamento (opcional)">
@@ -118,6 +120,7 @@
   </div>
   <footer class="ttra-page-footer"><div class="ttra-page-footer-brand">THE<br>TECH<br>ROOM<br>ARG<span>.</span></div><p>© The Tech Room Arg · Córdoba</p></footer>
   <script src="boot.js"></script>
+  <script src="mapa-pin.js"></script>
   <script src="login.js"></script>
   <script src="/scroll-lock.js"></script>
 </body>

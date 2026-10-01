@@ -19,6 +19,12 @@ const btnCancelarEdicionDomicilio = document.getElementById("btn-cancelar-edicio
 let temporizadorPerfilDireccion;
 let apiPlacesPerfil;
 let domicilioEnEdicionId = null;
+// Coordenadas del domicilio en el formulario: salen del autocompletado y el
+// pin del mapa las ajusta. Se mandan al guardar para que el cadete llegue a la puerta.
+let coordsDomicilioActual = null;
+const mapaDomicilio = window.TTRAMapaPin.crear(document.getElementById("domicilio-mapa"), (coords) => {
+  coordsDomicilioActual = coords;
+});
 
 // Sesión vencida con un panel abierto (p. ej. el celular quedó horas en
 // pausa): se pide el login en el modal y se vuelve al mismo panel, nunca a
@@ -97,9 +103,11 @@ async function mostrarSugerenciasPerfilDireccion(texto) {
     boton.textContent = placePrediction.text.text;
     boton.addEventListener("click", async () => {
       const place = placePrediction.toPlace();
-      await place.fetchFields({ fields: ["formattedAddress"] });
+      await place.fetchFields({ fields: ["formattedAddress", "location"] });
       domicilioDireccionInput.value = place.formattedAddress || placePrediction.text.text;
       ocultarSugerenciasPerfilDireccion();
+      coordsDomicilioActual = place.location ? { lat: place.location.lat(), lng: place.location.lng() } : null;
+      if (coordsDomicilioActual) mapaDomicilio.mostrar(coordsDomicilioActual.lat, coordsDomicilioActual.lng);
     });
     item.append(boton);
     return item;
@@ -109,6 +117,8 @@ async function mostrarSugerenciasPerfilDireccion(texto) {
 
 domicilioDireccionInput.addEventListener("input", () => {
   clearTimeout(temporizadorPerfilDireccion);
+  coordsDomicilioActual = null;
+  mapaDomicilio.ocultar();
   const texto = domicilioDireccionInput.value.trim();
   if (texto.length < 3) {
     ocultarSugerenciasPerfilDireccion();
@@ -290,6 +300,8 @@ function cancelarEdicionDomicilio() {
   domicilioDireccionInput.value = "";
   domicilioPisoInput.value = "";
   domicilioDeptoInput.value = "";
+  coordsDomicilioActual = null;
+  mapaDomicilio.ocultar();
   btnGuardarDomicilio.textContent = "Agregar domicilio";
   btnCancelarEdicionDomicilio.classList.add("oculto");
 }
@@ -325,6 +337,12 @@ function itemDomicilioHtml(domicilio) {
     domicilioDireccionInput.value = domicilio.direccion;
     domicilioPisoInput.value = domicilio.piso || "";
     domicilioDeptoInput.value = domicilio.depto || "";
+    coordsDomicilioActual = (domicilio.lat != null && domicilio.lng != null) ? { lat: domicilio.lat, lng: domicilio.lng } : null;
+    if (coordsDomicilioActual) {
+      cargarApiPlacesPerfil().then(() => mapaDomicilio.mostrar(coordsDomicilioActual.lat, coordsDomicilioActual.lng)).catch(() => {});
+    } else {
+      mapaDomicilio.ocultar();
+    }
     btnGuardarDomicilio.textContent = "Guardar cambios";
     btnCancelarEdicionDomicilio.classList.remove("oculto");
     domicilioAliasInput.focus();
@@ -422,6 +440,7 @@ formDomicilio.addEventListener("submit", async (e) => {
   const cuerpo = {
     alias: domicilioAliasInput.value, direccion: domicilioDireccionInput.value,
     piso: domicilioPisoInput.value, depto: domicilioDeptoInput.value,
+    lat: coordsDomicilioActual?.lat ?? null, lng: coordsDomicilioActual?.lng ?? null,
   };
   try {
     const r = domicilioEnEdicionId
