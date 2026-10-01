@@ -486,4 +486,12 @@
   });
   updateSession();
   mountDock(actions);
+  // En la pantalla de ingreso/creación de cuenta la navegación queda blureada e
+  // inerte: nada de volver al carrito y confirmar el pedido a mitad del alta.
+  if (/^\/(login(\.html)?|registro)\/?$/.test(location.pathname)) {
+    for (const nav of document.querySelectorAll('body > header, .ttra-dock')) {
+      nav.inert = true;
+      nav.classList.add('ttra-nav-bloqueada');
+    }
+  }
 })();

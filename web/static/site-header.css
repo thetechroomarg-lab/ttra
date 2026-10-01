@@ -301,3 +301,6 @@ html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-in
  font: 700 16px/1 var(--rc-font); color: inherit;
 }
 html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-initials):empty { display: none; }
+
+/* Login/registro: header y barra de navegación blureados y sin interacción (site-header.js). */
+.ttra-nav-bloqueada { filter: blur(4px); opacity: .55; pointer-events: none; user-select: none; }

@@ -941,11 +941,30 @@ function urlLoginParaCarrito() {
   return `/login.html?${params.toString()}`;
 }
 
+// Login/registro en el modal (login-drawer.js) sobre esta misma página: el
+// fondo queda blureado e inerte, así no se puede volver a tocar el carrito a
+// mitad del alta. El carrito y el código siguen en localStorage; al entrar se
+// recarga y procesarCheckoutPendiente vuelve a abrir el carrito tal cual.
+function pedirLoginParaCarrito() {
+  if (document.documentElement.classList.contains("ttra-cart-embedded")) {
+    // Carrito abierto como panel desde otra página: que esa página cierre el
+    // panel, muestre el login y vuelva a abrir el carrito.
+    window.parent.postMessage({ type: "ttra:panel-login" }, location.origin);
+    return;
+  }
+  cerrarCarrito();
+  import("/login-drawer.js")
+    .then(({ abrirLoginEnPagina }) => {
+      abrirLoginEnPagina(document.getElementById("btn-carrito") || document.body, () => location.reload());
+    })
+    .catch(() => { window.location.href = urlLoginParaCarrito(); });
+}
+
 async function asegurarSesionParaCarrito(producto, color) {
   const sesion = await obtenerEstadoSesionCliente(true);
   if (sesion && !sesion.debe_cambiar_password) return true;
   guardarPendienteCarrito(producto, color);
-  navegarDesdeCarrito(urlLoginParaCarrito());
+  pedirLoginParaCarrito();
   return false;
 }
 
@@ -1859,7 +1878,7 @@ async function asegurarSesionParaCheckout() {
   const sesion = await obtenerEstadoSesionCliente(true);
   if (sesion && !sesion.debe_cambiar_password) return true;
   guardarPendienteCheckout();
-  navegarDesdeCarrito(urlLoginParaCarrito());
+  pedirLoginParaCarrito();
   return false;
 }
 
