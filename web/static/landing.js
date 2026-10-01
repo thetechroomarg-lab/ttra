@@ -403,7 +403,7 @@ function restringirFalloutSegunSesion(sesion) {
 
 // Al cerrar sesión el carrito no sobrevive: si no, quien entra después (u otra
 // cuenta en el mismo navegador) suma productos sobre el carrito anterior.
-const CLAVES_SESION_CLIENTE = ["ttra_cliente", "ttra_carrito", "ttra_carrito_pendiente", "ttra_checkout_pendiente", "ttra_descuento_mailing", "ttra_regalo_promo"];
+const CLAVES_SESION_CLIENTE = ["ttra_cliente", "ttra_carrito", "ttra_carrito_pendiente", "ttra_checkout_pendiente", "ttra_descuento_mailing", "ttra_regalo_promo", "ttra_codigo_pendiente"];
 
 async function cerrarSesionCliente() {
   try {
@@ -1846,12 +1846,11 @@ async function procesarCheckoutPendiente() {
   if (!hayCheckoutPendiente()) return false;
   const sesion = await obtenerEstadoSesionCliente(true);
   if (!sesion || sesion.debe_cambiar_password) return false;
-  const carrito = cargarCarrito();
-  if (carrito.length === 0) {
-    borrarCheckoutPendiente();
-    return false;
-  }
-  await confirmarPedidoCarrito(carrito);
+  borrarCheckoutPendiente();
+  if (cargarCarrito().length === 0) return false;
+  // Vuelve de crear la cuenta: el carrito (y el código) siguen ahí; se abre
+  // completo para que elija entrega y dirección antes de confirmar.
+  abrirCarrito();
   return true;
 }
 
@@ -2026,6 +2025,9 @@ function renderCarrito() {
     setEstadoCodigoMailing(`Código ${descuentoMailing.codigo} aplicado sobre ${descuentoMailing.cantidad} ítem(s).`, "ok");
   } else if (descuentoGuardado) {
     setEstadoCodigoMailing("El código está cargado, pero hoy no aplica a los productos actuales del carrito.", "error");
+  } else if (leerCodigoPendiente()) {
+    if (inputCodigo && document.activeElement !== inputCodigo) inputCodigo.value = leerCodigoPendiente();
+    setEstadoCodigoMailing(`Código ${leerCodigoPendiente()} guardado: se aplica cuando crees tu cuenta.`, "ok");
   } else {
     setEstadoCodigoMailing("");
   }
@@ -2049,9 +2051,9 @@ function sincronizarLimiteCarrito() {
   document.documentElement.style.setProperty("--rc-carrito-separacion-footer", `${separacion}px`);
 }
 
-// Sin sesión el carrito muestra los productos y solo "Confirmar pedido", que
-// lleva a crear la cuenta (asegurarSesionParaCheckout). Entrega, dirección y
-// códigos se completan una vez logueado.
+// Sin sesión el carrito muestra los productos, "Aplicar código" y "Confirmar
+// pedido", que lleva a crear la cuenta (asegurarSesionParaCheckout). Entrega y
+// dirección se completan una vez logueado.
 async function actualizarCarritoInvitado() {
   const panel = document.getElementById("panel-carrito");
   if (!panel) return;
@@ -2551,6 +2553,41 @@ document.addEventListener("pointerdown", (evento) => {
   cerrarPanelSecundario();
 });
 
+// Validar un código exige sesión (el descuento puede ser de una cuenta puntual),
+// así que el invitado lo deja pendiente y se aplica solo al crear la cuenta.
+const CLAVE_CODIGO_PENDIENTE = "ttra_codigo_pendiente";
+
+function leerCodigoPendiente() {
+  try { return localStorage.getItem(CLAVE_CODIGO_PENDIENTE) || ""; } catch { return ""; }
+}
+
+function guardarCodigoPendiente(codigo) {
+  try { localStorage.setItem(CLAVE_CODIGO_PENDIENTE, codigo); } catch {}
+}
+
+function borrarCodigoPendiente() {
+  try { localStorage.removeItem(CLAVE_CODIGO_PENDIENTE); } catch {}
+}
+
+async function aplicarCodigoPendiente() {
+  const codigo = leerCodigoPendiente();
+  if (!codigo || !catalogoListo || !cargarCarrito().length) return;
+  const sesion = await obtenerEstadoSesionCliente(true);
+  if (!sesion || sesion.debe_cambiar_password) return;
+  borrarCodigoPendiente();
+  if (modoPrecioActual === "mayorista") return;
+  const r = await fetch("/api/codigos-promo/validar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ codigo }),
+  }).catch(() => null);
+  if (r?.ok) {
+    guardarRegaloPromo(await r.json());
+    return;
+  }
+  await aplicarCodigoMailingPorValor(codigo);
+}
+
 document.getElementById("btn-aplicar-codigo").addEventListener("click", async () => {
   if (!catalogoListo) return;
   if (modoPrecioActual === "mayorista") {
@@ -2566,6 +2603,13 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
   const codigo = (input?.value || "").trim().toUpperCase();
   if (!codigo) {
     alert("Ingresá un código.");
+    return;
+  }
+  if (!(await obtenerEstadoSesionCliente())) {
+    guardarCodigoPendiente(codigo);
+    setEstadoCodigoMailing(`Código ${codigo} guardado: se aplica cuando crees tu cuenta.`, "ok");
+    cerrarPanelSecundario();
+    alert(`Guardé tu código ${codigo}. Se aplica automáticamente cuando crees tu cuenta al confirmar el pedido.`);
     return;
   }
   const r = await fetch("/api/codigos-promo/validar", {
@@ -3048,6 +3092,7 @@ async function procesarLinkMailing() {
 
 cargarCatalogo().then(async () => {
   await procesarPendienteCarrito();
+  await aplicarCodigoPendiente();
   if (await procesarCheckoutPendiente()) return;
   const regresoComparativa = window.TTRAComparar?.readReturn()?.context;
   if (regresoComparativa) {

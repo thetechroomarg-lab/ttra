@@ -476,7 +476,7 @@
     try {
       const response = await fetch('/logout', { method: 'POST' });
       if (!response.ok) throw new Error('logout');
-      try { ['ttra_cliente', 'ttra_carrito', 'ttra_carrito_pendiente', 'ttra_checkout_pendiente', 'ttra_descuento_mailing', 'ttra_regalo_promo'].forEach((clave) => localStorage.removeItem(clave)); } catch {}
+      try { ['ttra_cliente', 'ttra_carrito', 'ttra_carrito_pendiente', 'ttra_checkout_pendiente', 'ttra_descuento_mailing', 'ttra_regalo_promo', 'ttra_codigo_pendiente'].forEach((clave) => localStorage.removeItem(clave)); } catch {}
       location.href = '/';
     } catch {
       error.textContent = 'No pude cerrar la sesión. Probá de nuevo.';
