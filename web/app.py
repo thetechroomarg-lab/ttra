@@ -34,7 +34,6 @@ from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
 from web.mailing import assets as mailing_assets, campanias, destinatarios, envio as mailing_envio, servicio as mailing_servicio, template as mailing_template
 from web.productos import resolver_proveedor
-from web.slugs import slug as slug_producto
 from web.supabase_client import get_client
 from web.ui_helpers import (
     _html_direccion_entrega,
@@ -5281,19 +5280,6 @@ def api_catalogo(request: Request):
     return {"secciones": catalogo.secciones_catalogo(productos), "modo_precio": modo_precio}
 
 
-# Los links viejos /p/<slug> ya no muestran una página propia: el producto se ve
-# siempre en el catálogo (/?producto=<nombre>), igual que el botón Compartir.
-@app.get("/p/{slug_url:path}")
-def redirigir_producto_publico(slug_url: str):
-    producto = next(
-        (p for p in _cargar_productos() if slug_producto(p.get("nombre", "")) == slug_url.strip("/")),
-        None,
-    )
-    if producto is None:
-        return RedirectResponse("/catalogo", status_code=301)
-    return RedirectResponse("/?" + urlencode({"producto": producto.get("nombre", "")}), status_code=301)
-
-
 _MAILING_PUBLICO_ESTILO = '<meta name="viewport" content="width=device-width, initial-scale=1">\n<style>\n  body { font-family: \'Segoe UI\', system-ui, sans-serif; background:#111318; color:#f2f4f8;\n         margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }\n  .tarjeta { background:#1b1e24; border-radius:16px; padding:28px 24px; width:100%; max-width:420px;\n             box-shadow:0 10px 30px rgba(0,0,0,0.5); box-sizing:border-box; border:1px solid #2a2e37; }\n  .tarjeta h1 { margin:0 0 6px; font-size:20px; }\n  .tarjeta .colores { color:#aab0bd; font-size:14px; margin:0 0 18px; }\n  .precios p { margin:4px 0; font-size:15px; }\n  .precios strong { font-size:20px; }\n  .btn-wa { display:block; text-align:center; margin-top:20px; background:#25D366; color:#0a0a0a;\n            font-weight:800; text-decoration:none; padding:14px; border-radius:10px; }\n  .link-catalogo { display:block; text-align:center; margin-top:12px; color:#aab0bd; font-size:13px; text-decoration:none; }\n</style>\n'
 
 
@@ -5343,7 +5329,7 @@ def mailing_baja_confirmar(cliente_id: str):
 @app.get("/api/productos")
 def api_productos():
     """Catálogo público de solo lectura — mismos datos que ya se muestran en
-    /p/<slug>, expuestos como feed para consumidores externos (ej. la rutina
+    el catálogo, expuestos como feed para consumidores externos (ej. la rutina
     de mailing corriendo en un checkout que no tiene productos.json local)."""
     return _cargar_productos()
 
