@@ -14,6 +14,59 @@ const pedidoPisoInput = document.getElementById("pedido-piso");
 const pedidoDeptoInput = document.getElementById("pedido-depto");
 const btnCancelarEditarDireccionPedido = document.getElementById("btn-cancelar-editar-direccion-pedido");
 let pedidoEnEdicionId = null;
+const pedidoSugerenciasDireccion = document.getElementById("pedido-sugerencias-direccion");
+let temporizadorPedidoDireccion;
+
+// Mismo autocomplete de Google Maps que los domicilios del perfil
+// (cargarApiPlacesPerfil vive en perfil.js, que se carga antes).
+function ocultarSugerenciasPedidoDireccion() {
+  if (!pedidoSugerenciasDireccion) return;
+  pedidoSugerenciasDireccion.replaceChildren();
+  pedidoSugerenciasDireccion.hidden = true;
+}
+
+async function mostrarSugerenciasPedidoDireccion(texto) {
+  const places = typeof cargarApiPlacesPerfil === "function" ? await cargarApiPlacesPerfil() : null;
+  if (!places || texto !== pedidoDireccionInput.value.trim()) return;
+  const { AutocompleteSuggestion } = places;
+  const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+    input: texto,
+    includedRegionCodes: ["ar"],
+  });
+  if (texto !== pedidoDireccionInput.value.trim() || !suggestions?.length) {
+    ocultarSugerenciasPedidoDireccion();
+    return;
+  }
+  pedidoSugerenciasDireccion.replaceChildren(...suggestions.slice(0, 5).map(({ placePrediction }) => {
+    const item = document.createElement("li");
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = placePrediction.text.text;
+    boton.addEventListener("click", async () => {
+      const place = placePrediction.toPlace();
+      await place.fetchFields({ fields: ["formattedAddress"] });
+      pedidoDireccionInput.value = place.formattedAddress || placePrediction.text.text;
+      ocultarSugerenciasPedidoDireccion();
+    });
+    item.append(boton);
+    return item;
+  }));
+  pedidoSugerenciasDireccion.hidden = false;
+}
+
+if (pedidoDireccionInput && pedidoSugerenciasDireccion) {
+  pedidoDireccionInput.addEventListener("input", () => {
+    clearTimeout(temporizadorPedidoDireccion);
+    const texto = pedidoDireccionInput.value.trim();
+    if (texto.length < 3) {
+      ocultarSugerenciasPedidoDireccion();
+      return;
+    }
+    temporizadorPedidoDireccion = setTimeout(() => {
+      mostrarSugerenciasPedidoDireccion(texto).catch(ocultarSugerenciasPedidoDireccion);
+    }, 250);
+  });
+}
 
 function cerrarPanelPedidos() {
   if (!panelPedidosEmbebido) return;

@@ -467,7 +467,10 @@
     <div class="rc-terminos-tarjeta">
       <h2>Editar dirección de entrega</h2>
       <form id="form-editar-direccion-pedido" class="form">
-        <input id="pedido-direccion" type="text" placeholder="Dirección" maxlength="500" required>
+        <div class="perfil-direccion-wrap">
+          <input id="pedido-direccion" type="text" placeholder="Dirección" autocomplete="off" maxlength="500" required>
+          <ul id="pedido-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
+        </div>
         <div class="piso-depto-fila">
           <input id="pedido-piso" type="text" placeholder="Piso (opcional)" maxlength="20" aria-label="Piso (opcional)">
           <input id="pedido-depto" type="text" placeholder="Depto (opcional)" maxlength="20" aria-label="Departamento (opcional)">
