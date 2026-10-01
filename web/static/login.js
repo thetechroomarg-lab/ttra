@@ -432,3 +432,13 @@ formRegistro.addEventListener("submit", async (e) => {
   }
   irADestinoTrasIngresar();
 });
+
+// Celular: solo números (también al pegar "+54 351-123 4567").
+function soloNumerosEnCelular(input) {
+  if (!input) return;
+  input.addEventListener("input", () => {
+    const limpio = input.value.replace(/\D+/g, "");
+    if (limpio !== input.value) input.value = limpio;
+  });
+}
+soloNumerosEnCelular(document.getElementById("registro-celular"));

@@ -405,7 +405,7 @@
       <input id="perfil-nombre" type="text" placeholder="Nombre" autocomplete="given-name" required aria-label="Nombre">
       <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required aria-label="Apellido">
       <input id="perfil-email" type="email" placeholder="Email" disabled aria-label="Email">
-      <input id="perfil-celular" type="tel" placeholder="Celular" autocomplete="tel" required aria-label="Celular">
+      <input id="perfil-celular" type="tel" placeholder="Celular" autocomplete="tel" inputmode="numeric" pattern="[0-9]*" required aria-label="Celular">
       <button type="submit">Guardar cambios</button>
       <p class="error" id="perfil-error"></p>
       <p class="ok" id="perfil-ok"></p>

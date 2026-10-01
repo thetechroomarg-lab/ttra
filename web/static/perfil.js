@@ -487,3 +487,13 @@ formPassword.addEventListener("submit", async (e) => {
     errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }
 });
+
+// Celular: solo números (también al pegar "+54 351-123 4567").
+function soloNumerosEnCelular(input) {
+  if (!input) return;
+  input.addEventListener("input", () => {
+    const limpio = input.value.replace(/\D+/g, "");
+    if (limpio !== input.value) input.value = limpio;
+  });
+}
+soloNumerosEnCelular(document.getElementById("perfil-celular"));
