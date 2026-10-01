@@ -1,4 +1,4 @@
-"""Slugs deterministicos para armar/resolver links públicos de producto (/p/<slug>)."""
+"""Slugs deterministicos para resolver los links viejos /p/<slug> al producto del catálogo."""
 import re
 import unicodedata
 
@@ -12,4 +12,5 @@ def slug(nombre):
 
 
 def url_producto(nombre, base="https://thetechroomarg.com"):
-    return f"{base}/p/{slug(nombre)}"
+    from urllib.parse import urlencode
+    return f"{base}/?{urlencode({'producto': nombre})}"

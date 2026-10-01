@@ -5281,78 +5281,17 @@ def api_catalogo(request: Request):
     return {"secciones": catalogo.secciones_catalogo(productos), "modo_precio": modo_precio}
 
 
-_PRODUCTO_PUBLICO_ESTILO = """
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script>document.documentElement.setAttribute('data-modo','classic');
-try { if (localStorage.getItem('ttra_classic_theme') === 'light')
-  document.documentElement.setAttribute('data-classic-theme','light'); } catch {}</script>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/theme.css">
-<link rel="stylesheet" href="/classic.css">
-<link rel="stylesheet" href="/classic-editorial.css">
-<link rel="stylesheet" href="/site-pages.css">
-<link rel="stylesheet" href="/site-header.css">
-<script src="/site-header.js" defer></script>
-<script src="/scroll-lock.js" defer></script>
-"""
-
-_PRODUCTO_PUBLICO_HEADER = (
-    '<header class="ttra-page-header"><a class="ttra-page-brand" href="/" '
-    'aria-label="The Tech Room Arg, volver al inicio">THE<br>TECH<br>ROOM<br>ARG<span>.</span></a>'
-    '<nav class="ttra-page-actions" aria-label="Navegación">'
-    '<a class="ttra-page-link" href="/catalogo">Explorar catálogo</a></nav></header>'
-)
-_PRODUCTO_PUBLICO_FOOTER = (
-    '<footer class="ttra-page-footer"><div class="ttra-page-footer-brand">'
-    'THE<br>TECH<br>ROOM<br>ARG<span>.</span></div>'
-    '<p>© The Tech Room Arg · Córdoba</p></footer>'
-)
-
-
-@app.get("/p/{slug_url}", response_class=HTMLResponse)
-def pagina_producto_publico(slug_url: str):
-    productos_publicos, _costos = _cargar_productos(), None
+# Los links viejos /p/<slug> ya no muestran una página propia: el producto se ve
+# siempre en el catálogo (/?producto=<nombre>), igual que el botón Compartir.
+@app.get("/p/{slug_url:path}")
+def redirigir_producto_publico(slug_url: str):
     producto = next(
-        (p for p in productos_publicos if slug_producto(p.get("nombre", "")) == slug_url),
+        (p for p in _cargar_productos() if slug_producto(p.get("nombre", "")) == slug_url.strip("/")),
         None,
     )
     if producto is None:
-        return HTMLResponse(
-            f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
-            f"<title>Producto no encontrado</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
-            f"<body class='ttra-page'>{_PRODUCTO_PUBLICO_HEADER}"
-            f"<main class='ttra-product-main'><div class='ttra-product-art' aria-hidden='true'><span>THE TECH ROOM ARG.</span></div>"
-            f"<div class='ttra-product-copy'><p class='ttra-page-eyebrow'>PRODUCTO NO DISPONIBLE</p>"
-            f"<h1>No encontré ese producto</h1>"
-            f"<p class='colores'>Puede que ya no esté disponible. Escribime por WhatsApp y te confirmo.</p>"
-            f"<a class='ttra-product-cta' href='{WHATSAPP}'>Escribir por WhatsApp</a>"
-            f"</div></main>{_PRODUCTO_PUBLICO_FOOTER}</body></html>",
-            status_code=404,
-        )
-    nombre = html.escape(producto.get("nombre", ""))
-    colores = producto.get("colores") or []
-    colores_html = f"<p class='colores'>{html.escape(', '.join(colores))}</p>" if colores else ""
-    usd = producto.get("usd")
-    pesos = producto.get("pesos")
-    transferencia = producto.get("transferencia")
-    mensaje_wa = urlencode({"text": f"Hola! Te consulto por: {producto.get('nombre', '')}"})
-    link_wa = f"{WHATSAPP}?{mensaje_wa}"
-    return HTMLResponse(
-        f"<!doctype html><html lang='es'><head><meta charset='utf-8'>"
-        f"<title>{nombre} — The Tech Room Arg</title>{_PRODUCTO_PUBLICO_ESTILO}</head>"
-        f"<body class='ttra-page'>{_PRODUCTO_PUBLICO_HEADER}"
-        f"<main class='ttra-product-main'><div class='ttra-product-art' aria-hidden='true'><span>THE TECH ROOM ARG.</span></div>"
-        f"<div class='ttra-product-copy'><p class='ttra-page-eyebrow'>PRODUCTO / THE TECH ROOM ARG</p>"
-        f"<h1>{nombre}</h1>{colores_html}"
-        f"<div class='ttra-product-prices'>"
-        f"<p><strong>U$D {usd}</strong></p>"
-        f"<p>$ {pesos} pesos contado</p>"
-        f"<p>$ {transferencia} pesos transferencia</p>"
-        f"</div>"
-        f"<a class='ttra-product-cta' href='{link_wa}'>Consultar por WhatsApp</a>"
-        f"<a class='ttra-product-secondary' href='/login'>Ver todo el catálogo</a>"
-        f"</div></main>{_PRODUCTO_PUBLICO_FOOTER}</body></html>"
-    )
+        return RedirectResponse("/catalogo", status_code=301)
+    return RedirectResponse("/?" + urlencode({"producto": producto.get("nombre", "")}), status_code=301)
 
 
 _MAILING_PUBLICO_ESTILO = '<meta name="viewport" content="width=device-width, initial-scale=1">\n<style>\n  body { font-family: \'Segoe UI\', system-ui, sans-serif; background:#111318; color:#f2f4f8;\n         margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }\n  .tarjeta { background:#1b1e24; border-radius:16px; padding:28px 24px; width:100%; max-width:420px;\n             box-shadow:0 10px 30px rgba(0,0,0,0.5); box-sizing:border-box; border:1px solid #2a2e37; }\n  .tarjeta h1 { margin:0 0 6px; font-size:20px; }\n  .tarjeta .colores { color:#aab0bd; font-size:14px; margin:0 0 18px; }\n  .precios p { margin:4px 0; font-size:15px; }\n  .precios strong { font-size:20px; }\n  .btn-wa { display:block; text-align:center; margin-top:20px; background:#25D366; color:#0a0a0a;\n            font-weight:800; text-decoration:none; padding:14px; border-radius:10px; }\n  .link-catalogo { display:block; text-align:center; margin-top:12px; color:#aab0bd; font-size:13px; text-decoration:none; }\n</style>\n'
