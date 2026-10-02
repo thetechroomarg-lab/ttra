@@ -304,3 +304,7 @@ html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-in
 
 /* Login/registro: header y barra de navegación blureados y sin interacción (site-header.js). */
 .ttra-nav-bloqueada { filter: blur(4px); opacity: .55; pointer-events: none; user-select: none; }
+/* Con el modal de ingreso/registro abierto la barra de navegación se oculta:
+   detrás del blur quedaba como una franja borrosa que se veía rota. */
+html:has(dialog.ttra-login-dialog[open]) .ttra-site-header,
+html:has(dialog.ttra-login-dialog[data-opening]) .ttra-site-header { visibility: hidden; }
