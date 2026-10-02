@@ -1,6 +1,8 @@
 import secrets
 import string
 
+from web import referidos
+
 DESCUENTO_FIDELIDAD_USD = 20
 SELLOS_PARA_PREMIO = 5
 
@@ -48,6 +50,12 @@ def registrar_entrega_completada(client, cliente_id):
         return None
 
     if codigo_emitido:
+        # Si tiene un premio de referidos sin usar, los US$20 se suman a ese
+        # mismo cupón: solo entra un código por compra y le corresponden los dos.
+        codigo_referidos = cliente.get("referidos_codigo_premio")
+        if referidos.sumar_a_cupon(client, codigo_referidos, DESCUENTO_FIDELIDAD_USD) is not None:
+            client.table("clientes").update({"fidelidad_ultimo_codigo": codigo_referidos}).eq("id", cliente_id).execute()
+            return {"sellos_fidelidad": sellos, "codigo_emitido": codigo_referidos}
         try:
             client.table("codigos_descuento").insert({
                 "cliente_id": cliente_id,

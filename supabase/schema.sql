@@ -36,6 +36,17 @@ alter table clientes add column if not exists condiciones_mayorista_aceptadas_en
 -- código de fidelidad_ultimo_codigo; recién entonces vuelve a 0.
 alter table clientes add column if not exists sellos_fidelidad integer not null default 0;
 alter table clientes add column if not exists fidelidad_ultimo_codigo text;
+-- Programa de referidos: cada cliente tiene un código personal para compartir.
+-- referido_por = quién lo invitó; referido_premiado_en = cuándo su primera
+-- compra (recibo enviado) le acreditó US$5 al referente (una sola vez).
+-- referidos_codigo_premio = cupón acumulado sin usar del referente.
+-- referido_premio_codigo = cupón del referente donde se acreditaron los US$5
+-- de este referido (para listar en el perfil qué amigos componen el descuento).
+alter table clientes add column if not exists codigo_referido text unique;
+alter table clientes add column if not exists referido_por uuid references clientes(id) on delete set null;
+alter table clientes add column if not exists referido_premiado_en timestamptz;
+alter table clientes add column if not exists referidos_codigo_premio text;
+alter table clientes add column if not exists referido_premio_codigo text;
 
 -- Un cliente que se dio de baja del mailing de novedades (link en el
 -- footer del mail) queda excluido de la audiencia de próximas campañas.

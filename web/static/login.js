@@ -17,6 +17,17 @@ const TITULO_CAMBIAR_OBLIGATORIO = "Elegí tu contraseña nueva";
 const paramsPantalla = new URLSearchParams(location.search);
 const productoCompartido = paramsPantalla.get("producto");
 const forzarRegistro = paramsPantalla.get("registro") === "1";
+// Link de invitación de un cliente (?ref=CODIGO): se guarda por si la
+// persona navega entre login y registro antes de crear la cuenta.
+const CLAVE_CODIGO_REFERIDO = "ttra_codigo_referido";
+(() => {
+  const ref = (paramsPantalla.get("ref") || "").trim().toUpperCase();
+  if (!ref) return;
+  try { sessionStorage.setItem(CLAVE_CODIGO_REFERIDO, ref); } catch {}
+})();
+function codigoReferidoGuardado() {
+  try { return sessionStorage.getItem(CLAVE_CODIGO_REFERIDO) || null; } catch { return null; }
+}
 const modoFallout = paramsPantalla.get("modo") === "fallout";
 function destinoInternoSeguro(valor) {
   if (!valor) return null;
@@ -427,6 +438,7 @@ formRegistro.addEventListener("submit", async (e) => {
       depto: document.getElementById("registro-depto").value,
       lat: coordsRegistroDireccionActual?.lat ?? null,
       lng: coordsRegistroDireccionActual?.lng ?? null,
+      codigo_referido: codigoReferidoGuardado(),
     },
     registroErrorEl,
   );

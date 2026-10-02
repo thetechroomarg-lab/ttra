@@ -140,3 +140,9 @@ input:disabled { opacity: .6; cursor: not-allowed; }
    y la tarjeta de fidelidad; cuando aparece un error recupera su espacio. */
 #form-perfil #perfil-error:empty { margin-block: 0; }
 #seccion-fidelidad > h2 { margin-top: 25px; }
+
+#seccion-referidos.oculto, #referidos-estado.oculto, #referidos-link.oculto, #fidelidad-premio.oculto { display: none; }
+.referidos-ayuda { margin: 0 0 8px; font-size: 13px; }
+.referidos-link { margin: 8px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.referidos-lista { margin: 4px 0 8px; padding-left: 18px; font-size: 13px; }
+.referidos-total { font-weight: 600; }

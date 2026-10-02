@@ -2080,8 +2080,22 @@ async function actualizarCarritoInvitado() {
   panel.classList.toggle("carrito-invitado", !sesion);
 }
 
+// Premio de referidos o fidelidad (si tiene los dos, son el mismo cupón con
+// la suma): si el cliente no cargó otro código, se aplica solo al abrir el carrito.
+async function aplicarPremioReferidosSiCorresponde() {
+  if (modoPrecioActual === "mayorista" || cargarDescuentoMailing() || !cargarCarrito().length) return;
+  try {
+    const r = await fetch("/api/me");
+    if (!r.ok) return;
+    const datos = await r.json();
+    const codigo = datos.referidos?.codigo_premio || datos.fidelidad_ultimo_codigo;
+    if (codigo && !cargarDescuentoMailing()) await aplicarCodigoMailingPorValor(codigo);
+  } catch {}
+}
+
 function abrirCarrito() {
   if (!catalogoListo) return;
+  aplicarPremioReferidosSiCorresponde();
   // Cierra el panel de perfil si estaba abierto: los dos comparten la
   // franja "flotante sobre la home blureada" y no tiene sentido ver ambos
   // superpuestos a la vez.
