@@ -162,3 +162,5 @@ html #panel-perfil #btn-abrir-form-domicilio { width: 100%; min-height: 44px; bo
   padding: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
 /* Todos los botones del perfil van con bordes redondeados, sin excepción. */
 html #panel-perfil button { border-radius: 10px; }
+/* "Compartir mi link": mismo alto que los demás botones, ancho según el texto. */
+html #panel-perfil #btn-compartir-referido { min-height: 44px; padding-block: 0; }
