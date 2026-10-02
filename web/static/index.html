@@ -408,7 +408,10 @@
       <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required aria-label="Apellido" disabled>
       <input id="perfil-email" type="email" placeholder="Email" disabled aria-label="Email">
       <input id="perfil-celular" type="tel" placeholder="Teléfono" autocomplete="tel" inputmode="numeric" pattern="[0-9]*" required aria-label="Teléfono" disabled>
-      <input id="perfil-domicilio" type="text" placeholder="Domicilio principal" disabled aria-label="Domicilio principal">
+      <div class="perfil-direccion-wrap">
+        <input id="perfil-domicilio" type="text" placeholder="Domicilio principal" autocomplete="off" disabled aria-label="Domicilio principal">
+        <ul id="perfil-domicilio-sugerencias" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
+      </div>
       <button type="button" id="btn-editar-perfil">Editar</button>
       <button type="submit" id="btn-guardar-perfil" disabled>Guardar cambios</button>
       <p class="error" id="perfil-error"></p>

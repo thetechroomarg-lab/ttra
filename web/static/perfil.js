@@ -16,7 +16,6 @@ const perfilSugerenciasDireccion = document.getElementById("perfil-sugerencias-d
 const listaDomicilios = document.getElementById("lista-domicilios");
 const btnGuardarDomicilio = document.getElementById("btn-guardar-domicilio");
 const btnCancelarEdicionDomicilio = document.getElementById("btn-cancelar-edicion-domicilio");
-let temporizadorPerfilDireccion;
 let apiPlacesPerfil;
 let domicilioEnEdicionId = null;
 let domicilioPrincipalActual = null;
@@ -60,9 +59,9 @@ if (overlayPerfilEmbebido) {
   overlayPerfilEmbebido.addEventListener("click", cerrarPanelPerfil);
 }
 
-function ocultarSugerenciasPerfilDireccion() {
-  perfilSugerenciasDireccion.replaceChildren();
-  perfilSugerenciasDireccion.hidden = true;
+function ocultarSugerenciasPerfilDireccion(lista = perfilSugerenciasDireccion) {
+  lista.replaceChildren();
+  lista.hidden = true;
 }
 
 async function cargarApiPlacesPerfil() {
@@ -85,19 +84,21 @@ async function cargarApiPlacesPerfil() {
   return apiPlacesPerfil;
 }
 
-async function mostrarSugerenciasPerfilDireccion(texto) {
+// Sugerencias de Google Places bajo un campo de dirección. Se usa en el
+// formulario de domicilios y en el domicilio principal del perfil.
+async function mostrarSugerenciasPerfilDireccion(texto, input, lista, alElegir) {
   const places = await cargarApiPlacesPerfil();
-  if (!places || texto !== domicilioDireccionInput.value.trim()) return;
+  if (!places || texto !== input.value.trim()) return;
   const { AutocompleteSuggestion } = places;
   const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
     input: texto,
     includedRegionCodes: ["ar"],
   });
-  if (texto !== domicilioDireccionInput.value.trim() || !suggestions?.length) {
-    ocultarSugerenciasPerfilDireccion();
+  if (texto !== input.value.trim() || !suggestions?.length) {
+    ocultarSugerenciasPerfilDireccion(lista);
     return;
   }
-  perfilSugerenciasDireccion.replaceChildren(...suggestions.slice(0, 5).map(({ placePrediction }) => {
+  lista.replaceChildren(...suggestions.slice(0, 5).map(({ placePrediction }) => {
     const item = document.createElement("li");
     const boton = document.createElement("button");
     boton.type = "button";
@@ -105,30 +106,51 @@ async function mostrarSugerenciasPerfilDireccion(texto) {
     boton.addEventListener("click", async () => {
       const place = placePrediction.toPlace();
       await place.fetchFields({ fields: ["formattedAddress", "location"] });
-      domicilioDireccionInput.value = place.formattedAddress || placePrediction.text.text;
-      ocultarSugerenciasPerfilDireccion();
-      coordsDomicilioActual = place.location ? { lat: place.location.lat(), lng: place.location.lng() } : null;
-      if (coordsDomicilioActual) mapaDomicilio.mostrar(coordsDomicilioActual.lat, coordsDomicilioActual.lng);
+      input.value = place.formattedAddress || placePrediction.text.text;
+      ocultarSugerenciasPerfilDireccion(lista);
+      alElegir(place.location ? { lat: place.location.lat(), lng: place.location.lng() } : null);
     });
     item.append(boton);
     return item;
   }));
-  perfilSugerenciasDireccion.hidden = false;
+  lista.hidden = false;
 }
 
-domicilioDireccionInput.addEventListener("input", () => {
-  clearTimeout(temporizadorPerfilDireccion);
-  coordsDomicilioActual = null;
-  mapaDomicilio.ocultar();
-  const texto = domicilioDireccionInput.value.trim();
-  if (texto.length < 3) {
-    ocultarSugerenciasPerfilDireccion();
-    return;
-  }
-  temporizadorPerfilDireccion = setTimeout(() => {
-    mostrarSugerenciasPerfilDireccion(texto).catch(ocultarSugerenciasPerfilDireccion);
-  }, 250);
-});
+function conectarAutocompletadoDireccion(input, lista, alEscribir, alElegir) {
+  let temporizador;
+  input.addEventListener("input", () => {
+    clearTimeout(temporizador);
+    alEscribir();
+    const texto = input.value.trim();
+    if (texto.length < 3) {
+      ocultarSugerenciasPerfilDireccion(lista);
+      return;
+    }
+    temporizador = setTimeout(() => {
+      mostrarSugerenciasPerfilDireccion(texto, input, lista, alElegir).catch(() => ocultarSugerenciasPerfilDireccion(lista));
+    }, 250);
+  });
+}
+
+conectarAutocompletadoDireccion(
+  domicilioDireccionInput,
+  perfilSugerenciasDireccion,
+  () => { coordsDomicilioActual = null; mapaDomicilio.ocultar(); },
+  (coords) => {
+    coordsDomicilioActual = coords;
+    if (coords) mapaDomicilio.mostrar(coords.lat, coords.lng);
+  },
+);
+
+// Domicilio principal editado desde los datos del perfil: si se elige una
+// sugerencia de Google se guardan sus coordenadas; escrito a mano, no.
+let coordsPerfilDomicilio = null;
+conectarAutocompletadoDireccion(
+  document.getElementById("perfil-domicilio"),
+  document.getElementById("perfil-domicilio-sugerencias"),
+  () => { coordsPerfilDomicilio = null; },
+  (coords) => { coordsPerfilDomicilio = coords; },
+);
 
 const seccionCondicionesMayorista = document.getElementById("seccion-condiciones-mayorista");
 const condicionesMayoristaFecha = document.getElementById("condiciones-mayorista-fecha");
@@ -518,6 +540,8 @@ function modoEdicionPerfil(editando) {
   // Editando se ve solo la dirección (piso y depto se cambian desde la lista).
   const campoDomicilio = document.getElementById("perfil-domicilio");
   campoDomicilio.value = textoDomicilioPrincipal(!editando);
+  coordsPerfilDomicilio = null;
+  ocultarSugerenciasPerfilDireccion(document.getElementById("perfil-domicilio-sugerencias"));
   if (editando) document.getElementById("perfil-nombre").focus();
 }
 btnEditarPerfil.addEventListener("click", () => modoEdicionPerfil(true));
@@ -547,20 +571,25 @@ formPerfil.addEventListener("submit", async (e) => {
     const direccionNueva = document.getElementById("perfil-domicilio").value.trim();
     const principal = domicilioPrincipalActual;
     if (direccionNueva && direccionNueva !== (principal?.direccion || "")) {
-      // Dirección cambiada a mano: el pin del mapa anterior ya no vale.
+      // Dirección cambiada: el pin anterior ya no vale. Si vino de una
+      // sugerencia de Google, se guardan sus coordenadas.
       const rDom = principal
         ? await fetch(`/api/domicilios/${principal.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               alias: principal.alias, direccion: direccionNueva,
-              piso: principal.piso || null, depto: principal.depto || null, lat: null, lng: null,
+              piso: principal.piso || null, depto: principal.depto || null,
+              lat: coordsPerfilDomicilio?.lat ?? null, lng: coordsPerfilDomicilio?.lng ?? null,
             }),
           })
         : await fetch("/api/domicilios", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ alias: "Casa", direccion: direccionNueva }),
+            body: JSON.stringify({
+              alias: "Casa", direccion: direccionNueva,
+              lat: coordsPerfilDomicilio?.lat ?? null, lng: coordsPerfilDomicilio?.lng ?? null,
+            }),
           });
       const datosDom = await rDom.json().catch(() => ({}));
       if (!rDom.ok) {
