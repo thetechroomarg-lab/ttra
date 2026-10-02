@@ -254,32 +254,45 @@ function mostrarTarjetaFidelidad(datos) {
 
 function mostrarReferidos(datos) {
   const seccion = document.getElementById("seccion-referidos");
+  const seccionAmigos = document.getElementById("seccion-amigos-referidos");
   const estado = document.getElementById("referidos-estado");
-  if (!seccion || !estado) return;
+  if (!seccion || !seccionAmigos || !estado) return;
   // Igual que fidelidad: el cupón no aplica sobre precio mayorista.
-  seccion.classList.toggle("oculto", datos.tipo_cliente === "mayorista");
+  const esMayorista = datos.tipo_cliente === "mayorista";
+  seccion.classList.toggle("oculto", esMayorista);
   estado.replaceChildren();
   const r = datos.referidos;
-  if (!r) {
-    estado.classList.add("oculto");
-    return;
+  const amigos = r?.amigos_con_compra || [];
+  // La sección aparece recién cuando hay al menos un amigo que compró.
+  seccionAmigos.classList.toggle("oculto", esMayorista || !amigos.length);
+  if (!amigos.length) return;
+
+  const lista = document.createElement("ul");
+  lista.className = "referidos-amigos";
+  for (const amigo of amigos) {
+    const item = document.createElement("li");
+    const datosAmigo = document.createElement("div");
+    const nombre = document.createElement("strong");
+    nombre.textContent = amigo.nombre;
+    const fecha = document.createElement("span");
+    fecha.className = "referidos-amigo-fecha";
+    fecha.textContent = amigo.compro_en
+      ? `Compró el ${new Date(amigo.compro_en).toLocaleDateString("es-AR")}`
+      : "Compró";
+    datosAmigo.append(nombre, fecha);
+    const premio = document.createElement("div");
+    premio.className = "referidos-amigo-premio";
+    const monto = document.createElement("strong");
+    monto.textContent = "US$5";
+    const estadoPremio = document.createElement("span");
+    estadoPremio.textContent = amigo.descuento_pendiente ? "Para tu próxima compra" : "Ya usado";
+    premio.classList.toggle("usado", !amigo.descuento_pendiente);
+    premio.append(monto, estadoPremio);
+    item.append(datosAmigo, premio);
+    lista.append(item);
   }
-  const amigos = r.amigos_con_compra || [];
-  if (amigos.length) {
-    const titulo = document.createElement("p");
-    titulo.className = "referidos-ayuda";
-    titulo.textContent = "Amigos que compraron con tu link:";
-    const lista = document.createElement("ul");
-    lista.className = "referidos-lista";
-    for (const amigo of amigos) {
-      const item = document.createElement("li");
-      const fecha = amigo.compro_en ? new Date(amigo.compro_en).toLocaleDateString("es-AR") : "";
-      const estado = amigo.descuento_pendiente ? "US$5 para tu próxima compra" : "US$5 ya usados";
-      item.textContent = `${amigo.nombre}${fecha ? ` — compró el ${fecha}` : ""} · ${estado}`;
-      lista.append(item);
-    }
-    estado.append(titulo, lista);
-  }
+  estado.append(lista);
+
   if (r.saldo_usd > 0) {
     const total = document.createElement("p");
     total.className = "referidos-total";
@@ -289,13 +302,10 @@ function mostrarReferidos(datos) {
       : `Total en tu próxima compra: US$${r.saldo_usd}. Se aplica solo.`;
     estado.append(total);
   }
-  if (r.referidos_registrados > 0) {
-    const cuenta = document.createElement("p");
-    cuenta.className = "referidos-ayuda";
-    cuenta.textContent = `Amigos registrados con tu link: ${r.referidos_registrados} (${r.referidos_con_compra} ya compraron).`;
-    estado.append(cuenta);
-  }
-  estado.classList.toggle("oculto", estado.childElementCount === 0);
+  const cuenta = document.createElement("p");
+  cuenta.className = "referidos-ayuda";
+  cuenta.textContent = `Amigos registrados con tu link: ${r.referidos_registrados} (${r.referidos_con_compra} ya compraron).`;
+  estado.append(cuenta);
 }
 
 async function compartirLinkReferido() {
