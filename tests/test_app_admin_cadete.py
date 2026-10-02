@@ -606,3 +606,24 @@ def test_cadete_no_ve_las_tareas_del_admin(monkeypatch):
     }).execute()
 
     assert "Retirar en correo" not in _cadete_logueado().get("/admin/cadete").text
+
+
+def test_nota_del_panel_de_alejo_queda_asignada_aunque_haya_sesion_de_admin(monkeypatch):
+    # Mismo navegador con las dos sesiones: la nota creada desde el panel de
+    # Alejo sigue la regla del cadete, no la del admin.
+    admin, fake = _admin_logueado(monkeypatch)
+    admin.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+
+    r = admin.post("/admin/tareas-entrega", json={
+        "fecha_entrega": fecha_hoy, "titulo": "Nota desde el panel de Alejo", "desde_panel_cadete": True,
+    })
+    assert r.status_code == 200
+    tarea = fake.table("tareas_entrega").select("*").eq("titulo", "Nota desde el panel de Alejo").execute().data[0]
+    assert tarea["asignado_a"] == "alejo"
+    assert "Nota desde el panel de Alejo" in admin.get("/admin/cadete").text
+
+    # Desde el panel de admin, sin tildar "Enviar a Alejo", sigue sin asignar.
+    admin.post("/admin/tareas-entrega", json={"fecha_entrega": fecha_hoy, "titulo": "Tarea del admin"})
+    tarea = fake.table("tareas_entrega").select("*").eq("titulo", "Tarea del admin").execute().data[0]
+    assert tarea["asignado_a"] is None

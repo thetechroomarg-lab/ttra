@@ -3235,6 +3235,7 @@ document.getElementById("form-nota-cadete").addEventListener("submit", async (e)
       nota:document.getElementById("nota-detalle").value,
       direccion:document.getElementById("nota-direccion").value,
       derivar_a_vlad:document.getElementById("nota-derivar-vlad").checked,
+      desde_panel_cadete:true,
     }}),
   }});
   if (!r.ok) {{ alert("No se pudo crear la nota."); return; }}
@@ -4252,6 +4253,9 @@ class TareaEntregaIn(BaseModel):
     direccion: str | None = Field(default=None, max_length=500)
     enviar_a_alejo: bool = False
     derivar_a_vlad: bool = False
+    # La nota se creó desde el panel de Alejo: rige su regla aunque el
+    # navegador también tenga sesión de admin abierta.
+    desde_panel_cadete: bool = False
     # Lo que se le paga a Alejo por esta tarea; sin valor, rige el monto fijo.
     monto_cadete: int | None = Field(default=None, ge=0, le=10_000_000)
 
@@ -4948,7 +4952,7 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
     # asignada o no. El cadete crea notas propias asignadas a él por default,
     # salvo que tilde "Derivar a Vlad" al crearla (se la manda directo, sin
     # el paso extra de derivarla después).
-    if es_admin:
+    if es_admin and not entrada.desde_panel_cadete:
         asignado_a = CADETE_SLUG if entrada.enviar_a_alejo else None
     else:
         asignado_a = None if entrada.derivar_a_vlad else CADETE_SLUG
