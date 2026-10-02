@@ -221,7 +221,9 @@ function mostrarTarjetaFidelidad(datos) {
   contenedorSellos.replaceChildren();
   // Con un premio pendiente el contador queda congelado en 5.
   const conPremio = Boolean(datos.fidelidad_ultimo_codigo);
-  mensajePremio.textContent = "¡Ganaste US$20 de descuento por tus 5 compras! Se aplica solo en tu 6ta compra.";
+  mensajePremio.textContent = datos.descuento_reservado_usd > 0
+    ? "Tu descuento ya está aplicado en tu pedido en curso: se descuenta cuando se concreta la venta."
+    : "¡Ganaste US$20 de descuento por tus 5 compras! Se aplica solo en tu 6ta compra.";
   mensajePremio.classList.toggle("oculto", !conPremio);
   const sellos = conPremio ? 5 : Math.min(Number(datos.sellos_fidelidad) || 0, 5);
   asegurarDibujoSello();
@@ -293,7 +295,12 @@ function mostrarReferidos(datos) {
   }
   estado.append(lista);
 
-  if (r.saldo_usd > 0) {
+  if (datos.descuento_reservado_usd > 0) {
+    const reservado = document.createElement("p");
+    reservado.className = "referidos-ayuda";
+    reservado.textContent = `US$${datos.descuento_reservado_usd} ya aplicados en tu pedido en curso: se descuentan cuando se concreta la venta.`;
+    estado.append(reservado);
+  } else if (r.saldo_usd > 0) {
     const total = document.createElement("p");
     total.className = "referidos-total";
     const conFidelidad = r.codigo_premio === datos.fidelidad_ultimo_codigo;

@@ -891,3 +891,35 @@ def test_admin_ve_piso_y_depto_como_aclaracion_y_puede_editarlos(monkeypatch):
     assert r.status_code == 200
     fila = fake.table("pedidos").select("*").eq("id", "con-depto").execute().data[0]
     assert (fila["piso_entrega"], fila["depto_entrega"]) == (None, "C")
+
+
+def test_descuento_reservado_se_consume_recien_al_enviar_el_recibo(monkeypatch):
+    # Regla de oro: el premio se le resta al cliente cuando sale el recibo.
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("clientes").update({
+        "sellos_fidelidad": 5, "fidelidad_ultimo_codigo": "TTRA-PREMIO01",
+    }).eq("id", cliente["id"]).execute()
+    fake.table("pedidos").insert({
+        "id": "pedido-con-premio", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{"nombre": "iPhone 13", "color": "Negro", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
+        "total_usd": 480, "descuento_usd": 20,
+    }).execute()
+    fake.table("codigos_descuento").insert({
+        "cliente_id": cliente["id"], "code": "TTRA-PREMIO01", "productos": [],
+        "descuento_usd": 20, "tope_total_usd": 20, "activo": True,
+        "reservado_pedido_id": "pedido-con-premio",
+    }).execute()
+    monkeypatch.setattr(appmod, "enviar_email", lambda *args: None)
+
+    r = c.post("/admin/pedidos/pedido-con-premio/recibo")
+
+    assert r.status_code == 200
+    codigo = fake.table("codigos_descuento").select("*").eq("code", "TTRA-PREMIO01").execute().data[0]
+    assert codigo["usado_en"]
+    actualizado = fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]
+    # Se cerró el premio (vuelve a 0) y esta misma compra suma su sello.
+    assert actualizado["fidelidad_ultimo_codigo"] is None
+    assert actualizado["sellos_fidelidad"] == 1

@@ -301,6 +301,12 @@ create table if not exists codigos_descuento (
 -- Tope total del descuento (premio de fidelidad). Null = código de mailing de
 -- siempre: descuento por unidad, solo sobre los productos de la lista.
 alter table codigos_descuento add column if not exists tope_total_usd numeric;
+-- Regla de oro: el descuento se le resta al cliente recién cuando se envía el
+-- recibo. Al confirmar el pedido el código queda reservado para ese pedido
+-- (no se puede usar en otro mientras el pedido siga en pie); el envío del
+-- recibo lo marca usado_en. Si el pedido se borra, la reserva deja de valer.
+alter table codigos_descuento add column if not exists reservado_pedido_id uuid references pedidos(id) on delete set null;
+alter table codigos_descuento add column if not exists reservado_en timestamptz;
 
 -- Códigos promo genéricos (no atados a un cliente): al aplicarse suman un
 -- producto de regalo a $0 al pedido, hasta agotar usos_maximos usos totales.
@@ -381,6 +387,14 @@ begin
       and code = p_codigo
       and activo = true
       and usado_en is null
+      and (
+        reservado_pedido_id is null
+        or not exists (
+          select 1 from pedidos reservado
+          where reservado.id = codigos_descuento.reservado_pedido_id
+            and reservado.borrado_en is null
+        )
+      )
     for update;
     if not found then
       return jsonb_build_object('ok', false, 'error', 'codigo_no_disponible');
@@ -537,8 +551,10 @@ begin
   end if;
 
   if p_codigo is not null then
+    -- Se reserva para este pedido; se consume al enviar el recibo.
     update codigos_descuento
-    set usado_en = now()
+    set reservado_pedido_id = v_pedido.id,
+        reservado_en = now()
     where id = v_codigo.id and usado_en is null;
     if not found then
       raise exception 'El codigo fue consumido concurrentemente';

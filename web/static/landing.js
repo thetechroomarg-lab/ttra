@@ -2088,7 +2088,7 @@ async function aplicarPremioReferidosSiCorresponde() {
     const r = await fetch("/api/me");
     if (!r.ok) return;
     const datos = await r.json();
-    const codigo = datos.referidos?.codigo_premio || datos.fidelidad_ultimo_codigo;
+    const codigo = datos.codigo_descuento_disponible;
     if (codigo && !cargarDescuentoMailing()) await aplicarCodigoMailingPorValor(codigo);
   } catch {}
 }

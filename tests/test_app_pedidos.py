@@ -432,11 +432,13 @@ def test_pedido_aplica_y_consume_codigo_mailing_despues_de_guardar(monkeypatch):
     pedido = fake.table("pedidos").select("*").execute().data[0]
     assert pedido["descuento_usd"] == 5
     codigo = fake.table("codigos_descuento").select("*").execute().data[0]
-    assert codigo["usado_en"]
+    # Regla de oro: al confirmar queda reservado, no consumido.
+    assert codigo["reservado_pedido_id"] == pedido["id"]
+    assert not codigo.get("usado_en")
     assert fake.rpc_calls[-1][0] == "guardar_pedido_con_descuento_mailing"
 
 
-def test_usar_codigo_de_fidelidad_resetea_el_ciclo(monkeypatch):
+def test_usar_codigo_de_fidelidad_lo_reserva_sin_resetear_el_ciclo(monkeypatch):
     c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
     cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
     fake.table("clientes").update({
@@ -459,9 +461,10 @@ def test_usar_codigo_de_fidelidad_resetea_el_ciclo(monkeypatch):
     })
 
     assert r.status_code == 200
+    # Hasta que se envíe el recibo, el premio sigue a nombre del cliente.
     cliente = fake.table("clientes").select("*").eq("id", cliente_id).execute().data[0]
-    assert cliente["sellos_fidelidad"] == 0
-    assert cliente["fidelidad_ultimo_codigo"] is None
+    assert cliente["sellos_fidelidad"] == 5
+    assert cliente["fidelidad_ultimo_codigo"] == "TTRA-PREMIO01"
 
 
 def test_codigo_de_fidelidad_descuenta_veinte_en_total_aunque_haya_varias_unidades(monkeypatch):
@@ -963,7 +966,7 @@ def test_pedido_combina_mailing_y_regalo_en_una_transaccion(monkeypatch):
     assert pedido["total_usd"] == 175
     assert pedido["descuento_usd"] == 5
     assert pedido["detalle"][-1]["codigo_promo"] == "REGALO-TEST"
-    assert fake.table("codigos_descuento").select("*").execute().data[0]["usado_en"]
+    assert fake.table("codigos_descuento").select("*").execute().data[0]["reservado_pedido_id"] == pedido["id"]
     assert fake.table("codigos_promo").select("*").execute().data[0]["usos_actuales"] == 1
 
 

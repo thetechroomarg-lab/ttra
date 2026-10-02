@@ -263,6 +263,7 @@ class FakeSupabaseClient:
                         and fila.get("code") == codigo_texto
                         and fila.get("activo")
                         and not fila.get("usado_en")
+                        and not self._pedido_vigente(fila.get("reservado_pedido_id"))
                     ),
                     None,
                 )
@@ -382,7 +383,9 @@ class FakeSupabaseClient:
             if codigo:
                 if codigo.get("usado_en"):
                     raise RuntimeError("El codigo fue consumido concurrentemente")
-                codigo["usado_en"] = datetime.now(timezone.utc).isoformat()
+                # Se reserva para el pedido; se consume al enviar el recibo.
+                codigo["reservado_pedido_id"] = pedido["id"]
+                codigo["reservado_en"] = datetime.now(timezone.utc).isoformat()
                 if self.atomic_order_failure_stage == "after_mailing":
                     raise RuntimeError("Fallo simulado despues del mailing")
 
@@ -405,6 +408,14 @@ class FakeSupabaseClient:
             for nombre, filas in instantanea.items():
                 self._tablas[nombre]._filas[:] = filas
             raise
+
+    def _pedido_vigente(self, pedido_id):
+        if not pedido_id:
+            return False
+        return any(
+            fila.get("id") == pedido_id and not fila.get("borrado_en")
+            for fila in self.table("pedidos")._filas
+        )
 
     def _eliminar_perfil_por_auth_id(self, auth_id):
         """Simula el trigger que borra el perfil y sus registros en cascada."""

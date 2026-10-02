@@ -28,7 +28,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import buscador, catalogo, cuentas, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete
+from web import buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -674,7 +674,8 @@ def _descuento_codigo_row(client, cliente_id, codigo):
     if not filas:
         return None
     fila = filas[0]
-    if not fila.get("activo") or fila.get("usado_en"):
+    # Usado o reservado para otro pedido en curso: no se puede aplicar.
+    if not cupones.disponible(client, fila):
         return None
     return fila
 
@@ -1133,6 +1134,15 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     # Solo el primer envío cuenta como entrega: reenviar el recibo no suma otro sello.
     primer_envio = not pedido.get("recibo_enviado_en")
     client.table("pedidos").update(actualizacion_pedido).eq("id", pedido_id).execute()
+    if primer_envio:
+        # Regla de oro: el descuento usado en esta venta se le resta al
+        # cliente recién ahora, con el recibo enviado.
+        try:
+            for codigo_usado in cupones.consumir_reservados(client, pedido_id):
+                fidelidad.marcar_codigo_fidelidad_usado(client, codigo_usado["cliente_id"], codigo_usado["code"])
+                referidos.marcar_premio_usado(client, codigo_usado["cliente_id"], codigo_usado["code"])
+        except Exception:
+            logger.exception("No se pudo consumir el descuento reservado del pedido %s", pedido_id)
     if pedido.get("cliente_id") and primer_envio:
         try:
             fidelidad.registrar_entrega_completada(client, pedido["cliente_id"])
@@ -4086,8 +4096,25 @@ def api_me(request: Request):
     except Exception:
         logger.exception("No se pudo leer el resumen de referidos")
         resumen_referidos = None
+    # Código que el carrito puede aplicar solo, y si hay uno ya apartado en un
+    # pedido en curso (se descuenta recién al enviarse el recibo).
+    codigo_disponible = None
+    descuento_reservado_usd = 0
+    try:
+        client_me = get_client()
+        for codigo in dict.fromkeys(filter(None, [
+            (resumen_referidos or {}).get("codigo_premio"), cliente.get("fidelidad_ultimo_codigo"),
+        ])):
+            fila = cupones.fila_por_codigo(client_me, codigo)
+            if cupones.disponible(client_me, fila):
+                codigo_disponible = codigo_disponible or codigo
+            elif fila and not fila.get("usado_en") and cupones.reservado(client_me, fila):
+                descuento_reservado_usd += int(fila.get("descuento_usd") or 0)
+    except Exception:
+        logger.exception("No se pudo resolver el descuento disponible")
     return {**cliente, "tipo_cliente": tipo_cliente, "modo_precio": tipo_cliente,
-            "referidos": resumen_referidos}
+            "referidos": resumen_referidos, "codigo_descuento_disponible": codigo_disponible,
+            "descuento_reservado_usd": descuento_reservado_usd}
 
 
 @app.post("/api/me/referido")
@@ -4606,15 +4633,8 @@ def api_pedidos(entrada: PedidoIn, request: Request):
                 client.table("pedidos").update(extras).eq("id", pedido_id_rpc).execute()
             except Exception:
                 logger.exception("No se pudieron guardar lat/lng/piso del pedido %s", pedido_id_rpc)
-        if fila_descuento:
-            try:
-                fidelidad.marcar_codigo_fidelidad_usado(client, cliente_id, fila_descuento["code"])
-            except Exception:
-                logger.exception("No se pudo resetear el ciclo de fidelidad de %s", cliente_id)
-            try:
-                referidos.marcar_premio_usado(client, cliente_id, fila_descuento["code"])
-            except Exception:
-                logger.exception("No se pudo cerrar el premio de referidos de %s", cliente_id)
+        # El código queda reservado para este pedido (lo hace la RPC); se
+        # consume y se cierran fidelidad/referidos recién al enviar el recibo.
     else:
         pedidos.guardar_pedido(
             client,

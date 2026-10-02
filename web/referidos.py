@@ -2,6 +2,8 @@ import secrets
 import string
 from datetime import datetime, timezone
 
+from web import cupones
+
 PREMIO_REFERIDO_USD = 5
 # Sin 0/O ni 1/I: el código se puede dictar por WhatsApp sin confusiones.
 _ALFABETO = "".join(c for c in string.ascii_uppercase + string.digits if c not in "0O1I")
@@ -59,7 +61,9 @@ def sumar_a_cupon(client, codigo, monto):
         client.table("codigos_descuento").select("*")
         .eq("code", codigo).is_("usado_en", "null").execute().data
     )
-    if not filas:
+    # Reservado para un pedido en curso: ese pedido ya se calculó con el monto
+    # anterior, así que el premio nuevo va a un cupón aparte.
+    if not filas or cupones.reservado(client, filas[0]):
         return None
     nuevo = int(filas[0].get("descuento_usd") or 0) + monto
     # Si justo se consumió en un pedido, el update no matchea y quien llama
@@ -134,6 +138,11 @@ def marcar_premio_usado(client, cliente_id, codigo):
     return True
 
 
+def _cupon_sin_usar(client, codigo):
+    fila = cupones.fila_por_codigo(client, codigo)
+    return fila is not None and not fila.get("usado_en")
+
+
 def resumen(client, cliente_id):
     cliente = _cliente(client, cliente_id) or {}
     saldo = 0
@@ -164,7 +173,7 @@ def resumen(client, cliente_id):
             {
                 "nombre": f"{(r.get('nombre') or '').strip()} {(r.get('apellido') or '').strip()[:1]}.".strip(),
                 "compro_en": r.get("referido_premiado_en"),
-                "descuento_pendiente": bool(codigo_premio) and r.get("referido_premio_codigo") == codigo_premio,
+                "descuento_pendiente": _cupon_sin_usar(client, r.get("referido_premio_codigo")),
             }
             for r in referidos if r.get("referido_premiado_en")
         ),
