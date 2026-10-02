@@ -254,6 +254,45 @@ function mostrarTarjetaFidelidad(datos) {
   contenedorSellos.append(ayuda);
 }
 
+function formatoUsd(monto) {
+  const n = Number(monto) || 0;
+  if (n > 0 && n < 0.01) return "menos de US$0,01";
+  return `US$${n.toLocaleString("es-AR", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
+}
+
+function nodoArbolRed(nodo) {
+  const item = document.createElement("li");
+  const nombre = document.createElement("span");
+  nombre.className = "red-nodo";
+  nombre.textContent = nodo.nombre;
+  item.append(nombre);
+  if (nodo.hijos?.length) {
+    const lista = document.createElement("ul");
+    nodo.hijos.forEach((hijo) => lista.append(nodoArbolRed(hijo)));
+    item.append(lista);
+  }
+  return item;
+}
+
+// Cartel sorpresa: lo que la red generó desde la última vez que el cliente
+// abrió su perfil en este navegador.
+function cartelSorpresaRed(r) {
+  const clave = "ttra_red_visto_hasta";
+  let vistoHasta = "";
+  try { vistoHasta = localStorage.getItem(clave) || ""; } catch {}
+  const nuevas = (r.ultimas_ganancias || []).filter((g) => g.fecha && g.fecha > vistoHasta);
+  const masReciente = (r.ultimas_ganancias || [])[0]?.fecha;
+  if (masReciente) {
+    try { localStorage.setItem(clave, masReciente); } catch {}
+  }
+  if (!vistoHasta || !nuevas.length) return null;
+  const total = nuevas.reduce((suma, g) => suma + Number(g.monto_usd || 0), 0);
+  const cartel = document.createElement("p");
+  cartel.className = "red-sorpresa";
+  cartel.textContent = `🎉 ¡Tu red te hizo ganar ${formatoUsd(total)} desde tu última visita!`;
+  return cartel;
+}
+
 function mostrarReferidos(datos) {
   const seccion = document.getElementById("seccion-referidos");
   const seccionAmigos = document.getElementById("seccion-amigos-referidos");
@@ -264,55 +303,58 @@ function mostrarReferidos(datos) {
   seccion.classList.toggle("oculto", esMayorista);
   estado.replaceChildren();
   const r = datos.referidos;
-  const amigos = r?.amigos_con_compra || [];
-  // La sección aparece recién cuando hay al menos un amigo que compró.
-  seccionAmigos.classList.toggle("oculto", esMayorista || !amigos.length);
-  if (!amigos.length) return;
+  const arbol = r?.arbol || [];
+  // La sección aparece recién cuando alguien de la red compró.
+  seccionAmigos.classList.toggle("oculto", esMayorista || !arbol.length);
+  if (!arbol.length) return;
+
+  const sorpresa = cartelSorpresaRed(r);
+  if (sorpresa) estado.append(sorpresa);
+
+  const resumen = document.createElement("div");
+  resumen.className = "red-resumen";
+  const filas = [
+    ["Personas en tu red", String(r.personas_en_red)],
+    ["Ganaste en total", formatoUsd(r.ganado_total_usd)],
+    ["Bolsa de tu red", `${formatoUsd(r.red_saldo_usd)} de ${formatoUsd(r.red_tope_usd)} máx.`],
+  ];
+  for (const [etiqueta, valor] of filas) {
+    const fila = document.createElement("div");
+    const e = document.createElement("span");
+    e.textContent = etiqueta;
+    const v = document.createElement("strong");
+    v.textContent = valor;
+    fila.append(e, v);
+    resumen.append(fila);
+  }
+  estado.append(resumen);
 
   const lista = document.createElement("ul");
-  lista.className = "referidos-amigos";
-  for (const amigo of amigos) {
-    const item = document.createElement("li");
-    const datosAmigo = document.createElement("div");
-    const nombre = document.createElement("strong");
-    nombre.textContent = amigo.nombre;
-    const fecha = document.createElement("span");
-    fecha.className = "referidos-amigo-fecha";
-    fecha.textContent = amigo.compro_en
-      ? `Compró el ${new Date(amigo.compro_en).toLocaleDateString("es-AR")}`
-      : "Compró";
-    datosAmigo.append(nombre, fecha);
-    const premio = document.createElement("div");
-    premio.className = "referidos-amigo-premio";
-    const monto = document.createElement("strong");
-    monto.textContent = "US$5";
-    const estadoPremio = document.createElement("span");
-    estadoPremio.textContent = amigo.descuento_pendiente ? "Para tu próxima compra" : "Ya usado";
-    premio.classList.toggle("usado", !amigo.descuento_pendiente);
-    premio.append(monto, estadoPremio);
-    item.append(datosAmigo, premio);
-    lista.append(item);
-  }
+  lista.className = "red-arbol";
+  const raiz = document.createElement("li");
+  const vos = document.createElement("span");
+  vos.className = "red-nodo red-nodo-vos";
+  vos.textContent = "Vos";
+  const hijos = document.createElement("ul");
+  arbol.forEach((nodo) => hijos.append(nodoArbolRed(nodo)));
+  raiz.append(vos, hijos);
+  lista.append(raiz);
   estado.append(lista);
 
   if (datos.descuento_reservado_usd > 0) {
     const reservado = document.createElement("p");
     reservado.className = "referidos-ayuda";
-    reservado.textContent = `US$${datos.descuento_reservado_usd} ya aplicados en tu pedido en curso: se descuentan cuando se concreta la venta.`;
+    reservado.textContent = `${formatoUsd(datos.descuento_reservado_usd)} ya aplicados en tu pedido en curso: se descuentan cuando se concreta la venta.`;
     estado.append(reservado);
   } else if (r.saldo_usd > 0) {
     const total = document.createElement("p");
     total.className = "referidos-total";
     const conFidelidad = r.codigo_premio === datos.fidelidad_ultimo_codigo;
     total.textContent = conFidelidad
-      ? `Total en tu próxima compra: US$${r.saldo_usd} (fidelidad + amigos). Se aplica solo.`
-      : `Total en tu próxima compra: US$${r.saldo_usd}. Se aplica solo.`;
+      ? `Total en tu próxima compra: ${formatoUsd(r.saldo_usd)} (fidelidad + red). Se aplica solo.`
+      : `Total en tu próxima compra: ${formatoUsd(r.saldo_usd)}. Se aplica solo.`;
     estado.append(total);
   }
-  const cuenta = document.createElement("p");
-  cuenta.className = "referidos-ayuda";
-  cuenta.textContent = `Amigos registrados con tu link: ${r.referidos_registrados} (${r.referidos_con_compra} ya compraron).`;
-  estado.append(cuenta);
 }
 
 async function compartirLinkReferido() {

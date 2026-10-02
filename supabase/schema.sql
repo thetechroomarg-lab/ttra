@@ -47,6 +47,10 @@ alter table clientes add column if not exists referido_por uuid references clien
 alter table clientes add column if not exists referido_premiado_en timestamptz;
 alter table clientes add column if not exists referidos_codigo_premio text;
 alter table clientes add column if not exists referido_premio_codigo text;
+-- Red de referidos (multinivel decreciente): saldo de la bolsa de red (tope
+-- US$15 sin usar) y fracciones de centavo todavía no pasadas al cupón.
+alter table clientes add column if not exists red_saldo_usd numeric not null default 0;
+alter table clientes add column if not exists red_fraccion_usd numeric not null default 0;
 
 -- Un cliente que se dio de baja del mailing de novedades (link en el
 -- footer del mail) queda excluido de la audiencia de próximas campañas.
@@ -307,6 +311,26 @@ alter table codigos_descuento add column if not exists tope_total_usd numeric;
 -- recibo lo marca usado_en. Si el pedido se borra, la reserva deja de valer.
 alter table codigos_descuento add column if not exists reservado_pedido_id uuid references pedidos(id) on delete set null;
 alter table codigos_descuento add column if not exists reservado_en timestamptz;
+-- Parte del cupón que vino de la bolsa de red: al consumirse se descuenta
+-- del saldo de red del cliente.
+alter table codigos_descuento add column if not exists red_usd numeric not null default 0;
+
+-- Cada ganancia que una compra le generó a alguien de la cadena de padrinos.
+-- Alimenta el árbol "Mi red" del perfil y evita pagar dos veces un pedido.
+create table if not exists referidos_ganancias (
+  id uuid primary key default gen_random_uuid(),
+  beneficiario_id uuid not null references clientes(id) on delete cascade,
+  origen_cliente_id uuid references clientes(id) on delete set null,
+  pedido_id uuid references pedidos(id) on delete set null,
+  nivel integer not null,
+  compra_numero integer not null,
+  monto_usd numeric not null,
+  acreditado_usd numeric not null,
+  bolsa text not null,
+  creado_en timestamptz not null default now(),
+  unique (beneficiario_id, pedido_id)
+);
+alter table referidos_ganancias enable row level security;
 
 -- Códigos promo genéricos (no atados a un cliente): al aplicarse suman un
 -- producto de regalo a $0 al pedido, hasta agotar usos_maximos usos totales.

@@ -1150,7 +1150,7 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             # El recibo ya salió: perder un sello es preferible a mostrar un error.
             logger.exception("No se pudo registrar el sello de fidelidad del pedido %s", pedido_id)
         try:
-            referidos.acreditar_por_compra(client, pedido["cliente_id"])
+            referidos.acreditar_por_compra(client, pedido["cliente_id"], pedido_id)
         except Exception:
             logger.exception("No se pudo acreditar el premio de referido del pedido %s", pedido_id)
     if primer_envio and pedido.get("asignado_a") == CADETE_SLUG:
@@ -4109,12 +4109,12 @@ def api_me(request: Request):
             if cupones.disponible(client_me, fila):
                 codigo_disponible = codigo_disponible or codigo
             elif fila and not fila.get("usado_en") and cupones.reservado(client_me, fila):
-                descuento_reservado_usd += int(fila.get("descuento_usd") or 0)
+                descuento_reservado_usd += float(fila.get("tope_total_usd") or fila.get("descuento_usd") or 0)
     except Exception:
         logger.exception("No se pudo resolver el descuento disponible")
     return {**cliente, "tipo_cliente": tipo_cliente, "modo_precio": tipo_cliente,
             "referidos": resumen_referidos, "codigo_descuento_disponible": codigo_disponible,
-            "descuento_reservado_usd": descuento_reservado_usd}
+            "descuento_reservado_usd": round(descuento_reservado_usd, 2)}
 
 
 @app.post("/api/me/referido")

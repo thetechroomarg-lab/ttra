@@ -1206,3 +1206,24 @@ def test_api_pedido_eliminar_pedido_en_curso(monkeypatch):
     pedido = fake.table("pedidos").select("*").execute().data[0]
     assert pedido.get("borrado_en")
     assert c.get("/api/pedidos").json()["en_curso"] == []
+
+
+def test_cupon_de_red_con_centavos_descuenta_exacto(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
+    fake.table("codigos_descuento").insert({
+        "cliente_id": cliente_id, "code": "TTRA-REF-CENTS",
+        "productos": [], "descuento_usd": 9, "tope_total_usd": 8.75, "activo": True,
+    }).execute()
+
+    r = c.post("/api/pedidos", json={
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 171.25,
+        "codigo_descuento": "TTRA-REF-CENTS",
+    })
+
+    assert r.status_code == 200, r.text
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert float(pedido["descuento_usd"]) == 8.75
