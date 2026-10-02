@@ -441,7 +441,7 @@ function itemDomicilioHtml(domicilio) {
   if (!domicilio.predeterminado) {
     const btnPredeterminado = document.createElement("button");
     btnPredeterminado.type = "button";
-    btnPredeterminado.textContent = "Elegir como principal";
+    btnPredeterminado.textContent = "Elegir para entrega";
     btnPredeterminado.addEventListener("click", async () => {
       await fetch(`/api/domicilios/${domicilio.id}/predeterminado`, { method: "POST" });
       cargarDomicilios();
