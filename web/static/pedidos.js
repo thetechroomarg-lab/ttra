@@ -77,13 +77,7 @@ function cerrarPanelPedidos() {
 if (btnCerrarPanelPedidos) {
   btnCerrarPanelPedidos.addEventListener("click", cerrarPanelPedidos);
 }
-if (overlayPedidosEmbebido) {
-  // El overlay es compartido con el perfil: solo cierra si Mis pedidos está
-  // abierto, para no apagar el blur con el perfil todavía visible.
-  overlayPedidosEmbebido.addEventListener("click", () => {
-    if (panelPedidosEmbebido && !panelPedidosEmbebido.classList.contains("oculto")) cerrarPanelPedidos();
-  });
-}
+// El fondo blureado no responde a toques: Mis pedidos se cierra con su ✕.
 
 function formatearMonedaUsd(valor) {
   return `U$D ${Number(valor || 0).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;

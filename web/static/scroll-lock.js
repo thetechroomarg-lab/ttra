@@ -25,7 +25,24 @@
     );
   }
 
+  // Regla: con un panel flotante y fondo blureado abierto se ocultan las
+  // barras de navegación (ver site-header.css). El menú de la cuenta también
+  // usa #overlay-perfil, pero cuelga de la barra: ese caso no cuenta.
+  function soloMenuDeCuenta() {
+    const profile = document.getElementById("overlay-perfil");
+    const abierto = (id) => {
+      const el = document.getElementById(id);
+      return el && !el.classList.contains("oculto");
+    };
+    return Boolean(profile && !profile.classList.contains("oculto") &&
+      !abierto("panel-perfil") && !abierto("panel-pedidos") &&
+      !(document.getElementById("overlay-carrito") && abierto("overlay-carrito")) &&
+      !document.querySelector("dialog[open], dialog[data-opening]") &&
+      !document.querySelector(".rc-logout-overlay.visible, .rc-terminos-overlay.visible"));
+  }
+
   function syncScrollLock() {
+    root.classList.toggle("ttra-panel-flotante", hasOpenOverlay() && !soloMenuDeCuenta());
     if (hasOpenOverlay()) {
       if (savedScrollY !== null) return;
       savedScrollY = window.scrollY;

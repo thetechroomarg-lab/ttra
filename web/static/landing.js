@@ -2315,7 +2315,7 @@ async function confirmarPedidoCarrito(carrito) {
 
 document.getElementById("btn-carrito").addEventListener("click", abrirCarrito);
 document.getElementById("btn-cerrar-carrito").addEventListener("click", cerrarCarrito);
-document.getElementById("overlay-carrito").addEventListener("click", cerrarCarrito);
+// El fondo blureado no responde a toques: el carrito se cierra con su ✕.
 window.addEventListener("resize", sincronizarLimiteCarrito);
 document.getElementById("btn-vaciar-carrito").addEventListener("click", () => {
   vaciarCarrito();
