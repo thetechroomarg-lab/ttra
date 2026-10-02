@@ -149,3 +149,5 @@ input:disabled { opacity: .6; cursor: not-allowed; }
 .referidos-link { margin: 8px 0 0; font-size: 12px; overflow-wrap: anywhere; }
 .referidos-lista { margin: 4px 0 8px; padding-left: 18px; font-size: 13px; }
 .referidos-total { font-weight: 600; }
+/* "Agregar domicilio" con la misma forma y alto que "Cancelar", que va justo debajo. */
+html #panel-perfil #btn-guardar-domicilio { min-height: 44px; border-radius: 10px; }
