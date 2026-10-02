@@ -404,11 +404,13 @@
       <button id="btn-cerrar-panel-perfil" aria-label="Cerrar perfil" type="button">✕</button>
     </div>
     <form id="form-perfil" class="form">
-      <input id="perfil-nombre" type="text" placeholder="Nombre" autocomplete="given-name" required aria-label="Nombre">
-      <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required aria-label="Apellido">
+      <input id="perfil-nombre" type="text" placeholder="Nombre" autocomplete="given-name" required aria-label="Nombre" disabled>
+      <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required aria-label="Apellido" disabled>
       <input id="perfil-email" type="email" placeholder="Email" disabled aria-label="Email">
-      <input id="perfil-celular" type="tel" placeholder="Celular" autocomplete="tel" inputmode="numeric" pattern="[0-9]*" required aria-label="Celular">
-      <button type="submit">Guardar cambios</button>
+      <input id="perfil-celular" type="tel" placeholder="Teléfono" autocomplete="tel" inputmode="numeric" pattern="[0-9]*" required aria-label="Teléfono" disabled>
+      <input id="perfil-domicilio" type="text" placeholder="Domicilio principal" disabled aria-label="Domicilio principal">
+      <button type="button" id="btn-editar-perfil">Editar</button>
+      <button type="submit" id="btn-guardar-perfil" disabled>Guardar cambios</button>
       <p class="error" id="perfil-error"></p>
       <p class="ok" id="perfil-ok"></p>
     </form>
@@ -422,8 +424,9 @@
 
     <h2>Mis domicilios</h2>
     <div id="lista-domicilios" class="lista-domicilios"></div>
-    <form id="form-domicilio" class="form">
-      <input id="domicilio-alias" type="text" placeholder="Nombre (ej. Casa, Oficina)" maxlength="80" required aria-label="Nombre del domicilio">
+    <button type="button" id="btn-abrir-form-domicilio">Agregar domicilio</button>
+    <form id="form-domicilio" class="form oculto">
+      <input id="domicilio-alias" type="text" placeholder="Categoría (ej. Casa, Trabajo)" maxlength="80" required aria-label="Categoría del domicilio">
       <div class="perfil-direccion-wrap">
         <input id="domicilio-direccion" type="text" placeholder="Dirección" autocomplete="street-address" maxlength="500" required aria-label="Dirección">
         <ul id="perfil-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
@@ -433,8 +436,8 @@
         <input id="domicilio-piso" type="text" placeholder="Piso (opcional)" maxlength="20" aria-label="Piso (opcional)">
         <input id="domicilio-depto" type="text" placeholder="Depto (opcional)" maxlength="20" aria-label="Departamento (opcional)">
       </div>
-      <button type="submit" id="btn-guardar-domicilio">Agregar domicilio</button>
-      <button type="button" id="btn-cancelar-edicion-domicilio" class="oculto">Cancelar</button>
+      <button type="submit" id="btn-guardar-domicilio">Guardar domicilio</button>
+      <button type="button" id="btn-cancelar-edicion-domicilio">Cancelar</button>
       <p class="error" id="domicilio-error"></p>
       <p class="ok" id="domicilio-ok"></p>
     </form>

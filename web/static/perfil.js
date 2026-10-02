@@ -365,6 +365,7 @@ async function cargarPerfil() {
     document.getElementById("perfil-apellido").value = datos.apellido || "";
     document.getElementById("perfil-email").value = datos.email || "";
     document.getElementById("perfil-celular").value = datos.celular || "";
+    modoEdicionPerfil(false);
     mostrarSeccionCondicionesMayorista(datos);
     mostrarTarjetaFidelidad(datos);
     mostrarReferidos(datos);
@@ -373,7 +374,15 @@ async function cargarPerfil() {
   }
 }
 
+const btnAbrirFormDomicilio = document.getElementById("btn-abrir-form-domicilio");
+function abrirFormDomicilio() {
+  document.getElementById("form-domicilio").classList.remove("oculto");
+  btnAbrirFormDomicilio.classList.add("oculto");
+}
+
 function cancelarEdicionDomicilio() {
+  document.getElementById("form-domicilio").classList.add("oculto");
+  btnAbrirFormDomicilio.classList.remove("oculto");
   domicilioEnEdicionId = null;
   domicilioAliasInput.value = "";
   domicilioDireccionInput.value = "";
@@ -381,8 +390,7 @@ function cancelarEdicionDomicilio() {
   domicilioDeptoInput.value = "";
   coordsDomicilioActual = null;
   mapaDomicilio.ocultar();
-  btnGuardarDomicilio.textContent = "Agregar domicilio";
-  btnCancelarEdicionDomicilio.classList.add("oculto");
+  btnGuardarDomicilio.textContent = "Guardar domicilio";
 }
 
 function itemDomicilioHtml(domicilio) {
@@ -390,7 +398,7 @@ function itemDomicilioHtml(domicilio) {
   item.className = "item-domicilio";
   const info = document.createElement("p");
   const pisoDepto = textoPisoDepto(domicilio);
-  info.textContent = `${domicilio.alias}${domicilio.predeterminado ? " · Predeterminado" : ""} — ${domicilio.direccion}${pisoDepto ? ` (${pisoDepto})` : ""}`;
+  info.textContent = `${domicilio.alias}${domicilio.predeterminado ? " · Principal" : ""} — ${domicilio.direccion}${pisoDepto ? ` (${pisoDepto})` : ""}`;
   item.append(info);
 
   const acciones = document.createElement("div");
@@ -399,7 +407,7 @@ function itemDomicilioHtml(domicilio) {
   if (!domicilio.predeterminado) {
     const btnPredeterminado = document.createElement("button");
     btnPredeterminado.type = "button";
-    btnPredeterminado.textContent = "Marcar predeterminado";
+    btnPredeterminado.textContent = "Elegir como principal";
     btnPredeterminado.addEventListener("click", async () => {
       await fetch(`/api/domicilios/${domicilio.id}/predeterminado`, { method: "POST" });
       cargarDomicilios();
@@ -423,7 +431,7 @@ function itemDomicilioHtml(domicilio) {
       mapaDomicilio.ocultar();
     }
     btnGuardarDomicilio.textContent = "Guardar cambios";
-    btnCancelarEdicionDomicilio.classList.remove("oculto");
+    abrirFormDomicilio();
     domicilioAliasInput.focus();
   });
   acciones.append(btnEditar);
@@ -449,6 +457,14 @@ async function cargarDomicilios() {
     const domicilios = await r.json();
     if (!r.ok) return;
     listaDomicilios.replaceChildren();
+    const principal = domicilios.find((d) => d.predeterminado) || domicilios[0];
+    const campoDomicilio = document.getElementById("perfil-domicilio");
+    if (campoDomicilio) {
+      const pisoDepto = principal ? textoPisoDepto(principal) : "";
+      campoDomicilio.value = principal ? `${principal.direccion}${pisoDepto ? ` (${pisoDepto})` : ""}` : "";
+    }
+    btnAbrirFormDomicilio.disabled = domicilios.length >= 5;
+    btnAbrirFormDomicilio.title = domicilios.length >= 5 ? "Llegaste al máximo de 5 domicilios" : "";
     if (!domicilios.length) {
       const vacio = document.createElement("p");
       vacio.className = "carrito-nota";
@@ -481,6 +497,20 @@ if (panelPerfilEmbebido) {
   };
 }
 
+// Los datos del perfil arrancan bloqueados: "Editar" habilita nombre,
+// apellido y teléfono y recién ahí se puede tocar "Guardar cambios".
+// Mail y domicilio quedan siempre en gris (el domicilio se maneja abajo).
+const CAMPOS_PERFIL_EDITABLES = ["perfil-nombre", "perfil-apellido", "perfil-celular"];
+const btnEditarPerfil = document.getElementById("btn-editar-perfil");
+const btnGuardarPerfil = document.getElementById("btn-guardar-perfil");
+function modoEdicionPerfil(editando) {
+  CAMPOS_PERFIL_EDITABLES.forEach((id) => { document.getElementById(id).disabled = !editando; });
+  btnGuardarPerfil.disabled = !editando;
+  btnEditarPerfil.disabled = editando;
+  if (editando) document.getElementById("perfil-nombre").focus();
+}
+btnEditarPerfil.addEventListener("click", () => modoEdicionPerfil(true));
+
 const formPerfil = document.getElementById("form-perfil");
 formPerfil.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -504,6 +534,7 @@ formPerfil.addEventListener("submit", async (e) => {
       return;
     }
     okEl.textContent = "Datos guardados";
+    modoEdicionPerfil(false);
   } catch {
     errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }
@@ -544,6 +575,12 @@ formDomicilio.addEventListener("submit", async (e) => {
   } catch {
     errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }
+});
+
+btnAbrirFormDomicilio.addEventListener("click", () => {
+  cancelarEdicionDomicilio();
+  abrirFormDomicilio();
+  domicilioAliasInput.focus();
 });
 
 btnCancelarEdicionDomicilio.addEventListener("click", () => {

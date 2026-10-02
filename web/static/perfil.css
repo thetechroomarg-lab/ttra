@@ -151,3 +151,12 @@ input:disabled { opacity: .6; cursor: not-allowed; }
 .referidos-total { font-weight: 600; }
 /* "Agregar domicilio" con la misma forma y alto que "Cancelar", que va justo debajo. */
 html #panel-perfil #btn-guardar-domicilio { min-height: 44px; border-radius: 10px; }
+
+/* Perfil en modo lectura: "Guardar cambios" gris hasta tocar "Editar". */
+#panel-perfil #form-perfil button:disabled,
+#panel-perfil #btn-abrir-form-domicilio:disabled { filter: grayscale(1); opacity: .45; cursor: not-allowed; }
+#panel-perfil #form-domicilio.oculto,
+#panel-perfil #btn-abrir-form-domicilio.oculto { display: none; }
+html #panel-perfil #btn-editar-perfil,
+html #panel-perfil #btn-abrir-form-domicilio { width: 100%; min-height: 44px; border-radius: 10px; margin-top: 4px;
+  padding: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
