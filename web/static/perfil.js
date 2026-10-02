@@ -19,6 +19,7 @@ const btnCancelarEdicionDomicilio = document.getElementById("btn-cancelar-edicio
 let temporizadorPerfilDireccion;
 let apiPlacesPerfil;
 let domicilioEnEdicionId = null;
+let domicilioPrincipalActual = null;
 // Coordenadas del domicilio en el formulario: salen del autocompletado y el
 // pin del mapa las ajusta. Se mandan al guardar para que el cadete llegue a la puerta.
 let coordsDomicilioActual = null;
@@ -460,11 +461,9 @@ async function cargarDomicilios() {
     if (!r.ok) return;
     listaDomicilios.replaceChildren();
     const principal = domicilios.find((d) => d.predeterminado) || domicilios[0];
+    domicilioPrincipalActual = principal || null;
     const campoDomicilio = document.getElementById("perfil-domicilio");
-    if (campoDomicilio) {
-      const pisoDepto = principal ? textoPisoDepto(principal) : "";
-      campoDomicilio.value = principal ? `${principal.direccion}${pisoDepto ? ` (${pisoDepto})` : ""}` : "";
-    }
+    if (campoDomicilio && campoDomicilio.disabled) campoDomicilio.value = textoDomicilioPrincipal(true);
     btnAbrirFormDomicilio.disabled = domicilios.length >= 5;
     btnAbrirFormDomicilio.title = domicilios.length >= 5 ? "Llegaste al máximo de 5 domicilios" : "";
     if (!domicilios.length) {
@@ -500,15 +499,25 @@ if (panelPerfilEmbebido) {
 }
 
 // Los datos del perfil arrancan bloqueados: "Editar" habilita nombre,
-// apellido y teléfono y recién ahí se puede tocar "Guardar cambios".
-// Mail y domicilio quedan siempre en gris (el domicilio se maneja abajo).
-const CAMPOS_PERFIL_EDITABLES = ["perfil-nombre", "perfil-apellido", "perfil-celular"];
+// apellido, teléfono y la dirección del domicilio principal, y recién ahí se
+// puede tocar "Guardar cambios". El mail queda siempre en gris. El campo de
+// domicilio muestra el que esté marcado como principal en la lista.
+const CAMPOS_PERFIL_EDITABLES = ["perfil-nombre", "perfil-apellido", "perfil-celular", "perfil-domicilio"];
+function textoDomicilioPrincipal(conPisoDepto) {
+  const d = domicilioPrincipalActual;
+  if (!d) return "";
+  const pisoDepto = conPisoDepto ? textoPisoDepto(d) : "";
+  return `${d.direccion}${pisoDepto ? ` (${pisoDepto})` : ""}`;
+}
 const btnEditarPerfil = document.getElementById("btn-editar-perfil");
 const btnGuardarPerfil = document.getElementById("btn-guardar-perfil");
 function modoEdicionPerfil(editando) {
   CAMPOS_PERFIL_EDITABLES.forEach((id) => { document.getElementById(id).disabled = !editando; });
   btnGuardarPerfil.disabled = !editando;
   btnEditarPerfil.disabled = editando;
+  // Editando se ve solo la dirección (piso y depto se cambian desde la lista).
+  const campoDomicilio = document.getElementById("perfil-domicilio");
+  campoDomicilio.value = textoDomicilioPrincipal(!editando);
   if (editando) document.getElementById("perfil-nombre").focus();
 }
 btnEditarPerfil.addEventListener("click", () => modoEdicionPerfil(true));
@@ -535,8 +544,33 @@ formPerfil.addEventListener("submit", async (e) => {
       errorEl.textContent = datos.error || datos.detail || "No pude guardar los cambios";
       return;
     }
+    const direccionNueva = document.getElementById("perfil-domicilio").value.trim();
+    const principal = domicilioPrincipalActual;
+    if (direccionNueva && direccionNueva !== (principal?.direccion || "")) {
+      // Dirección cambiada a mano: el pin del mapa anterior ya no vale.
+      const rDom = principal
+        ? await fetch(`/api/domicilios/${principal.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              alias: principal.alias, direccion: direccionNueva,
+              piso: principal.piso || null, depto: principal.depto || null, lat: null, lng: null,
+            }),
+          })
+        : await fetch("/api/domicilios", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ alias: "Casa", direccion: direccionNueva }),
+          });
+      const datosDom = await rDom.json().catch(() => ({}));
+      if (!rDom.ok) {
+        errorEl.textContent = datosDom.error || datosDom.detail || "Guardé tus datos, pero no pude actualizar el domicilio";
+        return;
+      }
+    }
     okEl.textContent = "Datos guardados";
     modoEdicionPerfil(false);
+    await cargarDomicilios();
   } catch {
     errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }
