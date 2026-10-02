@@ -2066,9 +2066,20 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                 f'{detalle_obs}{acciones}</div>'
             )
 
-        pedidos_historial_html = "".join(
-            [_pedido_historial_html(pedido) for pedido in pedidos_historial]
-            + [_tarea_historial_html(tarea) for tarea in tareas_historial]
+        items_historial = (
+            [(pedido, _pedido_historial_html(pedido)) for pedido in pedidos_historial]
+            + [(tarea, _tarea_historial_html(tarea)) for tarea in tareas_historial]
+        )
+
+        def _grupo_historial(titulo, responsable, items):
+            if not items:
+                return ""
+            return (f'<div class="grupo-entregas" data-responsable="{responsable}"><h3>{titulo} ({len(items)})</h3>'
+                    f'<div class="grupo-entregas-lista">{"".join(h for _, h in items)}</div></div>')
+
+        pedidos_historial_html = (
+            _grupo_historial("Mis entregas", "admin", [i for i in items_historial if i[0].get("asignado_a") != CADETE_SLUG])
+            + _grupo_historial("Entregas de Alejo", "alejo", [i for i in items_historial if i[0].get("asignado_a") == CADETE_SLUG])
         )
     else:
         pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'

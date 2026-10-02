@@ -579,3 +579,30 @@ def test_cadete_ve_piso_y_depto_del_pedido(monkeypatch):
     panel = _cadete_logueado().get("/admin/cadete").text
     assert '<span class="piso-depto">Piso 7 · Depto A</span>' in panel
     assert 'id="piso-cadete-input"' in panel
+
+
+def test_admin_ve_separadas_sus_entregas_y_las_de_alejo_en_cualquier_fecha(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-mia", "fecha_entrega": "2026-08-24", "titulo": "Retirar en correo",
+    }).execute()
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-alejo", "fecha_entrega": "2026-08-24", "titulo": "Llevar cargador",
+        "asignado_a": appmod.CADETE_SLUG,
+    }).execute()
+
+    texto = admin.get("/admin/clientes?fecha_pedidos=2026-08-24").text
+
+    mias = texto.index('data-responsable="admin"')
+    alejo = texto.index('data-responsable="alejo"')
+    assert mias < texto.index("Retirar en correo") < alejo < texto.index("Llevar cargador")
+
+
+def test_cadete_no_ve_las_tareas_del_admin(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-mia", "fecha_entrega": fecha_hoy, "titulo": "Retirar en correo",
+    }).execute()
+
+    assert "Retirar en correo" not in _cadete_logueado().get("/admin/cadete").text
