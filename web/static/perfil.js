@@ -504,7 +504,10 @@ async function cargarDomicilios() {
       listaDomicilios.append(vacio);
       return;
     }
-    domicilios.forEach((domicilio) => listaDomicilios.append(itemDomicilioHtml(domicilio)));
+    // El principal va siempre primero; el resto mantiene su orden.
+    [...domicilios]
+      .sort((a, b) => Number(Boolean(b.predeterminado)) - Number(Boolean(a.predeterminado)))
+      .forEach((domicilio) => listaDomicilios.append(itemDomicilioHtml(domicilio)));
     btnGuardarDomicilio.disabled = domicilios.length >= 5 && !domicilioEnEdicionId;
   } catch {
     // Si falla, la lista simplemente queda vacía — el resto del perfil sigue usable.
