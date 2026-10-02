@@ -17,3 +17,4 @@ html.ttra-welcome-pending #rc-body-landing > header { display: none !important; 
 @media(prefers-reduced-motion: reduce) { .ttra-intro *, .ttra-intro *::before { transition: none !important; } }
 
 .ttra-intro:focus { outline: none; }
+#ttra-hero-title:focus { outline: none; }

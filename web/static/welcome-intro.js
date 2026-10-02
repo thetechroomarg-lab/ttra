@@ -32,14 +32,14 @@
     if (!document.hidden && last) elapsed += (now - last) / 1000;
     last = now;
     try { scene.render(elapsed); } catch { ready(true); return; }
-    const reveal = smooth((elapsed - 7.8) / 1.2);
-    const fade = smooth((elapsed - 10.2) / 1.4);
+    const reveal = smooth((elapsed - 5.37) / 1.2);
+    const fade = smooth((elapsed - 7.77) / 1.4);
     intro.style.setProperty('--scene-opacity', String(1 - fade));
     intro.style.setProperty('--title-opacity', String(reveal * (1 - fade)));
     intro.style.setProperty('--title-scale', String(.72 + .28 * reveal));
     intro.style.setProperty('--title-blur', `${12 * (1 - reveal)}px`);
-    intro.dataset.phase = elapsed < 4.95 ? 'spin' : elapsed < 5.5 ? 'explode' : elapsed < 7.8 ? 'freeze' : elapsed < 10.2 ? 'welcome' : 'fade';
-    if (elapsed >= 12.2) ready();
+    intro.dataset.phase = elapsed < 2.52 ? 'spin' : elapsed < 3.07 ? 'explode' : elapsed < 5.37 ? 'freeze' : elapsed < 7.77 ? 'welcome' : 'fade';
+    if (elapsed >= 9.77) ready();
     else frame = requestAnimationFrame(tick);
   }
   function smooth(t) { t = Math.max(0, Math.min(1, t)); return t*t*(3-2*t); }
