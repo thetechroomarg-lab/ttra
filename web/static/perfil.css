@@ -137,9 +137,11 @@ input:disabled { opacity: .6; cursor: not-allowed; }
 /* Una vuelta y una pausa larga: casi siempre se lee de frente. */
 @keyframes fidelidad-girar { 0% { transform: rotateY(0); } 30%, 100% { transform: rotateY(360deg); } }
 /* Sin mensaje visible, los renglones de error/ok no ocupan lugar entre
-   "Guardar cambios" y los sellos de lealtad; con texto reaparecen. */
+   los botones de los formularios y la sección siguiente; con texto reaparecen. */
 #form-perfil #perfil-error:empty,
-#form-perfil #perfil-ok:empty { display: none; }
+#form-perfil #perfil-ok:empty,
+#form-domicilio #domicilio-error:empty,
+#form-domicilio #domicilio-ok:empty { display: none; }
 #seccion-fidelidad > h2 { margin-top: 16px; }
 
 #seccion-referidos.oculto, #referidos-estado.oculto, #referidos-link.oculto, #fidelidad-premio.oculto { display: none; }
