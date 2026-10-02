@@ -120,3 +120,18 @@ def test_premio_de_fidelidad_se_suma_al_de_referidos_pendiente_y_ambos_se_cierra
     assert referidos.marcar_premio_usado(fake, "ana", codigo)
     ana = _leer(fake, "ana")
     assert ana["sellos_fidelidad"] == 0 and ana["referidos_codigo_premio"] is None
+
+
+def test_historial_lista_todos_los_amigos_que_compraron():
+    fake = FakeSupabaseClient()
+    _alta(fake, "ana")
+    _alta(fake, "beto", referido_por="ana")
+    _alta(fake, "caro", referido_por="ana")
+    _alta(fake, "dani", referido_por="ana")  # se registró pero no compró
+    primero = referidos.acreditar_por_compra(fake, "beto")["codigo"]
+    fake.table("codigos_descuento").update({"usado_en": "2026-10-02T12:00:00+00:00"}).eq("code", primero).execute()
+    referidos.marcar_premio_usado(fake, "ana", primero)
+    referidos.acreditar_por_compra(fake, "caro")
+
+    amigos = {a["nombre"]: a["descuento_pendiente"] for a in referidos.resumen(fake, "ana")["amigos_con_compra"]}
+    assert amigos == {"beto X.": False, "caro X.": True}

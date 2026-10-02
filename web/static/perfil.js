@@ -242,16 +242,18 @@ function mostrarReferidos(datos) {
     estado.classList.add("oculto");
     return;
   }
-  const pendientes = r.pendientes || [];
-  if (pendientes.length) {
+  const amigos = r.amigos_con_compra || [];
+  if (amigos.length) {
     const titulo = document.createElement("p");
-    titulo.textContent = "Descuentos por amigos que ya compraron:";
+    titulo.className = "referidos-ayuda";
+    titulo.textContent = "Amigos que compraron con tu link:";
     const lista = document.createElement("ul");
     lista.className = "referidos-lista";
-    for (const p of pendientes) {
+    for (const amigo of amigos) {
       const item = document.createElement("li");
-      const fecha = p.acreditado_en ? new Date(p.acreditado_en).toLocaleDateString("es-AR") : "";
-      item.textContent = `US$${p.monto_usd} — ${p.nombre}${fecha ? ` (compró el ${fecha})` : ""}`;
+      const fecha = amigo.compro_en ? new Date(amigo.compro_en).toLocaleDateString("es-AR") : "";
+      const estado = amigo.descuento_pendiente ? "US$5 para tu próxima compra" : "US$5 ya usados";
+      item.textContent = `${amigo.nombre}${fecha ? ` — compró el ${fecha}` : ""} · ${estado}`;
       lista.append(item);
     }
     estado.append(titulo, lista);

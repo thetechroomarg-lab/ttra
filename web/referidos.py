@@ -157,9 +157,24 @@ def resumen(client, cliente_id):
         for r in referidos
         if codigo_premio and r.get("referido_premio_codigo") == codigo_premio
     ]
+    # Historial completo: todos los amigos que compraron, con o sin el
+    # descuento ya usado.
+    amigos_con_compra = sorted(
+        (
+            {
+                "nombre": f"{(r.get('nombre') or '').strip()} {(r.get('apellido') or '').strip()[:1]}.".strip(),
+                "compro_en": r.get("referido_premiado_en"),
+                "descuento_pendiente": bool(codigo_premio) and r.get("referido_premio_codigo") == codigo_premio,
+            }
+            for r in referidos if r.get("referido_premiado_en")
+        ),
+        key=lambda a: a["compro_en"] or "",
+        reverse=True,
+    )
     return {
         "codigo_premio": codigo_premio,
         "pendientes": pendientes,
+        "amigos_con_compra": amigos_con_compra,
         "saldo_usd": saldo,
         "referidos_registrados": len(referidos),
         "referidos_con_compra": sum(1 for r in referidos if r.get("referido_premiado_en")),
