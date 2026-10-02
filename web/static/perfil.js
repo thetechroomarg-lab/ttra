@@ -436,22 +436,31 @@ function itemDomicilioHtml(domicilio) {
   item.className = "item-domicilio";
   const info = document.createElement("p");
   const pisoDepto = textoPisoDepto(domicilio);
-  info.textContent = `${domicilio.alias}${domicilio.predeterminado ? " · Principal" : ""} — ${domicilio.direccion}${pisoDepto ? ` (${pisoDepto})` : ""}`;
+  info.textContent = `${domicilio.alias} — ${domicilio.direccion}${pisoDepto ? ` (${pisoDepto})` : ""}`;
+  if (domicilio.predeterminado) {
+    item.classList.add("domicilio-entrega");
+    const titulo = document.createElement("p");
+    titulo.className = "item-domicilio-titulo";
+    titulo.textContent = "Seleccionado como domicilio de entrega";
+    item.append(titulo);
+  }
   item.append(info);
 
   const acciones = document.createElement("div");
   acciones.className = "item-domicilio-acciones";
 
+  // Todos los domicilios llevan el botón; en el elegido queda marcado y gris.
+  const btnPredeterminado = document.createElement("button");
+  btnPredeterminado.type = "button";
+  btnPredeterminado.textContent = domicilio.predeterminado ? "✓ Elegido para entrega" : "Elegir para entrega";
+  btnPredeterminado.disabled = Boolean(domicilio.predeterminado);
   if (!domicilio.predeterminado) {
-    const btnPredeterminado = document.createElement("button");
-    btnPredeterminado.type = "button";
-    btnPredeterminado.textContent = "Elegir para entrega";
     btnPredeterminado.addEventListener("click", async () => {
       await fetch(`/api/domicilios/${domicilio.id}/predeterminado`, { method: "POST" });
       cargarDomicilios();
     });
-    acciones.append(btnPredeterminado);
   }
+  acciones.append(btnPredeterminado);
 
   const btnEditar = document.createElement("button");
   btnEditar.type = "button";

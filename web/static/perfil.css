@@ -173,3 +173,9 @@ html #panel-perfil #btn-compartir-referido { min-height: 44px; padding-block: 0;
 .referidos-amigo-fecha, .referidos-amigo-premio span { font-size: 12px; opacity: .75; }
 .referidos-amigo-premio { align-items: flex-end; text-align: right; }
 .referidos-amigo-premio.usado strong { text-decoration: line-through; opacity: .6; }
+
+/* Domicilio de entrega: primero en la lista, con título y borde destacado. */
+#lista-domicilios .item-domicilio.domicilio-entrega { border-color: var(--cl-coral, #f05b40); }
+#lista-domicilios .item-domicilio-titulo { flex-basis: 100%; margin: 0 0 4px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--cl-coral, #f05b40); }
+#lista-domicilios .item-domicilio-acciones button:disabled { opacity: .55; cursor: default; }
