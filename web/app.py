@@ -1419,6 +1419,7 @@ _ADMIN_CLIENTES_ESTILO = """
   .tarea-cerrar { border:0; background:transparent; color:var(--op-text-dim); font-size:20px; line-height:1; cursor:pointer; padding:4px 8px; margin:0 0 10px; }
   .tarea-cerrar:hover, .tarea-cerrar:focus-visible { color:var(--op-text); }
   .form-tarea-entrega { margin:0 0 12px; }
+  .form-fecha-label { display:block; margin:8px 0 4px; font-size:13px; color:var(--op-text-dim); }
   .form-tarea-entrega input { font-size:16px; }
   .form-tarea-entrega button { cursor:pointer; }
   .tarea-toggle { border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:38px; padding:0 14px; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
@@ -1684,6 +1685,7 @@ _CADETE_ESTILO = """
   .selector-fecha-cadete label { color:var(--op-text-dim); font-size:var(--op-fs-small); font-weight:700; }
   .selector-fecha-cadete input { min-height:44px; box-sizing:border-box; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); padding:0 10px; font:inherit; color-scheme:dark; }
   .form-tarea-entrega { margin:0 0 16px; }
+  .form-fecha-label { display:block; margin:8px 0 4px; font-size:13px; color:var(--op-text-dim); }
   .tarea-toggle, .tarea-cerrar { cursor:pointer; font:inherit; }
   .tarea-toggle { border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; font-weight:700; min-height:44px; padding:0 16px; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
   .tarea-toggle:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
@@ -2094,18 +2096,27 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             for cliente in sorted(clientes, key=lambda cliente: cliente["nombre"].casefold())
         ]
     )
-    pendientes_hoy_seccion_html = (
-        f'<section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pedidos pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})</h2>'
-        f'<button id="tarea-cerrar" class="tarea-cerrar" type="button" hidden aria-label="Cerrar formulario de tarea" title="Cerrar">✕</button></div>'
+    # El formulario de tareas está en cualquier día consultado: si no, cambiar
+    # la fecha de consulta hacía desaparecer una tarea a medio cargar.
+    form_tarea_html = (
         f'<form id="form-tarea-entrega" class="form-tarea-entrega"><button id="tarea-toggle" class="tarea-toggle" type="button">+ Nueva tarea</button>'
         f'<div id="tarea-campos" class="tarea-campos" hidden><input id="tarea-titulo" required maxlength="200" placeholder="Nueva tarea">'
+        f'<label class="form-fecha-label" for="tarea-fecha">Fecha de la tarea</label>'
         f'<input id="tarea-fecha" type="date" required value="{fecha_hoy}" title="Fecha de la tarea">'
         f'<div class="tarea-direccion-wrap"><input id="tarea-cliente-busqueda" required maxlength="200" placeholder="Cliente" autocomplete="off"><input type="hidden" id="tarea-cliente"><ul id="tarea-cliente-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Clientes" hidden></ul></div>'
         f'<input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Agregar dirección" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div>'
         f'<label class="tarea-enviar-alejo"><input type="checkbox" id="tarea-enviar-alejo"> Enviar a Alejo</label>'
         f'<button type="submit">Agregar tarea</button></div></form>'
-        f'{pedidos_hoy_html}</section>'
-        if fecha_historial == fecha_hoy else ""
+    )
+    titulo_seccion_tareas = (
+        f'Pedidos pendientes para hoy ({len(pedidos_hoy) + len(tareas_hoy)})'
+        if fecha_historial == fecha_hoy else "Nueva tarea"
+    )
+    pendientes_hoy_seccion_html = (
+        f'<section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>{titulo_seccion_tareas}</h2>'
+        f'<button id="tarea-cerrar" class="tarea-cerrar" type="button" hidden aria-label="Cerrar formulario de tarea" title="Cerrar">✕</button></div>'
+        f'{form_tarea_html}'
+        f'{pedidos_hoy_html if fecha_historial == fecha_hoy else ""}</section>'
     )
 
     if not mostrar_clientes:
@@ -2356,6 +2367,7 @@ document.querySelectorAll(".btn-eliminar-historial-tarea").forEach((btn) => {{
   }});
 }});
 document.getElementById("fecha-historial-pedidos").addEventListener("change", (e) => {{
+  guardarBorrador_tarea();
   const url = new URL(location.href);
   url.searchParams.set("fecha_pedidos", e.target.value);
   location.href = url.toString();
@@ -2548,8 +2560,28 @@ document.getElementById("form-tarea-entrega")?.addEventListener("submit", async 
   e.preventDefault();
   const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:document.getElementById("tarea-fecha").value, titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, cliente_nombre:document.getElementById("tarea-cliente-busqueda").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value, enviar_a_alejo:document.getElementById("tarea-enviar-alejo").checked}}) }});
   if (!r.ok) {{ alert("No se pudo crear la tarea."); return; }}
+  borrarBorrador_tarea();
   location.href = `/admin/clientes?fecha_pedidos=${{document.getElementById("tarea-fecha").value}}`;
 }});
+// Borrador del formulario: cambiar el día de consulta recarga la página;
+// si había algo a medio cargar, se guarda y se restaura en el día nuevo.
+const BORRADOR_tarea = "ttra_borrador_tarea";
+const CAMPOS_tarea = ["tarea-titulo", "tarea-fecha", "tarea-cliente-busqueda", "tarea-cliente", "tarea-nota", "tarea-direccion", "tarea-enviar-alejo"];
+function guardarBorrador_tarea() {{
+  if (!(document.getElementById("tarea-campos") && !document.getElementById("tarea-campos").hidden)) return;
+  const datos = {{}};
+  CAMPOS_tarea.forEach((id) => {{ const el = document.getElementById(id); if (el) datos[id] = el.type === "checkbox" ? el.checked : el.value; }});
+  try {{ sessionStorage.setItem(BORRADOR_tarea, JSON.stringify(datos)); }} catch {{}}
+}}
+function borrarBorrador_tarea() {{ try {{ sessionStorage.removeItem(BORRADOR_tarea); }} catch {{}} }}
+(() => {{
+  let datos = null;
+  try {{ datos = JSON.parse(sessionStorage.getItem(BORRADOR_tarea) || "null"); }} catch {{}}
+  borrarBorrador_tarea();
+  if (!datos) return;
+  document.getElementById("tarea-toggle")?.click();
+  CAMPOS_tarea.forEach((id) => {{ const el = document.getElementById(id); if (!el || !(id in datos)) return; if (el.type === "checkbox") el.checked = datos[id]; else el.value = datos[id]; }});
+}})();
 document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
     btn.disabled = true;
@@ -3173,6 +3205,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <button id="nota-cerrar" class="tarea-cerrar" type="button" hidden aria-label="Cerrar formulario de nota" title="Cerrar">✕</button>
     <div id="nota-campos" class="nota-campos" hidden>
       <input id="nota-titulo" required maxlength="200" placeholder="Nota">
+      <label class="form-fecha-label" for="nota-fecha">Fecha de la nota</label>
       <input id="nota-fecha" type="date" required value="{fecha_consulta}" title="Fecha de la nota">
       <input id="nota-detalle" maxlength="1000" placeholder="Detalle opcional">
       <div class="tarea-direccion-wrap"><input id="nota-direccion" maxlength="500" placeholder="Agregar dirección (opcional)" autocomplete="off"><ul id="nota-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div>
@@ -3211,6 +3244,7 @@ document.getElementById("salir").addEventListener("click", async () => {{
   location.reload();
 }});
 document.getElementById("fecha-cadete").addEventListener("change", (e) => {{
+  guardarBorrador_nota();
   location.href = `/admin/cadete?fecha=${{e.target.value}}`;
 }});
 document.getElementById("nota-toggle").addEventListener("click", (e) => {{
@@ -3239,8 +3273,29 @@ document.getElementById("form-nota-cadete").addEventListener("submit", async (e)
     }}),
   }});
   if (!r.ok) {{ alert("No se pudo crear la nota."); return; }}
+  borrarBorrador_nota();
   location.href = `/admin/cadete?fecha=${{document.getElementById("nota-fecha").value}}`;
 }});
+// Borrador del formulario: cambiar el día de consulta recarga la página;
+// si había algo a medio cargar, se guarda y se restaura en el día nuevo.
+const BORRADOR_nota = "ttra_borrador_nota";
+const CAMPOS_nota = ["nota-titulo", "nota-fecha", "nota-detalle", "nota-direccion", "nota-derivar-vlad"];
+function guardarBorrador_nota() {{
+  if (!(!document.getElementById("nota-campos").hidden)) return;
+  const datos = {{}};
+  CAMPOS_nota.forEach((id) => {{ const el = document.getElementById(id); if (el) datos[id] = el.type === "checkbox" ? el.checked : el.value; }});
+  try {{ sessionStorage.setItem(BORRADOR_nota, JSON.stringify(datos)); }} catch {{}}
+}}
+function borrarBorrador_nota() {{ try {{ sessionStorage.removeItem(BORRADOR_nota); }} catch {{}} }}
+(() => {{
+  let datos = null;
+  try {{ datos = JSON.parse(sessionStorage.getItem(BORRADOR_nota) || "null"); }} catch {{}}
+  borrarBorrador_nota();
+  if (!datos) return;
+  document.getElementById("nota-toggle").click();
+  CAMPOS_nota.forEach((id) => {{ const el = document.getElementById(id); if (!el || !(id in datos)) return; if (el.type === "checkbox") el.checked = datos[id]; else el.value = datos[id]; }});
+}})();
+
 document.querySelectorAll(".btn-direcciones").forEach((btn) => {{
   btn.addEventListener("click", () => {{
     window.open(btn.dataset.maps, "_blank", "noopener");
