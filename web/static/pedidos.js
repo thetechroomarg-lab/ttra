@@ -78,7 +78,11 @@ if (btnCerrarPanelPedidos) {
   btnCerrarPanelPedidos.addEventListener("click", cerrarPanelPedidos);
 }
 if (overlayPedidosEmbebido) {
-  overlayPedidosEmbebido.addEventListener("click", cerrarPanelPedidos);
+  // El overlay es compartido con el perfil: solo cierra si Mis pedidos está
+  // abierto, para no apagar el blur con el perfil todavía visible.
+  overlayPedidosEmbebido.addEventListener("click", () => {
+    if (panelPedidosEmbebido && !panelPedidosEmbebido.classList.contains("oculto")) cerrarPanelPedidos();
+  });
 }
 
 function formatearMonedaUsd(valor) {

@@ -55,9 +55,8 @@ function cerrarPanelPerfil() {
 if (btnCerrarPanelPerfil) {
   btnCerrarPanelPerfil.addEventListener("click", cerrarPanelPerfil);
 }
-if (overlayPerfilEmbebido) {
-  overlayPerfilEmbebido.addEventListener("click", cerrarPanelPerfil);
-}
+// Tocar el fondo blureado no cierra el perfil: se perdían datos a medio
+// editar. Se cierra solo con la ✕.
 
 function ocultarSugerenciasPerfilDireccion(lista = perfilSugerenciasDireccion) {
   lista.replaceChildren();
