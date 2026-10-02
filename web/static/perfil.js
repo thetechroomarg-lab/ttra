@@ -318,7 +318,11 @@ async function compartirLinkReferido() {
     const datos = await r.json().catch(() => ({}));
     if (!r.ok || !datos.url) throw new Error(datos.error || "No se pudo generar tu link.");
     const texto = "Te invito a The Tech Room Arg: creá tu cuenta con mi link.";
-    if (typeof navigator.share === "function") {
+    // En el celular se abre el menú de compartir (WhatsApp, etc.). En la
+    // computadora ese menú no deja nada en el portapapeles, así que se copia
+    // el link y además se muestra, por si el navegador no deja copiar.
+    const esCelular = window.matchMedia("(pointer: coarse)").matches;
+    if (esCelular && typeof navigator.share === "function") {
       try {
         await navigator.share({ title: "The Tech Room Arg", text: texto, url: datos.url });
         return;
@@ -326,12 +330,12 @@ async function compartirLinkReferido() {
         if (e?.name === "AbortError") return;
       }
     }
+    let copiado = false;
     try {
       await navigator.clipboard.writeText(datos.url);
-      linkEl.textContent = `Link copiado: ${datos.url}`;
-    } catch {
-      linkEl.textContent = datos.url;
-    }
+      copiado = true;
+    } catch {}
+    linkEl.textContent = copiado ? `Link copiado: ${datos.url}` : `Copiá tu link: ${datos.url}`;
     linkEl.classList.remove("oculto");
   } catch (e) {
     linkEl.textContent = e.message || "No se pudo generar tu link.";
