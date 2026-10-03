@@ -616,18 +616,7 @@ html[data-modo="classic"] .ttra-sticker-peel:is(.despegando, .despegado) .ttra-s
 html[data-modo="classic"] .ttra-sticker-peel.despegado .ttra-sticker-foto { cursor: pointer; }
 html[data-modo="classic"] .ttra-sticker-solapa {
   position: absolute; inset: -600px; z-index: 2; pointer-events: none;
-  /* Dorso con marcas de pegamento: manchas brillosas irregulares, hilos
-     estirados y un leve granulado sobre el papel. */
-  background:
-    radial-gradient(ellipse 22px 14px at 18px 22px, #ffffff70, #ffffff00 70%),
-    radial-gradient(ellipse 9px 6px at 52px 41px, #8d7f6340, #8d7f6300 75%),
-    radial-gradient(ellipse 30px 11px at 66px 12px, #ffffff55, #ffffff00 70%),
-    radial-gradient(circle 5px at 38px 58px, #7a6c5250, #7a6c5200 80%),
-    radial-gradient(ellipse 14px 20px at 8px 64px, #a8997c38, #a8997c00 75%),
-    repeating-linear-gradient(118deg, #ffffff00 0 11px, #ffffff18 11px 12px, #ffffff00 12px 27px),
-    repeating-linear-gradient(28deg, #6e604708 0 2px, #6e604700 2px 5px),
-    linear-gradient(var(--peel-ang, 225deg), #fffaf0 0%, #e4dccb 45%, #b9ad95 100%);
-  background-size: 83px 71px, 83px 71px, 97px 53px, 61px 79px, 53px 89px, auto, auto, auto;
+  background: linear-gradient(var(--peel-ang, 225deg), #fffaf0 0%, #e4dccb 45%, #b9ad95 100%);
   filter: drop-shadow(0 4px 6px #0006);
   display: none;
 }
