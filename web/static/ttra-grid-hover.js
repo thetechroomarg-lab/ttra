@@ -85,6 +85,8 @@
         // dedo -no en el resto de la web-. iOS Safari no soporta la API, en
         // ese caso navigator.vibrate simplemente no existe y no hace nada.
         if (!motion.matches) navigator.vibrate?.(6);
+        // El mismo "tic" que con el mouse, una vez por celda recorrida.
+        playBlip();
       }
       prevCell = cell;
     }, true);
