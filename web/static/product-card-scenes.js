@@ -229,7 +229,10 @@ export function createProductCardScenes(entries) {
     const product=makers[entry.kind](entry);scene.add(product.model);
     return {...entry,...product,scene,camera:new T.PerspectiveCamera(32,1,.1,50),context:entry.canvas.getContext('2d')};
   });
+  // Velocidad de giro de los modelos 3D de las cards (1 = la original).
+  const VELOCIDAD_GIRO=1.15;
   function render(view,time=0) {
+    time*=VELOCIDAD_GIRO;
     const width=view.canvas.clientWidth,height=view.canvas.clientHeight;if(!width||!height)return;
     const dpr=Math.min(devicePixelRatio,1.4);const w=Math.round(width*dpr),h=Math.round(height*dpr);
     if(view.canvas.width!==w||view.canvas.height!==h){view.canvas.width=w;view.canvas.height=h;}
