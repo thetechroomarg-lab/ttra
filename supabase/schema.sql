@@ -688,3 +688,15 @@ alter table pedidos add column if not exists monto_cadete integer;
 -- Alejo marca "Visto" en cada entrega/nota que le llega; Vlad ve la leyenda.
 alter table pedidos add column if not exists visto_en timestamptz;
 alter table tareas_entrega add column if not exists visto_en timestamptz;
+
+-- Cada "Registrar pago" a Alejo deja un registro, con el comprobante de la
+-- transferencia si Vlad lo sube (ruta en el bucket recibos-series).
+create table if not exists pagos_cadete (
+  id text primary key,
+  monto_ars integer not null,
+  movimientos integer not null default 0,
+  comprobante text,
+  creado_en timestamptz not null default now()
+);
+alter table pagos_cadete enable row level security;
+alter table movimientos_cadete add column if not exists pago_id text;

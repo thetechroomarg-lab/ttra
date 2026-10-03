@@ -189,3 +189,61 @@ def test_pedido_de_alejo_vale_10_dolares_a_la_cotizacion_del_dia(monkeypatch):
     appmod.saldo_cadete.registrar(fake, "pedido", {"id": "p1"}, "Entrega a Juan",
                                   appmod.saldo_cadete.monto_pedido_ars(appmod._cargar_cotizacion_catalogo()))
     assert _movimientos(fake)[0]["monto_ars"] == 15700
+
+
+class _StorageFalso:
+    def __init__(self):
+        self.archivos = {}
+
+    def from_(self, _bucket):
+        return self
+
+    def upload(self, ruta, contenido, _opciones):
+        self.archivos[ruta] = contenido
+
+    def download(self, ruta):
+        return self.archivos[ruta]
+
+
+def test_pago_con_comprobante_queda_registrado_y_se_puede_ver(monkeypatch):
+    fake, admin, cadete = _clientes(monkeypatch)
+    fake.storage = _StorageFalso()
+    fake.table("movimientos_cadete").insert({"id": "m1", "tipo": "tarea", "referencia_id": "1",
+                                             "descripcion": "x", "monto_ars": 6000}).execute()
+
+    r = admin.post("/admin/cadete/movimientos/pagar",
+                   files=[("comprobante", ("transf.png", b"png-bytes", "image/png"))])
+
+    assert r.status_code == 200
+    pago = fake.table("pagos_cadete").select("*").execute().data[0]
+    assert pago["monto_ars"] == 6000 and pago["movimientos"] == 1
+    assert _movimientos(fake)[0]["pago_id"] == pago["id"]
+    saldo = admin.get("/admin/cadete/saldo").text
+    assert "Ver comprobante" in saldo
+    archivo = cadete.get(f"/admin/cadete/pagos/{pago['id']}/comprobante")
+    assert archivo.content == b"png-bytes" and archivo.headers["content-type"] == "image/png"
+
+
+def test_pago_sin_comprobante_tambien_queda_registrado(monkeypatch):
+    fake, admin, _ = _clientes(monkeypatch)
+    fake.table("movimientos_cadete").insert({"id": "m1", "tipo": "tarea", "referencia_id": "1",
+                                             "descripcion": "x", "monto_ars": 6000}).execute()
+
+    assert admin.post("/admin/cadete/movimientos/pagar").status_code == 200
+
+    pago = fake.table("pagos_cadete").select("*").execute().data[0]
+    assert pago["comprobante"] is None
+    assert "Sin comprobante" in admin.get("/admin/cadete/saldo").text
+
+
+def test_comprobante_que_no_es_imagen_ni_pdf_se_rechaza(monkeypatch):
+    fake, admin, _ = _clientes(monkeypatch)
+    fake.storage = _StorageFalso()
+    fake.table("movimientos_cadete").insert({"id": "m1", "tipo": "tarea", "referencia_id": "1",
+                                             "descripcion": "x", "monto_ars": 6000}).execute()
+
+    r = admin.post("/admin/cadete/movimientos/pagar",
+                   files=[("comprobante", ("x.exe", b"MZ", "application/octet-stream"))])
+
+    assert r.status_code == 400
+    assert not _movimientos(fake)[0].get("pagado_en")

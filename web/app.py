@@ -5982,6 +5982,13 @@ _SALDO_CADETE_ESTILO = """
   .saldo-admin input { width:100%; min-width:0; box-sizing:border-box; }
   .saldo-admin #pagar { background:var(--op-accent); border:0; color:#fff; font-weight:700; cursor:pointer; min-height:44px; }
   .saldo-admin #pagar:disabled { opacity:.5; cursor:not-allowed; }
+  #form-pago { display:grid; grid-template-columns:1fr; gap:8px; }
+  .comprobante-label { display:grid; gap:4px; color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .comprobante-label input { padding:8px 10px; }
+  .pagos h2 { font-size:var(--op-fs-body); margin:0 0 8px; color:var(--op-text-dim); }
+  .movimiento.pago { border-color:var(--op-success); }
+  .ver-comprobante { display:inline-block; margin-top:4px; color:var(--op-success); font-weight:700; }
+  .sin-comprobante { display:block; margin-top:4px; color:var(--op-text-dim); font-size:var(--op-fs-micro); }
   a.volver { color:var(--op-text-dim); text-decoration:none; font-weight:700; }
 </style>
 """
@@ -6008,12 +6015,28 @@ def admin_cadete_saldo(request: Request):
                 f'<small>{fecha} {hora} · {estado}</small></div><div class="movimiento-monto">$ {_formatear_entero_ar(m.get("monto_ars"))}{acciones}</div></div>')
 
     lista = "".join(_fila(m) for m in movimientos) or '<p class="vacio">Todavía no hay movimientos.</p>'
+
+    def _fila_pago(p):
+        fecha, _, hora = _formatear_fecha_ar(p.get("creado_en"))
+        comprobante = (
+            f'<a class="ver-comprobante" href="/admin/cadete/pagos/{html.escape(p.get("id") or "")}/comprobante" target="_blank">Ver comprobante</a>'
+            if p.get("comprobante") else '<span class="sin-comprobante">Sin comprobante</span>'
+        )
+        return (f'<div class="movimiento pago"><div>Pago de {int(p.get("movimientos") or 0)} movimientos'
+                f'<small>{fecha} {hora}</small>{comprobante}</div>'
+                f'<div class="movimiento-monto">$ {_formatear_entero_ar(p.get("monto_ars"))}</div></div>')
+
+    pagos = saldo_cadete.listar_pagos(get_client())
+    pagos_html = (f'<section class="pagos"><h2>Pagos</h2>{"".join(_fila_pago(p) for p in pagos)}</section>'
+                  if pagos else "")
     admin_html = ""
     if es_admin:
         admin_html = (
             '<div class="saldo-admin"><form id="form-mov"><input id="mov-desc" required maxlength="300" placeholder="Movimiento manual">'
             f'<input id="mov-monto" type="number" min="0" required value="{saldo_cadete.MONTO_POR_MOVIMIENTO}"><button type="submit">Sumar</button></form>'
-            f'<button id="pagar" type="button"{" disabled" if not resumen["saldo_pendiente"] else ""}>Registrar pago de $ {_formatear_entero_ar(resumen["saldo_pendiente"])}</button></div>'
+            '<form id="form-pago"><label class="comprobante-label">Comprobante de transferencia (opcional)'
+            '<input id="pago-comprobante" type="file" accept="image/*,application/pdf"></label>'
+            f'<button id="pagar" type="submit"{" disabled" if not resumen["saldo_pendiente"] else ""}>Registrar pago de $ {_formatear_entero_ar(resumen["saldo_pendiente"])}</button></form></div>'
         )
     volver = "/admin/clientes" if es_admin else "/admin/cadete"
     titulo_total = "Saldo a pagar" if es_admin else "Total a cobrar"
@@ -6024,6 +6047,7 @@ def admin_cadete_saldo(request: Request):
   <div class="saldo-total"><p>{titulo_total}</p><strong>$ {_formatear_entero_ar(resumen["saldo_pendiente"])}</strong>
     <p>{resumen["movimientos_pendientes"]} movimientos sin pagar · {resumen["movimientos_total"]} en total</p></div>
   {admin_html}
+  {pagos_html}
   <section>{lista}</section>
 </div>
 <script>
@@ -6036,8 +6060,22 @@ document.getElementById("form-mov")?.addEventListener("submit", (e) => {{
   e.preventDefault();
   enviar("/admin/cadete/movimientos", "POST", {{descripcion: document.getElementById("mov-desc").value, monto_ars: Number(document.getElementById("mov-monto").value)}});
 }});
-document.getElementById("pagar")?.addEventListener("click", () => {{
-  if (confirm("¿Marcar todo el saldo pendiente como pagado?")) enviar("/admin/cadete/movimientos/pagar", "POST");
+document.getElementById("form-pago")?.addEventListener("submit", async (e) => {{
+  e.preventDefault();
+  if (!confirm("¿Marcar todo el saldo pendiente como pagado?")) return;
+  const boton = document.getElementById("pagar");
+  boton.disabled = true;
+  const datos = new FormData();
+  const archivo = document.getElementById("pago-comprobante").files[0];
+  if (archivo) datos.append("comprobante", archivo);
+  const r = await fetch("/admin/cadete/movimientos/pagar", {{method: "POST", body: datos}});
+  if (!r.ok) {{
+    const err = await r.json().catch(() => ({{}}));
+    alert(err.error || "No se pudo registrar el pago");
+    boton.disabled = false;
+    return;
+  }}
+  location.reload();
 }});
 document.querySelectorAll(".btn-monto").forEach((b) => b.addEventListener("click", () => {{
   const v = prompt("Nuevo monto en pesos", b.dataset.monto);
@@ -6080,10 +6118,44 @@ def admin_cadete_borrar_movimiento(movimiento_id: str, request: Request):
     return {"ok": True}
 
 
+_COMPROBANTE_TIPOS = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp",
+                      "image/heic": "heic", "application/pdf": "pdf"}
+_COMPROBANTE_MAX_BYTES = 8_000_000
+
+
 @app.post("/admin/cadete/movimientos/pagar")
-def admin_cadete_registrar_pago(request: Request):
+async def admin_cadete_registrar_pago(request: Request):
     _exigir_admin(request)
-    return {"ok": True, **saldo_cadete.registrar_pago(get_client())}
+    client = get_client()
+    ruta = None
+    if request.headers.get("content-type", "").startswith("multipart/"):
+        archivo = (await request.form()).get("comprobante")
+        if getattr(archivo, "filename", None):
+            extension = _COMPROBANTE_TIPOS.get(archivo.content_type or "")
+            if not extension:
+                return JSONResponse({"error": "El comprobante tiene que ser una imagen o un PDF"}, status_code=400)
+            contenido = await archivo.read()
+            if not contenido or len(contenido) > _COMPROBANTE_MAX_BYTES:
+                return JSONResponse({"error": "El comprobante debe pesar menos de 8 MB"}, status_code=400)
+            ruta = f"pagos-cadete/{uuid.uuid4().hex}.{extension}"
+            client.storage.from_(saldo_cadete.BUCKET_COMPROBANTES).upload(
+                ruta, contenido, {"content-type": archivo.content_type})
+    return {"ok": True, **saldo_cadete.registrar_pago(client, ruta)}
+
+
+@app.get("/admin/cadete/pagos/{pago_id}/comprobante")
+def admin_cadete_ver_comprobante(pago_id: str, request: Request):
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    filas = client.table(saldo_cadete.TABLA_PAGOS).select("*").eq("id", pago_id).execute().data
+    if not filas or not filas[0].get("comprobante"):
+        raise HTTPException(status_code=404, detail="Comprobante no encontrado")
+    ruta = filas[0]["comprobante"]
+    contenido = client.storage.from_(saldo_cadete.BUCKET_COMPROBANTES).download(ruta)
+    extension = ruta.rsplit(".", 1)[-1]
+    tipo = next((t for t, e in _COMPROBANTE_TIPOS.items() if e == extension), "application/octet-stream")
+    return Response(content=contenido, media_type=tipo, headers={"Cache-Control": "private, no-store"})
 
 
 # Comparison endpoints must precede the catch-all static mount.

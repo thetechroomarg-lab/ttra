@@ -23,6 +23,9 @@ MONTO_PEDIDO_USD = 10
 def monto_pedido_ars(cotizacion):
     return round(MONTO_PEDIDO_USD * cotizacion)
 TABLA = "movimientos_cadete"
+TABLA_PAGOS = "pagos_cadete"
+# Los comprobantes van al mismo bucket privado que las fotos de series.
+BUCKET_COMPROBANTES = "recibos-series"
 
 
 def monto_de(fila, por_defecto=MONTO_POR_MOVIMIENTO):
@@ -78,9 +81,32 @@ def resumen(movimientos):
     }
 
 
-def registrar_pago(client):
+def registrar_pago(client, comprobante=None):
+    """Marca los pendientes como pagados y deja un registro del pago.
+
+    `comprobante` es la ruta en Storage del archivo de la transferencia, si
+    Vlad lo subió. El registro se guarda antes de tocar los movimientos.
+    """
     ahora = datetime.now(timezone.utc).isoformat()
     pendientes = [m for m in listar(client) if not m.get("pagado_en")]
+    monto = sum(int(m.get("monto_ars") or 0) for m in pendientes)
+    pago = {
+        "id": str(uuid.uuid4()),
+        "monto_ars": monto,
+        "movimientos": len(pendientes),
+        "comprobante": comprobante,
+        "creado_en": ahora,
+    }
+    client.table(TABLA_PAGOS).insert(pago).execute()
     for movimiento in pendientes:
-        client.table(TABLA).update({"pagado_en": ahora}).eq("id", movimiento["id"]).execute()
-    return {"pagados": len(pendientes), "monto": sum(int(m.get("monto_ars") or 0) for m in pendientes)}
+        client.table(TABLA).update({"pagado_en": ahora, "pago_id": pago["id"]}).eq("id", movimiento["id"]).execute()
+    return {"pagados": len(pendientes), "monto": monto, "pago": pago}
+
+
+def listar_pagos(client):
+    try:
+        filas = client.table(TABLA_PAGOS).select("*").execute().data or []
+    except Exception:
+        logger.exception("No se pudieron leer los pagos del cadete")
+        return []
+    return sorted(filas, key=lambda p: p.get("creado_en") or "", reverse=True)
