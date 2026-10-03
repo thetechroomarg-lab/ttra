@@ -700,3 +700,13 @@ create table if not exists pagos_cadete (
 );
 alter table pagos_cadete enable row level security;
 alter table movimientos_cadete add column if not exists pago_id text;
+
+-- Punto de encuentro del día entre Vlad y Alejo: lo carga cualquiera de los
+-- dos y ambos lo ven con su botón Vamos.
+create table if not exists punto_encuentro (
+  fecha date primary key,
+  direccion text,
+  actualizado_por text,
+  actualizado_en timestamptz not null default now()
+);
+alter table punto_encuentro enable row level security;

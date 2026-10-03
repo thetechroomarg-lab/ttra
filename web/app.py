@@ -418,6 +418,11 @@ class ClienteMayoristaIn(BaseModel):
     habilitado: bool
 
 
+class PuntoEncuentroIn(BaseModel):
+    fecha: date
+    direccion: str = Field(default="", max_length=500)
+
+
 class DerivarEntregaIn(BaseModel):
     derivado: bool
     observaciones: str | None = None
@@ -612,6 +617,75 @@ def _query_maps(direccion, lat, lng):
     if lat is not None and lng is not None:
         return f"{lat},{lng}"
     return direccion
+
+
+_TABLA_PUNTO_ENCUENTRO = "punto_encuentro"
+
+
+def _punto_encuentro(client, fecha):
+    """Dirección donde se cruzan Vlad y Alejo ese día, o None."""
+    try:
+        filas = client.table(_TABLA_PUNTO_ENCUENTRO).select("*").eq("fecha", fecha).execute().data
+    except Exception:
+        logger.exception("No se pudo leer el punto de encuentro")
+        return None
+    return filas[0] if filas and (filas[0].get("direccion") or "").strip() else None
+
+
+def _punto_encuentro_html(punto, fecha, titulo):
+    """Sección compartida por los dos paneles: dirección + Vamos, y el form para cargarla."""
+    direccion = (punto or {}).get("direccion") or ""
+    if direccion:
+        link = "https://www.google.com/maps/search/?" + urlencode({"api": 1, "query": direccion})
+        quien = "Vlad" if punto.get("actualizado_por") != CADETE_SLUG else "Alejo"
+        contenido = (
+            f'<div class="punto-encuentro-fila"><div class="punto-encuentro-direccion">{html.escape(direccion)}'
+            f'<small>Cargado por {quien}</small></div>'
+            f'<button class="btn-direcciones" type="button" data-maps="{html.escape(link)}">Vamos</button></div>'
+        )
+        texto_toggle = "Editar dirección"
+    else:
+        contenido = '<p class="punto-encuentro-vacio">Todavía no hay punto de encuentro.</p>'
+        texto_toggle = "+ Agregar dirección"
+    return (
+        f'<section class="punto-encuentro"><h2>{titulo}</h2>{contenido}'
+        f'<button id="punto-encuentro-toggle" class="punto-encuentro-toggle" type="button">{texto_toggle}</button>'
+        f'<form id="form-punto-encuentro" class="punto-encuentro-form" data-fecha="{html.escape(fecha)}" hidden>'
+        f'<div class="tarea-direccion-wrap"><input id="punto-encuentro-input" maxlength="500" placeholder="Dirección del punto de encuentro" autocomplete="off" value="{html.escape(direccion)}">'
+        '<ul id="punto-encuentro-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div>'
+        '<div class="punto-encuentro-acciones">'
+        + ('<button id="punto-encuentro-borrar" type="button">Quitar</button>' if direccion else "")
+        + '<button type="submit">Guardar</button></div></form></section>'
+    )
+
+
+def _punto_encuentro_js(funcion_autocomplete):
+    return """
+(() => {
+  const form = document.getElementById("form-punto-encuentro");
+  if (!form) return;
+  const input = document.getElementById("punto-encuentro-input");
+  document.getElementById("punto-encuentro-toggle").addEventListener("click", () => {
+    form.hidden = !form.hidden;
+    if (!form.hidden) input.focus();
+  });
+  async function guardar(direccion) {
+    const r = await fetch("/admin/punto-encuentro", {
+      method: "PUT", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({fecha: form.dataset.fecha, direccion}),
+    });
+    if (!r.ok) { alert("No se pudo guardar el punto de encuentro."); return; }
+    location.reload();
+  }
+  form.addEventListener("submit", (e) => { e.preventDefault(); guardar(input.value.trim()); });
+  document.getElementById("punto-encuentro-borrar")?.addEventListener("click", () => {
+    if (confirm("¿Quitar el punto de encuentro?")) guardar("");
+  });
+  %s(input, document.getElementById("punto-encuentro-sugerencias"));
+})();
+""" % funcion_autocomplete
+
+
 
 
 def _link_whatsapp_cliente(celular, texto=None):
@@ -1498,6 +1572,20 @@ _ADMIN_CLIENTES_ESTILO = """
   .saldo-cadete-resumen:hover { background:var(--op-surface-2); }
   .direccion-entrega { font-weight:600; }
   .observacion-cadete { color:var(--op-warning); }
+  .punto-encuentro { margin:0 0 16px; padding:14px 16px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); }
+  .punto-encuentro h2 { margin:0 0 10px; font-size:var(--op-fs-body); }
+  .punto-encuentro-fila { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .punto-encuentro-direccion { min-width:0; flex:1 1 auto; font-weight:700; overflow-wrap:anywhere; }
+  .punto-encuentro-direccion small { display:block; margin-top:2px; color:var(--op-text-dim); font-weight:400; font-size:var(--op-fs-micro); }
+  .punto-encuentro .btn-direcciones { flex:0 0 auto; min-height:44px; padding:0 18px; border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; font:inherit; font-weight:700; cursor:pointer; }
+  .punto-encuentro-vacio { margin:0; color:var(--op-text-dim); }
+  .punto-encuentro-toggle { margin-top:10px; min-height:40px; padding:0 12px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); font:inherit; font-weight:700; cursor:pointer; }
+  .punto-encuentro-form { display:grid; gap:8px; margin-top:10px; }
+  .punto-encuentro-form[hidden] { display:none; }
+  .punto-encuentro-form input { width:100%; box-sizing:border-box; min-height:44px; padding:0 12px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); font:inherit; }
+  .punto-encuentro-acciones { display:flex; gap:8px; justify-content:flex-end; }
+  .punto-encuentro-acciones button { min-height:40px; padding:0 14px; border-radius:var(--op-r-sm); border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); font:inherit; font-weight:700; cursor:pointer; }
+  .punto-encuentro-acciones button[type=submit] { background:var(--op-accent); border:0; color:#fff; }
   .leyenda-visto { color:var(--op-success); font-weight:700; }
   .total-cadete { font-weight:700; }
   .btn-whatsapp-cliente { display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--op-success-border); border-radius:var(--op-r-sm); padding:8px 10px; background:var(--op-success-bg); color:var(--op-success); cursor:pointer; font-weight:700; text-decoration:none; text-align:center; transition:background-color var(--op-dur) var(--op-ease); }
@@ -1747,6 +1835,20 @@ _CADETE_ESTILO = """
   .pedido-hoy-detalle { font-size:var(--op-fs-body); line-height:1.55; overflow-wrap:anywhere; word-break:break-word; }
   .direccion-entrega { font-weight:600; }
   .observacion-cadete { color:var(--op-warning); }
+  .punto-encuentro { margin:0 0 16px; padding:14px 16px; background:var(--op-surface); border:1px solid var(--op-border-strong); border-radius:var(--op-r-md); }
+  .punto-encuentro h2 { margin:0 0 10px; font-size:var(--op-fs-body); }
+  .punto-encuentro-fila { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .punto-encuentro-direccion { min-width:0; flex:1 1 auto; font-weight:700; overflow-wrap:anywhere; }
+  .punto-encuentro-direccion small { display:block; margin-top:2px; color:var(--op-text-dim); font-weight:400; font-size:var(--op-fs-micro); }
+  .punto-encuentro .btn-direcciones { flex:0 0 auto; min-height:44px; padding:0 18px; border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; font:inherit; font-weight:700; cursor:pointer; }
+  .punto-encuentro-vacio { margin:0; color:var(--op-text-dim); }
+  .punto-encuentro-toggle { margin-top:10px; min-height:40px; padding:0 12px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); font:inherit; font-weight:700; cursor:pointer; }
+  .punto-encuentro-form { display:grid; gap:8px; margin-top:10px; }
+  .punto-encuentro-form[hidden] { display:none; }
+  .punto-encuentro-form input { width:100%; box-sizing:border-box; min-height:44px; padding:0 12px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); font:inherit; }
+  .punto-encuentro-acciones { display:flex; gap:8px; justify-content:flex-end; }
+  .punto-encuentro-acciones button { min-height:40px; padding:0 14px; border-radius:var(--op-r-sm); border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); font:inherit; font-weight:700; cursor:pointer; }
+  .punto-encuentro-acciones button[type=submit] { background:var(--op-accent); border:0; color:#fff; }
   .leyenda-visto { color:var(--op-success); font-weight:700; }
   .total-cadete { font-weight:700; font-size:16px; }
   .pedido-acciones { display:flex; flex-wrap:wrap; gap:8px; }
@@ -2208,6 +2310,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
   </div>
   {saldo_resumen_html}
+  {_punto_encuentro_html(_punto_encuentro(client, fecha_hoy), fecha_hoy, "Punto de encuentro con Alejo")}
   <section class="historial-pedidos"><h2>Historial de pedidos</h2><input id="filtro-historial-pedidos" type="search" placeholder="Buscar por cliente o producto"><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
   {pendientes_hoy_seccion_html}
 </div>
@@ -2516,6 +2619,7 @@ function activarAutocompleteDireccion(input, lista) {{
 }}
 activarAutocompleteDireccion(document.getElementById("tarea-direccion"), document.getElementById("tarea-direccion-sugerencias"));
 activarAutocompleteDireccion(document.getElementById("direccion-entrega-admin"), document.getElementById("direccion-entrega-admin-sugerencias"));
+{_punto_encuentro_js("activarAutocompleteDireccion")}
 const CLIENTES_TAREA = {clientes_tarea_json};
 const busquedaClienteTarea = document.getElementById("tarea-cliente-busqueda");
 const idClienteTarea = document.getElementById("tarea-cliente");
@@ -3286,6 +3390,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
       <button type="submit">Agregar nota</button>
     </div>
   </form>
+  {_punto_encuentro_html(_punto_encuentro(client, fecha_consulta), fecha_consulta, "Punto de encuentro con Vlad")}
   <section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pendientes para {'hoy' if fecha_consulta == fecha_hoy else html.escape(_label_fecha_entrega(fecha_consulta))} ({len(pedidos_hoy) + len(tareas_hoy)})</h2></div>{entregas_html}</section>
   {seccion_proximos}
 </div>
@@ -3676,6 +3781,7 @@ function activarAutocompleteDireccionCadete(input, lista) {{
 }}
 activarAutocompleteDireccionCadete(document.getElementById("nota-direccion"), document.getElementById("nota-direccion-sugerencias"));
 activarAutocompleteDireccionCadete(document.getElementById("direccion-cadete-input"), document.getElementById("direccion-cadete-sugerencias"));
+{_punto_encuentro_js("activarAutocompleteDireccionCadete")}
 
 // --- Notificaciones push: avisa en el celu cuando Vlad asigna un pedido o
 // una nota, sin tener la app abierta (ver web/push_cadete.py). Botón oculto
@@ -5198,6 +5304,26 @@ def admin_tarea_editar_texto(tarea_id: str, entrada: EditarTextoTareaIn, request
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
     client.table("tareas_entrega").update({"titulo": titulo, "nota": nota}).eq("id", tarea_id).execute()
     return {"ok": True, "tarea_id": tarea_id, "titulo": titulo, "nota": nota}
+
+
+@app.put("/admin/punto-encuentro")
+def admin_punto_encuentro(entrada: PuntoEncuentroIn, request: Request):
+    """Vlad o Alejo cargan (o quitan) la dirección donde se encuentran ese día."""
+    quien = _quien_opera(request)
+    if not quien:
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    fila = {
+        "fecha": entrada.fecha.isoformat(),
+        "direccion": entrada.direccion.strip() or None,
+        "actualizado_por": quien,
+        "actualizado_en": datetime.now(timezone.utc).isoformat(),
+    }
+    client = get_client()
+    if client.table(_TABLA_PUNTO_ENCUENTRO).select("fecha").eq("fecha", fila["fecha"]).execute().data:
+        client.table(_TABLA_PUNTO_ENCUENTRO).update(fila).eq("fecha", fila["fecha"]).execute()
+    else:
+        client.table(_TABLA_PUNTO_ENCUENTRO).insert(fila).execute()
+    return {"ok": True, **fila}
 
 
 def _marcar_visto(request: Request, tabla: str, entidad_id: str):

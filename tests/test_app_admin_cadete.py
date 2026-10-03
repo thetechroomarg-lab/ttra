@@ -701,3 +701,32 @@ def test_no_se_puede_marcar_visto_lo_que_no_es_de_alejo(monkeypatch):
 
     assert _cadete_logueado().post("/admin/tareas-entrega/tarea-1/visto").status_code == 403
     assert admin.post("/admin/tareas-entrega/tarea-1/visto").status_code == 403
+
+
+def test_punto_de_encuentro_lo_carga_uno_y_lo_ven_los_dos(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    hoy = appmod.entregas.ahora_argentina().date().isoformat()
+    cadete = _cadete_logueado()
+    assert "Punto de encuentro con Vlad" in cadete.get("/admin/cadete").text
+    assert "Punto de encuentro con Alejo" in admin.get("/admin/clientes").text
+
+    r = cadete.put("/admin/punto-encuentro", json={"fecha": hoy, "direccion": "Av. Colón 123, Córdoba"})
+
+    assert r.status_code == 200
+    for panel in (admin.get("/admin/clientes").text, cadete.get("/admin/cadete").text):
+        assert "Av. Colón 123, Córdoba" in panel
+        assert "https://www.google.com/maps/search/?api=1&amp;query=Av.+Col%C3%B3n+123%2C+C%C3%B3rdoba" in panel
+        assert "Cargado por Alejo" in panel
+
+    admin.put("/admin/punto-encuentro", json={"fecha": hoy, "direccion": "Plaza España"})
+    assert "Cargado por Vlad" in cadete.get("/admin/cadete").text
+    assert len(fake.table("punto_encuentro").select("*").execute().data) == 1
+
+    admin.put("/admin/punto-encuentro", json={"fecha": hoy, "direccion": ""})
+    assert "Todavía no hay punto de encuentro" in cadete.get("/admin/cadete").text
+
+
+def test_punto_de_encuentro_requiere_sesion(monkeypatch):
+    _admin_logueado(monkeypatch)
+    anonimo = TestClient(appmod.app, base_url="https://testserver")
+    assert anonimo.put("/admin/punto-encuentro", json={"fecha": "2026-10-03", "direccion": "x"}).status_code == 401
