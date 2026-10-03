@@ -703,6 +703,18 @@ def test_no_se_puede_marcar_visto_lo_que_no_es_de_alejo(monkeypatch):
     assert admin.post("/admin/tareas-entrega/tarea-1/visto").status_code == 403
 
 
+def test_visto_funciona_desde_el_panel_de_alejo_aunque_haya_sesion_de_admin(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": "2026-10-05", "titulo": "Llevar pago a Migue",
+        "asignado_a": appmod.CADETE_SLUG,
+    }).execute()
+    admin.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
+
+    assert admin.post("/admin/tareas-entrega/tarea-1/visto").status_code == 200
+    assert fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data[0]["visto_en"]
+
+
 def test_punto_de_encuentro_lo_carga_uno_y_lo_ven_los_dos(monkeypatch):
     admin, fake = _admin_logueado(monkeypatch)
     hoy = appmod.entregas.ahora_argentina().date().isoformat()

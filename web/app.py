@@ -3534,7 +3534,12 @@ document.querySelectorAll(".btn-visto:not(.visto)").forEach((btn) => {{
       ? `/admin/pedidos/${{btn.dataset.id}}/visto`
       : `/admin/tareas-entrega/${{btn.dataset.id}}/visto`;
     const r = await fetch(ruta, {{ method:"POST" }});
-    if (!r.ok) {{ alert("No se pudo marcar como visto."); btn.disabled = false; return; }}
+    if (!r.ok) {{
+      const err = await r.json().catch(() => ({{}}));
+      alert(`No se pudo marcar como visto${{err.detail ? ": " + err.detail : "."}}`);
+      btn.disabled = false;
+      return;
+    }}
     btn.classList.add("visto");
     btn.textContent = "✓ Visto";
   }});
@@ -5327,8 +5332,12 @@ def admin_punto_encuentro(entrada: PuntoEncuentroIn, request: Request):
 
 
 def _marcar_visto(request: Request, tabla: str, entidad_id: str):
-    """Alejo marca que ya vio la entrega/nota: solo se guarda la hora, nada más cambia."""
-    if _quien_opera(request) != CADETE_SLUG:
+    """Alejo marca que ya vio la entrega/nota: solo se guarda la hora, nada más cambia.
+
+    El botón solo existe en el panel de Alejo, así que alcanza con su sesión
+    aunque en el mismo navegador también esté abierta la de admin.
+    """
+    if not _cadete_activo(request):
         raise HTTPException(status_code=403, detail="Solo Alejo puede marcar como visto")
     client = get_client()
     filas = client.table(tabla).select("*").eq("id", entidad_id).execute().data
