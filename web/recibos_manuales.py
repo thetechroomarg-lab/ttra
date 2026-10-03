@@ -3,6 +3,8 @@ del cadete, sin depender de una fila en ``pedidos``. Ver
 docs/superpowers/specs/2026-09-19-recibo-manual-y-papelera-design.md.
 """
 
+from web.ui_helpers import CADETE_SLUG
+
 
 def construir_items(items_crudos):
     if not items_crudos:
@@ -42,6 +44,6 @@ def armar_pedido_like(nombre_cliente, items, total_usd, recibo_id, emitido_en, c
         "descuento_usd": 0,
         "recibo_id": recibo_id,
         "recibo_emitido_en": emitido_en,
-        "entregado_por_cadete": True,
+        "entregado_por_cadete": creado_por == CADETE_SLUG,
         "_nombre_cliente_manual": nombre_cliente,
     }

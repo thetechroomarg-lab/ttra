@@ -684,3 +684,7 @@ create unique index if not exists movimientos_cadete_referencia_unica
 alter table movimientos_cadete enable row level security;
 alter table tareas_entrega add column if not exists monto_cadete integer;
 alter table pedidos add column if not exists monto_cadete integer;
+
+-- Alejo marca "Visto" en cada entrega/nota que le llega; Vlad ve la leyenda.
+alter table pedidos add column if not exists visto_en timestamptz;
+alter table tareas_entrega add column if not exists visto_en timestamptz;

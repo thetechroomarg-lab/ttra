@@ -513,6 +513,21 @@ def _monto_viaje(tarea):
     return f" - $ {_formatear_entero_ar(saldo_cadete.monto_de(tarea))}"
 
 
+def _leyenda_visto(fila):
+    """"✓ Visto" en el panel de Vlad cuando Alejo ya marcó la entrega/nota."""
+    if fila.get("asignado_a") != CADETE_SLUG or not fila.get("visto_en"):
+        return ""
+    fecha, _, hora = _formatear_fecha_ar(fila["visto_en"])
+    return f'<br><span class="leyenda-visto">✓ Visto por Alejo · {html.escape(fecha)} {html.escape(hora)}</span>'
+
+
+def _boton_visto(fila, tipo):
+    entidad_id = html.escape(fila.get("id", ""))
+    if fila.get("visto_en"):
+        return f'<button class="btn-visto visto" type="button" disabled>✓ Visto</button>'
+    return f'<button class="btn-visto" type="button" data-id="{entidad_id}" data-tipo="{tipo}">Visto</button>'
+
+
 def _monto_viaje_pedido(pedido):
     if pedido.get("asignado_a") != CADETE_SLUG:
         return ""
@@ -1091,7 +1106,9 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     recibo_id = pedido.get("recibo_id") or _nuevo_recibo_id(client)
     ahora_recibo = datetime.now(timezone.utc).isoformat()
     emitido_en = pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en") or ahora_recibo
-    enviado_por_cadete = _cadete_activo(request)
+    # Solo cuenta como de Alejo si no hay sesión de admin: Vlad puede tener
+    # las dos abiertas en el mismo navegador.
+    enviado_por_cadete = _quien_opera(request) == CADETE_SLUG
     pedido_para_mail = {
         **pedido, "recibo_id": recibo_id, "recibo_emitido_en": emitido_en,
         "entregado_por_cadete": enviado_por_cadete,
@@ -1481,6 +1498,7 @@ _ADMIN_CLIENTES_ESTILO = """
   .saldo-cadete-resumen:hover { background:var(--op-surface-2); }
   .direccion-entrega { font-weight:600; }
   .observacion-cadete { color:var(--op-warning); }
+  .leyenda-visto { color:var(--op-success); font-weight:700; }
   .total-cadete { font-weight:700; }
   .btn-whatsapp-cliente { display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--op-success-border); border-radius:var(--op-r-sm); padding:8px 10px; background:var(--op-success-bg); color:var(--op-success); cursor:pointer; font-weight:700; text-decoration:none; text-align:center; transition:background-color var(--op-dur) var(--op-ease); }
   .btn-whatsapp-cliente:hover { background:var(--op-surface-3); }
@@ -1729,10 +1747,13 @@ _CADETE_ESTILO = """
   .pedido-hoy-detalle { font-size:var(--op-fs-body); line-height:1.55; overflow-wrap:anywhere; word-break:break-word; }
   .direccion-entrega { font-weight:600; }
   .observacion-cadete { color:var(--op-warning); }
+  .leyenda-visto { color:var(--op-success); font-weight:700; }
   .total-cadete { font-weight:700; font-size:16px; }
   .pedido-acciones { display:flex; flex-wrap:wrap; gap:8px; }
   .pedido-acciones > * { flex:1 1 120px; box-sizing:border-box; min-height:48px; font-size:15px; border-radius:var(--op-r-sm); font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
   .btn-direcciones, .btn-editar-entrega, .btn-derivar-vlad, .btn-agregar-direccion-cadete { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
+  .btn-visto { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
+  .btn-visto.visto { border-color:var(--op-success); color:var(--op-success); opacity:1; cursor:default; }
   .btn-direcciones:hover, .btn-editar-entrega:hover, .btn-derivar-vlad:hover, .btn-agregar-direccion-cadete:hover { background:var(--op-surface-3); }
   .btn-enviar-recibo, .btn-completar-tarea, .btn-recibo-nota { border:0; background:var(--op-accent); color:#fff; }
   .btn-enviar-recibo:hover, .btn-completar-tarea:hover, .btn-recibo-nota:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
@@ -2001,7 +2022,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
              if arrastrable else f'<div class="pedido-hoy" data-entrega-id="{tarea_id}"><div class="pedido-hoy-detalle">')
             + f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}{_monto_viaje(tarea)}</strong>'
             f'{_etiqueta_fecha_tarea(tarea)}'
-            f'{_html_direccion_entrega(tarea.get("direccion"))}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
+            f'{_html_direccion_entrega(tarea.get("direccion"))}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{_leyenda_visto(tarea)}</div>'
             f'{_acciones_tarea(tarea)}</div>'
         )
 
@@ -2027,7 +2048,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         return (
             f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}" data-tipo-entrega="pedido" data-entrega-id="{html.escape(pedido.get("id", ""))}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar pedido">≡</button><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}{_monto_viaje_pedido(pedido)}</strong> · '
             f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}{_html_direccion_entrega(pedido.get("direccion_entrega"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span>'
-            f'{_linea_piso_depto(pedido)}</div>'
+            f'{_linea_piso_depto(pedido)}{_leyenda_visto(pedido)}</div>'
             f'{_controles_entrega(pedido)}</div>'
         )
 
@@ -2075,7 +2096,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             return (
                 f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{html.escape(nombre_cliente)}</strong> · '
                 f'{html.escape(descripcion)} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}<br><span class="estado-recibo">'
-                f'{estado}</span>{detalle_obs}{acciones}</div>'
+                f'{estado}</span>{detalle_obs}{_leyenda_visto(pedido)}{acciones}</div>'
             )
 
         def _tarea_historial_html(tarea):
@@ -2107,7 +2128,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             return (
                 f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{titulo_tarjeta}: {html.escape(titulo)}</strong>'
                 f'{detalle_cliente}{detalle_nota}<br><span class="estado-recibo">{estado}</span>'
-                f'{detalle_obs}{acciones}</div>'
+                f'{detalle_obs}{_leyenda_visto(tarea)}{acciones}</div>'
             )
 
         items_historial = (
@@ -3156,7 +3177,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}{_monto_viaje_pedido(pedido)}</strong> · '
             f'{html.escape(cliente.get("celular") or "—")}{_html_direccion_entrega(direccion)}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
             f'{piso_depto}{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
-            f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"), cliente.get("celular"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{boton_recibo}{boton_fecha}{boton_derivar_vlad}</div></div>'
+            f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"), cliente.get("celular"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{_boton_visto(pedido, "pedido")}{boton_recibo}{boton_fecha}{boton_derivar_vlad}</div></div>'
         )
 
     def _tarjeta_tarea_cadete(tarea):
@@ -3187,7 +3208,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}{_monto_viaje(tarea)}</strong>'
             f'{_html_direccion_entrega(direccion)}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
             f'<div class="pedido-acciones">{_boton_vamos(direccion, tarea_id, "tarea", celular=cliente_tarea.get("celular"))}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
-            f'<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}{boton_recibo_manual}</div></div>'
+            f'{_boton_visto(tarea, "tarea")}<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}{boton_recibo_manual}</div></div>'
         )
 
     tarjetas = (
@@ -3399,6 +3420,18 @@ document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
     const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/completar`, {{ method:"POST" }});
     if (!r.ok) {{ alert("No se pudo completar la tarea."); btn.disabled = false; return; }}
     location.reload();
+  }});
+}});
+document.querySelectorAll(".btn-visto:not(.visto)").forEach((btn) => {{
+  btn.addEventListener("click", async () => {{
+    btn.disabled = true;
+    const ruta = btn.dataset.tipo === "pedido"
+      ? `/admin/pedidos/${{btn.dataset.id}}/visto`
+      : `/admin/tareas-entrega/${{btn.dataset.id}}/visto`;
+    const r = await fetch(ruta, {{ method:"POST" }});
+    if (!r.ok) {{ alert("No se pudo marcar como visto."); btn.disabled = false; return; }}
+    btn.classList.add("visto");
+    btn.textContent = "✓ Visto";
   }});
 }});
 document.querySelectorAll(".btn-derivar-vlad").forEach((btn) => {{
@@ -5029,7 +5062,7 @@ def admin_pedido_derivar(pedido_id: str, entrada: DerivarEntregaIn, request: Req
     asignado_a = CADETE_SLUG if entrada.derivado else None
     observaciones = ((entrada.observaciones or "").strip() or None) if entrada.derivado else None
     client.table("pedidos").update({
-        "asignado_a": asignado_a, "observaciones_cadete": observaciones,
+        "asignado_a": asignado_a, "observaciones_cadete": observaciones, "visto_en": None,
     }).eq("id", pedido_id).execute()
     if asignado_a == CADETE_SLUG:
         filas_cliente = client.table("clientes").select("nombre,apellido").eq("id", filas[0].get("cliente_id")).execute().data
@@ -5117,7 +5150,7 @@ def admin_completar_tarea_entrega(tarea_id: str, request: Request):
         raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
     completada_en = datetime.now(timezone.utc).isoformat()
     actualizacion_tarea = {"completada_en": completada_en}
-    if _cadete_activo(request):
+    if _quien_opera(request) == CADETE_SLUG:
         observacion_previa = (filas[0].get("observaciones_cadete") or "").strip()
         if "Entregado por Alejo" not in observacion_previa:
             actualizacion_tarea["observaciones_cadete"] = (
@@ -5167,6 +5200,33 @@ def admin_tarea_editar_texto(tarea_id: str, entrada: EditarTextoTareaIn, request
     return {"ok": True, "tarea_id": tarea_id, "titulo": titulo, "nota": nota}
 
 
+def _marcar_visto(request: Request, tabla: str, entidad_id: str):
+    """Alejo marca que ya vio la entrega/nota: solo se guarda la hora, nada más cambia."""
+    if _quien_opera(request) != CADETE_SLUG:
+        raise HTTPException(status_code=403, detail="Solo Alejo puede marcar como visto")
+    client = get_client()
+    filas = client.table(tabla).select("*").eq("id", entidad_id).execute().data
+    if not filas or not _activo(filas[0]):
+        raise HTTPException(status_code=404, detail="No encontrado")
+    if filas[0].get("asignado_a") != CADETE_SLUG:
+        raise HTTPException(status_code=403, detail="No está asignado a tu usuario")
+    visto_en = filas[0].get("visto_en")
+    if not visto_en:
+        visto_en = datetime.now(timezone.utc).isoformat()
+        client.table(tabla).update({"visto_en": visto_en}).eq("id", entidad_id).execute()
+    return {"ok": True, "visto_en": visto_en}
+
+
+@app.post("/admin/pedidos/{pedido_id}/visto")
+def admin_pedido_visto(pedido_id: str, request: Request):
+    return _marcar_visto(request, "pedidos", pedido_id)
+
+
+@app.post("/admin/tareas-entrega/{tarea_id}/visto")
+def admin_tarea_visto(tarea_id: str, request: Request):
+    return _marcar_visto(request, "tareas_entrega", tarea_id)
+
+
 @app.put("/admin/tareas-entrega/{tarea_id}/derivar")
 def admin_tarea_derivar(tarea_id: str, entrada: DerivarEntregaIn, request: Request):
     es_admin = _clientes_admin_activo(request)
@@ -5187,7 +5247,7 @@ def admin_tarea_derivar(tarea_id: str, entrada: DerivarEntregaIn, request: Reque
     asignado_a = CADETE_SLUG if entrada.derivado else None
     observaciones = ((entrada.observaciones or "").strip() or None) if entrada.derivado else None
     client.table("tareas_entrega").update({
-        "asignado_a": asignado_a, "observaciones_cadete": observaciones,
+        "asignado_a": asignado_a, "observaciones_cadete": observaciones, "visto_en": None,
     }).eq("id", tarea_id).execute()
     if asignado_a == CADETE_SLUG:
         push_cadete.enviar_push_cadete(client, "📝 Nueva nota asignada", filas[0].get("titulo") or "")

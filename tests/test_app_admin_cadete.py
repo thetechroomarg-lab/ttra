@@ -644,3 +644,60 @@ def test_admin_ve_notas_atrasadas_y_proximas_de_cualquier_responsable(monkeypatc
     assert "Nota atrasada" in texto and "Atrasada" in texto
     assert "Próximas tareas" in texto and "Nota futura de Alejo" in texto
     assert "Nota ya hecha" not in texto
+
+
+def test_tarea_completada_por_vlad_con_ambas_sesiones_no_marca_entregado_por_alejo(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": "2026-08-24", "titulo": "Retirar equipo", "orden": 1,
+    }).execute()
+    # Vlad tiene abierto también el panel de Alejo en el mismo navegador.
+    admin.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
+
+    r = admin.post("/admin/tareas-entrega/tarea-1/completar")
+
+    assert r.status_code == 200
+    tarea = fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data[0]
+    assert not tarea.get("observaciones_cadete")
+
+
+def test_cadete_marca_visto_y_vlad_ve_la_leyenda(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": "2026-08-24", "titulo": "Llevar cargador", "orden": 1,
+    }).execute()
+    admin.put("/admin/tareas-entrega/tarea-1/derivar", json={"derivado": True})
+    cadete = _cadete_logueado()
+    assert 'class="btn-visto"' in cadete.get("/admin/cadete?fecha=2026-08-24").text
+    assert "✓ Visto por Alejo" not in admin.get("/admin/clientes?fecha_pedidos=2026-08-24").text
+
+    r = cadete.post("/admin/tareas-entrega/tarea-1/visto")
+
+    assert r.status_code == 200
+    tarea = fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data[0]
+    assert tarea["visto_en"]
+    assert not tarea.get("completada_en")
+    assert "✓ Visto por Alejo" in admin.get("/admin/clientes?fecha_pedidos=2026-08-24").text
+    assert "btn-visto visto" in cadete.get("/admin/cadete?fecha=2026-08-24").text
+
+
+def test_cadete_marca_visto_un_pedido_derivado(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("pedidos").insert({
+        "id": "pedido-1", "fecha_entrega": "2026-08-24", "asignado_a": appmod.CADETE_SLUG,
+    }).execute()
+
+    r = _cadete_logueado().post("/admin/pedidos/pedido-1/visto")
+
+    assert r.status_code == 200
+    assert fake.table("pedidos").select("*").eq("id", "pedido-1").execute().data[0]["visto_en"]
+
+
+def test_no_se_puede_marcar_visto_lo_que_no_es_de_alejo(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    fake.table("tareas_entrega").insert({
+        "id": "tarea-1", "fecha_entrega": "2026-08-24", "titulo": "Mía",
+    }).execute()
+
+    assert _cadete_logueado().post("/admin/tareas-entrega/tarea-1/visto").status_code == 403
+    assert admin.post("/admin/tareas-entrega/tarea-1/visto").status_code == 403
