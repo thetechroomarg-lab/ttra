@@ -20,3 +20,11 @@ html body .grilla .card.ai-card{border:1px solid rgba(255,80,60,.26)!important;b
 html body .grilla .card.ai-card:focus-within{border-color:rgba(255,80,60,.52)!important;box-shadow:0 0 22px rgba(255,80,60,.20),0 0 50px rgba(255,80,60,.10)!important}
 @media(hover:hover){html body .grilla .card.ai-card:hover{border-color:rgba(255,80,60,.52)!important;box-shadow:0 0 22px rgba(255,80,60,.20),0 0 50px rgba(255,80,60,.10)!important}}
 @media(prefers-reduced-motion:reduce){html body .grilla .card.ai-card{transition:none}}
+.ai-prices.ai-prices-mayorista{grid-template-rows:repeat(6,1fr)}
+.ai-prices-mayorista .ai-price{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center}
+.ai-prices-mayorista .ai-price>:nth-child(2){text-align:center;font:600 3.2cqw Arial,sans-serif;color:#6fd08c;white-space:nowrap}
+.ai-prices-mayorista .ai-price>:nth-child(3){text-align:right}
+.ai-prices-mayorista .ai-price-head{color:#8a8a84!important;font-size:2.3cqw;text-transform:uppercase;letter-spacing:.05em}
+.ai-prices-mayorista .ai-price-head>:nth-child(2){font:inherit;color:inherit}
+.ai-prices-mayorista .ai-price:nth-child(2){color:#ff503c}.ai-prices-mayorista .ai-price:first-child strong{color:inherit}
+.ai-prices-mayorista .ai-price:not(.ai-price-head)>:first-child{font:600 3.4cqw Arial,sans-serif}

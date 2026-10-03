@@ -48,6 +48,9 @@ def test_catalogo_mayorista_omite_campos_privados():
         "pesos": round(130 * (280800 / 180)),
         "transferencia": round(130 * (289485 / 180)),
         "imagen": "publica",
+        "usd_publico": 180,
+        "pesos_publico": 280800,
+        "transferencia_publico": 289485,
     }]
 
 

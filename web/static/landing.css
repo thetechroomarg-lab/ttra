@@ -1795,3 +1795,11 @@ html[data-modo="fallout"] .card:focus-within::before {
   #selector-domicilio-entrega, #direccion-entrega-wrap, #btn-vaciar-carrito) {
   display: none !important;
 }
+
+
+/* Cuentas mayoristas: tipo de pago | descuento percibido | precio final. */
+.tabla-mayorista { display: grid; grid-template-columns: auto auto auto; gap: 2px 12px; width: 100%; }
+.tabla-mayorista > :nth-child(3n+2) { text-align: center; color: #2e9e55; font-weight: 600; }
+.tabla-mayorista > :nth-child(3n) { text-align: right; }
+.tabla-mayorista .tm-cab { font-size: 0.8em; opacity: 0.7; text-transform: uppercase; color: inherit; font-weight: 400; }
+.tabla-mayorista > :nth-child(3n+1):not(.tm-cab) { font-size: 1.15em; font-weight: 600; }
