@@ -5987,8 +5987,9 @@ _SALDO_CADETE_ESTILO = """
   .comprobante-label input { padding:8px 10px; }
   .pagos h2 { font-size:var(--op-fs-body); margin:0 0 8px; color:var(--op-text-dim); }
   .movimiento.pago { border-color:var(--op-success); }
-  .ver-comprobante { display:inline-block; margin-top:4px; color:var(--op-success); font-weight:700; }
-  .btn-subir-comprobante { display:inline-block; margin-top:6px; padding:6px 10px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); font-size:var(--op-fs-small); font-weight:700; cursor:pointer; }
+  .ver-comprobante, .btn-subir-comprobante { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; min-height:40px; margin-top:8px; padding:0 14px; border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; font:inherit; font-weight:700; text-decoration:none; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .ver-comprobante:hover, .btn-subir-comprobante:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .ver-comprobante:active, .btn-subir-comprobante:active { background:var(--op-accent-press); transform:translateY(0); }
   .sin-comprobante { display:block; margin-top:4px; color:var(--op-text-dim); font-size:var(--op-fs-micro); }
   a.volver { color:var(--op-text-dim); text-decoration:none; font-weight:700; }
 </style>
@@ -6024,11 +6025,11 @@ def admin_cadete_saldo(request: Request):
             f'<a class="ver-comprobante" href="/admin/cadete/pagos/{pid}/comprobante" target="_blank">Ver comprobante</a>'
             if p.get("comprobante") else '<span class="sin-comprobante">Sin comprobante</span>'
         )
-        # El monto de un pago ya hecho no se edita: solo se sube o cambia el comprobante.
+        # El monto de un pago ya hecho no se edita, y el comprobante se sube una sola vez.
         subir = (
-            f'<label class="btn-subir-comprobante">{"Cambiar comprobante" if p.get("comprobante") else "Subir comprobante"}'
+            f'<label class="btn-subir-comprobante">Subir comprobante'
             f'<input type="file" accept="image/*,application/pdf" data-pago="{pid}" hidden></label>'
-            if es_admin else ""
+            if es_admin and not p.get("comprobante") else ""
         )
         return (f'<div class="movimiento pago"><div>Pago de {int(p.get("movimientos") or 0)} movimientos'
                 f'<small>{fecha} {hora}</small>{comprobante}{subir}</div>'
@@ -6178,11 +6179,14 @@ async def admin_cadete_registrar_pago(request: Request):
 
 @app.post("/admin/cadete/pagos/{pago_id}/comprobante")
 async def admin_cadete_subir_comprobante(pago_id: str, request: Request):
-    """Sube o reemplaza el comprobante de un pago ya hecho. El monto no se toca."""
+    """Sube el comprobante de un pago ya hecho, una sola vez. El monto no se toca."""
     _exigir_admin(request)
     client = get_client()
-    if not client.table(saldo_cadete.TABLA_PAGOS).select("id").eq("id", pago_id).execute().data:
+    filas = client.table(saldo_cadete.TABLA_PAGOS).select("*").eq("id", pago_id).execute().data
+    if not filas:
         raise HTTPException(status_code=404, detail="Pago no encontrado")
+    if filas[0].get("comprobante"):
+        return JSONResponse({"error": "Este pago ya tiene comprobante"}, status_code=409)
     ruta, error = await _subir_comprobante(request, client)
     if error:
         return error

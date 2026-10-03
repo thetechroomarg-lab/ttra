@@ -274,3 +274,7 @@ def test_pago_viejo_sin_registro_aparece_y_se_le_sube_comprobante(monkeypatch):
     assert pago["comprobante"] and pago["monto_ars"] == 70000
     assert cadete.post(f"/admin/cadete/pagos/{pago['id']}/comprobante",
                        files=[("comprobante", ("t.jpg", b"jpg", "image/jpeg"))]).status_code == 401
+    # Con comprobante ya cargado no se puede cambiar.
+    assert "Subir comprobante" not in admin.get("/admin/cadete/saldo").text
+    assert admin.post(f"/admin/cadete/pagos/{pago['id']}/comprobante",
+                      files=[("comprobante", ("otro.jpg", b"otro", "image/jpeg"))]).status_code == 409
