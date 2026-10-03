@@ -1854,12 +1854,19 @@ _CADETE_ESTILO = """
   .pedido-acciones { display:flex; flex-wrap:wrap; gap:8px; }
   .pedido-acciones > * { flex:1 1 120px; box-sizing:border-box; min-height:48px; font-size:15px; border-radius:var(--op-r-sm); font-weight:700; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
   .btn-direcciones, .btn-editar-entrega, .btn-derivar-vlad, .btn-agregar-direccion-cadete { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
-  .btn-visto { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
-  .btn-visto.visto { border-color:var(--op-success); color:var(--op-success); opacity:1; cursor:default; }
+  .btn-visto, .btn-recibo-nota { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
+  .btn-recibo-nota:hover { background:var(--op-surface-3); }
+  /* Visto queda verde y fijo: una vez marcado no se puede desmarcar. */
+  .btn-visto.visto, .btn-visto.visto:disabled { border:0; background:#16a34a; color:#fff; opacity:1; cursor:default; }
   .btn-direcciones:hover, .btn-editar-entrega:hover, .btn-derivar-vlad:hover, .btn-agregar-direccion-cadete:hover { background:var(--op-surface-3); }
-  .btn-enviar-recibo, .btn-completar-tarea, .btn-recibo-nota { border:0; background:var(--op-accent); color:#fff; }
-  .btn-enviar-recibo:hover, .btn-completar-tarea:hover, .btn-recibo-nota:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
-  .btn-enviar-recibo:active, .btn-completar-tarea:active, .btn-recibo-nota:active { background:var(--op-accent-press); transform:translateY(0); }
+  .btn-enviar-recibo, .btn-completar-tarea { border:0; background:var(--op-accent); color:#fff; }
+  .btn-enviar-recibo:hover, .btn-completar-tarea:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
+  .btn-enviar-recibo:active, .btn-completar-tarea:active { background:var(--op-accent-press); transform:translateY(0); }
+  @media (max-width: 700px) {
+    .pedido-acciones { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .pedido-acciones > * { min-width:0; }
+    .pedido-acciones .btn-whatsapp-cliente { grid-column:1 / -1; }
+  }
   .btn-enviar-recibo:disabled, .btn-recibo-nota:disabled { opacity:.55; cursor:not-allowed; }
   .btn-whatsapp-cliente { display:flex; align-items:center; justify-content:center; border:1px solid var(--op-success-border); background:var(--op-success-bg); color:var(--op-success); text-decoration:none; text-align:center; }
   .btn-whatsapp-cliente:hover { background:var(--op-surface-3); }
@@ -3281,7 +3288,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle"><strong>{html.escape(nombre_cliente)}{_monto_viaje_pedido(pedido)}</strong> · '
             f'{html.escape(cliente.get("celular") or "—")}{_html_direccion_entrega(direccion)}<br><span>{html.escape(_descripcion_pedido(pedido))}</span>'
             f'{piso_depto}{detalle_obs}<br><span class="total-cadete">Total a cobrar: U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span></div>'
-            f'<div class="pedido-acciones">{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"), cliente.get("celular"))}{_boton_whatsapp_cliente(cliente.get("celular"))}{_boton_visto(pedido, "pedido")}{boton_recibo}{boton_fecha}{boton_derivar_vlad}</div></div>'
+            f'<div class="pedido-acciones">{_boton_visto(pedido, "pedido")}{_boton_vamos(direccion, pedido_id, "pedido", pedido.get("lat"), pedido.get("lng"), cliente.get("celular"))}'
+            f'{boton_fecha}{boton_derivar_vlad}{boton_recibo}{_boton_whatsapp_cliente(cliente.get("celular"))}</div></div>'
         )
 
     def _tarjeta_tarea_cadete(tarea):
@@ -3311,8 +3319,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<div class="pedido-hoy"><div class="pedido-hoy-detalle">'
             f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}{_monto_viaje(tarea)}</strong>'
             f'{_html_direccion_entrega(direccion)}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span>{detalle_obs}</div>'
-            f'<div class="pedido-acciones">{_boton_vamos(direccion, tarea_id, "tarea", celular=cliente_tarea.get("celular"))}{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}'
-            f'{_boton_visto(tarea, "tarea")}<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>{boton_fecha}{boton_derivar_vlad}{boton_recibo_manual}</div></div>'
+            f'<div class="pedido-acciones">{_boton_visto(tarea, "tarea")}{_boton_vamos(direccion, tarea_id, "tarea", celular=cliente_tarea.get("celular"))}'
+            f'{boton_fecha}{boton_derivar_vlad}{boton_recibo_manual}<button class="btn-completar-tarea" type="button" data-id="{tarea_id}">Completado</button>'
+            f'{_boton_whatsapp_cliente(cliente_tarea.get("celular"))}</div></div>'
         )
 
     tarjetas = (
