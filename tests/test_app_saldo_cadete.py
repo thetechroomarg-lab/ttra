@@ -247,3 +247,30 @@ def test_comprobante_que_no_es_imagen_ni_pdf_se_rechaza(monkeypatch):
 
     assert r.status_code == 400
     assert not _movimientos(fake)[0].get("pagado_en")
+
+
+def test_pago_viejo_sin_registro_aparece_y_se_le_sube_comprobante(monkeypatch):
+    fake, admin, cadete = _clientes(monkeypatch)
+    fake.storage = _StorageFalso()
+    for i, monto in enumerate([40000, 30000]):
+        fake.table("movimientos_cadete").insert({
+            "id": f"m{i}", "tipo": "tarea", "referencia_id": str(i), "descripcion": "x",
+            "monto_ars": monto, "pagado_en": "2026-10-02T20:00:00+00:00",
+        }).execute()
+
+    saldo = admin.get("/admin/cadete/saldo").text
+    admin.get("/admin/cadete/saldo")  # no duplica al recargar
+
+    pagos = fake.table("pagos_cadete").select("*").execute().data
+    assert len(pagos) == 1 and pagos[0]["monto_ars"] == 70000
+    assert "$ 70.000" in saldo and "Subir comprobante" in saldo
+    assert "Subir comprobante" not in cadete.get("/admin/cadete/saldo").text
+
+    r = admin.post(f"/admin/cadete/pagos/{pagos[0]['id']}/comprobante",
+                   files=[("comprobante", ("t.jpg", b"jpg", "image/jpeg"))])
+
+    assert r.status_code == 200
+    pago = fake.table("pagos_cadete").select("*").execute().data[0]
+    assert pago["comprobante"] and pago["monto_ars"] == 70000
+    assert cadete.post(f"/admin/cadete/pagos/{pago['id']}/comprobante",
+                       files=[("comprobante", ("t.jpg", b"jpg", "image/jpeg"))]).status_code == 401

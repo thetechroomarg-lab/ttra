@@ -5988,6 +5988,7 @@ _SALDO_CADETE_ESTILO = """
   .pagos h2 { font-size:var(--op-fs-body); margin:0 0 8px; color:var(--op-text-dim); }
   .movimiento.pago { border-color:var(--op-success); }
   .ver-comprobante { display:inline-block; margin-top:4px; color:var(--op-success); font-weight:700; }
+  .btn-subir-comprobante { display:inline-block; margin-top:6px; padding:6px 10px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-surface-2); color:var(--op-text); font-size:var(--op-fs-small); font-weight:700; cursor:pointer; }
   .sin-comprobante { display:block; margin-top:4px; color:var(--op-text-dim); font-size:var(--op-fs-micro); }
   a.volver { color:var(--op-text-dim); text-decoration:none; font-weight:700; }
 </style>
@@ -6018,14 +6019,23 @@ def admin_cadete_saldo(request: Request):
 
     def _fila_pago(p):
         fecha, _, hora = _formatear_fecha_ar(p.get("creado_en"))
+        pid = html.escape(p.get("id") or "")
         comprobante = (
-            f'<a class="ver-comprobante" href="/admin/cadete/pagos/{html.escape(p.get("id") or "")}/comprobante" target="_blank">Ver comprobante</a>'
+            f'<a class="ver-comprobante" href="/admin/cadete/pagos/{pid}/comprobante" target="_blank">Ver comprobante</a>'
             if p.get("comprobante") else '<span class="sin-comprobante">Sin comprobante</span>'
         )
+        # El monto de un pago ya hecho no se edita: solo se sube o cambia el comprobante.
+        subir = (
+            f'<label class="btn-subir-comprobante">{"Cambiar comprobante" if p.get("comprobante") else "Subir comprobante"}'
+            f'<input type="file" accept="image/*,application/pdf" data-pago="{pid}" hidden></label>'
+            if es_admin else ""
+        )
         return (f'<div class="movimiento pago"><div>Pago de {int(p.get("movimientos") or 0)} movimientos'
-                f'<small>{fecha} {hora}</small>{comprobante}</div>'
+                f'<small>{fecha} {hora}</small>{comprobante}{subir}</div>'
                 f'<div class="movimiento-monto">$ {_formatear_entero_ar(p.get("monto_ars"))}</div></div>')
 
+    if es_admin:
+        saldo_cadete.registrar_pagos_viejos(get_client())
     pagos = saldo_cadete.listar_pagos(get_client())
     pagos_html = (f'<section class="pagos"><h2>Pagos</h2>{"".join(_fila_pago(p) for p in pagos)}</section>'
                   if pagos else "")
@@ -6077,6 +6087,20 @@ document.getElementById("form-pago")?.addEventListener("submit", async (e) => {{
   }}
   location.reload();
 }});
+document.querySelectorAll(".btn-subir-comprobante input").forEach((input) => input.addEventListener("change", async () => {{
+  const archivo = input.files[0];
+  if (!archivo) return;
+  const datos = new FormData();
+  datos.append("comprobante", archivo);
+  const r = await fetch(`/admin/cadete/pagos/${{input.dataset.pago}}/comprobante`, {{method: "POST", body: datos}});
+  if (!r.ok) {{
+    const err = await r.json().catch(() => ({{}}));
+    alert(err.error || "No se pudo subir el comprobante");
+    input.value = "";
+    return;
+  }}
+  location.reload();
+}}));
 document.querySelectorAll(".btn-monto").forEach((b) => b.addEventListener("click", () => {{
   const v = prompt("Nuevo monto en pesos", b.dataset.monto);
   if (v !== null && v.trim() !== "" && !isNaN(Number(v))) enviar("/admin/cadete/movimientos/" + b.dataset.id, "PUT", {{monto_ars: Math.round(Number(v))}});
@@ -6123,24 +6147,49 @@ _COMPROBANTE_TIPOS = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "we
 _COMPROBANTE_MAX_BYTES = 8_000_000
 
 
+async def _subir_comprobante(request: Request, client):
+    """Sube el comprobante del form, si vino. Devuelve (ruta, error)."""
+    if not request.headers.get("content-type", "").startswith("multipart/"):
+        return None, None
+    archivo = (await request.form()).get("comprobante")
+    if not getattr(archivo, "filename", None):
+        return None, None
+    extension = _COMPROBANTE_TIPOS.get(archivo.content_type or "")
+    if not extension:
+        return None, JSONResponse({"error": "El comprobante tiene que ser una imagen o un PDF"}, status_code=400)
+    contenido = await archivo.read()
+    if not contenido or len(contenido) > _COMPROBANTE_MAX_BYTES:
+        return None, JSONResponse({"error": "El comprobante debe pesar menos de 8 MB"}, status_code=400)
+    ruta = f"pagos-cadete/{uuid.uuid4().hex}.{extension}"
+    client.storage.from_(saldo_cadete.BUCKET_COMPROBANTES).upload(
+        ruta, contenido, {"content-type": archivo.content_type})
+    return ruta, None
+
+
 @app.post("/admin/cadete/movimientos/pagar")
 async def admin_cadete_registrar_pago(request: Request):
     _exigir_admin(request)
     client = get_client()
-    ruta = None
-    if request.headers.get("content-type", "").startswith("multipart/"):
-        archivo = (await request.form()).get("comprobante")
-        if getattr(archivo, "filename", None):
-            extension = _COMPROBANTE_TIPOS.get(archivo.content_type or "")
-            if not extension:
-                return JSONResponse({"error": "El comprobante tiene que ser una imagen o un PDF"}, status_code=400)
-            contenido = await archivo.read()
-            if not contenido or len(contenido) > _COMPROBANTE_MAX_BYTES:
-                return JSONResponse({"error": "El comprobante debe pesar menos de 8 MB"}, status_code=400)
-            ruta = f"pagos-cadete/{uuid.uuid4().hex}.{extension}"
-            client.storage.from_(saldo_cadete.BUCKET_COMPROBANTES).upload(
-                ruta, contenido, {"content-type": archivo.content_type})
+    ruta, error = await _subir_comprobante(request, client)
+    if error:
+        return error
     return {"ok": True, **saldo_cadete.registrar_pago(client, ruta)}
+
+
+@app.post("/admin/cadete/pagos/{pago_id}/comprobante")
+async def admin_cadete_subir_comprobante(pago_id: str, request: Request):
+    """Sube o reemplaza el comprobante de un pago ya hecho. El monto no se toca."""
+    _exigir_admin(request)
+    client = get_client()
+    if not client.table(saldo_cadete.TABLA_PAGOS).select("id").eq("id", pago_id).execute().data:
+        raise HTTPException(status_code=404, detail="Pago no encontrado")
+    ruta, error = await _subir_comprobante(request, client)
+    if error:
+        return error
+    if not ruta:
+        return JSONResponse({"error": "Elegí un archivo"}, status_code=400)
+    client.table(saldo_cadete.TABLA_PAGOS).update({"comprobante": ruta}).eq("id", pago_id).execute()
+    return {"ok": True, "comprobante": ruta}
 
 
 @app.get("/admin/cadete/pagos/{pago_id}/comprobante")

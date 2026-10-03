@@ -103,6 +103,32 @@ def registrar_pago(client, comprobante=None):
     return {"pagados": len(pendientes), "monto": monto, "pago": pago}
 
 
+def registrar_pagos_viejos(client):
+    """Crea el registro de los pagos hechos antes de que existiera pagos_cadete.
+
+    Un pago viejo es el grupo de movimientos marcados con el mismo pagado_en
+    y sin pago_id. Es idempotente: al vincularlos, no se vuelven a agrupar.
+    """
+    grupos = {}
+    for movimiento in listar(client):
+        if movimiento.get("pagado_en") and not movimiento.get("pago_id"):
+            grupos.setdefault(movimiento["pagado_en"], []).append(movimiento)
+    for pagado_en, movimientos in grupos.items():
+        try:
+            pago = {
+                "id": str(uuid.uuid4()),
+                "monto_ars": sum(int(m.get("monto_ars") or 0) for m in movimientos),
+                "movimientos": len(movimientos),
+                "comprobante": None,
+                "creado_en": pagado_en,
+            }
+            client.table(TABLA_PAGOS).insert(pago).execute()
+            for movimiento in movimientos:
+                client.table(TABLA).update({"pago_id": pago["id"]}).eq("id", movimiento["id"]).execute()
+        except Exception:
+            logger.exception("No se pudo registrar el pago viejo del %s", pagado_en)
+
+
 def listar_pagos(client):
     try:
         filas = client.table(TABLA_PAGOS).select("*").execute().data or []
