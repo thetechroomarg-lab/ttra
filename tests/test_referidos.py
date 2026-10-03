@@ -200,3 +200,20 @@ def test_arbol_muestra_solo_quienes_compraron_con_nombre_e_inicial():
     assert resumen["arbol"] == [{"nombre": "Luis G.", "hijos": [{"nombre": "Pedro R.", "hijos": []}]}]
     assert resumen["personas_en_red"] == 2
     assert "pedido" not in str(resumen["arbol"])
+
+
+def test_mayorista_no_tiene_link_hasta_volver_a_minorista():
+    import pytest
+    fake = FakeSupabaseClient()
+    _alta(fake, "mayo", tipo_cliente="mayorista")
+    with pytest.raises(referidos.MayoristaSinLinkError):
+        referidos.obtener_o_crear_codigo(fake, "mayo")
+
+    # Un link de cuando era minorista deja de vincular mientras sea mayorista.
+    fake.table("clientes").update({"tipo_cliente": "minorista"}).eq("id", "mayo").execute()
+    codigo = referidos.obtener_o_crear_codigo(fake, "mayo")
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", "mayo").execute()
+    assert referidos.resolver_referente(fake, codigo) is None
+
+    fake.table("clientes").update({"tipo_cliente": "minorista"}).eq("id", "mayo").execute()
+    assert referidos.resolver_referente(fake, codigo) == "mayo"

@@ -4126,6 +4126,8 @@ def api_me_referido(request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     try:
         codigo = referidos.obtener_o_crear_codigo(get_client(), request.session["cliente_id"])
+    except referidos.MayoristaSinLinkError:
+        return JSONResponse({"error": "Las cuentas mayoristas no tienen link de invitación."}, status_code=403)
     except Exception:
         logger.exception("No se pudo generar el código de referido")
         return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)

@@ -23,10 +23,16 @@ def _cliente(client, cliente_id):
     return filas[0] if filas else None
 
 
+class MayoristaSinLinkError(Exception):
+    """Las cuentas mayoristas no invitan: el link vuelve si pasa a minorista."""
+
+
 def obtener_o_crear_codigo(client, cliente_id):
     cliente = _cliente(client, cliente_id)
     if not cliente:
         return None
+    if cliente.get("tipo_cliente") == "mayorista":
+        raise MayoristaSinLinkError()
     if cliente.get("codigo_referido"):
         return cliente["codigo_referido"]
     for _ in range(12):
@@ -50,7 +56,10 @@ def resolver_referente(client, codigo):
     if not codigo:
         return None
     filas = client.table("clientes").select("*").eq("codigo_referido", codigo).execute().data
-    return filas[0]["id"] if filas else None
+    # El link de alguien que hoy es mayorista no vincula a nadie.
+    if not filas or filas[0].get("tipo_cliente") == "mayorista":
+        return None
+    return filas[0]["id"]
 
 
 def _generar_codigo_premio(client):
