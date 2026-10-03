@@ -235,7 +235,7 @@ def mostrar_producto(row, cotizacion, es_mayorista=False):
         print(f"Colores disponibles: {colores}")
     print(f"🇺🇸 U$D {precios['usd']}")
     print(f"🏦 U$D {precios['transferencia_usd']} (transferencia exterior)")
-    print(f"₿ USDT {precios['usdt']}")
+    print(f"🪙 USDT {precios['usdt']}")
     print(f"🇦🇷 ${formatear_pesos(precios['pesos'])} (pesos contado)")
     print(f"🏦 ${formatear_pesos(precios['transferencia_pesos'])} (transferencia pesos)")
 
@@ -313,7 +313,7 @@ def main():
             precios = calcular_precios(usd_mayorista, cotizacion)
             print(f"🇺🇸 U$D {precios['usd']} (mayorista, calculado en vivo desde costos.json)")
             print(f"🏦 U$D {precios['transferencia_usd']} (transferencia exterior)")
-            print(f"₿ USDT {precios['usdt']}")
+            print(f"🪙 USDT {precios['usdt']}")
             print(f"🇦🇷 ${formatear_pesos(precios['pesos'])} (pesos contado)")
             print(f"🏦 ${formatear_pesos(precios['transferencia_pesos'])} (transferencia pesos)")
             print()

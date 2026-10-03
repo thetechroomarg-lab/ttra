@@ -136,7 +136,7 @@ def test_catalogo_mayorista_filtra_y_descuenta_por_sesion(tmp_path, monkeypatch)
     assert r.status_code == 200
     assert r.json()["modo_precio"] == "mayorista"
     assert r.json()["secciones"]["Celulares"] == [
-        {"nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 130, "marca": "Apple"}
+        {"nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 130, "usd_publico": 180, "marca": "Apple"}
     ]
     assert "costo" not in r.text
     assert "margen" not in r.text
@@ -281,7 +281,7 @@ def test_admin_habilita_y_revoca_catalogo_mayorista_por_rutas_reales(tmp_path, m
     assert catalogo_mayorista.status_code == 200
     assert catalogo_mayorista.json()["modo_precio"] == "mayorista"
     assert catalogo_mayorista.json()["secciones"]["Celulares"] == [
-        {"nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 130, "marca": "Apple"},
+        {"nombre": "Elegible", "categoria": "Apple - iPhone", "usd": 130, "usd_publico": 180, "marca": "Apple"},
     ]
 
     revocar = admin.post(f"/admin/clientes/{cliente_id}/mayorista", json={"habilitado": False})

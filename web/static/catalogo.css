@@ -199,3 +199,11 @@ body.catalog-share-open { overflow: hidden; }
 @media (max-width: 700px) {
   .catalog-filter-field { width: 100%; flex-direction: column; align-items: stretch; gap: 10px; }
 }
+
+
+/* Cuentas mayoristas: tipo de pago | descuento percibido | precio final. */
+.tabla-mayorista { display: grid; grid-template-columns: auto auto auto; gap: 2px 12px; width: 100%; }
+.tabla-mayorista > :nth-child(3n+2) { text-align: center; color: #2e9e55; font-weight: 600; }
+.tabla-mayorista > :nth-child(3n) { text-align: right; }
+.tabla-mayorista .tm-cab { font-size: 0.8em; opacity: 0.7; text-transform: uppercase; color: inherit; font-weight: 400; }
+.tabla-mayorista > :nth-child(3n+1):not(.tm-cab) { font-size: 1.15em; font-weight: 600; }

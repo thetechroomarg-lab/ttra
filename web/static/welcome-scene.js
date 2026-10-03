@@ -266,6 +266,8 @@ export function createScene(host) {
   const observer=new ResizeObserver(resize);observer.observe(host);resize();
   return {
     render(t){
+      // One turn at the original speed profile; every later beat starts 2.433s earlier.
+      const spinT=t;t+=2.433;
       const explosion=ease((t-4.95)/.55);const orbit=ease((t-5.5)/4.7);
       parts.forEach(({group,start,target})=>group.position.lerpVectors(start,target,explosion));
       for (const {sprite,delay} of sparks) {
@@ -286,10 +288,10 @@ export function createScene(host) {
       shutdownFlash.material.opacity = ease((shutdown-.45)/.2)*(1-ease((shutdown-.78)/.22));
       shutdownFlash.scale.x = 1-ease((shutdown-.78)/.22);
       // Hero hold, acceleration to centrifuge speed, then an abrupt time freeze.
-      const spinTime = T.MathUtils.clamp(t-1.3,0,4.2);
+      const spinTime = T.MathUtils.clamp(spinT-1.3,0,1.767);
       const turns = spinTime < 1.1 ? spinTime*spinTime/2.2 : spinTime-.55;
-      phone.rotation.set(.10+.06*explosion, -.45+turns*(Math.PI*6/3.65), -.12);
-      // At 5.5s all components and phone rotation freeze; only the camera moves.
+      phone.rotation.set(.10+.06*explosion, -.45+turns*(Math.PI*2/1.217), -.12);
+      // At 3.07s all components and phone rotation freeze; only the camera moves.
       const angle=orbit*1.7;
       const distance=T.MathUtils.lerp(Math.max(8.2,5/camera.aspect),Math.max(10.8,11.8/camera.aspect),explosion);
       camera.position.set(Math.sin(angle)*distance, .25+orbit*1.6, Math.cos(angle)*distance);

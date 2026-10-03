@@ -106,9 +106,15 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     tareas = [] if mostrar_clientes else client.table("tareas_entrega").select("*").execute().data
     tareas_hoy = [
         tarea for tarea in tareas
-        if tarea.get("fecha_entrega") == fecha_hoy and not tarea.get("completada_en")
+        # Las atrasadas sin completar siguen apareciendo hoy, para que ninguna nota se pierda.
+        if (tarea.get("fecha_entrega") or "") <= fecha_hoy and not tarea.get("completada_en")
     ]
-    tareas_hoy.sort(key=lambda tarea: int(tarea.get("orden") or 0))
+    tareas_hoy.sort(key=lambda tarea: (tarea.get("fecha_entrega") or "", int(tarea.get("orden") or 0)))
+    tareas_proximas = [
+        tarea for tarea in tareas
+        if (tarea.get("fecha_entrega") or "") > fecha_hoy and not tarea.get("completada_en")
+    ]
+    tareas_proximas.sort(key=lambda tarea: (tarea.get("fecha_entrega") or "", int(tarea.get("orden") or 0)))
     pedidos_hoy = [
         pedido for pedido in pedidos
         if pedido.get("fecha_entrega") == fecha_hoy and not pedido.get("recibo_enviado_en")
@@ -192,13 +198,22 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             '</div>'
         )
 
-    def _tarjeta_tarea(tarea):
+    def _etiqueta_fecha_tarea(tarea):
+        fecha = tarea.get("fecha_entrega") or ""
+        if not fecha or fecha == fecha_hoy:
+            return ""
+        prefijo = "Atrasada" if fecha < fecha_hoy else "Para el"
+        return f'<br><span class="estado-recibo">{prefijo} {html.escape("/".join(reversed(fecha.split("-"))))}</span>'
+
+    def _tarjeta_tarea(tarea, arrastrable=True):
         tarea_id = html.escape(tarea.get("id", ""))
         nombre_cliente = tarea.get("cliente_nombre") or clientes_por_id.get(tarea.get("cliente_id"), {}).get("nombre", "")
         detalle_cliente = f'<br><span>Cliente: {html.escape(nombre_cliente)}</span>' if nombre_cliente else ""
         return (
-            f'<div class="pedido-hoy" data-tipo-entrega="tarea" data-entrega-id="{tarea_id}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar tarea">≡</button><div class="pedido-hoy-detalle">'
-            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
+            (f'<div class="pedido-hoy" data-tipo-entrega="tarea" data-entrega-id="{tarea_id}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar tarea">≡</button><div class="pedido-hoy-detalle">'
+             if arrastrable else f'<div class="pedido-hoy" data-entrega-id="{tarea_id}"><div class="pedido-hoy-detalle">')
+            + f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}</strong>'
+            f'{_etiqueta_fecha_tarea(tarea)}'
             f'{_html_direccion_entrega(tarea.get("direccion"))}{detalle_cliente}<br><span>{html.escape(tarea.get("nota") or "")}</span></div>'
             f'{_acciones_tarea(tarea)}</div>'
         )
@@ -235,8 +250,25 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         _tarjeta_pedido(entrega) if tipo == "pedido" else _tarjeta_tarea(entrega)
         for tipo, entrega, _ in entregas_pendientes
     ]
+    def _es_de_alejo(entrega):
+        return entrega.get("asignado_a") == CADETE_SLUG
+
+    def _agrupar_por_responsable(items, clase_grupo):
+        # items: (entrega, html). Separa lo propio de lo derivado a Alejo, sin importar la fecha.
+        mias = "".join(h for e, h in items if not _es_de_alejo(e))
+        alejo = "".join(h for e, h in items if _es_de_alejo(e))
+        bloques = []
+        if mias:
+            bloques.append(f'<div class="{clase_grupo}" data-responsable="admin"><h3 class="grupo-responsable">Mías</h3>{mias}</div>')
+        if alejo:
+            bloques.append(f'<div class="{clase_grupo}" data-responsable="alejo"><h3 class="grupo-responsable">Alejo</h3>{alejo}</div>')
+        return "".join(bloques)
+
     if tarjetas_pendientes_hoy:
-        pedidos_hoy_html = "".join(tarjetas_pendientes_hoy)
+        pedidos_hoy_html = _agrupar_por_responsable(
+            [(entrega, tarjeta) for (_, entrega, _), tarjeta in zip(entregas_pendientes, tarjetas_pendientes_hoy)],
+            "grupo-entregas",
+        )
     else:
         pedidos_hoy_html = '<p class="vacio">No hay pedidos pendientes para hoy.</p>'
     if pedidos_historial or tareas_historial:
@@ -294,12 +326,20 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                 f'{detalle_obs}{acciones}</div>'
             )
 
-        pedidos_historial_html = "".join(
-            [_pedido_historial_html(pedido) for pedido in pedidos_historial]
-            + [_tarea_historial_html(tarea) for tarea in tareas_historial]
+        pedidos_historial_html = _agrupar_por_responsable(
+            [(pedido, _pedido_historial_html(pedido)) for pedido in pedidos_historial]
+            + [(tarea, _tarea_historial_html(tarea)) for tarea in tareas_historial],
+            "grupo-historial",
         )
     else:
         pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'
+
+    proximas_html = (
+        f'<section class="pedidos-hoy"><h2>Próximas tareas ({len(tareas_proximas)})</h2>'
+        + _agrupar_por_responsable([(t, _tarjeta_tarea(t, arrastrable=False)) for t in tareas_proximas], "grupo-proximas")
+        + '</section>'
+        if tareas_proximas else ""
+    )
 
     clientes_tarea_json = _json_para_script(
         [
@@ -318,6 +358,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         f'<label class="tarea-enviar-alejo"><input type="checkbox" id="tarea-enviar-alejo"> Enviar a Alejo</label>'
         f'<button type="submit">Agregar tarea</button></div></form>'
         f'{pedidos_hoy_html}</section>'
+        f'{proximas_html}'
         if fecha_historial == fecha_hoy else ""
     )
 
@@ -661,9 +702,9 @@ document.querySelectorAll(".arrastrar-entrega").forEach((tirador) => {{
     tirador.setPointerCapture(evento.pointerId);
     const mover = (movimiento) => {{
       const destino = document.elementFromPoint(movimiento.clientX, movimiento.clientY)?.closest(".pedido-hoy[data-tipo-entrega]");
-      if (!destino || destino === entrega || !listaEntregas.contains(destino)) return;
+      if (!destino || destino === entrega || destino.parentNode !== entrega.parentNode) return;
       const mitad = destino.getBoundingClientRect().top + destino.offsetHeight / 2;
-      listaEntregas.insertBefore(entrega, movimiento.clientY < mitad ? destino : destino.nextSibling);
+      destino.parentNode.insertBefore(entrega, movimiento.clientY < mitad ? destino : destino.nextSibling);
     }};
     const soltar = async () => {{
       entrega.classList.remove("arrastrando");
@@ -692,10 +733,10 @@ document.querySelectorAll(".arrastrar-entrega").forEach((tirador) => {{
 }});
 document.querySelectorAll(".pedido-hoy[data-tipo-entrega]").forEach((destino) => {{
   destino.addEventListener("dragover", (evento) => {{
-    if (!entregaNativaArrastrada || entregaNativaArrastrada === destino) return;
+    if (!entregaNativaArrastrada || entregaNativaArrastrada === destino || destino.parentNode !== entregaNativaArrastrada.parentNode) return;
     evento.preventDefault();
     const mitad = destino.getBoundingClientRect().top + destino.offsetHeight / 2;
-    listaEntregas.insertBefore(entregaNativaArrastrada, evento.clientY < mitad ? destino : destino.nextSibling);
+    destino.parentNode.insertBefore(entregaNativaArrastrada, evento.clientY < mitad ? destino : destino.nextSibling);
   }});
   destino.addEventListener("drop", async (evento) => {{
     if (!entregaNativaArrastrada) return;

@@ -148,14 +148,9 @@ function mostrarTarjetaFidelidad(datos) {
   // Los mayoristas no participan: su precio ya es especial.
   seccion.classList.toggle("oculto", datos.tipo_cliente === "mayorista");
   contenedorSellos.replaceChildren();
-  if (datos.fidelidad_ultimo_codigo) {
-    mensajePremio.textContent =
-      `¡Tenés un premio! Usá el código ${datos.fidelidad_ultimo_codigo} en tu próxima compra: US$20 de descuento.`;
-    mensajePremio.classList.remove("oculto");
-    return;
-  }
-  mensajePremio.classList.add("oculto");
-  const sellos = Math.min(Number(datos.sellos_fidelidad) || 0, 5);
+  // Con un premio pendiente el contador queda congelado en 5.
+  const conPremio = Boolean(datos.fidelidad_ultimo_codigo);
+  const sellos = conPremio ? 5 : Math.min(Number(datos.sellos_fidelidad) || 0, 5);
   contenedorSellos.setAttribute("aria-label", `${sellos} de 5 compras`);
   for (let i = 0; i < 5; i++) {
     const sello = document.createElement("span");
@@ -165,9 +160,92 @@ function mostrarTarjetaFidelidad(datos) {
   }
   const ayuda = document.createElement("p");
   ayuda.className = "fidelidad-ayuda";
-  ayuda.textContent = `${sellos} de 5 compras. A la quinta te regalo US$20 de descuento.`;
+  ayuda.textContent = conPremio
+    ? "Completaste tus 5 compras."
+    : `${sellos} de 5 compras. A la quinta te regalo US$20 de descuento.`;
   contenedorSellos.append(ayuda);
+  mensajePremio.textContent = "¡Ganaste US$20 de descuento por tus 5 compras! Se aplica solo en tu 6ta compra.";
+  mensajePremio.classList.toggle("oculto", !conPremio);
 }
+
+function mostrarReferidos(datos) {
+  const seccion = document.getElementById("seccion-referidos");
+  const estado = document.getElementById("referidos-estado");
+  if (!seccion || !estado) return;
+  // Igual que fidelidad: el cupón no aplica sobre precio mayorista.
+  seccion.classList.toggle("oculto", datos.tipo_cliente === "mayorista");
+  estado.replaceChildren();
+  const r = datos.referidos;
+  if (!r) {
+    estado.classList.add("oculto");
+    return;
+  }
+  const pendientes = r.pendientes || [];
+  if (pendientes.length) {
+    const titulo = document.createElement("p");
+    titulo.textContent = "Descuentos por amigos que ya compraron:";
+    const lista = document.createElement("ul");
+    lista.className = "referidos-lista";
+    for (const p of pendientes) {
+      const item = document.createElement("li");
+      const fecha = p.acreditado_en ? new Date(p.acreditado_en).toLocaleDateString("es-AR") : "";
+      item.textContent = `US$${p.monto_usd} — ${p.nombre}${fecha ? ` (compró el ${fecha})` : ""}`;
+      lista.append(item);
+    }
+    estado.append(titulo, lista);
+  }
+  if (r.saldo_usd > 0) {
+    const total = document.createElement("p");
+    total.className = "referidos-total";
+    const conFidelidad = r.codigo_premio === datos.fidelidad_ultimo_codigo;
+    total.textContent = conFidelidad
+      ? `Total en tu próxima compra: US$${r.saldo_usd} (fidelidad + amigos). Se aplica solo.`
+      : `Total en tu próxima compra: US$${r.saldo_usd}. Se aplica solo.`;
+    estado.append(total);
+  }
+  if (r.referidos_registrados > 0) {
+    const cuenta = document.createElement("p");
+    cuenta.className = "referidos-ayuda";
+    cuenta.textContent = `Amigos registrados con tu link: ${r.referidos_registrados} (${r.referidos_con_compra} ya compraron).`;
+    estado.append(cuenta);
+  }
+  estado.classList.toggle("oculto", estado.childElementCount === 0);
+}
+
+async function compartirLinkReferido() {
+  const boton = document.getElementById("btn-compartir-referido");
+  const linkEl = document.getElementById("referidos-link");
+  if (!boton || !linkEl) return;
+  boton.disabled = true;
+  try {
+    const r = await fetch("/api/me/referido", { method: "POST" });
+    const datos = await r.json().catch(() => ({}));
+    if (!r.ok || !datos.url) throw new Error(datos.error || "No se pudo generar tu link.");
+    const texto = "Te invito a The Tech Room Arg: creá tu cuenta con mi link.";
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: "The Tech Room Arg", text: texto, url: datos.url });
+        return;
+      } catch (e) {
+        if (e?.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(datos.url);
+      linkEl.textContent = `Link copiado: ${datos.url}`;
+    } catch {
+      linkEl.textContent = datos.url;
+    }
+    linkEl.classList.remove("oculto");
+  } catch (e) {
+    linkEl.textContent = e.message || "No se pudo generar tu link.";
+    linkEl.classList.remove("oculto");
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+document.getElementById("btn-compartir-referido")?.addEventListener("click", compartirLinkReferido);
 
 async function cargarFragmentoTerminosMayorista() {
   if (fragmentoTerminosMayoristaCacheLocal) return fragmentoTerminosMayoristaCacheLocal;
@@ -227,6 +305,7 @@ async function cargarPerfil() {
     document.getElementById("perfil-celular").value = datos.celular || "";
     mostrarSeccionCondicionesMayorista(datos);
     mostrarTarjetaFidelidad(datos);
+    mostrarReferidos(datos);
   } catch {
     errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }

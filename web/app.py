@@ -27,7 +27,7 @@ from web.public_static import PublicStaticFiles
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
-from web import buscador, catalogo, cuentas, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, push_cadete, recibos
+from web import buscador, catalogo, cuentas, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, push_cadete, recibos, referidos
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -986,6 +986,10 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
         except Exception:
             # El recibo ya salió: perder un sello es preferible a mostrar un error.
             logger.exception("No se pudo registrar el sello de fidelidad del pedido %s", pedido_id)
+        try:
+            referidos.acreditar_por_compra(client, pedido["cliente_id"])
+        except Exception:
+            logger.exception("No se pudo acreditar el premio de referido del pedido %s", pedido_id)
     return {"ok": True, "recibo_id": recibo_id, "reenviado": bool(pedido.get("recibo_enviado_en"))}
 
 
@@ -1161,6 +1165,7 @@ class RegistroIn(BaseModel):
     direccion: str = Field(min_length=3, max_length=500)
     lat: float | None = None
     lng: float | None = None
+    codigo_referido: str | None = Field(default=None, max_length=20)
 
 
 class LoginIn(BaseModel):
@@ -1271,6 +1276,14 @@ def registro(entrada: RegistroIn, request: Request):
         )
     except Exception:
         logger.exception("No se pudo guardar el domicilio inicial del registro")
+    if entrada.codigo_referido:
+        try:
+            referente_id = referidos.resolver_referente(client, entrada.codigo_referido)
+            if referente_id and referente_id != cliente["id"]:
+                client.table("clientes").update({"referido_por": referente_id}).eq("id", cliente["id"]).execute()
+        except Exception:
+            # Un código roto no puede frenar el alta de la cuenta.
+            logger.exception("No se pudo vincular el referido de %s", cliente["id"])
     if cliente["requiere_confirmacion_email"]:
         _vincular_interacciones_anonimas(client, request, cliente["id"])
         request.session.clear()
@@ -1372,7 +1385,28 @@ def api_me(request: Request):
     if cliente is None:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     tipo_cliente = _tipo_cliente_sesion(request)
-    return {**cliente, "tipo_cliente": tipo_cliente, "modo_precio": tipo_cliente}
+    try:
+        resumen_referidos = referidos.resumen(get_client(), cliente["id"])
+    except Exception:
+        logger.exception("No se pudo leer el resumen de referidos")
+        resumen_referidos = None
+    return {**cliente, "tipo_cliente": tipo_cliente, "modo_precio": tipo_cliente,
+            "referidos": resumen_referidos}
+
+
+@app.post("/api/me/referido")
+def api_me_referido(request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        codigo = referidos.obtener_o_crear_codigo(get_client(), request.session["cliente_id"])
+    except Exception:
+        logger.exception("No se pudo generar el código de referido")
+        return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
+    if not codigo:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    url = f"{_public_app_base_url(request)}/login.html?{urlencode({'registro': '1', 'ref': codigo})}"
+    return {"codigo": codigo, "url": url}
 
 
 class ActualizarMeIn(BaseModel):
@@ -1860,6 +1894,10 @@ def api_pedidos(entrada: PedidoIn, request: Request):
                 fidelidad.marcar_codigo_fidelidad_usado(client, cliente_id, fila_descuento["code"])
             except Exception:
                 logger.exception("No se pudo resetear el ciclo de fidelidad de %s", cliente_id)
+            try:
+                referidos.marcar_premio_usado(client, cliente_id, fila_descuento["code"])
+            except Exception:
+                logger.exception("No se pudo cerrar el premio de referidos de %s", cliente_id)
     else:
         pedidos.guardar_pedido(
             client,

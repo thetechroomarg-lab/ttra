@@ -38,6 +38,23 @@ def _clave(nombre):
     return " ".join(sorted(toks))
 
 
+# AZ es el proveedor preferido: mandar al cadete a buscar a otro cuesta ~US$4
+# de envío. Solo se elige a otro si lo tiene al menos US$10 más barato.
+PROVEEDOR_PREFERIDO = "az"
+VENTAJA_MINIMA_OTRO_PROVEEDOR = 10
+
+
+def _elegir_proveedor(grupo):
+    barato = min(grupo, key=lambda x: x["costo"])
+    preferidos = [x for x in grupo if str(x.get("proveedor", "")).lower() == PROVEEDOR_PREFERIDO]
+    if not preferidos:
+        return barato
+    az = min(preferidos, key=lambda x: x["costo"])
+    if az["costo"] - barato["costo"] >= VENTAJA_MINIMA_OTRO_PROVEEDOR:
+        return barato
+    return az
+
+
 def consolidar(items):
     grupos = {}  # clave -> lista de items
     orden = []
@@ -51,7 +68,7 @@ def consolidar(items):
     lista = []
     for clave in orden:
         grupo = grupos[clave]
-        barato = min(grupo, key=lambda x: x["costo"])
+        barato = _elegir_proveedor(grupo)
         fila = {
             "nombre": barato["nombre"],
             "costo": barato["costo"],

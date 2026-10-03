@@ -253,12 +253,12 @@ function tarjetaProducto(p, indice = 0) {
   return `
     <div class="card" data-product-index="${indice}">
       <h3>${escapeHtml(p.nombre)}</h3>
-      <p class="precios">
+      <p class="precios">${tablaMayoristaHtml(p) || `
         <strong>U$D ${monto(precios.dolares)} (contado)</strong><br>
         U$D ${monto(precios.bancoUsa)} (Transf. USA)<br>
         USDT ${monto(precios.usdt)}<br>
         $ ${monto(p.pesos)} Pesos contado.<br>
-        $ ${monto(p.transferencia)} Pesos transf.
+        $ ${monto(p.transferencia)} Pesos transf.`}
       </p>
       <div class="catalog-card-actions">
         ${colores}

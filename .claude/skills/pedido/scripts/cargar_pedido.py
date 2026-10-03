@@ -64,7 +64,10 @@ def main():
     ap.add_argument("--direccion", required=True, help="dirección de entrega (y domicilio principal si es cliente nuevo)")
     ap.add_argument("--piso", default=None, help="piso (opcional)")
     ap.add_argument("--depto", default=None, help="departamento (opcional)")
-    ap.add_argument("--producto", required=True, help="término de búsqueda, debe matchear EXACTAMENTE un producto de productos.json")
+    ap.add_argument("--producto", required=True, action="append",
+                    help="término de búsqueda, debe matchear EXACTAMENTE un producto de productos.json (repetible para varios productos)")
+    ap.add_argument("--total-usd", type=float, default=None,
+                    help="total final acordado en USD; la diferencia con la suma de precios se guarda como descuento")
     ap.add_argument("--cantidad", type=int, default=1)
     ap.add_argument("--fecha", default="manana", help="YYYY-MM-DD, o 'hoy'/'manana'/'pasado manana' (default: manana)")
     args = ap.parse_args()
@@ -73,18 +76,18 @@ def main():
     extra_domicilio = {k: v for k, v in {"piso": args.piso, "depto": args.depto}.items() if v}
     extra_pedido = {k: v for k, v in {"piso_entrega": args.piso, "depto_entrega": args.depto}.items() if v}
 
-    candidatos = buscar_producto(args.producto)
-    if len(candidatos) == 0:
-        print(f"ERROR: ningún producto matchea '{args.producto}' en productos.json.", file=sys.stderr)
-        sys.exit(1)
-    if len(candidatos) > 1:
-        print(f"ERROR: '{args.producto}' matchea {len(candidatos)} productos, sé más específico:", file=sys.stderr)
-        for p in candidatos:
-            print(f"  - {p['nombre']}", file=sys.stderr)
-        sys.exit(1)
-    producto = candidatos[0]
-    nombre_producto = producto["nombre"]
-    usd_unitario = pedidos.numero_monetario_db(producto["usd"])
+    productos_pedido = []
+    for termino in args.producto:
+        candidatos = buscar_producto(termino)
+        if len(candidatos) == 0:
+            print(f"ERROR: ningún producto matchea '{termino}' en productos.json.", file=sys.stderr)
+            sys.exit(1)
+        if len(candidatos) > 1:
+            print(f"ERROR: '{termino}' matchea {len(candidatos)} productos, sé más específico:", file=sys.stderr)
+            for p in candidatos:
+                print(f"  - {p['nombre']}", file=sys.stderr)
+            sys.exit(1)
+        productos_pedido.append(candidatos[0])
 
     try:
         fecha_entrega = resolver_fecha(args.fecha)
@@ -135,31 +138,37 @@ def main():
             print(f"AVISO: no se pudo guardar el domicilio inicial: {e}")
         cliente_nuevo = True
 
-    usd_subtotal = round(usd_unitario * args.cantidad, 2)
     proveedores = {}
     proveedores_path = PROJECT_DIR / "web" / "proveedores.json"
     if proveedores_path.exists():
         proveedores = json.loads(proveedores_path.read_text(encoding="utf-8"))
-    proveedor = resolver_proveedor(proveedores, nombre_producto)
-
-    detalle = [{
-        "nombre": nombre_producto,
-        "color": None,
-        "cantidad": args.cantidad,
-        "usd_unitario": usd_unitario,
-        "usd_subtotal": usd_subtotal,
-        "proveedor": proveedor,
-    }]
+    detalle = []
+    for producto in productos_pedido:
+        usd_unitario = pedidos.numero_monetario_db(producto["usd"])
+        detalle.append({
+            "nombre": producto["nombre"],
+            "color": None,
+            "cantidad": args.cantidad,
+            "usd_unitario": usd_unitario,
+            "usd_subtotal": round(usd_unitario * args.cantidad, 2),
+            "proveedor": resolver_proveedor(proveedores, producto["nombre"]),
+        })
+    usd_subtotal = round(sum(item["usd_subtotal"] for item in detalle), 2)
+    total_usd = usd_subtotal if args.total_usd is None else round(args.total_usd, 2)
+    descuento_usd = round(usd_subtotal - total_usd, 2)
+    if descuento_usd < 0:
+        print(f"ERROR: el total {total_usd} supera la suma de precios {usd_subtotal}.", file=sys.stderr)
+        sys.exit(1)
 
     pedido = pedidos.guardar_pedido(
         client,
         cliente_id,
-        [nombre_producto],
+        [item["nombre"] for item in detalle],
         fecha_entrega,
         direccion_entrega=args.direccion,
         detalle=detalle,
-        total_usd=usd_subtotal,
-        descuento_usd=0,
+        total_usd=total_usd,
+        descuento_usd=descuento_usd,
         modo_precio="minorista",
         descuento_mayorista_usd=0,
         origen="manual",
@@ -186,11 +195,11 @@ def main():
     print("cliente_nuevo:", cliente_nuevo)
     if password:
         print("password_temporal:", password)
-    print("producto:", nombre_producto)
-    print("proveedor (interno):", proveedor)
+    for item in detalle:
+        print("producto:", item["nombre"], "· US$", item["usd_unitario"], "· proveedor (interno):", item["proveedor"])
     print("pedido_id:", pedido.get("id"))
     print("fecha_entrega:", fecha_entrega.isoformat())
-    print("total_usd:", usd_subtotal)
+    print("subtotal_usd:", usd_subtotal, "· descuento_usd:", descuento_usd, "· total_usd:", total_usd)
     if mail_ok is not None:
         print("mail_enviado:", mail_ok)
 

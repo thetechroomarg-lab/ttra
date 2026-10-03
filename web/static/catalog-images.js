@@ -37,10 +37,16 @@
       const name=text('h3','ai-title',p.nombre), color=text('span','ai-color','');
       const picture=text('div','ai-picture',''), img=document.createElement('img');
       img.loading='lazy'; img.decoding='async'; picture.append(img);
-      const prices=text('div','ai-prices',''), amounts=preciosDe(p);
+      const prices=text('div','ai-prices',''), amounts=preciosDe(p), filasMay=filasMayoristaDe(p);
+      if(filasMay){
+        prices.classList.add('ai-prices-mayorista');
+        const head=text('div','ai-price ai-price-head','');head.append(text('span','','Pago'),text('span','','Descuento'),text('span','','Tu precio'));prices.append(head);
+      }
       [amounts.dolares,amounts.bancoUsa,amounts.usdt,amounts.pesos,amounts.pesosTransf].forEach((v,j)=>{
-        const row=text('div','ai-price','');
-        row.append(text('span','',labels[j]),text('strong','',(v==null?'Consultar':(j<2?'USD ':j===2?'USDT ':'$ ')+Number(v).toLocaleString('es-AR'))));prices.append(row);
+        const row=text('div','ai-price',''), value=text('strong','',(v==null?'Consultar':(j<2?'USD ':j===2?'USDT ':'$ ')+Number(v).toLocaleString('es-AR')));
+        if(filasMay)row.append(text('span','',labels[j]),text('span','ai-desc',filasMay[j].descuento?'-'+filasMay[j].descuento:'-'),value);
+        else row.append(text('span','',labels[j]),value);
+        prices.append(row);
       });
       const marker=document.createComment('original product actions');links.before(marker);
       face.append(logo,name,color,picture,prices,links); card.prepend(face);

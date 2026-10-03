@@ -70,3 +70,23 @@ def test_specs_distintas_no_se_unifican():
     ]
     r = consolidar(items)
     assert len(r["lista"]) == 2
+
+
+def test_prioriza_az_si_otro_no_es_al_menos_10_mas_barato():
+    items = [
+        {"nombre": "Redmi 15 8GB 256GB", "costo": 200, "proveedor": "az"},
+        {"nombre": "Redmi 15 8GB 256GB", "costo": 191, "proveedor": "fr"},
+    ]
+    fila = consolidar(items)["lista"][0]
+    assert fila["proveedor"] == "az"
+    assert fila["costo"] == 200
+
+
+def test_elige_otro_proveedor_si_es_10_o_mas_barato_que_az():
+    items = [
+        {"nombre": "Redmi 15 8GB 256GB", "costo": 200, "proveedor": "az"},
+        {"nombre": "Redmi 15 8GB 256GB", "costo": 190, "proveedor": "fr"},
+    ]
+    fila = consolidar(items)["lista"][0]
+    assert fila["proveedor"] == "fr"
+    assert fila["costo"] == 190

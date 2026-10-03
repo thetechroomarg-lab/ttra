@@ -271,6 +271,8 @@ function productosAlAzar(n) {
 // flex-column, así que cada <strong>/<span> ya cae en su propia fila sin
 // necesitar <br>.
 function bloquePreciosHtml(p) {
+  const tabla = tablaMayoristaHtml(p);
+  if (tabla) return tabla;
   const pr = preciosDe(p);
   return `
     <strong>U$D ${formatearPesos(pr.dolares)} (contado)</strong>

@@ -48,8 +48,11 @@ def catalogo_mayorista(productos: list[dict], costos: dict[str, float]) -> list[
         }
         precio_usd = precio_publico - descuento
         copia["usd"] = precio_usd
+        # El precio público va al lado, para que el mayorista vea su descuento.
+        copia["usd_publico"] = precio_publico
         for campo in ("pesos", "transferencia"):
             if campo in producto:
                 copia[campo] = round(precio_usd * (producto[campo] / precio_publico))
+                copia[f"{campo}_publico"] = producto[campo]
         resultado.append(copia)
     return resultado
