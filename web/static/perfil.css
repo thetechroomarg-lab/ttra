@@ -191,3 +191,7 @@ html #panel-perfil #btn-compartir-referido { min-height: 44px; padding-block: 0;
 .red-arbol ul > li::before { content: ""; position: absolute; left: -14px; top: 15px; width: 10px; border-top: 1px solid rgba(175, 175, 165, .35); }
 .red-nodo { display: inline-block; padding: 4px 10px; border: 1px solid rgba(175, 175, 165, .35); border-radius: 999px; font-size: 13px; }
 .red-nodo-vos { border-color: var(--cl-coral, #f05b40); font-weight: 700; }
+.red-arbol-caja { max-height: 360px; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  margin: 0 0 12px; padding: 10px; border: 1px solid rgba(175, 175, 165, .25); border-radius: 10px; }
+.red-arbol-caja .red-arbol { width: max-content; min-width: 100%; }
+.red-nodo { white-space: nowrap; }

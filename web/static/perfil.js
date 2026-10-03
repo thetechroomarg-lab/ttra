@@ -343,7 +343,12 @@ function mostrarReferidos(datos) {
   arbol.forEach((nodo) => hijos.append(nodoArbolRed(nodo)));
   raiz.append(vos, hijos);
   lista.append(raiz);
-  estado.append(lista);
+  // Si la red crece mucho, el árbol scrollea dentro de su caja (arriba/abajo
+  // y de costado) en lugar de estirar todo el perfil.
+  const caja = document.createElement("div");
+  caja.className = "red-arbol-caja";
+  caja.append(lista);
+  estado.append(caja);
 
   if (datos.descuento_reservado_usd > 0) {
     const reservado = document.createElement("p");
