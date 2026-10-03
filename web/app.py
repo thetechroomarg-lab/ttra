@@ -1062,6 +1062,9 @@ def admin_clientes_actualizar_mayorista(
     if not entrada.habilitado:
         actualizacion["condiciones_mayorista_aceptadas_en"] = None
     client.table("clientes").update(actualizacion).eq("id", cliente_id).execute()
+    if (filas_cliente[0].get("tipo_cliente") or "minorista") != tipo_cliente:
+        # Cambio de tipo: sellos, premios y saldos de referidos arrancan de cero.
+        referidos.reiniciar_beneficios(client, cliente_id)
     return {"ok": True, "tipo_cliente": tipo_cliente}
 
 

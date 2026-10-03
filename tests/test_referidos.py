@@ -217,3 +217,23 @@ def test_mayorista_no_tiene_link_hasta_volver_a_minorista():
 
     fake.table("clientes").update({"tipo_cliente": "minorista"}).eq("id", "mayo").execute()
     assert referidos.resolver_referente(fake, codigo) == "mayo"
+
+
+def test_pasar_a_mayorista_borra_beneficios_y_al_volver_arranca_de_cero():
+    fake = FakeSupabaseClient()
+    _red_de_nietos(fake, 4)                     # Juan: 10 de red
+    fake.table("clientes").update({"sellos_fidelidad": 4}).eq("id", "juan").execute()
+    fidelidad.registrar_entrega_completada(fake, "juan")
+    codigo = _leer(fake, "juan")["referidos_codigo_premio"]
+    assert _saldo(fake, "juan") == 30
+
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", "juan").execute()
+    referidos.reiniciar_beneficios(fake, "juan")
+    juan = _leer(fake, "juan")
+    assert juan["sellos_fidelidad"] == 0 and juan["red_saldo_usd"] == 0
+    assert not fake.table("codigos_descuento").select("*").eq("code", codigo).execute().data[0]["activo"]
+
+    fake.table("clientes").update({"tipo_cliente": "minorista"}).eq("id", "juan").execute()
+    referidos.reiniciar_beneficios(fake, "juan")
+    resumen = referidos.resumen(fake, "juan")
+    assert resumen["saldo_usd"] == 0 and resumen["arbol"] == [] and resumen["ganado_total_usd"] == 0

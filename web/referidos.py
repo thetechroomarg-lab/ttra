@@ -228,6 +228,28 @@ def _cupon_sin_usar(client, codigo):
     return fila is not None and not fila.get("usado_en")
 
 
+def reiniciar_beneficios(client, cliente_id):
+    """Al cambiar entre minorista y mayorista el cliente arranca de cero:
+    pierde sellos, premios y saldos sin usar, y "Mi red" solo cuenta lo que
+    gane desde ahora. Un descuento ya reservado en un pedido en curso se
+    respeta (ese precio ya se le pasó al cliente)."""
+    codigos = (
+        client.table("codigos_descuento").select("*")
+        .eq("cliente_id", cliente_id).is_("usado_en", "null").execute().data
+    ) or []
+    for fila in codigos:
+        if not cupones.reservado(client, fila):
+            client.table("codigos_descuento").update({"activo": False}).eq("code", fila["code"]).execute()
+    client.table("clientes").update({
+        "sellos_fidelidad": 0,
+        "fidelidad_ultimo_codigo": None,
+        "referidos_codigo_premio": None,
+        "saldo_directos_usd": 0,
+        "red_saldo_usd": 0,
+        "beneficios_desde": datetime.now(timezone.utc).isoformat(),
+    }).eq("id", cliente_id).execute()
+
+
 def _nombre_corto(cliente):
     return f"{(cliente.get('nombre') or '').strip()} {(cliente.get('apellido') or '').strip()[:1]}.".strip()
 
@@ -280,6 +302,9 @@ def resumen(client, cliente_id):
             codigo_premio = None
     referidos = client.table("clientes").select("*").eq("referido_por", cliente_id).execute().data or []
     ganancias = client.table("referidos_ganancias").select("*").eq("beneficiario_id", cliente_id).execute().data or []
+    desde = cliente.get("beneficios_desde")
+    if desde:
+        ganancias = [g for g in ganancias if (g.get("creado_en") or "") >= desde]
     ganancias.sort(key=lambda g: g.get("creado_en") or "", reverse=True)
     return {
         "codigo_premio": codigo_premio,

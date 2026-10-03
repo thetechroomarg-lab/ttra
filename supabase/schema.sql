@@ -53,6 +53,9 @@ alter table clientes add column if not exists referido_premio_codigo text;
 -- compra se aplican como máximo US$15.
 alter table clientes add column if not exists saldo_directos_usd numeric not null default 0;
 alter table clientes add column if not exists red_saldo_usd numeric not null default 0;
+-- Al pasar entre minorista y mayorista los beneficios arrancan de cero:
+-- "Mi red" solo cuenta ganancias desde esta fecha.
+alter table clientes add column if not exists beneficios_desde timestamptz;
 
 -- Un cliente que se dio de baja del mailing de novedades (link en el
 -- footer del mail) queda excluido de la audiencia de próximas campañas.
