@@ -593,3 +593,43 @@ html[data-modo="classic"] :is(.rc-logout-overlay, .rc-terminos-overlay) {
 html[data-modo="classic"][data-classic-theme="light"] :is(.rc-logout-overlay, .rc-terminos-overlay) {
   background: rgba(16, 33, 79, .18);
 }
+
+/* Sticker "Hola soy Vlad" despegable (sticker-peel.js): el wrapper hereda la
+   caja y la rotación del sticker; atrás queda la caricatura. */
+html[data-modo="classic"] .ttra-sticker-peel {
+  position: relative;
+  box-sizing: border-box;
+  width: min(calc(100% - 10px), 410px);
+  margin: 16px 5px 10px;
+  transform: rotate(-2deg);
+  transform-origin: 45% 55%;
+}
+html[data-modo="classic"] .ttra-sticker-peel > .ttra-personal-intro { width: 100%; margin: 0; transform: none; }
+html[data-modo="classic"] .ttra-sticker-peel.despegando > .ttra-personal-intro::after { display: none; }
+html[data-modo="classic"] .ttra-sticker-foto {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 30%;
+  border-radius: 14px; opacity: 0; transition: opacity .15s;
+  box-shadow: inset 0 0 0 1px #0006, 0 6px 16px #0005;
+}
+html[data-modo="classic"] .ttra-sticker-peel:is(.despegando, .despegado) .ttra-sticker-foto { opacity: 1; }
+html[data-modo="classic"] .ttra-sticker-peel.despegado .ttra-sticker-foto { cursor: pointer; }
+html[data-modo="classic"] .ttra-sticker-solapa {
+  position: absolute; inset: -600px; z-index: 2; pointer-events: none;
+  background: linear-gradient(var(--peel-ang, 225deg), #fffaf0 0%, #e4dccb 45%, #b9ad95 100%);
+  filter: drop-shadow(0 4px 6px #0006);
+  display: none;
+}
+html[data-modo="classic"] .ttra-sticker-peel.despegando .ttra-sticker-solapa { display: block; }
+html[data-modo="classic"] .ttra-sticker-peel.despegado .ttra-sticker-solapa,
+html[data-modo="classic"] .ttra-sticker-peel.despegado > .ttra-personal-intro { visibility: hidden; }
+html[data-modo="classic"] .ttra-sticker-esquina {
+  position: absolute; top: -6px; right: -6px; z-index: 3;
+  width: 56px; height: 56px; padding: 0; border: 0; background: transparent;
+  cursor: grab; touch-action: none;
+}
+html[data-modo="classic"] .ttra-sticker-esquina:active { cursor: grabbing; }
+html[data-modo="classic"] .ttra-sticker-peel.despegado .ttra-sticker-esquina { display: none; }
+@media (min-width: 701px) {
+  html[data-modo="classic"] .ttra-hero-copy .ttra-sticker-peel { justify-self: center; width: min(100%, 410px); margin: 32px auto 10px; }
+}
