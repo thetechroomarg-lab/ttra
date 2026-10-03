@@ -27,4 +27,4 @@ html body .grilla .card.ai-card:focus-within{border-color:rgba(255,80,60,.52)!im
 .ai-prices-mayorista .ai-price-head{color:#8a8a84!important;font-size:2.3cqw;text-transform:uppercase;letter-spacing:.05em}
 .ai-prices-mayorista .ai-price-head>:nth-child(2){font:inherit;color:inherit}
 .ai-prices-mayorista .ai-price:nth-child(2){color:#ff503c}.ai-prices-mayorista .ai-price:first-child strong{color:inherit}
-.ai-prices-mayorista .ai-price:not(.ai-price-head)>:first-child{font:600 3.4cqw Arial,sans-serif}
+.ai-price:not(.ai-price-head)>:first-child:not(:only-child){font:600 3.4cqw Arial,sans-serif}
