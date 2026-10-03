@@ -6,8 +6,11 @@ from datetime import datetime, timezone
 from web import cupones
 
 PREMIO_REFERIDO_USD = 5
-# Bolsa de red (niveles de más arriba y compras repetidas): tope de saldo.
-TOPE_RED_USD = 15
+# Bolsa de red (niveles de más arriba y compras repetidas): acumula sin
+# límite, pero en cada compra se aplican como máximo US$15.
+TOPE_RED_POR_COMPRA_USD = 15
+# Premio de los 5 sellos (ver fidelidad.py; acá para no importar en círculo).
+DESCUENTO_FIDELIDAD_USD = 20
 MAX_NIVELES = 40
 # Por debajo de esto la cadena ya no aporta nada medible.
 MONTO_MINIMO_USD = 0.000001
@@ -58,69 +61,89 @@ def _generar_codigo_premio(client):
     raise RuntimeError("No se pudo generar un código de premio único")
 
 
-def sumar_a_cupon(client, codigo, monto, red_usd=0):
-    """Suma `monto` a un cupón con tope todavía sin usar. Devuelve el saldo
-    nuevo, o None si el cupón no existe, ya se usó o está reservado.
-
-    `red_usd` es la parte del monto que viene de la red (bolsa con tope de
-    US$15): se guarda en el cupón para descontarla del saldo de red cuando
-    el cupón se consume.
-    """
-    if not codigo:
-        return None
-    filas = (
-        client.table("codigos_descuento").select("*")
-        .eq("code", codigo).is_("usado_en", "null").execute().data
-    )
-    # Reservado para un pedido en curso: ese pedido ya se calculó con el monto
-    # anterior, así que el premio nuevo va a un cupón aparte.
-    if not filas or cupones.reservado(client, filas[0]):
-        return None
-    fila = filas[0]
-    tope_actual = float(fila.get("tope_total_usd") or fila.get("descuento_usd") or 0)
-    nuevo = round(tope_actual + monto, 2)
-    # Si justo se consumió en un pedido, el update no matchea y quien llama
-    # emite un cupón nuevo: el premio nunca se pierde.
-    actualizado = (
-        client.table("codigos_descuento")
-        .update({
-            # descuento_usd es por unidad y entero: el tope (con centavos) es
-            # el que limita el total.
-            "descuento_usd": math.ceil(nuevo),
-            "tope_total_usd": nuevo,
-            "red_usd": round(float(fila.get("red_usd") or 0) + red_usd, 2),
-        })
-        .eq("code", codigo).is_("usado_en", "null")
-        .execute().data
-    )
-    return nuevo if actualizado else None
+def _centavos(monto):
+    return math.floor(round(float(monto) * 100, 6)) / 100
 
 
-def _sumar_premio(client, beneficiario_id, monto, red_usd=0):
-    """Suma el premio al cupón pendiente del cliente (referidos y fidelidad
-    van en un solo cupón: entra un código por compra), o emite uno nuevo."""
-    beneficiario = _cliente(client, beneficiario_id)
-    if not beneficiario:
+def _desglose(cliente):
+    """Lo que el cliente puede aplicar en su próxima compra, por bolsa."""
+    fidelidad = DESCUENTO_FIDELIDAD_USD if cliente.get("fidelidad_ultimo_codigo") else 0
+    directos = _centavos(cliente.get("saldo_directos_usd") or 0)
+    red = _centavos(min(float(cliente.get("red_saldo_usd") or 0), TOPE_RED_POR_COMPRA_USD))
+    return {"fidelidad": fidelidad, "directos": directos, "red": red,
+            "total": round(fidelidad + directos + red, 2)}
+
+
+def refrescar_cupon(client, cliente_id):
+    """Deja un único cupón del cliente con todo lo que puede aplicar hoy:
+    sellos + directos + hasta US$15 de la red. Si el cupón está reservado
+    para un pedido en curso no se toca (ese pedido ya se calculó)."""
+    cliente = _cliente(client, cliente_id)
+    if not cliente or cliente.get("tipo_cliente") == "mayorista":
         return None
-    for codigo_actual in (beneficiario.get("referidos_codigo_premio"), beneficiario.get("fidelidad_ultimo_codigo")):
-        saldo = sumar_a_cupon(client, codigo_actual, monto, red_usd)
-        if saldo is not None:
-            client.table("clientes").update({"referidos_codigo_premio": codigo_actual}).eq("id", beneficiario_id).execute()
-            return {"codigo": codigo_actual, "saldo_usd": saldo}
-    codigo = _generar_codigo_premio(client)
-    monto = round(monto, 2)
-    client.table("codigos_descuento").insert({
-        "cliente_id": beneficiario_id,
-        "code": codigo,
-        # Sin productos + tope: vale para cualquier producto, en total.
-        "productos": [],
-        "descuento_usd": math.ceil(monto),
-        "tope_total_usd": monto,
-        "red_usd": round(red_usd, 2),
+    codigo = cliente.get("referidos_codigo_premio") or cliente.get("fidelidad_ultimo_codigo")
+    fila = cupones.fila_por_codigo(client, codigo) if codigo else None
+    if fila and fila.get("usado_en"):
+        fila, codigo = None, None
+    if fila and cupones.reservado(client, fila):
+        return codigo
+    total = _desglose(cliente)["total"]
+    if total <= 0:
+        if fila:
+            client.table("codigos_descuento").update({"activo": False}).eq("code", codigo).execute()
+        client.table("clientes").update({"referidos_codigo_premio": None}).eq("id", cliente_id).execute()
+        return None
+    datos = {
+        # descuento_usd es por unidad y entero: el tope (con centavos) es el
+        # que limita el total del descuento.
+        "descuento_usd": math.ceil(total),
+        "tope_total_usd": total,
         "activo": True,
-    }).execute()
-    client.table("clientes").update({"referidos_codigo_premio": codigo}).eq("id", beneficiario_id).execute()
-    return {"codigo": codigo, "saldo_usd": monto}
+        "aplicado_usd": None,
+    }
+    if fila:
+        client.table("codigos_descuento").update(datos).eq("code", codigo).execute()
+    else:
+        codigo = _generar_codigo_premio(client)
+        client.table("codigos_descuento").insert({
+            "cliente_id": cliente_id, "code": codigo, "productos": [], **datos,
+        }).execute()
+    cambios = {"referidos_codigo_premio": codigo}
+    viejo_fidelidad = cliente.get("fidelidad_ultimo_codigo")
+    if viejo_fidelidad and viejo_fidelidad != codigo:
+        # El premio de sellos pasa a vivir en el cupón único.
+        client.table("codigos_descuento").update({"activo": False}).eq("code", viejo_fidelidad).is_("usado_en", "null").execute()
+        cambios["fidelidad_ultimo_codigo"] = codigo
+    client.table("clientes").update(cambios).eq("id", cliente_id).execute()
+    return codigo
+
+
+def aplicar_consumo(client, fila):
+    """Se llama cuando un cupón se consume (recibo enviado). Descuenta de cada
+    bolsa lo que realmente se usó en la compra —primero sellos, después
+    directos, después red— y lo que sobra queda para la próxima compra."""
+    cliente = _cliente(client, fila.get("cliente_id"))
+    codigo = fila.get("code")
+    if not cliente or codigo not in (cliente.get("referidos_codigo_premio"), cliente.get("fidelidad_ultimo_codigo")):
+        return None  # Código de mailing u otro: no toca los saldos.
+    aplicado = fila.get("aplicado_usd")
+    restante = float(aplicado if aplicado is not None else (fila.get("tope_total_usd") or 0))
+    cambios = {"referidos_codigo_premio": None}
+    directos = float(cliente.get("saldo_directos_usd") or 0)
+    if cliente.get("fidelidad_ultimo_codigo") == codigo:
+        usado = min(restante, DESCUENTO_FIDELIDAD_USD)
+        restante -= usado
+        # Si la compra no alcanzó a usar los US$20 enteros, el resto no se pierde.
+        directos += DESCUENTO_FIDELIDAD_USD - usado
+        cambios.update({"sellos_fidelidad": 0, "fidelidad_ultimo_codigo": None})
+    usado = min(restante, directos)
+    directos -= usado
+    restante -= usado
+    red = float(cliente.get("red_saldo_usd") or 0)
+    red -= min(restante, red, TOPE_RED_POR_COMPRA_USD)
+    cambios.update({"saldo_directos_usd": round(directos, 6), "red_saldo_usd": round(red, 6)})
+    client.table("clientes").update(cambios).eq("id", cliente["id"]).execute()
+    return refrescar_cupon(client, cliente["id"])
 
 
 def monto_por_compra(nivel, compra_numero):
@@ -129,21 +152,12 @@ def monto_por_compra(nivel, compra_numero):
     return PREMIO_REFERIDO_USD / (2 ** (nivel - 1)) / (2 ** (compra_numero - 1))
 
 
-def _acreditar_red(client, beneficiario, monto):
-    """Bolsa de red: nunca acumula más de US$15 sin usar. Las fracciones de
-    centavo se guardan y pasan al cupón cuando completan un centavo.
-    Devuelve (acreditado_exacto, centavos_al_cupon)."""
-    saldo = float(beneficiario.get("red_saldo_usd") or 0)
-    acreditado = max(0.0, min(monto, TOPE_RED_USD - saldo))
-    if acreditado <= 0:
-        return 0.0, 0.0
-    fraccion = float(beneficiario.get("red_fraccion_usd") or 0) + acreditado
-    centavos = math.floor(round(fraccion * 100, 6)) / 100
+def _acreditar(client, beneficiario, monto, directo):
+    campo = "saldo_directos_usd" if directo else "red_saldo_usd"
     client.table("clientes").update({
-        "red_saldo_usd": round(saldo + acreditado, 6),
-        "red_fraccion_usd": round(fraccion - centavos, 6),
+        campo: round(float(beneficiario.get(campo) or 0) + monto, 6),
     }).eq("id", beneficiario["id"]).execute()
-    return acreditado, centavos
+    refrescar_cupon(client, beneficiario["id"])
 
 
 def _compras_concretadas(client, cliente_id):
@@ -183,15 +197,8 @@ def acreditar_por_compra(client, cliente_id, pedido_id=None):
         # Los códigos solo aplican a precio minorista.
         if not ya and beneficiario.get("tipo_cliente") != "mayorista":
             directo = nivel == 1 and compra_numero == 1
-            if directo:
-                acreditado, al_cupon = monto, monto
-                premio = _sumar_premio(client, beneficiario["id"], monto)
-                if premio:
-                    client.table("clientes").update({"referido_premio_codigo": premio["codigo"]}).eq("id", cliente_id).execute()
-            else:
-                acreditado, al_cupon = _acreditar_red(client, beneficiario, monto)
-                if al_cupon > 0:
-                    _sumar_premio(client, beneficiario["id"], al_cupon, red_usd=al_cupon)
+            acreditado = monto
+            _acreditar(client, beneficiario, monto, directo)
             client.table("referidos_ganancias").insert({
                 "beneficiario_id": beneficiario["id"],
                 "origen_cliente_id": cliente_id,
@@ -205,24 +212,6 @@ def acreditar_por_compra(client, cliente_id, pedido_id=None):
             acreditados.append({"beneficiario_id": beneficiario["id"], "nivel": nivel, "acreditado_usd": round(acreditado, 6)})
         actual, nivel = beneficiario, nivel + 1
     return acreditados
-
-
-def marcar_premio_usado(client, cliente_id, codigo):
-    """Se llama cuando el cupón se consume (recibo enviado)."""
-    cliente = _cliente(client, cliente_id)
-    if not cliente or not codigo:
-        return False
-    fila = cupones.fila_por_codigo(client, codigo) or {}
-    red_usd = float(fila.get("red_usd") or 0)
-    cambios = {}
-    if red_usd > 0:
-        # La bolsa de red vuelve a juntar desde lo que no se gastó.
-        cambios["red_saldo_usd"] = round(max(0.0, float(cliente.get("red_saldo_usd") or 0) - red_usd), 6)
-    if cliente.get("referidos_codigo_premio") == codigo:
-        cambios["referidos_codigo_premio"] = None
-    if cambios:
-        client.table("clientes").update(cambios).eq("id", cliente_id).execute()
-    return "referidos_codigo_premio" in cambios
 
 
 def _cupon_sin_usar(client, codigo):
@@ -287,7 +276,8 @@ def resumen(client, cliente_id):
         "codigo_premio": codigo_premio,
         "saldo_usd": round(saldo, 2),
         "red_saldo_usd": round(float(cliente.get("red_saldo_usd") or 0), 2),
-        "red_tope_usd": TOPE_RED_USD,
+        "red_tope_por_compra_usd": TOPE_RED_POR_COMPRA_USD,
+        "desglose": _desglose(cliente),
         "ganado_total_usd": round(sum(float(g.get("acreditado_usd") or 0) for g in ganancias), 2),
         # Montos y fechas, sin decir quién los generó ni qué compró.
         "ultimas_ganancias": [

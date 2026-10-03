@@ -49,7 +49,7 @@ def test_al_llegar_a_cinco_emite_codigo_de_veinte_dolares_y_no_resetea():
     assert cliente["sellos_fidelidad"] == 5
     assert cliente["fidelidad_ultimo_codigo"] == resultado["codigo_emitido"]
     codigos = fake.table("codigos_descuento").select("*").eq("code", resultado["codigo_emitido"]).execute().data
-    assert codigos[0] == {
+    assert {k: v for k, v in codigos[0].items() if k != "aplicado_usd"} == {
         "cliente_id": cliente_id,
         "code": resultado["codigo_emitido"],
         "productos": [],

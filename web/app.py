@@ -1139,8 +1139,8 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
         # cliente recién ahora, con el recibo enviado.
         try:
             for codigo_usado in cupones.consumir_reservados(client, pedido_id):
-                fidelidad.marcar_codigo_fidelidad_usado(client, codigo_usado["cliente_id"], codigo_usado["code"])
-                referidos.marcar_premio_usado(client, codigo_usado["cliente_id"], codigo_usado["code"])
+                # Descuenta de cada bolsa lo que se usó; el resto queda guardado.
+                referidos.aplicar_consumo(client, codigo_usado)
         except Exception:
             logger.exception("No se pudo consumir el descuento reservado del pedido %s", pedido_id)
     if pedido.get("cliente_id") and primer_envio:
@@ -4092,6 +4092,9 @@ def api_me(request: Request):
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     tipo_cliente = _tipo_cliente_sesion(request)
     try:
+        # El cupón único se recalcula con los saldos de hoy antes de mostrarlo.
+        referidos.refrescar_cupon(get_client(), cliente["id"])
+        cliente = cuentas.obtener_cliente(get_client(), cliente["id"]) or cliente
         resumen_referidos = referidos.resumen(get_client(), cliente["id"])
     except Exception:
         logger.exception("No se pudo leer el resumen de referidos")
@@ -4635,6 +4638,14 @@ def api_pedidos(entrada: PedidoIn, request: Request):
                 logger.exception("No se pudieron guardar lat/lng/piso del pedido %s", pedido_id_rpc)
         # El código queda reservado para este pedido (lo hace la RPC); se
         # consume y se cierran fidelidad/referidos recién al enviar el recibo.
+        # Se anota cuánto se aplicó para descontar solo eso de los saldos.
+        if fila_descuento:
+            try:
+                client.table("codigos_descuento").update({
+                    "aplicado_usd": pedidos.numero_monetario_db(descuento_mailing_usd),
+                }).eq("code", fila_descuento["code"]).execute()
+            except Exception:
+                logger.exception("No se pudo anotar el descuento aplicado de %s", fila_descuento["code"])
     else:
         pedidos.guardar_pedido(
             client,

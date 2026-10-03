@@ -47,10 +47,12 @@ alter table clientes add column if not exists referido_por uuid references clien
 alter table clientes add column if not exists referido_premiado_en timestamptz;
 alter table clientes add column if not exists referidos_codigo_premio text;
 alter table clientes add column if not exists referido_premio_codigo text;
--- Red de referidos (multinivel decreciente): saldo de la bolsa de red (tope
--- US$15 sin usar) y fracciones de centavo todavía no pasadas al cupón.
+-- Saldos de referidos. Directos: US$5 por la primera compra de cada amigo
+-- invitado, sin tope por compra. Red (multinivel decreciente y compras
+-- repetidas): acumula sin límite, con fracciones de centavo exactas; en cada
+-- compra se aplican como máximo US$15.
+alter table clientes add column if not exists saldo_directos_usd numeric not null default 0;
 alter table clientes add column if not exists red_saldo_usd numeric not null default 0;
-alter table clientes add column if not exists red_fraccion_usd numeric not null default 0;
 
 -- Un cliente que se dio de baja del mailing de novedades (link en el
 -- footer del mail) queda excluido de la audiencia de próximas campañas.
@@ -311,9 +313,9 @@ alter table codigos_descuento add column if not exists tope_total_usd numeric;
 -- recibo lo marca usado_en. Si el pedido se borra, la reserva deja de valer.
 alter table codigos_descuento add column if not exists reservado_pedido_id uuid references pedidos(id) on delete set null;
 alter table codigos_descuento add column if not exists reservado_en timestamptz;
--- Parte del cupón que vino de la bolsa de red: al consumirse se descuenta
--- del saldo de red del cliente.
-alter table codigos_descuento add column if not exists red_usd numeric not null default 0;
+-- Cuánto se aplicó realmente en el pedido que reservó el cupón: al enviarse
+-- el recibo se descuenta solo eso de los saldos y el resto queda guardado.
+alter table codigos_descuento add column if not exists aplicado_usd numeric;
 
 -- Cada ganancia que una compra le generó a alguien de la cadena de padrinos.
 -- Alimenta el árbol "Mi red" del perfil y evita pagar dos veces un pedido.

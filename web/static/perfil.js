@@ -316,7 +316,7 @@ function mostrarReferidos(datos) {
   const filas = [
     ["Personas en tu red", String(r.personas_en_red)],
     ["Ganaste en total", formatoUsd(r.ganado_total_usd)],
-    ["Bolsa de tu red", `${formatoUsd(r.red_saldo_usd)} de ${formatoUsd(r.red_tope_usd)} máx.`],
+    ["Bolsa de tu red", formatoUsd(r.red_saldo_usd)],
   ];
   for (const [etiqueta, valor] of filas) {
     const fila = document.createElement("div");
@@ -328,6 +328,10 @@ function mostrarReferidos(datos) {
     resumen.append(fila);
   }
   estado.append(resumen);
+  const ayudaTope = document.createElement("p");
+  ayudaTope.className = "referidos-ayuda";
+  ayudaTope.textContent = `De la bolsa de tu red se aplican hasta ${formatoUsd(r.red_tope_por_compra_usd)} por compra; el resto queda guardado para las siguientes.`;
+  estado.append(ayudaTope);
 
   const lista = document.createElement("ul");
   lista.className = "red-arbol";
@@ -349,10 +353,13 @@ function mostrarReferidos(datos) {
   } else if (r.saldo_usd > 0) {
     const total = document.createElement("p");
     total.className = "referidos-total";
-    const conFidelidad = r.codigo_premio === datos.fidelidad_ultimo_codigo;
-    total.textContent = conFidelidad
-      ? `Total en tu próxima compra: ${formatoUsd(r.saldo_usd)} (fidelidad + red). Se aplica solo.`
-      : `Total en tu próxima compra: ${formatoUsd(r.saldo_usd)}. Se aplica solo.`;
+    const d = r.desglose || {};
+    const partes = [
+      d.fidelidad > 0 ? `sellos ${formatoUsd(d.fidelidad)}` : "",
+      d.directos > 0 ? `amigos ${formatoUsd(d.directos)}` : "",
+      d.red > 0 ? `red ${formatoUsd(d.red)}` : "",
+    ].filter(Boolean);
+    total.textContent = `Total en tu próxima compra: ${formatoUsd(r.saldo_usd)}${partes.length > 1 ? ` (${partes.join(" + ")})` : ""}. Se aplica solo.`;
     estado.append(total);
   }
 }

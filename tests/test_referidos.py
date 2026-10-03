@@ -12,7 +12,7 @@ def _alta(fake, id_, referido_por=None, tipo_cliente="minorista", apellido="X"):
         "codigo_referido": None, "referido_por": referido_por, "referido_premiado_en": None,
         "referidos_codigo_premio": None, "referido_premio_codigo": None,
         "sellos_fidelidad": 0, "fidelidad_ultimo_codigo": None,
-        "red_saldo_usd": 0, "red_fraccion_usd": 0,
+        "red_saldo_usd": 0, "saldo_directos_usd": 0,
     }).execute()
     return id_
 
@@ -71,39 +71,63 @@ def test_compra_repetida_paga_la_mitad_y_va_a_la_bolsa_de_red():
     assert _leer(fake, "juan")["red_saldo_usd"] == 3.75
 
 
-def test_bolsa_de_red_nunca_pasa_de_15():
-    fake = FakeSupabaseClient()
+def _consumir(fake, cliente_id, aplicado):
+    """Simula: el cliente usa su cupón en una compra y se envía el recibo."""
+    codigo = _leer(fake, cliente_id)["referidos_codigo_premio"]
+    pedido_id = f"pedido-propio-{next(_ids)}"
+    fake.table("pedidos").insert({"id": pedido_id, "cliente_id": cliente_id}).execute()
+    fake.table("codigos_descuento").update({
+        "reservado_pedido_id": pedido_id, "aplicado_usd": aplicado,
+    }).eq("code", codigo).execute()
+    for fila in cupones.consumir_reservados(fake, pedido_id):
+        referidos.aplicar_consumo(fake, fila)
+
+
+def _red_de_nietos(fake, cantidad):
     _alta(fake, "juan")
     _alta(fake, "luis", referido_por="juan")
-    # 20 nietos que compran: 20 x 2.50 = 50, pero la bolsa de red topea en 15.
-    for i in range(20):
+    for i in range(cantidad):
         _alta(fake, f"nieto{i}", referido_por="luis")
-        _compra(fake, f"nieto{i}")
+        _compra(fake, f"nieto{i}")      # Juan +2.50 de red por cada uno
 
-    juan = _leer(fake, "juan")
-    assert juan["red_saldo_usd"] == 15
+
+def test_la_red_acumula_sin_limite_pero_aplica_hasta_15_por_compra():
+    fake = FakeSupabaseClient()
+    _red_de_nietos(fake, 20)            # 20 x 2.50 = 50 de red
+    assert _leer(fake, "juan")["red_saldo_usd"] == 50
     assert _saldo(fake, "juan") == 15
     # Los directos no tienen tope: Luis tiene 20 x 5.
     assert _saldo(fake, "luis") == 100
 
 
-def test_al_gastar_el_cupon_la_bolsa_de_red_vuelve_a_juntar():
+def test_ejemplo_de_vladimir_50_de_red_y_5_sellos():
+    fake = FakeSupabaseClient()
+    _red_de_nietos(fake, 20)            # 50 de red
+    fake.table("clientes").update({"sellos_fidelidad": 4}).eq("id", "juan").execute()
+    fidelidad.registrar_entrega_completada(fake, "juan")
+    assert _saldo(fake, "juan") == 35   # 20 de sellos + 15 de red
+
+    _consumir(fake, "juan", 35)
+    juan = _leer(fake, "juan")
+    assert juan["sellos_fidelidad"] == 0 and juan["fidelidad_ultimo_codigo"] is None
+    assert juan["red_saldo_usd"] == 35
+    assert _saldo(fake, "juan") == 15
+
+    _consumir(fake, "juan", 15)
+    assert _leer(fake, "juan")["red_saldo_usd"] == 20
+    assert _saldo(fake, "juan") == 15
+
+
+def test_lo_que_no_se_usa_queda_para_la_proxima():
     fake = FakeSupabaseClient()
     _alta(fake, "juan")
-    _alta(fake, "luis", referido_por="juan")
-    _alta(fake, "pedro", referido_por="luis")
-    _compra(fake, "pedro")      # Juan +2.50 de red
-    codigo = _leer(fake, "juan")["referidos_codigo_premio"]
-    fake.table("pedidos").insert({"id": "pedido-juan", "cliente_id": "juan"}).execute()
-    fake.table("codigos_descuento").update({"reservado_pedido_id": "pedido-juan"}).eq("code", codigo).execute()
-
-    for fila in cupones.consumir_reservados(fake, "pedido-juan"):
-        referidos.marcar_premio_usado(fake, fila["cliente_id"], fila["code"])
-
-    assert _leer(fake, "juan")["red_saldo_usd"] == 0
-    assert _saldo(fake, "juan") == 0
-    _compra(fake, "pedro")      # 2da compra de Pedro: Juan (2 niveles) +5/2/2 = 1.25
-    assert _saldo(fake, "juan") == 1.25
+    for i in range(8):                  # 8 directos = 40
+        _alta(fake, f"amigo{i}", referido_por="juan")
+        _compra(fake, f"amigo{i}")
+    assert _saldo(fake, "juan") == 40
+    _consumir(fake, "juan", 30)         # compró algo que solo admitía 30
+    assert _leer(fake, "juan")["saldo_directos_usd"] == 10
+    assert _saldo(fake, "juan") == 10
 
 
 def test_fracciones_de_centavo_no_se_pierden():
@@ -113,10 +137,9 @@ def test_fracciones_de_centavo_no_se_pierden():
     for i in range(1, 12):
         anterior = _alta(fake, f"n{i}", referido_por=anterior)
     _compra(fake, "n11")
-    tope = _leer(fake, "n0")
     # n0 está a 11 niveles: 5/2^10 = 0.0048828 -> todavía no completa un centavo.
     assert _saldo(fake, "n0") == 0
-    assert round(tope["red_fraccion_usd"], 6) == round(5 / 2 ** 10, 6)
+    assert round(_leer(fake, "n0")["red_saldo_usd"], 6) == round(5 / 2 ** 10, 6)
     # Dos compras más de gente nueva a esa distancia completan el centavo.
     for extra in ("e1", "e2"):
         _alta(fake, extra, referido_por="n10")
