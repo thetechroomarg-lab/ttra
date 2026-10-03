@@ -4,7 +4,7 @@
   if(!section)return;
   const root=document.documentElement;
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
-  const kinds=[['phone','phone'],['tablet','tablet'],['laptop','laptop'],['gaming','controller'],['audio','headphones']];
+  const kinds=[['phone','phone'],['tablet','tablet'],['laptop','laptop'],['gaming','controller'],['audio','headphones'],['brands','magnifier']];
   let engine,loading=false,failed=false,frame=0,last=0,elapsed=0;
   const active=new Set();
   const sceneCards=[...section.querySelectorAll(".ttra-category-scene")];

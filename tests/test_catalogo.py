@@ -87,3 +87,22 @@ def test_marca_de_otros_por_nombre():
 def test_secciones_catalogo_incluye_marca_en_cada_producto():
     resultado = secciones_catalogo([_prod("iPhone 15", "Apple - iPhone")])
     assert resultado["Celulares"][0]["marca"] == "Apple"
+
+
+def test_marca_de_notebooks_por_nombre():
+    assert marca_de(_prod("HP VICTUS 15-FA2013 GAMING Core i5", "Notebook")) == "HP"
+    assert marca_de(_prod("NOTEBOOK LENOVO IDEAPAD SLIM", "Notebook")) == "Lenovo"
+    assert marca_de(_prod("Asus Vivobook 14 X1404VA", "Notebook")) == "Asus"
+    assert marca_de(_prod("Acer Aspire Go 15", "Notebook")) == "Acer"
+    assert marca_de(_prod("NOTEBOOK DELL INSPIRON 15", "Notebook")) == "Dell"
+    assert marca_de(_prod("MSI CYBORG 15 GAMING", "Notebook")) == "MSI"
+    assert marca_de(_prod("A16 3VHK3US894SH Gigabyte GAMING A16", "Notebook")) == "Gigabyte"
+    assert marca_de(_prod("MacBook Air M2 8GB 256GB", "Mac")) == "Apple"
+
+
+def test_marca_de_relojes_no_apple_en_categoria_watch():
+    assert marca_de(_prod("APPLEWATCH S10 42MM GPS", "Apple - Watch")) == "Apple"
+    assert marca_de(_prod("Apple Watch Series 11 42 mm GPS", "Apple - Watch")) == "Apple"
+    assert marca_de(_prod("Xiaomi Redmi Watch 6", "Apple - Watch")) == "Xiaomi"
+    assert marca_de(_prod("Watch Xiaomi Band 7", "Apple - Watch")) == "Xiaomi"
+    assert marca_de(_prod("Haylou Watch 4", "Apple - Watch")) == "Otras marcas"

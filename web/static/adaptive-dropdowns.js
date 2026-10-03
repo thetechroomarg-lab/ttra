@@ -61,8 +61,14 @@ function sync() {
   for(const menu of active.keys())if(!menu.isConnected)active.delete(menu);
 }
 function schedule(){if(!frame)frame=requestAnimationFrame(sync);}
+// r.target.closest(selector) importa tanto como r.target.matches(selector):
+// un ítem ADENTRO de un menú abierto (ej. "Pedidos"/"Cerrar sesión" en
+// #rc-perfil-dropdown) puede cambiar de oculto a visible después de que el
+// menú ya midió su maxHeight una vez (la sesión se confirma async) — sin
+// esto, ese cambio no dispara un recálculo y el menú queda con una altura
+// vieja que recorta los ítems agregados después de la primera medición.
 new MutationObserver(records=>{
-  if(records.some(r=>r.type==='childList' ? [...r.addedNodes,...r.removedNodes].some(n=>n.nodeType===1&&(n.matches(selector)||n.querySelector(selector))) : r.target.matches(selector)||r.target===root||r.target===document.body))schedule();
+  if(records.some(r=>r.type==='childList' ? [...r.addedNodes,...r.removedNodes].some(n=>n.nodeType===1&&(n.matches(selector)||n.querySelector(selector))) : r.target.matches(selector)||r.target===root||r.target===document.body||r.target.closest?.(selector)))schedule();
 }).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden']});
 window.addEventListener('resize',schedule,{passive:true});
 window.addEventListener('scroll',event=>{

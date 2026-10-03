@@ -274,6 +274,7 @@ document.getElementById("form-nota-cadete").addEventListener("submit", async (e)
       nota:document.getElementById("nota-detalle").value,
       direccion:document.getElementById("nota-direccion").value,
       derivar_a_vlad:document.getElementById("nota-derivar-vlad").checked,
+      desde_panel_cadete:true,
     }}),
   }});
   if (!r.ok) {{ alert("No se pudo crear la nota."); return; }}

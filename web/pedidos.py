@@ -89,6 +89,8 @@ def guardar_pedido(
     origen="whatsapp",
     lat=None,
     lng=None,
+    piso_entrega=None,
+    depto_entrega=None,
 ):
     fecha_iso = fecha_entrega.isoformat() if fecha_entrega else None
     detalle = _normalizar_detalles(detalle)
@@ -96,7 +98,10 @@ def guardar_pedido(
     descuento_usd = numero_monetario_db(descuento_usd)
     descuento_mayorista_usd = numero_monetario_db(descuento_mayorista_usd)
     if fecha_iso and detalle and total_usd is not None:
-        existentes = client.table("pedidos").select("*").eq("cliente_id", cliente_id).execute().data
+        existentes = [
+            p for p in client.table("pedidos").select("*").eq("cliente_id", cliente_id).execute().data
+            if not p.get("borrado_en")
+        ]
         pendiente = next(
             (
                 pedido for pedido in existentes
@@ -106,6 +111,8 @@ def guardar_pedido(
                 and pedido.get("total_usd") is not None
                 and pedido.get("modo_precio", "minorista") == modo_precio
                 and pedido.get("direccion_entrega") == direccion_entrega
+                and (pedido.get("piso_entrega") or None) == (piso_entrega or None)
+                and (pedido.get("depto_entrega") or None) == (depto_entrega or None)
             ),
             None,
         )
@@ -143,6 +150,8 @@ def guardar_pedido(
         "fecha": datetime.now(timezone.utc).isoformat(),
         "lat": lat,
         "lng": lng,
+        "piso_entrega": piso_entrega or None,
+        "depto_entrega": depto_entrega or None,
     }
     client.table("pedidos").insert(fila).execute()
     return fila
@@ -156,7 +165,10 @@ def editar_fecha_entrega(client, pedido_id, fecha_entrega):
     fecha_iso = fecha_entrega.isoformat()
     if pedido.get("fecha_entrega") == fecha_iso:
         return pedido
-    candidatos = client.table("pedidos").select("*").eq("cliente_id", pedido["cliente_id"]).execute().data
+    candidatos = [
+        p for p in client.table("pedidos").select("*").eq("cliente_id", pedido["cliente_id"]).execute().data
+        if not p.get("borrado_en")
+    ]
     destino = next(
         (
             otro for otro in candidatos
@@ -169,6 +181,8 @@ def editar_fecha_entrega(client, pedido_id, fecha_entrega):
             and pedido.get("total_usd") is not None
             and otro.get("modo_precio", "minorista") == pedido.get("modo_precio", "minorista")
             and otro.get("direccion_entrega") == pedido.get("direccion_entrega")
+            and (otro.get("piso_entrega") or None) == (pedido.get("piso_entrega") or None)
+            and (otro.get("depto_entrega") or None) == (pedido.get("depto_entrega") or None)
         ),
         None,
     )
@@ -192,8 +206,18 @@ def editar_fecha_entrega(client, pedido_id, fecha_entrega):
     return {**pedido, "fecha_entrega": fecha_iso}
 
 
-def eliminar_pedido(client, pedido_id):
+def eliminar_pedido(client, pedido_id, borrado_por):
     filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
     if not filas:
         raise ValueError("Pedido no encontrado")
-    client.table("pedidos").delete().eq("id", pedido_id).execute()
+    client.table("pedidos").update({
+        "borrado_en": datetime.now(timezone.utc).isoformat(),
+        "borrado_por": borrado_por,
+    }).eq("id", pedido_id).execute()
+
+
+def restaurar_pedido(client, pedido_id):
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas:
+        raise ValueError("Pedido no encontrado")
+    client.table("pedidos").update({"borrado_en": None, "borrado_por": None}).eq("id", pedido_id).execute()

@@ -1,0 +1,76 @@
+/* Fendi's personal photo album, using the storefront's existing theme. */
+/* A static, edge-to-edge photographic backdrop, isolated from the album content. */
+.fendi-photo-backdrop { isolation: isolate; }
+.fendi-photo-backdrop::before {
+ content: ""; position: fixed; inset: -16px; z-index: -1; pointer-events: none;
+ background: linear-gradient(#11140fe0,#11140fc9), url('/vaiven/cat-supplies-collage.webp') center / cover no-repeat;
+ filter: blur(5px); animation: none;
+}
+html[data-classic-theme="light"] .fendi-photo-backdrop::before {
+ background-image: linear-gradient(#f4f0e6e0,#f4f0e6cf), url('/vaiven/cat-supplies-collage.webp');
+}
+.fendi-page #fendi-album { width: min(1280px,100%); margin: 0 auto; padding: 64px var(--ed-gutter,24px) 150px; }
+.fendi-page .fendi-kicker { display: block; margin: 0 0 22px; font-size: 12px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--ed-accent,#ef6257); }
+.fendi-intro,.fendi-confession,.fendi-goodbye { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: clamp(36px,6vw,100px); }
+.fendi-page h1 { margin: 0 0 28px; font-size: clamp(68px,8vw,120px); line-height: .98; letter-spacing: -.065em; font-weight: 500; }
+.fendi-page h1 em { font-family: 'TTRA Handwriting',cursive; font-style: normal; letter-spacing: -.04em; color: var(--ed-accent,#ef6257); }
+.fendi-page h2 { margin: 0 0 26px; font-size: clamp(36px,4.5vw,64px); line-height: 1.05; letter-spacing: -.045em; font-weight: 500; }
+.fendi-page p:not(.fendi-kicker):not(.fendi-note) { max-width: 48ch; font-size: clamp(17px,1.5vw,20px); line-height: 1.7; }
+.fendi-page .fendi-lead { font-weight: 700; }
+.fendi-page .fendi-note,.fendi-signature { display: block; margin: 24px 0 0; font-family: 'TTRA Handwriting',cursive; font-size: clamp(28px,3vw,38px); line-height: 1.2; }
+.fendi-page .fendi-photo { margin: 0; padding: 12px 12px 18px; background: #f5efe2; color: #34312c; border: 1px solid #c9bda84d; box-shadow: 0 10px 30px #0002; border-radius: 3px; }
+.fendi-photo img { display: block; width: 100%; height: auto; border-radius: 1px; }
+.fendi-page .fendi-photo figcaption { margin: 15px 8px 0; font-family: 'TTRA Handwriting',cursive; font-size: clamp(23px,2.1vw,29px); line-height: 1.15; text-align: center; }
+.fendi-portrait { transform: rotate(2deg); max-width: 440px; justify-self: center; }
+.fendi-memories { margin-top: 120px; }
+.fendi-section-heading { margin-bottom: 48px; }
+.fendi-photo-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); align-items: start; gap: 28px; }
+.fendi-photo-grid figure:nth-child(2) { margin-top: 54px; }
+.fendi-confession,.fendi-goodbye { margin-top: 120px; }
+.fendi-confession { grid-template-columns: .8fr 1.1fr; }
+.fendi-confession .fendi-photo { max-width: 380px; transform: rotate(-2deg); }
+.fendi-goodbye .fendi-photo { max-width: 320px; justify-self: center; transform: rotate(2deg); }
+.fendi-page .fendi-back { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; margin-top: 20px; padding: 14px 26px; background: var(--ed-accent,#ef6257); border-radius: 999px; color: #fff; text-decoration: none; font-size: 16px; font-weight: 700; text-align: center; }
+.fendi-page .fendi-back:hover { filter: brightness(1.1); }
+@media(min-width:701px) { .fendi-ready [data-fendi-reveal] { transition: opacity .7s ease, translate .7s ease; } .fendi-ready [data-fendi-reveal]:not(.is-visible) { opacity: 0; translate: 0 22px; } }
+@media(max-width:700px) {
+ .fendi-page #fendi-album { padding: 40px 22px 125px; }
+ .fendi-intro,.fendi-confession,.fendi-goodbye { grid-template-columns: minmax(0,1fr); gap: 32px; }
+ .fendi-portrait { max-width: 360px; margin-inline: 8px !important; }
+ .fendi-memories,.fendi-confession,.fendi-goodbye { margin-top: 70px; }
+ .fendi-photo-grid { grid-template-columns: minmax(0,1fr); gap: 28px; }
+ .fendi-photo-grid figure:nth-child(2) { margin-top: 0; }
+ .fendi-confession-copy { grid-row: 1; }
+ .fendi-confession .fendi-photo,.fendi-goodbye .fendi-photo { margin-inline: 8px; }
+ .fendi-page .fendi-back { width: 100%; }
+}
+@media(prefers-reduced-motion:reduce) { .fendi-ready [data-fendi-reveal] { opacity: 1 !important; translate: none !important; transition: none !important; } }
+
+/* A quiet mascot occupies the former logo footprint; no storefront header or dock. */
+.fendi-masthead { padding: 8px var(--ed-gutter,24px); }
+#fendi-mascot { width: 116px; height: 131.2px; pointer-events: none; }
+#fendi-mascot svg { display: block; width: 100%; height: 100%; overflow: visible; }
+#fendi-mascot .cat-head { transform-origin: 79px 72px; animation: fendi-seated-head 17s ease-in-out infinite; }
+#fendi-mascot .cat-eyes { transform-box: fill-box; transform-origin: center; animation: fendi-seated-blink 6s infinite; }
+#fendi-mascot .fendi-scratch-paw { opacity: 0; transform-origin: 82px 117px; animation: fendi-seated-scratch 17s linear infinite; }
+@keyframes fendi-seated-head { 0%,79%,94%,100% { transform: rotate(0); } 82%,91% { transform: rotate(10deg); } }
+@keyframes fendi-seated-scratch {
+  0%,79%,94%,100% { opacity: 0; transform: rotate(0); }
+  81%,83%,85%,87%,89%,91% { opacity: 1; transform: rotate(-9deg); }
+  82%,84%,86%,88%,90%,92% { opacity: 1; transform: rotate(7deg); }
+}
+@keyframes fendi-seated-blink { 0%,44%,48%,100% { transform: scaleY(1); } 46% { transform: scaleY(.08); } }
+@media(max-width:700px) {
+ .fendi-masthead { padding: 8px 20px; }
+ #fendi-mascot { width: calc(clamp(28px,8vw,32px)*2.9); height: calc(clamp(28px,8vw,32px)*3.28); }
+}
+@media(prefers-reduced-motion:reduce) { #fendi-mascot * { animation: none !important; } }
+
+/* Fendi's album never reserves space for, or displays, the storefront dock. */
+html[data-modo="classic"] body.fendi-page :is(.ttra-dock-section,.ttra-dock) { display: none !important; }
+html[data-modo="classic"] body.fendi-page #fendi-album { padding-bottom: 72px; }
+
+.fendi-return { margin-top: clamp(40px,6vw,80px); text-align: center; }
+.fendi-page .fendi-return .fendi-back { margin-top: 0; }
+.fendi-page #fendi-album.fendi-denied { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; max-width: 1000px; padding-block: 70px; }
+.fendi-page .fendi-denied h1 { font-size: clamp(48px,8vw,104px); line-height: 1.05; }

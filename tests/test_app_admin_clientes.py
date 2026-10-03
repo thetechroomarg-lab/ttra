@@ -180,7 +180,7 @@ def test_admin_apila_controles_y_muestra_clientes_como_tarjetas_en_mobile(monkey
     assert "#tabla-clientes .col-check { justify-content:flex-start; text-align:left; }" in r.text
     assert ".pedido-acciones > * { box-sizing:border-box; flex:1 1 140px; min-height:42px; }" in r.text
     assert ".pedido-acciones .btn-direcciones, .pedido-acciones .btn-agregar-direccion { align-items:center; display:flex; justify-content:center; }" in r.text
-    assert ".pedido-acciones .btn-enviar-recibo { grid-area:recibo; }" in r.text
+    assert ".pedido-acciones .btn-enviar-recibo, .pedido-acciones .btn-recibo-nota { grid-area:recibo; }" in r.text
     assert ".pedido-acciones .btn-direcciones { grid-area:direcciones; }" in r.text
     assert ".pedido-acciones .btn-editar-entrega { grid-area:editar; }" in r.text
     assert ".pedido-acciones .btn-eliminar-entrega { grid-area:eliminar; }" in r.text
@@ -481,7 +481,8 @@ def test_admin_puede_editar_y_eliminar_una_entrega_pendiente(monkeypatch):
     assert fake.table("pedidos").select("*").eq("id", "editable").execute().data[0]["fecha_entrega"] == "2026-08-25"
     eliminar = c.delete("/admin/pedidos/editable")
     assert eliminar.status_code == 200
-    assert fake.table("pedidos").select("*").eq("id", "editable").execute().data == []
+    fila = fake.table("pedidos").select("*").eq("id", "editable").execute().data[0]
+    assert fila["borrado_en"] is not None
 
 
 def test_admin_puede_adelantar_un_pedido_a_hoy_pasado_el_corte(monkeypatch):
@@ -557,7 +558,8 @@ def test_admin_puede_eliminar_un_pedido_del_historial_con_recibo_enviado(monkeyp
     eliminar = c.delete("/admin/pedidos/con-recibo")
 
     assert eliminar.status_code == 200
-    assert fake.table("pedidos").select("*").eq("id", "con-recibo").execute().data == []
+    fila = fake.table("pedidos").select("*").eq("id", "con-recibo").execute().data[0]
+    assert fila["borrado_en"] is not None
 
 
 def test_historial_muestra_boton_para_eliminar_pedido_con_recibo(monkeypatch):
@@ -850,3 +852,74 @@ def test_admin_resetea_password_cliente_inexistente(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     r = c.post("/admin/clientes/id-que-no-existe/resetear-password")
     assert r.status_code == 400
+
+
+def test_panel_pedidos_tiene_link_a_papelera(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
+
+    assert 'href="/admin/papelera"' in cliente.get("/admin/clientes").text
+    assert 'href="/admin/papelera"' in cliente.get("/admin/clientes/lista").text
+
+
+def test_admin_ve_piso_y_depto_como_aclaracion_y_puede_editarlos(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "con-depto", "cliente_id": cliente["id"], "productos": ["Galaxy A56"],
+        "fecha_entrega": "2026-08-24", "direccion_entrega": "Av. Colón 123, Córdoba",
+        "piso_entrega": "3", "depto_entrega": "B",
+        "detalle": [{"nombre": "Galaxy A56", "cantidad": 1, "usd_unitario": 300, "usd_subtotal": 300}],
+        "total_usd": 300,
+    }).execute()
+    monkeypatch.setattr(appmod.entregas, "ahora_argentina", lambda: __import__("datetime").datetime(2026, 8, 24, 10, 0, tzinfo=appmod.entregas.ZONA_HORARIA))
+
+    panel = c.get("/admin/clientes").text
+    assert '<span class="piso-depto">Piso 3 · Depto B</span>' in panel
+    assert 'data-piso="3" data-depto="B"' in panel
+    assert 'id="piso-entrega-admin"' in panel and 'id="depto-entrega-admin"' in panel
+    # El link a Maps usa solo la calle: el piso/depto confundiría la búsqueda.
+    assert "Piso+3" not in panel
+
+    r = c.put("/admin/pedidos/con-depto/direccion", json={
+        "direccion_entrega": "Av. Colón 123, Córdoba", "piso_entrega": "", "depto_entrega": "C",
+    })
+    assert r.status_code == 200
+    fila = fake.table("pedidos").select("*").eq("id", "con-depto").execute().data[0]
+    assert (fila["piso_entrega"], fila["depto_entrega"]) == (None, "C")
+
+
+def test_descuento_reservado_se_consume_recien_al_enviar_el_recibo(monkeypatch):
+    # Regla de oro: el premio se le resta al cliente cuando sale el recibo.
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("clientes").update({
+        "sellos_fidelidad": 5, "fidelidad_ultimo_codigo": "TTRA-PREMIO01",
+    }).eq("id", cliente["id"]).execute()
+    fake.table("pedidos").insert({
+        "id": "pedido-con-premio", "cliente_id": cliente["id"], "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{"nombre": "iPhone 13", "color": "Negro", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
+        "total_usd": 480, "descuento_usd": 20,
+    }).execute()
+    fake.table("codigos_descuento").insert({
+        "cliente_id": cliente["id"], "code": "TTRA-PREMIO01", "productos": [],
+        "descuento_usd": 20, "tope_total_usd": 20, "activo": True,
+        "reservado_pedido_id": "pedido-con-premio",
+    }).execute()
+    monkeypatch.setattr(appmod, "enviar_email", lambda *args: None)
+
+    r = c.post("/admin/pedidos/pedido-con-premio/recibo")
+
+    assert r.status_code == 200
+    codigo = fake.table("codigos_descuento").select("*").eq("code", "TTRA-PREMIO01").execute().data[0]
+    assert codigo["usado_en"]
+    actualizado = fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]
+    # Se cerró el premio (vuelve a 0) y esta misma compra suma su sello.
+    assert actualizado["fidelidad_ultimo_codigo"] is None
+    assert actualizado["sellos_fidelidad"] == 1

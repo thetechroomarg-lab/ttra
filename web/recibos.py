@@ -1,12 +1,14 @@
 import html
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+_ZONA_ARGENTINA = timezone(timedelta(hours=-3))
 
 
 def _formatear_usd(valor):
@@ -79,7 +81,8 @@ def _formatear_fecha_emision(fecha):
     if not fecha:
         return "-"
     try:
-        return datetime.fromisoformat(fecha.replace("Z", "+00:00")).strftime("%d/%m/%Y %H:%M")
+        momento = datetime.fromisoformat(fecha.replace("Z", "+00:00"))
+        return momento.astimezone(_ZONA_ARGENTINA).strftime("%d/%m/%Y %H:%M")
     except ValueError:
         return fecha
 
@@ -126,6 +129,7 @@ def html_recibo(cliente, pedido, logo_url=""):
   <p style='font-size:20px;font-weight:700;text-align:right'>Total: {_formatear_usd(pedido.get('total_usd'))}</p>
   <section style='border-top:1px solid #ddd;margin-top:24px;padding-top:18px'><h2 style='font-size:17px'>Garantía</h2><ul>{garantias}</ul>
     <p style='font-size:13px;color:#555'>Para gestionar una garantía, conservá caja y accesorios. Soy intermediario con el importador y te mantendré informado durante el proceso.</p>
+    <p style='font-size:12px;color:#888;margin-top:10px'>Documento no válido como factura.</p>
   </section>
 </main></body></html>"""
 
@@ -211,6 +215,10 @@ def pdf_recibo(cliente, pedido, fotos=None):
     elementos.extend([Spacer(1, 16), Paragraph("Garantía", estilos["Heading2"])])
     for garantia in garantias_para_detalle(pedido.get("detalle")):
         elementos.append(Paragraph(f"- {html.escape(garantia)}", normal))
+    elementos.extend([
+        Spacer(1, 14),
+        Paragraph("Documento no válido como factura.", ParagraphStyle("Leyenda", parent=normal, fontSize=8, textColor=colors.HexColor("#888888"))),
+    ])
     imagenes = _fotos_para_pdf(fotos)
     if imagenes:
         elementos.extend([Spacer(1, 16), Paragraph("Fotos de entrega", estilos["Heading2"])])

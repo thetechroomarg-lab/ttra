@@ -96,6 +96,15 @@ def test_pedido_con_sesion_guarda_fecha_entrega_valida(monkeypatch):
     assert pedido["fecha_entrega"] == "2026-08-24"
 
 
+
+def test_hacer_un_pedido_no_suma_sello_de_fidelidad(monkeypatch):
+    # La venta recién está asegurada cuando sale el recibo: ahí se suma el sello.
+    c, fake = _cliente_con_catalogo(monkeypatch)
+    r = c.post("/api/pedidos", json={"productos": ["Elegible"], "fecha_entrega": "2026-08-24"})
+    assert r.status_code == 200
+    cliente = fake.table("clientes").select("*").execute().data[0]
+    assert int(cliente.get("sellos_fidelidad") or 0) == 0
+
 def test_pedido_guarda_el_detalle_y_total_usd_del_checkout(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
@@ -423,11 +432,13 @@ def test_pedido_aplica_y_consume_codigo_mailing_despues_de_guardar(monkeypatch):
     pedido = fake.table("pedidos").select("*").execute().data[0]
     assert pedido["descuento_usd"] == 5
     codigo = fake.table("codigos_descuento").select("*").execute().data[0]
-    assert codigo["usado_en"]
+    # Regla de oro: al confirmar queda reservado, no consumido.
+    assert codigo["reservado_pedido_id"] == pedido["id"]
+    assert not codigo.get("usado_en")
     assert fake.rpc_calls[-1][0] == "guardar_pedido_con_descuento_mailing"
 
 
-def test_usar_codigo_de_fidelidad_resetea_el_ciclo(monkeypatch):
+def test_usar_codigo_de_fidelidad_lo_reserva_sin_resetear_el_ciclo(monkeypatch):
     c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
     cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
     fake.table("clientes").update({
@@ -450,9 +461,10 @@ def test_usar_codigo_de_fidelidad_resetea_el_ciclo(monkeypatch):
     })
 
     assert r.status_code == 200
+    # Hasta que se envíe el recibo, el premio sigue a nombre del cliente.
     cliente = fake.table("clientes").select("*").eq("id", cliente_id).execute().data[0]
-    assert cliente["sellos_fidelidad"] == 0
-    assert cliente["fidelidad_ultimo_codigo"] is None
+    assert cliente["sellos_fidelidad"] == 5
+    assert cliente["fidelidad_ultimo_codigo"] == "TTRA-PREMIO01"
 
 
 def test_codigo_de_fidelidad_descuenta_veinte_en_total_aunque_haya_varias_unidades(monkeypatch):
@@ -954,7 +966,7 @@ def test_pedido_combina_mailing_y_regalo_en_una_transaccion(monkeypatch):
     assert pedido["total_usd"] == 175
     assert pedido["descuento_usd"] == 5
     assert pedido["detalle"][-1]["codigo_promo"] == "REGALO-TEST"
-    assert fake.table("codigos_descuento").select("*").execute().data[0]["usado_en"]
+    assert fake.table("codigos_descuento").select("*").execute().data[0]["reservado_pedido_id"] == pedido["id"]
     assert fake.table("codigos_promo").select("*").execute().data[0]["usos_actuales"] == 1
 
 
@@ -1043,3 +1055,175 @@ def test_fake_rpc_rechaza_auditoria_mayorista_en_modo_minorista():
     assert resultado == {"ok": False, "error": "pedido_invalido"}
     assert fake.table("pedidos").select("*").execute().data == []
     assert fake.table("codigos_promo").select("*").execute().data[0]["usos_actuales"] == 0
+
+
+def test_eliminar_pedido_es_recuperable_y_desaparece_de_listas(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+    cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
+    fake.table("clientes").insert({"id": "c1", "nombre": "Ana", "apellido": "Lopez"}).execute()
+    fake.table("pedidos").insert({
+        "id": "p1", "cliente_id": "c1", "productos": [], "fecha_entrega": "2026-09-20",
+    }).execute()
+
+    respuesta = cliente.delete("/admin/pedidos/p1")
+    assert respuesta.status_code == 200
+
+    fila = fake.table("pedidos").select("*").eq("id", "p1").execute().data[0]
+    assert fila["borrado_en"] is not None
+    assert fila["borrado_por"] == "Vlad"
+
+    respuesta_doble_borrado = cliente.delete("/admin/pedidos/p1")
+    assert respuesta_doble_borrado.status_code == 404
+
+
+def test_pedido_guarda_piso_y_depto_con_y_sin_codigo_promo(monkeypatch):
+    """Catches piso/depto lost on either save path (direct insert or promo RPC)."""
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    _insertar_regalo(fake)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180, "piso_entrega": "3", "depto_entrega": "B",
+    }
+    assert c.post("/api/pedidos", json=base).status_code == 200
+    assert c.post("/api/pedidos", json={**base, "fecha_entrega": "2026-08-25", "codigo_promo": "regalo-test"}).status_code == 200
+    filas = fake.table("pedidos").select("*").execute().data
+    assert len(filas) == 2
+    assert all((f["piso_entrega"], f["depto_entrega"]) == ("3", "B") for f in filas)
+
+
+def test_api_pedidos_listar_sin_sesion_devuelve_401(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    c = TestClient(appmod.app, base_url="https://testserver")
+    assert c.get("/api/pedidos").status_code == 401
+
+
+def test_api_pedidos_lista_separa_en_curso_e_historial_y_oculta_proveedor(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    }
+    assert c.post("/api/pedidos", json=base).status_code == 200
+    pedido_entregado = fake.table("pedidos").select("*").execute().data[0]
+    fake.table("pedidos").update({
+        "recibo_enviado_en": "2026-08-20T12:00:00+00:00",
+        "recibo_emitido_en": "2026-08-20T12:00:00+00:00",
+    }).eq("id", pedido_entregado["id"]).execute()
+    assert c.post("/api/pedidos", json={**base, "fecha_entrega": "2026-08-25"}).status_code == 200
+
+    r = c.get("/api/pedidos")
+    assert r.status_code == 200
+    datos = r.json()
+    assert len(datos["en_curso"]) == 1
+    assert datos["en_curso"][0]["fecha_entrega"] == "2026-08-25"
+    assert len(datos["historial"]) == 1
+    assert datos["historial"][0]["entregado"] is True
+    for grupo in (datos["en_curso"], datos["historial"]):
+        for pedido in grupo:
+            assert "proveedor" not in str(pedido["detalle"])
+
+
+def test_api_pedido_no_pertenece_a_otro_cliente(monkeypatch):
+    c1, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    }
+    assert c1.post("/api/pedidos", json=base).status_code == 200
+    pedido_id = fake.table("pedidos").select("*").execute().data[0]["id"]
+
+    c2 = TestClient(appmod.app, base_url="https://testserver")
+    c2.post("/registro", json={
+        "nombre": "Otra", "apellido": "Persona", "celular": "3519999999",
+        "email": "otra@x.com", "password": "clave1234",
+        "provincia": "Córdoba", "direccion": "Otra dirección 1",
+    })
+    assert c2.put(f"/api/pedidos/{pedido_id}/direccion", json={"direccion_entrega": "Robada 123"}).status_code == 403
+    assert c2.delete(f"/api/pedidos/{pedido_id}").status_code == 403
+
+
+def test_api_pedido_editar_direccion_actualiza_piso_y_depto(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    }
+    assert c.post("/api/pedidos", json=base).status_code == 200
+    pedido_id = fake.table("pedidos").select("*").execute().data[0]["id"]
+    r = c.put(f"/api/pedidos/{pedido_id}/direccion", json={
+        "direccion_entrega": "Nueva dirección 456", "piso_entrega": "2", "depto_entrega": "A",
+    })
+    assert r.status_code == 200
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert pedido["direccion_entrega"] == "Nueva dirección 456"
+    assert (pedido["piso_entrega"], pedido["depto_entrega"]) == ("2", "A")
+
+
+def test_api_pedido_no_puede_editar_direccion_ni_eliminar_si_ya_fue_entregado(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    }
+    assert c.post("/api/pedidos", json=base).status_code == 200
+    pedido_id = fake.table("pedidos").select("*").execute().data[0]["id"]
+    fake.table("pedidos").update({"recibo_enviado_en": "2026-08-20T12:00:00+00:00"}).eq("id", pedido_id).execute()
+
+    r = c.put(f"/api/pedidos/{pedido_id}/direccion", json={"direccion_entrega": "Otra 789"})
+    assert r.status_code == 400
+    r = c.delete(f"/api/pedidos/{pedido_id}")
+    assert r.status_code == 400
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert pedido["direccion_entrega"] == "Av. Colón 123"
+    assert not pedido.get("borrado_en")
+
+
+def test_api_pedido_eliminar_pedido_en_curso(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    base = {
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    }
+    assert c.post("/api/pedidos", json=base).status_code == 200
+    pedido_id = fake.table("pedidos").select("*").execute().data[0]["id"]
+    assert c.delete(f"/api/pedidos/{pedido_id}").status_code == 200
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert pedido.get("borrado_en")
+    assert c.get("/api/pedidos").json()["en_curso"] == []
+
+
+def test_cupon_de_red_con_centavos_descuenta_exacto(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    cliente_id = fake.table("clientes").select("*").execute().data[0]["id"]
+    fake.table("codigos_descuento").insert({
+        "cliente_id": cliente_id, "code": "TTRA-REF-CENTS",
+        "productos": [], "descuento_usd": 9, "tope_total_usd": 8.75, "activo": True,
+    }).execute()
+
+    r = c.post("/api/pedidos", json={
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 171.25,
+        "codigo_descuento": "TTRA-REF-CENTS",
+    })
+
+    assert r.status_code == 200, r.text
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert float(pedido["descuento_usd"]) == 8.75

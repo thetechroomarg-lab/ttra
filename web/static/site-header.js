@@ -2,19 +2,24 @@
 (() => {
   const root = document.documentElement;
   if (document.body.classList.contains('vaiven-page') || /^\/vaiven\/?$/.test(location.pathname)) return;
+  if (document.body.classList.contains('bitu-page') || /^\/bitu\/?$/.test(location.pathname)) return;
+  if (document.body.classList.contains('fendi-page') || /^\/fendi\/?$/.test(location.pathname)) return;
   import('/adaptive-dropdowns.js');
   if (root.classList.contains('ttra-cart-embedded')) {
-    const panel = document.getElementById('panel-carrito');
+    // Home inside cart-drawer.js: whichever floating panel is open (carrito,
+    // perfil or pedidos) drives the parent dialog; all closed means close it.
+    const panels = ['panel-carrito', 'panel-perfil', 'panel-pedidos'].map((id) => document.getElementById(id));
     let opened = false;
     const syncPanel = () => {
-      if (!panel.classList.contains('oculto')) {
+      if (panels.some((panel) => !panel.classList.contains('oculto'))) {
+        if (!opened) parent.postMessage({type:'ttra:cart-ready'}, location.origin);
         opened = true;
-        parent.postMessage({type:'ttra:cart-ready'}, location.origin);
       } else if (opened) parent.postMessage({type:'ttra:cart-close'}, location.origin);
     };
-    new MutationObserver(syncPanel).observe(panel, {attributes:true,attributeFilter:['class']});
+    const observer = new MutationObserver(() => queueMicrotask(syncPanel));
+    for (const panel of panels) observer.observe(panel, {attributes:true,attributeFilter:['class']});
     syncPanel();
-    for (const id of ['btn-cerrar-carrito', 'overlay-carrito']) {
+    for (const id of ['btn-cerrar-carrito', 'overlay-carrito', 'btn-cerrar-panel-perfil', 'btn-cerrar-panel-pedidos', 'overlay-perfil']) {
       document.getElementById(id).addEventListener('click', () => parent.postMessage({type:'ttra:cart-close'}, location.origin));
     }
     document.addEventListener('keydown', (event) => {
@@ -32,6 +37,50 @@
   const header = document.querySelector('body > header');
   if (!header || root.dataset.modo !== 'classic') return;
   header.classList.add('ttra-site-header');
+  // Scroll progress: a thin fill sitting on the header's own bottom edge
+  // (the "floor" the header-cat mascot walks on), tracking how far down
+  // the page the visitor has scrolled. Lives here -not in a page-specific
+  // script- so it mounts on every real storefront page and skips the
+  // embedded cart/login sub-panels, which return before reaching this line.
+  const scrollProgress = document.createElement('div');
+  scrollProgress.className = 'ttra-scroll-progress';
+  scrollProgress.setAttribute('aria-hidden', 'true');
+  const scrollProgressFill = document.createElement('div');
+  scrollProgressFill.className = 'ttra-scroll-progress-fill';
+  scrollProgress.append(scrollProgressFill);
+  header.append(scrollProgress);
+  // Después de la primera navegación interna, cat-navigation.js mete el
+  // resto del sitio dentro de un <iframe id="ttra-storefront-frame">
+  // persistente -el header que se ve queda fijo afuera, con este script
+  // corriendo en el documento de arriba, pero el scroll real pasa DENTRO
+  // del iframe-. Enganchar listeners de scroll/resize al contentWindow de
+  // ese iframe resultó poco confiable (cada navegación interna lo puede
+  // reemplazar, y el evento 'load' no siempre llega a tiempo para
+  // re-engancharlos), así que en vez de perseguir eventos entre ventanas
+  // esto simplemente LEE el scroll actual en cada frame -mismo patrón que
+  // ya usa el gatito del header (requestAnimationFrame continuo)-, que es
+  // correcto sin importar qué documento sea el que scrollea de verdad.
+  (function tick() {
+    // Durante el instante de una navegación interna, el documento del
+    // iframe puede quedar momentáneamente null/inaccesible -sin el
+    // try/catch, esa excepción cortaba el loop entero (nunca se volvía a
+    // pedir el próximo frame) y la barra quedaba congelada para siempre,
+    // no solo desactualizada-.
+    try {
+      const frame = document.getElementById('ttra-storefront-frame');
+      let doc = document.documentElement;
+      if (frame && root.classList.contains('ttra-cat-shell') && frame.contentDocument) {
+        doc = frame.contentDocument.documentElement;
+      }
+      const max = doc.scrollHeight - doc.clientHeight;
+      const pct = max > 0 ? Math.min(100, Math.max(0, (doc.scrollTop / max) * 100)) : 0;
+      scrollProgressFill.style.width = `${pct}%`;
+      // header-cat.js lee esto para que los gatitos giren la cabeza y
+      // sigan la puntita de la línea roja mientras avanza.
+      window.__ttraScrollPct = pct;
+    } catch {}
+    requestAnimationFrame(tick);
+  })();
   // The persistent host owns the masthead and mascot while page content navigates.
   let catHost;
   try { if (window.parent !== window) catHost = window.parent.TTRAHeaderCat; } catch { /* External embeds have no shared host. */ }
@@ -122,7 +171,7 @@
       ['Notebooks y Macbooks', '/catalogo?categoria=Notebooks%20y%20Macbooks'],
       ['Gaming', '/catalogo?categoria=Gaming'],
       ['Accesorios', '/catalogo?categoria=Accesorios%20Celulares'],
-      ['Búsqueda por marca', '/catalogo?filtro=marca#catalog-filters'],
+      ['Búsqueda por marca', '/catalogo?filtro=marca'],
     ];
     for (const [title, href] of links) {
       const link = document.createElement('a');
@@ -271,7 +320,8 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="9.5" r="3.6" fill="currentColor"/><path d="M4.8 19.2c1.1-3.4 3.9-5.2 7.2-5.2s6.1 1.8 7.2 5.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
       </button>
       <div id="ttra-site-menu" class="ttra-site-menu" hidden>
-        <a class="ttra-site-profile-link" href="/perfil">Ir a perfil</a>
+        <a class="ttra-site-profile-link" href="/?panel=perfil">Ir a perfil</a>
+        <a class="ttra-site-pedidos-link" href="/?panel=pedidos" hidden>Pedidos</a>
         <button type="button" class="ttra-site-logout" hidden>Cerrar sesión</button>
         <p class="ttra-site-error" role="status" hidden></p>
       </div>
@@ -373,29 +423,49 @@
   });
 
   const profileLink = actions.querySelector('.ttra-site-profile-link');
+  const pedidosLink = actions.querySelector('.ttra-site-pedidos-link');
   const logout = actions.querySelector('.ttra-site-logout');
   const loginParams = new URLSearchParams({ volver: location.pathname + location.search });
   profileLink.href = `/login.html?${loginParams}`;
   profileLink.textContent = 'Iniciar sesión';
   let sesionActiva = false;
+  // Perfil y pedidos son siempre paneles flotantes sobre esta misma página.
+  async function openPanel(panel) {
+    closeMenu();
+    try {
+      const {abrirPanelEnPagina} = await import('/cart-drawer.js');
+      abrirPanelEnPagina(toggle, panel);
+    } catch {
+      const error = accountContainer.querySelector('.ttra-site-error');
+      error.textContent = 'No pude abrir el panel. Probá de nuevo.';
+      error.hidden = false;
+      menu.hidden = false;
+    }
+  }
   profileLink.addEventListener('click', (event) => {
-    if (sesionActiva) return; // ya logueado: navega normal a /perfil
     event.preventDefault();
+    if (sesionActiva) { openPanel('perfil'); return; }
     closeMenu();
     import('/login-drawer.js').then(({ abrirLoginEnPagina }) => {
       abrirLoginEnPagina(profileLink, updateSession);
     });
   });
+  pedidosLink.addEventListener('click', (event) => {
+    event.preventDefault();
+    openPanel('pedidos');
+  });
+  window.addEventListener('ttra:session-change', updateSession);
   async function updateSession() {
     try {
       const response = await fetch('/api/me');
       if (!response.ok) return;
       const account = await response.json();
       sesionActiva = true;
-      profileLink.href = '/perfil';
+      profileLink.href = '/?panel=perfil';
       profileLink.textContent = 'Ir a perfil';
       accountContainer.querySelector('.ttra-site-initials').textContent =
         [account.nombre, account.apellido].map((name) => (name || '').trim().charAt(0).toUpperCase()).join('');
+      if (pedidosLink) pedidosLink.hidden = false;
       logout.hidden = false;
     } catch { /* Public navigation remains usable if session lookup fails. */ }
   }
@@ -406,7 +476,7 @@
     try {
       const response = await fetch('/logout', { method: 'POST' });
       if (!response.ok) throw new Error('logout');
-      try { localStorage.removeItem('ttra_cliente'); } catch {}
+      try { ['ttra_cliente', 'ttra_carrito', 'ttra_carrito_pendiente', 'ttra_checkout_pendiente', 'ttra_descuento_mailing', 'ttra_regalo_promo', 'ttra_codigo_pendiente'].forEach((clave) => localStorage.removeItem(clave)); } catch {}
       location.href = '/';
     } catch {
       error.textContent = 'No pude cerrar la sesión. Probá de nuevo.';
@@ -416,4 +486,12 @@
   });
   updateSession();
   mountDock(actions);
+  // En la pantalla de ingreso/creación de cuenta la navegación queda blureada e
+  // inerte: nada de volver al carrito y confirmar el pedido a mitad del alta.
+  if (/^\/(login(\.html)?|registro)\/?$/.test(location.pathname)) {
+    for (const nav of document.querySelectorAll('body > header, .ttra-dock')) {
+      nav.inert = true;
+      nav.classList.add('ttra-nav-bloqueada');
+    }
+  }
 })();

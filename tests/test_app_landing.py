@@ -24,7 +24,7 @@ def leer_landing_js():
 
 
 def test_todas_las_paginas_html_incluyen_una_unica_etiqueta_google_al_inicio_del_head():
-    for nombre in ("index.html", "login.html", "perfil.html", "catalogo.html"):
+    for nombre in ("index.html", "login.html", "catalogo.html"):
         html = (appmod.BASE / "static" / nombre).read_text()
         etiqueta = 'https://www.googletagmanager.com/gtag/js?id=G-ZPQR91G145'
 
@@ -290,7 +290,7 @@ def test_domicilios_de_registro_y_checkout_tambien_funcionan_en_fallout():
 
 
 def test_perfil_permite_gestionar_hasta_cinco_domicilios_con_autocomplete():
-    perfil_html = (appmod.BASE / "static" / "perfil.html").read_text()
+    perfil_html = (appmod.BASE / "static" / "index.html").read_text()
     perfil_js = (appmod.BASE / "static" / "perfil.js").read_text()
 
     assert 'id="lista-domicilios"' in perfil_html
@@ -442,13 +442,6 @@ def test_classic_tiene_alternancia_light_persistente_solo_en_el_header():
     assert "--rc-bg: #c7dbe7;" in css
     assert "--rc-bg-panel: #e2ebf0;" in css
     assert "--cl-azul-francia: #102a43;" in css
-
-
-def test_perfil_recupera_el_tema_light_classic_antes_de_cargar_estilos():
-    perfil = (appmod.BASE / "static" / "perfil.html").read_text()
-
-    assert 'localStorage.getItem("ttra_classic_theme") === "light"' in perfil
-    assert 'document.documentElement.setAttribute("data-classic-theme", "light")' in perfil
 
 
 def test_login_recupera_el_tema_light_classic_antes_de_cargar_estilos():
@@ -623,7 +616,7 @@ def test_classic_mobile_sin_scroll_no_se_filtra_a_otras_paginas():
     index_html = (appmod.BASE / "static" / "index.html").read_text()
     assert '<body id="rc-body-landing">' in index_html
 
-    for nombre in ("perfil.html", "login.html", "catalogo.html"):
+    for nombre in ("login.html", "catalogo.html"):
         html = (appmod.BASE / "static" / nombre).read_text()
         assert 'id="rc-body-landing"' not in html
 
@@ -969,8 +962,8 @@ def test_carrito_respeta_el_tope_total_del_codigo_de_fidelidad():
     assert "const conTope =" in funcion
 
 
-def test_tarjeta_de_fidelidad_en_perfil_standalone_y_embebido():
-    for nombre in ("perfil.html", "index.html"):
+def test_tarjeta_de_fidelidad_en_el_panel_de_perfil():
+    for nombre in ("index.html",):
         html = (appmod.BASE / "static" / nombre).read_text(encoding="utf-8")
         assert 'id="seccion-fidelidad"' in html, nombre
         assert 'id="fidelidad-sellos"' in html, nombre
@@ -983,3 +976,24 @@ def test_tarjeta_de_fidelidad_en_perfil_standalone_y_embebido():
     assert 'seccion.classList.toggle("oculto", datos.tipo_cliente === "mayorista")' in funcion
     # El código viene de la base: se escribe con textContent, nunca innerHTML.
     assert "mensajePremio.innerHTML" not in perfil_js
+
+
+def test_perfil_y_pedidos_no_tienen_pantalla_propia():
+    from fastapi.testclient import TestClient
+    client = TestClient(appmod.app)
+    for ruta, panel in (("/perfil", "perfil"), ("/pedidos", "pedidos")):
+        r = client.get(ruta, follow_redirects=False)
+        assert r.status_code == 307, ruta
+        assert r.headers["location"] == f"/?panel={panel}", ruta
+    assert not (appmod.BASE / "static" / "perfil.html").exists()
+    assert not (appmod.BASE / "static" / "pedidos.html").exists()
+
+
+def test_sesion_vencida_en_un_panel_pide_login_en_el_modal():
+    for nombre in ("perfil.js", "pedidos.js"):
+        js = (appmod.BASE / "static" / nombre).read_text(encoding="utf-8")
+        assert 'window.location.href = "/login.html"' not in js, nombre
+        assert "pedirLoginDesdePanel(" in js, nombre
+    header = (appmod.BASE / "static" / "site-header.js").read_text(encoding="utf-8")
+    assert "href=\"/perfil\"" not in header and "href=\"/pedidos\"" not in header
+    assert "abrirPanelEnPagina(toggle, panel)" in header

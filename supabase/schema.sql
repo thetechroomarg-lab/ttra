@@ -40,13 +40,110 @@ alter table clientes add column if not exists fidelidad_ultimo_codigo text;
 -- referido_por = quién lo invitó; referido_premiado_en = cuándo su primera
 -- compra (recibo enviado) le acreditó US$5 al referente (una sola vez).
 -- referidos_codigo_premio = cupón acumulado sin usar del referente.
+-- referido_premio_codigo = cupón del referente donde se acreditaron los US$5
+-- de este referido (para listar en el perfil qué amigos componen el descuento).
 alter table clientes add column if not exists codigo_referido text unique;
 alter table clientes add column if not exists referido_por uuid references clientes(id) on delete set null;
 alter table clientes add column if not exists referido_premiado_en timestamptz;
 alter table clientes add column if not exists referidos_codigo_premio text;
--- Cupón del referente donde se acreditaron los US$5 de este referido (para
--- listar en el perfil qué amigos componen el descuento pendiente).
 alter table clientes add column if not exists referido_premio_codigo text;
+-- Saldos de referidos. Directos: US$5 por la primera compra de cada amigo
+-- invitado, sin tope por compra. Red (multinivel decreciente y compras
+-- repetidas): acumula sin límite, con fracciones de centavo exactas; en cada
+-- compra se aplican como máximo US$15.
+alter table clientes add column if not exists saldo_directos_usd numeric not null default 0;
+alter table clientes add column if not exists red_saldo_usd numeric not null default 0;
+-- Al pasar entre minorista y mayorista los beneficios arrancan de cero:
+-- "Mi red" solo cuenta ganancias desde esta fecha.
+alter table clientes add column if not exists beneficios_desde timestamptz;
+
+-- Un cliente que se dio de baja del mailing de novedades (link en el
+-- footer del mail) queda excluido de la audiencia de próximas campañas.
+alter table clientes add column if not exists no_mailing boolean not null default false;
+
+-- Estado de la campaña de mailing de novedades (snapshot del catálogo, nota
+-- pendiente, borrador actual). Una sola fila por `clave` — no es historial,
+-- es el "último valor conocido" de cada cosa, para que tanto un script local
+-- como la rutina en la nube lean/escriban el mismo estado.
+create table if not exists mailing_estado (
+  clave text primary key,
+  valor jsonb not null,
+  actualizado_en timestamptz not null default now()
+);
+
+-- Un registro por campaña efectivamente enviada (no por borrador armado).
+create table if not exists mailing_envios (
+  id uuid primary key default gen_random_uuid(),
+  productos int not null,
+  ok int not null,
+  fallidos int not null,
+  enviado_en timestamptz not null default now()
+);
+
+-- Versiones inmutables de campañas visuales. Cada regeneración conserva la
+-- anterior y crea una versión hija; el manifiesto contiene el HTML aprobado,
+-- productos/precios congelados y el hash del arte persistente.
+create table if not exists mailing_campanias (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null,
+  parent_id uuid references mailing_campanias(id) on delete set null,
+  version integer not null,
+  estado text not null check (estado in ('previsualizado','aprobado','enviando','enviado','invalidado')),
+  manifest jsonb not null,
+  creado_en timestamptz not null default now(),
+  aprobado_en timestamptz,
+  enviado_en timestamptz,
+  resultado jsonb,
+  unique (campaign_id, version)
+);
+alter table mailing_campanias enable row level security;
+
+-- Resultado por destinatario para auditoría y para evitar reintentos ciegos
+-- tras un fallo parcial del proveedor de correo.
+create table if not exists mailing_envios_detalle (
+  version_id uuid not null references mailing_campanias(id) on delete cascade,
+  cliente_id uuid not null references clientes(id) on delete cascade,
+  estado text not null check (estado in ('ok','fallido')),
+  error text,
+  enviado_en timestamptz not null default now(),
+  primary key (version_id, cliente_id)
+);
+alter table mailing_envios_detalle enable row level security;
+
+-- Compare-and-set del estado para que dos aprobaciones/envíos concurrentes
+-- no puedan avanzar la misma versión desde el mismo estado.
+create or replace function public.transicionar_mailing_campania(
+  p_id uuid, p_desde text, p_hacia text, p_cambios jsonb default '{}'::jsonb
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare fila mailing_campanias;
+begin
+  if not (
+    (p_desde = 'previsualizado' and p_hacia in ('aprobado', 'invalidado'))
+    or (p_desde = 'aprobado' and p_hacia in ('enviando', 'invalidado'))
+    or (p_desde = 'enviando' and p_hacia = 'enviado')
+  ) then
+    raise exception 'invalid_mailing_transition';
+  end if;
+  update mailing_campanias
+     set estado = p_hacia,
+         aprobado_en = case when p_hacia = 'aprobado' then now() else aprobado_en end,
+         enviado_en = case when p_hacia = 'enviado' then now() else enviado_en end,
+         resultado = coalesce(p_cambios->'resultado', resultado)
+   where id = p_id and estado = p_desde
+   returning * into fila;
+  if fila.id is null then
+    raise exception 'invalid_mailing_transition';
+  end if;
+  return to_jsonb(fila);
+end;
+$$;
+revoke all on function public.transicionar_mailing_campania(uuid, text, text, jsonb) from public;
+revoke all on function public.transicionar_mailing_campania(uuid, text, text, jsonb) from anon, authenticated;
+grant execute on function public.transicionar_mailing_campania(uuid, text, text, jsonb) to service_role;
 
 -- Domicilios guardados por cliente para el checkout (hasta 5, uno
 -- predeterminado). La columna clientes.direccion se mantiene aparte: la
@@ -64,6 +161,11 @@ alter table domicilios_cliente enable row level security;
 -- Coordenadas exactas del domicilio (ver comentario análogo en pedidos).
 alter table domicilios_cliente add column if not exists lat double precision;
 alter table domicilios_cliente add column if not exists lng double precision;
+-- Piso y departamento: opcionales y aparte de la calle, así el link a Maps
+-- ("Vamos" en los paneles de admin/cadete) usa solo la dirección y el piso/depto
+-- se muestra como aclaración.
+alter table domicilios_cliente add column if not exists piso text;
+alter table domicilios_cliente add column if not exists depto text;
 
 -- Migra el domicilio único que ya tenían las cuentas de clientes reales
 -- (columna clientes.direccion) como su primer domicilio guardado,
@@ -102,6 +204,8 @@ alter table pedidos add column if not exists recibo_id text;
 alter table pedidos add column if not exists recibo_emitido_en timestamptz;
 alter table pedidos add column if not exists recibo_enviado_en timestamptz;
 alter table pedidos add column if not exists direccion_entrega text;
+alter table pedidos add column if not exists piso_entrega text;
+alter table pedidos add column if not exists depto_entrega text;
 alter table pedidos add column if not exists orden_entrega integer;
 alter table pedidos add column if not exists fotos_series jsonb not null default '[]'::jsonb;
 -- Slug del cadete al que se derivó la entrega (ej. "alejo"), o null si la
@@ -114,6 +218,12 @@ alter table pedidos add column if not exists observaciones_cadete text;
 -- solo buscar el texto de la dirección. Null si no se pudo capturar.
 alter table pedidos add column if not exists lat double precision;
 alter table pedidos add column if not exists lng double precision;
+-- Borrado temporal (papelera): una fila con borrado_en no nulo queda oculta
+-- de todas las listas activas pero sigue existiendo 48hs por si hay que
+-- restaurarla. Se purga (delete real) al superar ese plazo, de forma
+-- perezosa, la próxima vez que alguien abre la papelera.
+alter table pedidos add column if not exists borrado_en timestamptz;
+alter table pedidos add column if not exists borrado_por text;
 -- Marca cuándo se mandó el mail de seguimiento post-entrega (7 días después
 -- de enviar el recibo). Null hasta que el envío tiene éxito.
 alter table pedidos add column if not exists seguimiento_enviado_en timestamptz;
@@ -145,6 +255,28 @@ alter table tareas_entrega add column if not exists cliente_id uuid references c
 alter table tareas_entrega add column if not exists cliente_nombre text;
 alter table tareas_entrega add column if not exists asignado_a text;
 alter table tareas_entrega add column if not exists observaciones_cadete text;
+alter table tareas_entrega add column if not exists borrado_en timestamptz;
+alter table tareas_entrega add column if not exists borrado_por text;
+
+-- Recibos generados a mano desde una nota del cadete, sin depender de que
+-- exista un pedido en la base (ver panel "Recibo" en /admin/cadete). Los
+-- items son una instantánea: nombre + precio USD tal cual los cargó el
+-- cadete, no una referencia viva al catálogo.
+create table if not exists recibos_manuales (
+  id uuid primary key default gen_random_uuid(),
+  tarea_id uuid references tareas_entrega(id) on delete set null,
+  nombre_cliente text not null,
+  email_cliente text not null,
+  items jsonb not null,
+  total_usd numeric not null,
+  fotos_series jsonb not null default '[]'::jsonb,
+  recibo_id text unique,
+  creado_por text not null,
+  creado_en timestamptz not null default now(),
+  enviado_en timestamptz
+);
+create index if not exists recibos_manuales_tarea_idx on recibos_manuales (tarea_id);
+alter table recibos_manuales enable row level security;
 
 create sequence if not exists public.recibos_numero_seq start with 1993;
 create or replace function public.siguiente_numero_recibo()
@@ -178,6 +310,32 @@ create table if not exists codigos_descuento (
 -- Tope total del descuento (premio de fidelidad). Null = código de mailing de
 -- siempre: descuento por unidad, solo sobre los productos de la lista.
 alter table codigos_descuento add column if not exists tope_total_usd numeric;
+-- Regla de oro: el descuento se le resta al cliente recién cuando se envía el
+-- recibo. Al confirmar el pedido el código queda reservado para ese pedido
+-- (no se puede usar en otro mientras el pedido siga en pie); el envío del
+-- recibo lo marca usado_en. Si el pedido se borra, la reserva deja de valer.
+alter table codigos_descuento add column if not exists reservado_pedido_id uuid references pedidos(id) on delete set null;
+alter table codigos_descuento add column if not exists reservado_en timestamptz;
+-- Cuánto se aplicó realmente en el pedido que reservó el cupón: al enviarse
+-- el recibo se descuenta solo eso de los saldos y el resto queda guardado.
+alter table codigos_descuento add column if not exists aplicado_usd numeric;
+
+-- Cada ganancia que una compra le generó a alguien de la cadena de padrinos.
+-- Alimenta el árbol "Mi red" del perfil y evita pagar dos veces un pedido.
+create table if not exists referidos_ganancias (
+  id uuid primary key default gen_random_uuid(),
+  beneficiario_id uuid not null references clientes(id) on delete cascade,
+  origen_cliente_id uuid references clientes(id) on delete set null,
+  pedido_id uuid references pedidos(id) on delete set null,
+  nivel integer not null,
+  compra_numero integer not null,
+  monto_usd numeric not null,
+  acreditado_usd numeric not null,
+  bolsa text not null,
+  creado_en timestamptz not null default now(),
+  unique (beneficiario_id, pedido_id)
+);
+alter table referidos_ganancias enable row level security;
 
 -- Códigos promo genéricos (no atados a un cliente): al aplicarse suman un
 -- producto de regalo a $0 al pedido, hasta agotar usos_maximos usos totales.
@@ -258,6 +416,14 @@ begin
       and code = p_codigo
       and activo = true
       and usado_en is null
+      and (
+        reservado_pedido_id is null
+        or not exists (
+          select 1 from pedidos reservado
+          where reservado.id = codigos_descuento.reservado_pedido_id
+            and reservado.borrado_en is null
+        )
+      )
     for update;
     if not found then
       return jsonb_build_object('ok', false, 'error', 'codigo_no_disponible');
@@ -414,8 +580,10 @@ begin
   end if;
 
   if p_codigo is not null then
+    -- Se reserva para este pedido; se consume al enviar el recibo.
     update codigos_descuento
-    set usado_en = now()
+    set reservado_pedido_id = v_pedido.id,
+        reservado_en = now()
     where id = v_codigo.id and usado_en is null;
     if not found then
       raise exception 'El codigo fue consumido concurrentemente';
@@ -497,3 +665,22 @@ create table if not exists cadete_push_suscripciones (
   creada_en timestamptz not null default now()
 );
 alter table cadete_push_suscripciones enable row level security;
+
+-- Saldo del cadete: cada entrega completada por Alejo suma un movimiento
+-- ($ 6000 salvo que el pedido/tarea traiga monto_cadete). pagado_en queda
+-- null hasta que el admin registra el pago.
+create table if not exists movimientos_cadete (
+  id text primary key,
+  tipo text not null,
+  referencia_id text not null,
+  descripcion text,
+  fecha_entrega date,
+  monto_ars integer not null default 6000,
+  creado_en timestamptz not null default now(),
+  pagado_en timestamptz
+);
+create unique index if not exists movimientos_cadete_referencia_unica
+  on movimientos_cadete (tipo, referencia_id);
+alter table movimientos_cadete enable row level security;
+alter table tareas_entrega add column if not exists monto_cadete integer;
+alter table pedidos add column if not exists monto_cadete integer;

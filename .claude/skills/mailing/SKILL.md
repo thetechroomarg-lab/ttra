@@ -1,78 +1,72 @@
 ---
 name: mailing
-description: Use when Vladimir asks to prepare, regenerate, approve, or send a visual email campaign for The Tech Room Arg from current catalog products, especially when an image preview or a separate send confirmation is needed.
+description: Arma y envía la campaña semanal de mailing de novedades a los clientes de The Tech Room Arg — siempre exactamente 10 productos (5 por columna: los nuevos del catálogo primero, completando al azar si faltan), suma una nota/promo manual opcional, y solo envía cuando Vladimir lo confirma explícitamente. Usar cuando Vladimir dice "dejá esta nota para la próxima campaña", "mandá la campaña de novedades", o cuando corre la rutina semanal programada.
 ---
 
-# Campañas visuales de mailing
+# Campaña de mailing de novedades
 
-Prepara un correo híbrido para The Tech Room Arg: hero visual generado, contenido comercial en HTML real y CTA funcional. La preparación, aprobación y envío son tres acciones distintas.
+Escribe DIRECTO en la base de producción (Supabase) al enviar — no hay
+ambiente de prueba separado (ver `web/supabase_client.py`).
 
-Lee [references/brand.md](references/brand.md) antes de construir el prompt de imagen. Usa el generador de imágenes integrado de Codex por defecto; si no está disponible, explica que hay un modo CLI que requiere configuración y espera a que Vladimir lo solicite.
+Todo el estado (snapshot del catálogo, nota pendiente, borrador actual) vive
+en las tablas `mailing_estado`/`mailing_envios` de Supabase — no en archivos
+locales. El catálogo se lee del endpoint público `GET /api/productos`, no de
+`web/productos.json`. Por eso estos tres scripts corren igual desde esta
+máquina o desde la rutina programada en la nube (skill `schedule`): les hace
+falta `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` y `RESEND_API_KEY` como
+variables de entorno — localmente salen de `web/.env`, en la nube hay que
+cargarlas a mano en la sección Environments de claude.ai.
 
-## Preparar una campaña
-
-1. Consulta productos y precios actuales desde la API pública:
-
-   ```bash
-   ./.venv/bin/python .claude/skills/mailing/scripts/catalogo.py --buscar "iphone" --buscar "16"
-   ```
-
-   Usa los nombres exactos devueltos por el catálogo. No inventes productos, precios, stock, cuotas, garantías o descuentos. Incluye en la campaña solo productos cuya selección tenga sentido para el pedido de Vladimir. Una nota promocional se copia exactamente de lo que él dio.
-
-2. Propón el asunto y el preheader usando solo hechos confirmados. Genera un hero horizontal de marketing con el generador de imágenes. Sigue `references/brand.md`; no pidas que se rastericen precios, CTA, URLs ni condiciones. Para productos reconocibles, evita logos o detalles de hardware que no puedas verificar.
-
-3. Copia el archivo final que devolvió la herramienta de imágenes al proyecto con un nombre nuevo bajo `outputs/mailing/arte/`; crea la carpeta si aún no existe y no sobrescribas artes anteriores. Pasa ese archivo a `preparar.py`, junto con los nombres exactos y el brief:
-
-   ```bash
-   ./.venv/bin/python .claude/skills/mailing/scripts/preparar.py \
-     --imagen "outputs/mailing/arte/hero-iphone-16-v1.png" \
-     --producto "IPHONE 16 128GB" \
-     --brief "tecnología premium, minimalista, alto contraste" \
-     --asunto "Novedades Apple" \
-     --preheader "Equipos disponibles esta semana" \
-     --alt "Teléfono sobre un fondo oscuro con luz coral"
-   ```
-
-   Repite `--producto` por cada artículo. Si el usuario pide regenerar una campaña, pasa `--parent-id <version-id>` para conservar la campaña y crear una versión hija nueva. El script sube el arte, valida los nombres contra el catálogo y crea la versión `previsualizado`. Guarda los archivos bajo `outputs/mailing/<campaign_id>/<version_id>/`.
-
-4. Abre `preview.html` con la skill `browser:control-in-app-browser` y revisa escritorio y móvil. Confirma que el hero cargue, que los precios/CTA HTML sean correctos, que el texto siga teniendo sentido con las imágenes desactivadas y que la baja esté presente. Presenta en el chat la imagen, el HTML de vista previa, los productos y precios, el asunto y el ID de versión. No apruebes por el usuario.
-
-## Aprobar una versión
-
-Aprueba solo cuando Vladimir se refiera de forma inequívoca al ID de versión mostrado. Una aprobación guarda el estado `aprobado`, pero todavía no envía el correo.
+## Dejar una nota/promo para la próxima campaña
 
 ```bash
-./.venv/bin/python .claude/skills/mailing/scripts/aprobar.py <version-id>
+cd "/Users/toraba/TTRA Project"
+./.venv/bin/python .claude/skills/mailing/scripts/nota.py "texto exacto que Vladimir dictó, nunca un descuento inventado por vos"
 ```
 
-Confirma que quedó aprobada y recuérdale que aún no se envió. Si la campaña se regenera o se edita, la versión nueva requiere su propia aprobación.
+Reemplaza cualquier nota pendiente sin usar (el script avisa si pisa una). El texto de la nota SIEMPRE sale textual de lo que Vladimir escribió — nunca inventar ni completar un número de descuento, aunque sea a modo de ejemplo.
 
-## Enviar la versión aprobada
+## Rutina semanal (automática, vía skill `schedule`)
 
-Antes de pedir confirmación final, vuelve a consultar el estado, los precios y la audiencia actuales:
+Cada sábado 20:00 (hora Argentina) corré:
 
 ```bash
-./.venv/bin/python .claude/skills/mailing/scripts/resumen.py <version-id>
-./.venv/bin/python .claude/skills/mailing/scripts/catalogo.py --buscar "iphone" --buscar "16"
+cd "/Users/toraba/TTRA Project"
+./.venv/bin/python .claude/skills/mailing/scripts/armar_borrador.py
 ```
 
-Continúa solo si la versión está `aprobado`, `catalogo_vigente` y `asset_disponible` son `true`, y `envio_disponible` es `true`. Muestra el asunto, la versión, los productos/precios congelados y la cantidad actual de destinatarios. La API excluye las direcciones vacías y `no_mailing=true`.
+El script:
+- Descarga el catálogo desde `GET /api/productos` y lo compara contra el último snapshot guardado en `mailing_estado` para detectar productos nuevos.
+- Arma la selección final de la campaña: **siempre exactamente 10 productos, sin excepción, 5 por columna** — prioriza los nuevos de la semana y completa al azar con el resto del catálogo si hay menos de 10 nuevos (`web/mailing/catalogo_diff.seleccionar_para_campania`).
+- Lee la nota pendiente (si hay) y la consume — queda limpia después de esta corrida, se haya aprobado el borrador o no.
+- Si arma un borrador, imprime `BORRADOR_LISTO` seguido de un resumen (cuántos de los 10 son realmente nuevos vs. relleno, si incluye nota, cantidad de destinatarios), y guarda el HTML completo en `mailing_estado` (clave `borrador_actual`, campo `valor.html_preview`).
 
-Si un precio cambió o el arte ya no existe, no intentes aprobar la versión vieja. Crea una versión nueva con `--parent-id`, muestra la vista previa y vuelve a pedir aprobación.
+Si imprimió `BORRADOR_LISTO`:
 
-Después del resumen, solicita una confirmación aparte que mencione ese ID. Solo al recibirla ejecuta el script con el texto exacto:
+1. Leé el borrador de Supabase (`select valor from mailing_estado where clave = 'borrador_actual'`, o correlo desde Python con `web.mailing.estado.leer_borrador(client)`), tomá el campo `html_preview`.
+2. Escribilo a un archivo `.html` y publicalo con tu herramienta Artifact (favicon 📧, título "Campaña de novedades").
+3. Mandale una notificación push a Vladimir con la herramienta PushNotification: cantidad de productos nuevos, si incluye nota, cantidad de destinatarios, y que revise el link del artifact.
+4. No envíes nada vos solo — el envío real requiere que Vladimir lo pida explícitamente después de revisar el artifact.
+
+La cantidad de destinatarios y los datos de producto quedan congelados al momento de armar el borrador. Si Vladimir aprueba la campaña más de uno o dos días después, avisale que convendría un chequeo rápido de precios antes de mandarla, por si quedaron desactualizados.
+
+## Enviar la campaña aprobada
+
+Cuando Vladimir confirma (dice "dale, mandala" o similar) después de haber visto el artifact:
 
 ```bash
-./.venv/bin/python .claude/skills/mailing/scripts/enviar.py \
-  <version-id> --confirmacion "ENVIAR <version-id>"
+cd "/Users/toraba/TTRA Project"
+./.venv/bin/python .claude/skills/mailing/scripts/enviar_campania.py
 ```
 
-El script y la API vuelven a comprobar el catálogo y el arte antes del primer correo. Nunca repitas el envío si la versión está `enviando` o `enviado`; ante una interrupción, informa el estado y los resultados guardados. Al completar, comunica enviados y fallidos.
+- Envía el HTML del borrador (personalizado por cliente solo en el link de baja) a todos los clientes con email y sin `no_mailing=true`.
+- Si falla un envío individual, sigue con el resto — al final reporta `ENVIADA: X/Y destinatarios, Z fallidos`.
+- Marca el borrador como usado — no se puede reenviar el mismo borrador dos veces, hace falta uno nuevo de la próxima corrida semanal.
 
-## Límites operativos
+Contale a Vladimir el resultado final en el chat.
 
-- “Me gusta”, “hacelo”, “publicalo” o una aprobación de otra versión no autorizan el envío.
-- No ejecutes el paso de envío desde una rutina programada.
-- No inventes precios ni claims. El arte aporta la identidad visual; el HTML contiene nombres, precios, condiciones, CTA y baja.
-- No escribas `ADMIN_TOKEN`, `RESEND_API_KEY` ni credenciales en prompts, archivos de preview o logs.
-- Si un comando falla o devuelve un estado distinto del esperado, detente y presenta el error sin reintentar un posible envío parcial.
+## Gotchas
+
+- El envío real (`enviar_campania.py`) NUNCA se corre automáticamente ni sin que Vladimir lo haya pedido explícitamente para ese borrador puntual.
+- Nunca inventar un descuento, promo o condición comercial — ni real ni de ejemplo. La nota siempre sale textual de `/mailing nota`.
+- La columna `clientes.no_mailing` tiene que existir en Supabase antes de correr cualquiera de estos scripts contra producción (`supabase/schema.sql`, corrida a mano en el SQL Editor).

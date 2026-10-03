@@ -418,3 +418,21 @@ def test_login_email_no_confirmado_devuelve_403_con_mensaje_claro(monkeypatch):
     r = c.post("/login", json={"email": "juan@x.com", "password": "clave1234"})
     assert r.status_code == 403
     assert "confirmá tu email" in r.json()["error"].lower()
+
+
+def test_registro_y_perfil_guardan_piso_y_depto_opcionales(monkeypatch):
+    c = _cliente(monkeypatch)
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba",
+        "direccion": "Av. Colón 123, Córdoba", "piso": " 3 ", "depto": "B",
+    })
+    principal = c.get("/api/domicilios").json()[0]
+    assert (principal["piso"], principal["depto"]) == ("3", "B")
+
+    nuevo = c.post("/api/domicilios", json={"alias": "Casa", "direccion": "San Martín 456"}).json()
+    assert (nuevo["piso"], nuevo["depto"]) == ("", "")
+    editado = c.put(f"/api/domicilios/{nuevo['id']}", json={
+        "alias": "Casa", "direccion": "San Martín 456", "piso": "PB", "depto": "",
+    }).json()
+    assert (editado["piso"], editado["depto"]) == ("PB", "")

@@ -1,7 +1,0 @@
-INFO:     Will watch for changes in these directories: ['/Users/toraba/TTRA Project']
-INFO:     Uvicorn running on http://127.0.0.1:8010 (Press CTRL+C to quit)
-INFO:     Started reloader process [71665] using StatReload
-INFO:     Started server process [71681]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     127.0.0.1:63257 - "GET / HTTP/1.1" 200 OK

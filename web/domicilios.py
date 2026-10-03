@@ -1,6 +1,13 @@
 import uuid
 
 MAX_DOMICILIOS = 5
+MAX_PISO_DEPTO = 20
+
+
+def opcional(valor):
+    """Piso/depto son opcionales: vacío pasa a None, y se recorta a un largo sano."""
+    valor = (valor or "").strip()[:MAX_PISO_DEPTO]
+    return valor or None
 
 
 def _normalizar(fila):
@@ -8,6 +15,8 @@ def _normalizar(fila):
         "id": fila["id"],
         "alias": fila.get("alias") or "",
         "direccion": fila.get("direccion") or "",
+        "piso": fila.get("piso") or "",
+        "depto": fila.get("depto") or "",
         "predeterminado": bool(fila.get("predeterminado")),
         "lat": fila.get("lat"),
         "lng": fila.get("lng"),
@@ -39,7 +48,7 @@ def _obtener_propio(client, cliente_id, domicilio_id):
     return filas[0]
 
 
-def crear(client, cliente_id, alias, direccion, lat=None, lng=None, predeterminado=False):
+def crear(client, cliente_id, alias, direccion, lat=None, lng=None, predeterminado=False, piso=None, depto=None):
     alias = (alias or "").strip()
     direccion = (direccion or "").strip()
     if not alias:
@@ -57,6 +66,8 @@ def crear(client, cliente_id, alias, direccion, lat=None, lng=None, predetermina
         "cliente_id": cliente_id,
         "alias": alias,
         "direccion": direccion,
+        "piso": opcional(piso),
+        "depto": opcional(depto),
         "predeterminado": hacer_predeterminado,
         "lat": lat,
         "lng": lng,
@@ -65,7 +76,7 @@ def crear(client, cliente_id, alias, direccion, lat=None, lng=None, predetermina
     return _normalizar(fila)
 
 
-def actualizar(client, cliente_id, domicilio_id, alias, direccion, lat=None, lng=None):
+def actualizar(client, cliente_id, domicilio_id, alias, direccion, lat=None, lng=None, piso=None, depto=None):
     fila = _obtener_propio(client, cliente_id, domicilio_id)
     alias = (alias or "").strip()
     direccion = (direccion or "").strip()
@@ -73,7 +84,7 @@ def actualizar(client, cliente_id, domicilio_id, alias, direccion, lat=None, lng
         raise ValueError("Ingresá un nombre para el domicilio")
     if not direccion:
         raise ValueError("Ingresá una dirección")
-    cambios = {"alias": alias, "direccion": direccion, "lat": lat, "lng": lng}
+    cambios = {"alias": alias, "direccion": direccion, "lat": lat, "lng": lng, "piso": opcional(piso), "depto": opcional(depto)}
     client.table("domicilios_cliente").update(cambios).eq("id", domicilio_id).execute()
     fila.update(cambios)
     return _normalizar(fila)

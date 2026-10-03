@@ -78,6 +78,15 @@ _MARCA_POR_PALABRA = (
     (re.compile(r"(?i)\blogitech\b"), "Logitech"),
     (re.compile(r"(?i)\bplaystation\b|\bps5\b|\bsony\b"), "PlayStation"),
     (re.compile(r"(?i)\bnintendo\b|\bswitch\b"), "Nintendo"),
+    # Notebooks: el pipeline las trae todas bajo la categoría "Notebook".
+    (re.compile(r"(?i)\bhp\b"), "HP"),
+    (re.compile(r"(?i)\blenovo\b"), "Lenovo"),
+    (re.compile(r"(?i)\basus\b"), "Asus"),
+    (re.compile(r"(?i)\bacer\b"), "Acer"),
+    (re.compile(r"(?i)\bdell\b"), "Dell"),
+    (re.compile(r"(?i)\bmsi\b"), "MSI"),
+    (re.compile(r"(?i)\bgigabyte\b"), "Gigabyte"),
+    (re.compile(r"(?i)\bxtrem\b"), "Xtrem"),
     (re.compile(r"(?i)\bapple\b"), "Apple"),
     (re.compile(r"(?i)\bsamsung\b|\bgalaxy\b"), "Samsung"),
     (re.compile(r"(?i)\bxiaomi\b|\bredmi\b|\bpoco\b"), "Xiaomi"),
@@ -101,9 +110,12 @@ _MARCA_POR_CATEGORIA = {
 
 def marca_de(producto):
     categoria = producto.get("categoria", "")
-    if categoria in _MARCA_POR_CATEGORIA:
-        return _MARCA_POR_CATEGORIA[categoria]
     nombre = producto.get("nombre", "")
+    # El pipeline manda todo reloj a "Apple - Watch" (Xiaomi, Haylou, ...):
+    # ahí solo es Apple si el nombre lo dice.
+    ambigua = categoria == "Apple - Watch" and not re.search(r"(?i)apple", nombre)
+    if categoria in _MARCA_POR_CATEGORIA and not ambigua:
+        return _MARCA_POR_CATEGORIA[categoria]
     for patron, marca in _MARCA_POR_PALABRA:
         if patron.search(nombre):
             return marca

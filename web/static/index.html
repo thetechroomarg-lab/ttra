@@ -18,10 +18,10 @@
       // Sin storage, la landing conserva el Classic oscuro por defecto.
     }
     const introParams = new URLSearchParams(location.search);
-    if (window.parent !== window && introParams.get('embed') === 'carrito') {
+    if (window.parent !== window && ['carrito', 'perfil', 'pedidos'].includes(introParams.get('embed'))) {
       document.documentElement.classList.add('ttra-cart-embedded');
     }
-    let introSeen = false, albumReturn = null;
+    let introSeen = false, albumReturn = null, bituAlbumReturn = null, fendiAlbumReturn = null;
     try {
       introSeen = sessionStorage.getItem("ttra_portada_vista") === "1";
       const savedReturn = JSON.parse(sessionStorage.getItem("ttra_vaiven_return_once") || "null");
@@ -30,10 +30,24 @@
         albumReturn = savedReturn;
         sessionStorage.setItem("ttra_portada_vista", "1");
       }
+      const savedBituReturn = JSON.parse(sessionStorage.getItem("ttra_bitu_return_once") || "null");
+      sessionStorage.removeItem("ttra_bitu_return_once");
+      if (savedBituReturn && typeof savedBituReturn.guest === "boolean" && Date.now() - savedBituReturn.at >= 0 && Date.now() - savedBituReturn.at < 30000) {
+        bituAlbumReturn = savedBituReturn;
+        sessionStorage.setItem("ttra_portada_vista", "1");
+      }
+      const savedFendiReturn = JSON.parse(sessionStorage.getItem("ttra_fendi_return_once") || "null");
+      sessionStorage.removeItem("ttra_fendi_return_once");
+      if (savedFendiReturn && typeof savedFendiReturn.guest === "boolean" && Date.now() - savedFendiReturn.at >= 0 && Date.now() - savedFendiReturn.at < 30000) {
+        fendiAlbumReturn = savedFendiReturn;
+        sessionStorage.setItem("ttra_portada_vista", "1");
+      }
     } catch {}
     window.__TTRA_VAIVEN_RETURN = albumReturn;
+    window.__TTRA_BITU_RETURN = bituAlbumReturn;
+    window.__TTRA_FENDI_RETURN = fendiAlbumReturn;
     const isReload = performance.getEntriesByType('navigation')[0]?.type === 'reload';
-    const showIntro = introParams.get("intro") === "1" || (!albumReturn && (!introSeen || isReload) && introParams.get("panel") !== "carrito");
+    const showIntro = introParams.get("intro") === "1" || (!albumReturn && !bituAlbumReturn && !fendiAlbumReturn && (!introSeen || isReload) && introParams.get("panel") !== "carrito");
     document.documentElement.classList.add(showIntro ? "ttra-welcome-pending" : "ttra-welcome-dismissed");
   </script>
   <meta charset="utf-8">
@@ -72,7 +86,10 @@
   <link rel="stylesheet" href="landing.css">
   <link rel="stylesheet" href="classic.css">
   <link rel="stylesheet" href="perfil.css">
+  <link rel="stylesheet" href="mapa-pin.css">
+  <link rel="stylesheet" href="pedidos.css">
   <link rel="stylesheet" href="classic-editorial.css">
+  <link rel="stylesheet" href="ttra-grid-hover.css">
   <link rel="stylesheet" href="/site-header.css">
   <link rel="stylesheet" href="/disclosure.css">
   <link rel="stylesheet" href="/carrito.css">
@@ -161,6 +178,7 @@
             </button>
             <div id="rc-perfil-dropdown" class="rc-perfil-dropdown oculto" role="menu">
               <a id="link-ir-a-perfil" class="rc-perfil-opcion" role="menuitem">Ir a perfil</a>
+              <a id="link-ir-a-pedidos" class="rc-perfil-opcion oculto" href="/?panel=pedidos" role="menuitem">Pedidos</a>
               <button id="btn-logout-classic" type="button" class="rc-perfil-opcion rc-perfil-opcion-salir" role="menuitem">Cerrar sesión</button>
             </div>
           </div>
@@ -243,7 +261,7 @@
   <div class="ttra-scroll-stage ttra-editorial ttra-home-only">
   <section class="ttra-hero ttra-editorial ttra-home-only" aria-labelledby="ttra-hero-title">
     <div class="ttra-hero-copy">
-      <h2 id="ttra-hero-title"><span class="ttra-cat-word">Lo Buscás?</span><br><span class="ttra-cat-word">Lo tenés<span class="ttra-accent">.</span></span></h2>
+      <h2 id="ttra-hero-title"><span class="ttra-cat-word">Lo Buscás?</span> <br><span class="ttra-cat-word">Lo tenés<span class="ttra-accent">.</span></span></h2>
       <p class="ttra-hero-description ttra-personal-intro"><span class="ttra-intro-hello">Hola</span> <span class="ttra-intro-name"><span class="ttra-intro-soy">soy</span> <strong>Vlad</strong></span> <span class="ttra-intro-detail">vendo tecnología desde el año <strong>2009.</strong></span></p>
     </div>
   </section>
@@ -304,7 +322,7 @@
         <div class="ttra-headphones" aria-hidden="true"><i></i><b></b><span>TTR<em>.</em></span></div>
         <div class="ttra-category-bottom"><div><h3>Accesorios</h3></div><svg class="ttra-circle-arrow" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="14.5"/><path d="M11 21 21 11M11 11h10v10"/></svg></div>
       </a>
-      <a class="ttra-category ttra-category-brands ttra-category-scene" href="/catalogo?filtro=marca#catalog-filters" data-reveal>
+      <a class="ttra-category ttra-category-brands ttra-category-scene" href="/catalogo?filtro=marca" data-reveal>
         <img class="ttra-category-backdrop" src="/category-backgrounds/electronics-shelves.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1200" height="800">
         <div class="ttra-brand-lens" aria-hidden="true"><span>¿cuál<br>elegís<span class="ttra-accent">?</span></span></div>
         <div class="ttra-category-bottom"><div><h3>Búsqueda por Marca</h3></div><svg class="ttra-circle-arrow" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="14.5"/><path d="M11 21 21 11M11 11h10v10"/></svg></div>
@@ -352,6 +370,7 @@
     <div class="panel-carrito-footer">
       <p id="total-carrito"></p>
       <label for="fecha-entrega">Entrega</label><select id="fecha-entrega"></select><p id="nota-entrega" class="carrito-nota"></p>
+      <p id="direccion-entrega-actual" class="carrito-nota" hidden></p>
       <button id="btn-abrir-direccion" type="button">Dirección de entrega</button>
       <div id="selector-domicilio-entrega" class="oculto">
         <ul id="lista-domicilios-entrega" class="lista-domicilios-entrega" role="listbox" aria-label="Domicilio de entrega"></ul>
@@ -360,6 +379,10 @@
         <label for="direccion-entrega" class="rc-codigo-titulo">Especificá dirección de entrega</label>
         <input id="direccion-alias" type="text" maxlength="80" placeholder="Nombre para guardar (ej. Casa)" class="oculto">
         <input id="direccion-entrega" type="text" maxlength="500" autocomplete="street-address" placeholder="Calle, número, barrio y ciudad">
+        <div class="piso-depto-fila">
+          <input id="piso-entrega" type="text" maxlength="20" placeholder="Piso (opcional)" aria-label="Piso (opcional)">
+          <input id="depto-entrega" type="text" maxlength="20" placeholder="Depto (opcional)" aria-label="Departamento (opcional)">
+        </div>
         <button id="btn-usar-ubicacion" type="button" class="btn-usar-ubicacion">📍 Usar mi ubicación</button>
         <ul id="sugerencias-direccion" class="sugerencias-direccion oculto" role="listbox" aria-label="Sugerencias de dirección"></ul>
         <button id="btn-guardar-direccion" type="button">APLICAR</button>
@@ -381,11 +404,16 @@
       <button id="btn-cerrar-panel-perfil" aria-label="Cerrar perfil" type="button">✕</button>
     </div>
     <form id="form-perfil" class="form">
-      <input id="perfil-nombre" type="text" placeholder="Nombre" autocomplete="given-name" required aria-label="Nombre">
-      <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required aria-label="Apellido">
+      <input id="perfil-nombre" type="text" placeholder="Nombre" autocomplete="given-name" required aria-label="Nombre" disabled>
+      <input id="perfil-apellido" type="text" placeholder="Apellido" autocomplete="family-name" required aria-label="Apellido" disabled>
       <input id="perfil-email" type="email" placeholder="Email" disabled aria-label="Email">
-      <input id="perfil-celular" type="tel" placeholder="Celular" autocomplete="tel" required aria-label="Celular">
-      <button type="submit">Guardar cambios</button>
+      <input id="perfil-celular" type="tel" placeholder="Teléfono" autocomplete="tel" inputmode="numeric" pattern="[0-9]*" required aria-label="Teléfono" disabled>
+      <div class="perfil-direccion-wrap">
+        <input id="perfil-domicilio" type="text" placeholder="Domicilio principal" autocomplete="off" disabled aria-label="Domicilio principal">
+        <ul id="perfil-domicilio-sugerencias" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
+      </div>
+      <button type="button" id="btn-editar-perfil">Editar</button>
+      <button type="submit" id="btn-guardar-perfil" disabled>Guardar cambios</button>
       <p class="error" id="perfil-error"></p>
       <p class="ok" id="perfil-ok"></p>
     </form>
@@ -396,6 +424,27 @@
       <button type="button" id="btn-ver-condiciones-mayorista">Ver condiciones mayoristas</button>
     </section>
 
+
+    <h2>Mis domicilios</h2>
+    <div id="lista-domicilios" class="lista-domicilios"></div>
+    <button type="button" id="btn-abrir-form-domicilio">Agregar domicilio</button>
+    <form id="form-domicilio" class="form oculto">
+      <input id="domicilio-alias" type="text" placeholder="Categoría (ej. Casa, Trabajo)" maxlength="80" required aria-label="Categoría del domicilio">
+      <div class="perfil-direccion-wrap">
+        <input id="domicilio-direccion" type="text" placeholder="Dirección" autocomplete="street-address" maxlength="500" required aria-label="Dirección">
+        <ul id="perfil-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
+      </div>
+      <div id="domicilio-mapa" class="mapa-pin" hidden><div class="mapa-pin-lienzo"></div><p class="mapa-pin-ayuda">Mové el pin hasta tu puerta para que la entrega llegue justo.</p></div>
+      <div class="piso-depto-fila">
+        <input id="domicilio-piso" type="text" placeholder="Piso (opcional)" maxlength="20" aria-label="Piso (opcional)">
+        <input id="domicilio-depto" type="text" placeholder="Depto (opcional)" maxlength="20" aria-label="Departamento (opcional)">
+      </div>
+      <button type="submit" id="btn-guardar-domicilio">Guardar domicilio</button>
+      <button type="button" id="btn-cancelar-edicion-domicilio">Cancelar</button>
+      <p class="error" id="domicilio-error"></p>
+      <p class="ok" id="domicilio-ok"></p>
+    </form>
+
     <section id="seccion-fidelidad">
       <h2>Sellos de lealtad</h2>
       <div id="fidelidad-sellos" class="fidelidad-sellos" aria-live="polite"></div>
@@ -404,25 +453,15 @@
 
     <section id="seccion-referidos">
       <h2>Invitá a un amigo</h2>
-      <p class="referidos-ayuda">Compartí tu link. Cuando tu amigo se crea la cuenta y hace su primera compra, ganás US$5 de descuento que se aplica solo en tu próxima compra.</p>
-      <p id="referidos-estado" class="ok oculto" aria-live="polite"></p>
+      <p class="referidos-ayuda">Compartí tu link. Cuando tu amigo se crea la cuenta y hace su primera compra, ganás US$5 de descuento. Y si tu amigo invita a otros, vos también ganás con cada compra de tu red: cada vez un poco menos, para siempre. Se aplica solo en tu próxima compra.</p>
       <button type="button" id="btn-compartir-referido">Compartir mi link</button>
       <p id="referidos-link" class="referidos-link oculto"></p>
     </section>
 
-    <h2>Mis domicilios</h2>
-    <div id="lista-domicilios" class="lista-domicilios"></div>
-    <form id="form-domicilio" class="form">
-      <input id="domicilio-alias" type="text" placeholder="Nombre (ej. Casa, Oficina)" maxlength="80" required aria-label="Nombre del domicilio">
-      <div class="perfil-direccion-wrap">
-        <input id="domicilio-direccion" type="text" placeholder="Dirección" autocomplete="street-address" maxlength="500" required aria-label="Dirección">
-        <ul id="perfil-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
-      </div>
-      <button type="submit" id="btn-guardar-domicilio">Agregar domicilio</button>
-      <button type="button" id="btn-cancelar-edicion-domicilio" class="oculto">Cancelar</button>
-      <p class="error" id="domicilio-error"></p>
-      <p class="ok" id="domicilio-ok"></p>
-    </form>
+    <section id="seccion-amigos-referidos" class="oculto">
+      <h2>Mi red</h2>
+      <div id="referidos-estado" aria-live="polite"></div>
+    </section>
 
     <h2>Cambiar contraseña</h2>
     <form id="form-password" class="form">
@@ -434,6 +473,38 @@
       <p class="ok" id="password-ok"></p>
     </form>
   </aside>
+  <aside id="panel-pedidos" class="oculto">
+    <div class="panel-carrito-header">
+      <h2>Mis pedidos</h2>
+      <button id="btn-cerrar-panel-pedidos" aria-label="Cerrar pedidos" type="button">✕</button>
+    </div>
+    <div class="pedidos-tabs">
+      <button type="button" id="tab-pedidos-en-curso" class="pedidos-tab activo">En curso</button>
+      <button type="button" id="tab-pedidos-historial" class="pedidos-tab">Historial</button>
+    </div>
+    <div id="lista-pedidos-en-curso" class="lista-pedidos"></div>
+    <div id="lista-pedidos-historial" class="lista-pedidos oculto"></div>
+  </aside>
+  <div id="modal-editar-direccion-pedido" class="rc-terminos-overlay">
+    <div class="rc-terminos-tarjeta">
+      <h2>Modificar dirección de entrega</h2>
+      <form id="form-editar-direccion-pedido" class="form">
+        <div class="perfil-direccion-wrap">
+          <input id="pedido-direccion" type="text" placeholder="Dirección" autocomplete="off" maxlength="500" required>
+          <ul id="pedido-sugerencias-direccion" class="perfil-sugerencias-direccion" role="listbox" aria-label="Sugerencias de dirección" hidden></ul>
+        </div>
+        <div class="piso-depto-fila">
+          <input id="pedido-piso" type="text" placeholder="Piso (opcional)" maxlength="20" aria-label="Piso (opcional)">
+          <input id="pedido-depto" type="text" placeholder="Depto (opcional)" maxlength="20" aria-label="Departamento (opcional)">
+        </div>
+        <p class="error" id="pedido-direccion-error"></p>
+        <div class="rc-terminos-acciones" style="gap:10px">
+          <button type="submit">Guardar</button>
+          <button type="button" id="btn-cancelar-editar-direccion-pedido">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
   <div id="overlay-carrito" class="oculto"></div>
   <div id="overlay-perfil" class="oculto"></div>
 
@@ -481,6 +552,10 @@
     <div class="ttra-about-photo"><img src="/texturas/cordoba-city.jpg" alt="Vista de la ciudad de Córdoba" loading="lazy" width="900" height="600" data-parallax="0.06"><span>DE CÓRDOBA.<br>PARA <span class="ttra-glitch-word" data-word="TU">TU</span> MUNDO.</span></div>
     <div class="ttra-about-copy" data-reveal><p class="ttra-eyebrow">02 / ESTOY CERCA</p><h2 id="ttra-about-title">La tecnología cambia.<br>El trato humano,<br><em>NO.</em></h2><p>Estoy de este lado. Te ayudo a elegir, respondo tus dudas y coordino tu pedido con vos.</p><a class="ttra-button" href="https://wa.me/543512145217" target="_blank" rel="noopener">Escribime</a></div>
   </section>
+  <section class="ttra-grid-hover ttra-editorial ttra-home-only" aria-labelledby="ttra-grid-hover-title">
+    <h2 id="ttra-grid-hover-title" class="ttra-grid-hover-title">Estrés?</h2>
+    <div class="ttra-grid-hover-grid" aria-hidden="true"></div>
+  </section>
   <footer class="rc-pie">
     <h2 class="ttra-footer-title ttra-editorial">Vías de contacto:</h2>
     <div class="rc-redes">
@@ -521,8 +596,11 @@
   <script src="/comparar-productos.js"></script>
   <script src="/catalog-images.js?v=1"></script>
   <script src="landing.js"></script>
+  <script src="mapa-pin.js"></script>
   <script src="perfil.js"></script>
+  <script src="pedidos.js"></script>
   <script src="classic-editorial.js"></script>
+  <script src="ttra-grid-hover.js" defer></script>
   <script src="scroll-lock.js"></script>
 </body>
 </html>

@@ -48,7 +48,7 @@ function fixture() {
     body,
     getElementById: (id) => elements.get(id),
     querySelector: (selector) => {
-      if (selector.startsWith('dialog[data-ttra-cart]') && elements.get('native-cart').open) return elements.get('native-cart');
+      if (selector.startsWith('dialog[open]') && elements.get('native-cart').open) return elements.get('native-cart');
       if (selector === '.rc-logout-overlay.visible' &&
         elements.get('rc-terminos-mayorista').classList.contains('visible'))
         return elements.get('rc-terminos-mayorista');

@@ -1,0 +1,172 @@
+import json
+from io import BytesIO
+from unittest.mock import Mock
+
+from PIL import Image
+from fastapi.testclient import TestClient
+
+from tests.fakes_supabase import FakeSupabaseClient
+from web import app as appmod
+from web.mailing import campanias
+
+
+CAMPAIGN_ID = "2c1c82e4-73e5-46d2-a77e-921c21ef82d3"
+PRODUCTO = {
+    "nombre": "IPHONE 16 128GB", "usd": 800, "pesos": 1252000,
+    "transferencia": 1214440, "colores": ["Black"],
+}
+
+
+def escribir_catalogo(tmp_path):
+    path = tmp_path / "productos.json"
+    path.write_text(json.dumps([PRODUCTO]), encoding="utf-8")
+    return path
+
+
+def jpeg_valido():
+    salida = BytesIO()
+    Image.new("RGB", (1200, 600), "#1a1a1a").save(salida, format="JPEG")
+    return salida.getvalue()
+
+
+def preparar_cliente(monkeypatch, tmp_path):
+    fake = FakeSupabaseClient()
+    monkeypatch.setenv("PUBLIC_APP_URL", "https://thetechroomarg.com")
+    monkeypatch.setattr(appmod, "ADMIN_TOKEN", "secreto")
+    monkeypatch.setattr(appmod, "PRODUCTOS_PATH", escribir_catalogo(tmp_path))
+    monkeypatch.setattr(appmod, "MAILING_ASSETS_PATH", tmp_path / "assets")
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "enviar_email", Mock())
+    return TestClient(appmod.app), fake
+
+
+def subir_asset(client):
+    respuesta = client.post(
+        f"/admin/mailing/assets/{CAMPAIGN_ID}",
+        headers={"x-admin-token": "secreto"},
+        files={"archivo": ("hero.jpg", jpeg_valido(), "image/jpeg")},
+    )
+    assert respuesta.status_code == 200
+    return respuesta.json()
+
+
+def payload_campania(asset, productos=None):
+    return {
+        "campaign_id": CAMPAIGN_ID,
+        "brief": "premium minimalista",
+        "asunto": "Semana Apple",
+        "preheader": "iPhone seleccionado",
+        "nota": "",
+        "productos": productos or [PRODUCTO["nombre"]],
+        "hero": {
+            "url": asset["url"], "sha256": asset["sha256"],
+            "alt": "iPhone en estudio", "width": asset["width"], "height": asset["height"],
+        },
+    }
+
+
+def test_preparar_no_envia_y_congela_productos(monkeypatch, tmp_path):
+    client, _fake = preparar_cliente(monkeypatch, tmp_path)
+    asset = subir_asset(client)
+    respuesta = client.post(
+        "/admin/mailing/campanias",
+        headers={"x-admin-token": "secreto"},
+        json=payload_campania(asset),
+    )
+    assert respuesta.status_code == 201
+    datos = respuesta.json()
+    assert datos["estado"] == "previsualizado"
+    assert datos["manifest"]["productos"][0]["usd"] == 800
+    assert "U$D 800" in datos["manifest"]["html"]
+    assert appmod.enviar_email.call_count == 0
+
+
+def test_preparar_rechaza_producto_inexistente(monkeypatch, tmp_path):
+    client, _fake = preparar_cliente(monkeypatch, tmp_path)
+    asset = subir_asset(client)
+    respuesta = client.post(
+        "/admin/mailing/campanias",
+        headers={"x-admin-token": "secreto"},
+        json=payload_campania(asset, productos=["NO EXISTE"]),
+    )
+    assert respuesta.status_code == 422
+    assert appmod.enviar_email.call_count == 0
+
+
+def test_aprobar_no_envia_y_rechaza_asset_ausente(monkeypatch, tmp_path):
+    client, fake = preparar_cliente(monkeypatch, tmp_path)
+    manifiesto = {
+        "asunto": "Semana Apple", "productos": [], "html": "<html></html>",
+        "asset_sha256": "a" * 64,
+        "asset_url": f"https://thetechroomarg.com/mailing/assets/{CAMPAIGN_ID}/" + "a" * 64 + ".jpg",
+    }
+    version = campanias.crear_version(fake, manifiesto)
+    respuesta = client.post(
+        f"/admin/mailing/campanias/{version['id']}/aprobar",
+        headers={"x-admin-token": "secreto"},
+    )
+    assert respuesta.status_code == 409
+    assert appmod.enviar_email.call_count == 0
+
+
+def test_aprobar_version_con_asset_correcto_no_envia(monkeypatch, tmp_path):
+    client, _fake = preparar_cliente(monkeypatch, tmp_path)
+    asset = subir_asset(client)
+    creada = client.post(
+        "/admin/mailing/campanias",
+        headers={"x-admin-token": "secreto"},
+        json=payload_campania(asset),
+    ).json()
+    aprobada = client.post(
+        f"/admin/mailing/campanias/{creada['id']}/aprobar",
+        headers={"x-admin-token": "secreto"},
+    )
+    assert aprobada.status_code == 200
+    assert aprobada.json()["estado"] == "aprobado"
+    repetida = client.post(
+        f"/admin/mailing/campanias/{creada['id']}/aprobar",
+        headers={"x-admin-token": "secreto"},
+    )
+    assert repetida.status_code == 409
+    assert appmod.enviar_email.call_count == 0
+
+
+def test_endpoint_enviar_exige_confirmacion_exacta_antes_de_obtener_client(monkeypatch):
+    monkeypatch.setattr(appmod, "ADMIN_TOKEN", "secreto")
+    mock_client = Mock(side_effect=AssertionError("no debe consultar Supabase"))
+    monkeypatch.setattr(appmod, "get_client", mock_client)
+    monkeypatch.setattr(appmod, "enviar_email", Mock())
+    respuesta = TestClient(appmod.app).post(
+        f"/admin/mailing/campanias/{CAMPAIGN_ID}/enviar",
+        headers={"x-admin-token": "secreto"},
+        json={"confirmacion": "sí, mandala"},
+    )
+    assert respuesta.status_code == 422
+    mock_client.assert_not_called()
+    appmod.enviar_email.assert_not_called()
+
+
+def test_resumen_campania_recalcula_destinatarios_actuales(monkeypatch, tmp_path):
+    client, fake = preparar_cliente(monkeypatch, tmp_path)
+    asset = subir_asset(client)
+    creada = client.post(
+        "/admin/mailing/campanias",
+        headers={"x-admin-token": "secreto"},
+        json=payload_campania(asset),
+    ).json()
+    fake.table("clientes").insert({
+        "id": "11111111-1111-1111-1111-111111111111", "email": "a@example.com",
+    }).execute()
+    fake.table("clientes").insert({
+        "id": "22222222-2222-2222-2222-222222222222", "email": "b@example.com",
+    }).execute()
+    fake.table("clientes").insert({
+        "id": "33333333-3333-3333-3333-333333333333", "email": "c@example.com", "no_mailing": True,
+    }).execute()
+    resumen = client.get(
+        f"/admin/mailing/campanias/{creada['id']}",
+        headers={"x-admin-token": "secreto"},
+    )
+    assert resumen.status_code == 200
+    assert resumen.json()["destinatarios_actuales"] == 2
+    assert resumen.json()["catalogo_vigente"] is True

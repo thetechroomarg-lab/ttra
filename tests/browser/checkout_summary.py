@@ -40,7 +40,7 @@ with sync_playwright() as p:
             Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText:async text=>{window.copied=text}}});""")
         page = ctx.new_page()
         page.on('dialog', lambda d: d.accept())
-        page.goto(BASE + ('/catalogo' if embedded else '/?panel=carrito'), wait_until='domcontentloaded')
+        page.goto(BASE + ('/catalogo' if embedded else '/'), wait_until='domcontentloaded')
         page.evaluate('(items)=>localStorage.setItem("ttra_carrito",JSON.stringify(items))', [dict(PRODUCTS[0], cantidad=2, color='Azul')])
         if embedded:
             page.locator('.ttra-site-cart').click()

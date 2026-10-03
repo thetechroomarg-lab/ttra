@@ -82,6 +82,7 @@ html[data-modo="classic"].ttra-scroll-locked body#rc-body-landing:not(.rc-vista-
 }
 #panel-carrito,
 #panel-perfil,
+#panel-pedidos,
 .rc-terminos-contenido,
 .rc-panel-compartir-contenido {
   overscroll-behavior: contain;
@@ -267,7 +268,7 @@ html[data-modo="classic"] .rc-redes { display: flex; justify-content: center; fl
 html[data-modo="classic"] .rc-red-icono svg { width: 22px; height: 22px; }
 html[data-modo="classic"] .ttra-footer-title { margin: 0; font: 500 clamp(20px, 2vw, 28px)/1.2 var(--rc-font); letter-spacing: -.035em; }
 html[data-modo="classic"] .rc-red-icono { width: 44px; height: 44px; display: grid; place-items: center; color: var(--rc-green); }
-html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, .rc-logout-tarjeta, .tarjeta) { background: var(--rc-bg-panel); border: 1px solid var(--ed-line); border-radius: 6px; box-shadow: 0 24px 70px #00000030; }
+html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-logout-tarjeta, .tarjeta) { background: var(--rc-bg-panel); border: 1px solid var(--ed-line); border-radius: 6px; box-shadow: 0 24px 70px #00000030; }
 html[data-modo="classic"] .tarjeta { width: min(440px, 92vw); padding: 42px 32px; }
 html[data-modo="classic"] .tarjeta h1 { margin-top: 25px; font-size: 27px; font-weight: 500; letter-spacing: -.04em; }
 html[data-modo="classic"] .form :is(input, select, textarea) { min-height: 46px; border-radius: 2px; border: 1px solid var(--ed-line); background: var(--rc-bg); color: var(--rc-green); }
@@ -322,7 +323,7 @@ html[data-modo="classic"] .ttra-hero-description { animation-delay: .12s; }
   html[data-modo="classic"] .ttra-device-back { top: 70px; left: 11%; }
   html[data-modo="classic"] .ttra-device-front { top: 100px; right: 8%; }
   html[data-modo="classic"] .ttra-device-mark { top: 57%; }
-  html[data-modo="classic"] .ttra-collection { padding: 55px 20px 28px; }
+  html[data-modo="classic"] .ttra-collection { padding: 30px 20px 28px; }
   html[data-modo="classic"] .ttra-section-heading { margin-bottom: 25px; }
   html[data-modo="classic"] .ttra-section-note { display: none; }
   html[data-modo="classic"] .ttra-collection-grid { grid-template-columns: 1fr; gap: 16px; }
@@ -513,7 +514,7 @@ html[data-modo="classic"] .ttra-text-rolling .ttra-roll-in { animation: ttra-let
 .ttra-product-canvas { display: none; }
 html[data-modo="classic"] .ttra-product-canvas { display: block; position: absolute; top: 33px; left: 12px; width: calc(100% - 24px); height: calc(100% - 133px); pointer-events: none; opacity: 0; }
 html[data-modo="classic"] .ttra-3d-ready .ttra-product-canvas { opacity: 1; }
-html[data-modo="classic"] .ttra-3d-ready > :is(.ttra-mini-phone,.ttra-tablet,.ttra-laptop,.ttra-controller,.ttra-headphones) { visibility: hidden; }
+html[data-modo="classic"] .ttra-3d-ready > :is(.ttra-mini-phone,.ttra-tablet,.ttra-laptop,.ttra-controller,.ttra-headphones,.ttra-brand-lens) { visibility: hidden; }
 
 html[data-modo="classic"] .ttra-3d-ready::after { content: ''; position: absolute; left: 24%; right: 24%; bottom: 96px; height: 15px; border-radius: 50%; background: #11182024; filter: blur(9px); pointer-events: none; }
 
@@ -537,18 +538,58 @@ html[data-modo="classic"] .ttra-category-scene .ttra-product-canvas { top: 12px;
 /* The home introduction now flows directly into the categories. */
 html[data-modo="classic"] .ttra-hero { grid-template-columns: 1fr; min-height: auto; gap: 0; }
 
-/* Desktop pairs the headline with Vlad's introduction; mobile stays stacked. */
-@media (min-width: 1024px) {
+/* Desktop-only: big centered awwwards-style headline with the sticker card
+   below it, same size as always. Mobile (<=700px) keeps its original
+   left-aligned stacked layout untouched (see the max-width:700px block). */
+@media (min-width: 701px) {
   html[data-modo="classic"] .ttra-hero-copy {
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    column-gap: clamp(48px, 6vw, 112px);
+    text-align: center;
+    max-width: 1240px;
+    margin: 0 auto;
   }
-  html[data-modo="classic"] .ttra-hero-copy h2 { margin-bottom: 0; }
+  html[data-modo="classic"] .ttra-hero-copy h2 {
+    text-align: center;
+    text-transform: uppercase;
+    font: 800 clamp(24px, 4.6vw, 110px)/.98 var(--rc-font);
+    letter-spacing: -.03em;
+    margin: 0;
+    white-space: nowrap;
+  }
+  html[data-modo="classic"] .ttra-hero-copy h2 br { display: none; }
   html[data-modo="classic"] .ttra-hero-copy .ttra-personal-intro {
     justify-self: center;
     width: min(100%, 410px);
-    margin: 0;
+    margin: 32px auto 10px;
   }
+}
+
+/* Floating surfaces: a faint warm backlight separates panels, menus and
+   dialogs from the near-black page. The ring defines the edge; the glow and
+   the deep shadow give lift without turning into a neon effect. */
+html[data-modo="classic"] {
+  --ed-halo: 0 0 0 1px #fff6e026, 0 0 44px -6px #fff6e038, 0 0 110px -24px #fff6e024, 0 22px 60px #000000a6;
+  --ed-halo-reach: -48px;
+}
+html[data-modo="classic"][data-classic-theme="light"] {
+  --ed-halo: 0 0 0 1px #20231e0f, 0 0 30px -8px #20231e1f, 0 18px 48px #20231e24;
+}
+html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-logout-tarjeta, .rc-terminos-tarjeta, .ttra-auth-form-wrap .tarjeta,
+  #rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, #sugerencias-direccion, #perfil-sugerencias-direccion, .registro-sugerencias-direccion,
+  .ttra-dock-category-panel, .ttra-dock-label, .ttra-cart-loading, .ttra-login-loading, .rc-panel-compartir-contenido, #catalog-share,
+  #rc-aviso-flotante, .ttra-cart-feedback, .ttra-cart-flight),
+html[data-modo="classic"][data-classic-theme="light"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-logout-tarjeta, .rc-terminos-tarjeta, #rc-perfil-dropdown) {
+  box-shadow: var(--ed-halo);
+}
+/* Confirmation dialogs (logout, session closed, terms, edit address) get the
+   same blurred scrim as the cart so the page steps back behind the choice. */
+html[data-modo="classic"] :is(.rc-logout-overlay, .rc-terminos-overlay) {
+  background: rgba(16, 20, 24, .35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+html[data-modo="classic"][data-classic-theme="light"] :is(.rc-logout-overlay, .rc-terminos-overlay) {
+  background: rgba(16, 33, 79, .18);
 }

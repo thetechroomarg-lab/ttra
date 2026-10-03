@@ -401,9 +401,13 @@ function restringirFalloutSegunSesion(sesion) {
   }
 }
 
+// Al cerrar sesión el carrito no sobrevive: si no, quien entra después (u otra
+// cuenta en el mismo navegador) suma productos sobre el carrito anterior.
+const CLAVES_SESION_CLIENTE = ["ttra_cliente", "ttra_carrito", "ttra_carrito_pendiente", "ttra_checkout_pendiente", "ttra_descuento_mailing", "ttra_regalo_promo", "ttra_codigo_pendiente"];
+
 async function cerrarSesionCliente() {
   try {
-    localStorage.removeItem("ttra_cliente");
+    CLAVES_SESION_CLIENTE.forEach((clave) => localStorage.removeItem(clave));
   } catch {
     // Sin localStorage no había nada que borrar: no es crítico.
   }
@@ -426,6 +430,7 @@ const btnPerfilToggle = document.getElementById("btn-perfil-toggle");
 const dropdownPerfil = document.getElementById("rc-perfil-dropdown");
 const overlayPerfil = document.getElementById("overlay-perfil");
 const linkIrAPerfil = document.getElementById("link-ir-a-perfil");
+const linkIrAPedidos = document.getElementById("link-ir-a-pedidos");
 
 function cerrarMenuPerfil() {
   if (!dropdownPerfil) return;
@@ -434,8 +439,21 @@ function cerrarMenuPerfil() {
   // El fondo blureado (overlay-perfil) es un agregado solo de Classic (ver
   // classic.css) — sin CSS propia en Fallout, así que de todos modos no se
   // ve ahí, pero igual la ocultamos siempre para no dejarla "abierta" si el
-  // usuario cambia de modo con el menú desplegado.
-  if (overlayPerfil) overlayPerfil.classList.add("oculto");
+  // usuario cambia de modo con el menú desplegado. EXCEPTO si overlay-perfil
+  // lo sigue usando un panel flotante (perfil/pedidos) que quedó abierto:
+  // este overlay es compartido entre "menú desplegado" y "panel abierto",
+  // y este listener de click-afuera se dispara con CUALQUIER click fuera
+  // del menú -incluido un click adentro del panel mismo, que no es
+  // descendiente de menuPerfil- así que sin este chequeo, tocar cualquier
+  // botón del panel apagaba el blur/scroll-lock aunque el panel siguiera
+  // visible (bug reportado).
+  const panelPerfilAbierto = document.getElementById("panel-perfil") &&
+    !document.getElementById("panel-perfil").classList.contains("oculto");
+  const panelPedidosAbierto = document.getElementById("panel-pedidos") &&
+    !document.getElementById("panel-pedidos").classList.contains("oculto");
+  if (overlayPerfil && !panelPerfilAbierto && !panelPedidosAbierto) {
+    overlayPerfil.classList.add("oculto");
+  }
 }
 
 if (btnPerfilToggle && dropdownPerfil) {
@@ -463,18 +481,13 @@ if (btnPerfilToggle && dropdownPerfil) {
 if (linkIrAPerfil) {
   linkIrAPerfil.addEventListener("click", (e) => {
     e.preventDefault();
-    // Classic + con sesión: abre el panel embebido (ver perfil.js) en vez
-    // de navegar a /perfil — así queda la home blureada detrás, igual que
-    // el carrito. Fallout sigue navegando a la página completa de siempre
-    // (pedido explícito: no tocar ese modo) y un invitado sigue yendo a
-    // login, en los dos casos no hay panel que abrir.
-    if (modoVisual !== "fallout" && estadoSesionCliente && typeof window.abrirPanelPerfil === "function") {
+    // Con sesión: el perfil es siempre el panel flotante (ver perfil.js),
+    // con la home blureada detrás. No existe una pantalla de perfil aparte.
+    if (estadoSesionCliente) {
       cerrarMenuPerfil();
       window.abrirPanelPerfil();
       return;
     }
-    const destinoPerfil = modoVisual === "fallout" ? "/perfil?modo=fallout" : "/perfil";
-    if (estadoSesionCliente) { window.location.href = destinoPerfil; return; }
     const paramsLogin = new URLSearchParams({ volver: `${location.pathname}${location.search}` });
     if (modoVisual === "fallout") paramsLogin.set("modo", "fallout");
     const destinoLogin = `/login.html?${paramsLogin.toString()}`;
@@ -485,6 +498,16 @@ if (linkIrAPerfil) {
     import("/login-drawer.js").then(({ abrirLoginEnPagina }) => {
       abrirLoginEnPagina(linkIrAPerfil, () => location.reload());
     });
+  });
+}
+
+if (linkIrAPedidos) {
+  linkIrAPedidos.addEventListener("click", (e) => {
+    // Solo es visible con sesión (ver sincronizarMenuPerfilSegunSesion).
+    // Igual que el perfil: siempre el panel flotante (ver pedidos.js).
+    e.preventDefault();
+    cerrarMenuPerfil();
+    window.abrirPanelPedidos();
   });
 }
 
@@ -517,6 +540,9 @@ async function sincronizarMenuPerfilSegunSesion(force = false) {
   await cargarInicialesHeader();
   if (linkIrAPerfil) {
     linkIrAPerfil.textContent = sesion ? "Ir a perfil" : "Iniciar sesión";
+  }
+  if (linkIrAPedidos) {
+    linkIrAPedidos.classList.toggle("oculto", !sesion);
   }
   if (btnLogoutClassic) {
     btnLogoutClassic.classList.toggle("oculto", !sesion);
@@ -915,11 +941,30 @@ function urlLoginParaCarrito() {
   return `/login.html?${params.toString()}`;
 }
 
+// Login/registro en el modal (login-drawer.js) sobre esta misma página: el
+// fondo queda blureado e inerte, así no se puede volver a tocar el carrito a
+// mitad del alta. El carrito y el código siguen en localStorage; al entrar se
+// recarga y procesarCheckoutPendiente vuelve a abrir el carrito tal cual.
+function pedirLoginParaCarrito() {
+  if (document.documentElement.classList.contains("ttra-cart-embedded")) {
+    // Carrito abierto como panel desde otra página: que esa página cierre el
+    // panel, muestre el login y vuelva a abrir el carrito.
+    window.parent.postMessage({ type: "ttra:panel-login" }, location.origin);
+    return;
+  }
+  cerrarCarrito();
+  import("/login-drawer.js")
+    .then(({ abrirLoginEnPagina }) => {
+      abrirLoginEnPagina(document.getElementById("btn-carrito") || document.body, () => location.reload());
+    })
+    .catch(() => { window.location.href = urlLoginParaCarrito(); });
+}
+
 async function asegurarSesionParaCarrito(producto, color) {
   const sesion = await obtenerEstadoSesionCliente(true);
   if (sesion && !sesion.debe_cambiar_password) return true;
   guardarPendienteCarrito(producto, color);
-  navegarDesdeCarrito(urlLoginParaCarrito());
+  pedirLoginParaCarrito();
   return false;
 }
 
@@ -1820,12 +1865,11 @@ async function procesarCheckoutPendiente() {
   if (!hayCheckoutPendiente()) return false;
   const sesion = await obtenerEstadoSesionCliente(true);
   if (!sesion || sesion.debe_cambiar_password) return false;
-  const carrito = cargarCarrito();
-  if (carrito.length === 0) {
-    borrarCheckoutPendiente();
-    return false;
-  }
-  await confirmarPedidoCarrito(carrito);
+  borrarCheckoutPendiente();
+  if (cargarCarrito().length === 0) return false;
+  // Vuelve de crear la cuenta: el carrito (y el código) siguen ahí; se abre
+  // completo para que elija entrega y dirección antes de confirmar.
+  abrirCarrito();
   return true;
 }
 
@@ -1834,7 +1878,7 @@ async function asegurarSesionParaCheckout() {
   const sesion = await obtenerEstadoSesionCliente(true);
   if (sesion && !sesion.debe_cambiar_password) return true;
   guardarPendienteCheckout();
-  navegarDesdeCarrito(urlLoginParaCarrito());
+  pedirLoginParaCarrito();
   return false;
 }
 
@@ -2000,6 +2044,9 @@ function renderCarrito() {
     setEstadoCodigoMailing(`Código ${descuentoMailing.codigo} aplicado sobre ${descuentoMailing.cantidad} ítem(s).`, "ok");
   } else if (descuentoGuardado) {
     setEstadoCodigoMailing("El código está cargado, pero hoy no aplica a los productos actuales del carrito.", "error");
+  } else if (leerCodigoPendiente()) {
+    if (inputCodigo && document.activeElement !== inputCodigo) inputCodigo.value = leerCodigoPendiente();
+    setEstadoCodigoMailing(`Código ${leerCodigoPendiente()} guardado: se aplica cuando crees tu cuenta.`, "ok");
   } else {
     setEstadoCodigoMailing("");
   }
@@ -2023,16 +2070,25 @@ function sincronizarLimiteCarrito() {
   document.documentElement.style.setProperty("--rc-carrito-separacion-footer", `${separacion}px`);
 }
 
+// Sin sesión el carrito muestra los productos, "Aplicar código" y "Confirmar
+// pedido", que lleva a crear la cuenta (asegurarSesionParaCheckout). Entrega y
+// dirección se completan una vez logueado.
+async function actualizarCarritoInvitado() {
+  const panel = document.getElementById("panel-carrito");
+  if (!panel) return;
+  const sesion = await obtenerEstadoSesionCliente();
+  panel.classList.toggle("carrito-invitado", !sesion);
+}
+
 // Premio de referidos o fidelidad (si tiene los dos, son el mismo cupón con
-// la suma): si el cliente no cargó otro código,
-// se aplica solo al abrir el carrito.
+// la suma): si el cliente no cargó otro código, se aplica solo al abrir el carrito.
 async function aplicarPremioReferidosSiCorresponde() {
   if (modoPrecioActual === "mayorista" || cargarDescuentoMailing() || !cargarCarrito().length) return;
   try {
     const r = await fetch("/api/me");
     if (!r.ok) return;
     const datos = await r.json();
-    const codigo = datos.referidos?.codigo_premio || datos.fidelidad_ultimo_codigo;
+    const codigo = datos.codigo_descuento_disponible;
     if (codigo && !cargarDescuentoMailing()) await aplicarCodigoMailingPorValor(codigo);
   } catch {}
 }
@@ -2045,6 +2101,8 @@ function abrirCarrito() {
   // superpuestos a la vez.
   if (typeof cerrarPanelPerfil === "function") cerrarPanelPerfil();
   cargarOpcionesEntrega().catch(() => {});
+  actualizarCarritoInvitado();
+  precargarDireccionEntrega().catch(() => {});
   mostrarResumenPedidoGuardado();
   sincronizarLimiteCarrito();
   document.getElementById("panel-carrito").classList.remove("oculto");
@@ -2052,10 +2110,12 @@ function abrirCarrito() {
 }
 
 function navegarDesdeCarrito(url) {
-  // El acceso a la cuenta conserva su navegación fuera del carrito incrustado.
   const destino = document.documentElement.classList.contains('ttra-cart-embedded') ? window.parent : window;
+  // Pestaña nueva en vez de reemplazar la página: si wa.me falla (algunos
+  // firewalls/antivirus de escritorio lo bloquean por ser un acortador),
+  // el cliente no queda varado en una pantalla de error sin poder reintentar.
   const ventana = destino.open(url, '_blank', 'noopener');
-  if (!ventana) destino.location.href = url;
+  if (!ventana) destino.location.href = url; // fallback si el navegador bloqueó el popup
 }
 
 function cerrarCarrito() {
@@ -2255,7 +2315,7 @@ async function confirmarPedidoCarrito(carrito) {
 
 document.getElementById("btn-carrito").addEventListener("click", abrirCarrito);
 document.getElementById("btn-cerrar-carrito").addEventListener("click", cerrarCarrito);
-document.getElementById("overlay-carrito").addEventListener("click", cerrarCarrito);
+// El fondo blureado no responde a toques: el carrito se cierra con su ✕.
 window.addEventListener("resize", sincronizarLimiteCarrito);
 document.getElementById("btn-vaciar-carrito").addEventListener("click", () => {
   vaciarCarrito();
@@ -2268,6 +2328,8 @@ const panelSelectorDomicilio = document.getElementById("selector-domicilio-entre
 const panelCodigoPromocional = document.getElementById("modal-codigo");
 const inputDireccionEntrega = document.getElementById("direccion-entrega");
 const inputDireccionAlias = document.getElementById("direccion-alias");
+const inputPisoEntrega = document.getElementById("piso-entrega");
+const inputDeptoEntrega = document.getElementById("depto-entrega");
 const sugerenciasDireccion = document.getElementById("sugerencias-direccion");
 const listaDomiciliosEntrega = document.getElementById("lista-domicilios-entrega");
 let temporizadorSugerenciasDireccion;
@@ -2419,8 +2481,49 @@ function abrirFormularioNuevaDireccion() {
   inputDireccionAlias.classList.toggle("oculto", !puedeGuardar);
   inputDireccionAlias.value = "";
   inputDireccionEntrega.value = "";
+  inputPisoEntrega.value = "";
+  inputDeptoEntrega.value = "";
   coordsDireccionEntregaActual = null;
   abrirPanelSecundario("direccion-entrega-wrap");
+}
+
+// La dirección elegida queda escrita arriba del botón, que pasa a decir
+// "Modificar dirección de entrega".
+function mostrarDireccionEntregaActual(alias = null) {
+  const actual = document.getElementById("direccion-entrega-actual");
+  const boton = document.getElementById("btn-abrir-direccion");
+  const direccion = inputDireccionEntrega.value.trim();
+  const pisoDepto = [inputPisoEntrega.value.trim() && `Piso ${inputPisoEntrega.value.trim()}`,
+    inputDeptoEntrega.value.trim() && `Depto ${inputDeptoEntrega.value.trim()}`].filter(Boolean).join(" · ");
+  if (actual) {
+    actual.textContent = direccion ? `Entrega en: ${alias ? `${alias} — ` : ""}${direccion}${pisoDepto ? ` (${pisoDepto})` : ""}` : "";
+    actual.hidden = !direccion;
+  }
+  boton.textContent = direccion ? "Modificar dirección de entrega" : "Dirección de entrega";
+}
+
+// Por defecto se entrega en el domicilio que cargó al crear la cuenta
+// ("Principal"); si no está, el primero guardado.
+async function precargarDireccionEntrega() {
+  if (inputDireccionEntrega.value.trim()) return;
+  const cliente = await obtenerEstadoSesionCliente();
+  if (!cliente) return;
+  const r = await fetch("/api/domicilios").catch(() => null);
+  domiciliosCliente = r?.ok ? await r.json() : [];
+  const domicilio = domiciliosCliente.find((d) => d.alias === "Principal") || domiciliosCliente[0];
+  if (inputDireccionEntrega.value.trim()) return;
+  if (domicilio) {
+    inputDireccionEntrega.value = domicilio.direccion;
+    inputPisoEntrega.value = domicilio.piso || "";
+    inputDeptoEntrega.value = domicilio.depto || "";
+    coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
+      ? { lat: domicilio.lat, lng: domicilio.lng }
+      : null;
+    mostrarDireccionEntregaActual(domicilio.alias);
+  } else if (cliente.direccion) {
+    inputDireccionEntrega.value = cliente.direccion;
+    mostrarDireccionEntregaActual();
+  }
 }
 
 async function abrirSelectorDireccion() {
@@ -2447,10 +2550,12 @@ async function abrirSelectorDireccion() {
   listaDomiciliosEntrega.replaceChildren(
     ...domiciliosCliente.map((domicilio) => itemDomicilioEntregaHtml(`${domicilio.alias} — ${domicilio.direccion}`, () => {
       inputDireccionEntrega.value = domicilio.direccion;
+      inputPisoEntrega.value = domicilio.piso || "";
+      inputDeptoEntrega.value = domicilio.depto || "";
       coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
         ? { lat: domicilio.lat, lng: domicilio.lng }
         : null;
-      document.getElementById("btn-abrir-direccion").textContent = `Entrega: ${domicilio.alias}`;
+      mostrarDireccionEntregaActual(domicilio.alias);
       cerrarPanelSecundario();
     })),
     itemDomicilioEntregaHtml("+ Agregar nueva dirección", abrirFormularioNuevaDireccion),
@@ -2494,6 +2599,7 @@ document.getElementById("btn-guardar-direccion").addEventListener("click", async
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         alias, direccion,
+        piso: inputPisoEntrega.value, depto: inputDeptoEntrega.value,
         lat: coordsDireccionEntregaActual?.lat ?? null,
         lng: coordsDireccionEntregaActual?.lng ?? null,
       }),
@@ -2504,7 +2610,7 @@ document.getElementById("btn-guardar-direccion").addEventListener("click", async
       aliasGuardado = domicilio.alias;
     }
   }
-  document.getElementById("btn-abrir-direccion").textContent = aliasGuardado ? `Entrega: ${aliasGuardado}` : "Dirección de entrega";
+  mostrarDireccionEntregaActual(aliasGuardado);
   cerrarPanelSecundario();
 });
 
@@ -2519,6 +2625,41 @@ document.addEventListener("pointerdown", (evento) => {
   if (evento.target.closest("#btn-abrir-direccion, #btn-abrir-codigo")) return;
   cerrarPanelSecundario();
 });
+
+// Validar un código exige sesión (el descuento puede ser de una cuenta puntual),
+// así que el invitado lo deja pendiente y se aplica solo al crear la cuenta.
+const CLAVE_CODIGO_PENDIENTE = "ttra_codigo_pendiente";
+
+function leerCodigoPendiente() {
+  try { return localStorage.getItem(CLAVE_CODIGO_PENDIENTE) || ""; } catch { return ""; }
+}
+
+function guardarCodigoPendiente(codigo) {
+  try { localStorage.setItem(CLAVE_CODIGO_PENDIENTE, codigo); } catch {}
+}
+
+function borrarCodigoPendiente() {
+  try { localStorage.removeItem(CLAVE_CODIGO_PENDIENTE); } catch {}
+}
+
+async function aplicarCodigoPendiente() {
+  const codigo = leerCodigoPendiente();
+  if (!codigo || !catalogoListo || !cargarCarrito().length) return;
+  const sesion = await obtenerEstadoSesionCliente(true);
+  if (!sesion || sesion.debe_cambiar_password) return;
+  borrarCodigoPendiente();
+  if (modoPrecioActual === "mayorista") return;
+  const r = await fetch("/api/codigos-promo/validar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ codigo }),
+  }).catch(() => null);
+  if (r?.ok) {
+    guardarRegaloPromo(await r.json());
+    return;
+  }
+  await aplicarCodigoMailingPorValor(codigo);
+}
 
 document.getElementById("btn-aplicar-codigo").addEventListener("click", async () => {
   if (!catalogoListo) return;
@@ -2535,6 +2676,13 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
   const codigo = (input?.value || "").trim().toUpperCase();
   if (!codigo) {
     alert("Ingresá un código.");
+    return;
+  }
+  if (!(await obtenerEstadoSesionCliente())) {
+    guardarCodigoPendiente(codigo);
+    setEstadoCodigoMailing(`Código ${codigo} guardado: se aplica cuando crees tu cuenta.`, "ok");
+    cerrarPanelSecundario();
+    alert(`Guardé tu código ${codigo}. Se aplica automáticamente cuando crees tu cuenta al confirmar el pedido.`);
     return;
   }
   const r = await fetch("/api/codigos-promo/validar", {
@@ -2583,6 +2731,8 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
     body: JSON.stringify({
       productos, fecha_entrega, direccion_entrega, detalle, total_usd,
       codigo_descuento, codigo_promo,
+      piso_entrega: inputPisoEntrega.value.trim() || null,
+      depto_entrega: inputDeptoEntrega.value.trim() || null,
       lat: coordsDireccion?.lat ?? null,
       lng: coordsDireccion?.lng ?? null,
     }),
@@ -3015,6 +3165,7 @@ async function procesarLinkMailing() {
 
 cargarCatalogo().then(async () => {
   await procesarPendienteCarrito();
+  await aplicarCodigoPendiente();
   if (await procesarCheckoutPendiente()) return;
   const regresoComparativa = window.TTRAComparar?.readReturn()?.context;
   if (regresoComparativa) {
@@ -3029,8 +3180,10 @@ cargarCatalogo().then(async () => {
   } else abrirProductoCompartido();
   await procesarLinkMailing();
   const parametrosPanel = new URLSearchParams(location.search);
-  if (parametrosPanel.get("panel") === "carrito") {
-    abrirCarrito();
+  const panelPedido = parametrosPanel.get("panel");
+  const abrirPanel = { carrito: abrirCarrito, perfil: window.abrirPanelPerfil, pedidos: window.abrirPanelPedidos }[panelPedido];
+  if (abrirPanel) {
+    abrirPanel();
     parametrosPanel.delete("panel");
     const query = parametrosPanel.toString();
     history.replaceState(history.state, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);

@@ -67,8 +67,13 @@ def safe_source_url(value):
         return False
 
 
+def _mismo_modelo(devuelto, nombre):
+    # El modelo a veces reescribe mayúsculas o espacios del nombre ("5g" -> "5G").
+    return isinstance(devuelto, str) and ' '.join(devuelto.split()).casefold() == ' '.join(nombre.split()).casefold()
+
+
 def validate_sheet(payload, searched_urls, producto):
-    if not isinstance(payload, dict) or payload.get('model') != producto['nombre']:
+    if not isinstance(payload, dict) or not _mismo_modelo(payload.get('model'), producto['nombre']):
         raise ValueError('Modelo no confirmado')
     raw = payload.get('attributes')
     if not isinstance(raw, list) or not raw or len(raw) > 16:

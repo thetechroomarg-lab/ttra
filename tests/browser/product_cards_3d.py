@@ -1,4 +1,4 @@
-"""Rotating card products preserve navigation, continuous motion and static fallbacks."""
+"""Card products (five rotating, plus the swaying magnifier) keep navigation, motion and static fallbacks."""
 import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -23,26 +23,25 @@ with sync_playwright() as p:
         assert page.locator('.ttra-product-motion').count()==0
         continuing=canvas.evaluate('(el)=>el.toDataURL()');page.wait_for_timeout(500)
         assert continuing!=canvas.evaluate('(el)=>el.toDataURL()'),'Rotation must continue without controls'
-        for kind in ('phone','tablet','laptop','gaming','audio'):
+        for kind in ('phone','tablet','laptop','gaming','audio','brands'):
             card=page.locator('.ttra-category-'+kind);card.scroll_into_view_if_needed()
             page.wait_for_function('(kind)=>document.querySelector(".ttra-category-"+kind).classList.contains("ttra-3d-ready")',arg=kind)
             assert card.locator('canvas').evaluate('(el)=>getComputedStyle(el).pointerEvents')=='none'
             assert card.locator('canvas').evaluate('(el)=>{const a=el.getContext("2d").getImageData(0,0,el.width,el.height).data;return a.some((v,i)=>i%4===3&&v>0)}')
             card.screenshot(path=str(OUT/f'{width}-{kind}.png'))
-        assert page.locator('.ttra-category-brands canvas').count()==0
-        assert page.locator('.ttra-brand-lens').is_visible()
+        assert not page.locator('.ttra-brand-lens').is_visible(),'3D magnifier replaces the CSS lens'
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         page.locator('.ttra-category-gaming canvas').click(force=True)
         page.wait_for_url('**/catalogo?categoria=Gaming')
         assert not errors,errors
-        context.close();print('PASS continuous rotation, five products and navigation',width,flush=True)
+        context.close();print('PASS continuous motion, six products and navigation',width,flush=True)
     for mode in ('reduce','failure'):
         context=browser.new_context(viewport={'width':1440,'height':1100},reduced_motion='reduce')
         context.route('**/api/**',api);context.add_init_script("sessionStorage.setItem('ttra_portada_vista','1')")
         if mode=='failure':context.route('**/product-card-scenes.js',lambda route:route.abort())
         page=context.new_page();page.goto(BASE+'/',wait_until='networkidle');page.locator('#ttra-explorar').scroll_into_view_if_needed()
         if mode=='reduce':
-            page.wait_for_function("document.querySelectorAll('.ttra-3d-ready').length===5")
+            page.wait_for_function("document.querySelectorAll('.ttra-3d-ready').length===6")
             canvas=page.locator('.ttra-category-phone canvas');before=canvas.evaluate('(el)=>el.toDataURL()');page.wait_for_timeout(400);assert before==canvas.evaluate('(el)=>el.toDataURL()');assert page.locator('.ttra-product-motion').count()==0
             page.locator('.ttra-collection-grid').screenshot(path=str(OUT/'grid-static.png'))
         else:

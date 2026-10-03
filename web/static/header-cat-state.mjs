@@ -22,16 +22,17 @@ export function pet(s,now) {
   s.petTimes=(Array.isArray(s.petTimes)?s.petTimes:[]).filter(t=>Number.isFinite(t)&&now-t>=0&&now-t<=1500);
   s.petTimes.push(now);
   if(s.petTimes.length>=3){s.petTimes=[];setPhase(s,'attack',now,2400,s.x);}
-  else setPhase(s,'belly',now,3000,s.x);
+  else s.joyAt=now;
 }
-export function interact(s,now,pointer='mouse',detail=1) {
+export function interact(s,now,pointer='mouse',detail=1,allowIntroduce=true) {
   if(!s.active||['enter','return','off','introduce'].includes(s.phase.kind))return;
   if(pointer==='touch'||pointer==='mouse'||pointer==='pen') {
     s.interactionCount=now-(s.lastInteraction??-Infinity)<=1500?(s.interactionCount||0)+1:1;
     s.lastInteraction=now;
   }
   if(s.interactionCount>=10) {
-    s.joyAt=0;s.interactionCount=0;s.petTimes=[];setPhase(s,'introduce',now,3600000,s.x);return;
+    s.interactionCount=0;
+    if(allowIntroduce){s.joyAt=0;s.petTimes=[];setPhase(s,'introduce',now,3600000,s.x);return;}
   }
   pet(s,now);
 }

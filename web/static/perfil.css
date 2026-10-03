@@ -29,17 +29,15 @@
   letter-spacing: .04em;
 }
 
-.rc-perfil-volver {
-  display: inline-block; margin-bottom: 16px; font-size: 13px; text-decoration: none;
-  color: var(--rc-green-dim);
-}
-.rc-perfil-volver:hover { color: var(--rc-green-bright); }
 h2 { margin: 28px 0 16px; font-size: 16px; letter-spacing: .05em; text-transform: uppercase;
      color: var(--rc-green-bright); }
 input:disabled { opacity: .6; cursor: not-allowed; }
 .ok { min-height: 16px; margin: 6px 0 0; font-size: 12px; color: var(--rc-green-bright); }
 .perfil-direccion-wrap { position: relative; }
 .perfil-direccion-wrap input { width: 100%; }
+/* Piso y depto: opcionales, lado a lado debajo de la dirección. */
+.piso-depto-fila { display: flex; gap: 10px; }
+.piso-depto-fila input { flex: 1; min-width: 0; width: auto !important; }
 .perfil-sugerencias-direccion {
   position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; right: 0;
   max-height: 180px; overflow-y: auto; margin: 0; padding: 0; list-style: none;
@@ -102,13 +100,98 @@ input:disabled { opacity: .6; cursor: not-allowed; }
   box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
 }
 
-.fidelidad-sellos { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.fidelidad-sello { font-size: 28px; line-height: 1; color: var(--rc-green-faint); }
-.fidelidad-sello.lleno { color: var(--rc-green-bright); }
+.fidelidad-sellos {
+  --sello: clamp(44px, 13vw, 56px);
+  --sello-tinta: var(--rc-green-bright);
+  --sello-cinta: var(--ed-accent, var(--rc-green));
+  --sello-papel: var(--rc-bg-panel, #000);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+}
+.fidelidad-fila { display: flex; flex-wrap: wrap; gap: 8px; perspective: 600px; }
+.fidelidad-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+/* Casillero vacío: el lugar donde va a caer el próximo sello. */
+.fidelidad-sello {
+  position: relative; flex: none; display: grid; place-items: center;
+  width: var(--sello); height: var(--sello); border-radius: 50%;
+  border: 2px dashed var(--rc-green-faint); color: var(--rc-green-dim);
+  font-size: 13px; font-weight: 700; line-height: 1;
+}
+.fidelidad-sello.lleno { border: 0; transform: rotate(var(--sello-giro, -6deg)); }
+.fidelidad-sello.lleno:nth-child(2) { --sello-giro: 7deg; }
+.fidelidad-sello.lleno:nth-child(3) { --sello-giro: -3deg; }
+.fidelidad-sello.lleno:nth-child(4) { --sello-giro: 10deg; }
+.fidelidad-sello.lleno:nth-child(5) { --sello-giro: -9deg; }
+.fidelidad-sello-giro { position: absolute; inset: 0; transform-style: preserve-3d; }
+.fidelidad-sello-giro svg { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; }
+.fidelidad-sello-giro .dorso { transform: rotateY(180deg); }
 .fidelidad-ayuda { flex-basis: 100%; margin: 4px 0 0; font-size: 12px; color: var(--rc-green-dim); }
+@media (prefers-reduced-motion: no-preference) {
+  .fidelidad-sello.nuevo { animation: fidelidad-estampar .55s cubic-bezier(.2, 1.4, .4, 1) both; }
+  .fidelidad-sello.nuevo .fidelidad-sello-giro { animation: fidelidad-girar 5s cubic-bezier(.45, 0, .25, 1) .8s infinite; }
+}
+@keyframes fidelidad-estampar {
+  0% { opacity: 0; transform: scale(1.9) rotate(-28deg); }
+  60% { opacity: 1; transform: scale(.9) rotate(var(--sello-giro, -6deg)); }
+  100% { transform: scale(1) rotate(var(--sello-giro, -6deg)); }
+}
+/* Una vuelta y una pausa larga: casi siempre se lee de frente. */
+@keyframes fidelidad-girar { 0% { transform: rotateY(0); } 30%, 100% { transform: rotateY(360deg); } }
+/* Sin mensaje visible, los renglones de error/ok no ocupan lugar entre
+   los botones de los formularios y la sección siguiente; con texto reaparecen. */
+#form-perfil #perfil-error:empty,
+#form-perfil #perfil-ok:empty,
+#form-domicilio #domicilio-error:empty,
+#form-domicilio #domicilio-ok:empty { display: none; }
+#seccion-fidelidad > h2 { margin-top: 16px; }
 
 #seccion-referidos.oculto, #referidos-estado.oculto, #referidos-link.oculto, #fidelidad-premio.oculto { display: none; }
 .referidos-ayuda { margin: 0 0 8px; font-size: 13px; }
 .referidos-link { margin: 8px 0 0; font-size: 12px; overflow-wrap: anywhere; }
 .referidos-lista { margin: 4px 0 8px; padding-left: 18px; font-size: 13px; }
 .referidos-total { font-weight: 600; }
+/* "Agregar domicilio" con la misma forma y alto que "Cancelar", que va justo debajo. */
+html #panel-perfil #btn-guardar-domicilio { min-height: 44px; border-radius: 10px; }
+
+/* Perfil en modo lectura: "Guardar cambios" gris hasta tocar "Editar". */
+#panel-perfil #form-perfil button:disabled,
+#panel-perfil #btn-abrir-form-domicilio:disabled { filter: grayscale(1); opacity: .45; cursor: not-allowed; }
+#panel-perfil #form-domicilio.oculto,
+#panel-perfil #btn-abrir-form-domicilio.oculto { display: none; }
+html #panel-perfil #btn-editar-perfil,
+html #panel-perfil #btn-abrir-form-domicilio { width: 100%; min-height: 44px; border-radius: 10px; margin-top: 4px;
+  padding: 12px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+/* Todos los botones del perfil van con bordes redondeados, sin excepción. */
+html #panel-perfil button { border-radius: 10px; }
+/* "Compartir mi link": mismo alto que los demás botones, ancho según el texto. */
+html #panel-perfil #btn-compartir-referido { min-height: 44px; padding-block: 0; }
+
+#seccion-amigos-referidos.oculto { display: none; }
+.referidos-amigos { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.referidos-amigos li { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 10px 14px; border: 1px solid rgba(175, 175, 165, .35); border-radius: 10px; }
+.referidos-amigos li > div { display: flex; flex-direction: column; gap: 2px; }
+.referidos-amigo-fecha, .referidos-amigo-premio span { font-size: 12px; opacity: .75; }
+.referidos-amigo-premio { align-items: flex-end; text-align: right; }
+.referidos-amigo-premio.usado strong { text-decoration: line-through; opacity: .6; }
+
+/* Domicilio de entrega: primero en la lista, con título y borde destacado. */
+#lista-domicilios .item-domicilio.domicilio-entrega { border-color: var(--cl-coral, #f05b40); }
+#lista-domicilios .item-domicilio-titulo { flex-basis: 100%; margin: 0 0 4px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--cl-coral, #f05b40); }
+#lista-domicilios .item-domicilio-acciones button:disabled { opacity: .55; cursor: default; }
+
+/* Mi red: resumen, cartel sorpresa y árbol. */
+.red-sorpresa { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; font-weight: 700;
+  background: color-mix(in srgb, var(--cl-coral, #f05b40) 18%, transparent); border: 1px solid var(--cl-coral, #f05b40); }
+.red-resumen { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; }
+.red-resumen div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.red-arbol, .red-arbol ul { list-style: none; margin: 0; padding: 0; }
+.red-arbol ul { margin-left: 10px; padding-left: 14px; border-left: 1px solid rgba(175, 175, 165, .35); }
+.red-arbol li { position: relative; padding: 4px 0; }
+.red-arbol ul > li::before { content: ""; position: absolute; left: -14px; top: 15px; width: 10px; border-top: 1px solid rgba(175, 175, 165, .35); }
+.red-nodo { display: inline-block; padding: 4px 10px; border: 1px solid rgba(175, 175, 165, .35); border-radius: 999px; font-size: 13px; }
+.red-nodo-vos { border-color: var(--cl-coral, #f05b40); font-weight: 700; }
+.red-arbol-caja { max-height: 360px; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  margin: 0 0 12px; padding: 10px; border: 1px solid rgba(175, 175, 165, .25); border-radius: 10px; }
+.red-arbol-caja .red-arbol { width: max-content; min-width: 100%; }
+.red-nodo { white-space: nowrap; }

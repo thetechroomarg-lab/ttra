@@ -103,6 +103,20 @@ class _FakeRpcCall:
         return _FakeRpcResult(self._callback())
 
 
+class _FakeNotFilter:
+    """Doble mínimo de `.not_` — soporta `.is_(campo, "null")` como filtro
+    de "campo no es null", que es lo único que usa el código productivo."""
+
+    def __init__(self, query):
+        self._query = query
+
+    def is_(self, campo, valor):
+        if valor != "null":
+            raise ValueError(valor)
+        self._query._filtros.append((campo, "not_null"))
+        return self._query
+
+
 class _FakeQuery:
     def __init__(self, tabla, operacion, payload=None):
         self._tabla = tabla
@@ -114,6 +128,10 @@ class _FakeQuery:
         self._filtros.append((campo, valor))
         return self
 
+    @property
+    def not_(self):
+        return _FakeNotFilter(self)
+
     def is_(self, campo, valor):
         if valor != "null":
             raise ValueError(valor)
@@ -122,7 +140,10 @@ class _FakeQuery:
 
     def _filtrar(self, filas):
         for campo, valor in self._filtros:
-            filas = [f for f in filas if f.get(campo) == valor]
+            if valor == "not_null":
+                filas = [f for f in filas if f.get(campo) is not None]
+            else:
+                filas = [f for f in filas if f.get(campo) == valor]
         return filas
 
     def execute(self):
@@ -130,6 +151,8 @@ class _FakeQuery:
             return _FakeExecuteResult(self._filtrar(list(self._tabla._filas)))
         if self._operacion == "insert":
             fila = dict(self._payload)
+            if self._tabla._nombre in {"mailing_campanias", "mailing_envios_detalle"}:
+                fila.setdefault("id", str(uuid.uuid4()))
             self._tabla._filas.append(fila)
             return _FakeExecuteResult([fila])
         if self._operacion == "update":
@@ -188,7 +211,33 @@ class FakeSupabaseClient:
             return _FakeRpcCall(
                 lambda: self._guardar_pedido_con_descuento_mailing(parametros or {})
             )
+        if nombre == "transicionar_mailing_campania":
+            return _FakeRpcCall(
+                lambda: self._transicionar_mailing_campania(parametros or {})
+            )
         raise ValueError(nombre)
+
+    def _transicionar_mailing_campania(self, parametros):
+        filas = self.table("mailing_campanias")._filas
+        fila = next((f for f in filas if f.get("id") == parametros.get("p_id")), None)
+        transiciones = {
+            ("previsualizado", "aprobado"),
+            ("previsualizado", "invalidado"),
+            ("aprobado", "enviando"),
+            ("aprobado", "invalidado"),
+            ("enviando", "enviado"),
+        }
+        if (
+            not fila
+            or fila.get("estado") != parametros.get("p_desde")
+            or (parametros.get("p_desde"), parametros.get("p_hacia")) not in transiciones
+        ):
+            raise RuntimeError("invalid_mailing_transition")
+        fila["estado"] = parametros["p_hacia"]
+        cambios = parametros.get("p_cambios") or {}
+        if cambios.get("resultado") is not None:
+            fila["resultado"] = cambios["resultado"]
+        return copy.deepcopy(fila)
 
     def _guardar_pedido_con_descuento_mailing(self, parametros):
         """Simula el RPC transaccional, incluyendo rollback ante excepciones."""
@@ -214,6 +263,7 @@ class FakeSupabaseClient:
                         and fila.get("code") == codigo_texto
                         and fila.get("activo")
                         and not fila.get("usado_en")
+                        and not self._pedido_vigente(fila.get("reservado_pedido_id"))
                     ),
                     None,
                 )
@@ -333,7 +383,9 @@ class FakeSupabaseClient:
             if codigo:
                 if codigo.get("usado_en"):
                     raise RuntimeError("El codigo fue consumido concurrentemente")
-                codigo["usado_en"] = datetime.now(timezone.utc).isoformat()
+                # Se reserva para el pedido; se consume al enviar el recibo.
+                codigo["reservado_pedido_id"] = pedido["id"]
+                codigo["reservado_en"] = datetime.now(timezone.utc).isoformat()
                 if self.atomic_order_failure_stage == "after_mailing":
                     raise RuntimeError("Fallo simulado despues del mailing")
 
@@ -356,6 +408,14 @@ class FakeSupabaseClient:
             for nombre, filas in instantanea.items():
                 self._tablas[nombre]._filas[:] = filas
             raise
+
+    def _pedido_vigente(self, pedido_id):
+        if not pedido_id:
+            return False
+        return any(
+            fila.get("id") == pedido_id and not fila.get("borrado_en")
+            for fila in self.table("pedidos")._filas
+        )
 
     def _eliminar_perfil_por_auth_id(self, auth_id):
         """Simula el trigger que borra el perfil y sus registros en cascada."""

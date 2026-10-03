@@ -1,22 +1,37 @@
+import itertools
+
 from tests.fakes_supabase import FakeSupabaseClient
-from web import referidos
+from web import cupones, fidelidad, referidos
+
+_ids = itertools.count(1)
 
 
-def _alta(fake, id_, tipo_cliente="minorista", referido_por=None):
+def _alta(fake, id_, referido_por=None, tipo_cliente="minorista", apellido="X"):
     fake.table("clientes").insert({
-        "id": id_, "nombre": id_, "apellido": "X", "tipo_cliente": tipo_cliente,
-        "codigo_referido": None, "referido_por": referido_por,
-        "referido_premiado_en": None, "referidos_codigo_premio": None, "referido_premio_codigo": None,
+        "id": id_, "nombre": id_.capitalize(), "apellido": apellido, "tipo_cliente": tipo_cliente,
+        "codigo_referido": None, "referido_por": referido_por, "referido_premiado_en": None,
+        "referidos_codigo_premio": None, "referido_premio_codigo": None,
+        "sellos_fidelidad": 0, "fidelidad_ultimo_codigo": None,
+        "red_saldo_usd": 0, "saldo_directos_usd": 0,
     }).execute()
     return id_
+
+
+def _compra(fake, cliente_id):
+    """Simula una venta concretada (recibo enviado) y acredita la cadena."""
+    pedido_id = f"pedido-{next(_ids)}"
+    fake.table("pedidos").insert({
+        "id": pedido_id, "cliente_id": cliente_id, "recibo_enviado_en": "2026-10-02T12:00:00+00:00",
+    }).execute()
+    return referidos.acreditar_por_compra(fake, cliente_id, pedido_id)
 
 
 def _leer(fake, id_):
     return fake.table("clientes").select("*").eq("id", id_).execute().data[0]
 
 
-def _cupon(fake, code):
-    return fake.table("codigos_descuento").select("*").eq("code", code).execute().data[0]
+def _saldo(fake, id_):
+    return referidos.resumen(fake, id_)["saldo_usd"]
 
 
 def test_codigo_personal_es_estable():
@@ -28,95 +43,197 @@ def test_codigo_personal_es_estable():
     assert referidos.resolver_referente(fake, "NOEXISTE") is None
 
 
-def test_primera_compra_del_referido_acredita_5_una_sola_vez():
+def test_ejemplo_de_vladimir_juan_luis_pedro():
     fake = FakeSupabaseClient()
-    _alta(fake, "ana")
-    _alta(fake, "beto", referido_por="ana")
+    _alta(fake, "juan")
+    _alta(fake, "luis", referido_por="juan")
+    _alta(fake, "pedro", referido_por="luis")
+    _alta(fake, "ana", referido_por="pedro")
 
-    premio = referidos.acreditar_por_compra(fake, "beto")
-    assert premio["saldo_usd"] == 5
-    cupon = _cupon(fake, premio["codigo"])
-    assert cupon["cliente_id"] == "ana"
-    assert cupon["tope_total_usd"] == 5 and cupon["productos"] == []
+    _compra(fake, "luis")       # Juan +5
+    _compra(fake, "pedro")      # Luis +5, Juan +2.50
+    _compra(fake, "ana")        # Pedro +5, Luis +2.50, Juan +1.25
 
-    # Segunda compra del mismo referido: no suma nada.
-    assert referidos.acreditar_por_compra(fake, "beto") is None
-    assert _cupon(fake, premio["codigo"])["descuento_usd"] == 5
+    assert _saldo(fake, "juan") == 8.75
+    assert _saldo(fake, "luis") == 7.5
+    assert _saldo(fake, "pedro") == 5
 
 
-def test_varios_referidos_se_suman_en_el_mismo_cupon():
+def test_compra_repetida_paga_la_mitad_y_va_a_la_bolsa_de_red():
     fake = FakeSupabaseClient()
-    _alta(fake, "ana")
-    for nombre in ("beto", "caro", "dani"):
-        _alta(fake, nombre, referido_por="ana")
-        referidos.acreditar_por_compra(fake, nombre)
+    _alta(fake, "juan")
+    _alta(fake, "luis", referido_por="juan")
+    _compra(fake, "luis")   # 5 directo
+    _compra(fake, "luis")   # 2.50 a la red, no otros 5
+    _compra(fake, "luis")   # 1.25
 
-    codigo = _leer(fake, "ana")["referidos_codigo_premio"]
-    cupon = _cupon(fake, codigo)
-    assert cupon["descuento_usd"] == 15 and cupon["tope_total_usd"] == 15
-    resumen = referidos.resumen(fake, "ana")
-    assert resumen["saldo_usd"] == 15 and resumen["codigo_premio"] == codigo
-    assert resumen["referidos_registrados"] == 3 and resumen["referidos_con_compra"] == 3
-    assert [p["nombre"] for p in resumen["pendientes"]] == ["beto X.", "caro X.", "dani X."]
-    assert all(p["monto_usd"] == 5 for p in resumen["pendientes"])
+    assert _saldo(fake, "juan") == 8.75
+    assert _leer(fake, "juan")["red_saldo_usd"] == 3.75
 
 
-def test_cupon_usado_arranca_uno_nuevo():
+def _consumir(fake, cliente_id, aplicado):
+    """Simula: el cliente usa su cupón en una compra y se envía el recibo."""
+    codigo = _leer(fake, cliente_id)["referidos_codigo_premio"]
+    pedido_id = f"pedido-propio-{next(_ids)}"
+    fake.table("pedidos").insert({"id": pedido_id, "cliente_id": cliente_id}).execute()
+    fake.table("codigos_descuento").update({
+        "reservado_pedido_id": pedido_id, "aplicado_usd": aplicado,
+    }).eq("code", codigo).execute()
+    for fila in cupones.consumir_reservados(fake, pedido_id):
+        referidos.aplicar_consumo(fake, fila)
+
+
+def _red_de_nietos(fake, cantidad):
+    _alta(fake, "juan")
+    _alta(fake, "luis", referido_por="juan")
+    for i in range(cantidad):
+        _alta(fake, f"nieto{i}", referido_por="luis")
+        _compra(fake, f"nieto{i}")      # Juan +2.50 de red por cada uno
+
+
+def test_la_red_acumula_sin_limite_pero_aplica_hasta_15_por_compra():
     fake = FakeSupabaseClient()
-    _alta(fake, "ana")
-    _alta(fake, "beto", referido_por="ana")
-    _alta(fake, "caro", referido_por="ana")
-    primero = referidos.acreditar_por_compra(fake, "beto")["codigo"]
-    fake.table("codigos_descuento").update({"usado_en": "2026-10-02T12:00:00+00:00"}).eq("code", primero).execute()
-    assert referidos.marcar_premio_usado(fake, "ana", primero)
-
-    segundo = referidos.acreditar_por_compra(fake, "caro")
-    assert segundo["codigo"] != primero and segundo["saldo_usd"] == 5
-    # Beto ya se usó: solo Caro figura como descuento pendiente.
-    assert [p["nombre"] for p in referidos.resumen(fake, "ana")["pendientes"]] == ["caro X."]
+    _red_de_nietos(fake, 20)            # 20 x 2.50 = 50 de red
+    assert _leer(fake, "juan")["red_saldo_usd"] == 50
+    assert _saldo(fake, "juan") == 15
+    # Los directos no tienen tope: Luis tiene 20 x 5.
+    assert _saldo(fake, "luis") == 100
 
 
-def test_sin_referente_o_referente_mayorista_no_hay_premio():
+def test_ejemplo_de_vladimir_50_de_red_y_5_sellos():
+    fake = FakeSupabaseClient()
+    _red_de_nietos(fake, 20)            # 50 de red
+    fake.table("clientes").update({"sellos_fidelidad": 4}).eq("id", "juan").execute()
+    fidelidad.registrar_entrega_completada(fake, "juan")
+    assert _saldo(fake, "juan") == 35   # 20 de sellos + 15 de red
+
+    _consumir(fake, "juan", 35)
+    juan = _leer(fake, "juan")
+    assert juan["sellos_fidelidad"] == 0 and juan["fidelidad_ultimo_codigo"] is None
+    assert juan["red_saldo_usd"] == 35
+    assert _saldo(fake, "juan") == 15
+
+    _consumir(fake, "juan", 15)
+    assert _leer(fake, "juan")["red_saldo_usd"] == 20
+    assert _saldo(fake, "juan") == 15
+
+
+def test_lo_que_no_se_usa_queda_para_la_proxima():
+    fake = FakeSupabaseClient()
+    _alta(fake, "juan")
+    for i in range(8):                  # 8 directos = 40
+        _alta(fake, f"amigo{i}", referido_por="juan")
+        _compra(fake, f"amigo{i}")
+    assert _saldo(fake, "juan") == 40
+    _consumir(fake, "juan", 30)         # compró algo que solo admitía 30
+    assert _leer(fake, "juan")["saldo_directos_usd"] == 10
+    assert _saldo(fake, "juan") == 10
+
+
+def test_fracciones_de_centavo_no_se_pierden():
+    fake = FakeSupabaseClient()
+    # Cadena larga: el de arriba de todo recibe fracciones de centavo.
+    anterior = _alta(fake, "n0")
+    for i in range(1, 12):
+        anterior = _alta(fake, f"n{i}", referido_por=anterior)
+    _compra(fake, "n11")
+    # n0 está a 11 niveles: 5/2^10 = 0.0048828 -> todavía no completa un centavo.
+    assert _saldo(fake, "n0") == 0
+    assert round(_leer(fake, "n0")["red_saldo_usd"], 6) == round(5 / 2 ** 10, 6)
+    # Dos compras más de gente nueva a esa distancia completan el centavo.
+    for extra in ("e1", "e2"):
+        _alta(fake, extra, referido_por="n10")
+        _compra(fake, extra)
+    assert _saldo(fake, "n0") == 0.01
+
+
+def test_mismo_pedido_no_paga_dos_veces():
+    fake = FakeSupabaseClient()
+    _alta(fake, "juan")
+    _alta(fake, "luis", referido_por="juan")
+    fake.table("pedidos").insert({"id": "p1", "cliente_id": "luis", "recibo_enviado_en": "2026-10-02"}).execute()
+    referidos.acreditar_por_compra(fake, "luis", "p1")
+    referidos.acreditar_por_compra(fake, "luis", "p1")
+    assert _saldo(fake, "juan") == 5
+
+
+def test_mayorista_no_gana_pero_la_cadena_sigue():
+    fake = FakeSupabaseClient()
+    _alta(fake, "juan")
+    _alta(fake, "mayo", referido_por="juan", tipo_cliente="mayorista")
+    _alta(fake, "luis", referido_por="mayo")
+    _compra(fake, "luis")
+    assert _saldo(fake, "mayo") == 0
+    assert _saldo(fake, "juan") == 2.5
+
+
+def test_sin_padrino_no_hay_premio():
     fake = FakeSupabaseClient()
     _alta(fake, "solo")
-    assert referidos.acreditar_por_compra(fake, "solo") is None
-
-    _alta(fake, "mayo", tipo_cliente="mayorista")
-    _alta(fake, "beto", referido_por="mayo")
-    assert referidos.acreditar_por_compra(fake, "beto") is None
+    assert _compra(fake, "solo") == []
     assert fake.table("codigos_descuento").select("*").execute().data == []
 
 
 def test_premio_de_referido_se_suma_al_de_fidelidad_pendiente():
-    from web import fidelidad
     fake = FakeSupabaseClient()
     _alta(fake, "ana")
-    fake.table("clientes").update({"sellos_fidelidad": 4, "fidelidad_ultimo_codigo": None}).eq("id", "ana").execute()
+    fake.table("clientes").update({"sellos_fidelidad": 4}).eq("id", "ana").execute()
     codigo_fidelidad = fidelidad.registrar_entrega_completada(fake, "ana")["codigo_emitido"]
     _alta(fake, "beto", referido_por="ana")
-
-    premio = referidos.acreditar_por_compra(fake, "beto")
-
-    assert premio == {"codigo": codigo_fidelidad, "saldo_usd": 25}
-    assert _cupon(fake, codigo_fidelidad)["tope_total_usd"] == 25
+    _compra(fake, "beto")
     assert _leer(fake, "ana")["referidos_codigo_premio"] == codigo_fidelidad
+    assert _saldo(fake, "ana") == 25
 
 
-def test_premio_de_fidelidad_se_suma_al_de_referidos_pendiente_y_ambos_se_cierran():
-    from web import fidelidad
+def test_arbol_muestra_solo_quienes_compraron_con_nombre_e_inicial():
     fake = FakeSupabaseClient()
-    _alta(fake, "ana")
-    _alta(fake, "beto", referido_por="ana")
-    codigo = referidos.acreditar_por_compra(fake, "beto")["codigo"]
-    fake.table("clientes").update({"sellos_fidelidad": 4}).eq("id", "ana").execute()
+    _alta(fake, "juan")
+    _alta(fake, "luis", referido_por="juan", apellido="Gómez")
+    _alta(fake, "mudo", referido_por="luis")          # se registró, no compró
+    _alta(fake, "pedro", referido_por="mudo", apellido="Ruiz")
+    _alta(fake, "nadie", referido_por="juan")         # no compró
+    _compra(fake, "luis")
+    _compra(fake, "pedro")
 
-    resultado = fidelidad.registrar_entrega_completada(fake, "ana")
+    resumen = referidos.resumen(fake, "juan")
+    # Pedro cuelga de Luis aunque "Mudo" (que no compró) esté en el medio.
+    assert resumen["arbol"] == [{"nombre": "Luis G.", "hijos": [{"nombre": "Pedro R.", "hijos": []}]}]
+    assert resumen["personas_en_red"] == 2
+    assert "pedido" not in str(resumen["arbol"])
 
-    assert resultado["codigo_emitido"] == codigo
-    assert _cupon(fake, codigo)["descuento_usd"] == 25
-    assert len(fake.table("codigos_descuento").select("*").execute().data) == 1
-    # Al usarlo en un pedido se cierran los dos programas.
-    assert fidelidad.marcar_codigo_fidelidad_usado(fake, "ana", codigo)
-    assert referidos.marcar_premio_usado(fake, "ana", codigo)
-    ana = _leer(fake, "ana")
-    assert ana["sellos_fidelidad"] == 0 and ana["referidos_codigo_premio"] is None
+
+def test_mayorista_no_tiene_link_hasta_volver_a_minorista():
+    import pytest
+    fake = FakeSupabaseClient()
+    _alta(fake, "mayo", tipo_cliente="mayorista")
+    with pytest.raises(referidos.MayoristaSinLinkError):
+        referidos.obtener_o_crear_codigo(fake, "mayo")
+
+    # Un link de cuando era minorista deja de vincular mientras sea mayorista.
+    fake.table("clientes").update({"tipo_cliente": "minorista"}).eq("id", "mayo").execute()
+    codigo = referidos.obtener_o_crear_codigo(fake, "mayo")
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", "mayo").execute()
+    assert referidos.resolver_referente(fake, codigo) is None
+
+    fake.table("clientes").update({"tipo_cliente": "minorista"}).eq("id", "mayo").execute()
+    assert referidos.resolver_referente(fake, codigo) == "mayo"
+
+
+def test_pasar_a_mayorista_borra_beneficios_y_al_volver_arranca_de_cero():
+    fake = FakeSupabaseClient()
+    _red_de_nietos(fake, 4)                     # Juan: 10 de red
+    fake.table("clientes").update({"sellos_fidelidad": 4}).eq("id", "juan").execute()
+    fidelidad.registrar_entrega_completada(fake, "juan")
+    codigo = _leer(fake, "juan")["referidos_codigo_premio"]
+    assert _saldo(fake, "juan") == 30
+
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", "juan").execute()
+    referidos.reiniciar_beneficios(fake, "juan")
+    juan = _leer(fake, "juan")
+    assert juan["sellos_fidelidad"] == 0 and juan["red_saldo_usd"] == 0
+    assert not fake.table("codigos_descuento").select("*").eq("code", codigo).execute().data[0]["activo"]
+
+    fake.table("clientes").update({"tipo_cliente": "minorista"}).eq("id", "juan").execute()
+    referidos.reiniciar_beneficios(fake, "juan")
+    resumen = referidos.resumen(fake, "juan")
+    assert resumen["saldo_usd"] == 0 and resumen["arbol"] == [] and resumen["ganado_total_usd"] == 0

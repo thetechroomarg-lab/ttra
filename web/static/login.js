@@ -68,6 +68,10 @@ const registroErrorEl = document.getElementById("registro-error");
 const registroOkEl = document.getElementById("registro-ok");
 const CLAVE_ANON_ID = "ttra_anon_id";
 const registroDireccionInput = document.getElementById("registro-direccion");
+// El pin del mapa ajusta las coordenadas que se guardan con el domicilio.
+const mapaRegistro = window.TTRAMapaPin.crear(document.getElementById("registro-mapa"), (coords) => {
+  coordsRegistroDireccionActual = coords;
+});
 const registroSugerenciasDireccion = document.getElementById("registro-sugerencias-direccion");
 let temporizadorRegistroDireccion;
 let apiPlacesRegistro;
@@ -313,6 +317,7 @@ async function mostrarSugerenciasRegistroDireccion(texto) {
         ? { lat: place.location.lat(), lng: place.location.lng() }
         : null;
       ocultarSugerenciasRegistroDireccion();
+      if (coordsRegistroDireccionActual) mapaRegistro.mostrar(coordsRegistroDireccionActual.lat, coordsRegistroDireccionActual.lng);
     });
     item.append(boton);
     return item;
@@ -336,12 +341,15 @@ if (btnRegistroUsarUbicacion) {
     registroDireccionInput.value = resultado.direccion;
     coordsRegistroDireccionActual = { lat: resultado.lat, lng: resultado.lng };
     ocultarSugerenciasRegistroDireccion();
+    // "Usar mi ubicación" carga la API recién acá si todavía no se había usado el autocompletado.
+    cargarApiPlacesRegistro().then(() => mapaRegistro.mostrar(resultado.lat, resultado.lng)).catch(() => {});
   });
 }
 
 registroDireccionInput.addEventListener("input", () => {
   clearTimeout(temporizadorRegistroDireccion);
   coordsRegistroDireccionActual = null;
+  mapaRegistro.ocultar();
   const texto = registroDireccionInput.value.trim();
   if (texto.length < 3) {
     ocultarSugerenciasRegistroDireccion();
@@ -426,6 +434,8 @@ formRegistro.addEventListener("submit", async (e) => {
       password,
       provincia: document.getElementById("registro-provincia").value,
       direccion: registroDireccionInput.value,
+      piso: document.getElementById("registro-piso").value,
+      depto: document.getElementById("registro-depto").value,
       lat: coordsRegistroDireccionActual?.lat ?? null,
       lng: coordsRegistroDireccionActual?.lng ?? null,
       codigo_referido: codigoReferidoGuardado(),
@@ -442,3 +452,13 @@ formRegistro.addEventListener("submit", async (e) => {
   }
   irADestinoTrasIngresar();
 });
+
+// Celular: solo números (también al pegar "+54 351-123 4567").
+function soloNumerosEnCelular(input) {
+  if (!input) return;
+  input.addEventListener("input", () => {
+    const limpio = input.value.replace(/\D+/g, "");
+    if (limpio !== input.value) input.value = limpio;
+  });
+}
+soloNumerosEnCelular(document.getElementById("registro-celular"));

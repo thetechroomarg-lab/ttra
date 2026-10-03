@@ -17,6 +17,15 @@ html[data-modo="classic"].ttra-scroll-locked body > header.ttra-site-header {
 html[data-modo="classic"].ttra-menu-open body > header.ttra-site-header,
 html[data-modo="classic"] body:has(#rc-perfil-dropdown:not(.oculto)) > header.ttra-site-header { z-index: 9991; }
 html[data-modo="classic"] body.ttra-page > header.ttra-site-header { flex-wrap: nowrap; }
+/* Progreso de scroll de la página, apoyado sobre el borde inferior del
+   header -el mismo "piso" donde camina el gatito (ver header-cat.js). */
+html[data-modo="classic"] .ttra-scroll-progress {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: transparent; overflow: hidden; pointer-events: none;
+}
+html[data-modo="classic"] .ttra-scroll-progress-fill {
+  height: 100%; width: 0%; background: var(--ed-accent);
+}
 html[data-modo="classic"] .ttra-site-header .ttra-page-brand { font-size: clamp(30px, 3vw, 42px); line-height: .88; letter-spacing: -.065em; }
 html[data-modo="classic"] .ttra-site-actions { display: flex; align-items: center; gap: 12px; }
 html[data-modo="classic"] .ttra-site-header .rc-perfil-menu { order: 0; }
@@ -94,9 +103,9 @@ html[data-modo="classic"] .ttra-site-header .indicador-mayorista { grid-column: 
 .ttra-cart-loading[hidden] { display: none; }
 .ttra-cart-loading button { min-height: 44px; padding: 10px 18px; cursor: pointer; }
 html.ttra-cart-embedded, html.ttra-cart-embedded body#rc-body-landing { background: transparent !important; }
-html.ttra-cart-embedded body#rc-body-landing > :not(aside):not(#overlay-carrito):not(#overlay-perfil):not(.rc-logout-overlay):not(.ttra-cart-feedback):not(script):not(style) { display: none !important; }
-html.ttra-cart-embedded #panel-carrito { top: 16px; bottom: 16px; }
-html.ttra-cart-embedded #overlay-carrito { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+html.ttra-cart-embedded body#rc-body-landing > :not(aside):not(#overlay-carrito):not(#overlay-perfil):not(#modal-editar-direccion-pedido):not(.rc-logout-overlay):not(.ttra-cart-feedback):not(script):not(style) { display: none !important; }
+html.ttra-cart-embedded :is(#panel-carrito, #panel-perfil, #panel-pedidos) { top: 16px; bottom: 16px; }
+html.ttra-cart-embedded :is(#overlay-carrito, #overlay-perfil) { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
 /* Login embebido en un <dialog> (ver login-drawer.js): mismo patrón que el carrito. */
 .ttra-login-dialog { position: fixed; inset: 0; margin: 0; padding: 0; border: 0; width: 100%; max-width: none; height: 100dvh; max-height: none; background: transparent; overflow: hidden; }
 .ttra-login-dialog::backdrop { background: #10141859; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
@@ -146,9 +155,15 @@ html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-menu, .ttra-site-acco
 html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu) .ttra-theme {
   display: flex; align-items: center; width: 100%; min-height: 48px;
   padding: 12px; border: 0; border-radius: 0; text-align: left;
-  font: 500 16px/1.4 Arial, sans-serif; color: var(--rc-green);
-  background: transparent; cursor: pointer;
+  color: var(--rc-green); background: transparent; cursor: pointer;
 }
+/* Misma tipografía exacta que sus hermanos del menú en cada contexto (home
+   usa .rc-perfil-opcion a 600/13px, el resto usa .ttra-site-menu a 500/13px)
+   -sin esto, el botón de tema (es un <button>, no un <a>) queda con el
+   font-size:24px pensado para el ícono redondo del header, no para texto
+   de una fila de menú, y "Modo claro" se ve más grande que el resto. */
+html[data-modo="classic"] #rc-perfil-dropdown .ttra-theme { font: 600 13px var(--rc-font); }
+html[data-modo="classic"] .ttra-site-menu .ttra-theme { font: 500 13px var(--rc-font); }
 @media (max-width: 700px) {
   html[data-modo="classic"] .ttra-site-header :is(.rc-logo-linea, .ttra-page-brand) { font-size: clamp(32px, 8.5vw, 42px); }
   html[data-modo="classic"] .ttra-site-header :is(.rc-modo-y-carrito, .ttra-site-actions) { grid-template-columns: 48px 48px; gap: 8px 16px; }
@@ -169,7 +184,7 @@ html[data-modo="classic"] .ttra-dock {
   border: 1px solid color-mix(in srgb, var(--rc-green) 20%, transparent); border-radius: 28px;
   background: color-mix(in srgb, var(--rc-bg-panel) 90%, transparent);
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 14px 44px #00000045, inset 0 1px 0 #ffffff12;
+  box-shadow: var(--ed-halo, 0 14px 44px #00000045), inset 0 1px 0 #ffffff12;
 }
 html[data-modo="classic"] .ttra-dock :is(.rc-modo-y-carrito, .ttra-site-actions) {
   display: grid; grid-template-columns: repeat(5, 48px); gap: 8px;
@@ -286,3 +301,13 @@ html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-in
  font: 700 16px/1 var(--rc-font); color: inherit;
 }
 html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-initials):empty { display: none; }
+
+/* Login/registro: header y barra de navegación blureados y sin interacción (site-header.js). */
+.ttra-nav-bloqueada { filter: blur(4px); opacity: .55; pointer-events: none; user-select: none; }
+/* Regla general: con cualquier panel flotante de fondo blureado abierto
+   (perfil, pedidos, carrito, ingreso/registro, confirmaciones) las barras de
+   navegación se ocultan; detrás del blur quedaban como franjas borrosas que
+   se veían rotas. La clase la pone scroll-lock.js. */
+html.ttra-panel-flotante :is(.ttra-site-header, body > header, .ttra-dock),
+html:has(dialog.ttra-login-dialog[open]) .ttra-site-header,
+html:has(dialog.ttra-login-dialog[data-opening]) .ttra-site-header { visibility: hidden; }

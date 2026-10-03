@@ -37,6 +37,18 @@ def test_facts_require_real_search_sources():
         validate_sheet({**data, 'model': 'different model'}, {url: 'Apple'}, PHONE)
 
 
+
+def test_model_echo_ignores_case_and_spacing_only():
+    # El modelo suele devolver el nombre con otra capitalización ("5g" -> "5G");
+    # eso no es otro modelo, pero un número o calificador distinto sí lo es.
+    moto = {'nombre': 'MOTO Edge 70 FUSION 5g 256/8gb', 'categoria': 'Motorola'}
+    url = 'https://www.motorola.com/specs'
+    data = {'model': 'MOTO Edge 70  FUSION 5G 256/8GB', 'attributes': [{'key': 'pantalla', 'value': 'pOLED', 'source_urls': [url]}]}
+    assert validate_sheet(data, {url: 'Motorola'}, moto)['model'] == moto['nombre']
+    for other in ['MOTO Edge 60 FUSION 5g 256/8gb', 'MOTO Edge 70 FUSION 5g 512/8gb', 'MOTO Edge 70 5g 256/8gb']:
+        with pytest.raises(ValueError):
+            validate_sheet({**data, 'model': other}, {url: 'Motorola'}, moto)
+
 def test_source_links_reject_browser_normalized_local_hosts():
     from web.comparativa import safe_source_url
     for url in ['http://127.1/private', 'http://0x7f.0.0.1/private', 'https://localhost./private', 'https://foo.local./private', 'https://example.com:99999/specs']:

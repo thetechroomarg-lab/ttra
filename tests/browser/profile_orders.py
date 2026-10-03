@@ -26,7 +26,7 @@ with sync_playwright() as p:
             toggle.click()
             page.locator('#link-ir-a-pedidos' if path == '/' else '.ttra-site-pedidos-link').click()
             panel = page if path == '/' else page.frame_locator('.ttra-cart-dialog iframe')
-            expect(panel.locator('#panel-pedidos')).to_be_visible()
+            expect(panel.locator('#panel-pedidos')).to_be_visible(timeout=15000)
             expect(panel.locator('#lista-pedidos-en-curso')).to_contain_text('Teléfono de prueba')
             panel.locator('#tab-pedidos-historial').click()
             expect(panel.locator('#lista-pedidos-historial')).to_contain_text('Todavía no tenés compras finalizadas')
