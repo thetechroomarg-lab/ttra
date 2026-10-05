@@ -1,4 +1,5 @@
 import html
+from pathlib import Path
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
 
@@ -23,6 +24,10 @@ def garantias_para_detalle(detalle):
 
 
 _ACENTO = "#c8102e"
+LOGO_PATH = Path(__file__).resolve().parent / "static" / "icon-512.png"
+GRACIAS = "Gracias por confiar en The Tech Room Arg."
+GRACIAS_DETALLE = "Fue un gusto atenderte. Volvé cuando quieras, acá te espero."
+FIRMA = "Vladimir · The Tech Room Arg"
 
 
 def _garantias_html(detalle):
@@ -84,6 +89,8 @@ def _formatear_fecha_emision(fecha):
 
 
 def html_recibo(cliente, pedido, logo_url=""):
+    # El logo del mail se dibuja con HTML (sin imágenes externas): muchos
+    # clientes de correo bloquean imágenes y quedaría un recuadro roto.
     detalle = pedido.get("detalle") or []
     filas = "".join(
         "<tr>"
@@ -111,7 +118,10 @@ def html_recibo(cliente, pedido, logo_url=""):
     return f"""<!doctype html><html lang='es'><body style='margin:0;background:#f2f2f2;font-family:Arial,sans-serif;color:#161616'>
 <main style='max-width:680px;margin:24px auto;background:#fff;padding:32px;box-sizing:border-box'>
   <header style='border-bottom:3px solid #c8102e;padding-bottom:18px;margin-bottom:24px'>
-    <strong style='font-size:22px;letter-spacing:-1px'>THE TECH ROOM ARG<span style='color:#c8102e'>.</span></strong>
+    <table role='presentation' cellpadding='0' cellspacing='0' style='border-collapse:collapse'><tr>
+      <td style='background:#000;width:84px;height:84px;padding:0 0 0 12px;vertical-align:middle'>
+        <div style='width:62px;color:#fff;font:900 17px/0.92 Arial,Helvetica,sans-serif;letter-spacing:-1px'>THE TECH ROOM ARG<span style='color:#c8102e'>.</span></div>
+      </td></tr></table>
     <p style='margin:14px 0 0;color:#555'>Recibo interno {recibo_id}<br>Emitido el {fecha_emision}</p>
     {entregado_por_alejo_html}
   </header>
@@ -126,8 +136,13 @@ def html_recibo(cliente, pedido, logo_url=""):
   <section style='border-top:1px solid #ddd;margin-top:24px;padding-top:18px'><h2 style='font-size:17px;margin:0'>Garantía de tu compra</h2>
     <p style='font-size:13px;color:#555;margin:6px 0 0'>Estas son las condiciones de garantía de los productos que compraste.</p>
     {garantias_html}
-    <p style='font-size:12px;color:#888;margin-top:22px'>Documento no válido como factura.</p>
   </section>
+  <footer style='margin-top:28px;padding:22px 20px;background:#161616;color:#fff;border-top:3px solid #c8102e'>
+    <p style='margin:0;font-size:18px;font-weight:700'>{GRACIAS}</p>
+    <p style='margin:8px 0 0;font-size:14px;color:#ddd'>{GRACIAS_DETALLE}</p>
+    <p style='margin:12px 0 0;font-family:Georgia,serif;font-style:italic;color:#bbb'>{FIRMA}</p>
+  </footer>
+  <p style='font-size:12px;color:#888;margin-top:14px'>Documento no válido como factura.</p>
 </main></body></html>"""
 
 
@@ -249,6 +264,38 @@ def _garantias_pdf(detalle, normal):
     return elementos
 
 
+def _cierre_pdf(normal):
+    """Bloque final de agradecimiento, siempre presente."""
+    blanco = ParagraphStyle("CierreTitulo", parent=normal, fontName="Helvetica-Bold", fontSize=14, leading=18,
+                            textColor=colors.white)
+    detalle = ParagraphStyle("CierreDetalle", parent=normal, fontSize=10, leading=14, textColor=colors.HexColor("#dddddd"))
+    firma = ParagraphStyle("CierreFirma", parent=normal, fontName="Times-Italic", fontSize=11, textColor=colors.HexColor("#bbbbbb"))
+    tabla = Table([[[Paragraph(GRACIAS, blanco), Spacer(1, 4), Paragraph(GRACIAS_DETALLE, detalle),
+                     Spacer(1, 6), Paragraph(FIRMA, firma)]]], colWidths=[17.9 * cm])
+    tabla.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#161616")),
+        ("LINEABOVE", (0, 0), (-1, 0), 3, colors.HexColor(_ACENTO)),
+        ("LEFTPADDING", (0, 0), (-1, -1), 14), ("RIGHTPADDING", (0, 0), (-1, -1), 14),
+        ("TOPPADDING", (0, 0), (-1, -1), 14), ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
+    ]))
+    return KeepTogether([tabla])
+
+
+def _pie_de_pagina(canvas, doc):
+    """En cada página: agradecimiento a la izquierda y número de página a la derecha."""
+    canvas.saveState()
+    ancho = doc.pagesize[0]
+    y = 0.9 * cm
+    canvas.setStrokeColor(colors.HexColor("#dddddd"))
+    canvas.setLineWidth(0.5)
+    canvas.line(doc.leftMargin, y + 10, ancho - doc.rightMargin, y + 10)
+    canvas.setFont("Helvetica", 8)
+    canvas.setFillColor(colors.HexColor("#666666"))
+    canvas.drawString(doc.leftMargin, y, f"{GRACIAS} Volvé cuando quieras.")
+    canvas.drawRightString(ancho - doc.rightMargin, y, f"thetechroomarg.com  ·  {doc.page}")
+    canvas.restoreState()
+
+
 def pdf_recibo(cliente, pedido, fotos=None):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1.5 * cm, leftMargin=1.5 * cm,
@@ -264,11 +311,22 @@ def pdf_recibo(cliente, pedido, fotos=None):
     nombre_cliente = html.escape(
         f"{cliente.get('nombre', '')} {cliente.get('apellido', '')}".strip() or "Cliente"
     )
-    elementos = [
-        Paragraph('THE TECH ROOM ARG<font color="#c8102e">.</font>', titulo),
-        Paragraph(f"Recibo interno {html.escape(pedido.get('recibo_id') or '')}", normal),
+    datos_recibo = [
+        Paragraph(f"<b>Recibo interno {html.escape(pedido.get('recibo_id') or '')}</b>", normal),
         Paragraph(f"Emitido el {_formatear_fecha_emision(pedido.get('recibo_emitido_en'))}", normal),
     ]
+    if LOGO_PATH.exists():
+        cabecera = Table([[Image(str(LOGO_PATH), width=2.6 * cm, height=2.6 * cm), datos_recibo]],
+                         colWidths=[3.2 * cm, 14.7 * cm], hAlign="LEFT")
+        cabecera.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("LINEBELOW", (0, 0), (-1, -1), 2, colors.HexColor(_ACENTO)),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+        ]))
+        elementos = [cabecera]
+    else:
+        elementos = [Paragraph('THE TECH ROOM ARG<font color="#c8102e">.</font>', titulo), *datos_recibo]
     if pedido.get("entregado_por_cadete"):
         elementos.append(Paragraph("<b>Entregado por Alejo</b>", normal))
     elementos.extend([
@@ -305,8 +363,7 @@ def pdf_recibo(cliente, pedido, fotos=None):
         elementos.append(Paragraph(f"Descuentos aplicados: -{_formatear_usd(descuento)}", normal))
     elementos.append(Paragraph(f"<b>Total: {_formatear_usd(pedido.get('total_usd'))}</b>", normal))
     elementos.extend(_garantias_pdf(pedido.get("detalle"), normal))
-    elementos.extend([
-        Spacer(1, 14),
+    elementos.extend([Spacer(1, 22), _cierre_pdf(normal), Spacer(1, 10),
         Paragraph("Documento no válido como factura.", ParagraphStyle("Leyenda", parent=normal, fontSize=8, textColor=colors.HexColor("#888888"))),
     ])
     imagenes = _fotos_para_pdf(fotos)
@@ -314,5 +371,5 @@ def pdf_recibo(cliente, pedido, fotos=None):
         elementos.extend([Spacer(1, 16), Paragraph("Fotos de entrega", estilos["Heading2"])])
         filas_fotos = [imagenes[indice:indice + 2] for indice in range(0, len(imagenes), 2)]
         elementos.append(Table(filas_fotos, colWidths=[8.0 * cm, 8.0 * cm], hAlign="LEFT"))
-    doc.build(elementos)
+    doc.build(elementos, onFirstPage=_pie_de_pagina, onLaterPages=_pie_de_pagina)
     return buffer.getvalue()
