@@ -633,3 +633,40 @@ html[data-modo="classic"] .ttra-sticker-peel.despegado .ttra-sticker-esquina { d
 @media (min-width: 701px) {
   html[data-modo="classic"] .ttra-hero-copy .ttra-sticker-peel { justify-self: center; width: min(100%, 410px); margin: 32px auto 10px; }
 }
+
+/* Backlight de cards (Categorías y Garantías): halo blanco sutil en reposo
+   que crece cuando la card "salta" al pasar el mouse o con el foco. */
+html[data-modo="classic"] {
+  --card-halo: 0 0 0 1px #ffffff14, 0 0 26px -8px #ffffff1f;
+  --card-halo-activo: 0 0 0 1px #ffffff4d, 0 0 34px -4px #ffffff47, 0 0 90px -22px #ffffff38, 0 24px 50px #00000080;
+}
+html[data-modo="classic"][data-classic-theme="light"] {
+  --card-halo: 0 0 0 1px #ffffffd9, 0 8px 22px -12px #20231e2e;
+  --card-halo-activo: 0 0 0 1px #ffffff, 0 0 32px 2px #ffffffe6, 0 24px 46px -14px #20231e47;
+}
+html[data-modo="classic"] .ttra-category { box-shadow: var(--card-halo); }
+html[data-modo="classic"] .ttra-category[data-reveal].ttra-reveal-ready {
+  transition:
+    opacity .65s var(--ed-ease) var(--reveal-delay, 0s),
+    transform .8s var(--ed-ease) var(--reveal-delay, 0s),
+    filter .8s var(--ed-ease) var(--reveal-delay, 0s),
+    translate .35s var(--ed-ease), box-shadow .35s var(--ed-ease);
+  transition-delay: var(--reveal-delay, 0s), var(--reveal-delay, 0s), var(--reveal-delay, 0s), 0s, 0s;
+}
+html[data-modo="classic"] .ttra-category[data-reveal]:focus-within { transition-delay: 0s; }
+html[data-modo="classic"] .ttra-category:focus-visible { translate: 0 -6px; box-shadow: var(--card-halo-activo); }
+@media (hover: hover) {
+  html[data-modo="classic"] .ttra-category:hover { translate: 0 -6px; box-shadow: var(--card-halo-activo); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .ttra-category:is(:hover, :focus-visible) { translate: none; }
+}
+/* Misma flecha que las cards de Garantías: gira 45° al pasar el mouse o con el foco. */
+html[data-modo="classic"] .ttra-category .ttra-circle-arrow { transition: rotate .35s var(--ed-ease); }
+html[data-modo="classic"] .ttra-category:focus-visible .ttra-circle-arrow { rotate: 45deg; }
+@media (hover: hover) {
+  html[data-modo="classic"] .ttra-category:hover .ttra-circle-arrow { rotate: 45deg; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .ttra-category .ttra-circle-arrow { transition: none; }
+}

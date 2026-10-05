@@ -9,7 +9,8 @@
   const scrollStage = document.querySelector('.ttra-scroll-stage');
   const sectionTransitions = [
     [document.querySelector('.ttra-hero'), document.querySelector('.ttra-collection')],
-    [document.querySelector('.ttra-collection'), document.querySelector('.ttra-about')],
+    [document.querySelector('.ttra-collection'), document.querySelector('.ttra-garantias')],
+    [document.querySelector('.ttra-garantias'), document.querySelector('.ttra-about')],
   ].filter(([outgoing, incoming]) => outgoing && incoming);
   const themeButton = document.getElementById('ttra-theme');
   const glitchWord = document.querySelector('.ttra-glitch-word');
@@ -173,7 +174,7 @@
         .sort((a, b) => revealElements.indexOf(a.target) - revealElements.indexOf(b.target));
       let cardIndex = 0;
       for (const {target} of entering) {
-        target.style.setProperty('--reveal-delay', `${target.matches('.ttra-category') ? cardIndex++ * .09 : 0}s`);
+        target.style.setProperty('--reveal-delay', `${target.matches('.ttra-category, .ttra-garantia') ? cardIndex++ * .09 : 0}s`);
         target.classList.add('is-visible');
         revealObserver.unobserve(target);
       }

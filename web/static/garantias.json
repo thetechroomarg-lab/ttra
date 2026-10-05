@@ -1,0 +1,501 @@
+{
+  "apple": {
+    "titulo": "Apple",
+    "plazo": [
+      "1",
+      "año"
+    ],
+    "desde": "Garantía oficial mundial, desde la activación.",
+    "alcance": "Todos los productos Apple tienen 1 año de garantía oficial mundial, válida desde la fecha de activación.",
+    "bloques": [
+      {
+        "tipo": "aviso",
+        "titulo": "Cómo funciona",
+        "texto": "The Tech Room Arg no entrega equipos nuevos ni hace devoluciones por fallas. Cualquier problema debe gestionarse a través del servicio técnico oficial de Apple."
+      },
+      {
+        "tipo": "servicios",
+        "titulo": "Dónde ir",
+        "lugares": [
+          {
+            "nombre": "One Click",
+            "lugar": "Córdoba Shopping",
+            "links": [
+              [
+                "Cómo llegar",
+                "https://goo.gl/maps/x3JnZmqDw6bNnjzx9"
+              ],
+              [
+                "Sitio web",
+                "https://ar.oneclickstore.com"
+              ]
+            ]
+          },
+          {
+            "nombre": "MacStation",
+            "lugar": "Nuevocentro Shopping · Duarte Quirós 1400, nivel 2, local 2269",
+            "links": [
+              [
+                "Cómo llegar",
+                "https://www.google.com/maps/search/?api=1&query=MacStation+Nuevocentro+Shopping+Duarte+Quir%C3%B3s+1400+C%C3%B3rdoba"
+              ],
+              [
+                "Sitio web",
+                "https://www.macstation.com.ar/sucursales"
+              ]
+            ]
+          }
+        ],
+        "turnos": [
+          "Sacá turno en Apple Soporte",
+          "https://support.apple.com/es-lamr/repair"
+        ]
+      },
+      {
+        "tipo": "cobertura",
+        "titulo": "Cobertura",
+        "cubre": [
+          "Fallas de fábrica o de funcionamiento interno."
+        ],
+        "noCubre": [
+          "Golpes, líquidos, mal uso ni desgaste normal."
+        ],
+        "nota": "Apple decidirá si repara o reemplaza el equipo. La garantía no se extiende más allá de 12 meses."
+      },
+      {
+        "tipo": "excepciones",
+        "titulo": "Excepciones",
+        "etiqueta": "Equipos preactivados",
+        "cifra": [
+          "8",
+          "meses"
+        ],
+        "cifraNota": "La garantía en equipos preactivados rara vez baja de este mínimo.",
+        "items": [
+          "Todos los productos de The Tech Room Arg son nuevos y sellados.",
+          "En casos poco frecuentes (MacBooks, iPads, periféricos), pueden venir preactivados, lo que podría reducir la garantía (rara vez baja de 8 meses).",
+          "Se recomienda siempre usar cargadores originales."
+        ]
+      },
+      {
+        "tipo": "firma",
+        "cierre": "Cualquier duda, escribime cuando quieras. Estoy para ayudarte.",
+        "firma": "Vladimir · The Tech Room Arg"
+      }
+    ]
+  },
+  "samsung": {
+    "titulo": "Samsung",
+    "plazo": [
+      "3",
+      "meses"
+    ],
+    "desde": "Desde la entrega.",
+    "bloques": [
+      {
+        "tipo": "cobertura",
+        "titulo": "Cobertura",
+        "cubre": [
+          "Defectos de fábrica no causados por factores externos."
+        ],
+        "noCubre": [
+          "Daños por golpes, rayaduras, humedad (incluso si el equipo es sumergible) ni fallas por apps no seguras.",
+          "No devuelvo dinero por disconformidad o porque no cumplió expectativas. Sin excepción.",
+          "Remover films, etiquetas de garantía o números de serie anula la garantía.",
+          "Daños por mal manejo, golpes, cambios de voltaje, cortocircuitos o cualquier daño físico visible también anulan la garantía."
+        ]
+      },
+      {
+        "tipo": "destacado",
+        "titulo": "Pantalla, display y accesorios",
+        "cifra": [
+          "7",
+          "días"
+        ],
+        "texto": "Garantía por fallas como píxeles muertos o mal funcionamiento."
+      },
+      {
+        "tipo": "requisitos",
+        "titulo": "Para usar la garantía",
+        "items": [
+          "Presentar el equipo con caja y accesorios.",
+          "Sin cuentas activas.",
+          "Nota escrita o impresa en papel, dentro de la caja, detallando la falla."
+        ]
+      },
+      {
+        "tipo": "proceso",
+        "titulo": "El proceso",
+        "pasos": [
+          {
+            "cifra": [
+              "5",
+              "días hábiles"
+            ],
+            "titulo": "Revisión",
+            "texto": "Hasta 5 días hábiles, realizada por técnico autorizado por el importador."
+          },
+          {
+            "cifra": [
+              "1",
+              "mes"
+            ],
+            "titulo": "Resolución",
+            "texto": "Tiempo estimado de resolución: hasta 1 mes."
+          },
+          {
+            "cifra": [
+              "2",
+              "días"
+            ],
+            "titulo": "Cambio directo",
+            "texto": "Si el equipo falla dentro de los 2 días posteriores a la revisión, se cambia directo."
+          }
+        ]
+      },
+      {
+        "tipo": "importante",
+        "titulo": "Importante",
+        "parrafos": [
+          "Actúo como intermediario entre vos y el importador. Me responsabilizo solo por gestionar la garantía correctamente.",
+          "Me comprometo a mantenerte al tanto de cualquier novedad en la ejecución del proceso.",
+          "No acepto agresiones ni insistencias. Siempre trato con respeto y espero lo mismo.",
+          "Al entregarme el equipo, el cliente declara haber comprendido y aceptar estos términos."
+        ],
+        "cierre": "Gracias por tu comprensión y confianza.",
+        "firma": "Vladimir · The Tech Room Arg"
+      }
+    ]
+  },
+  "motorola": {
+    "titulo": "Motorola",
+    "plazo": [
+      "3",
+      "meses"
+    ],
+    "desde": "Desde la entrega.",
+    "bloques": [
+      {
+        "tipo": "cobertura",
+        "titulo": "Cobertura",
+        "cubre": [
+          "Defectos de fábrica no causados por factores externos."
+        ],
+        "noCubre": [
+          "Daños por golpes, rayaduras, humedad (incluso si el equipo es sumergible) ni fallas por apps no seguras.",
+          "No devuelvo dinero por disconformidad o porque no cumplió expectativas. Sin excepción.",
+          "Remover films, etiquetas de garantía o números de serie anula la garantía.",
+          "Daños por mal manejo, golpes, cambios de voltaje, cortocircuitos o cualquier daño físico visible también anulan la garantía."
+        ]
+      },
+      {
+        "tipo": "destacado",
+        "titulo": "Pantalla, display y accesorios",
+        "cifra": [
+          "7",
+          "días"
+        ],
+        "texto": "Garantía por fallas como píxeles muertos o mal funcionamiento."
+      },
+      {
+        "tipo": "requisitos",
+        "titulo": "Para usar la garantía",
+        "items": [
+          "Presentar el equipo con caja y accesorios.",
+          "Sin cuentas activas.",
+          "Nota escrita o impresa en papel, dentro de la caja, detallando la falla."
+        ]
+      },
+      {
+        "tipo": "proceso",
+        "titulo": "El proceso",
+        "pasos": [
+          {
+            "cifra": [
+              "5",
+              "días hábiles"
+            ],
+            "titulo": "Revisión",
+            "texto": "Hasta 5 días hábiles, realizada por técnico autorizado por el importador."
+          },
+          {
+            "cifra": [
+              "1",
+              "mes"
+            ],
+            "titulo": "Resolución",
+            "texto": "Tiempo estimado de resolución: hasta 1 mes."
+          },
+          {
+            "cifra": [
+              "2",
+              "días"
+            ],
+            "titulo": "Cambio directo",
+            "texto": "Si el equipo falla dentro de los 2 días posteriores a la revisión, se cambia directo."
+          }
+        ]
+      },
+      {
+        "tipo": "importante",
+        "titulo": "Importante",
+        "parrafos": [
+          "Actúo como intermediario entre vos y el importador. Me responsabilizo solo por gestionar la garantía correctamente.",
+          "Me comprometo a mantenerte al tanto de cualquier novedad en la ejecución del proceso.",
+          "No acepto agresiones ni insistencias. Siempre trato con respeto y espero lo mismo.",
+          "Al entregarme el equipo, el cliente declara haber comprendido y aceptar estos términos."
+        ],
+        "cierre": "Gracias por tu comprensión y confianza.",
+        "firma": "Vladimir · The Tech Room Arg"
+      }
+    ]
+  },
+  "xiaomi": {
+    "titulo": "Xiaomi",
+    "plazo": [
+      "3",
+      "meses"
+    ],
+    "desde": "Desde la entrega.",
+    "bloques": [
+      {
+        "tipo": "cobertura",
+        "titulo": "Cobertura",
+        "cubre": [
+          "Defectos de fábrica no causados por factores externos."
+        ],
+        "noCubre": [
+          "Daños por golpes, rayaduras, humedad (incluso si el equipo es sumergible) ni fallas por apps no seguras.",
+          "No devuelvo dinero por disconformidad o porque no cumplió expectativas. Sin excepción.",
+          "Remover films, etiquetas de garantía o números de serie anula la garantía.",
+          "Daños por mal manejo, golpes, cambios de voltaje, cortocircuitos o cualquier daño físico visible también anulan la garantía."
+        ]
+      },
+      {
+        "tipo": "destacado",
+        "titulo": "Pantalla, display y accesorios",
+        "cifra": [
+          "7",
+          "días"
+        ],
+        "texto": "Garantía por fallas como píxeles muertos o mal funcionamiento."
+      },
+      {
+        "tipo": "requisitos",
+        "titulo": "Para usar la garantía",
+        "items": [
+          "Presentar el equipo con caja y accesorios.",
+          "Sin cuentas activas.",
+          "Nota escrita o impresa en papel, dentro de la caja, detallando la falla."
+        ]
+      },
+      {
+        "tipo": "proceso",
+        "titulo": "El proceso",
+        "pasos": [
+          {
+            "cifra": [
+              "5",
+              "días hábiles"
+            ],
+            "titulo": "Revisión",
+            "texto": "Hasta 5 días hábiles, realizada por técnico autorizado por el importador."
+          },
+          {
+            "cifra": [
+              "1",
+              "mes"
+            ],
+            "titulo": "Resolución",
+            "texto": "Tiempo estimado de resolución: hasta 1 mes."
+          },
+          {
+            "cifra": [
+              "2",
+              "días"
+            ],
+            "titulo": "Cambio directo",
+            "texto": "Si el equipo falla dentro de los 2 días posteriores a la revisión, se cambia directo."
+          }
+        ]
+      },
+      {
+        "tipo": "importante",
+        "titulo": "Importante",
+        "parrafos": [
+          "Actúo como intermediario entre vos y el importador. Me responsabilizo solo por gestionar la garantía correctamente.",
+          "Me comprometo a mantenerte al tanto de cualquier novedad en la ejecución del proceso.",
+          "No acepto agresiones ni insistencias. Siempre trato con respeto y espero lo mismo.",
+          "Al entregarme el equipo, el cliente declara haber comprendido y aceptar estos términos."
+        ],
+        "cierre": "Gracias por tu comprensión y confianza.",
+        "firma": "Vladimir · The Tech Room Arg"
+      }
+    ]
+  },
+  "notebooks": {
+    "titulo": "Notebooks",
+    "plazo": [
+      "6",
+      "meses"
+    ],
+    "desde": "Por fallas de funcionamiento.",
+    "bloques": [
+      {
+        "tipo": "cobertura",
+        "titulo": "Cobertura",
+        "cubre": [
+          "Fallas de funcionamiento. La garantía aplica exclusivamente a ellas."
+        ],
+        "noCubre": [
+          "Negligencia por parte del cliente, incluyendo golpes y daños por líquidos.",
+          "Instalación de software que genere un rendimiento no deseado."
+        ]
+      },
+      {
+        "tipo": "proceso",
+        "titulo": "El proceso",
+        "pasos": [
+          {
+            "cifra": [
+              "5",
+              "días hábiles"
+            ],
+            "titulo": "Verificación técnica",
+            "texto": "Cualquier inconveniente debe ser evaluado previamente por el servicio técnico. Puede demorar hasta 5 días hábiles."
+          },
+          {
+            "cifra": [
+              "30",
+              "días"
+            ],
+            "titulo": "Ejecución de garantía",
+            "texto": "La resolución de la garantía puede demorar hasta 30 días como plazo máximo."
+          }
+        ]
+      },
+      {
+        "tipo": "opciones",
+        "titulo": "Reposición del producto",
+        "opciones": [
+          {
+            "titulo": "Mismo modelo",
+            "texto": "Se entrega el mismo modelo en caso de corresponder."
+          },
+          {
+            "titulo": "Modelo superior",
+            "texto": "Si no hay stock, podés optar por un modelo superior abonando la diferencia."
+          },
+          {
+            "titulo": "Modelo de menor valor",
+            "texto": "O por un modelo de menor valor, reintegrando únicamente la diferencia."
+          }
+        ]
+      },
+      {
+        "tipo": "firma",
+        "firma": "Vladimir · The Tech Room Arg"
+      }
+    ]
+  },
+  "gaming": {
+    "titulo": "Gaming y Accesorios",
+    "plazo": [
+      "1",
+      "mes"
+    ],
+    "desde": "Desde la fecha de entrega.",
+    "alcance": "Consolas, parlantes y accesorios no Apple.",
+    "bloques": [
+      {
+        "tipo": "cobertura",
+        "titulo": "Cobertura",
+        "noCubre": [
+          "Daños por golpes, humedad, caídas, mala conexión, sobrecarga eléctrica o uso indebido.",
+          "Fallas ocasionadas por modificaciones, intentos de reparación o uso de fuentes de energía no originales.",
+          "No se devuelve el dinero por inconformidad o porque el producto no cumplió expectativas. Sin excepción."
+        ]
+      },
+      {
+        "tipo": "requisitos",
+        "titulo": "Para usar la garantía",
+        "items": [
+          "Presentar el producto con su embalaje completo, incluyendo caja y todos los accesorios originales.",
+          "Incluir una nota indicando la falla detectada."
+        ]
+      },
+      {
+        "tipo": "proceso",
+        "titulo": "El proceso",
+        "pasos": [
+          {
+            "cifra": [
+              "5",
+              "días hábiles"
+            ],
+            "titulo": "Revisión",
+            "texto": "El producto será revisado en un plazo de hasta 5 días hábiles."
+          },
+          {
+            "cifra": [
+              "1",
+              "mes"
+            ],
+            "titulo": "Reparación o reposición",
+            "texto": "El proceso de reparación o reposición puede extenderse hasta 1 mes."
+          }
+        ],
+        "nota": "No se realizan cambios inmediatos ni reemplazos sin revisión previa."
+      },
+      {
+        "tipo": "importante",
+        "titulo": "Nota importante",
+        "parrafos": [
+          "Mi rol es de intermediario entre el importador y el cliente. Garantizo la correcta gestión del reclamo dentro de los plazos establecidos.",
+          "Te pido respeto y paciencia durante este proceso. No acepto agresiones ni consultas reiteradas sobre el estado del producto en garantía, ya que los tiempos dependen del importador."
+        ],
+        "cierre": "Gracias por tu comprensión y por confiar en The Tech Room Arg.",
+        "firma": "Vladimir · The Tech Room Arg"
+      }
+    ]
+  },
+  "usados": {
+    "titulo": "Usados Swap",
+    "plazo": [
+      "30",
+      "días"
+    ],
+    "desde": "Corridos desde la entrega.",
+    "bloques": [
+      {
+        "tipo": "cobertura",
+        "titulo": "Cobertura",
+        "cubre": [
+          "Solo fallas de funcionamiento."
+        ],
+        "noCubre": [
+          "Reclamos por “pieza desconocida” (cámara, batería o módulo).",
+          "Reclamos pasados los 30 días."
+        ]
+      },
+      {
+        "tipo": "lista",
+        "titulo": "El equipo",
+        "items": [
+          "Las baterías al 100% son premium marca Ampsentrix.",
+          "Los equipos se entregan sin accesorios. Si dice “caja”, es solo la caja, sin nada más."
+        ]
+      },
+      {
+        "tipo": "importante",
+        "titulo": "Antes de comprar",
+        "parrafos": [
+          "El cliente debe aceptar estas condiciones antes de la compra.",
+          "Mi compromiso es entregarte un equipo revisado, en buen estado y con el respaldo correspondiente dentro del plazo estipulado."
+        ],
+        "cierre": "Ante cualquier duda previa a la compra, estoy siempre disponible.",
+        "firma": "Vladimir · The Tech Room Arg"
+      }
+    ]
+  }
+}

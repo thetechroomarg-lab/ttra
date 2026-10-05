@@ -1,0 +1,388 @@
+/* Sección Garantías (home, Classic). Grilla tipográfica: el plazo es el
+   protagonista y se lee sin abrir nada. Contrasta a propósito con la grilla
+   fotográfica de Categorías que tiene arriba. */
+html[data-modo="classic"] .ttra-garantias {
+  position: relative; z-index: 2;
+  padding: 70px var(--ed-gutter) 65px;
+  scroll-margin-top: 25px;
+  background: var(--rc-bg);
+  box-shadow: 0 -24px 55px #00000022;
+  translate: 0 var(--section-enter-y, 0px);
+  transform: scale(var(--section-scale, 1));
+  transform-origin: center bottom;
+  filter: brightness(var(--section-brightness, 1)) blur(var(--section-blur, 0px));
+}
+html[data-modo="classic"] .ttra-garantias-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* Card */
+html[data-modo="classic"] .ttra-garantia {
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  min-height: 250px;
+  padding: 22px;
+  border: 1px solid var(--ed-line);
+  border-radius: 0;
+  background: var(--rc-bg-panel);
+  color: var(--rc-green);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--card-halo);
+  transition: translate .35s var(--ed-ease), border-color .25s, box-shadow .35s var(--ed-ease);
+}
+/* La entrada escalonada (classic-editorial.js) convive con el hover. */
+html[data-modo="classic"] .ttra-garantia[data-reveal].ttra-reveal-ready {
+  transition:
+    opacity .7s var(--ed-ease) var(--reveal-delay, 0s),
+    transform .8s var(--ed-ease) var(--reveal-delay, 0s),
+    translate .35s var(--ed-ease), border-color .25s, box-shadow .35s var(--ed-ease);
+}
+html[data-modo="classic"] .ttra-garantia-destacada {
+  grid-column: span 2;
+  background: var(--ed-paper);
+  border-color: var(--ed-paper);
+  color: var(--ed-ink);
+}
+html[data-modo="classic"][data-classic-theme="light"] .ttra-garantia-destacada {
+  background: var(--ed-ink);
+  border-color: var(--ed-ink);
+  color: var(--ed-paper);
+}
+html[data-modo="classic"] .ttra-garantia-plazo {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  align-self: start;
+}
+html[data-modo="classic"] .ttra-garantia-plazo strong {
+  font: 500 clamp(72px, 7.4vw, 120px)/.82 var(--rc-font);
+  letter-spacing: -.075em;
+  color: var(--rc-green-bright);
+}
+html[data-modo="classic"] .ttra-garantia-destacada .ttra-garantia-plazo strong { color: inherit; }
+html[data-modo="classic"] .ttra-garantia-plazo > span {
+  font: 700 12px/1 var(--rc-font);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ed-accent);
+}
+html[data-modo="classic"] .ttra-garantia-desde {
+  margin: 18px 0 14px;
+  font: 600 10px/1.6 var(--rc-font);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--rc-green-dim);
+}
+html[data-modo="classic"] .ttra-garantia-destacada .ttra-garantia-desde { color: inherit; opacity: .72; }
+html[data-modo="classic"] .ttra-garantia-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ed-line);
+}
+html[data-modo="classic"] .ttra-garantia-destacada .ttra-garantia-bottom { border-top-color: currentColor; border-top-color: color-mix(in srgb, currentColor 22%, transparent); }
+html[data-modo="classic"] .ttra-garantia-nombre {
+  font-size: clamp(19px, 1.65vw, 25px);
+  font-weight: 500;
+  letter-spacing: -.04em;
+}
+html[data-modo="classic"] .ttra-garantia .ttra-circle-arrow {
+  display: block; flex: 0 0 36px; width: 36px; height: 36px;
+  fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+  transition: rotate .35s var(--ed-ease);
+}
+@media (hover: hover) {
+  html[data-modo="classic"] .ttra-garantia:hover {
+    translate: 0 -6px;
+    border-color: transparent;
+    box-shadow: var(--card-halo-activo);
+  }
+  html[data-modo="classic"] .ttra-garantia:hover .ttra-circle-arrow { rotate: 45deg; }
+}
+html[data-modo="classic"] .ttra-garantia:active { translate: 0 -1px; }
+html[data-modo="classic"] .ttra-garantia:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 4px; translate: 0 -6px; box-shadow: var(--card-halo-activo); }
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .ttra-garantia:is(:hover, :focus-visible) { translate: none; }
+}
+
+/* Panel flotante: backlight blanco sobre un fondo blureado e inerte.
+   El dialog no scrollea: scrollea su contenido, así la ✕ queda siempre a mano. */
+html[data-modo="classic"] .ttra-garantia-panel {
+  box-sizing: border-box;
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: var(--rc-bg-panel);
+  color: var(--rc-green);
+  box-shadow:
+    0 0 0 1px #ffffff5c,
+    0 0 36px #ffffff4d,
+    0 0 120px -8px #ffffff38,
+    0 30px 80px #000000b3;
+}
+html[data-modo="classic"] .ttra-garantia-panel[open] { display: flex; flex-direction: column; animation: ttra-garantia-entra .45s var(--ed-ease); }
+html[data-modo="classic"] .ttra-garantia-panel::backdrop {
+  background: rgba(10, 12, 10, .55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+html[data-modo="classic"][data-classic-theme="light"] .ttra-garantia-panel::backdrop { background: rgba(16, 20, 24, .42); }
+@keyframes ttra-garantia-entra {
+  from { opacity: 0; transform: translateY(18px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+html[data-modo="classic"] .ttra-garantia-panel-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 52px 52px 44px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ed-line) transparent;
+}
+html[data-modo="classic"] .ttra-garantia-cerrar {
+  position: absolute; top: 14px; right: 14px; z-index: 2;
+  display: grid; place-items: center;
+  width: 44px; height: 44px; padding: 0;
+  border: 1px solid var(--ed-line); border-radius: 50%;
+  background: var(--rc-bg-panel); color: var(--rc-green);
+  cursor: pointer;
+  transition: background .2s, color .2s, rotate .35s var(--ed-ease);
+}
+html[data-modo="classic"] .ttra-garantia-cerrar svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+@media (hover: hover) {
+  html[data-modo="classic"] .ttra-garantia-cerrar:hover { background: var(--rc-green-bright); color: var(--rc-bg-panel); rotate: 90deg; }
+}
+
+/* Cabecera: el plazo manda. */
+html[data-modo="classic"] .ttra-garantia-panel-cabecera {
+  display: grid; grid-template-columns: 1fr auto; align-items: end; column-gap: 24px;
+  padding-bottom: 30px; border-bottom: 1px solid var(--ed-line);
+}
+html[data-modo="classic"] .ttra-garantia-panel .ttra-eyebrow { grid-column: 1 / -1; margin: 0 0 12px; color: var(--rc-green-dim); }
+html[data-modo="classic"] .ttra-garantia-panel h2 {
+  margin: 0; padding-bottom: 8px;
+  font: 500 clamp(32px, 5vw, 50px)/1 var(--rc-font);
+  letter-spacing: -.055em;
+  color: var(--rc-green-bright);
+}
+html[data-modo="classic"] .ttra-garantia-panel-plazo { grid-row: 2 / 4; grid-column: 2; display: flex; align-items: baseline; gap: 10px; margin: 0; }
+html[data-modo="classic"] .ttra-garantia-panel-plazo strong {
+  font: 500 clamp(80px, 13vw, 132px)/.78 var(--rc-font);
+  letter-spacing: -.075em;
+  color: var(--rc-green-bright);
+}
+html[data-modo="classic"] .ttra-garantia-panel-plazo span { font: 700 13px/1 var(--rc-font); letter-spacing: .14em; text-transform: uppercase; color: var(--ed-accent); }
+html[data-modo="classic"] .ttra-garantia-panel-desde {
+  margin: 0;
+  font: 600 11px/1.6 var(--rc-font); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rc-green-dim);
+}
+
+/* Bloques numerados */
+html[data-modo="classic"] .ttra-gp-bloque { padding: 30px 0; border-bottom: 1px solid var(--ed-line); }
+html[data-modo="classic"] .ttra-gp-bloque:last-child { border-bottom: 0; padding-bottom: 6px; }
+html[data-modo="classic"] .ttra-gp-titulo {
+  display: flex; align-items: baseline; gap: 14px;
+  margin: 0 0 20px;
+  font: 700 11px/1.4 var(--rc-font); letter-spacing: .16em; text-transform: uppercase;
+  color: var(--rc-green-bright);
+}
+html[data-modo="classic"] .ttra-gp-indice { color: var(--ed-accent); font-variant-numeric: tabular-nums; }
+html[data-modo="classic"] .ttra-gp-bloque :is(ul, ol) { margin: 0; padding: 0; list-style: none; }
+html[data-modo="classic"] .ttra-gp-bloque li, html[data-modo="classic"] .ttra-gp-bloque p { font-size: 15px; line-height: 1.6; }
+
+/* Íconos dibujados: el significado está en la etiqueta y el trazo, no solo en el color. */
+html[data-modo="classic"] .ttra-gp-icono { flex: 0 0 22px; width: 22px; height: 22px; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+html[data-modo="classic"] .ttra-gp-icono-cubre, html[data-modo="classic"] .ttra-gp-icono-requisito { color: var(--rc-green-bright); }
+html[data-modo="classic"] .ttra-gp-icono-noCubre { color: var(--ed-accent); }
+
+html[data-modo="classic"] .ttra-gp-cobertura { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 28px; }
+html[data-modo="classic"] .ttra-gp-etiqueta {
+  margin: 0 0 14px !important; padding-bottom: 10px; border-bottom: 1px solid var(--ed-line);
+  font: 700 10px/1.4 var(--rc-font) !important; letter-spacing: .16em; text-transform: uppercase; color: var(--rc-green-dim);
+}
+html[data-modo="classic"] .ttra-gp-col ul { display: grid; gap: 14px; }
+html[data-modo="classic"] :is(.ttra-gp-col, .ttra-gp-requisitos) li { display: flex; gap: 12px; align-items: flex-start; }
+
+html[data-modo="classic"] .ttra-gp-cifra { display: flex; align-items: baseline; gap: 8px; margin: 0; }
+html[data-modo="classic"] .ttra-gp-cifra strong { font: 500 64px/.85 var(--rc-font); letter-spacing: -.07em; color: var(--rc-green-bright); }
+html[data-modo="classic"] .ttra-gp-cifra span { font: 700 11px/1.2 var(--rc-font) !important; letter-spacing: .14em; text-transform: uppercase; color: var(--ed-accent); }
+
+html[data-modo="classic"] .ttra-gp-destacado { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 28px; padding: 22px 24px; background: var(--rc-bg-panel-2); }
+html[data-modo="classic"] .ttra-gp-destacado-texto { margin: 0; }
+
+html[data-modo="classic"] .ttra-gp-requisitos { display: grid; gap: 14px; }
+
+html[data-modo="classic"] :is(.ttra-gp-proceso, .ttra-gp-opciones) { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0; counter-reset: paso; }
+html[data-modo="classic"] .ttra-gp-proceso li { position: relative; padding: 0 20px 0 0; }
+html[data-modo="classic"] .ttra-gp-proceso li + li { padding-left: 20px; border-left: 1px solid var(--ed-line); }
+html[data-modo="classic"] .ttra-gp-paso-titulo { margin: 16px 0 6px; font-weight: 700; color: var(--rc-green-bright); }
+html[data-modo="classic"] .ttra-gp-paso-texto { margin: 0; color: var(--rc-green-dim); font-size: 14px !important; }
+html[data-modo="classic"] .ttra-gp-opciones { gap: 10px; }
+html[data-modo="classic"] .ttra-gp-opciones li { counter-increment: paso; padding: 18px; background: var(--rc-bg-panel-2); }
+html[data-modo="classic"] .ttra-gp-opciones li::before { content: counter(paso, upper-alpha); font: 700 11px var(--rc-font); letter-spacing: .16em; color: var(--ed-accent); }
+html[data-modo="classic"] .ttra-gp-opciones .ttra-gp-paso-titulo { margin-top: 10px; }
+
+html[data-modo="classic"] .ttra-gp-lista { display: grid; gap: 12px; }
+html[data-modo="classic"] .ttra-gp-lista li { position: relative; padding-left: 26px; }
+html[data-modo="classic"] .ttra-gp-lista li::before { content: ''; position: absolute; left: 0; top: .8em; width: 14px; height: 2px; background: var(--ed-accent); }
+
+html[data-modo="classic"] .ttra-gp-importante { padding: 4px 0 4px 22px; border-left: 2px solid var(--ed-accent); }
+html[data-modo="classic"] .ttra-gp-importante p { margin: 0 0 12px; color: var(--rc-green); }
+html[data-modo="classic"] .ttra-gp-cierre { margin: 18px 0 0 !important; font-weight: 700; color: var(--rc-green-bright) !important; }
+html[data-modo="classic"] .ttra-gp-firma {
+  margin: 26px 0 0; padding-top: 22px; border-top: 1px solid var(--ed-line);
+  font: italic 500 15px/1.4 Georgia, 'Times New Roman', serif; letter-spacing: -.01em;
+  color: var(--rc-green-dim);
+}
+html[data-modo="classic"] .ttra-gp-bloque-importante + .ttra-gp-firma { border-top: 0; padding-top: 0; }
+
+@media (max-width: 1050px) {
+  html[data-modo="classic"] .ttra-garantias-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  html[data-modo="classic"] .ttra-garantia-destacada { grid-column: 1 / -1; }
+  html[data-modo="classic"] .ttra-garantia { min-height: 220px; padding: 18px; }
+}
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-garantias { padding: 30px 20px 28px; }
+  html[data-modo="classic"] .ttra-garantias-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  html[data-modo="classic"] .ttra-garantia { min-height: 176px; padding: 16px 14px 14px; }
+  html[data-modo="classic"] .ttra-garantia-destacada { min-height: 150px; }
+  html[data-modo="classic"] .ttra-garantia-plazo { flex-wrap: wrap; gap: 6px; }
+  html[data-modo="classic"] .ttra-garantia-plazo strong { font-size: 58px; }
+  html[data-modo="classic"] .ttra-garantia-destacada .ttra-garantia-plazo strong { font-size: 62px; }
+  html[data-modo="classic"] .ttra-garantia-plazo > span { font-size: 10px; }
+  html[data-modo="classic"] .ttra-garantia-desde { margin: 12px 0 10px; font-size: 9px; }
+  html[data-modo="classic"] .ttra-garantia-nombre { font-size: 16px; line-height: 1.15; }
+  html[data-modo="classic"] .ttra-garantia .ttra-circle-arrow { flex-basis: 28px; width: 28px; height: 28px; }
+  html[data-modo="classic"] .ttra-garantia-panel { max-height: calc(100dvh - 32px); }
+  html[data-modo="classic"] .ttra-garantia-panel-scroll { padding: 46px 22px 28px; }
+  html[data-modo="classic"] .ttra-garantia-panel-cabecera { grid-template-columns: 1fr; padding-bottom: 24px; }
+  html[data-modo="classic"] .ttra-garantia-panel h2 { margin-right: 52px; }
+  html[data-modo="classic"] .ttra-garantia-panel-plazo { grid-row: auto; grid-column: 1; margin: 18px 0 12px; }
+  html[data-modo="classic"] .ttra-garantia-panel-plazo strong { font-size: 92px; }
+  html[data-modo="classic"] .ttra-gp-bloque { padding: 24px 0; }
+  html[data-modo="classic"] .ttra-gp-bloque li, html[data-modo="classic"] .ttra-gp-bloque p { font-size: 14px; }
+  html[data-modo="classic"] .ttra-gp-cobertura { grid-template-columns: 1fr; gap: 22px; }
+  html[data-modo="classic"] .ttra-gp-destacado { grid-template-columns: 1fr; gap: 12px; padding: 18px; }
+  html[data-modo="classic"] .ttra-gp-cifra strong { font-size: 54px; }
+  html[data-modo="classic"] .ttra-gp-proceso { grid-template-columns: 1fr; }
+  html[data-modo="classic"] .ttra-gp-proceso li, html[data-modo="classic"] .ttra-gp-proceso li + li { padding: 0 0 18px 18px; border-left: 1px solid var(--ed-line); }
+  html[data-modo="classic"] .ttra-gp-proceso li + li { padding-top: 4px; }
+  html[data-modo="classic"] .ttra-gp-opciones { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] :is(.ttra-garantia, .ttra-garantia .ttra-circle-arrow, .ttra-garantia-cerrar) { transition: none; }
+  html[data-modo="classic"] .ttra-garantia-panel[open] { animation: none; }
+}
+
+/* Bloques opcionales: alcance, cobertura con una sola columna y nota del proceso. */
+html[data-modo="classic"] .ttra-gp-alcance {
+  margin: 26px 0 0; font-size: 15px; line-height: 1.6; color: var(--rc-green-dim);
+}
+html[data-modo="classic"] .ttra-gp-cobertura-simple { grid-template-columns: 1fr; }
+html[data-modo="classic"] .ttra-gp-nota {
+  margin: 22px 0 0 !important; padding: 14px 18px; background: var(--rc-bg-panel-2);
+  font-size: 14px !important; color: var(--rc-green);
+}
+
+/* Apple: aviso, service oficial y turnos. */
+html[data-modo="classic"] .ttra-gp-aviso {
+  margin: 0; padding: 18px 20px;
+  background: var(--rc-bg-panel-2); border-left: 2px solid var(--ed-accent);
+  color: var(--rc-green-bright);
+}
+html[data-modo="classic"] .ttra-gp-lugares { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+html[data-modo="classic"] .ttra-gp-lugar { display: flex; flex-direction: column; padding: 20px; border: 1px solid var(--ed-line); }
+html[data-modo="classic"] .ttra-gp-lugar-nombre { margin: 0; font: 500 24px/1.1 var(--rc-font) !important; letter-spacing: -.04em; color: var(--rc-green-bright); }
+html[data-modo="classic"] .ttra-gp-lugar-donde { margin: 6px 0 18px; color: var(--rc-green-dim); font-size: 13px !important; }
+html[data-modo="classic"] .ttra-gp-lugar-links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: auto 0 0; }
+html[data-modo="classic"] .ttra-gp-link {
+  display: inline-flex; align-items: center; min-height: 44px;
+  font: 700 11px/1.2 var(--rc-font); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--rc-green-bright); text-decoration: underline; text-decoration-color: var(--ed-accent);
+  text-decoration-thickness: 2px; text-underline-offset: 5px;
+}
+html[data-modo="classic"] .ttra-gp-link::after, html[data-modo="classic"] .ttra-gp-turnos::after { content: '↗'; margin-left: 6px; text-decoration: none; }
+html[data-modo="classic"] .ttra-gp-turnos {
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 54px; margin-top: 10px; padding: 0 20px;
+  background: var(--rc-green-bright); color: var(--rc-bg-panel);
+  font: 700 13px var(--rc-font); text-decoration: none;
+  transition: background .25s;
+}
+@media (hover: hover) {
+  html[data-modo="classic"] .ttra-gp-turnos:hover { background: var(--ed-accent); color: #191b16; }
+  html[data-modo="classic"] .ttra-gp-link:hover { color: var(--ed-accent); }
+}
+html[data-modo="classic"] .ttra-gp-cierre-final { margin: 26px 0 0; font-size: 15px; line-height: 1.6; font-weight: 700; color: var(--rc-green-bright); }
+html[data-modo="classic"] .ttra-gp-cierre-final + .ttra-gp-firma { margin-top: 10px; padding-top: 0; border-top: 0; }
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-gp-lugares { grid-template-columns: 1fr; }
+}
+
+/* Apple: aclaración de excepciones (se leen al abrir la card). */
+html[data-modo="classic"] .ttra-garantia-excepciones {
+  margin: -4px 0 14px;
+  font: 500 12px/1.5 var(--rc-font);
+  opacity: .72;
+}
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-garantia-excepciones { margin: -2px 0 10px; font-size: 11px; }
+}
+
+/* Excepciones (Apple): el segundo foco del panel después del plazo.
+   Bloque en tono invertido, como la card destacada de Apple, con su propia
+   cifra. El acento cambia de tono adentro para mantener contraste AA. */
+html[data-modo="classic"] .ttra-gp-bloque-excepciones {
+  --exc-bg: var(--ed-paper);
+  --exc-ink: var(--ed-ink);
+  --exc-dim: #4f5148;
+  --exc-accent: #b73622;
+  position: relative;
+  margin: 8px -24px 0;
+  padding: 30px 24px 28px;
+  border-bottom: 0;
+  background: var(--exc-bg);
+  color: var(--exc-ink);
+  box-shadow: inset 0 3px 0 var(--exc-accent);
+}
+html[data-modo="classic"][data-classic-theme="light"] .ttra-gp-bloque-excepciones {
+  --exc-bg: var(--ed-ink);
+  --exc-ink: var(--ed-paper);
+  --exc-dim: #c9c7bc;
+  --exc-accent: #ff715b;
+}
+html[data-modo="classic"] .ttra-gp-bloque-excepciones + * { margin-top: 26px; }
+html[data-modo="classic"] .ttra-gp-bloque-excepciones .ttra-gp-titulo { flex-wrap: wrap; color: var(--exc-ink); }
+html[data-modo="classic"] .ttra-gp-bloque-excepciones .ttra-gp-indice { color: var(--exc-accent); }
+html[data-modo="classic"] .ttra-gp-etiqueta-tag {
+  margin-left: auto; padding: 5px 9px;
+  border: 1px solid currentColor;
+  font: 700 9px/1 var(--rc-font); letter-spacing: .16em;
+  color: var(--exc-accent);
+}
+html[data-modo="classic"] .ttra-gp-excepciones { display: grid; grid-template-columns: minmax(150px, .38fr) 1fr; gap: 28px; align-items: start; }
+html[data-modo="classic"] .ttra-gp-exc-cifra { padding-right: 24px; border-right: 1px solid color-mix(in srgb, var(--exc-ink) 18%, transparent); }
+html[data-modo="classic"] .ttra-gp-bloque-excepciones .ttra-gp-cifra strong { font-size: 86px; color: var(--exc-ink); }
+html[data-modo="classic"] .ttra-gp-bloque-excepciones .ttra-gp-cifra span { color: var(--exc-accent); }
+html[data-modo="classic"] .ttra-gp-exc-cifra-nota { margin: 14px 0 0 !important; font-size: 12px !important; line-height: 1.5 !important; color: var(--exc-dim); }
+html[data-modo="classic"] .ttra-gp-bloque-excepciones .ttra-gp-lista li { color: var(--exc-ink); }
+html[data-modo="classic"] .ttra-gp-bloque-excepciones .ttra-gp-lista li::before { background: var(--exc-accent); }
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-gp-bloque-excepciones { margin: 8px -22px 0; padding: 26px 22px 24px; }
+  html[data-modo="classic"] .ttra-gp-excepciones { grid-template-columns: 1fr; gap: 20px; }
+  html[data-modo="classic"] .ttra-gp-exc-cifra { padding: 0 0 18px; border-right: 0; border-bottom: 1px solid color-mix(in srgb, var(--exc-ink) 18%, transparent); }
+  html[data-modo="classic"] .ttra-gp-bloque-excepciones .ttra-gp-cifra strong { font-size: 72px; }
+}
