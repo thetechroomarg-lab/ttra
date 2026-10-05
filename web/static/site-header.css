@@ -311,3 +311,15 @@ html[data-modo="classic"] .ttra-site-header :is(.rc-perfil-nombre, .ttra-site-in
 html.ttra-panel-flotante :is(.ttra-site-header, body > header, .ttra-dock),
 html:has(dialog.ttra-login-dialog[open]) .ttra-site-header,
 html:has(dialog.ttra-login-dialog[data-opening]) .ttra-site-header { visibility: hidden; }
+
+/* Cambio de tema claro/oscuro: fundido suave de toda la página (View
+   Transitions). Sin soporte, .ttra-theme-switching transiciona colores
+   durante el cambio. Sin animación si el usuario pide movimiento reducido. */
+html[data-modo="classic"]::view-transition-old(root),
+html[data-modo="classic"]::view-transition-new(root) { animation-duration: .45s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+html[data-modo="classic"].ttra-theme-switching,
+html[data-modo="classic"].ttra-theme-switching *,
+html[data-modo="classic"].ttra-theme-switching *::before,
+html[data-modo="classic"].ttra-theme-switching *::after {
+  transition: background-color .45s ease, color .45s ease, border-color .45s ease, box-shadow .45s ease, fill .45s ease !important;
+}

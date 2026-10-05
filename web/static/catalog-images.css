@@ -28,3 +28,49 @@ html body .grilla .card.ai-card:focus-within{border-color:rgba(255,80,60,.52)!im
 .ai-prices-mayorista .ai-price-head>:nth-child(2){font:inherit;color:inherit}
 .ai-prices-mayorista .ai-price:nth-child(2){color:#ff503c}.ai-prices-mayorista .ai-price:first-child strong{color:inherit}
 .ai-price:not(.ai-price-head)>:first-child:not(:only-child){font:600 3.4cqw Arial,sans-serif}
+
+/* Classic: mismo backlight sutil que las cards del home (--card-halo en
+   classic-editorial.css), teñido de celeste hielo Martini (en light, azul Martini para que se lea sobre el crema). Halo tenue en
+   reposo que crece cuando la card sube al pasar el mouse o con el foco.
+   Fallout conserva su halo coral. */
+html[data-modo="classic"] {
+  --ai-card-halo: 0 0 0 1px #a8dcf51f, 0 0 26px -8px #a8dcf538;
+  --ai-card-halo-activo: 0 0 0 1px #a8dcf566, 0 0 34px -4px #a8dcf55c, 0 0 90px -22px #a8dcf547, 0 24px 50px #00000080;
+}
+html[data-modo="classic"][data-classic-theme="light"] {
+  --ai-card-halo: 0 0 0 1px #0b8fd640, 0 0 26px -8px #0b8fd673;
+  --ai-card-halo-activo: 0 0 0 1px #0b8fd6, 0 0 34px -4px #0b8fd68c, 0 0 90px -22px #0b8fd666, 0 24px 46px -14px #20231e47;
+}
+html[data-modo="classic"] body .grilla .card.ai-card {
+  border-color: #a8dcf529 !important;
+  box-shadow: var(--ai-card-halo) !important;
+  transition: translate .35s var(--ed-ease, ease), box-shadow .35s var(--ed-ease, ease), border-color .35s var(--ed-ease, ease);
+}
+html[data-modo="classic"][data-classic-theme="light"] body .grilla .card.ai-card { border-color: #10110e !important; }
+html[data-modo="classic"][data-classic-theme="light"] body .grilla .card.ai-card:focus-within { border-color: #0b8fd6 !important; }
+@media (hover: hover) {
+  html[data-modo="classic"][data-classic-theme="light"] body .grilla .card.ai-card:hover { border-color: #0b8fd6 !important; }
+}
+html[data-modo="classic"] body .grilla .card.ai-card:focus-within { translate: 0 -6px; border-color: #a8dcf566 !important; box-shadow: var(--ai-card-halo-activo) !important; }
+@media (hover: hover) {
+  html[data-modo="classic"] body .grilla .card.ai-card:hover { translate: 0 -6px; border-color: #a8dcf566 !important; box-shadow: var(--ai-card-halo-activo) !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] body .grilla .card.ai-card:is(:hover, :focus-within) { translate: none; }
+}
+
+/* Classic Light: la card pasa de casi negro a gris medio, mismo diseño. Las
+   fotos son transparentes, así que el gris se ve parejo detrás. Los tonos que
+   en el negro alcanzaban y en el gris no (coral del primer precio, líneas,
+   encabezado mayorista) se aclaran apenas para seguir en WCAG AA. */
+html[data-modo="classic"][data-classic-theme="light"] {
+  --ai-card-gris: #464843;
+  --ai-card-coral: #ff9d8c;
+}
+html[data-modo="classic"][data-classic-theme="light"] body .grilla .card.ai-card,
+html[data-modo="classic"][data-classic-theme="light"] .ai-face { background: var(--ai-card-gris) !important; }
+html[data-modo="classic"][data-classic-theme="light"] .ai-price { border-bottom-color: #5c5e58; }
+html[data-modo="classic"][data-classic-theme="light"] :is(.ai-price:first-child, .ai-price:first-child strong, .ai-prices-mayorista .ai-price:nth-child(2)),
+html[data-modo="classic"][data-classic-theme="light"] .ai-face .btn-foto:hover { color: var(--ai-card-coral) !important; }
+html[data-modo="classic"][data-classic-theme="light"] .ai-prices-mayorista .ai-price-head { color: #c8c8c2 !important; }
+html[data-modo="classic"][data-classic-theme="light"] .card.ai-card .catalog-card-actions :is(label, .catalog-card-status) { color: #d6d6d0; }

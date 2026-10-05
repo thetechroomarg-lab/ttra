@@ -397,10 +397,23 @@
     themeButton.title = label;
     themeButton.textContent = label;
   }
+  // Cross-fade between themes (View Transitions; CSS-transition fallback) and
+  // close the account menu in the same step, so the choice reads as "done".
+  function transitionTheme(update) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { update(); return; }
+    if (document.startViewTransition) { document.startViewTransition(update); return; }
+    root.classList.add('ttra-theme-switching');
+    update();
+    setTimeout(() => root.classList.remove('ttra-theme-switching'), 500);
+  }
   themeButton.addEventListener('click', () => {
-    root.dataset.classicTheme = root.dataset.classicTheme === 'light' ? 'dark' : 'light';
-    try { localStorage.setItem('ttra_classic_theme', root.dataset.classicTheme); } catch {}
-    updateThemeLabel();
+    transitionTheme(() => {
+      root.dataset.classicTheme = root.dataset.classicTheme === 'light' ? 'dark' : 'light';
+      try { localStorage.setItem('ttra_classic_theme', root.dataset.classicTheme); } catch {}
+      updateThemeLabel();
+      closeMenu();
+    });
+    toggle.focus({ preventScroll: true });
   });
   updateThemeLabel();
 

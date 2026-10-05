@@ -86,12 +86,25 @@
     themeButton?.setAttribute('title', light ? 'Modo oscuro' : 'Modo claro');
     if (themeButton) themeButton.textContent = light ? 'Modo oscuro' : 'Modo claro';
   }
+  // Cross-fade between themes (View Transitions; CSS-transition fallback) and
+  // close the profile menu in the same step, so the choice reads as "done".
+  function transitionTheme(update) {
+    if (reducedMotion.matches) { update(); return; }
+    if (document.startViewTransition) { document.startViewTransition(update); return; }
+    root.classList.add('ttra-theme-switching');
+    update();
+    setTimeout(() => root.classList.remove('ttra-theme-switching'), 500);
+  }
   themeButton?.addEventListener('click', () => {
     if (!isClassic()) return;
-    // Reuse the app's theme persistence.
-    if (typeof aplicarTemaClassic === 'function') {
-      aplicarTemaClassic(root.dataset.classicTheme === 'light' ? 'dark' : 'light', true);
-    }
+    transitionTheme(() => {
+      // Reuse the app's theme persistence.
+      if (typeof aplicarTemaClassic === 'function') {
+        aplicarTemaClassic(root.dataset.classicTheme === 'light' ? 'dark' : 'light', true);
+      }
+      if (typeof cerrarMenuPerfil === 'function') cerrarMenuPerfil();
+    });
+    document.getElementById('btn-perfil-toggle')?.focus({ preventScroll: true });
   });
   updateThemeLabel();
   new MutationObserver(() => { updateThemeLabel(); scheduleFrame(); }).observe(root, {
