@@ -1157,6 +1157,33 @@ def admin_clientes_actualizar_mayorista(
     return {"ok": True, "tipo_cliente": tipo_cliente}
 
 
+def _beneficios_para_recibo(client, cliente, request, primer_envio):
+    """Sellos (contando esta compra) y link de referido para el mail del recibo.
+
+    El mail sale antes de registrar el sello, así que en el primer envío se
+    muestra uno más. Los mayoristas no juntan sellos ni invitan.
+    """
+    if cliente.get("tipo_cliente") == "mayorista":
+        return None
+    if cliente.get("fidelidad_ultimo_codigo"):
+        sellos = fidelidad.SELLOS_PARA_PREMIO
+    else:
+        sellos = int(cliente.get("sellos_fidelidad") or 0) + (1 if primer_envio else 0)
+    link = None
+    try:
+        codigo = referidos.obtener_o_crear_codigo(client, cliente["id"])
+        if codigo:
+            link = f"{_public_app_base_url(request)}/login.html?{urlencode({'registro': '1', 'ref': codigo})}"
+    except Exception:
+        # Sin link el recibo igual sale: no vale la pena frenar la entrega.
+        logger.exception("No se pudo armar el link de referido del recibo")
+    return {
+        "sellos": sellos, "sellos_para_premio": fidelidad.SELLOS_PARA_PREMIO,
+        "premio_fidelidad_usd": fidelidad.DESCUENTO_FIDELIDAD_USD,
+        "link_referido": link, "premio_referido_usd": referidos.PREMIO_REFERIDO_USD,
+    }
+
+
 @app.post("/admin/pedidos/{pedido_id}/recibo")
 async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     if not (_clientes_admin_activo(request) or _cadete_activo(request)):
@@ -1208,7 +1235,8 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
         enviar_email(
             cliente["email"],
             f"Recibo {recibo_id} — The Tech Room Arg",
-            recibos.html_recibo(cliente, pedido_para_mail),
+            recibos.html_recibo(cliente, pedido_para_mail, beneficios=_beneficios_para_recibo(
+                client, cliente, request, primer_envio=not pedido.get("recibo_enviado_en"))),
             [{"filename": f"recibo-{recibo_id}.pdf", "content": pdf_adjunto}, *adjuntos_fotos],
         )
     except EnvioEmailError as e:
