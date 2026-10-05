@@ -6,7 +6,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import CondPageBreak, Image, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+from . import garantias
 
 _ZONA_ARGENTINA = timezone(timedelta(hours=-3))
 
@@ -15,66 +17,60 @@ def _formatear_usd(valor):
     return f"U$D {int(valor or 0):,}".replace(",", ".")
 
 
-def _garantia_producto(nombre):
-    producto = (nombre or "").lower()
-    if any(palabra in producto for palabra in ("iphone", "ipad", "macbook", "imac", "airpods", "apple watch")):
-        return (
-            "Apple: 1 año de garantía oficial mundial desde la activación. Cubre fallas de fábrica o "
-            "funcionamiento interno; no cubre golpes, líquidos, mal uso ni desgaste. La gestión se realiza "
-            "directamente con Apple, por ejemplo en One Click (Córdoba Shopping) o MacStation. Apple define "
-            "reparación o reemplazo. Los equipos son nuevos y sellados; una preactivación excepcional puede "
-            "reducir la vigencia. Se recomienda usar cargadores originales."
-        )
-    if any(palabra in producto for palabra in ("notebook", "laptop")):
-        return (
-            "Notebooks: 6 meses por fallas de funcionamiento. Requiere verificación técnica previa, de hasta "
-            "5 días hábiles; la resolución puede demorar hasta 30 días. No cubre golpes, líquidos, negligencia "
-            "ni software que afecte el rendimiento. Si corresponde, se repone el mismo modelo; sin stock se "
-            "coordina uno equivalente con ajuste de diferencia."
-        )
-    if "samsung" in producto:
-        return (
-            "Samsung: 3 meses desde la entrega por fallas de fábrica. No cubre caídas, rayones, humedad, apps "
-            "no confiables, mal uso, sobrecargas o cortocircuitos; tampoco hay reembolso por disconformidad. "
-            "Retirar films, etiquetas o números de serie anula la garantía. Display y accesorios: 7 días. "
-            "Presentar caja, accesorios, sin cuentas activas y nota con la falla. Diagnóstico: hasta 5 días hábiles; "
-            "resolución estimada: hasta 1 mes. Si falla dentro de 2 días de la revisión, corresponde cambio directo. "
-            "The Tech Room Arg intermedia con el importador."
-        )
-    elif "motorola" in producto or producto.startswith("moto "):
-        return (
-            "Motorola: 3 meses desde la entrega por defectos de fábrica. No cubre golpes, rayaduras, humedad, "
-            "apps no seguras, mal manejo, variaciones de voltaje ni cortocircuitos; tampoco hay devolución por "
-            "disconformidad. Remover films, etiquetas de garantía o números de serie anula la garantía. Display y "
-            "accesorios: 7 días. Presentar caja, accesorios, sin cuentas activas y nota con la falla. Diagnóstico: "
-            "hasta 5 días hábiles; resolución estimada: hasta 1 mes. Si falla dentro de 2 días de la revisión, "
-            "corresponde cambio directo. The Tech Room Arg intermedia con el importador."
-        )
-    elif any(palabra in producto for palabra in ("xiaomi", "redmi", "poco")):
-        return (
-            "Xiaomi: 3 meses desde la entrega por desperfectos de fábrica. No cubre golpes, rayaduras, humedad, "
-            "apps inseguras, mal uso, variaciones eléctricas ni manipulación indebida; tampoco hay devolución por "
-            "disconformidad. Remover etiquetas, films o el número de serie anula la garantía. Display y accesorios: "
-            "7 días. Presentar caja, accesorios, sin cuentas activas y nota con la falla. Diagnóstico: hasta 5 días "
-            "hábiles; resolución estimada: hasta 1 mes. Si falla dentro de 2 días de la revisión, corresponde cambio "
-            "directo. The Tech Room Arg intermedia con el importador."
-        )
-    return (
-        "Accesorios, consolas y parlantes no Apple: 1 mes desde la entrega. No cubre golpes, caídas, humedad, "
-        "mala conexión, sobrecargas, uso indebido, modificaciones, intentos de reparación ni fuentes no originales; "
-        "no hay devolución por disconformidad. Presentar embalaje, caja, accesorios y nota con la falla. Revisión: "
-        "hasta 5 días hábiles; reparación o reposición: hasta 1 mes. No hay cambios inmediatos sin revisión previa. "
-        "The Tech Room Arg intermedia con el importador."
-    )
-
-
 def garantias_para_detalle(detalle):
-    garantias = []
-    for item in detalle or []:
-        garantia = _garantia_producto(item.get("nombre"))
-        if garantia not in garantias:
-            garantias.append(garantia)
-    return garantias
+    """Texto completo de cada garantía del pedido, sin repetir (misma fuente que la web)."""
+    return [garantias.texto_plano(clave) for clave in garantias.claves_para_detalle(detalle)]
+
+
+_ACENTO = "#c8102e"
+
+
+def _garantias_html(detalle):
+    datos = garantias.cargar()
+    partes = []
+    for clave in garantias.claves_para_detalle(detalle):
+        g = datos[clave]
+        bloques = []
+        if g.get("alcance"):
+            bloques.append(f"<p style='margin:14px 0 0;color:#444;font-size:14px;line-height:1.6'>{html.escape(g['alcance'])}</p>")
+        for seccion in garantias.secciones(g):
+            filas = []
+            if seccion["titulo"]:
+                filas.append(
+                    f"<p style='margin:20px 0 8px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase'>"
+                    f"<span style='color:{_ACENTO}'>{seccion['indice']}</span>&nbsp;&nbsp;{html.escape(seccion['titulo'])}</p>"
+                )
+            for tipo, valor in seccion["lineas"]:
+                if tipo == "item":
+                    filas.append(f"<p style='margin:0 0 6px;padding-left:16px;text-indent:-16px;font-size:14px;line-height:1.55'><span style='color:{_ACENTO}'>&ndash;</span>&nbsp;&nbsp;{html.escape(valor)}</p>")
+                elif tipo == "etiqueta":
+                    filas.append(f"<p style='margin:10px 0 6px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#777'>{html.escape(valor)}</p>")
+                elif tipo == "destacado":
+                    filas.append(f"<p style='margin:0 0 8px;padding:10px 12px;background:#f3f1ea;font-size:14px;font-weight:700'>{html.escape(valor)}</p>")
+                elif tipo == "excepcion":
+                    filas.append(f"<p style='margin:0 0 10px;padding:12px 14px;background:#161616;color:#fff;border-top:3px solid {_ACENTO};font-size:14px;font-weight:700'>{html.escape(valor)}</p>")
+                elif tipo == "nota":
+                    filas.append(f"<p style='margin:8px 0 0;padding:10px 12px;background:#f3f1ea;font-size:13px;color:#444'>{html.escape(valor)}</p>")
+                elif tipo == "enlace":
+                    texto, url = valor
+                    filas.append(f"<p style='margin:0 0 6px;font-size:13px'><a href='{html.escape(url)}' style='color:{_ACENTO};font-weight:700'>{html.escape(texto)}</a></p>")
+                elif tipo == "fuerte":
+                    filas.append(f"<p style='margin:10px 0 4px;font-size:14px;font-weight:700'>{html.escape(valor)}</p>")
+                elif tipo == "firma":
+                    filas.append(f"<p style='margin:8px 0 0;font-family:Georgia,serif;font-style:italic;color:#666'>{html.escape(valor)}</p>")
+                else:
+                    filas.append(f"<p style='margin:0 0 8px;font-size:14px;line-height:1.6'>{html.escape(valor)}</p>")
+            bloques.append("".join(filas))
+        partes.append(
+            "<article style='margin:22px 0 0;border:1px solid #e2e0d8'>"
+            f"<div style='background:#161616;color:#fff;padding:16px 18px'>"
+            f"<p style='margin:0;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#bbb'>Garantía</p>"
+            f"<p style='margin:4px 0 0;font-size:22px;font-weight:700'>{html.escape(g['titulo'])}"
+            f"<span style='float:right;color:#ff715b'>{html.escape(garantias.plazo_texto(g))}</span></p>"
+            f"<p style='margin:6px 0 0;font-size:12px;color:#bbb'>{html.escape(g['desde'])}</p></div>"
+            f"<div style='padding:4px 18px 18px'>{''.join(bloques)}</div></article>"
+        )
+    return "".join(partes)
 
 
 def _formatear_fecha_emision(fecha):
@@ -103,7 +99,7 @@ def html_recibo(cliente, pedido, logo_url=""):
         f"<p style='margin:4px 0'>Descuentos aplicados: -{_formatear_usd(descuento)}</p>"
         if descuento else ""
     )
-    garantias = "".join(f"<li>{html.escape(garantia)}</li>" for garantia in garantias_para_detalle(detalle))
+    garantias_html = _garantias_html(detalle)
     nombres = str(cliente.get("nombre") or "").strip().split()
     primer_nombre = html.escape(nombres[0] if nombres else "Cliente")
     recibo_id = html.escape(pedido.get("recibo_id") or "")
@@ -127,9 +123,10 @@ def html_recibo(cliente, pedido, logo_url=""):
   </table>
   {descuento_html}
   <p style='font-size:20px;font-weight:700;text-align:right'>Total: {_formatear_usd(pedido.get('total_usd'))}</p>
-  <section style='border-top:1px solid #ddd;margin-top:24px;padding-top:18px'><h2 style='font-size:17px'>Garantía</h2><ul>{garantias}</ul>
-    <p style='font-size:13px;color:#555'>Para gestionar una garantía, conservá caja y accesorios. Soy intermediario con el importador y te mantendré informado durante el proceso.</p>
-    <p style='font-size:12px;color:#888;margin-top:10px'>Documento no válido como factura.</p>
+  <section style='border-top:1px solid #ddd;margin-top:24px;padding-top:18px'><h2 style='font-size:17px;margin:0'>Garantía de tu compra</h2>
+    <p style='font-size:13px;color:#555;margin:6px 0 0'>Estas son las condiciones de garantía de los productos que compraste.</p>
+    {garantias_html}
+    <p style='font-size:12px;color:#888;margin-top:22px'>Documento no válido como factura.</p>
   </section>
 </main></body></html>"""
 
@@ -155,6 +152,101 @@ def _fotos_para_pdf(fotos):
         except Exception:
             continue
     return imagenes
+
+
+def _garantias_pdf(detalle, normal):
+    """Una ficha por garantía: cabecera oscura con el plazo y bloques numerados."""
+    claves = garantias.claves_para_detalle(detalle)
+    if not claves:
+        return []
+    acento = colors.HexColor(_ACENTO)
+    gris = colors.HexColor("#666666")
+    base = ParagraphStyle("GarBase", parent=normal, fontSize=9.5, leading=13.5)
+    titulo_seccion = ParagraphStyle("GarSeccion", parent=base, fontName="Helvetica-Bold", fontSize=8, leading=11,
+                                    spaceBefore=11, spaceAfter=5)
+    item = ParagraphStyle("GarItem", parent=base, leftIndent=12, firstLineIndent=-12, spaceAfter=3)
+    etiqueta = ParagraphStyle("GarEtiqueta", parent=base, fontName="Helvetica-Bold", fontSize=7.5, leading=10,
+                              textColor=gris, spaceBefore=4, spaceAfter=3)
+    parrafo = ParagraphStyle("GarParrafo", parent=base, spaceAfter=4)
+    fuerte = ParagraphStyle("GarFuerte", parent=base, fontName="Helvetica-Bold", spaceBefore=4, spaceAfter=3)
+    firma = ParagraphStyle("GarFirma", parent=base, fontName="Times-Italic", fontSize=10.5, textColor=gris, spaceBefore=4)
+    caja = ParagraphStyle("GarCaja", parent=base, fontSize=9)
+    caja_invertida = ParagraphStyle("GarCajaInv", parent=caja, textColor=colors.white)
+    cab_titulo = ParagraphStyle("GarCabTitulo", parent=base, fontName="Helvetica-Bold", fontSize=15, leading=18,
+                                textColor=colors.white)
+    cab_plazo = ParagraphStyle("GarCabPlazo", parent=cab_titulo, alignment=2, textColor=colors.HexColor("#ff715b"))
+    cab_desde = ParagraphStyle("GarCabDesde", parent=base, fontSize=8, leading=10, textColor=colors.HexColor("#bbbbbb"))
+
+    def recuadro(contenido, fondo="#f3f1ea"):
+        tabla = Table([[contenido]], colWidths=[17.9 * cm])
+        tabla.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(fondo)),
+            ("LEFTPADDING", (0, 0), (-1, -1), 9), ("RIGHTPADDING", (0, 0), (-1, -1), 9),
+            ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        return tabla
+
+    elementos = [
+        CondPageBreak(6 * cm),
+        Spacer(1, 18),
+        Paragraph("Garantía de tu compra", ParagraphStyle("GarH", parent=base, fontName="Helvetica-Bold", fontSize=14, leading=18)),
+        Paragraph("Estas son las condiciones de garantía de los productos que compraste.",
+                  ParagraphStyle("GarIntro", parent=base, textColor=gris)),
+    ]
+    datos = garantias.cargar()
+    for clave in claves:
+        g = datos[clave]
+        cabecera = Table([
+            [Paragraph(f"Garantía {html.escape(g['titulo'])}", cab_titulo),
+             Paragraph(html.escape(garantias.plazo_texto(g)), cab_plazo)],
+            [Paragraph(html.escape(g["desde"]), cab_desde), ""],
+        ], colWidths=[12.4 * cm, 5.5 * cm])
+        cabecera.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#161616")),
+            ("SPAN", (0, 1), (1, 1)),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 10), ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+            ("TOPPADDING", (0, 0), (-1, 0), 9), ("BOTTOMPADDING", (0, -1), (-1, -1), 9),
+            ("TOPPADDING", (0, 1), (-1, 1), 0), ("BOTTOMPADDING", (0, 0), (-1, 0), 2),
+            ("LINEBELOW", (0, -1), (-1, -1), 2, acento),
+        ]))
+        ficha = [Spacer(1, 4)]
+        if g.get("alcance"):
+            ficha.append(Paragraph(html.escape(g["alcance"]), ParagraphStyle("GarAlcance", parent=parrafo, textColor=gris)))
+        for seccion in garantias.secciones(g):
+            if seccion["titulo"]:
+                ficha.append(Paragraph(
+                    f'<font color="{_ACENTO}">{seccion["indice"]}</font>&nbsp;&nbsp;&nbsp;{html.escape(seccion["titulo"].upper())}',
+                    titulo_seccion))
+            for tipo, valor in seccion["lineas"]:
+                if tipo == "item":
+                    ficha.append(Paragraph(f'<font color="{_ACENTO}">–</font>&nbsp;&nbsp;{html.escape(valor)}', item))
+                elif tipo == "etiqueta":
+                    ficha.append(Paragraph(html.escape(valor.upper()), etiqueta))
+                elif tipo == "destacado":
+                    ficha.append(recuadro(Paragraph(f"<b>{html.escape(valor)}</b>", caja)))
+                    ficha.append(Spacer(1, 3))
+                elif tipo == "excepcion":
+                    ficha.append(recuadro(Paragraph(f"<b>{html.escape(valor)}</b>", caja_invertida), "#161616"))
+                    ficha.append(Spacer(1, 4))
+                elif tipo == "nota":
+                    ficha.append(Spacer(1, 3))
+                    ficha.append(recuadro(Paragraph(html.escape(valor), caja)))
+                elif tipo == "enlace":
+                    texto, url = valor
+                    # La dirección se imprime solo si es corta; si no, queda el enlace.
+                    visible = f' <font color="#888888" size="8">{html.escape(url)}</font>' if len(url) <= 45 else ""
+                    ficha.append(Paragraph(
+                        f'&nbsp;&nbsp;&nbsp;<link href="{html.escape(url)}"><font color="{_ACENTO}"><u>{html.escape(texto)}</u></font></link>{visible}',
+                        base))
+                elif tipo == "fuerte":
+                    ficha.append(Paragraph(html.escape(valor), fuerte))
+                elif tipo == "firma":
+                    ficha.append(Paragraph(html.escape(valor), firma))
+                else:
+                    ficha.append(Paragraph(html.escape(valor), parrafo))
+        elementos.extend([Spacer(1, 14), KeepTogether([cabecera, *ficha[:3]]), *ficha[3:]])
+    return elementos
 
 
 def pdf_recibo(cliente, pedido, fotos=None):
@@ -212,9 +304,7 @@ def pdf_recibo(cliente, pedido, fotos=None):
     if descuento:
         elementos.append(Paragraph(f"Descuentos aplicados: -{_formatear_usd(descuento)}", normal))
     elementos.append(Paragraph(f"<b>Total: {_formatear_usd(pedido.get('total_usd'))}</b>", normal))
-    elementos.extend([Spacer(1, 16), Paragraph("Garantía", estilos["Heading2"])])
-    for garantia in garantias_para_detalle(pedido.get("detalle")):
-        elementos.append(Paragraph(f"- {html.escape(garantia)}", normal))
+    elementos.extend(_garantias_pdf(pedido.get("detalle"), normal))
     elementos.extend([
         Spacer(1, 14),
         Paragraph("Documento no válido como factura.", ParagraphStyle("Leyenda", parent=normal, fontSize=8, textColor=colors.HexColor("#888888"))),
