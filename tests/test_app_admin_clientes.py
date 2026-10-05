@@ -271,6 +271,49 @@ def test_enviar_recibo_suma_un_sello_de_fidelidad(monkeypatch):
     assert actualizado["sellos_fidelidad"] == 2
 
 
+def _pedido_para_recibo(fake, cliente_id, pedido_id):
+    fake.table("pedidos").insert({
+        "id": pedido_id, "cliente_id": cliente_id, "productos": ["iPhone 13"],
+        "fecha_entrega": "2026-08-24",
+        "detalle": [{"nombre": "iPhone 13", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}],
+        "total_usd": 500,
+    }).execute()
+
+
+def test_mail_del_recibo_muestra_sellos_con_esta_compra_y_link_de_referido(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("clientes").update({"sellos_fidelidad": 1}).eq("id", cliente["id"]).execute()
+    _pedido_para_recibo(fake, cliente["id"], "pedido-beneficios")
+    enviados = []
+    monkeypatch.setattr(appmod, "enviar_email", lambda *args: enviados.append(args))
+
+    r = c.post("/admin/pedidos/pedido-beneficios/recibo")
+
+    assert r.status_code == 200
+    cuerpo = enviados[0][2]
+    codigo = fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]["codigo_referido"]
+    assert codigo
+    assert f"ref={codigo}" in cuerpo
+    assert "Llevás 2 de 5 compras" in cuerpo
+
+
+def test_mail_del_recibo_de_un_mayorista_no_muestra_beneficios(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", cliente["id"]).execute()
+    _pedido_para_recibo(fake, cliente["id"], "pedido-mayorista")
+    enviados = []
+    monkeypatch.setattr(appmod, "enviar_email", lambda *args: enviados.append(args))
+
+    r = c.post("/admin/pedidos/pedido-mayorista/recibo")
+
+    assert r.status_code == 200
+    assert "Tus beneficios" not in enviados[0][2]
+
+
 def test_reenviar_recibo_no_suma_otro_sello(monkeypatch):
     c = _cliente_logueado(monkeypatch)
     fake = appmod.get_client()

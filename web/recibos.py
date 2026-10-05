@@ -1,5 +1,6 @@
 import html
 from pathlib import Path
+from urllib.parse import quote
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
 
@@ -88,7 +89,45 @@ def _formatear_fecha_emision(fecha):
         return fecha
 
 
-def html_recibo(cliente, pedido, logo_url=""):
+def _link_whatsapp(link):
+    texto = f"Te paso la tienda donde compro tecnología, registrate con mi link: {link}"
+    return f"https://wa.me/?text={quote(texto)}"
+
+
+def _beneficios_html(beneficios):
+    """Sellos de fidelidad y link de referido. Sin datos, no hay sección."""
+    if not beneficios:
+        return ""
+    total = int(beneficios.get("sellos_para_premio") or 0)
+    sellos = min(int(beneficios.get("sellos") or 0), total)
+    premio = _formatear_usd(beneficios.get("premio_fidelidad_usd"))
+    puntos = "".join(
+        f"<span style='display:inline-block;width:22px;height:22px;border-radius:50%;margin-right:6px;"
+        f"background:{_ACENTO if i < sellos else '#e4e4e4'}'></span>"
+        for i in range(total)
+    )
+    if sellos >= total:
+        texto_sellos = (f"Completaste las {total} compras: tenés {premio} de descuento para tu próxima compra. "
+                        "Lo ves en tu perfil de la web.")
+    else:
+        texto_sellos = f"Llevás {sellos} de {total} compras. Al llegar a {total} te ganás {premio} de descuento."
+    link = beneficios.get("link_referido")
+    referido_html = (
+        "<p style='margin:16px 0 6px;font-weight:700'>Invitá a tus amigos</p>"
+        f"<p style='margin:0 0 10px;font-size:14px;color:#555'>Por cada amigo que se registre con tu link y compre, "
+        f"ganás {_formatear_usd(beneficios.get('premio_referido_usd'))} para tu próxima compra.</p>"
+        f"<a href='{html.escape(_link_whatsapp(link), quote=True)}' style='display:inline-block;background:{_ACENTO};color:#fff;"
+        "text-decoration:none;font-weight:700;padding:10px 16px'>Compartir por WhatsApp</a>"
+        f"<p style='margin:8px 0 0;font-size:12px;color:#888;word-break:break-all'>{html.escape(link)}</p>"
+    ) if link else ""
+    return f"""<section style='border-top:1px solid #ddd;margin-top:24px;padding-top:18px'><h2 style='font-size:17px;margin:0 0 10px'>Tus beneficios</h2>
+    <div>{puntos}</div>
+    <p style='margin:10px 0 0;font-size:14px'>{texto_sellos}</p>
+    {referido_html}
+  </section>"""
+
+
+def html_recibo(cliente, pedido, logo_url="", beneficios=None):
     # El logo del mail se dibuja con HTML (sin imágenes externas): muchos
     # clientes de correo bloquean imágenes y quedaría un recuadro roto.
     detalle = pedido.get("detalle") or []
@@ -137,6 +176,7 @@ def html_recibo(cliente, pedido, logo_url=""):
     <p style='font-size:13px;color:#555;margin:6px 0 0'>Estas son las condiciones de garantía de los productos que compraste.</p>
     {garantias_html}
   </section>
+  {_beneficios_html(beneficios)}
   <footer style='margin-top:28px;padding:22px 20px;background:#161616;color:#fff;border-top:3px solid #c8102e'>
     <p style='margin:0;font-size:18px;font-weight:700'>{GRACIAS}</p>
     <p style='margin:8px 0 0;font-size:14px;color:#ddd'>{GRACIAS_DETALLE}</p>

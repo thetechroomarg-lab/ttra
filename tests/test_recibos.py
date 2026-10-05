@@ -181,3 +181,41 @@ def test_clasificacion_de_garantias_por_producto():
 
 def test_encabezado_de_tabla_pdf_conserva_texto_blanco():
     assert recibos._estilo_celda_encabezado().textColor == colors.white
+
+
+def _pedido_minimo():
+    return {
+        "recibo_id": "TTRA-000002",
+        "detalle": [{"nombre": "iPhone 15", "cantidad": 1, "usd_unitario": 900, "usd_subtotal": 900}],
+        "total_usd": 900,
+    }
+
+
+def test_html_recibo_muestra_sellos_y_link_de_referido():
+    contenido = recibos.html_recibo({"nombre": "Ana"}, _pedido_minimo(), beneficios={
+        "sellos": 2, "sellos_para_premio": 5, "premio_fidelidad_usd": 20,
+        "link_referido": "https://thetechroomarg.com/login.html?registro=1&ref=ABC2345",
+        "premio_referido_usd": 5,
+    })
+
+    assert "Llevás 2 de 5 compras" in contenido
+    assert "U$D 20" in contenido
+    assert "https://thetechroomarg.com/login.html?registro=1&amp;ref=ABC2345" in contenido
+    assert "U$D 5" in contenido
+    assert "https://wa.me/?text=" in contenido
+
+
+def test_html_recibo_avisa_cuando_el_premio_de_fidelidad_esta_listo():
+    contenido = recibos.html_recibo({"nombre": "Ana"}, _pedido_minimo(), beneficios={
+        "sellos": 5, "sellos_para_premio": 5, "premio_fidelidad_usd": 20,
+        "link_referido": None, "premio_referido_usd": 5,
+    })
+
+    assert "Completaste las 5 compras" in contenido
+    assert "Invitá a tus amigos" not in contenido
+
+
+def test_html_recibo_sin_beneficios_no_muestra_la_seccion():
+    contenido = recibos.html_recibo({"nombre": "Ana"}, _pedido_minimo())
+
+    assert "Tus beneficios" not in contenido
