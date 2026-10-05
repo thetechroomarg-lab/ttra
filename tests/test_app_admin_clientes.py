@@ -296,7 +296,9 @@ def test_mail_del_recibo_muestra_sellos_con_esta_compra_y_link_de_referido(monke
     codigo = fake.table("clientes").select("*").eq("id", cliente["id"]).execute().data[0]["codigo_referido"]
     assert codigo
     assert f"ref={codigo}" in cuerpo
-    assert "Llevás 2 de 5 compras" in cuerpo
+    assert "2 de 5 compras. A la quinta te regalo US$20 de descuento." in cuerpo
+    assert [a.get("content_id") for a in enviados[0][3] if a.get("content_id")] == [
+        "sello-lleno-1", "sello-lleno-2", "sello-vacio-3", "sello-vacio-4", "sello-vacio-5"]
 
 
 def test_mail_del_recibo_de_un_mayorista_no_muestra_beneficios(monkeypatch):
