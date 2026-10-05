@@ -1232,12 +1232,13 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             fotos_pdf.append(contenido)
             adjuntos_fotos.append({"filename": nombre, "content": contenido})
         pdf_adjunto = recibos.pdf_recibo(cliente, pedido_para_mail, fotos=fotos_pdf)
+        beneficios = _beneficios_para_recibo(client, cliente, request, primer_envio=not pedido.get("recibo_enviado_en"))
         enviar_email(
             cliente["email"],
             f"Recibo {recibo_id} — The Tech Room Arg",
-            recibos.html_recibo(cliente, pedido_para_mail, beneficios=_beneficios_para_recibo(
-                client, cliente, request, primer_envio=not pedido.get("recibo_enviado_en"))),
-            [{"filename": f"recibo-{recibo_id}.pdf", "content": pdf_adjunto}, *adjuntos_fotos],
+            recibos.html_recibo(cliente, pedido_para_mail, beneficios=beneficios),
+            [{"filename": f"recibo-{recibo_id}.pdf", "content": pdf_adjunto}, *adjuntos_fotos,
+             *recibos.adjuntos_sellos(beneficios)],
         )
     except EnvioEmailError as e:
         return JSONResponse({"error": str(e)}, status_code=502)

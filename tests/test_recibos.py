@@ -198,8 +198,9 @@ def test_html_recibo_muestra_sellos_y_link_de_referido():
         "premio_referido_usd": 5,
     })
 
-    assert "Llevás 2 de 5 compras" in contenido
-    assert "U$D 20" in contenido
+    assert "2 de 5 compras. A la quinta te regalo US$20 de descuento." in contenido
+    assert contenido.count("cid:sello-lleno-") == 2
+    assert contenido.count("cid:sello-vacio-") == 3
     assert "https://thetechroomarg.com/login.html?registro=1&amp;ref=ABC2345" in contenido
     assert "U$D 5" in contenido
     assert "https://wa.me/?text=" in contenido
@@ -211,7 +212,7 @@ def test_html_recibo_avisa_cuando_el_premio_de_fidelidad_esta_listo():
         "link_referido": None, "premio_referido_usd": 5,
     })
 
-    assert "Completaste las 5 compras" in contenido
+    assert "¡Ganaste US$20 de descuento por tus 5 compras!" in contenido
     assert "Invitá a tus amigos" not in contenido
 
 
@@ -219,3 +220,17 @@ def test_html_recibo_sin_beneficios_no_muestra_la_seccion():
     contenido = recibos.html_recibo({"nombre": "Ana"}, _pedido_minimo())
 
     assert "Tus beneficios" not in contenido
+
+
+def test_adjuntos_sellos_trae_una_imagen_inline_por_casillero_del_html():
+    beneficios = {"sellos": 2, "sellos_para_premio": 5, "premio_fidelidad_usd": 20,
+                  "link_referido": None, "premio_referido_usd": 5}
+    contenido = recibos.html_recibo({"nombre": "Ana"}, _pedido_minimo(), beneficios=beneficios)
+
+    adjuntos = recibos.adjuntos_sellos(beneficios)
+
+    assert [a["content_id"] for a in adjuntos] == [
+        "sello-lleno-1", "sello-lleno-2", "sello-vacio-3", "sello-vacio-4", "sello-vacio-5"]
+    assert all(f"cid:{a['content_id']}" in contenido for a in adjuntos)
+    assert all(a["content"].startswith(b"\x89PNG") for a in adjuntos)
+    assert recibos.adjuntos_sellos(None) == []

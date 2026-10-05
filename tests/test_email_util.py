@@ -35,3 +35,16 @@ def test_enviar_email_sin_reply_to_no_manda_la_clave(monkeypatch):
     email_util.enviar_email("cliente@x.com", "Asunto", "<p>hola</p>")
 
     assert "reply_to" not in capturado["json"]
+
+
+def test_enviar_email_manda_el_content_id_de_las_imagenes_inline(monkeypatch):
+    capturado = _capturar_envio(monkeypatch)
+
+    email_util.enviar_email("cliente@x.com", "Asunto", "<img src='cid:sello-lleno-1'>", [
+        {"filename": "recibo.pdf", "content": b"%PDF"},
+        {"filename": "sello-lleno-1.png", "content": b"png", "content_id": "sello-lleno-1"},
+    ])
+
+    pdf, sello = capturado["json"]["attachments"]
+    assert "content_id" not in pdf
+    assert sello["content_id"] == "sello-lleno-1"

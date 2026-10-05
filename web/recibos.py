@@ -89,6 +89,26 @@ def _formatear_fecha_emision(fecha):
         return fecha
 
 
+_CARPETA_SELLOS = Path(__file__).resolve().parent / "mail_sellos"
+_LADO_SELLO_PX = 66
+
+
+def _cid_sello(indice, sellos):
+    return f"sello-{'lleno' if indice < sellos else 'vacio'}-{indice + 1}"
+
+
+def adjuntos_sellos(beneficios):
+    """Imágenes inline (cid:) de los sellos que usa html_recibo."""
+    if not beneficios:
+        return []
+    total = int(beneficios.get("sellos_para_premio") or 0)
+    sellos = min(int(beneficios.get("sellos") or 0), total)
+    return [
+        {"filename": f"{cid}.png", "content": (_CARPETA_SELLOS / f"{cid}.png").read_bytes(), "content_id": cid}
+        for cid in (_cid_sello(i, sellos) for i in range(total))
+    ]
+
+
 def _link_whatsapp(link):
     texto = f"Te paso la tienda donde compro tecnología, registrate con mi link: {link}"
     return f"https://wa.me/?text={quote(texto)}"
@@ -100,17 +120,20 @@ def _beneficios_html(beneficios):
         return ""
     total = int(beneficios.get("sellos_para_premio") or 0)
     sellos = min(int(beneficios.get("sellos") or 0), total)
-    premio = _formatear_usd(beneficios.get("premio_fidelidad_usd"))
-    puntos = "".join(
-        f"<span style='display:inline-block;width:22px;height:22px;border-radius:50%;margin-right:6px;"
-        f"background:{_ACENTO if i < sellos else '#e4e4e4'}'></span>"
+    premio = f"US${int(beneficios.get('premio_fidelidad_usd') or 0)}"
+    # Las mismas imágenes del perfil (ver scripts/generar_sellos_mail.py),
+    # embebidas en el mail: no dependen de que el cliente cargue imágenes.
+    casilleros = "".join(
+        f"<td style='padding:0 4px 0 0'><img src='cid:{_cid_sello(i, sellos)}' width='{_LADO_SELLO_PX}' "
+        f"height='{_LADO_SELLO_PX}' alt='{'Sello' if i < sellos else 'Casillero'} {i + 1}' style='display:block'></td>"
         for i in range(total)
     )
+    puntos = f"<table role='presentation' cellpadding='0' cellspacing='0' style='border-collapse:collapse'><tr>{casilleros}</tr></table>"
+    # Mismos textos que la tarjeta de fidelidad del perfil.
     if sellos >= total:
-        texto_sellos = (f"Completaste las {total} compras: tenés {premio} de descuento para tu próxima compra. "
-                        "Lo ves en tu perfil de la web.")
+        texto_sellos = f"¡Ganaste {premio} de descuento por tus {total} compras! Se aplica solo en tu {total + 1}ta compra."
     else:
-        texto_sellos = f"Llevás {sellos} de {total} compras. Al llegar a {total} te ganás {premio} de descuento."
+        texto_sellos = f"{sellos} de {total} compras. A la quinta te regalo {premio} de descuento."
     link = beneficios.get("link_referido")
     referido_html = (
         "<p style='margin:16px 0 6px;font-weight:700'>Invitá a tus amigos</p>"

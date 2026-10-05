@@ -30,7 +30,9 @@ def enviar_email(destinatario, asunto, html, adjuntos=None, reply_to=None):
             "from": REMITENTE, "to": [destinatario], "subject": asunto, "html": html,
             **({"reply_to": [reply_to]} if reply_to else {}),
             "attachments": [
-                {"filename": adjunto["filename"], "content": base64.b64encode(adjunto["content"]).decode("ascii")}
+                {"filename": adjunto["filename"], "content": base64.b64encode(adjunto["content"]).decode("ascii"),
+                 # content_id: imagen inline que el html referencia con src="cid:...".
+                 **({"content_id": adjunto["content_id"]} if adjunto.get("content_id") else {})}
                 for adjunto in (adjuntos or [])
             ],
         },
