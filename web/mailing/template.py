@@ -110,7 +110,7 @@ def _hero_html(hero):
 
 
 def armar_html(productos_nuevos, nota=None, cliente_id=None, base_url=BASE_URL,
-               hero=None, preheader=""):
+               hero=None, preheader="", subtitulo="Novedades de la semana", intro=None):
     baja_url = f"{base_url}/mailing/baja/{cliente_id}" if cliente_id else "#"
     preheader_html = ""
     if preheader:
@@ -134,6 +134,13 @@ def armar_html(productos_nuevos, nota=None, cliente_id=None, base_url=BASE_URL,
   </table>
 </td></tr>"""
 
+    bloque_intro = ""
+    if intro:
+        bloque_intro = f"""
+<tr><td style="padding:0 20px 12px;">
+  <p style="margin:0; font-family:{_FUENTE}; font-size:14px; line-height:1.5; color:{_CREMA};">{html.escape(intro)}</p>
+</td></tr>"""
+
     filas_productos = ""
     for i in range(0, len(productos_nuevos), 2):
         par = productos_nuevos[i:i + 2]
@@ -152,9 +159,10 @@ def armar_html(productos_nuevos, nota=None, cliente_id=None, base_url=BASE_URL,
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; background:{_BG};">
 <tr><td style="padding:0 20px 20px; text-align:center;">
   <p style="margin:0; font-family:{_FUENTE}; font-size:20px; font-weight:800; color:{_BLANCO}; letter-spacing:0.5px;">THE TECH ROOM ARG</p>
-  <p style="margin:4px 0 0; font-family:{_FUENTE}; font-size:12px; color:{_GRIS_TENUE};">Novedades de la semana</p>
+  <p style="margin:4px 0 0; font-family:{_FUENTE}; font-size:12px; color:{_GRIS_TENUE};">{html.escape(subtitulo)}</p>
 </td></tr>
 {hero_html}
+{bloque_intro}
 {banner_nota}
 <tr><td style="padding:0 12px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{filas_productos}</table>

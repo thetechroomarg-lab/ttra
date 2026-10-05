@@ -227,6 +227,10 @@ alter table pedidos add column if not exists borrado_por text;
 -- Marca cuándo se mandó el mail de seguimiento post-entrega (7 días después
 -- de enviar el recibo). Null hasta que el envío tiene éxito.
 alter table pedidos add column if not exists seguimiento_enviado_en timestamptz;
+-- Marca cuándo se mandó el mail con 5 productos recomendados (30 días después
+-- de enviar el recibo). Null hasta que se envía o se descarta (cliente sin mail
+-- o dado de baja del mailing).
+alter table pedidos add column if not exists recomendacion_enviado_en timestamptz;
 create unique index if not exists pedidos_recibo_id_unico
   on pedidos (recibo_id) where recibo_id is not null;
 create index if not exists pedidos_fecha_orden_entrega_idx
