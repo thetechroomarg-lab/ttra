@@ -46,6 +46,11 @@ def registrar(client, tipo, fila, descripcion, por_defecto=MONTO_POR_MOVIMIENTO)
             "referencia_id", referencia_id
         ).execute().data
         if existentes:
+            # Ya estaba registrado y pagado, pero se restauró: completarlo de
+            # nuevo levanta la anulación que había restado su monto.
+            client.table(TABLA).delete().eq("tipo", TIPO_ANULACION).eq(
+                "referencia_id", _referencia_anulacion(tipo, referencia_id)
+            ).is_("pagado_en", "null").execute()
             return None
         movimiento = {
             "id": str(uuid.uuid4()),
@@ -61,6 +66,52 @@ def registrar(client, tipo, fila, descripcion, por_defecto=MONTO_POR_MOVIMIENTO)
     except Exception:
         logger.exception("No se pudo registrar el movimiento del cadete (%s %s)", tipo, referencia_id)
         return None
+
+
+TIPO_ANULACION = "anulacion"
+
+
+def _referencia_anulacion(tipo, referencia_id):
+    return f"{tipo}:{referencia_id}"
+
+
+def anular(client, tipo, referencia_id):
+    """Resta del saldo lo que sumó una entrega que se restauró.
+
+    Si el movimiento sigue pendiente se borra, así completarla de nuevo lo
+    vuelve a crear. Si ya se pagó, queda un movimiento negativo que se
+    descuenta del próximo pago. Devuelve el monto restado.
+    """
+    try:
+        movimientos = client.table(TABLA).select("*").eq("tipo", tipo).eq(
+            "referencia_id", referencia_id
+        ).execute().data or []
+        restado = 0
+        for movimiento in movimientos:
+            monto = int(movimiento.get("monto_ars") or 0)
+            if not movimiento.get("pagado_en"):
+                client.table(TABLA).delete().eq("id", movimiento["id"]).execute()
+                restado += monto
+                continue
+            referencia = _referencia_anulacion(tipo, referencia_id)
+            if client.table(TABLA).select("id").eq("tipo", TIPO_ANULACION).eq(
+                "referencia_id", referencia
+            ).is_("pagado_en", "null").execute().data:
+                continue
+            client.table(TABLA).insert({
+                "id": str(uuid.uuid4()),
+                "tipo": TIPO_ANULACION,
+                "referencia_id": referencia,
+                "descripcion": f"Restaurada: {movimiento.get('descripcion') or tipo}"[:300],
+                "fecha_entrega": movimiento.get("fecha_entrega"),
+                "monto_ars": -monto,
+                "creado_en": datetime.now(timezone.utc).isoformat(),
+            }).execute()
+            restado += monto
+        return restado
+    except Exception:
+        logger.exception("No se pudo anular el movimiento del cadete (%s %s)", tipo, referencia_id)
+        return 0
 
 
 def listar(client):

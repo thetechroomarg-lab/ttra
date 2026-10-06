@@ -3192,6 +3192,24 @@ _CADETE_ESTILO += _leer_ui("operations_editorial.css.html")
 _CADETE_ESTILO += """<style>
   .saldo-cadete-titulo { display:block; margin:0 0 16px; padding:14px 16px; border-radius:var(--op-r-md, 12px); background:var(--op-surface); border:1px solid var(--op-border-strong); color:var(--op-text); text-decoration:none; font-size:18px; }
   .saldo-cadete-titulo strong { font-size:26px; margin-left:6px; }
+  .tareas-completadas .pedido-hoy { opacity:.85; }
+  .btn-restaurar-tarea { min-height:44px; padding:0 14px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm, 8px); background:var(--op-surface-2); color:var(--op-text); font:inherit; font-weight:700; cursor:pointer; }
+  .btn-restaurar-tarea:hover { background:var(--op-surface-3); }
+  .btn-restaurar-tarea:disabled { opacity:.6; cursor:wait; }
+  /* Confirmación de "Completado": panel flotante con backlight sobre un fondo
+     blureado. No se cierra tocando afuera: solo Aceptar o Cancelar. */
+  body.modal-bloqueante-abierto { overflow:hidden; }
+  .modal-confirmar-completado { position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(10,12,16,.55); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+  .modal-confirmar-completado[hidden] { display:none; }
+  .modal-confirmar-completado-contenido { width:100%; max-width:380px; padding:24px 20px 20px; background:var(--op-surface); color:var(--op-text); border-radius:var(--op-r-md, 12px); box-shadow:0 0 0 1px #ffffff5c, 0 0 36px #ffffff4d, 0 0 120px -8px #ffffff38, 0 30px 80px #000000b3; animation:confirmar-completado-entra .3s cubic-bezier(.2,.8,.2,1); }
+  .modal-confirmar-completado h2 { margin:0 0 20px; font-size:19px; line-height:1.35; text-align:center; }
+  .confirmar-completado-acciones { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .confirmar-completado-acciones button { min-height:48px; border-radius:var(--op-r-sm, 8px); font:inherit; font-weight:700; cursor:pointer; }
+  #confirmar-completado-cancelar { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
+  #confirmar-completado-aceptar { border:0; background:var(--op-accent); color:#fff; }
+  #confirmar-completado-aceptar:disabled { opacity:.6; cursor:wait; }
+  @keyframes confirmar-completado-entra { from { opacity:0; transform:translateY(14px) scale(.97); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { .modal-confirmar-completado-contenido { animation:none; } }
 </style>"""
 
 
@@ -3362,6 +3380,45 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         else '<p class="vacio">No tenés entregas asignadas para ese día.</p>'
     )
 
+    def _completada_en_ar(tarea):
+        try:
+            momento = datetime.fromisoformat(tarea.get("completada_en"))
+        except (TypeError, ValueError):
+            return None
+        return momento.astimezone(entregas.ZONA_HORARIA)
+
+    # Las notas completadas del día (por fecha de la nota o por el día en que se
+    # tocó "Completado"), para poder restaurarlas si se completaron sin querer.
+    tareas_completadas = sorted(
+        (
+            tarea for tarea in tareas
+            if tarea.get("completada_en") and (
+                tarea.get("fecha_entrega") == fecha_consulta
+                or (_completada_en_ar(tarea) and _completada_en_ar(tarea).date().isoformat() == fecha_consulta)
+            )
+        ),
+        key=lambda tarea: tarea.get("completada_en") or "",
+        reverse=True,
+    )
+
+    def _tarjeta_tarea_completada(tarea):
+        tarea_id = html.escape(tarea.get("id", ""))
+        momento = _completada_en_ar(tarea)
+        cuando = f" el {momento.strftime('%d/%m')} a las {momento.strftime('%H:%M')}" if momento else ""
+        return (
+            f'<div class="pedido-hoy tarea-completada"><div class="pedido-hoy-detalle">'
+            f'<strong>Tarea: {html.escape(tarea.get("titulo") or "")}{_monto_viaje(tarea)}</strong>'
+            f'<br><span>Para el {html.escape(_label_fecha_entrega(tarea.get("fecha_entrega") or ""))} · Completada{cuando}</span></div>'
+            f'<div class="pedido-acciones"><button class="btn-restaurar-tarea" type="button" data-id="{tarea_id}">Restaurar</button></div></div>'
+        )
+
+    seccion_completadas = (
+        f'<section class="pedidos-hoy tareas-completadas"><div class="pedidos-hoy-header">'
+        f'<h2>Completadas ({len(tareas_completadas)})</h2></div>'
+        + "".join(_tarjeta_tarea_completada(tarea) for tarea in tareas_completadas)
+        + "</section>"
+    ) if tareas_completadas else ""
+
     seccion_proximos = ""
     if fecha_consulta == fecha_hoy:
         pedidos_proximos = [
@@ -3431,7 +3488,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   {_punto_encuentro_html(_punto_encuentro(client, fecha_consulta), fecha_consulta, "Punto de encuentro con Vlad")}
   <section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Pendientes para {'hoy' if fecha_consulta == fecha_hoy else html.escape(_label_fecha_entrega(fecha_consulta))} ({len(pedidos_hoy) + len(tareas_hoy)})</h2></div>{entregas_html}</section>
   {seccion_proximos}
+  {seccion_completadas}
 </div>
+<div class="modal-confirmar-completado" id="modal-confirmar-completado" hidden><div class="modal-confirmar-completado-contenido" role="alertdialog" aria-modal="true" aria-labelledby="confirmar-completado-titulo"><h2 id="confirmar-completado-titulo">¿Estás seguro de que completaste esta tarea?</h2><div class="confirmar-completado-acciones"><button id="confirmar-completado-cancelar" type="button">Cancelar</button><button id="confirmar-completado-aceptar" type="button">Aceptar</button></div></div></div>
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
 <div class="modal-direccion-cadete" id="modal-direccion-cadete" hidden><div class="modal-direccion-cadete-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-cadete-titulo"><h2 id="direccion-cadete-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-cadete-input" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-cadete-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="piso-depto-fila" id="piso-depto-cadete"><input id="piso-cadete-input" type="text" maxlength="20" placeholder="Piso (opcional)" aria-label="Piso"><input id="depto-cadete-input" type="text" maxlength="20" placeholder="Depto (opcional)" aria-label="Departamento"></div><div class="direccion-acciones"><button id="direccion-cadete-cancelar" type="button">Cancelar</button><button id="direccion-cadete-guardar" type="button">Guardar dirección</button></div></div></div>
 <div class="modal-recibo-manual" id="modal-recibo-manual" hidden><div class="modal-recibo-manual-contenido" role="dialog" aria-modal="true" aria-labelledby="recibo-manual-titulo">
@@ -3557,11 +3616,45 @@ document.getElementById("direccion-cadete-guardar").addEventListener("click", as
   if (!r.ok) {{ alert(datos.error || "No se pudo guardar la dirección."); boton.disabled = false; return; }}
   location.reload();
 }});
+// "Completado" pide confirmación en un modal que no se cierra tocando afuera
+// ni con Escape: hay que elegir Aceptar o Cancelar.
+const modalConfirmarCompletado = document.getElementById("modal-confirmar-completado");
+let completarTareaActiva = null;
+function cerrarConfirmarCompletado() {{
+  modalConfirmarCompletado.hidden = true;
+  document.body.classList.remove("modal-bloqueante-abierto");
+  document.querySelector(".panel").inert = false;
+  if (completarTareaActiva) completarTareaActiva.focus();
+  completarTareaActiva = null;
+}}
 document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
+  btn.addEventListener("click", () => {{
+    completarTareaActiva = btn;
+    modalConfirmarCompletado.hidden = false;
+    document.body.classList.add("modal-bloqueante-abierto");
+    document.querySelector(".panel").inert = true;
+    document.getElementById("confirmar-completado-aceptar").disabled = false;
+    document.getElementById("confirmar-completado-cancelar").focus();
+  }});
+}});
+modalConfirmarCompletado.addEventListener("keydown", (e) => {{
+  if (e.key === "Escape") e.preventDefault();
+}});
+document.getElementById("confirmar-completado-cancelar").addEventListener("click", cerrarConfirmarCompletado);
+document.getElementById("confirmar-completado-aceptar").addEventListener("click", async (e) => {{
+  const btn = completarTareaActiva;
+  if (!btn) return;
+  e.currentTarget.disabled = true;
+  btn.disabled = true;
+  const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/completar`, {{ method:"POST" }});
+  if (!r.ok) {{ cerrarConfirmarCompletado(); alert("No se pudo completar la tarea."); btn.disabled = false; return; }}
+  location.reload();
+}});
+document.querySelectorAll(".btn-restaurar-tarea").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
     btn.disabled = true;
-    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/completar`, {{ method:"POST" }});
-    if (!r.ok) {{ alert("No se pudo completar la tarea."); btn.disabled = false; return; }}
+    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/restaurar`, {{ method:"POST" }});
+    if (!r.ok) {{ alert("No se pudo restaurar la tarea."); btn.disabled = false; return; }}
     location.reload();
   }});
 }});
@@ -5343,6 +5436,29 @@ def admin_completar_tarea_entrega(tarea_id: str, request: Request):
     if filas[0].get("asignado_a") == CADETE_SLUG:
         saldo_cadete.registrar(client, "tarea", filas[0], filas[0].get("titulo"))
     return {"ok": True, "tarea_id": tarea_id, "completada_en": completada_en}
+
+
+@app.post("/admin/tareas-entrega/{tarea_id}/restaurar")
+def admin_restaurar_tarea_entrega(tarea_id: str, request: Request):
+    """Deshace un "Completado": la nota vuelve a pendientes y su monto se
+    resta de lo que se le debe a Alejo (completarla de nuevo lo vuelve a sumar)."""
+    if not (_clientes_admin_activo(request) or _cadete_activo(request)):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    filas = client.table("tareas_entrega").select("*").eq("id", tarea_id).execute().data
+    if not filas or not _activo(filas[0]):
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    if not _puede_operar_entrega(request, filas[0]):
+        raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
+    if not filas[0].get("completada_en"):
+        raise HTTPException(status_code=409, detail="La tarea no está completada")
+    observaciones = (filas[0].get("observaciones_cadete") or "").strip()
+    observaciones = re.sub(r"(?:\s*·\s*)?Entregado por Alejo", "", observaciones).strip(" ·") or None
+    client.table("tareas_entrega").update(
+        {"completada_en": None, "observaciones_cadete": observaciones}
+    ).eq("id", tarea_id).execute()
+    restado = saldo_cadete.anular(client, "tarea", tarea_id)
+    return {"ok": True, "tarea_id": tarea_id, "monto_restado": restado}
 
 
 @app.put("/admin/tareas-entrega/{tarea_id}/direccion")

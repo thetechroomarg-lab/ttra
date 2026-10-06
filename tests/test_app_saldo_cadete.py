@@ -278,3 +278,76 @@ def test_pago_viejo_sin_registro_aparece_y_se_le_sube_comprobante(monkeypatch):
     assert "Subir comprobante" not in admin.get("/admin/cadete/saldo").text
     assert admin.post(f"/admin/cadete/pagos/{pago['id']}/comprobante",
                       files=[("comprobante", ("otro.jpg", b"otro", "image/jpeg"))]).status_code == 409
+
+
+def _tarea_completada_por_alejo(fake, cadete, tarea_id="r1", fecha="2026-10-07"):
+    fake.table("tareas_entrega").insert({
+        "id": tarea_id, "fecha_entrega": fecha, "titulo": "Buscar pedidos en Azra", "asignado_a": "alejo",
+    }).execute()
+    cadete.post(f"/admin/tareas-entrega/{tarea_id}/completar")
+
+
+def _saldo(fake):
+    from web import saldo_cadete
+    return saldo_cadete.resumen(saldo_cadete.listar(fake))["saldo_pendiente"]
+
+
+def test_restaurar_tarea_la_vuelve_a_pendiente_y_resta_su_monto(monkeypatch):
+    fake, _, cadete = _clientes(monkeypatch)
+    _tarea_completada_por_alejo(fake, cadete)
+    assert _saldo(fake) == 6000
+
+    r = cadete.post("/admin/tareas-entrega/r1/restaurar")
+
+    assert r.status_code == 200 and r.json()["monto_restado"] == 6000
+    tarea = fake.table("tareas_entrega").select("*").eq("id", "r1").execute().data[0]
+    assert tarea["completada_en"] is None
+    assert tarea["observaciones_cadete"] is None
+    assert _saldo(fake) == 0
+
+
+def test_completar_despues_de_restaurar_vuelve_a_sumar(monkeypatch):
+    fake, _, cadete = _clientes(monkeypatch)
+    _tarea_completada_por_alejo(fake, cadete)
+    cadete.post("/admin/tareas-entrega/r1/restaurar")
+
+    cadete.post("/admin/tareas-entrega/r1/completar")
+
+    assert _saldo(fake) == 6000
+
+
+def test_restaurar_tarea_ya_pagada_descuenta_y_completar_lo_devuelve(monkeypatch):
+    from web import saldo_cadete
+    fake, _, cadete = _clientes(monkeypatch)
+    _tarea_completada_por_alejo(fake, cadete)
+    saldo_cadete.registrar_pago(fake)
+    assert _saldo(fake) == 0
+
+    cadete.post("/admin/tareas-entrega/r1/restaurar")
+    assert _saldo(fake) == -6000
+
+    cadete.post("/admin/tareas-entrega/r1/completar")
+    assert _saldo(fake) == 0
+
+
+def test_restaurar_una_tarea_no_completada_falla(monkeypatch):
+    fake, _, cadete = _clientes(monkeypatch)
+    fake.table("tareas_entrega").insert({
+        "id": "r2", "fecha_entrega": "2026-10-07", "titulo": "Pendiente", "asignado_a": "alejo",
+    }).execute()
+
+    assert cadete.post("/admin/tareas-entrega/r2/restaurar").status_code == 409
+
+
+def test_panel_cadete_muestra_completadas_con_restaurar_y_modal_de_confirmacion(monkeypatch):
+    from web import entregas
+    fake, _, cadete = _clientes(monkeypatch)
+    hoy = entregas.ahora_argentina().date().isoformat()
+    _tarea_completada_por_alejo(fake, cadete, fecha=hoy)
+
+    html = cadete.get(f"/admin/cadete?fecha={hoy}").text
+
+    assert "Completadas (1)" in html
+    assert 'class="btn-restaurar-tarea" type="button" data-id="r1"' in html
+    assert "¿Estás seguro de que completaste esta tarea?" in html
+    assert 'id="confirmar-completado-aceptar"' in html and 'id="confirmar-completado-cancelar"' in html
