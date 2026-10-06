@@ -1,14 +1,38 @@
+// Mercado Pago, Point Tap, crédito en cuotas sin interés, cobro en el momento:
+// 6,29% de cobro + el costo de las cuotas (18,69% en 6, 32,29% en 12), todo
+// + IVA, sobre lo que se cobra. Se calcula sobre la transferencia en pesos y
+// solo se ofrece en productos con transferencia de hasta $500.000.
+const MP_RECARGO_CUOTAS = { 6: (0.0629 + 0.1869) * 1.21, 12: (0.0629 + 0.3229) * 1.21 };
+const MP_CUOTAS_TOPE_TRANSF = 500000;
+
+function precioMp(pesosTransf, cuotas) {
+  if (pesosTransf == null || pesosTransf > MP_CUOTAS_TOPE_TRANSF) return null;
+  return Math.ceil(pesosTransf / (1 - MP_RECARGO_CUOTAS[cuotas]));
+}
+
 // Shared payment amounts for the storefront and cart. Round fees upward.
 function preciosDe(p) {
   const dolares = p.usd ?? null;
   const pesos = p.pesos ?? null;
+  const pesosTransf = pesos == null ? null : Math.ceil(pesos / 0.97);
+  const mp6 = precioMp(pesosTransf, 6);
+  const mp12 = precioMp(pesosTransf, 12);
   return {
     dolares,
     bancoUsa: dolares == null ? null : Math.ceil(dolares / 0.975),
     usdt: dolares == null ? null : Math.ceil(dolares / 0.99),
     pesos,
-    pesosTransf: pesos == null ? null : Math.ceil(pesos / 0.97),
+    pesosTransf,
+    mp6,
+    mp6Cuota: mp6 == null ? null : Math.ceil(mp6 / 6),
+    mp12,
+    mp12Cuota: mp12 == null ? null : Math.ceil(mp12 / 12),
   };
+}
+
+function etiquetaMp(precios, cuotas) {
+  const cuota = precios[`mp${cuotas}Cuota`];
+  return `MP ${cuotas} cuotas de $ ${cuota == null ? "-" : Number(cuota).toLocaleString("es-AR")}`;
 }
 
 // Solo las cuentas mayoristas reciben usd_publico: el precio que ve el
@@ -34,6 +58,8 @@ function filasMayoristaDe(p) {
     fila("USDT", "USDT", "usdt"),
     fila("Pesos", "$", "pesos"),
     fila("Pesos transf.", "$", "pesosTransf"),
+    ...(pr.mp6 == null ? [] : [fila(etiquetaMp(pr, 6), "$", "mp6")]),
+    ...(pr.mp12 == null ? [] : [fila(etiquetaMp(pr, 12), "$", "mp12")]),
   ];
 }
 

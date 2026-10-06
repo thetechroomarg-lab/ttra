@@ -224,3 +224,101 @@ html[data-modo="classic"] .catalog-brand-card:hover { box-shadow: var(--ed-halo)
 .tabla-mayorista > :nth-child(3n) { text-align: right; }
 .tabla-mayorista .tm-cab { font-size: 0.8em; opacity: 0.7; text-transform: uppercase; color: inherit; font-weight: 400; }
 .tabla-mayorista > :nth-child(3n+1):not(.tm-cab) { font-size: 1.15em; font-weight: 600; }
+
+/* ---- Consola de filtros: orden + rango de precio ----
+   Misma gramática editorial que el resto de la página (esquinas rectas,
+   --ed-line, acento coral). El histograma muestra dónde se concentra la
+   oferta y se ilumina dentro del rango elegido. */
+.catalog-brand-filter { flex-wrap: wrap; align-items: flex-end; column-gap: 28px; row-gap: 18px; }
+.catalog-brand-filter > .catalog-filter-field { align-self: center; }
+
+.catalog-sort { display: flex; align-items: center; gap: 16px; min-width: 0; margin: 0 0 0 auto; padding: 0; border: 0; }
+.catalog-sort legend { float: left; padding: 0; color: var(--rc-green-dim); font: 600 12px var(--rc-font); }
+.catalog-sort-options { display: flex; border: 1px solid var(--ed-line); background: var(--rc-bg-panel); }
+.catalog-sort label { position: relative; display: flex; }
+.catalog-sort label + label { border-left: 1px solid var(--ed-line); }
+.catalog-sort input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.catalog-sort span { display: inline-flex; align-items: center; min-height: 42px; padding: 0 16px; color: var(--rc-green); font: 600 12px var(--rc-font); white-space: nowrap; transition: background .2s, color .2s; }
+.catalog-sort label:hover span { color: var(--rc-green-bright); background: color-mix(in srgb, var(--ed-accent) 10%, transparent); }
+.catalog-sort input:checked + span { background: #d52f27; color: #fff; }
+.catalog-sort input:focus-visible + span { outline: 2px solid var(--ed-accent); outline-offset: 2px; position: relative; z-index: 1; }
+
+.catalog-price { --desde: 0; --hasta: 1; flex: 1 1 100%; display: grid; gap: 0; padding: 20px 22px 18px; border: 1px solid var(--ed-line); background: var(--rc-bg-panel); transition: border-color .25s; }
+.catalog-price[hidden] { display: none; }
+.catalog-price.activo { border-color: color-mix(in srgb, var(--ed-accent) 55%, var(--ed-line)); }
+.catalog-price-head { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 18px; }
+.catalog-price-head h2 { margin: 0; color: var(--rc-green-dim); font: 600 12px/32px var(--rc-font); letter-spacing: 0; }
+/* Lectura doble: dólar grande (lo que mueve la manija) y debajo su
+   equivalente en pesos contado, recalculado en vivo. */
+.catalog-price-values { display: grid; justify-items: end; gap: 6px; margin-left: auto; font-variant-numeric: tabular-nums; }
+#price-readout { color: var(--rc-green-bright); font: 600 clamp(18px, 2vw, 22px)/1 var(--rc-font); letter-spacing: -.03em; }
+#price-readout-pesos { margin: 0; color: var(--rc-green-dim); font: 500 13px/1 var(--rc-font); }
+.catalog-price.activo #price-readout { color: var(--ed-accent); }
+.catalog-price-reset { min-height: 32px; padding: 0 2px; border: 0; background: none; color: var(--rc-green-dim); font: 600 12px var(--rc-font); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.catalog-price-reset:hover { color: var(--ed-accent); }
+.catalog-price-reset:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 2px; }
+.catalog-price-reset[hidden] { display: none; }
+
+/* Histograma: 32 barras alineadas con el recorrido del slider (mismo ancho,
+   mismo padding lateral que el centro de las manijas). */
+.catalog-price-hist { display: flex; align-items: flex-end; gap: 2px; height: 56px; padding: 0 11px; }
+/* En reposo el histograma es neutro (informa sin competir con el rojo de las
+   cards); al acotar el rango, lo elegido se enciende en coral. */
+.catalog-price-hist span { flex: 1; height: calc(var(--alto, 0) * 100%); background: color-mix(in srgb, var(--rc-green-dim) 42%, transparent); transition: height .45s var(--ed-ease), background-color .2s; }
+.catalog-price.activo .catalog-price-hist span { background: var(--ed-accent); }
+.catalog-price.activo .catalog-price-hist span.fuera { background: var(--ed-line); }
+
+.catalog-price-slider { position: relative; height: 44px; }
+.catalog-price-track { position: absolute; left: 11px; right: 11px; top: 50%; height: 2px; margin-top: -1px; background: var(--ed-line); }
+.catalog-price-fill { position: absolute; top: -1px; bottom: -1px; left: calc(var(--desde) * 100%); right: calc((1 - var(--hasta)) * 100%); background: var(--ed-accent); }
+.catalog-price-slider input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+.catalog-price-slider input.arriba { z-index: 2; }
+.catalog-price-slider input[type="range"]::-webkit-slider-runnable-track { height: 100%; background: none; }
+.catalog-price-slider input[type="range"]::-moz-range-track { background: none; }
+.catalog-price-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; pointer-events: auto; width: 22px; height: 22px; margin-top: 11px;
+  border: 2px solid var(--ed-accent); border-radius: 50%; background: var(--rc-bg-panel);
+  box-shadow: 0 0 0 4px var(--rc-bg-panel); cursor: grab; transition: transform .15s var(--ed-ease), background-color .15s;
+}
+.catalog-price-slider input[type="range"]::-moz-range-thumb {
+  pointer-events: auto; width: 18px; height: 18px; border: 2px solid var(--ed-accent); border-radius: 50%;
+  background: var(--rc-bg-panel); box-shadow: 0 0 0 4px var(--rc-bg-panel); cursor: grab;
+}
+.catalog-price-slider input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.12); }
+.catalog-price-slider input[type="range"]:active::-webkit-slider-thumb { cursor: grabbing; background: var(--ed-accent); transform: scale(1.18); }
+.catalog-price-slider input[type="range"]:active::-moz-range-thumb { cursor: grabbing; background: var(--ed-accent); }
+.catalog-price-slider input[type="range"]:focus-visible { outline: none; }
+.catalog-price-slider input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--rc-bg-panel), 0 0 0 6px var(--ed-accent); }
+.catalog-price-slider input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--rc-bg-panel), 0 0 0 6px var(--ed-accent); }
+
+
+.catalog-price-empty { display: grid; justify-items: center; gap: 10px; }
+.catalog-price-empty p { margin: 0; }
+
+@media (max-width: 700px) {
+  /* En columna, cada bloque ocupa todo el ancho, igual que las cards. */
+  .catalog-brand-filter { align-items: stretch; }
+  .catalog-price { width: 100%; min-width: 0; }
+  .catalog-sort { flex-direction: column; align-items: stretch; gap: 10px; width: 100%; margin: 0; }
+  .catalog-sort legend { float: none; margin-bottom: 10px; font-size: 14px; }
+  .catalog-sort-options { width: 100%; }
+  .catalog-sort label { flex: 1; }
+  .catalog-sort span { justify-content: center; width: 100%; min-height: 48px; padding: 0 8px; font-size: 13px; }
+  .catalog-price { padding: 16px 14px 14px; }
+  .catalog-price-head { margin-bottom: 14px; }
+  .catalog-price-head h2 { font-size: 14px; line-height: 32px; }
+  .catalog-price-values { flex-basis: 100%; justify-items: start; margin-left: 0; order: 3; }
+  .catalog-price-reset { margin-left: auto; }
+  .catalog-price-hist { height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalog-price-hist span, .catalog-sort span, .catalog-price-slider input[type="range"]::-webkit-slider-thumb { transition: none; }
+}
+/* Los estilos globales de Classic (radio 10px, sombra de botón, anillo de
+   foco alrededor del control entero) no aplican acá: el foco se marca en la
+   manija y en el marco de la caja. Mismo prefijo que la regla global. */
+html[data-modo="classic"] body.ttra-page .catalog-price-slider input[type="range"],
+html[data-modo="classic"] body.ttra-page .catalog-price-slider input[type="range"]:is(:focus, :focus-visible) { border: 0; border-radius: 0; outline: none; box-shadow: none; }
+html[data-modo="classic"] body.ttra-page .catalog-price-reset,
+html[data-modo="classic"] body.ttra-page .catalog-price-reset:is(:hover, :active) { border: 0; border-radius: 0; background: none; box-shadow: none; }
+html[data-modo="classic"] body.ttra-page .catalog-price-reset:focus-visible { box-shadow: none; outline: 2px solid var(--ed-accent); outline-offset: 2px; }

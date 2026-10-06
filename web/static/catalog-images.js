@@ -13,7 +13,7 @@
     for (const k in index) { const kk = nameKey(k); if (!(kk in m)) m[kk] = index[k]; }
     return m;
   });
-  const labels = ['Dólar contado', 'Dólar transf. USA', 'USDT', 'Pesos contado', 'Pesos transf.'];
+  const labels = ['Dólar contado', 'Dólar transf. USA', 'USDT', 'Pesos contado', 'Pesos transf.', 'MP 6 cuotas', 'MP 12 cuotas'];
   const text = (tag, cls, value) => { const e=document.createElement(tag); e.className=cls; e.textContent=value; return e; };
   const renders=new WeakMap();
   async function enhance(container, products) {
@@ -42,10 +42,12 @@
         prices.classList.add('ai-prices-mayorista');
         const head=text('div','ai-price ai-price-head','');head.append(text('span','','Pago'),text('span','','Descuento'),text('span','','Tu precio'));prices.append(head);
       }
-      [amounts.dolares,amounts.bancoUsa,amounts.usdt,amounts.pesos,amounts.pesosTransf].forEach((v,j)=>{
+      [amounts.dolares,amounts.bancoUsa,amounts.usdt,amounts.pesos,amounts.pesosTransf,amounts.mp6,amounts.mp12].forEach((v,j)=>{
+        if(j>=5&&v==null)return;
+        const label=j===5?etiquetaMp(amounts,6):j===6?etiquetaMp(amounts,12):labels[j];
         const row=text('div','ai-price',''), value=text('strong','',(v==null?'Consultar':(j<2?'USD ':j===2?'USDT ':'$ ')+Number(v).toLocaleString('es-AR')));
-        if(filasMay)row.append(text('span','',labels[j]),text('span','ai-desc',filasMay[j].descuento?'-'+filasMay[j].descuento:'-'),value);
-        else row.append(text('span','',labels[j]),value);
+        if(filasMay)row.append(text('span','',label),text('span','ai-desc',filasMay[j].descuento?'-'+filasMay[j].descuento:'-'),value);
+        else row.append(text('span','',label),value);
         prices.append(row);
       });
       const marker=document.createComment('original product actions');links.before(marker);

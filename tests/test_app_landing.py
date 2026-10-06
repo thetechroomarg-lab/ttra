@@ -463,6 +463,25 @@ def test_landing_y_catalogo_recuperan_el_tema_light_classic_antes_de_cargar_esti
     assert '<link rel="stylesheet" href="classic.css">' in catalogo
 
 
+def test_catalogo_ofrece_orden_y_rango_de_precio():
+    html = (appmod.BASE / "static" / "catalogo.html").read_text()
+    js = (appmod.BASE / "static" / "catalogo.js").read_text()
+
+    # Orden con radios nativos y rango con dos sliders (lectura en dólar y pesos),
+    # todo dentro de #catalog-filters (que se oculta en "Búsqueda por marca").
+    filtros = html[html.index('id="catalog-filters"') : html.index('<main id="secciones">')]
+    for valor in ("destacados", "precio-asc", "precio-desc"):
+        assert f'name="orden" value="{valor}"' in filtros
+    for control in ("price-min-range", "price-max-range", "price-readout", "price-readout-pesos", "price-reset"):
+        assert f'id="{control}"' in filtros
+    assert 'aria-label="Precio mínimo"' in filtros and 'aria-label="Precio máximo"' in filtros
+
+    # El rango filtra antes de ordenar, y ambos viajan en el contexto del
+    # comparador para volver al mismo listado.
+    assert "ordenarPorPrecio(candidatos.filter(dentroDelRango))" in js
+    assert "orden: ordenActivo, precioMin, precioMax," in js
+
+
 def test_classic_light_usa_botones_de_categoria_gris_oscuro_con_tipografia_blanca():
     css = (appmod.BASE / "static" / "classic.css").read_text()
     selector = 'html[data-modo="classic"][data-classic-theme="light"] .btn-categoria {'

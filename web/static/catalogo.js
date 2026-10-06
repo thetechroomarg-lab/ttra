@@ -45,6 +45,134 @@ let tipoActivo = "";
 
 const SECCION_NOTEBOOKS = "Notebooks y Macbooks";
 
+// Orden y rango de precio (en dólar contado, el precio principal de la card).
+// null = sin límite de ese lado.
+let ordenActivo = "destacados";
+let precioMin = null;
+let precioMax = null;
+// El slider recorre los precios en escala logarítmica: el catálogo va de
+// cables de US$10 a Macs de US$3.000 y en escala lineal todo lo accesible
+// quedaría apretado en el primer centímetro.
+const PRECIO_PASOS = 1000;
+const PRECIO_BARRAS = 32;
+let dominioPrecio = { min: 0, max: 0 };
+
+const precioUsd = (producto) => (Number.isFinite(producto.usd) ? producto.usd : null);
+const formatoUsd = (valor) => `US$ ${Math.round(valor).toLocaleString("es-AR")}`;
+
+function redondearPrecio(valor) {
+  const paso = valor < 100 ? 5 : valor < 1000 ? 10 : 50;
+  return Math.round(valor / paso) * paso;
+}
+
+function precioEnPosicion(pos) {
+  const { min, max } = dominioPrecio;
+  if (max <= min) return min;
+  if (pos <= 0) return min;
+  if (pos >= PRECIO_PASOS) return max;
+  return Math.min(max, Math.max(min, redondearPrecio(min * (max / min) ** (pos / PRECIO_PASOS))));
+}
+
+function posicionDePrecio(precio) {
+  const { min, max } = dominioPrecio;
+  if (max <= min) return 0;
+  const acotado = Math.min(max, Math.max(min, precio));
+  return Math.round(PRECIO_PASOS * Math.log(acotado / min) / Math.log(max / min));
+}
+
+const hayFiltroPrecio = () => precioMin != null || precioMax != null;
+
+function dentroDelRango(producto) {
+  const usd = precioUsd(producto);
+  if (usd == null) return !hayFiltroPrecio();
+  return (precioMin == null || usd >= precioMin) && (precioMax == null || usd <= precioMax);
+}
+
+function ordenarPorPrecio(productos) {
+  if (ordenActivo === "destacados") return productos;
+  const signo = ordenActivo === "precio-asc" ? 1 : -1;
+  // Los productos sin precio van siempre al final, en cualquier sentido.
+  return [...productos].sort((a, b) => {
+    const pa = precioUsd(a), pb = precioUsd(b);
+    if (pa == null || pb == null) return (pa == null) - (pb == null);
+    return signo * (pa - pb);
+  });
+}
+
+let candidatosPrecio = [];
+// Dólar implícito del catálogo (mediana de pesos/usd): así los pesos del
+// slider coinciden con el "Pesos contado" de las cards sin otro pedido.
+let cotizacionCatalogo = null;
+const formatoPesos = (usd) => `$ ${(Math.round(usd * cotizacionCatalogo / 100) * 100).toLocaleString("es-AR")}`;
+
+function textoContador(visibles, total) {
+  const unidad = (n) => `${n} ${n === 1 ? "producto" : "productos"}`;
+  return visibles < total ? `${visibles} de ${unidad(total)}` : unidad(visibles);
+}
+
+// Recalcula el dominio con los productos que dejan pasar los demás filtros,
+// y repinta histograma, manijas, cajas de texto y lectura.
+function pintarFiltroPrecio(candidatos) {
+  candidatosPrecio = candidatos;
+  const cotizaciones = candidatos.filter((p) => precioUsd(p) > 0 && Number.isFinite(p.pesos))
+    .map((p) => p.pesos / p.usd).sort((a, b) => a - b);
+  if (cotizaciones.length) cotizacionCatalogo = cotizaciones[Math.floor(cotizaciones.length / 2)];
+  const precios = candidatos.map(precioUsd).filter((v) => v != null && v > 0);
+  const panel = document.getElementById("catalog-price");
+  panel.hidden = precios.length < 2;
+  if (panel.hidden) return;
+  dominioPrecio = {
+    min: Math.max(1, Math.floor(Math.min(...precios))),
+    max: Math.ceil(Math.max(...precios)),
+  };
+  const hist = document.getElementById("price-hist");
+  const cuentas = new Array(PRECIO_BARRAS).fill(0);
+  precios.forEach((v) => {
+    const i = Math.min(PRECIO_BARRAS - 1, Math.floor(posicionDePrecio(v) / PRECIO_PASOS * PRECIO_BARRAS));
+    cuentas[i] += 1;
+  });
+  const pico = Math.max(...cuentas);
+  if (hist.children.length !== PRECIO_BARRAS) {
+    hist.replaceChildren(...cuentas.map(() => document.createElement("span")));
+  }
+  cuentas.forEach((n, i) => {
+    hist.children[i].style.setProperty("--alto", n ? Math.max(0.08, n / pico) : 0);
+  });
+  sincronizarControlesPrecio();
+}
+
+// Refleja precioMin/precioMax en todos los controles sin redibujar la grilla.
+function sincronizarControlesPrecio() {
+  const { min, max } = dominioPrecio;
+  const desde = precioMin ?? min;
+  const hasta = precioMax ?? max;
+  const rMin = document.getElementById("price-min-range");
+  const rMax = document.getElementById("price-max-range");
+  // Solo se reubica una manija si su precio cambió por otra vía (cajas,
+  // restablecer, otra sección): si no, el redondeo la haría volver atrás.
+  const precioDeManija = (rango, extremo) => {
+    const pos = Number(rango.value);
+    return pos === extremo ? null : precioEnPosicion(pos);
+  };
+  if (precioDeManija(rMin, 0) !== precioMin) rMin.value = precioMin == null ? 0 : posicionDePrecio(precioMin);
+  if (precioDeManija(rMax, PRECIO_PASOS) !== precioMax) rMax.value = precioMax == null ? PRECIO_PASOS : posicionDePrecio(precioMax);
+  rMin.setAttribute("aria-valuetext", formatoUsd(desde));
+  rMax.setAttribute("aria-valuetext", formatoUsd(hasta));
+  const panel = document.getElementById("catalog-price");
+  panel.style.setProperty("--desde", Number(rMin.value) / PRECIO_PASOS);
+  panel.style.setProperty("--hasta", Number(rMax.value) / PRECIO_PASOS);
+  [...document.getElementById("price-hist").children].forEach((barra, i) => {
+    const centro = (i + 0.5) / PRECIO_BARRAS;
+    barra.classList.toggle("fuera", centro < Number(rMin.value) / PRECIO_PASOS || centro > Number(rMax.value) / PRECIO_PASOS);
+  });
+  document.getElementById("price-readout").textContent = `${formatoUsd(desde)} — ${formatoUsd(hasta)}`;
+  document.getElementById("price-readout-pesos").textContent = cotizacionCatalogo
+    ? `${formatoPesos(desde)} — ${formatoPesos(hasta)} pesos contado`
+    : "";
+  document.getElementById("price-reset").hidden = !hayFiltroPrecio();
+  panel.classList.toggle("activo", hayFiltroPrecio());
+}
+
 // Mismos logos que la "Búsqueda por Marca" de la landing (landing-base.js).
 const MARCA_LOGO = {
   "Apple": "apple", "Samsung": "samsung", "Xiaomi": "xiaomi",
@@ -153,14 +281,21 @@ function pintarSeccion(nombre) {
   const porCondicion = filtrarCondicion && condicionActiva
     ? porMarca.filter(producto => condicionProducto(producto) === condicionActiva)
     : porMarca;
-  const productos = palabrasBusqueda.length
+  const candidatos = palabrasBusqueda.length
     ? porCondicion.filter(producto => {
         const texto = normalizarBusqueda(`${producto.nombre || ''} ${producto.marca || ''}`);
         return palabrasBusqueda.every(palabra => texto.includes(palabra));
       })
     : porCondicion;
-  document.getElementById("contador-productos").textContent =
-    `${productos.length} ${productos.length === 1 ? "producto" : "productos"}`;
+  pintarFiltroPrecio(candidatos);
+  const productos = ordenarPorPrecio(candidatos.filter(dentroDelRango));
+  document.getElementById("contador-productos").textContent = textoContador(productos.length, candidatos.length);
+  if (productos.length === 0 && candidatos.length > 0) {
+    el.innerHTML = '<div class="mensaje-vacio catalog-price-empty"><p>No hay productos en ese rango de precio.</p>'
+      + '<button type="button" class="catalog-price-reset" data-reset-precio>Ver todos los precios</button></div>';
+    el.querySelector('[data-reset-precio]').addEventListener('click', restablecerPrecio);
+    return;
+  }
   if (productos.length === 0) {
     const detalle = marcaActiva
       ? ` de ${escapeHtml(etiquetaMarca(marcaActiva))} en ${escapeHtml(nombre)}`
@@ -173,6 +308,7 @@ function pintarSeccion(nombre) {
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
   window.TTRAComparar?.bind(el, productos, SECCIONES_DATA, () => ({
     categoria: categoriaActiva, marca: marcaActiva, condicion: condicionActiva, tipo: tipoActivo,
+    orden: ordenActivo, precioMin, precioMax,
     query: document.getElementById('catalog-search').value,
     searchVisible: !document.querySelector('.catalog-search-wrap').hidden
   }));
@@ -323,7 +459,9 @@ function tarjetaProducto(p, indice = 0) {
         U$D ${monto(precios.bancoUsa)} (Transf. USA)<br>
         USDT ${monto(precios.usdt)}<br>
         $ ${monto(p.pesos)} Pesos contado.<br>
-        $ ${monto(p.transferencia)} Pesos transf.`}
+        $ ${monto(p.transferencia)} Pesos transf.${precios.mp6 == null ? "" : `<br>
+        $ ${monto(precios.mp6)} ${escapeHtml(etiquetaMp(precios, 6))}<br>
+        $ ${monto(precios.mp12)} ${escapeHtml(etiquetaMp(precios, 12))}`}`}
       </p>
       <div class="catalog-card-actions">
         ${colores}
@@ -364,6 +502,11 @@ async function cargarCatalogo() {
     if (regreso) {
       condicionActiva = regreso.condicion || '';
       document.getElementById('condition-filter').value = condicionActiva;
+      ordenActivo = regreso.orden || "destacados";
+      precioMin = Number.isFinite(regreso.precioMin) ? regreso.precioMin : null;
+      precioMax = Number.isFinite(regreso.precioMax) ? regreso.precioMax : null;
+      const radio = document.querySelector(`#catalog-sort input[value="${ordenActivo}"]`);
+      if (radio) radio.checked = true;
     }
     pintarSeccion(SECCIONES.includes(categoriaSolicitada) ? categoriaSolicitada : "Todos");
     if (regreso ? regreso.searchVisible : parametros.get("buscar") === "1") {
@@ -411,6 +554,55 @@ document.getElementById("condition-filter").addEventListener("change", (event) =
 });
 
 document.getElementById('catalog-search').addEventListener('input', () => pintarSeccion(categoriaActiva));
+
+document.getElementById("catalog-sort").addEventListener("change", (event) => {
+  ordenActivo = event.target.value;
+  pintarSeccion(categoriaActiva);
+});
+
+// Mientras se arrastra, lectura, histograma y contador responden en el acto;
+// la grilla (cientos de cards) se repinta al soltar o en una pausa.
+let repintadoPendiente = 0;
+function repintarPorPrecio() {
+  sincronizarControlesPrecio();
+  document.getElementById("contador-productos").textContent =
+    textoContador(candidatosPrecio.filter(dentroDelRango).length, candidatosPrecio.length);
+  clearTimeout(repintadoPendiente);
+  repintadoPendiente = setTimeout(() => pintarSeccion(categoriaActiva), 220);
+}
+function repintarYa() {
+  clearTimeout(repintadoPendiente);
+  pintarSeccion(categoriaActiva);
+}
+
+function restablecerPrecio() {
+  precioMin = null;
+  precioMax = null;
+  pintarSeccion(categoriaActiva);
+}
+
+const rangoMin = document.getElementById("price-min-range");
+const rangoMax = document.getElementById("price-max-range");
+rangoMin.addEventListener("input", () => {
+  if (Number(rangoMin.value) > Number(rangoMax.value)) rangoMin.value = rangoMax.value;
+  const pos = Number(rangoMin.value);
+  precioMin = pos <= 0 ? null : precioEnPosicion(pos);
+  repintarPorPrecio();
+});
+rangoMax.addEventListener("input", () => {
+  if (Number(rangoMax.value) < Number(rangoMin.value)) rangoMax.value = rangoMin.value;
+  const pos = Number(rangoMax.value);
+  precioMax = pos >= PRECIO_PASOS ? null : precioEnPosicion(pos);
+  repintarPorPrecio();
+});
+// La manija de abajo queda tapada si las dos se juntan en un extremo: la que
+// se toca pasa adelante.
+[rangoMin, rangoMax].forEach((rango) => {
+  rango.addEventListener("pointerdown", () => rangoMin.classList.toggle("arriba", rango === rangoMin));
+  rango.addEventListener("pointerup", repintarYa);
+});
+
+document.getElementById("price-reset").addEventListener("click", restablecerPrecio);
 
 pintarCarrousel();
 cargarCatalogo();

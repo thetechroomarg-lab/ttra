@@ -68,6 +68,30 @@
     <div class="catalog-filter-field" id="tipo-filter-field" hidden><label for="tipo-filter">Tipo</label><select id="tipo-filter"><option value="">Todos</option><option value="Notebook">Notebooks</option><option value="Mac">Macbooks</option></select></div>
     <div class="catalog-filter-field" id="marca-filter-field"><label for="marca-filter">Filtrar por marca</label><select id="marca-filter"><option value="">Todas las marcas</option></select></div>
     <div class="catalog-filter-field" id="condition-filter-field" hidden><label for="condition-filter">Estado</label><select id="condition-filter"><option value="">Todos</option><option value="nuevo">Nuevo</option><option value="usado">Usado</option><option value="cpo">CPO</option></select></div>
+    <fieldset class="catalog-sort" id="catalog-sort">
+      <legend>Ordenar</legend>
+      <div class="catalog-sort-options">
+        <label><input type="radio" name="orden" value="destacados" checked><span>Destacados</span></label>
+        <label><input type="radio" name="orden" value="precio-asc"><span>Menor precio</span></label>
+        <label><input type="radio" name="orden" value="precio-desc"><span>Mayor precio</span></label>
+      </div>
+    </fieldset>
+    <section class="catalog-price" id="catalog-price" aria-labelledby="catalog-price-title">
+      <div class="catalog-price-head">
+        <h2 id="catalog-price-title">Precio</h2>
+        <button type="button" id="price-reset" class="catalog-price-reset" hidden>Restablecer</button>
+        <div class="catalog-price-values" aria-live="polite">
+          <output id="price-readout" for="price-min-range price-max-range"></output>
+          <p id="price-readout-pesos"></p>
+        </div>
+      </div>
+      <div class="catalog-price-hist" id="price-hist" aria-hidden="true"></div>
+      <div class="catalog-price-slider">
+        <div class="catalog-price-track"><div class="catalog-price-fill" id="price-fill"></div></div>
+        <input type="range" id="price-min-range" min="0" max="1000" step="1" value="0" aria-label="Precio mínimo">
+        <input type="range" id="price-max-range" min="0" max="1000" step="1" value="1000" aria-label="Precio máximo">
+      </div>
+    </section>
   </div>
   <main id="secciones"></main>
 

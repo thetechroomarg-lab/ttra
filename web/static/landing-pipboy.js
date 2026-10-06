@@ -280,6 +280,8 @@ function bloquePreciosHtml(p) {
     <span>USDT ${formatearPesos(pr.usdt)}</span>
     <span>$ ${formatearPesos(pr.pesos)} Pesos contado.</span>
     <span>$ ${formatearPesos(pr.pesosTransf)} Pesos transf.</span>
+    ${pr.mp6 == null ? "" : `<span>$ ${formatearPesos(pr.mp6)} ${etiquetaMp(pr, 6)}</span>
+    <span>$ ${formatearPesos(pr.mp12)} ${etiquetaMp(pr, 12)}</span>`}
   `;
 }
 
