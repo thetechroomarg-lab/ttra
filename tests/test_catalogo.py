@@ -106,3 +106,19 @@ def test_marca_de_relojes_no_apple_en_categoria_watch():
     assert marca_de(_prod("Xiaomi Redmi Watch 6", "Apple - Watch")) == "Xiaomi"
     assert marca_de(_prod("Watch Xiaomi Band 7", "Apple - Watch")) == "Xiaomi"
     assert marca_de(_prod("Haylou Watch 4", "Apple - Watch")) == "Otras marcas"
+
+
+def test_cargadores_de_celular_van_a_accesorios_aunque_su_categoria_sea_de_celulares():
+    resultado = secciones_catalogo([
+        _prod("Cargador Apple 20W Original", "Apple - iPhone"),
+        _prod("Cargador Samsung 45W Turbo Charge Original", "Samsung"),
+        _prod("Cargador Original en caja MacBook 67W USB C Enchufe Argentino", "Mac"),
+    ])
+    assert [p["nombre"] for p in resultado["Accesorios Celulares"]] == [
+        "Cargador Apple 20W Original", "Cargador Samsung 45W Turbo Charge Original",
+    ]
+    assert [p["marca"] for p in resultado["Accesorios Celulares"]] == ["Apple", "Samsung"]
+    assert resultado["Celulares"] == []
+    assert [p["nombre"] for p in resultado["Notebooks y Macbooks"]] == [
+        "Cargador Original en caja MacBook 67W USB C Enchufe Argentino",
+    ]

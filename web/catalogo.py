@@ -22,6 +22,11 @@ _TABLET_PATTERN = re.compile(
     r"(?i)\btablet\b|\bgalaxy\s*tab\b|\bmi\s*pad\b|\bredmi\s*pad\b|\bpoco\s*pad\b|\btab\s*s\d"
 )
 
+# Los cargadores de celular de stock propio llevan la categoría de su marca
+# ("Apple - iPhone", "Samsung") para la marca y el orden del listado, pero en
+# la web son accesorios. Los de MacBook siguen con las notebooks.
+_CARGADOR_CELULAR = re.compile(r"(?i)^\s*cargador\b(?!.*macbook)")
+
 # Teléfonos de marcas que hoy caen en la categoría "Otros" del pipeline de precios.
 _CELULAR_OTROS = re.compile(
     r"(?i)\boppo\b|\bnokia\b|\binfinix\b|\bhonor\b|\bitel\b|\bxiaomi\b|\bredmi\b|"
@@ -39,6 +44,8 @@ def _seccion_de(producto):
     nombre = producto.get("nombre", "")
     if _TABLET_PATTERN.search(nombre):
         return "Tablets"
+    if _CARGADOR_CELULAR.search(nombre):
+        return "Accesorios Celulares"
     categoria = producto.get("categoria", "")
     if categoria in _CELULARES_CATEGORIAS:
         return "Celulares"
