@@ -1,8 +1,8 @@
 // Retención de Ingresos Brutos de Córdoba sobre lo cobrado con tarjeta.
 const IIBB_CORDOBA = 0.0475;
 // La financiación se calcula sobre la transferencia en pesos y solo se ofrece
-// en productos con transferencia de hasta $500.000.
-const CUOTAS_TOPE_TRANSF = 500000;
+// en productos con transferencia de hasta $250.000.
+const CUOTAS_TOPE_TRANSF = 250000;
 
 // Mercado Pago, Point Tap, crédito en cuotas sin interés, cobro en el momento:
 // 6,29% de cobro + el costo de las cuotas (18,69% en 6, 32,29% en 12), todo
