@@ -670,6 +670,17 @@ create table if not exists cadete_push_suscripciones (
 );
 alter table cadete_push_suscripciones enable row level security;
 
+-- Suscripciones Web Push del panel de admin (Vladimir): avisan cuando entra
+-- un pedido de la web (ver push_cadete.enviar_push_admin).
+create table if not exists admin_push_suscripciones (
+  id uuid primary key default gen_random_uuid(),
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  creada_en timestamptz not null default now()
+);
+alter table admin_push_suscripciones enable row level security;
+
 -- Saldo del cadete: cada entrega completada por Alejo suma un movimiento
 -- ($ 6000 salvo que el pedido/tarea traiga monto_cadete). pagado_en queda
 -- null hasta que el admin registra el pago.

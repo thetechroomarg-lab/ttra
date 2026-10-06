@@ -15,10 +15,8 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(fetch(event.request));
 });
 
-// Web Push del panel del cadete (ver web/push_cadete.py): el payload viaja
-// como JSON {titulo, cuerpo, url}. Solo el cadete llega a suscribirse (no
-// hay UI de suscripción en las páginas de admin que comparten este mismo
-// sw.js), así que en la práctica esto solo dispara ahí.
+// Web Push de los paneles del cadete y de admin (ver web/push_cadete.py):
+// el payload viaja como JSON {titulo, cuerpo, url} y el click abre esa url.
 self.addEventListener("push", (event) => {
   let datos = {};
   try {

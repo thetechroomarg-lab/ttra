@@ -20,7 +20,7 @@ from urllib.parse import quote, urlencode, urlparse
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Header, HTTPException, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse, Response
 from web.public_static import PublicStaticFiles
@@ -1034,6 +1034,29 @@ def admin_cadete_push_suscribir(entrada: SuscripcionPushIn, request: Request):
         push_cadete.guardar_suscripcion(get_client(), entrada.model_dump())
     except ValueError as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
+    return {"ok": True}
+
+
+@app.get("/admin/clientes/push/vapid-public-key")
+def admin_clientes_push_vapid_public_key(request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    if not push_cadete.PUSH_CONFIGURADO:
+        raise HTTPException(status_code=503, detail="Notificaciones no configuradas")
+    return {"publicKey": push_cadete.VAPID_PUBLIC_KEY}
+
+
+@app.post("/admin/clientes/push/suscribir")
+def admin_clientes_push_suscribir(entrada: SuscripcionPushIn, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    try:
+        push_cadete.guardar_suscripcion(get_client(), entrada.model_dump(), push_cadete.TABLA_ADMIN)
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo guardar la suscripción push del admin")
+        return JSONResponse({"error": "No se pudo activar las notificaciones."}, status_code=503)
     return {"ok": True}
 
 
@@ -2343,7 +2366,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 <div class="panel">
   <div class="panel-header">
     <h1>Pedidos y recibos</h1>
-    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
+    <div class="panel-header-acciones"><button id="btn-notificaciones-admin" class="btn-clientes" type="button" style="cursor:pointer" hidden>🔔 Activar notificaciones</button><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
   </div>
   {saldo_resumen_html}
   {_punto_encuentro_html(_punto_encuentro(client, fecha_hoy), fecha_hoy, "Punto de encuentro con Alejo")}
@@ -2823,6 +2846,7 @@ document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
     location.reload();
   }});
 }});
+{_NOTIFICACIONES_ADMIN_JS}
 </script>
 {_ADMIN_CLIENTES_PWA_SCRIPT}
 </body></html>"""
@@ -3182,6 +3206,47 @@ document.getElementById("btn-eliminar-masivo").addEventListener("click", async (
 </body></html>"""
 
 
+
+# Notificaciones push del panel de admin: avisan cuando entra un pedido de la
+# web (ver push_cadete.enviar_push_admin). El sw.js es el mismo que el del
+# cadete, así que si el navegador ya tiene una suscripción se reenvía para
+# dejarla anotada también como del admin.
+_NOTIFICACIONES_ADMIN_JS = """
+(() => {
+  const btn = document.getElementById("btn-notificaciones-admin");
+  if (!btn || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (Notification.permission === "denied") return;
+  const aBytes = (base64) => {
+    const relleno = "=".repeat((4 - (base64.length % 4)) % 4);
+    const crudo = atob((base64 + relleno).replace(/-/g, "+").replace(/_/g, "/"));
+    return Uint8Array.from([...crudo].map((c) => c.charCodeAt(0)));
+  };
+  const guardar = (sub) => fetch("/admin/clientes/push/suscribir", {
+    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(sub.toJSON()),
+  });
+  navigator.serviceWorker.ready.then(async (reg) => {
+    const actual = await reg.pushManager.getSubscription();
+    if (actual && Notification.permission === "granted") { guardar(actual); return; }
+    btn.hidden = false;
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      try {
+        if (await Notification.requestPermission() !== "granted") { btn.disabled = false; return; }
+        const r = await fetch("/admin/clientes/push/vapid-public-key");
+        if (!r.ok) { alert("Notificaciones no configuradas todavía."); btn.disabled = false; return; }
+        const { publicKey } = await r.json();
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: aBytes(publicKey) });
+        const g = await guardar(sub);
+        if (!g.ok) { alert("No se pudieron activar las notificaciones."); btn.disabled = false; return; }
+        btn.hidden = true;
+      } catch (e) {
+        console.error("No se pudo activar notificaciones", e);
+        btn.disabled = false;
+      }
+    });
+  });
+})();
+"""
 
 # Confirmación de "Completado" en las notas, igual en el panel de Vlad y en el de Alejo:
 # panel flotante con backlight sobre el fondo blureado, que solo se cierra con Aceptar o Cancelar.
@@ -4719,8 +4784,23 @@ def api_interacciones(entrada: InteraccionIn, request: Request):
     return {"ok": True}
 
 
+def _avisar_pedido_nuevo(cliente_id, productos, total_usd=None):
+    """Push al panel de admin: "Nuevo pedido · Nombre Apellido" + qué pidió."""
+    try:
+        client = get_client()
+        filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
+        cliente = filas[0] if filas else {}
+        nombre = f"{cliente.get('nombre') or ''} {cliente.get('apellido') or ''}".strip() or "Cliente"
+        cuerpo = ", ".join(str(p) for p in productos if p)[:180] or "Pedido desde la web"
+        if total_usd is not None:
+            cuerpo += f" · U$D {_formatear_entero_ar(total_usd)}"
+        push_cadete.enviar_push_admin(client, f"🛒 Nuevo pedido · {nombre}", cuerpo)
+    except Exception:
+        logger.exception("No se pudo avisar al admin del pedido nuevo")
+
+
 @app.post("/api/pedidos")
-def api_pedidos(entrada: PedidoIn, request: Request):
+def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: BackgroundTasks):
     cliente_id = request.session.get("cliente_id")
     if not cliente_id:
         raise HTTPException(status_code=401, detail="Sesión requerida")
@@ -4749,6 +4829,7 @@ def api_pedidos(entrada: PedidoIn, request: Request):
             modo_precio=modo_precio,
             descuento_mayorista_usd=0,
         )
+        background_tasks.add_task(_avisar_pedido_nuevo, cliente_id, list(entrada.productos or []))
         return {"ok": True}
     if entrada.detalle and not (entrada.direccion_entrega or "").strip():
         return JSONResponse({"error": "Especificá dirección de entrega"}, status_code=400)
@@ -5022,6 +5103,10 @@ def api_pedidos(entrada: PedidoIn, request: Request):
             piso_entrega=domicilios.opcional(entrada.piso_entrega),
             depto_entrega=domicilios.opcional(entrada.depto_entrega),
         )
+    background_tasks.add_task(
+        _avisar_pedido_nuevo, cliente_id,
+        [f"{item.get('nombre')} x{item.get('cantidad')}" for item in detalle], total_usd,
+    )
     return {"ok": True}
 
 

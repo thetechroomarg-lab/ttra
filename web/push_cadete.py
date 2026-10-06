@@ -1,5 +1,8 @@
-"""Web Push al panel del cadete: le avisa al celu cuando Vladimir le asigna
-un pedido o una nota, sin que tenga que estar mirando la app.
+"""Web Push a los paneles: al del cadete le avisa al celu cuando Vladimir le
+asigna un pedido o una nota, y al de admin cuando entra un pedido de la web,
+sin que tengan que estar mirando la app.
+
+Las suscripciones del admin viven aparte, en `admin_push_suscripciones`.
 
 Las suscripciones viven en la tabla `cadete_push_suscripciones` (ver
 supabase/schema.sql) — puede haber más de una fila (el cadete reinstaló la
@@ -34,9 +37,12 @@ PUSH_CONFIGURADO = bool(VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY_PEM)
 
 _avisado_sin_configurar = False
 
+TABLA_CADETE = "cadete_push_suscripciones"
+TABLA_ADMIN = "admin_push_suscripciones"
 
-def guardar_suscripcion(client, suscripcion):
-    """Guarda (o actualiza) una suscripción push del cadete.
+
+def guardar_suscripcion(client, suscripcion, tabla=TABLA_CADETE):
+    """Guarda (o actualiza) una suscripción push del cadete (o del admin).
 
     `suscripcion` es el objeto PushSubscription tal cual lo entrega el
     navegador: {"endpoint": ..., "keys": {"p256dh": ..., "auth": ...}}.
@@ -48,16 +54,16 @@ def guardar_suscripcion(client, suscripcion):
     if not (endpoint and p256dh and auth):
         raise ValueError("Suscripción push incompleta")
     fila = {"endpoint": endpoint, "p256dh": p256dh, "auth": auth}
-    existente = client.table("cadete_push_suscripciones").select("id").eq("endpoint", endpoint).execute().data
+    existente = client.table(tabla).select("id").eq("endpoint", endpoint).execute().data
     if existente:
-        client.table("cadete_push_suscripciones").update(fila).eq("endpoint", endpoint).execute()
+        client.table(tabla).update(fila).eq("endpoint", endpoint).execute()
     else:
-        client.table("cadete_push_suscripciones").insert(fila).execute()
+        client.table(tabla).insert(fila).execute()
     return fila
 
 
-def eliminar_suscripcion(client, endpoint):
-    client.table("cadete_push_suscripciones").delete().eq("endpoint", endpoint).execute()
+def eliminar_suscripcion(client, endpoint, tabla=TABLA_CADETE):
+    client.table(tabla).delete().eq("endpoint", endpoint).execute()
 
 
 def _notificar_mail_alejo(titulo, cuerpo):
@@ -83,11 +89,24 @@ def enviar_push_cadete(client, titulo, cuerpo, url="/admin/cadete"):
     de un test (PYTEST_CURRENT_TEST), así que esto es seguro de dejar sin
     mockear en los tests existentes que ya ejercitan este camino."""
     _notificar_mail_alejo(titulo, cuerpo)
+    _enviar_push(client, TABLA_CADETE, titulo, cuerpo, url)
+
+
+def enviar_push_admin(client, titulo, cuerpo, url="/admin/clientes"):
+    """Avisa en los dispositivos de Vladimir (panel de admin). Mismo criterio:
+    nunca tira excepción hacia arriba, así un fallo no voltea el pedido."""
+    try:
+        _enviar_push(client, TABLA_ADMIN, titulo, cuerpo, url)
+    except Exception:
+        logger.exception("Error inesperado enviando push al admin")
+
+
+def _enviar_push(client, tabla, titulo, cuerpo, url):
     global _avisado_sin_configurar
     if not PUSH_CONFIGURADO:
         if not _avisado_sin_configurar:
             logger.warning(
-                "Push al cadete deshabilitado: falta VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY en el entorno"
+                "Push deshabilitado: falta VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY en el entorno"
             )
             _avisado_sin_configurar = True
         return
@@ -95,7 +114,7 @@ def enviar_push_cadete(client, titulo, cuerpo, url="/admin/cadete"):
     from pywebpush import WebPushException, webpush
     import json as _json
 
-    suscripciones = client.table("cadete_push_suscripciones").select("*").execute().data
+    suscripciones = client.table(tabla).select("*").execute().data
     if not suscripciones:
         return
 
@@ -120,8 +139,8 @@ def enviar_push_cadete(client, titulo, cuerpo, url="/admin/cadete"):
                 # El navegador invalidó esa suscripción (desinstaló la PWA,
                 # revocó el permiso, etc.) — se descarta en vez de reintentar
                 # para siempre.
-                eliminar_suscripcion(client, sub["endpoint"])
+                eliminar_suscripcion(client, sub["endpoint"], tabla)
             else:
-                logger.warning("Fallo enviando push al cadete: %s", exc)
+                logger.warning("Fallo enviando push (%s): %s", tabla, exc)
         except Exception:
-            logger.exception("Error inesperado enviando push al cadete")
+            logger.exception("Error inesperado enviando push (%s)", tabla)

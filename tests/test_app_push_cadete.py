@@ -136,3 +136,41 @@ def test_crear_nota_sin_asignar_no_dispara_push(monkeypatch):
     })
     assert r.status_code == 200
     assert llamadas == []
+
+
+def test_suscribir_push_admin_requiere_sesion_de_admin(monkeypatch):
+    fake = FakeSupabaseClient()
+    cadete = _cadete_logueado(fake, monkeypatch)
+    r = cadete.post("/admin/clientes/push/suscribir", json={
+        "endpoint": "https://ejemplo.com/a", "keys": {"p256dh": "a", "auth": "b"},
+    })
+    assert r.status_code == 401
+
+
+def test_suscribir_push_admin_guarda_en_su_propia_tabla(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    r = admin.post("/admin/clientes/push/suscribir", json={
+        "endpoint": "https://ejemplo.com/a", "keys": {"p256dh": "a", "auth": "b"},
+    })
+    assert r.status_code == 200
+    assert [f["endpoint"] for f in fake.table("admin_push_suscripciones").select("*").execute().data] == ["https://ejemplo.com/a"]
+    assert fake.table("cadete_push_suscripciones").select("*").execute().data == []
+
+
+def test_panel_admin_tiene_boton_de_notificaciones(monkeypatch):
+    admin, _ = _admin_logueado(monkeypatch)
+    html = admin.get("/admin/clientes").text
+    assert 'id="btn-notificaciones-admin"' in html
+    assert "/admin/clientes/push/suscribir" in html
+
+
+def test_pedido_nuevo_de_la_web_avisa_al_admin(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    fake.table("clientes").insert({"id": "c1", "nombre": "Ana", "apellido": "Pérez"}).execute()
+    enviados = []
+    monkeypatch.setattr(appmod.push_cadete, "enviar_push_admin", lambda client, titulo, cuerpo, url="/admin/clientes": enviados.append((titulo, cuerpo)))
+
+    appmod._avisar_pedido_nuevo("c1", ["iPhone 17 256GB x1"], 1020)
+
+    assert enviados == [("🛒 Nuevo pedido · Ana Pérez", "iPhone 17 256GB x1 · U$D 1.020")]

@@ -1227,3 +1227,22 @@ def test_cupon_de_red_con_centavos_descuenta_exacto(monkeypatch):
     assert r.status_code == 200, r.text
     pedido = fake.table("pedidos").select("*").execute().data[0]
     assert float(pedido["descuento_usd"]) == 8.75
+
+
+def test_pedido_de_la_web_avisa_al_admin_por_push(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    monkeypatch.setattr(appmod, "_cargar_productos", lambda: [{"nombre": "Elegible", "usd": 180}])
+    avisos = []
+    monkeypatch.setattr(appmod.push_cadete, "enviar_push_admin", lambda client, titulo, cuerpo, url="/admin/clientes": avisos.append((titulo, cuerpo)))
+
+    r = c.post("/api/pedidos", json={
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 180,
+    })
+
+    assert r.status_code == 200
+    assert len(avisos) == 1
+    assert avisos[0][0].startswith("🛒 Nuevo pedido · ")
+    assert avisos[0][1] == "Elegible x1 · U$D 180"
