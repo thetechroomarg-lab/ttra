@@ -13,11 +13,9 @@ const MP_RECARGO_CUOTAS = {
 };
 
 // Plan Z de Naranja X: 3 cuotas sin interés con tarjeta Naranja X, costo de
-// financiación bonificado durante octubre 2026. Queda la comisión de cobro de
-// Nave + IVA, más IIBB. PROVISORIO: comisión igual a la de MP hasta tener la
-// real de Nave.
-const PLAN_Z_COMISION_NAVE = 0.0629;
-const PLAN_Z_RECARGO = PLAN_Z_COMISION_NAVE * 1.21 + IIBB_CORDOBA;
+// financiación bonificado durante octubre 2026. Solo queda lo que descuenta
+// Nave por cobro: medido en una venta real, de $100 cobrados llegan $95,50.
+const PLAN_Z_RECARGO = 0.045;
 const PLAN_Z_VENCE = Date.parse("2026-11-01T00:00:00-03:00");
 
 function financiable(pesosTransf) {
