@@ -55,6 +55,21 @@ def resolver_fecha(valor):
     return datetime.strptime(valor, "%Y-%m-%d").date()
 
 
+def mandar_credenciales(args, email_norm, password):
+    html = f"""
+<p>Hola {cuentas.capitalizar_nombre(args.nombre)}, ¿cómo estás? Soy Vladimir de The Tech Room Arg.</p>
+<p>Te creé tu cuenta para que puedas hacer seguimiento de tus pedidos en la web:</p>
+<p><b>Email:</b> {email_norm}<br><b>Contraseña temporal:</b> {password}</p>
+<p>Al entrar por primera vez te va a pedir que elijas una contraseña nueva.</p>
+<p>Cualquier cosa, quedo a disposición.</p>
+"""
+    try:
+        email_util.enviar_email(email_norm, "Tu cuenta en The Tech Room Arg", html)
+        return True
+    except Exception as e:
+        return f"FALLÓ: {e}"
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--nombre", required=True)
@@ -64,7 +79,7 @@ def main():
     ap.add_argument("--direccion", required=True, help="dirección de entrega (y domicilio principal si es cliente nuevo)")
     ap.add_argument("--piso", default=None, help="piso (opcional)")
     ap.add_argument("--depto", default=None, help="departamento (opcional)")
-    ap.add_argument("--producto", required=True, action="append",
+    ap.add_argument("--producto", default=[], action="append",
                     help="término de búsqueda, debe matchear EXACTAMENTE un producto de productos.json (repetible para varios productos)")
     ap.add_argument("--total-usd", type=float, default=None,
                     help="total final acordado en USD; la diferencia con la suma de precios se guarda como descuento")
@@ -138,6 +153,17 @@ def main():
             print(f"AVISO: no se pudo guardar el domicilio inicial: {e}")
         cliente_nuevo = True
 
+    if not productos_pedido:
+        mail_ok = mandar_credenciales(args, email_norm, password) if cliente_nuevo else None
+        print("OK (solo cliente, sin pedido)")
+        print("cliente_id:", cliente_id)
+        print("cliente_nuevo:", cliente_nuevo)
+        if password:
+            print("password_temporal:", password)
+        if mail_ok is not None:
+            print("mail_enviado:", mail_ok)
+        return
+
     proveedores = {}
     proveedores_path = PROJECT_DIR / "web" / "proveedores.json"
     if proveedores_path.exists():
@@ -175,20 +201,7 @@ def main():
         **extra_pedido,
     )
 
-    mail_ok = None
-    if cliente_nuevo:
-        html = f"""
-<p>Hola {cuentas.capitalizar_nombre(args.nombre)}, ¿cómo estás? Soy Vladimir de The Tech Room Arg.</p>
-<p>Te creé tu cuenta para que puedas hacer seguimiento de tu pedido en la web:</p>
-<p><b>Email:</b> {email_norm}<br><b>Contraseña temporal:</b> {password}</p>
-<p>Al entrar por primera vez te va a pedir que elijas una contraseña nueva.</p>
-<p>Cualquier cosa, quedo a disposición.</p>
-"""
-        try:
-            email_util.enviar_email(email_norm, "Tu cuenta en The Tech Room Arg", html)
-            mail_ok = True
-        except Exception as e:
-            mail_ok = f"FALLÓ: {e}"
+    mail_ok = mandar_credenciales(args, email_norm, password) if cliente_nuevo else None
 
     print("OK")
     print("cliente_id:", cliente_id)

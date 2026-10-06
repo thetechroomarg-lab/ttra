@@ -1,0 +1,19 @@
+{
+  "producto": "iPhone 16 128GB (ejemplo, números inventados)",
+  "cotizacion": 1565,
+  "precio_venta": {"monto": 950, "moneda": "USD"},
+  "costos": [
+    {"concepto": "Costo proveedor", "monto": 870, "moneda": "USD", "tipo": "producto", "fuente": "🟢"},
+    {"concepto": "Retiro en proveedor", "monto": 4000, "moneda": "ARS", "tipo": "landed", "fuente": "🟡"},
+    {"concepto": "Cargador de regalo", "monto": 12, "moneda": "USD", "tipo": "variable", "fuente": "🔴"},
+    {"concepto": "Bolsa + escarapela + calcomanía + llavero", "monto": 3, "moneda": "USD", "tipo": "variable", "fuente": "🔵"},
+    {"concepto": "Entrega (cadete)", "monto": 8000, "moneda": "ARS", "tipo": "variable", "fuente": "🔴"},
+    {"concepto": "Garantía esperada (2% × USD 150)", "monto": 3, "moneda": "USD", "tipo": "variable", "fuente": "🔵"},
+    {"concepto": "Tiempo propio + fijos asignados", "monto": 15, "moneda": "USD", "tipo": "fijo", "fuente": "🔵"}
+  ],
+  "cobro_pct": 0.0,
+  "margen_objetivo": 0.05,
+  "fijos_mensuales": 1500,
+  "dias_hasta_vender": 3,
+  "escenarios_dolar": [1500, 1565, 1650, 1800]
+}
