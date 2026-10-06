@@ -2339,7 +2339,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<strong>$ {_formatear_entero_ar(resumen_saldo["saldo_pendiente"])}</strong></span></a>'
         )
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
+<title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}</head><body>
 <div class="panel">
   <div class="panel-header">
     <h1>Pedidos y recibos</h1>
@@ -2350,6 +2350,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   <section class="historial-pedidos"><h2>Historial de pedidos</h2><input id="filtro-historial-pedidos" type="search" placeholder="Buscar por cliente o producto"><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
   {pendientes_hoy_seccion_html}
 </div>
+{_CONFIRMAR_COMPLETADO_HTML}
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
 <div class="modal-direccion" id="modal-direccion" hidden><div class="modal-direccion-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-titulo"><h2 id="direccion-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-entrega-admin" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-entrega-admin-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="piso-depto-fila" id="piso-depto-admin"><input id="piso-entrega-admin" type="text" maxlength="20" placeholder="Piso (opcional)" aria-label="Piso"><input id="depto-entrega-admin" type="text" maxlength="20" placeholder="Depto (opcional)" aria-label="Departamento"></div><div class="direccion-acciones"><button id="direccion-cancelar" type="button">Cancelar</button><button id="direccion-guardar" type="button">Guardar dirección</button></div></div></div>
 <div class="modal-fecha-entrega" id="modal-fecha-entrega" hidden><div class="modal-fecha-contenido" role="dialog" aria-modal="true" aria-labelledby="fecha-entrega-titulo"><h2 id="fecha-entrega-titulo">Editar fecha de entrega</h2><input id="fecha-entrega-admin" type="date"><div class="fecha-entrega-acciones"><button id="fecha-entrega-cancelar" type="button">Cancelar</button><button id="fecha-entrega-guardar" type="button">Guardar fecha</button></div></div></div>
@@ -2795,14 +2796,7 @@ function borrarBorrador_tarea() {{ try {{ sessionStorage.removeItem(BORRADOR_tar
   document.getElementById("tarea-toggle")?.click();
   CAMPOS_tarea.forEach((id) => {{ const el = document.getElementById(id); if (!el || !(id in datos)) return; if (el.type === "checkbox") el.checked = datos[id]; else el.value = datos[id]; }});
 }})();
-document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
-  btn.addEventListener("click", async () => {{
-    btn.disabled = true;
-    const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/completar`, {{ method:"POST" }});
-    if (!r.ok) {{ alert("No se pudo completar la tarea."); btn.disabled = false; return; }}
-    location.reload();
-  }});
-}});
+{_CONFIRMAR_COMPLETADO_JS}
 function _rutaDerivar(tipo, id) {{
   return tipo === "pedido" ? `/admin/pedidos/${{id}}/derivar` : `/admin/tareas-entrega/${{id}}/derivar`;
 }}
@@ -3188,14 +3182,10 @@ document.getElementById("btn-eliminar-masivo").addEventListener("click", async (
 </body></html>"""
 
 
-_CADETE_ESTILO += _leer_ui("operations_editorial.css.html")
-_CADETE_ESTILO += """<style>
-  .saldo-cadete-titulo { display:block; margin:0 0 16px; padding:14px 16px; border-radius:var(--op-r-md, 12px); background:var(--op-surface); border:1px solid var(--op-border-strong); color:var(--op-text); text-decoration:none; font-size:18px; }
-  .saldo-cadete-titulo strong { font-size:26px; margin-left:6px; }
-  .tareas-completadas .pedido-hoy { opacity:.85; }
-  .btn-restaurar-tarea { min-height:44px; padding:0 14px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm, 8px); background:var(--op-surface-2); color:var(--op-text); font:inherit; font-weight:700; cursor:pointer; }
-  .btn-restaurar-tarea:hover { background:var(--op-surface-3); }
-  .btn-restaurar-tarea:disabled { opacity:.6; cursor:wait; }
+
+# Confirmación de "Completado" en las notas, igual en el panel de Vlad y en el de Alejo:
+# panel flotante con backlight sobre el fondo blureado, que solo se cierra con Aceptar o Cancelar.
+_CONFIRMAR_COMPLETADO_ESTILO = """<style>
   /* Confirmación de "Completado": panel flotante con backlight sobre un fondo
      blureado. No se cierra tocando afuera: solo Aceptar o Cancelar. */
   body.modal-bloqueante-abierto { overflow:hidden; }
@@ -3210,6 +3200,53 @@ _CADETE_ESTILO += """<style>
   #confirmar-completado-aceptar:disabled { opacity:.6; cursor:wait; }
   @keyframes confirmar-completado-entra { from { opacity:0; transform:translateY(14px) scale(.97); } to { opacity:1; transform:none; } }
   @media (prefers-reduced-motion: reduce) { .modal-confirmar-completado-contenido { animation:none; } }
+</style>"""
+_CONFIRMAR_COMPLETADO_HTML = (
+    '<div class="modal-confirmar-completado" id="modal-confirmar-completado" hidden><div class="modal-confirmar-completado-contenido" role="alertdialog" aria-modal="true" aria-labelledby="confirmar-completado-titulo"><h2 id="confirmar-completado-titulo">¿Estás seguro de que completaste esta tarea?</h2><div class="confirmar-completado-acciones"><button id="confirmar-completado-cancelar" type="button">Cancelar</button><button id="confirmar-completado-aceptar" type="button">Aceptar</button></div></div></div>'
+)
+_CONFIRMAR_COMPLETADO_JS = """// "Completado" pide confirmación en un modal que no se cierra tocando afuera
+// ni con Escape: hay que elegir Aceptar o Cancelar.
+const modalConfirmarCompletado = document.getElementById("modal-confirmar-completado");
+let completarTareaActiva = null;
+function cerrarConfirmarCompletado() {
+  modalConfirmarCompletado.hidden = true;
+  document.body.classList.remove("modal-bloqueante-abierto");
+  document.querySelector(".panel").inert = false;
+  if (completarTareaActiva) completarTareaActiva.focus();
+  completarTareaActiva = null;
+}
+document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    completarTareaActiva = btn;
+    modalConfirmarCompletado.hidden = false;
+    document.body.classList.add("modal-bloqueante-abierto");
+    document.querySelector(".panel").inert = true;
+    document.getElementById("confirmar-completado-aceptar").disabled = false;
+    document.getElementById("confirmar-completado-cancelar").focus();
+  });
+});
+modalConfirmarCompletado.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") e.preventDefault();
+});
+document.getElementById("confirmar-completado-cancelar").addEventListener("click", cerrarConfirmarCompletado);
+document.getElementById("confirmar-completado-aceptar").addEventListener("click", async (e) => {
+  const btn = completarTareaActiva;
+  if (!btn) return;
+  e.currentTarget.disabled = true;
+  btn.disabled = true;
+  const r = await fetch(`/admin/tareas-entrega/${btn.dataset.id}/completar`, { method:"POST" });
+  if (!r.ok) { cerrarConfirmarCompletado(); alert("No se pudo completar la tarea."); btn.disabled = false; return; }
+  location.reload();
+});"""
+
+_CADETE_ESTILO += _leer_ui("operations_editorial.css.html")
+_CADETE_ESTILO += """<style>
+  .saldo-cadete-titulo { display:block; margin:0 0 16px; padding:14px 16px; border-radius:var(--op-r-md, 12px); background:var(--op-surface); border:1px solid var(--op-border-strong); color:var(--op-text); text-decoration:none; font-size:18px; }
+  .saldo-cadete-titulo strong { font-size:26px; margin-left:6px; }
+  .tareas-completadas .pedido-hoy { opacity:.85; }
+  .btn-restaurar-tarea { min-height:44px; padding:0 14px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm, 8px); background:var(--op-surface-2); color:var(--op-text); font:inherit; font-weight:700; cursor:pointer; }
+  .btn-restaurar-tarea:hover { background:var(--op-surface-3); }
+  .btn-restaurar-tarea:disabled { opacity:.6; cursor:wait; }
 </style>"""
 
 
@@ -3458,7 +3495,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         logger.exception("No se pudo calcular el saldo del cadete")
         saldo_alejo_html = ""
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Entregas asignadas</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
+<title>Entregas asignadas</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}</head><body>
 <div class="panel">
   <div class="panel-header">
     <h1>Entregas asignadas</h1>
@@ -3490,7 +3527,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   {seccion_proximos}
   {seccion_completadas}
 </div>
-<div class="modal-confirmar-completado" id="modal-confirmar-completado" hidden><div class="modal-confirmar-completado-contenido" role="alertdialog" aria-modal="true" aria-labelledby="confirmar-completado-titulo"><h2 id="confirmar-completado-titulo">¿Estás seguro de que completaste esta tarea?</h2><div class="confirmar-completado-acciones"><button id="confirmar-completado-cancelar" type="button">Cancelar</button><button id="confirmar-completado-aceptar" type="button">Aceptar</button></div></div></div>
+{_CONFIRMAR_COMPLETADO_HTML}
 <div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
 <div class="modal-direccion-cadete" id="modal-direccion-cadete" hidden><div class="modal-direccion-cadete-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-cadete-titulo"><h2 id="direccion-cadete-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-cadete-input" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-cadete-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="piso-depto-fila" id="piso-depto-cadete"><input id="piso-cadete-input" type="text" maxlength="20" placeholder="Piso (opcional)" aria-label="Piso"><input id="depto-cadete-input" type="text" maxlength="20" placeholder="Depto (opcional)" aria-label="Departamento"></div><div class="direccion-acciones"><button id="direccion-cadete-cancelar" type="button">Cancelar</button><button id="direccion-cadete-guardar" type="button">Guardar dirección</button></div></div></div>
 <div class="modal-recibo-manual" id="modal-recibo-manual" hidden><div class="modal-recibo-manual-contenido" role="dialog" aria-modal="true" aria-labelledby="recibo-manual-titulo">
@@ -3616,40 +3653,7 @@ document.getElementById("direccion-cadete-guardar").addEventListener("click", as
   if (!r.ok) {{ alert(datos.error || "No se pudo guardar la dirección."); boton.disabled = false; return; }}
   location.reload();
 }});
-// "Completado" pide confirmación en un modal que no se cierra tocando afuera
-// ni con Escape: hay que elegir Aceptar o Cancelar.
-const modalConfirmarCompletado = document.getElementById("modal-confirmar-completado");
-let completarTareaActiva = null;
-function cerrarConfirmarCompletado() {{
-  modalConfirmarCompletado.hidden = true;
-  document.body.classList.remove("modal-bloqueante-abierto");
-  document.querySelector(".panel").inert = false;
-  if (completarTareaActiva) completarTareaActiva.focus();
-  completarTareaActiva = null;
-}}
-document.querySelectorAll(".btn-completar-tarea").forEach((btn) => {{
-  btn.addEventListener("click", () => {{
-    completarTareaActiva = btn;
-    modalConfirmarCompletado.hidden = false;
-    document.body.classList.add("modal-bloqueante-abierto");
-    document.querySelector(".panel").inert = true;
-    document.getElementById("confirmar-completado-aceptar").disabled = false;
-    document.getElementById("confirmar-completado-cancelar").focus();
-  }});
-}});
-modalConfirmarCompletado.addEventListener("keydown", (e) => {{
-  if (e.key === "Escape") e.preventDefault();
-}});
-document.getElementById("confirmar-completado-cancelar").addEventListener("click", cerrarConfirmarCompletado);
-document.getElementById("confirmar-completado-aceptar").addEventListener("click", async (e) => {{
-  const btn = completarTareaActiva;
-  if (!btn) return;
-  e.currentTarget.disabled = true;
-  btn.disabled = true;
-  const r = await fetch(`/admin/tareas-entrega/${{btn.dataset.id}}/completar`, {{ method:"POST" }});
-  if (!r.ok) {{ cerrarConfirmarCompletado(); alert("No se pudo completar la tarea."); btn.disabled = false; return; }}
-  location.reload();
-}});
+{_CONFIRMAR_COMPLETADO_JS}
 document.querySelectorAll(".btn-restaurar-tarea").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
     btn.disabled = true;

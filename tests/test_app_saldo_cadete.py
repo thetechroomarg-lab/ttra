@@ -351,3 +351,17 @@ def test_panel_cadete_muestra_completadas_con_restaurar_y_modal_de_confirmacion(
     assert 'class="btn-restaurar-tarea" type="button" data-id="r1"' in html
     assert "¿Estás seguro de que completaste esta tarea?" in html
     assert 'id="confirmar-completado-aceptar"' in html and 'id="confirmar-completado-cancelar"' in html
+
+
+def test_panel_admin_tambien_confirma_el_completado_con_el_modal(monkeypatch):
+    from web import entregas
+    fake, admin, _ = _clientes(monkeypatch)
+    hoy = entregas.ahora_argentina().date().isoformat()
+    fake.table("tareas_entrega").insert({"id": "v1", "fecha_entrega": hoy, "titulo": "Nota de Vlad"}).execute()
+
+    html = admin.get("/admin/clientes").text
+
+    assert 'class="btn-completar-tarea" type="button" data-id="v1"' in html
+    assert "¿Estás seguro de que completaste esta tarea?" in html
+    assert html.count('id="modal-confirmar-completado"') == 1
+    assert ".modal-confirmar-completado {" in html
