@@ -1683,13 +1683,15 @@ function refrescarPreciosCarrito() {
 
   const carrito = cargarCarrito();
   const carritoActualizado = carrito
-    .filter((it) => catalogoPlano[it.nombre])
+    .filter((it) => catalogoPlano[it.nombre] || it.promo)
     .map((it) => {
       const p = catalogoPlano[it.nombre];
-      return { ...it, usd: p.usd, pesos: p.pesos, transferencia: p.transferencia };
+      if (!p) return it;
+      const promo_cargador = p.oferta_cargador?.nombre;
+      return { ...it, usd: p.usd, pesos: p.pesos, transferencia: p.transferencia, ...(promo_cargador ? { promo_cargador } : {}) };
     });
 
-  guardarCarrito(carritoActualizado);
+  guardarCarrito(ajustarCargadoresPromo(carritoActualizado, catalogoPlano));
 }
 
 // --- Carrito ---
@@ -1703,8 +1705,47 @@ function cargarCarrito() {
 }
 
 function guardarCarrito(carrito) {
-  localStorage.setItem(CLAVE_CARRITO, JSON.stringify(carrito));
+  const normalizado = catalogoListo ? ajustarCargadoresPromo(carrito, catalogoPlanoActual()) : carrito;
+  localStorage.setItem(CLAVE_CARRITO, JSON.stringify(normalizado));
   renderCarrito();
+}
+
+// carrito.js suma ítems por su cuenta (p. ej. el cargador promocional al
+// aceptar la oferta): el panel se vuelve a dibujar con el carrito guardado.
+window.addEventListener("ttra:cart-change", () => {
+  if (catalogoListo) renderCarrito();
+});
+
+function catalogoPlanoActual() {
+  const catalogoPlano = {};
+  Object.values(SECCIONES_DATA).forEach((productos) => {
+    (productos || []).forEach((p) => {
+      catalogoPlano[p.nombre] = p;
+    });
+  });
+  return catalogoPlano;
+}
+
+// Cargador de premio promocional (ver web/promo_cargador.py y ofrecerCargador
+// en carrito.js): no está en el catálogo. Se conserva mientras el carrito
+// tenga teléfonos que lo habiliten (uno por teléfono) y con el precio que
+// publica el catálogo; si se quita el teléfono, se va con él.
+function ajustarCargadoresPromo(carrito, catalogoPlano) {
+  const habilitados = {};
+  carrito.forEach((it) => {
+    const oferta = catalogoPlano[it.nombre]?.oferta_cargador;
+    if (!oferta) return;
+    habilitados[oferta.nombre] ||= { oferta, tope: 0 };
+    habilitados[oferta.nombre].tope += it.cantidad;
+  });
+  return carrito.flatMap((it) => {
+    if (!it.promo) return [it];
+    const habilitado = habilitados[it.nombre];
+    const cantidad = habilitado ? Math.min(it.cantidad, habilitado.tope) : 0;
+    if (cantidad <= 0) return [];
+    const { oferta } = habilitado;
+    return [{ ...it, usd: oferta.usd, pesos: oferta.pesos, transferencia: oferta.transferencia, cantidad }];
+  });
 }
 
 function cargarDescuentoMailing() {
@@ -1787,7 +1828,7 @@ function descuentoMailingAplicado(carrito) {
   let transferencia = 0;
 
   carrito.forEach((it) => {
-    if ((!conTope && !productosElegibles.has(it.nombre)) || !it.usd) return;
+    if (it.promo || (!conTope && !productosElegibles.has(it.nombre)) || !it.usd) return;
     const descuentoUsdUnit = Math.min(Number(descuento.descuento_usd_por_item) || 0, Number(it.usd) || 0);
     if (descuentoUsdUnit <= 0) return;
     cantidad += it.cantidad;
@@ -1941,10 +1982,12 @@ function calcularDescuento(carrito) {
 }
 
 function calcularDescuentoMinorista(carrito) {
-  const cantidadTotal = carrito.reduce((n, it) => n + it.cantidad, 0);
+  // El cargador de premio promocional no cuenta para el descuento por cantidad.
+  const productos = carrito.filter((it) => !it.promo);
+  const cantidadTotal = productos.reduce((n, it) => n + it.cantidad, 0);
   const porUnidad = descuentoPorUnidad(cantidadTotal);
   if (porUnidad === 0) return null;
-  const subtotal = totales(carrito);
+  const subtotal = totales(productos);
   if (subtotal.usd <= 0) return null;
   const usd = porUnidad * cantidadTotal;
   const pesos = Math.round(usd * (subtotal.pesos / subtotal.usd));

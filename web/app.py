@@ -28,7 +28,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete
+from web import buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -4697,7 +4697,35 @@ def api_pedidos(entrada: PedidoIn, request: Request):
     total_bruto_usd = Decimal("0")
     descuento_mayorista_usd = Decimal("0")
     cantidad_total = 0
+    # Cargador de premio promocional (ver promo_cargador): precio fijo, solo
+    # minoristas, hasta uno por teléfono que califica, y no suma al descuento
+    # por cantidad.
+    cargadores_promo = {}
+    telefonos_con_promo = {}
     for item in entrada.detalle:
+        clave_promo = promo_cargador.PROMO_POR_NOMBRE.get(item.nombre)
+        if clave_promo:
+            precio_promo = pedidos.decimal_monetario(promo_cargador.PROMOS[clave_promo]["usd"])
+            if (
+                modo_precio != "minorista"
+                or item.usd_unitario != precio_promo
+                or item.usd_subtotal != precio_promo * item.cantidad
+                or item.color not in (None, "Color único")
+            ):
+                return error_precios
+            cargadores_promo[clave_promo] = cargadores_promo.get(clave_promo, 0) + item.cantidad
+            total_bruto_usd += precio_promo * item.cantidad
+            detalle.append({
+                "nombre": item.nombre,
+                "color": None,
+                "cantidad": item.cantidad,
+                "usd_unitario": pedidos.numero_monetario_db(precio_promo),
+                "usd_subtotal": pedidos.numero_monetario_db(precio_promo * item.cantidad),
+                "proveedor": "stock propio",
+            })
+            if item.nombre not in productos_pedido:
+                productos_pedido.append(item.nombre)
+            continue
         producto = por_nombre.get(item.nombre)
         if not producto or producto.get("usd") is None:
             return error_precios
@@ -4723,6 +4751,9 @@ def api_pedidos(entrada: PedidoIn, request: Request):
             return error_precios
         total_bruto_usd += subtotal_autorizado
         cantidad_total += item.cantidad
+        clave_telefono = promo_cargador.promo_para_producto(producto)
+        if clave_telefono:
+            telefonos_con_promo[clave_telefono] = telefonos_con_promo.get(clave_telefono, 0) + item.cantidad
         if modo_precio == "mayorista":
             producto_publico = publicos_por_nombre.get(item.nombre)
             if not producto_publico or producto_publico.get("usd") is None:
@@ -4749,6 +4780,9 @@ def api_pedidos(entrada: PedidoIn, request: Request):
         etiqueta = f"{item.nombre} ({color})" if color else item.nombre
         if etiqueta not in productos_pedido:
             productos_pedido.append(etiqueta)
+
+    if any(cantidad > telefonos_con_promo.get(clave, 0) for clave, cantidad in cargadores_promo.items()):
+        return error_precios
 
     descuento_cantidad_usd = Decimal("0")
     if modo_precio == "minorista":
@@ -5693,7 +5727,10 @@ def api_catalogo(request: Request):
         return {"secciones": {s: [] for s in catalogo.SECCIONES},
                 "mensaje": "Estoy actualizando los precios",
                 "modo_precio": modo_precio}
-    return {"secciones": catalogo.secciones_catalogo(productos), "modo_precio": modo_precio}
+    secciones = catalogo.secciones_catalogo(productos)
+    if modo_precio == "minorista":
+        secciones = promo_cargador.con_ofertas(secciones, _cargar_cotizacion_catalogo())
+    return {"secciones": secciones, "modo_precio": modo_precio}
 
 
 _MAILING_PUBLICO_ESTILO = '<meta name="viewport" content="width=device-width, initial-scale=1">\n<style>\n  body { font-family: \'Segoe UI\', system-ui, sans-serif; background:#111318; color:#f2f4f8;\n         margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }\n  .tarjeta { background:#1b1e24; border-radius:16px; padding:28px 24px; width:100%; max-width:420px;\n             box-shadow:0 10px 30px rgba(0,0,0,0.5); box-sizing:border-box; border:1px solid #2a2e37; }\n  .tarjeta h1 { margin:0 0 6px; font-size:20px; }\n  .tarjeta .colores { color:#aab0bd; font-size:14px; margin:0 0 18px; }\n  .precios p { margin:4px 0; font-size:15px; }\n  .precios strong { font-size:20px; }\n  .btn-wa { display:block; text-align:center; margin-top:20px; background:#25D366; color:#0a0a0a;\n            font-weight:800; text-decoration:none; padding:14px; border-radius:10px; }\n  .link-catalogo { display:block; text-align:center; margin-top:12px; color:#aab0bd; font-size:13px; text-decoration:none; }\n</style>\n'

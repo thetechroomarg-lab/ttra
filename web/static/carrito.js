@@ -2,6 +2,7 @@
 (() => {
   const key = 'ttra_carrito';
   let feedbackTimer;
+  let vuelo = Promise.resolve();
 
   function leer() {
     const cart = JSON.parse(localStorage.getItem(key) || '[]');
@@ -32,9 +33,11 @@
     const normalizeColor = (value) => withoutVariants && value === 'Color único' ? null : (value || null);
     const selectedColor = normalizeColor(color);
     const existing = cart.find((item) => item.nombre === producto.nombre && normalizeColor(item.color) === selectedColor);
+    const promoCargador = producto.oferta_cargador?.nombre;
     if (existing) {
       existing.cantidad = (Number(existing.cantidad) || 0) + 1;
       existing.color = selectedColor;
+      if (promoCargador) existing.promo_cargador = promoCargador;
     } else {
       cart.push({
         nombre: producto.nombre,
@@ -43,6 +46,7 @@
         pesos: producto.pesos,
         transferencia: producto.transferencia,
         cantidad: 1,
+        ...(promoCargador ? { promo_cargador: promoCargador } : {}),
       });
     }
     // Persist first: no successful feedback or animation if storage fails.
@@ -50,7 +54,67 @@
     window.dispatchEvent(new Event('ttra:cart-change'));
     window.dispatchEvent(new Event('ttra:cart-added'));
     notificar(`${producto.nombre} agregado al carrito.`);
+    // After the caller starts the card's flight, so the offer opens once it lands.
+    if (promoCargador) setTimeout(() => vuelo.then(() => ofrecerCargador(producto.oferta_cargador)));
     return cart;
+  }
+
+  // Cargador de premio promocional (ver web/promo_cargador.py): el servidor
+  // marca los teléfonos que califican con oferta_cargador; se ofrece uno por
+  // cada teléfono del carrito que lo habilita.
+  const cantidad = (items) => items.reduce((n, it) => n + (Number(it.cantidad) || 0), 0);
+  function cargadoresPendientes(cart, oferta) {
+    const telefonos = cantidad(cart.filter((it) => it.promo_cargador === oferta.nombre));
+    return telefonos - cantidad(cart.filter((it) => it.nombre === oferta.nombre));
+  }
+
+  function sumarCargador(oferta) {
+    const cart = leer();
+    if (cargadoresPendientes(cart, oferta) <= 0) return;
+    const existing = cart.find((it) => it.nombre === oferta.nombre);
+    if (existing) existing.cantidad = (Number(existing.cantidad) || 0) + 1;
+    else cart.push({ nombre: oferta.nombre, color: null, usd: oferta.usd, pesos: oferta.pesos, transferencia: oferta.transferencia, cantidad: 1, promo: true });
+    localStorage.setItem(key, JSON.stringify(cart));
+    window.dispatchEvent(new Event('ttra:cart-change'));
+    notificar(`${oferta.nombre} agregado al carrito.`);
+  }
+
+  function ofrecerCargador(oferta) {
+    let cart;
+    try { cart = leer(); } catch { return; }
+    if (document.querySelector('.ttra-oferta-cargador[open]') || cargadoresPendientes(cart, oferta) <= 0) return;
+    const titulo = oferta.nombre.replace(/\s*\(premio promocional\)\s*$/i, '');
+    const pesos = new Intl.NumberFormat('es-AR').format(oferta.pesos);
+    const dialog = document.createElement('dialog');
+    dialog.className = 'ttra-oferta-cargador';
+    dialog.setAttribute('aria-labelledby', 'ttra-oferta-cargador-titulo');
+    dialog.setAttribute('aria-describedby', 'ttra-oferta-cargador-texto');
+    dialog.innerHTML = `
+      <p class="ttra-oferta-cargador-etiqueta">Premio promocional</p>
+      <h2 id="ttra-oferta-cargador-titulo"></h2>
+      <p id="ttra-oferta-cargador-texto"></p>
+      <p class="ttra-oferta-cargador-precio"><strong></strong><span></span></p>
+      <div class="ttra-oferta-cargador-acciones">
+        <button type="button" value="cancelar">Cancelar</button>
+        <button type="button" value="aceptar" autofocus>Aceptar</button>
+      </div>`;
+    dialog.querySelector('h2').textContent = `¿Sumás el ${titulo}?`;
+    dialog.querySelector('#ttra-oferta-cargador-texto').textContent = /apple/i.test(titulo)
+      ? 'Por llevar tu iPhone, te lo dejo a precio promocional.'
+      : 'Tu teléfono no trae cargador en la caja. Por llevarlo, te lo dejo a precio promocional.';
+    dialog.querySelector('.ttra-oferta-cargador-precio strong').textContent = `US$ ${oferta.usd}`;
+    dialog.querySelector('.ttra-oferta-cargador-precio span').textContent = `$ ${pesos} en pesos`;
+    dialog.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => dialog.close(button.value)));
+    // Esc counts as Cancelar; the backdrop does nothing, only the two buttons decide.
+    dialog.addEventListener('cancel', () => { dialog.returnValue = 'cancelar'; });
+    dialog.addEventListener('close', () => {
+      if (dialog.returnValue === 'aceptar') {
+        try { sumarCargador(oferta); } catch { notificar('No pude sumar el cargador al carrito. Probá de nuevo.', true); }
+      }
+      dialog.remove();
+    }, { once: true });
+    document.body.append(dialog);
+    dialog.showModal();
   }
 
   async function animar(source) {
@@ -98,6 +162,7 @@
         { transform: 'scale(.95) rotate(220deg)', opacity: 1, offset: .8 },
         { transform: 'scale(0) rotate(300deg)', opacity: 0 },
       ], { duration: 900, easing: 'ease-in-out', fill: 'forwards' });
+      vuelo = Promise.all([absorb.finished, vortex.finished]).catch(() => {});
       await Promise.all([absorb.finished, vortex.finished]);
       target.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 220 });
     } catch {

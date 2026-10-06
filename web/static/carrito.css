@@ -55,3 +55,70 @@ html[data-modo="classic"] .ttra-card-adding { opacity: .6; }
   font: inherit; font-weight: 600; text-decoration: none;
 }
 #btn-whatsapp-pedido:hover { text-decoration: underline; }
+
+/* Oferta del cargador de premio promocional (ver ofrecerCargador en carrito.js):
+   diálogo modal nativo, así el resto de la página queda inerte detrás del
+   blur y solo responden Aceptar y Cancelar. Mismo lenguaje que los paneles
+   flotantes de Classic: superficie del panel, borde fino y backlight sutil. */
+html:has(.ttra-oferta-cargador[open]) { overflow: hidden; }
+.ttra-oferta-cargador {
+  box-sizing: border-box;
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  margin: auto;
+  padding: 28px 24px 24px;
+  border: 1px solid var(--ed-line, var(--rc-green-faint, #3c3e38));
+  border-radius: 6px;
+  background: var(--rc-bg-panel, #1e201d);
+  color: var(--rc-green-bright, #fffdf5);
+  font-family: var(--rc-font, inherit);
+  box-shadow: var(--ed-halo, 0 24px 70px #0000004d);
+}
+.ttra-oferta-cargador::backdrop {
+  background: rgba(16, 20, 24, .35);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+html[data-classic-theme="light"] .ttra-oferta-cargador::backdrop { background: rgba(16, 33, 79, .18); }
+.ttra-oferta-cargador-etiqueta {
+  margin: 0 0 10px;
+  color: var(--ed-accent, var(--rc-green-dim, currentColor));
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.ttra-oferta-cargador h2 { margin: 0 0 10px; font-size: 21px; font-weight: 800; line-height: 1.25; letter-spacing: -.01em; }
+.ttra-oferta-cargador p { margin: 0; }
+#ttra-oferta-cargador-texto { color: var(--rc-green, currentColor); font-size: 15px; line-height: 1.5; }
+.ttra-oferta-cargador-precio { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 18px 0 22px !important; }
+.ttra-oferta-cargador-precio strong { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ttra-oferta-cargador-precio span { color: var(--rc-green-dim, currentColor); font-size: 14px; font-variant-numeric: tabular-nums; }
+.ttra-oferta-cargador-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ttra-oferta-cargador-acciones button {
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid var(--ed-line, var(--rc-green-faint, currentColor));
+  border-radius: 4px;
+  background: transparent;
+  color: var(--rc-green-bright, currentColor);
+  font: 800 14px var(--rc-font, inherit);
+  cursor: pointer;
+  transition: background-color .2s, border-color .2s, color .2s;
+}
+.ttra-oferta-cargador-acciones button:hover { border-color: var(--rc-green-dim, currentColor); }
+.ttra-oferta-cargador-acciones button[value="aceptar"] {
+  border-color: transparent;
+  background: var(--ed-button, var(--ed-accent, #f05b40));
+  color: #191b16;
+}
+.ttra-oferta-cargador-acciones button[value="aceptar"]:hover { filter: brightness(1.08); }
+.ttra-oferta-cargador-acciones button:focus-visible { outline: 2px solid var(--ed-accent, currentColor); outline-offset: 3px; }
+@media (prefers-reduced-motion: no-preference) {
+  .ttra-oferta-cargador[open] { animation: ttra-oferta-entrada .32s cubic-bezier(.2, .8, .2, 1); }
+  .ttra-oferta-cargador[open]::backdrop { animation: ttra-oferta-fondo .32s ease; }
+}
+@keyframes ttra-oferta-entrada { from { opacity: 0; transform: translateY(12px) scale(.97); } }
+@keyframes ttra-oferta-fondo { from { opacity: 0; } }
+@media (max-width: 380px) { .ttra-oferta-cargador-acciones { grid-template-columns: 1fr; } }
