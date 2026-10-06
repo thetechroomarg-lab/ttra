@@ -75,6 +75,11 @@ const DOBLE_TOQUE_RW_MS = 500;
 const btnPlayMusic = document.getElementById("btn-play-music");
 const btnMusicaRw = document.getElementById("btn-musica-rw");
 const btnMusicaFf = document.getElementById("btn-musica-ff");
+// Nombre del producto al que llegó el usuario por un link (?producto=):
+// tarjetaProducto le pone .card-del-link para que resalte del resto, también
+// cuando la grilla se vuelve a pintar al filtrar u ordenar.
+let productoDelLink = null;
+
 let spotifyController = null;
 let musicaSonando = false;
 let posicionActualMs = 0;
@@ -1316,7 +1321,8 @@ function tarjetaProducto(p) {
     </div>
   `;
   return `
-    <div class="card" data-nombre="${escapeHtml(p.nombre)}">
+    <div class="card${p.nombre === productoDelLink ? " card-del-link" : ""}" data-nombre="${escapeHtml(p.nombre)}">
+      ${p.nombre === productoDelLink ? '<span class="card-del-link-etiqueta">Producto del link</span>' : ""}
       <h3>${marcaLogoHtml(p.marca, "marca-logo-card")}${escapeHtml(p.nombre)}</h3>
       <p class="precios">
         ${bloquePreciosHtml(p)}
@@ -3173,6 +3179,7 @@ function abrirProductoCompartido() {
   if (!nombreObjetivo) return;
   const clave = buscarProductoYSeccion(nombreObjetivo);
   if (!clave) return;
+  productoDelLink = nombreObjetivo;
   seccionActiva = clave;
   subFiltrosActivos = new Set();
   filtroMarcaGlobal = null;

@@ -74,3 +74,10 @@ html[data-modo="classic"][data-classic-theme="light"] :is(.ai-price:first-child,
 html[data-modo="classic"][data-classic-theme="light"] .ai-face .btn-foto:hover { color: var(--ai-card-coral) !important; }
 html[data-modo="classic"][data-classic-theme="light"] .ai-prices-mayorista .ai-price-head { color: #c8c8c2 !important; }
 html[data-modo="classic"][data-classic-theme="light"] .card.ai-card .catalog-card-actions :is(label, .catalog-card-status) { color: #d6d6d0; }
+/* Card del producto al que se llegó por un link: le gana al halo azul de las
+   cards con imagen (también en hover/foco). Ver .card-del-link en classic.css. */
+html[data-modo="classic"] body .grilla .card.ai-card.card-del-link,
+html[data-modo="classic"] body .grilla .card.ai-card.card-del-link:is(:hover, :focus-within) {
+  border-color: var(--cl-rojo) !important;
+  box-shadow: 0 0 0 2px var(--cl-rojo), 0 0 34px -4px color-mix(in srgb, var(--cl-rojo) 55%, transparent) !important;
+}

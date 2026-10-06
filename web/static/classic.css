@@ -1452,3 +1452,39 @@ html[data-modo="classic"] .tarjeta h1 {
   text-transform: none;
   text-align: center;
 }
+
+/* Card del producto al que se llegó por un link (?producto=, ver
+   abrirProductoCompartido en landing.js): anillo del color de acento, una
+   etiqueta arriba y un latido (outline que se expande) tres veces al llegar,
+   para que se distinga del resto de la grilla aunque el usuario seleccione
+   otra card. El latido va por outline y no por box-shadow porque las cards
+   con imagen (catalog-images.css) fijan el box-shadow con !important, que
+   también le gana a las animaciones. */
+html[data-modo="classic"] .card.card-del-link {
+  position: relative;
+  border-color: var(--cl-rojo);
+  box-shadow: 0 0 0 2px var(--cl-rojo), 0 0 34px -4px color-mix(in srgb, var(--cl-rojo) 55%, transparent);
+  outline: 2px solid transparent;
+  animation: card-del-link-latido 1.4s ease-out 3;
+}
+html[data-modo="classic"] .card-del-link-etiqueta {
+  position: absolute;
+  top: -11px;
+  left: 14px;
+  z-index: 5;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--cl-rojo);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+@keyframes card-del-link-latido {
+  0%   { outline-color: var(--cl-rojo); outline-offset: 0; }
+  100% { outline-color: transparent; outline-offset: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .card.card-del-link { animation: none; }
+}
