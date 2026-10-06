@@ -48,6 +48,9 @@ const SECCION_NOTEBOOKS = "Notebooks y Macbooks";
 // Orden y rango de precio (en dólar contado, el precio principal de la card).
 // null = sin límite de ese lado.
 let ordenActivo = "destacados";
+// "En cuotas": solo productos con alguna línea de financiación (Plan Z / MP).
+let soloCuotas = false;
+const calificaCuotas = (producto) => cuotasDe(preciosDe(producto)).length > 0;
 let precioMin = null;
 let precioMax = null;
 // El slider recorre los precios en escala logarítmica: el catálogo va de
@@ -281,15 +284,29 @@ function pintarSeccion(nombre) {
   const porCondicion = filtrarCondicion && condicionActiva
     ? porMarca.filter(producto => condicionProducto(producto) === condicionActiva)
     : porMarca;
-  const candidatos = palabrasBusqueda.length
+  const porBusqueda = palabrasBusqueda.length
     ? porCondicion.filter(producto => {
         const texto = normalizarBusqueda(`${producto.nombre || ''} ${producto.marca || ''}`);
         return palabrasBusqueda.every(palabra => texto.includes(palabra));
       })
     : porCondicion;
+  const enCuotas = porBusqueda.filter(calificaCuotas);
+  document.getElementById("cuotas-count").textContent =
+    `${enCuotas.length} ${enCuotas.length === 1 ? "producto disponible" : "productos disponibles"}`;
+  const candidatos = soloCuotas ? enCuotas : porBusqueda;
   pintarFiltroPrecio(candidatos);
   const productos = ordenarPorPrecio(candidatos.filter(dentroDelRango));
-  document.getElementById("contador-productos").textContent = textoContador(productos.length, candidatos.length);
+  document.getElementById("contador-productos").textContent = textoContador(productos.length, porBusqueda.length);
+  if (soloCuotas && candidatos.length === 0 && porBusqueda.length > 0) {
+    el.innerHTML = '<div class="mensaje-vacio catalog-price-empty"><p>No hay productos en cuotas en esta selección.</p>'
+      + '<button type="button" class="catalog-price-reset" data-ver-todos>Ver todos los productos</button></div>';
+    el.querySelector('[data-ver-todos]').addEventListener('click', () => {
+      soloCuotas = false;
+      document.getElementById("cuotas-filter").checked = false;
+      pintarSeccion(categoriaActiva);
+    });
+    return;
+  }
   if (productos.length === 0 && candidatos.length > 0) {
     el.innerHTML = '<div class="mensaje-vacio catalog-price-empty"><p>No hay productos en ese rango de precio.</p>'
       + '<button type="button" class="catalog-price-reset" data-reset-precio>Ver todos los precios</button></div>';
@@ -308,7 +325,7 @@ function pintarSeccion(nombre) {
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
   window.TTRAComparar?.bind(el, productos, SECCIONES_DATA, () => ({
     categoria: categoriaActiva, marca: marcaActiva, condicion: condicionActiva, tipo: tipoActivo,
-    orden: ordenActivo, precioMin, precioMax,
+    orden: ordenActivo, precioMin, precioMax, soloCuotas,
     query: document.getElementById('catalog-search').value,
     searchVisible: !document.querySelector('.catalog-search-wrap').hidden
   }));
@@ -459,9 +476,8 @@ function tarjetaProducto(p, indice = 0) {
         U$D ${monto(precios.bancoUsa)} (Transf. USA)<br>
         USDT ${monto(precios.usdt)}<br>
         $ ${monto(p.pesos)} Pesos contado.<br>
-        $ ${monto(p.transferencia)} Pesos transf.${precios.mp6 == null ? "" : `<br>
-        $ ${monto(precios.mp6)} ${escapeHtml(etiquetaMp(precios, 6))}<br>
-        $ ${monto(precios.mp12)} ${escapeHtml(etiquetaMp(precios, 12))}`}`}
+        $ ${monto(p.transferencia)} Pesos transf.${cuotasDe(precios).map((c) => `<br>
+        $ ${monto(c.total)} ${escapeHtml(c.etiqueta)}`).join("")}`}
       </p>
       <div class="catalog-card-actions">
         ${colores}
@@ -505,6 +521,8 @@ async function cargarCatalogo() {
       ordenActivo = regreso.orden || "destacados";
       precioMin = Number.isFinite(regreso.precioMin) ? regreso.precioMin : null;
       precioMax = Number.isFinite(regreso.precioMax) ? regreso.precioMax : null;
+      soloCuotas = regreso.soloCuotas === true;
+      document.getElementById("cuotas-filter").checked = soloCuotas;
       const radio = document.querySelector(`#catalog-sort input[value="${ordenActivo}"]`);
       if (radio) radio.checked = true;
     }
@@ -554,6 +572,11 @@ document.getElementById("condition-filter").addEventListener("change", (event) =
 });
 
 document.getElementById('catalog-search').addEventListener('input', () => pintarSeccion(categoriaActiva));
+
+document.getElementById("cuotas-filter").addEventListener("change", (event) => {
+  soloCuotas = event.target.checked;
+  pintarSeccion(categoriaActiva);
+});
 
 document.getElementById("catalog-sort").addEventListener("change", (event) => {
   ordenActivo = event.target.value;

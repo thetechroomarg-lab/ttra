@@ -243,6 +243,24 @@ html[data-modo="classic"] .catalog-brand-card:hover { box-shadow: var(--ed-halo)
 .catalog-sort input:checked + span { background: #d52f27; color: #fff; }
 .catalog-sort input:focus-visible + span { outline: 2px solid var(--ed-accent); outline-offset: 2px; position: relative; z-index: 1; }
 
+/* Toggle "En cuotas": fila propia entre el orden y el rango de precio,
+   alineado a la derecha bajo "Ordenar". Píldora porque es un interruptor
+   (on/off), lo único redondeado de la consola. */
+.catalog-cuotas { flex: 1 1 100%; display: flex; align-items: center; justify-content: flex-end; gap: 14px; min-height: 44px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.catalog-cuotas input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.catalog-cuotas-text { display: grid; gap: 3px; order: -1; text-align: right; }
+.catalog-cuotas-text strong { color: var(--rc-green-bright); font: 700 14px/1 var(--rc-font); letter-spacing: -.01em; transition: color .2s; }
+#cuotas-count { color: var(--rc-green-dim); font: 500 11px/1 var(--rc-font); font-variant-numeric: tabular-nums; }
+.catalog-cuotas-track { position: relative; flex: 0 0 auto; width: 52px; height: 30px; border: 1px solid var(--ed-line); border-radius: 999px; background: var(--rc-bg-panel); transition: background-color .25s var(--ed-ease), border-color .25s; }
+.catalog-cuotas-thumb { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--rc-green-dim); box-shadow: 0 1px 3px #0000004d; transition: transform .3s var(--ed-ease), background-color .25s; }
+.catalog-cuotas:hover .catalog-cuotas-track { border-color: var(--ed-accent); }
+.catalog-cuotas input:checked ~ .catalog-cuotas-track { border-color: #d52f27; background: #d52f27; }
+.catalog-cuotas input:checked ~ .catalog-cuotas-track .catalog-cuotas-thumb { transform: translateX(22px); background: #fff; }
+.catalog-cuotas input:checked ~ .catalog-cuotas-text strong { color: var(--ed-accent); }
+.catalog-cuotas input:focus-visible ~ .catalog-cuotas-track { outline: 2px solid var(--ed-accent); outline-offset: 3px; }
+.catalog-cuotas input:active ~ .catalog-cuotas-track .catalog-cuotas-thumb { width: 26px; }
+.catalog-cuotas input:checked:active ~ .catalog-cuotas-track .catalog-cuotas-thumb { transform: translateX(18px); }
+
 .catalog-price { --desde: 0; --hasta: 1; flex: 1 1 100%; display: grid; gap: 0; padding: 20px 22px 18px; border: 1px solid var(--ed-line); background: var(--rc-bg-panel); transition: border-color .25s; }
 .catalog-price[hidden] { display: none; }
 .catalog-price.activo { border-color: color-mix(in srgb, var(--ed-accent) 55%, var(--ed-line)); }
@@ -299,6 +317,10 @@ html[data-modo="classic"] .catalog-brand-card:hover { box-shadow: var(--ed-halo)
   /* En columna, cada bloque ocupa todo el ancho, igual que las cards. */
   .catalog-brand-filter { align-items: stretch; }
   .catalog-price { width: 100%; min-width: 0; }
+  .catalog-cuotas { justify-content: space-between; padding: 4px 0; }
+  .catalog-cuotas-text { text-align: left; }
+  .catalog-cuotas-text strong { font-size: 16px; }
+  #cuotas-count { font-size: 12px; }
   .catalog-sort { flex-direction: column; align-items: stretch; gap: 10px; width: 100%; margin: 0; }
   .catalog-sort legend { float: none; margin-bottom: 10px; font-size: 14px; }
   .catalog-sort-options { width: 100%; }
@@ -312,6 +334,7 @@ html[data-modo="classic"] .catalog-brand-card:hover { box-shadow: var(--ed-halo)
   .catalog-price-hist { height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .catalog-cuotas-track, .catalog-cuotas-thumb,
   .catalog-price-hist span, .catalog-sort span, .catalog-price-slider input[type="range"]::-webkit-slider-thumb { transition: none; }
 }
 /* Los estilos globales de Classic (radio 10px, sombra de botón, anillo de

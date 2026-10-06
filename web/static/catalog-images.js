@@ -13,7 +13,7 @@
     for (const k in index) { const kk = nameKey(k); if (!(kk in m)) m[kk] = index[k]; }
     return m;
   });
-  const labels = ['Dólar contado', 'Dólar transf. USA', 'USDT', 'Pesos contado', 'Pesos transf.', 'MP 6 cuotas', 'MP 12 cuotas'];
+  const labels = ['Dólar contado', 'Dólar transf. USA', 'USDT', 'Pesos contado', 'Pesos transf.'];
   const text = (tag, cls, value) => { const e=document.createElement(tag); e.className=cls; e.textContent=value; return e; };
   const renders=new WeakMap();
   async function enhance(container, products) {
@@ -42,14 +42,23 @@
         prices.classList.add('ai-prices-mayorista');
         const head=text('div','ai-price ai-price-head','');head.append(text('span','','Pago'),text('span','','Descuento'),text('span','','Tu precio'));prices.append(head);
       }
-      [amounts.dolares,amounts.bancoUsa,amounts.usdt,amounts.pesos,amounts.pesosTransf,amounts.mp6,amounts.mp12].forEach((v,j)=>{
-        if(j>=5&&v==null)return;
-        const label=j===5?etiquetaMp(amounts,6):j===6?etiquetaMp(amounts,12):labels[j];
+      const cuotas=cuotasDe(amounts);
+      [amounts.dolares,amounts.bancoUsa,amounts.usdt,amounts.pesos,amounts.pesosTransf,...cuotas.map(c=>c.total)].forEach((v,j)=>{
+        const label=j>=5?cuotas[j-5].etiqueta:labels[j];
         const row=text('div','ai-price',''), value=text('strong','',(v==null?'Consultar':(j<2?'USD ':j===2?'USDT ':'$ ')+Number(v).toLocaleString('es-AR')));
         if(filasMay)row.append(text('span','',label),text('span','ai-desc',filasMay[j].descuento?'-'+filasMay[j].descuento:'-'),value);
         else row.append(text('span','',label),value);
         prices.append(row);
       });
+      // La cara está pensada para 5 precios (6 filas en mayorista). Con las
+      // líneas de cuotas se estira hacia abajo, una fila por precio extra.
+      const base=filasMay?6:5, filas=prices.children.length;
+      if(filas>base){
+        const fila=32/base;
+        face.classList.add('ai-face-extra');
+        face.style.setProperty('--alto-precios',`${filas*fila}cqw`);
+        face.style.aspectRatio=`100 / ${(100+(filas-base)*fila).toFixed(2)}`;
+      }
       const marker=document.createComment('original product actions');links.before(marker);
       face.append(logo,name,color,picture,prices,links); card.prepend(face);
       title.hidden=true; oldPrices.hidden=true; card.classList.add('ai-card');grid?.classList.add('has-ai-cards');

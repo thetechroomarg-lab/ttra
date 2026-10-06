@@ -479,7 +479,12 @@ def test_catalogo_ofrece_orden_y_rango_de_precio():
     # El rango filtra antes de ordenar, y ambos viajan en el contexto del
     # comparador para volver al mismo listado.
     assert "ordenarPorPrecio(candidatos.filter(dentroDelRango))" in js
-    assert "orden: ordenActivo, precioMin, precioMax," in js
+    assert "orden: ordenActivo, precioMin, precioMax, soloCuotas," in js
+
+    # Toggle "En cuotas" entre el orden y el rango; filtra antes del slider.
+    assert html.index('id="catalog-sort"') < html.index('id="cuotas-filter"') < html.index('id="catalog-price"')
+    assert 'id="cuotas-filter" role="switch"' in filtros
+    assert "const candidatos = soloCuotas ? enCuotas : porBusqueda;" in js
 
 
 def test_classic_light_usa_botones_de_categoria_gris_oscuro_con_tipografia_blanca():
