@@ -1,8 +1,13 @@
 // Mercado Pago, Point Tap, crédito en cuotas sin interés, cobro en el momento:
 // 6,29% de cobro + el costo de las cuotas (18,69% en 6, 32,29% en 12), todo
-// + IVA, sobre lo que se cobra. Se calcula sobre la transferencia en pesos y
-// solo se ofrece en productos con transferencia de hasta $500.000.
-const MP_RECARGO_CUOTAS = { 6: (0.0629 + 0.1869) * 1.21, 12: (0.0629 + 0.3229) * 1.21 };
+// + IVA, más la retención de Ingresos Brutos de Córdoba, sobre lo que se
+// cobra. Se calcula sobre la transferencia en pesos y solo se ofrece en
+// productos con transferencia de hasta $500.000.
+const MP_IIBB_CORDOBA = 0.0475;
+const MP_RECARGO_CUOTAS = {
+  6: (0.0629 + 0.1869) * 1.21 + MP_IIBB_CORDOBA,
+  12: (0.0629 + 0.3229) * 1.21 + MP_IIBB_CORDOBA,
+};
 const MP_CUOTAS_TOPE_TRANSF = 500000;
 
 function precioMp(pesosTransf, cuotas) {
