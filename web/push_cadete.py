@@ -111,6 +111,7 @@ def _enviar_push(client, tabla, titulo, cuerpo, url):
             _avisado_sin_configurar = True
         return
 
+    from py_vapid import Vapid
     from pywebpush import WebPushException, webpush
     import json as _json
 
@@ -119,6 +120,9 @@ def _enviar_push(client, tabla, titulo, cuerpo, url):
         return
 
     payload = _json.dumps({"titulo": titulo, "cuerpo": cuerpo, "url": url}, ensure_ascii=False)
+    # La clave viene en PEM; pywebpush solo acepta un string en base64 DER,
+    # así que se le pasa la clave ya cargada.
+    clave_vapid = Vapid.from_pem(VAPID_PRIVATE_KEY_PEM.encode())
 
     for sub in suscripciones:
         subscription_info = {
@@ -129,7 +133,7 @@ def _enviar_push(client, tabla, titulo, cuerpo, url):
             webpush(
                 subscription_info=subscription_info,
                 data=payload,
-                vapid_private_key=VAPID_PRIVATE_KEY_PEM,
+                vapid_private_key=clave_vapid,
                 vapid_claims={"sub": VAPID_CLAIMS_EMAIL},
                 ttl=3600,
             )

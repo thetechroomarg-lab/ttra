@@ -174,3 +174,26 @@ def test_pedido_nuevo_de_la_web_avisa_al_admin(monkeypatch):
     appmod._avisar_pedido_nuevo("c1", ["iPhone 17 256GB x1"], 1020)
 
     assert enviados == [("🛒 Nuevo pedido · Ana Pérez", "iPhone 17 256GB x1 · U$D 1.020")]
+
+
+def test_envio_push_carga_la_clave_vapid_desde_pem(monkeypatch):
+    """pywebpush no acepta el PEM como string: hay que pasarle la clave cargada."""
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    import pywebpush
+    from py_vapid import Vapid01
+    from web import push_cadete
+
+    pem = ec.generate_private_key(ec.SECP256R1()).private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption(),
+    ).decode()
+    monkeypatch.setattr(push_cadete, "PUSH_CONFIGURADO", True)
+    monkeypatch.setattr(push_cadete, "VAPID_PRIVATE_KEY_PEM", pem)
+    claves = []
+    monkeypatch.setattr(pywebpush, "webpush", lambda **kw: claves.append(kw["vapid_private_key"]))
+    fake = FakeSupabaseClient()
+    fake.table("admin_push_suscripciones").insert({"endpoint": "https://e/x", "p256dh": "a", "auth": "b"}).execute()
+
+    push_cadete.enviar_push_admin(fake, "t", "c")
+
+    assert len(claves) == 1 and isinstance(claves[0], Vapid01)
