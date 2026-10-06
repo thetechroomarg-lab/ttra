@@ -5605,6 +5605,10 @@ def admin_punto_encuentro(entrada: PuntoEncuentroIn, request: Request):
         client.table(_TABLA_PUNTO_ENCUENTRO).update(fila).eq("fecha", fila["fecha"]).execute()
     else:
         client.table(_TABLA_PUNTO_ENCUENTRO).insert(fila).execute()
+    # Su panel no se refresca solo: sin aviso, Alejo no se entera del punto
+    # que fijó Vlad hasta que recarga la página.
+    if quien != CADETE_SLUG and fila["direccion"]:
+        push_cadete.enviar_push_cadete(client, "📍 Punto de encuentro", fila["direccion"])
     return {"ok": True, **fila}
 
 

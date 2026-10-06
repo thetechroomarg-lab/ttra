@@ -197,3 +197,40 @@ def test_envio_push_carga_la_clave_vapid_desde_pem(monkeypatch):
     push_cadete.enviar_push_admin(fake, "t", "c")
 
     assert len(claves) == 1 and isinstance(claves[0], Vapid01)
+
+def test_vlad_fija_punto_de_encuentro_dispara_push(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    llamadas = []
+    monkeypatch.setattr(
+        appmod.push_cadete, "enviar_push_cadete",
+        lambda client, titulo, cuerpo, **kw: llamadas.append((titulo, cuerpo)),
+    )
+    r = admin.put("/admin/punto-encuentro", json={"fecha": "2026-10-06", "direccion": "Av. Maipú 51"})
+    assert r.status_code == 200
+    assert len(llamadas) == 1
+    assert "Av. Maipú 51" in llamadas[0][1]
+
+
+def test_vlad_quita_punto_de_encuentro_no_dispara_push(monkeypatch):
+    admin, fake = _admin_logueado(monkeypatch)
+    llamadas = []
+    monkeypatch.setattr(
+        appmod.push_cadete, "enviar_push_cadete",
+        lambda client, titulo, cuerpo, **kw: llamadas.append((titulo, cuerpo)),
+    )
+    r = admin.put("/admin/punto-encuentro", json={"fecha": "2026-10-06", "direccion": ""})
+    assert r.status_code == 200
+    assert llamadas == []
+
+
+def test_alejo_fija_punto_de_encuentro_no_se_autonotifica(monkeypatch):
+    fake = FakeSupabaseClient()
+    cadete = _cadete_logueado(fake, monkeypatch)
+    llamadas = []
+    monkeypatch.setattr(
+        appmod.push_cadete, "enviar_push_cadete",
+        lambda client, titulo, cuerpo, **kw: llamadas.append((titulo, cuerpo)),
+    )
+    r = cadete.put("/admin/punto-encuentro", json={"fecha": "2026-10-06", "direccion": "Plaza España"})
+    assert r.status_code == 200
+    assert llamadas == []
