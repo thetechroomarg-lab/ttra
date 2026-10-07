@@ -117,6 +117,18 @@ export function createProductCardScenes(entries) {
   }
   function headphones(){
     const p=new T.Group();
+    // Glossy black rear shells: a dim photo reflection, sampled by view-space normal
+    // (matcap-style) so it bends over the dome and slides as the model turns.
+    const reflection=own(new T.TextureLoader().load('/category-backgrounds/reflejo-auriculares.jpg'));reflection.colorSpace=T.SRGBColorSpace;
+    const shell=material(0x0b0c0e,.25,.18);
+    shell.onBeforeCompile=shader=>{
+      shader.uniforms.uReflection={value:reflection};
+      shader.fragmentShader='uniform sampler2D uReflection;\n'+shader.fragmentShader.replace('#include <opaque_fragment>',
+        `{vec3 viewDir=normalize(vViewPosition);vec3 rx=normalize(vec3(viewDir.z,0.0,-viewDir.x));vec3 ry=cross(viewDir,rx);
+        vec2 ruv=vec2(dot(rx,normal),dot(ry,normal))*.495+.5;float facing=max(dot(normal,viewDir),0.0);
+        outgoingLight+=texture2D(uReflection,ruv).rgb*vec3(.85,.9,1.0)*(.06+.10*(1.0-facing));}
+        #include <opaque_fragment>`);
+    };
     // Two stainless rails support the breathable canopy and telescoping stems.
     const arc=[];for(let i=0;i<=36;i++){const a=Math.PI*i/36;arc.push(new T.Vector3(Math.cos(a)*.92,.35+Math.sin(a)*1.25,0));}
     for(const z of [-.15,.15]){const points=arc.map(v=>new T.Vector3(v.x,v.y,z));mesh(p,own(new T.TubeGeometry(new T.CatmullRomCurve3(points),40,.038,8,false)),edge);}
@@ -126,7 +138,7 @@ export function createProductCardScenes(entries) {
       const cup=new T.Group();cup.position.set(side*.93,-.29,0);cup.rotation.z=side*.12;p.add(cup);
       cup.rotation.y=side*.16;
       // Round spun-metal ear cups, a softly domed back and padded circular cushions.
-      const dome=mesh(cup,own(new T.SphereGeometry(.49,40,24)),black,0,0,-.045);dome.scale.z=.40;
+      const dome=mesh(cup,own(new T.SphereGeometry(.49,40,24)),shell,0,0,-.045);dome.scale.z=.40;
       disc(cup,.474,.13,edge,0,0,.015);
       disc(cup,.459,.13,black,0,0,.04);
       const cushion=mesh(cup,own(new T.TorusGeometry(.362,.103,16,48)),rubber,0,0,.17);cushion.scale.z=.86;
