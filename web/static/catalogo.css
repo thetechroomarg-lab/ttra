@@ -345,3 +345,31 @@ html[data-modo="classic"] body.ttra-page .catalog-price-slider input[type="range
 html[data-modo="classic"] body.ttra-page .catalog-price-reset,
 html[data-modo="classic"] body.ttra-page .catalog-price-reset:is(:hover, :active) { border: 0; border-radius: 0; background: none; box-shadow: none; }
 html[data-modo="classic"] body.ttra-page .catalog-price-reset:focus-visible { box-shadow: none; outline: 2px solid var(--ed-accent); outline-offset: 2px; }
+
+/* ---- Desktop: filtros en columna ----
+   Arriba qué se mira (marca, y tipo/estado cuando aplican); debajo "En
+   cuotas"; y al final el rango de precio como panel protagonista
+   (histograma alto, lectura grande) con ancho acotado, con "Ordenar" a la
+   derecha a la altura del slider. Si no entra, "Ordenar" baja a la derecha.
+   Solo CSS: mismos IDs, inputs y eventos. Mobile (≤700px) no cambia. */
+@media (min-width: 701px) {
+  .catalog-brand-filter { align-items: flex-end; column-gap: 24px; row-gap: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--ed-line); }
+  .catalog-brand-filter > .catalog-filter-field { align-self: auto; flex-direction: column; align-items: stretch; gap: 8px; }
+  .catalog-brand-filter select { min-width: 160px; }
+
+  .catalog-cuotas { order: 1; flex: 0 0 100%; justify-content: flex-start; gap: 12px; }
+  .catalog-cuotas-text { order: 0; text-align: left; }
+  .catalog-sort { order: 3; flex: 0 0 auto; display: grid; justify-items: end; gap: 8px; margin: 0 0 18px auto; }
+  .catalog-sort legend { float: none; margin-bottom: 8px; font-size: 12px; line-height: 1.2; }
+
+  .catalog-price { order: 2; flex: 1 1 360px; max-width: 760px; padding: 22px 26px 18px; }
+  .catalog-price-head { align-items: flex-end; margin-bottom: 20px; }
+  .catalog-price-head h2 { color: var(--rc-green-bright); font: 700 15px/1.2 var(--rc-font); }
+  #price-readout { font: 700 clamp(22px, 2.2vw, 28px)/1 var(--rc-font); letter-spacing: -.03em; }
+  .catalog-price-hist { height: 64px; }
+  .catalog-price-tag { color: var(--rc-green-dim); font-size: .55em; font-weight: 600; letter-spacing: 0; vertical-align: .18em; }
+}
+/* "Desde"/"Hasta" del rango en dólares: solo en desktop. */
+@media (max-width: 700px) {
+  .catalog-price-tag { display: none; }
+}
