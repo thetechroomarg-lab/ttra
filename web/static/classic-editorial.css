@@ -693,24 +693,48 @@ html[data-modo="classic"] .ttra-fisher-man .ttra-fisher-body { stroke-width: 5.5
 /* El equipo de pesca se dibuja en px desde la cadera (viewBox 1x1 = 1px). */
 html[data-modo="classic"] .ttra-fisher-tackle { left: 0; top: 0; width: 1px; height: 1px; fill: none; }
 html[data-modo="classic"] .ttra-fisher-tackle > path, html[data-modo="classic"] .ttra-fisher-bobber { pointer-events: visibleStroke; cursor: pointer; }
-html[data-modo="classic"] .ttra-fisher-rod { stroke-width: calc(var(--fisher-u) * 1.4); transform-box: view-box; transform-origin: 0 0; animation: ttra-fisher-rod 4s ease-in-out infinite; }
+html[data-modo="classic"] .ttra-fisher-rod { stroke-width: calc(var(--fisher-u) * 1.4); transform-box: view-box; transform-origin: 0 0; animation: ttra-fisher-rod 10s ease-in-out infinite; }
 html[data-modo="classic"] .ttra-fisher-line { stroke-width: calc(var(--fisher-u) * .55); opacity: .75; transform-box: view-box; transform-origin: var(--fisher-tip); }
 html[data-modo="classic"] .ttra-fisher-bobber { fill: var(--ed-accent); stroke: none; animation: ttra-fisher-bob 2.2s ease-in-out infinite; }
 /* Lo que pesca: un celular chiquito colgando del anzuelo. */
 html[data-modo="classic"] .ttra-fisher-catch { fill: currentColor; stroke: var(--ed-accent); stroke-width: calc(var(--fisher-u) * .8); opacity: 0; }
-html[data-modo="classic"] .ttra-fisher.is-reeling .ttra-fisher-line { animation: ttra-fisher-reel 2.6s ease-in-out both; }
-html[data-modo="classic"] .ttra-fisher.is-reeling .ttra-fisher-hook { animation: ttra-fisher-lift 2.6s ease-in-out both; }
-html[data-modo="classic"] .ttra-fisher.is-reeling .ttra-fisher-catch { animation: ttra-fisher-catch 2.6s ease-in-out both; }
-html[data-modo="classic"] .ttra-fisher.is-reeling .ttra-fisher-rod { animation: ttra-fisher-pull 2.6s ease-in-out both; }
+/* Pesca siempre, en un ciclo de 10 s: mece la caña, le pican (el corcho se
+   hunde), recoge la línea con un celular colgando y vuelve a tirar. */
+html[data-modo="classic"] .ttra-fisher-line { animation: ttra-fisher-reel 10s ease-in-out infinite; }
+html[data-modo="classic"] .ttra-fisher-hook { animation: ttra-fisher-lift 10s ease-in-out infinite; }
+html[data-modo="classic"] .ttra-fisher-catch { animation: ttra-fisher-catch 10s ease-in-out infinite; }
 @keyframes ttra-fisher-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes ttra-fisher-rod { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-2deg); } }
+@keyframes ttra-fisher-rod { 0%,28%,55%,60%,92%,100% { transform: rotate(0); } 14%,42% { transform: rotate(-2deg); } 57% { transform: rotate(-5deg); } 68%,80% { transform: rotate(-11deg); } 86% { transform: rotate(4deg); } }
 @keyframes ttra-fisher-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(calc(var(--fisher-u) * 1.4)); } }
-@keyframes ttra-fisher-reel { 0%,100% { transform: scaleY(1); } 35%,65% { transform: scaleY(var(--fisher-reel-scale)); } }
-@keyframes ttra-fisher-lift { 0%,100% { transform: translateY(0); } 35%,65% { transform: translateY(var(--fisher-reel)); } }
-@keyframes ttra-fisher-catch { 0%,22% { opacity: 0; } 32%,68% { opacity: 1; } 85%,100% { opacity: 0; } }
-@keyframes ttra-fisher-pull { 0%,100% { transform: rotate(0); } 35%,65% { transform: rotate(-6deg); } }
+@keyframes ttra-fisher-reel { 0%,66%,90%,100% { transform: scaleY(1); } 74%,82% { transform: scaleY(var(--fisher-reel-scale)); } }
+@keyframes ttra-fisher-lift { 0%,55%,62%,66%,90%,100% { transform: translateY(0); } 58% { transform: translateY(calc(var(--fisher-u) * 3)); } 74%,82% { transform: translateY(var(--fisher-reel)); } }
+@keyframes ttra-fisher-catch { 0%,70%,86%,100% { opacity: 0; } 74%,82% { opacity: 1; } }
+
+/* Zoom hacia el pescador (6 s): se agranda .ttra-scroll-stage entero -tiene
+   fondo propio- por encima del header, los gatitos y el dock; la página no
+   scrollea ni recibe toques mientras tanto. */
+html.ttra-fisher-zooming, html.ttra-fisher-zooming body { overflow: hidden; }
+html.ttra-fisher-zooming body { padding-right: var(--fisher-scrollbar, 0); }
+html[data-modo="classic"].ttra-fisher-zooming .ttra-scroll-stage { z-index: 10045; pointer-events: none; }
+.ttra-fisher-shield { position: fixed; inset: 0; z-index: 10046; }
+.ttra-fisher-bubble {
+  position: fixed; z-index: 10047; box-sizing: border-box; padding: 18px 22px;
+  background: #fffdf6; color: #16130f; border: 3px solid #16130f; border-radius: 28px;
+  box-shadow: 6px 6px 0 #16130f;
+  font: 700 clamp(16px, 2.2vw, 20px)/1.32 var(--ed-font-sans, var(--rc-font)), sans-serif; letter-spacing: -.01em;
+  opacity: 0; transform: translateY(14px) scale(.6) rotate(-2deg); transform-origin: var(--tail-x, 40px) 100%;
+  transition: opacity .25s ease, transform .45s cubic-bezier(.3,1.6,.5,1); pointer-events: none;
+}
+.ttra-fisher-bubble.is-open { opacity: 1; transform: rotate(-1.5deg); transition-delay: 1.15s; }
+/* Colita del globo: borde negro + relleno, apuntando a la cabeza. */
+.ttra-fisher-bubble::before, .ttra-fisher-bubble::after { content: ''; position: absolute; top: 100%; left: var(--tail-x, 40px); border-style: solid; }
+.ttra-fisher-bubble::before { margin-left: -14px; border-width: 24px 14px 0 4px; border-color: #16130f transparent transparent; }
+.ttra-fisher-bubble::after { margin-left: -9px; margin-top: -4px; border-width: 18px 9px 0 3px; border-color: #fffdf6 transparent transparent; }
+html.ttra-fisher-zooming #ttra-header-cat-portal, html.ttra-fisher-zooming #ttra-cat-dot { opacity: 0; transition: opacity .4s; }
+/* Ya contó su frase: sigue pescando, pero tocarlo no hace nada más. */
+html[data-modo="classic"] .ttra-fisher.is-told :is(.ttra-fisher-man, .ttra-fisher-tackle > path, .ttra-fisher-bobber) { cursor: default; }
 @media (prefers-reduced-motion: reduce) {
   html[data-modo="classic"] .ttra-fisher :is(.ttra-fisher-rod, .ttra-fisher-bobber), html[data-modo="classic"] .ttra-hero-copy > .ttra-fisher { animation: none; }
-  html[data-modo="classic"] .ttra-fisher.is-reeling :is(.ttra-fisher-line, .ttra-fisher-hook, .ttra-fisher-catch, .ttra-fisher-rod) { animation: none; }
-  html[data-modo="classic"] .ttra-fisher.is-reeling .ttra-fisher-catch { opacity: 1; }
+  html[data-modo="classic"] .ttra-fisher :is(.ttra-fisher-line, .ttra-fisher-hook, .ttra-fisher-catch) { animation: none; }
+  .ttra-fisher-bubble, .ttra-fisher-bubble.is-open { transform: none; transition: opacity .3s; transition-delay: 0s; }
 }

@@ -1,8 +1,10 @@
 // Easter egg: un pescador diminuto sentado sobre la tilde de "Buscás", con la
 // línea colgando y el corchito flotando sobre la letra siguiente (como el
 // nene pescando en la luna de DreamWorks). Mide un pelito: de tamaño normal
-// es una manchita, solo se descubre haciendo zoom. Tocarlo lo hace sacar un
-// celular del agua.
+// es una manchita, solo se descubre haciendo zoom. Pesca todo el tiempo (le
+// pican, saca un celular, vuelve a tirar). Tocarlo hace zoom hacia él y dice
+// su frase en un globo de historieta durante 6 s, una sola vez por carga de
+// página.
 //
 // No toca el <h2>: classic-editorial.js le reescribe el innerHTML al hacer
 // rodar las letras, así que el pescador es una capa aparte dentro de
@@ -81,6 +83,8 @@
   }
 
   function place() {
+    // Durante el zoom todo está agrandado: medir ahora lo correría de lugar.
+    if (root.classList.contains('ttra-fisher-zooming')) return;
     if (root.dataset.modo !== 'classic' || title.classList.contains('ttra-text-rolling') || title.getAnimations().some(a => a.playState === 'running')) {
       fisher.hidden = true; return;
     }
@@ -125,11 +129,74 @@
 
   let frame = 0;
   const schedule = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; place(); }); };
-  fisher.addEventListener('click', () => {
-    if (fisher.classList.contains('is-reeling')) return;
-    fisher.classList.add('is-reeling');
-    setTimeout(() => fisher.classList.remove('is-reeling'), reducedMotion.matches ? 1200 : 2600);
-  });
+  // --- Zoom hacia el pescador + globo de diálogo (6 s, una vez por carga) ---
+  const QUOTE = 'A veces se puede encontrar a alguien viviendo su vida, tranquilo, y no es necesario molestarlo. Tenés que aprender a respetar la paz, te deseo buena vida.';
+  const TOTAL = 6000, ZOOM_IN = .2, ZOOM_OUT = .8;
+  const stage = title.closest('.ttra-scroll-stage');
+  let told = false;
+  // Header y gatitos pueden vivir en el documento de arriba (shell con
+  // iframe): la clase va en los dos, cada hoja de estilos esconde lo suyo.
+  const roots = () => { const list = [root]; try { if (window.parent !== window && window.parent.document) list.push(window.parent.document.documentElement); } catch {} return list; };
+  function tell() {
+    if (told || !stage) return;
+    told = true;
+    const seat = fisher.getBoundingClientRect(), man = fisher.querySelector('.ttra-fisher-man').getBoundingClientRect();
+    const small = innerWidth <= 700;
+    // Dónde queda el pescador ya agrandado, y cuánto se agranda: unos 130px de alto.
+    const cx = innerWidth * (small ? .3 : .36), cy = innerHeight * (small ? .74 : .68);
+    const scale = Math.min(40, Math.max(6, Math.min(innerHeight * .17, 140) / Math.max(1, man.height)));
+    const s = stage.getBoundingClientRect();
+    const zoomed = `translate(${(cx - seat.left).toFixed(1)}px, ${(cy - seat.top).toFixed(1)}px) scale(${scale.toFixed(2)})`;
+    const head = {x: cx + (man.left + man.width * .45 - seat.left) * scale, y: cy + (man.top - seat.top) * scale};
+
+    const shield = document.createElement('div');
+    shield.className = 'ttra-fisher-shield';
+    const bubble = document.createElement('div');
+    bubble.className = 'ttra-fisher-bubble';
+    bubble.setAttribute('role', 'status');
+    bubble.textContent = QUOTE;
+    document.body.append(shield, bubble);
+    // El globo arriba de la cabeza; la colita apunta a la cabeza.
+    const width = Math.min(innerWidth - 32, 420);
+    const left = Math.max(16, Math.min(innerWidth - width - 16, head.x - width * (small ? .25 : .18)));
+    bubble.style.width = `${width}px`;
+    bubble.style.left = `${left}px`;
+    bubble.style.bottom = `${Math.max(16, innerHeight - head.y + 26)}px`;
+    bubble.style.setProperty('--tail-x', `${Math.max(24, Math.min(width - 24, head.x - left))}px`);
+
+    const scrollbar = innerWidth - root.clientWidth;
+    root.style.setProperty('--fisher-scrollbar', `${scrollbar}px`);
+    for (const r of roots()) r.classList.add('ttra-fisher-zooming');
+    // Tres tramos: entrar, quedarse quieto y salir. En el tramo quieto el
+    // transform va fijo (sin animación) para que el navegador redibuje todo
+    // nítido al tamaño grande; animado de punta a punta, la tilde se veía
+    // pixelada porque se estiraba la imagen tomada al tamaño original.
+    let zoom = null;
+    const motion = !reducedMotion.matches;
+    const ease = 'cubic-bezier(.65,0,.25,1)';
+    if (motion) {
+      stage.style.transformOrigin = `${(seat.left - s.left).toFixed(1)}px ${(seat.top - s.top).toFixed(1)}px`;
+      zoom = stage.animate([{transform: 'none'}, {transform: zoomed}], {duration: TOTAL * ZOOM_IN, easing: ease});
+      zoom.onfinish = () => { stage.style.transform = zoomed; zoom.cancel(); zoom = null; };
+      setTimeout(() => {
+        stage.style.transform = '';
+        zoom = stage.animate([{transform: zoomed}, {transform: 'none'}], {duration: TOTAL * (1 - ZOOM_OUT), easing: ease});
+      }, TOTAL * ZOOM_OUT);
+    }
+    requestAnimationFrame(() => bubble.classList.add('is-open'));
+    setTimeout(() => bubble.classList.remove('is-open'), TOTAL * ZOOM_OUT - 250);
+    setTimeout(() => {
+      zoom?.cancel();
+      stage.style.transform = '';
+      stage.style.transformOrigin = '';
+      for (const r of roots()) r.classList.remove('ttra-fisher-zooming');
+      root.style.removeProperty('--fisher-scrollbar');
+      shield.remove(); bubble.remove();
+      fisher.classList.add('is-told');
+      schedule();
+    }, TOTAL);
+  }
+  fisher.addEventListener('click', tell);
   title.addEventListener('animationend', schedule);
   new MutationObserver(schedule).observe(title, {attributes: true, attributeFilter: ['class'], childList: true});
   new MutationObserver(schedule).observe(root, {attributes: true, attributeFilter: ['data-modo', 'class']});

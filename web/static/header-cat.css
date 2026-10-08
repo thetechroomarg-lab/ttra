@@ -276,3 +276,8 @@ html.ttra-shell-album #ttra-storefront-frame { top: 0; height: 100dvh; }
 /* El punto rojo suelto: copia del "." del título que juega en el piso. */
 #ttra-cat-dot { position: fixed; top: 0; left: 0; z-index: 10039; border-radius: 50%; pointer-events: none; will-change: transform; }
 #ttra-cat-dot[hidden], html.ttra-scroll-locked #ttra-cat-dot { display: none; }
+
+/* Mientras el pescador del título cuenta su frase (hero-fisherman.js), con la
+   home dentro del iframe del shell: el header y los gatitos de acá arriba se
+   apartan para que el zoom quede solo. */
+html.ttra-fisher-zooming #ttra-header-cat-portal, html.ttra-fisher-zooming #ttra-cat-dot, html.ttra-fisher-zooming body > header.ttra-site-header { opacity: 0; transition: opacity .4s; }
