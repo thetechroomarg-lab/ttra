@@ -372,7 +372,9 @@ function stepDuet(now,g) {
           duet=null;
         } else {
           const target=clamp(Math.random());
-          const dur=700+Math.random()*450;
+          // A paso de corrida (~160 px/s): antes cruzaban todo el piso en
+          // menos de un segundo y se veían deslizándose.
+          const dur=Math.max(700,Math.abs(target-bituState.x)*g.travel/160*1000);
           setPhase(bituState,'walk',now,dur,target);
           const gapFrac=g.travel?(g.size*.9*.55)/g.travel:0;
           setPhase(state,duet.leg%2===0?'jump':'walk',now,dur,clamp(target+(target<state.x?gapFrac:-gapFrac)));
@@ -451,7 +453,7 @@ function render() {
   bubble.hidden=!visible||kind!=='introduce';
   cat.setAttribute('aria-expanded',String(!bubble.hidden));
   cat.setAttribute('aria-controls',bubble.id);
-  cat.dataset.running=String(RUNNING.includes(kind)||kind==='return'&&Boolean(state.phase.running));
+  cat.dataset.running=String(RUNNING.includes(kind)||duet?.kind==='chase'&&kind==='walk'||kind==='return'&&Boolean(state.phase.running));
   current.button.setAttribute('aria-label',state.active?'Volver a guardar el gatito':'Dejar salir al gatito');
   current.button.setAttribute('aria-pressed',String(state.active));
   current.house.hidden=kind!=='enter'&&kind!=='return';
@@ -555,7 +557,7 @@ function renderBitu() {
   const pose=advance(bituState,now,g),p=pose.progress,kind=bituState.phase.kind;
   const visible=kind!=='off' && !current.doc.documentElement.classList.contains('ttra-welcome-pending');
   catBitu.hidden=!visible;
-  catBitu.dataset.running=String(RUNNING.includes(kind));
+  catBitu.dataset.running=String(RUNNING.includes(kind)||duet?.kind==='chase'&&kind==='walk');
   bubbleBitu.hidden=!visible||kind!=='introduce';
   catBitu.setAttribute('aria-expanded',String(!bubbleBitu.hidden));
   catBitu.setAttribute('aria-controls',bubbleBitu.id);
