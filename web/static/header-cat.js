@@ -1,9 +1,10 @@
-import {createState,advance,toggleState,setPhase,celebrate,pet,interact,dismissIntroduction,clamp} from './header-cat-state.mjs';
+import {createState,advance,toggleState,setPhase,celebrate,pet,interact,dismissIntroduction,clamp,TRICKS} from './header-cat-state.mjs';
 import {catArtwork} from './header-cat-art.js';
 import {fendiArtwork} from './header-cat-art-fendi.js';
 import {bituArtwork} from './header-cat-art-bitu.js';
 import {createDoor} from './header-cat-door.js';
 import {persistentNavigation} from './cat-navigation.js';
+import {createPlay} from './header-cat-play.js';
 
 const KEY='ttra_header_cat_state_v1',PREF='ttra_header_cat_enabled';
 const KEY_FENDI='ttra_header_cat_fendi_state_v1';
@@ -14,7 +15,7 @@ let fendiState=createState();
 let bituState=createState();
 try {
   const saved=JSON.parse(sessionStorage.getItem(KEY)||'null');
-  if(saved?.version===1 && typeof saved.active==='boolean' && Number.isFinite(saved.epoch) && Number.isFinite(saved.seed) && Number.isFinite(saved.x) && saved.phase && ['off','enter','return','walk','idle','scratch','lick','jump','pee','poop','sleep','belly','attack','bury-walk','bury','introduce'].includes(saved.phase.kind) && [saved.phase.start,saved.phase.duration,saved.phase.from,saved.phase.to].every(Number.isFinite) && Array.isArray(saved.waste))state=saved;
+  if(saved?.version===1 && typeof saved.active==='boolean' && Number.isFinite(saved.epoch) && Number.isFinite(saved.seed) && Number.isFinite(saved.x) && saved.phase && ['off','enter','return','walk','idle','scratch','lick','jump','pee','poop','sleep','belly','attack','bury-walk','bury','introduce',...TRICKS].includes(saved.phase.kind) && [saved.phase.start,saved.phase.duration,saved.phase.from,saved.phase.to].every(Number.isFinite) && Array.isArray(saved.waste))state=saved;
   else if(localStorage.getItem(PREF)==='1')toggleState(state,Date.now());
 } catch {}
 // Fendi y Bitu son más simples -nunca hacen scratch/lick/belly/attack/
@@ -25,7 +26,7 @@ try {
 function restoreCompanion(key) {
   try {
     const saved=JSON.parse(sessionStorage.getItem(key)||'null');
-    if(saved?.version===1 && typeof saved.active==='boolean' && Number.isFinite(saved.epoch) && Number.isFinite(saved.seed) && Number.isFinite(saved.x) && saved.phase && ['off','enter','return','walk','idle','jump','sniff','funny','sleep','pee','poop','bury-walk','bury','introduce'].includes(saved.phase.kind) && [saved.phase.start,saved.phase.duration,saved.phase.from,saved.phase.to].every(Number.isFinite) && Array.isArray(saved.waste))return saved;
+    if(saved?.version===1 && typeof saved.active==='boolean' && Number.isFinite(saved.epoch) && Number.isFinite(saved.seed) && Number.isFinite(saved.x) && saved.phase && ['off','enter','return','walk','idle','jump','sniff','funny','sleep','pee','poop','bury-walk','bury','introduce','scratch','lick',...TRICKS].includes(saved.phase.kind) && [saved.phase.start,saved.phase.duration,saved.phase.from,saved.phase.to].every(Number.isFinite) && Array.isArray(saved.waste))return saved;
   } catch {}
   return null;
 }
@@ -79,6 +80,7 @@ const catFendi=makeCompanion('ttra-header-cat-fendi',fendiArtwork,'Acariciar a F
 const catBitu=makeCompanion('ttra-header-cat-bitu',bituArtwork,'Acariciar a Bitu',bituState,()=>persistBitu(),true,()=>bubbleBitu);
 portal.append(cat,catFendi,catBitu);document.body.append(portal);
 const door3d=createDoor();
+const play=createPlay({motion});
 // Globito de "encontraste mi álbum secreto" a los 10 clicks/taps seguidos
 // (ver interact() en header-cat-state.mjs). Fábrica reusada por los tres gatos.
 function makeIntroBubble(id,s,persistFn,renderFn,focusEl,albumPath,accessPath) {
@@ -225,6 +227,7 @@ async function attach(doc) {
     persist();persistBitu();persistFendi();return;
   }
   const pageDoc=doc;
+  play.attachPage(pageDoc);
   if(doc!==document){
     if(!mounted.has(doc)){
       doc.defaultView.addEventListener('ttra:cart-added',reward);
@@ -318,6 +321,17 @@ const navigation=persistentNavigation({attach,portal});
 // Frames delegate to this host rather than creating a mascot or behavior engine.
 window.TTRAHeaderCat={ready:doc=>navigation.ready(doc),attach:doc=>{if(navigation.accepts(doc)&&doc.readyState==='complete')attach(doc);}};
 const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
+// Corridas: se dibujan como caminar, pero con las patitas a toda velocidad.
+const RUNNING=['zoom','chase'];
+// Cuánto se despegan del piso según la fase (jump es el salto de siempre).
+function hop(kind,p,jump) {
+  if(motion.matches)return 0;
+  if(kind==='jump')return Math.sin(p*Math.PI)*jump;
+  if(kind==='pounce')return Math.sin(p*Math.PI)*jump*1.8;
+  if(kind==='startle')return Math.sin(clamp(p*1.7)*Math.PI)*jump*1.4;
+  if(kind==='spin')return Math.abs(Math.sin(p*Math.PI*4))*4;
+  return 0;
+}
 // Dúo Vaiven+Fendi: cuando las dos están afuera y libres (no enter/return/
 // jump/sniff/funny), cada tanto se dispara UN gesto guionado -perseguirse
 // (Fendi corre, Vaiven salta hacia donde va) o el gag de olerle la cola-
@@ -428,14 +442,16 @@ function renderWaste(s,nodes,pose,g,now) {
 function render() {
   if(!geometry||!current)return;
   const now=Date.now();const g=geometry;
-  stepDuet(now,g);
+  // El juego del punto rojo manda mientras dura; el dúo espera su turno.
+  if(play.step(now,g,[{s:state,x:lastVaivenX,size:g.size},{s:fendiState,x:lastFendiX,size:g.size*.9},{s:bituState,x:lastBituX,size:g.size*.9}]))duet=null;
+  else stepDuet(now,g);
   const pose=advance(state,now,g),p=pose.progress,kind=state.phase.kind;
   const visible=kind!=='off' && !current.doc.documentElement.classList.contains('ttra-welcome-pending');
   portal.hidden=!visible;
   bubble.hidden=!visible||kind!=='introduce';
   cat.setAttribute('aria-expanded',String(!bubble.hidden));
   cat.setAttribute('aria-controls',bubble.id);
-  cat.dataset.running=String(kind==='return'&&Boolean(state.phase.running));
+  cat.dataset.running=String(RUNNING.includes(kind)||kind==='return'&&Boolean(state.phase.running));
   current.button.setAttribute('aria-label',state.active?'Volver a guardar el gatito':'Dejar salir al gatito');
   current.button.setAttribute('aria-pressed',String(state.active));
   current.house.hidden=kind!=='enter'&&kind!=='return';
@@ -450,13 +466,13 @@ function render() {
     cat.hidden=p>.88;
   } else cat.hidden=false;
   angleVaiven=angle;
-  if(pose.kind==='jump'&&!motion.matches)y-=Math.sin(p*Math.PI)*12;
+  y-=hop(pose.kind,p,12);
   if(pose.kind==='joy'&&!motion.matches)y-=Math.sin(pose.joyProgress*Math.PI)*18;
   if(motion.matches && !['enter','return'].includes(kind))x=g.left;
   const facing=kind==='return'?-1:state.phase.direction||(kind==='poop'&&state.x>.5?-1:state.phase.to<state.phase.from?-1:1);
   cat.style.setProperty('--cat-facing',String(facing));
   applyScrollLook(cat,x,kind,facing,g);
-  const visual=['enter','return','bury-walk'].includes(pose.kind)?'walk':pose.kind;
+  const visual=['enter','return','bury-walk',...RUNNING].includes(pose.kind)?'walk':pose.kind;
   if(lastPose!==visual||lastSerial!==state.phase.serial){
     cat.dataset.state=visual;cat.dataset.behavior=kind;
     cat.style.setProperty('--cat-phase',`${-(now-state.phase.start)/1000}s`);
@@ -480,6 +496,7 @@ function renderFendi() {
   const pose=advance(fendiState,now,g),p=pose.progress,kind=fendiState.phase.kind;
   const visible=kind!=='off' && !current.doc.documentElement.classList.contains('ttra-welcome-pending');
   catFendi.hidden=!visible;
+  catFendi.dataset.running=String(RUNNING.includes(kind));
   bubbleFendi.hidden=!visible||kind!=='introduce';
   catFendi.setAttribute('aria-expanded',String(!bubbleFendi.hidden));
   catFendi.setAttribute('aria-controls',bubbleFendi.id);
@@ -495,7 +512,7 @@ function renderFendi() {
     x=p<.65?g.left+fendiState.phase.from*g.travel*(1-ease(p/.65)):g.left+(g.doorX-g.left)*ease((p-.65)/.22);
     catFendi.hidden=p>.88;
   }
-  if(pose.kind==='jump'&&!motion.matches)y-=Math.sin(p*Math.PI)*10;
+  y-=hop(pose.kind,p,10);
   if(motion.matches && !['enter','return'].includes(kind))x=g.left;
   // Separación mínima para que no se apilen los sprites (glitch visual)
   // -salvo durante el gag armado a propósito, donde el acercamiento es la gracia-.
@@ -510,10 +527,10 @@ function renderFendi() {
     // dejar caminando encima del logo-.
     x=Math.max(g.left,Math.min(g.left+g.travel,x));
   }
-  const facing=kind==='return'?-1:(kind==='poop'&&fendiState.x>.5?-1:(fendiState.phase.to<fendiState.phase.from?-1:1));
+  const facing=kind==='return'?-1:fendiState.phase.direction||(kind==='poop'&&fendiState.x>.5?-1:(fendiState.phase.to<fendiState.phase.from?-1:1));
   catFendi.style.setProperty('--cat-facing',String(facing));
   applyScrollLook(catFendi,x,kind,facing,g);
-  const visual=['enter','return','bury-walk'].includes(pose.kind)?'walk':pose.kind;
+  const visual=['enter','return','bury-walk',...RUNNING].includes(pose.kind)?'walk':pose.kind;
   if(lastPoseFendi!==visual||lastSerialFendi!==fendiState.phase.serial){
     catFendi.dataset.state=visual;
     catFendi.style.setProperty('--cat-phase',`${-(now-fendiState.phase.start)/1000}s`);
@@ -538,6 +555,7 @@ function renderBitu() {
   const pose=advance(bituState,now,g),p=pose.progress,kind=bituState.phase.kind;
   const visible=kind!=='off' && !current.doc.documentElement.classList.contains('ttra-welcome-pending');
   catBitu.hidden=!visible;
+  catBitu.dataset.running=String(RUNNING.includes(kind));
   bubbleBitu.hidden=!visible||kind!=='introduce';
   catBitu.setAttribute('aria-expanded',String(!bubbleBitu.hidden));
   catBitu.setAttribute('aria-controls',bubbleBitu.id);
@@ -553,7 +571,7 @@ function renderBitu() {
     x=p<.65?g.left+bituState.phase.from*g.travel*(1-ease(p/.65)):g.left+(g.doorX-g.left)*ease((p-.65)/.22);
     catBitu.hidden=p>.88;
   }
-  if(pose.kind==='jump'&&!motion.matches)y-=Math.sin(p*Math.PI)*10;
+  y-=hop(pose.kind,p,10);
   if(motion.matches && !['enter','return'].includes(kind))x=g.left;
   if(!duet && kind!=='enter' && kind!=='return') {
     for(const otherX of [lastVaivenX,lastFendiX]) {
@@ -563,10 +581,10 @@ function renderBitu() {
     }
     x=Math.max(g.left,Math.min(g.left+g.travel,x));
   }
-  const facing=kind==='return'?-1:(kind==='poop'&&bituState.x>.5?-1:(bituState.phase.to<bituState.phase.from?-1:1));
+  const facing=kind==='return'?-1:bituState.phase.direction||(kind==='poop'&&bituState.x>.5?-1:(bituState.phase.to<bituState.phase.from?-1:1));
   catBitu.style.setProperty('--cat-facing',String(facing));
   applyScrollLook(catBitu,x,kind,facing,g);
-  const visual=['enter','return','bury-walk'].includes(pose.kind)?'walk':pose.kind;
+  const visual=['enter','return','bury-walk',...RUNNING].includes(pose.kind)?'walk':pose.kind;
   if(lastPoseBitu!==visual||lastSerialBitu!==bituState.phase.serial){
     catBitu.dataset.state=visual;
     catBitu.style.setProperty('--cat-phase',`${-(now-bituState.phase.start)/1000}s`);

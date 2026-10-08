@@ -1,0 +1,238 @@
+// Juegos de los gatitos que reaccionan a lo que pasa en la página.
+// Regla de oro (aprendida a la fuerza): los gatos NUNCA salen de su piso -el
+// borde inferior del header-. Si algo de la página entra en el juego, es ese
+// algo el que viene al piso, no el gato el que camina por bordes de la UI.
+//
+// - Punto rojo: el "." de "Lo tenés." salta del título al piso y los gatos lo
+//   persiguen como a un láser, hasta que uno lo manda de vuelta a su lugar.
+//   Arranca solo una vez por visita, o tocando el punto.
+// - Susto: un scroll muy rápido los hace saltar con la cola inflada.
+// - Caza: el mouse sobre el header es una presa: de cerca le tiran un
+//   zarpazo, de un poco más lejos se agazapan y saltan hacia él.
+//
+// Todo es decorativo: no toca clicks, foco ni contenido. El punto original
+// solo se oculta con una clase en <html> mientras su copia anda suelta.
+import {setPhase,clamp} from './header-cat-state.mjs';
+
+const FREE=['idle','walk','loaf','stretch','yawn','scratch','lick','spin'];
+const AUTO_KEY='ttra_cat_dot_auto_v1';
+const AWAY='ttra-cat-dot-away';
+const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
+const easeOut=t=>1-(1-clamp(t))**3;
+
+export function createPlay({motion}) {
+  const dot=document.createElement('span');
+  dot.id='ttra-cat-dot';dot.hidden=true;dot.setAttribute('aria-hidden','true');
+  document.body.append(dot);
+  let page=null,game=null,requested=false,eligibleSince=0;
+  let lastPct=null,lastPctAt=0,startleAt=0,pointer=null;
+  const cooldown=new WeakMap();
+  const clicks=new WeakSet();
+
+  addEventListener('pointermove',event=>{
+    if(event.pointerType==='mouse')pointer={x:event.clientX,y:event.clientY,at:performance.now()};
+  },{passive:true});
+  document.documentElement.addEventListener('mouseleave',()=>{pointer=null;});
+
+  function attachPage(doc) {
+    if(page&&page!==doc)finish(true);
+    page=doc;eligibleSince=0;
+    if(clicks.has(doc))return;clicks.add(doc);
+    doc.addEventListener('click',event=>{
+      if(event.target.closest?.('#ttra-hero-title .ttra-accent'))requested=true;
+    });
+    if(!doc.getElementById('ttra-cat-dot-style')){
+      const style=doc.createElement('style');style.id='ttra-cat-dot-style';
+      style.textContent=`html.${AWAY} #ttra-hero-title .ttra-accent{visibility:hidden}`;
+      doc.head.append(style);
+    }
+  }
+
+  // Dónde está el punto rojo del título en coordenadas de la ventana de
+  // arriba (la home puede estar adentro del iframe del shell persistente).
+  function anchor() {
+    try {
+      if(!page?.documentElement||page.documentElement.dataset.modo!=='classic')return null;
+      if(page.getElementById('ttra-hero-title')?.classList.contains('ttra-text-rolling'))return null;
+      const el=page.querySelector('#ttra-hero-title .ttra-accent');
+      if(!el)return null;
+      const r=el.getBoundingClientRect();if(!r.width||!r.height)return null;
+      let ox=0,oy=0;const frame=page.defaultView.frameElement;
+      if(frame){const f=frame.getBoundingClientRect();ox=f.left;oy=f.top;}
+      const css=page.defaultView.getComputedStyle(el);
+      const size=parseFloat(css.fontSize)||40;
+      const d=clamp(size*.2,9,18);
+      // El glifo del punto se apoya en la línea de base, a la izquierda de su caja.
+      return {x:ox+r.left+r.width*.42,y:oy+r.bottom-r.height*.27,d,color:css.color};
+    } catch {return null;}
+  }
+  const onScreen=(a,g)=>a&&a.y>g.top+g.height+a.d&&a.y<innerHeight-a.d;
+  const free=c=>c.s.active&&FREE.includes(c.s.phase.kind);
+  const paw=(c,dir)=>c.x+c.size*(dir>0?.8:.2);
+  const toNorm=(px,g)=>g.travel>0?clamp((px-g.left)/g.travel):0;
+
+  function place(x,y,squash=1) {
+    dot.style.transform=`translate3d(${(x-game.d/2).toFixed(1)}px,${(y-game.d/2).toFixed(1)}px,0) scale(${squash.toFixed(2)},${(1/squash).toFixed(2)})`;
+  }
+  function face(c,x){c.s.phase.direction=x>c.x+c.size/2?1:-1;}
+
+  function start(now,g,cats) {
+    const players=cats.filter(free);
+    const a=anchor();
+    if(!players.length||!onScreen(a,g))return false;
+    const floorY=g.top+g.floor;
+    const minX=g.left+g.size*.3,maxX=g.left+g.travel+g.size*.7;
+    if(maxX-minX<60)return false;
+    game={stage:'escape',at:now,until:now+700,players,turn:0,dashes:0,total:4+Math.floor(Math.random()*3),
+      d:a.d,floorY,minX,maxX,x:clamp(a.x,minX+20,maxX-20),from:a,deadline:now+30000};
+    game.y=floorY-game.d/2-1;
+    Object.assign(dot.style,{width:`${game.d}px`,height:`${game.d}px`,background:a.color});
+    dot.hidden=false;place(a.x,a.y);
+    page.documentElement.classList.add(AWAY);
+    for(const c of players){setPhase(c.s,'watch',now,30000,c.s.x);face(c,a.x);}
+    return true;
+  }
+
+  function finish(aborted,now=Date.now()) {
+    if(!game)return;
+    if(page?.documentElement)page.documentElement.classList.remove(AWAY);
+    dot.hidden=true;
+    for(const c of game.players){
+      if(c.s.active&&['watch','chase','pounce','swat'].includes(c.s.phase.kind))setPhase(c.s,'idle',now,aborted?800:1600,c.s.x);
+    }
+    game=null;
+  }
+
+  // Un tramo de "láser": el punto se escapa a otro lugar del piso y el gato
+  // de turno sale corriendo atrás, con un poco de retraso.
+  function dash(now,g) {
+    const chaser=game.players[game.turn%game.players.length];
+    const span=game.maxX-game.minX;
+    let to=game.minX+Math.random()*span;
+    if(Math.abs(to-game.x)<span*.25)to=clamp(game.x+(to<game.x?-1:1)*span*.4,game.minX,game.maxX);
+    const dur=260+Math.random()*180;
+    Object.assign(game,{stage:'dash',at:now,until:now+dur,fromX:game.x,toX:to,chaser});
+    const dir=to>chaser.x+chaser.size/2?1:-1;
+    const target=to-(dir>0?.8:.2)*chaser.size;
+    setPhase(chaser.s,'chase',now,dur+380,toNorm(target,g));chaser.s.phase.direction=dir;
+    for(const c of game.players)if(c!==chaser&&c.s.phase.kind!=='pounce')setPhase(c.s,'watch',now,30000,c.s.x);
+  }
+
+  function stepGame(now,g,cats) {
+    const live=game.players.every(c=>cats.some(o=>o.s===c.s));
+    if(!live||now>game.deadline||game.players.some(c=>!c.s.active)||document.documentElement.classList.contains('ttra-scroll-locked')){finish(true,now);return;}
+    // Los objetos de cats se recrean en cada frame: se refresca la posición.
+    // Y si a alguno se le terminó la fase del juego, la máquina de estados le
+    // habría elegido otra al azar (irse caminando): vuelve a mirar el punto.
+    for(const c of game.players){
+      const fresh=cats.find(o=>o.s===c.s);c.x=fresh.x;c.size=fresh.size;
+      if(!['watch','chase','pounce','swat'].includes(c.s.phase.kind))setPhase(c.s,'watch',now,30000,c.s.x);
+    }
+    const p=clamp((now-game.at)/Math.max(1,game.until-game.at));
+    if(game.stage==='escape') {
+      const a=anchor()||game.from;
+      const x=a.x+(game.x-a.x)*ease(p),y=a.y+(game.y-a.y)*ease(p)-Math.sin(p*Math.PI)*70;
+      place(x,y);
+      for(const c of game.players)face(c,x);
+      if(p>=1){place(game.x,game.y,.7);Object.assign(game,{stage:'pause',at:now,until:now+500});}
+      return;
+    }
+    if(game.stage==='dash') {
+      game.x=game.fromX+(game.toX-game.fromX)*easeOut(p);
+      place(game.x,game.y-Math.sin(p*Math.PI)*6,1+.6*Math.sin(p*Math.PI));
+      for(const c of game.players)if(c.s.phase.kind==='watch')face(c,game.x);
+      if(p>=1){game.dashes++;game.turn++;Object.assign(game,{stage:'pause',at:now,until:now+650+Math.random()*450});}
+      return;
+    }
+    if(game.stage==='pause') {
+      place(game.x,game.y);
+      const chaser=game.chaser||game.players[0];
+      if(game.dashAt){if(now>=game.dashAt){game.dashAt=0;dash(now,g);}return;}
+      // Espera a que el gato llegue corriendo (con un tope por las dudas).
+      if(chaser.s.phase.kind==='chase'&&now<game.until+900)return;
+      if(now<game.until)return;
+      const dir=game.x>chaser.x+chaser.size/2?1:-1;
+      if(game.dashes<game.total) {
+        // Salta... y el punto se escapa justo antes de que caiga.
+        setPhase(chaser.s,'pounce',now,600,toNorm(game.x-(dir>0?.8:.2)*chaser.size,g));
+        chaser.s.phase.direction=dir;game.dashAt=now+330;
+        return;
+      }
+      if(Math.abs(paw(chaser,dir)-game.x)>chaser.size*.5&&!game.approached) {
+        game.approached=true;
+        setPhase(chaser.s,'chase',now,600,toNorm(game.x-(dir>0?.8:.2)*chaser.size,g));
+        chaser.s.phase.direction=dir;game.until=now+620;
+        return;
+      }
+      // El último manotazo es el bueno: el punto vuelve volando a su lugar.
+      setPhase(chaser.s,'swat',now,700,chaser.s.x);chaser.s.phase.direction=dir;
+      Object.assign(game,{stage:'wind',at:now,until:now+260});
+      return;
+    }
+    if(game.stage==='wind') {
+      place(game.x,game.y,1-.3*p);
+      if(p>=1)Object.assign(game,{stage:'home',at:now,until:now+800,fromX:game.x});
+      return;
+    }
+    if(game.stage==='home') {
+      const a=anchor();
+      if(!a||!onScreen(a,g)){dot.style.opacity=String(1-p);if(p>=1){dot.style.opacity='';finish(false,now);}return;}
+      const x=game.fromX+(a.x-game.fromX)*ease(p);
+      const y=game.y+(a.y-game.y)*ease(p)-Math.sin(p*Math.PI)*110;
+      place(x,y,p>.92?1.35:1);
+      for(const c of game.players)face(c,x);
+      if(p>=1)finish(false,now);
+    }
+  }
+
+  // Scroll muy rápido = susto. Lee el mismo porcentaje que ya publica
+  // site-header.js en cada frame, sea cual sea el documento que scrollea.
+  function stepStartle(now,cats) {
+    const pct=window.__ttraScrollPct;
+    if(typeof pct!=='number'){lastPct=null;return;}
+    const dt=now-lastPctAt;
+    if(lastPct!==null&&dt>0&&dt<200&&Math.abs(pct-lastPct)/dt*1000>140&&now-startleAt>5000) {
+      startleAt=now;
+      for(const c of cats)if(c.s.active&&[...FREE,'sleep'].includes(c.s.phase.kind))setPhase(c.s,'startle',now+Math.random()*120,750,c.s.x);
+    }
+    lastPct=pct;lastPctAt=now;
+  }
+
+  // El cursor sobre el header es una presa.
+  function stepHunt(now,g,cats) {
+    if(!pointer||performance.now()-pointer.at>2500)return;
+    if(pointer.y<g.top||pointer.y>g.top+g.height+12)return;
+    for(const c of cats) {
+      if(!c.s.active||!['idle','loaf','walk'].includes(c.s.phase.kind))continue;
+      if(now<(cooldown.get(c.s)||0))continue;
+      const dx=pointer.x-(c.x+c.size/2),dir=dx>0?1:-1;
+      if(Math.abs(dx)<c.size*.75){
+        setPhase(c.s,'swat',now,700,c.s.x);c.s.phase.direction=dir;cooldown.set(c.s,now+2600);
+      } else if(Math.abs(dx)<c.size*2.6&&c.s.phase.kind!=='walk'){
+        setPhase(c.s,'crouch',now,1100,c.s.x);c.s.phase.direction=dir;cooldown.set(c.s,now+4200);
+      }
+    }
+  }
+
+  // cats: [{s, x, size}] con x = borde izquierdo ya dibujado de cada gato.
+  function step(now,g,cats) {
+    if(motion.matches||!g){if(game)finish(true,now);requested=false;return false;}
+    if(game){stepGame(now,g,cats);return Boolean(game);}
+    stepStartle(now,cats);
+    stepHunt(now,g,cats);
+    let auto=false;
+    if(cats.some(free)&&onScreen(anchor(),g)){
+      eligibleSince||=now;
+      try{auto=now-eligibleSince>7000&&!sessionStorage.getItem(AUTO_KEY);}catch{}
+    } else eligibleSince=0;
+    if((requested||auto)&&start(now,g,cats)){
+      try{sessionStorage.setItem(AUTO_KEY,'1');}catch{}
+      requested=false;return true;
+    }
+    requested=false;
+    return false;
+  }
+
+  addEventListener('pagehide',()=>finish(true));
+  return {attachPage,step,finish,get busy(){return Boolean(game);}};
+}

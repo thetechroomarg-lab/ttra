@@ -57,6 +57,12 @@ function next(s,now,mobile,travel) {
       setPhase(s,'bury',now,2800);s.phase.wasteId=wasteId;s.phase.direction=direction;return;
     }
   }
+  // Agazaparse siempre termina en el salto hacia donde estaba mirando.
+  if(s.phase.kind==='crouch') {
+    const direction=s.phase.direction||1;
+    const to=clamp(s.x+direction*Math.min(.2,(mobile?20:64)/Math.max(1,travel)));
+    setPhase(s,'pounce',now,650,travel>2?to:s.x);s.phase.direction=direction;return;
+  }
   if(mobile && now>=s.sleepAt){setPhase(s,'sleep',now,3600000);return;}
   if(now>=s.nextBathroom){const kind=s.bathroom;s.bathroom=kind==='pee'?'poop':'pee';s.nextBathroom=now+28000;setPhase(s,kind,now,2800);return;}
   const r=random(s);
@@ -67,8 +73,27 @@ function next(s,now,mobile,travel) {
     setPhase(s,'walk',now,Math.max(900,Math.abs(to-s.x)*travel/(mobile?20:42)*1000),to);
   } else if(!mobile && r>.90) {
     setPhase(s,'jump',now,850,clamp(s.x+(s.x<.5?1:-1)*Math.min(.12,28/Math.max(1,travel))));
-  } else setPhase(s,r<.66?'idle':r<.8?'scratch':'lick',now,2400+random(s)*2200);
+  } else if(r<.60) setPhase(s,'idle',now,2400+random(s)*2200);
+  else if(r<.68) setPhase(s,'scratch',now,2400+random(s)*2200);
+  else if(r<.74) setPhase(s,'lick',now,2400+random(s)*2200);
+  // Travesuras sueltas: desperezarse, bostezar y hacerse pancito andan en
+  // cualquier pantalla; las que necesitan piso (perseguirse la cola,
+  // agazaparse y saltar, correr como loca) quedan para desktop.
+  else if(r<.78) setPhase(s,'stretch',now,2300);
+  else if(r<.81) setPhase(s,'yawn',now,1700);
+  else if(r<.84) setPhase(s,'loaf',now,5000+random(s)*4000);
+  else if(mobile || travel<=2) setPhase(s,'idle',now,2400+random(s)*2200);
+  else if(r<.86) setPhase(s,'spin',now,1700);
+  else if(r<.88) {setPhase(s,'crouch',now,1400);s.phase.direction=s.x<.5?1:-1;}
+  else {
+    const to=s.x<.5?1:0;
+    setPhase(s,'zoom',now,Math.max(700,Math.abs(to-s.x)*travel/170*1000),to);
+  }
 }
+// Fases que agregan las travesuras (solas o del juego del punto rojo, ver
+// header-cat-play.js). header-cat.js las suma a su lista de estados que se
+// pueden restaurar al navegar.
+export const TRICKS=['stretch','yawn','loaf','spin','crouch','pounce','zoom','startle','swat','watch','chase'];
 function deposit(s,p) {
   if(!['pee','poop'].includes(p.kind)||p.dropped)return;
   p.dropped=true;
