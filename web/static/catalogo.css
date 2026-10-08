@@ -345,3 +345,54 @@ html[data-modo="classic"] body.ttra-page .catalog-price-slider input[type="range
 html[data-modo="classic"] body.ttra-page .catalog-price-reset,
 html[data-modo="classic"] body.ttra-page .catalog-price-reset:is(:hover, :active) { border: 0; border-radius: 0; background: none; box-shadow: none; }
 html[data-modo="classic"] body.ttra-page .catalog-price-reset:focus-visible { box-shadow: none; outline: 2px solid var(--ed-accent); outline-offset: 2px; }
+
+/* ---- Desktop: barra de filtros compacta ----
+   En pantallas anchas los filtros dejan de apilarse en tres filas y el rango
+   de precio deja de ocupar todo el ancho: todo vive en una sola barra con la
+   etiqueta arriba de cada control y la misma altura de 44px (marca · precio ·
+   cuotas · orden). El histograma pasa a ser el fondo del control de precio.
+   Solo CSS: mismos IDs, inputs y eventos. Mobile (≤700px) no cambia. */
+@media (min-width: 701px) {
+  .catalog-brand-filter { align-items: flex-end; column-gap: 24px; row-gap: 16px; padding-bottom: 22px; border-bottom: 1px solid var(--ed-line); }
+  .catalog-brand-filter > .catalog-filter-field { align-self: auto; flex-direction: column; align-items: stretch; gap: 8px; }
+  .catalog-brand-filter select { min-width: 170px; }
+  /* Hasta que entra todo en una fila: arriba lo que filtra (marca, precio),
+     abajo y a la derecha cómo se muestra (cuotas, orden). */
+  .catalog-brand-filter::after { content: ""; order: 2; flex: 0 0 100%; height: 0; }
+
+  .catalog-price { order: 1; flex: 1 1 280px; max-width: 520px; grid-template-rows: auto 22px 22px; padding: 0; border: 0; background: none; }
+  .catalog-price::before { content: ""; grid-row: 2 / 4; grid-column: 1; border: 1px solid var(--ed-line); background: var(--rc-bg-panel); transition: border-color .25s; }
+  .catalog-price.activo::before { border-color: color-mix(in srgb, var(--ed-accent) 55%, var(--ed-line)); }
+  .catalog-price-head { align-items: baseline; flex-wrap: nowrap; gap: 10px; min-width: 0; margin-bottom: 8px; }
+  .catalog-price-head h2 { font: 600 12px/1.2 var(--rc-font); }
+  .catalog-price-reset { min-height: 0; font-size: 11px; line-height: 1.2; }
+  .catalog-price-values { display: flex; align-items: baseline; justify-content: flex-end; flex-wrap: wrap; gap: 2px 8px; min-width: 0; }
+  #price-readout { font: 700 13px/1.2 var(--rc-font); letter-spacing: -.01em; }
+  #price-readout-pesos { font: 500 11px/1.2 var(--rc-font); }
+  .catalog-price-hist { grid-row: 2; grid-column: 1; height: 22px; padding: 5px 13px 0; position: relative; }
+  .catalog-price-hist span { opacity: .55; }
+  .catalog-price.activo .catalog-price-hist span { opacity: .8; }
+  .catalog-price-slider { grid-row: 3; grid-column: 1; height: 22px; }
+  .catalog-price-track { left: 13px; right: 13px; }
+  .catalog-price-slider input[type="range"] { left: 4px; right: 4px; width: calc(100% - 8px); }
+  .catalog-price-slider input[type="range"]::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: 2px; box-shadow: 0 0 0 3px var(--rc-bg-panel); }
+  .catalog-price-slider input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; box-shadow: 0 0 0 3px var(--rc-bg-panel); }
+  .catalog-price-slider input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--rc-bg-panel), 0 0 0 5px var(--ed-accent); }
+  .catalog-price-slider input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--rc-bg-panel), 0 0 0 5px var(--ed-accent); }
+
+  .catalog-cuotas { order: 3; flex: 0 0 auto; margin-left: auto; justify-content: flex-start; gap: 12px; }
+  .catalog-cuotas-text { order: 0; text-align: left; }
+
+  .catalog-sort { order: 4; display: grid; gap: 8px; margin: 0; }
+  .catalog-sort legend { float: none; margin-bottom: 8px; font-size: 12px; line-height: 1.2; }
+}
+/* Una sola fila cuando entra: con un selector desde 1280px, con dos desde 1400px. */
+@media (min-width: 1280px) {
+  .catalog-brand-filter:not(:has(> .catalog-filter-field:not([hidden]) ~ .catalog-filter-field:not([hidden])))::after { display: none; }
+}
+@media (min-width: 1400px) {
+  .catalog-brand-filter::after { display: none; }
+}
+@media (min-width: 701px) and (prefers-reduced-motion: reduce) {
+  .catalog-price::before { transition: none; }
+}
