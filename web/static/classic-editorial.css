@@ -133,6 +133,12 @@ html[data-modo="classic"] .ttra-hero-copy { display: flex; flex-direction: colum
 html[data-modo="classic"] .ttra-eyebrow { margin: 0 0 30px; font: 600 10px/1.6 var(--rc-font); letter-spacing: .14em; text-transform: uppercase; }
 html[data-modo="classic"] .ttra-hero h2 { margin: 0 0 28px; color: var(--rc-green-bright); font: 500 clamp(58px, 7.5vw, 126px)/.95 var(--rc-font); letter-spacing: -.075em; }
 html[data-modo="classic"] .ttra-accent { color: var(--ed-accent); }
+/* El punto de "Lo tenés." es redondo -el de la tipografía es cuadrado- para
+   que sea la misma pelotita con la que juegan los gatitos (header-cat-play.js
+   lee tamaño, posición y color de este ::after). El "." sigue en el texto,
+   transparente, así que la lectura y la selección no cambian. */
+html[data-modo="classic"] #ttra-hero-title .ttra-accent { position: relative; color: transparent; }
+html[data-modo="classic"] #ttra-hero-title .ttra-accent::after { content: ''; position: absolute; left: .03em; bottom: .3em; width: .17em; height: .17em; border-radius: 50%; background: var(--ed-accent); pointer-events: none; }
 html[data-modo="classic"] .ttra-hero-description { margin: 0; color: var(--rc-green-dim); font-size: 16px; line-height: 1.75; }
 html[data-modo="classic"] .ttra-catalog-cta { display: inline-flex; align-items: center; justify-content: center; text-align: center; gap: 0; min-height: 60px; margin-top: 32px; padding: 16px 22px; background: #d52f27; color: #fff; font: 800 13px var(--rc-font); letter-spacing: .08em; text-decoration: none; box-shadow: 0 12px 28px #d52f2740; transition: background .25s, transform .3s var(--ed-ease), box-shadow .3s; }
 html[data-modo="classic"] .ttra-catalog-cta:hover { background: #f04433; transform: translateY(-3px); box-shadow: 0 16px 34px #d52f2755; }

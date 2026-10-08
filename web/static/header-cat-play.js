@@ -59,11 +59,12 @@ export function createPlay({motion}) {
       const r=el.getBoundingClientRect();if(!r.width||!r.height)return null;
       let ox=0,oy=0;const frame=page.defaultView.frameElement;
       if(frame){const f=frame.getBoundingClientRect();ox=f.left;oy=f.top;}
-      const css=page.defaultView.getComputedStyle(el);
-      const size=parseFloat(css.fontSize)||40;
-      const d=clamp(size*.2,9,18);
-      // El glifo del punto se apoya en la línea de base, a la izquierda de su caja.
-      return {x:ox+r.left+r.width*.42,y:oy+r.bottom-r.height*.27,d,color:css.color};
+      // El punto redondo es el ::after del acento (ver classic-editorial.css):
+      // la copia que juega en el piso sale con su mismo tamaño, lugar y color.
+      const dotCss=page.defaultView.getComputedStyle(el,'::after');
+      const d=parseFloat(dotCss.width);
+      if(!d)return null;
+      return {x:ox+r.left+(parseFloat(dotCss.left)||0)+d/2,y:oy+r.bottom-(parseFloat(dotCss.bottom)||0)-d/2,d,color:dotCss.backgroundColor};
     } catch {return null;}
   }
   const onScreen=(a,g)=>a&&a.y>g.top+g.height+a.d&&a.y<innerHeight-a.d;

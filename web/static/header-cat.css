@@ -274,5 +274,5 @@ html.ttra-shell-album #ttra-storefront-frame { top: 0; height: 100dvh; }
 @keyframes header-cat-wiggle { from { transform: translateY(5px) scale(1.08,.8) rotate(-1.5deg); } to { transform: translateY(5px) scale(1.08,.8) rotate(1.5deg); } }
 
 /* El punto rojo suelto: copia del "." del título que juega en el piso. */
-#ttra-cat-dot { position: fixed; top: 0; left: 0; z-index: 10039; border-radius: 50%; pointer-events: none; will-change: transform; box-shadow: 0 1px 0 #0002; }
+#ttra-cat-dot { position: fixed; top: 0; left: 0; z-index: 10039; border-radius: 50%; pointer-events: none; will-change: transform; }
 #ttra-cat-dot[hidden], html.ttra-scroll-locked #ttra-cat-dot { display: none; }
