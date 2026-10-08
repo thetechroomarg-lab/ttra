@@ -168,7 +168,10 @@ function sincronizarControlesPrecio() {
     const centro = (i + 0.5) / PRECIO_BARRAS;
     barra.classList.toggle("fuera", centro < Number(rMin.value) / PRECIO_PASOS || centro > Number(rMax.value) / PRECIO_PASOS);
   });
-  document.getElementById("price-readout").textContent = `${formatoUsd(desde)} — ${formatoUsd(hasta)}`;
+  // "Desde"/"Hasta" van en su propio span: el CSS los muestra solo en desktop.
+  const etiqueta = (texto) => Object.assign(document.createElement("span"), { className: "catalog-price-tag", textContent: texto });
+  document.getElementById("price-readout").replaceChildren(
+    etiqueta("Desde "), formatoUsd(desde), " — ", etiqueta("Hasta "), formatoUsd(hasta));
   document.getElementById("price-readout-pesos").textContent = cotizacionCatalogo
     ? `${formatoPesos(desde)} — ${formatoPesos(hasta)} pesos contado`
     : "";
