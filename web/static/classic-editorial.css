@@ -11,7 +11,7 @@ html[data-modo="classic"] {
   --rc-green-bright: #fffdf5;
   --rc-green-dim: #afafa5;
   --rc-green-faint: #3c3e38;
-  --rc-font: Arial, Helvetica, sans-serif;
+  --rc-font: 'Geist', Arial, Helvetica, sans-serif;
   --rc-glow: transparent;
   --cl-rojo: #ff715b;
   --cl-azul-francia: #141513;
@@ -193,7 +193,7 @@ html[data-modo="classic"] .ttra-category:hover .ttra-mini-phone { transform: tra
 html[data-modo="classic"] .ttra-laptop { position: absolute; top: 65px; width: 70%; max-width: 280px; left: 0; right: 0; margin-inline: auto; transform: rotate(-7deg); }
 html[data-modo="classic"] .ttra-laptop > div { aspect-ratio: 1.55; border: 7px solid #30332f; border-radius: 9px 9px 2px 2px; background: #899986; overflow: hidden; }
 html[data-modo="classic"] .ttra-laptop span { display: block; padding: 12px 20px; font: 600 clamp(32px, 4vw, 58px)/.85 var(--rc-font); letter-spacing: -.07em; color: #eef0dd; }
-html[data-modo="classic"] .ttra-laptop em { font-family: Georgia, serif; font-weight: 400; }
+html[data-modo="classic"] .ttra-laptop em { font-family: var(--ed-font-serif); font-weight: 400; }
 html[data-modo="classic"] .ttra-laptop small { position: absolute; right: 15px; bottom: 31px; color: #eef0dd; font: 700 7px var(--rc-font); letter-spacing: -.03em; }
 html[data-modo="classic"] .ttra-laptop small b { color: #f47a61; }
 html[data-modo="classic"] .ttra-laptop > i { display: block; width: 117%; margin-left: -8.5%; height: 13px; background: linear-gradient(#bfc0b8, #878980); border-radius: 1px 1px 50% 50%; box-shadow: 0 14px 15px #242d2230; }
@@ -207,7 +207,7 @@ html[data-modo="classic"] .ttra-headphones > span em { color: #f5735d; font-styl
 html[data-modo="classic"] .ttra-category:hover .ttra-headphones { transform: translateY(-8px) rotate(5deg); }
 html[data-modo="classic"] .ttra-tablet { position: absolute; top: 73px; left: 0; right: 0; width: min(75%, 255px); aspect-ratio: 1.36; margin: auto; padding: 35px 25px; border: 8px solid #333b38; border-radius: 18px; background: linear-gradient(135deg, #647d7a, #a4b5ab); color: #f6f5e9; transform: rotate(-9deg); box-shadow: 16px 18px 20px #34413d30; }
 html[data-modo="classic"] .ttra-tablet > span { display: block; font: 700 clamp(20px, 2.5vw, 35px)/.95 var(--rc-font); letter-spacing: -.065em; }
-html[data-modo="classic"] .ttra-tablet em { font-family: Georgia, serif; font-weight: 400; }
+html[data-modo="classic"] .ttra-tablet em { font-family: var(--ed-font-serif); font-weight: 400; }
 html[data-modo="classic"] .ttra-tablet small { position: absolute; right: 16px; bottom: 14px; font: 700 6px var(--rc-font); letter-spacing: -.02em; }
 html[data-modo="classic"] .ttra-category:hover .ttra-tablet { transform: translateY(-9px) rotate(-4deg); }
 html[data-modo="classic"] .ttra-controller { position: absolute; top: 57px; left: 50%; width: min(92%, 320px); height: auto; overflow: visible; transform: translateX(-50%) rotate(-7deg); }
@@ -260,7 +260,7 @@ html[data-modo="classic"] .ttra-glitch-word.is-glitching::after { color: #ff806b
 @keyframes ttra-glitch-bottom { 0%, 100% { transform: none; } 18%, 54% { transform: translate(-4px, 1px); } 35%, 74% { transform: translate(3px, -1px); } }
 html[data-modo="classic"] .ttra-about-copy { padding: clamp(30px, 5vw, 80px); align-self: center; }
 html[data-modo="classic"] .ttra-about h2 { font-size: clamp(30px, 3vw, 46px); font-weight: 500; line-height: 1.1; letter-spacing: -.05em; margin: 0 0 24px; }
-html[data-modo="classic"] .ttra-about h2 em { font-family: Georgia, serif; font-weight: 400; color: var(--ed-accent); }
+html[data-modo="classic"] .ttra-about h2 em { font-family: var(--ed-font-serif); font-weight: 400; color: var(--ed-accent); }
 html[data-modo="classic"] .ttra-about-copy > p:not(.ttra-eyebrow) { color: var(--rc-green-dim); font-size: 14px; line-height: 1.8; max-width: 350px; margin-bottom: 25px; }
 html[data-modo="classic"] .rc-pie { position: relative; z-index: 3; display: flex; justify-content: center; align-items: center; gap: 20px; padding: 55px var(--ed-gutter); border-top: 1px solid var(--ed-line); background: var(--rc-bg); color: var(--rc-green); box-shadow: 0 -20px 48px #00000022; translate: 0 var(--section-enter-y, 0px); }
 html[data-modo="classic"] .rc-pie { margin-top: auto; flex-shrink: 0; }
@@ -432,7 +432,7 @@ html[data-modo="classic"] .ttra-intro-hello {
   padding: 10px 16px 8px;
   background: #e9524f;
   color: #fffaf2;
-  font: 800 clamp(30px, 4vw, 40px)/1 Arial, sans-serif;
+  font: 800 clamp(30px, 4vw, 40px)/1 var(--rc-font);
   letter-spacing: .18em;
   text-indent: .18em;
   text-transform: uppercase;
@@ -670,3 +670,6 @@ html[data-modo="classic"] .ttra-category:focus-visible .ttra-circle-arrow { rota
 @media (prefers-reduced-motion: reduce) {
   html[data-modo="classic"] .ttra-category .ttra-circle-arrow { transition: none; }
 }
+
+/* Tarjeta de clave del landing: misma fuente que el resto de Classic. */
+html[data-modo="classic"] .rc-gate-tarjeta { font-family: var(--rc-font); }

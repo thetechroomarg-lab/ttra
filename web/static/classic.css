@@ -4,7 +4,14 @@
    html[data-modo="classic"] para convivir con theme.css y landing.css sin
    tocarlos. */
 
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+/* Tipografía Classic (propuesta A): Geist para texto e interfaz, Geist Mono
+   para precios y Instrument Serif para las cursivas de acento. Alojadas acá
+   (OFL, ver /fonts) en vez de Google Fonts. El logo NO usa estas fuentes:
+   sigue en Arial 800, es la identidad de la marca. */
+@font-face { font-family: 'Geist'; src: url('/fonts/geist-latin-wght.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Geist Mono'; src: url('/fonts/geist-mono-latin-wght.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Instrument Serif'; src: url('/fonts/instrument-serif-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Instrument Serif'; src: url('/fonts/instrument-serif-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 
 /* Modo Classic: único look, oscuro (el modo claro se sacó del todo, junto
    con el toggle sol/luna que alternaba entre los dos). */
@@ -28,7 +35,10 @@ html[data-modo="classic"] {
   --rc-halo-seleccion: #d9d9d9;
   --rc-halo-seleccion-glow: rgba(217, 217, 217, 0.35);
   --rc-halo-seleccion-glow-suave: rgba(217, 217, 217, 0.22);
-  --rc-font: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --rc-font: 'Geist', Arial, Helvetica, sans-serif;
+  --ed-font-sans: 'Geist', Arial, Helvetica, sans-serif;
+  --ed-font-serif: 'Instrument Serif', Georgia, serif;
+  --ed-font-num: 'Geist Mono', ui-monospace, monospace;
   --rc-cursor: auto;
   --rc-cursor-mira: pointer;
 }
@@ -208,7 +218,7 @@ html[data-modo="classic"] .rc-modo-y-carrito {
 html[data-modo="classic"] .indicador-mayorista {
   border-color: rgba(255, 255, 255, 0.35);
   color: rgba(255, 255, 255, 0.8);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--rc-font);
   font-size: 10px;
 }
 html[data-modo="classic"] .rc-modo-y-carrito button {

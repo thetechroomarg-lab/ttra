@@ -41,7 +41,7 @@ html.ttra-scroll-locked #ttra-header-cat-portal { z-index: 9992; filter: blur(3p
 #ttra-header-cat[data-state="sleep"] .cat-pose { transform: scale(1.05,.68); }
 #ttra-header-cat[data-state="sleep"] .cat-head { transform: rotate(-12deg) translate(-7px,5px); }
 #ttra-header-cat[data-state="sleep"] .cat-tail { animation-duration: 12s; }
-.ttra-cat-zzz { display: none; position: absolute; top: 12%; left: 60%; color: var(--rc-green); font: 700 13px Arial,sans-serif; }
+.ttra-cat-zzz { display: none; position: absolute; top: 12%; left: 60%; color: var(--rc-green); font: 700 13px var(--ed-font-sans, Arial), sans-serif; }
 #ttra-header-cat[data-state="sleep"] .ttra-cat-zzz { display: block; }
 .ttra-cat-zzz span { display: inline-block; animation: header-cat-zzz 2.8s ease-out infinite; }
 .ttra-cat-zzz span:nth-child(2) { animation-delay: .7s; font-size: 16px; }
@@ -112,7 +112,7 @@ html.ttra-cat-shell body > :not(#ttra-storefront-frame):not(#ttra-header-cat-por
 .ttra-cat-introduction[hidden] { display: none; }
 .ttra-cat-introduction::before { content: ''; position: absolute; left: var(--bubble-pointer,24px); top: -7px; width: 12px; height: 12px; transform: rotate(45deg); background: #fff9eb; border-top: 1px solid #d4c8b5; border-left: 1px solid #d4c8b5; }
 .ttra-cat-introduction a { display: flex; min-height: 44px; align-items: center; color: inherit; text-decoration: none; padding: 0 8px; }
-.ttra-cat-introduction button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: transparent; border: 0; border-radius: 50%; color: inherit; font: 24px Arial,sans-serif; cursor: pointer; }
+.ttra-cat-introduction button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: transparent; border: 0; border-radius: 50%; color: inherit; font: 24px var(--ed-font-sans, Arial), sans-serif; cursor: pointer; }
 .ttra-cat-introduction :focus-visible { outline: 2px solid #d6382d; outline-offset: 1px; border-radius: 8px; }
 
 /* The original masthead stays outside page navigation, even with the cat asleep. */
