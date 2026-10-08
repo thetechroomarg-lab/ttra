@@ -4,7 +4,7 @@ Negocio: THE TECH ROOM ARG. Vladimir trabaja solo. Dos mitades:
 1. **Pipeline de precios** (raíz del repo): toma listas de proveedores y arma los listados.
 2. **Web** (`web/`): FastAPI con catálogo, cuentas de cliente, pedidos y paneles de admin/cadete.
 
-Rama de producción: `main` (Railway despliega desde ahí). `staging` es la rama del ambiente staging, que comparte base y mails con producción. **Nunca hacer push sin que Vladimir lo pida para ese cambio puntual.**
+Ramas: `main` = producción, `staging` = staging (Railway despliega cada una en su ambiente; staging comparte base y mails con producción). Todo cambio va en una rama nueva desde `staging`, se mergea a `staging` y después a `main`, y la rama se borra. **Nunca hacer push sin que Vladimir lo pida para ese cambio puntual.**
 
 ## Reglas de trabajo
 
