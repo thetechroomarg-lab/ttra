@@ -225,3 +225,54 @@ html.ttra-shell-album #ttra-storefront-frame { top: 0; height: 100dvh; }
 #ttra-header-cat[data-state="funny"] .cat-head { transform: rotate(-16deg) translate(-5px,-5px); }
 #ttra-header-cat[data-state="funny"] .cat-pose { transform: translateX(-6px); animation: header-cat-funny-shake .32s ease-in-out 2; }
 @keyframes header-cat-funny-shake { 0%,100% { transform: translateX(-6px) rotate(0); } 50% { transform: translateX(-9px) rotate(-4deg); } }
+
+/* --- Travesuras (ver header-cat-state.mjs y header-cat-play.js) ---------
+   Las tres comparten el mismo dibujo (Fendi y Bitu son recolores), así que
+   cada pose se escribe una sola vez para las tres. Todo es transform sobre
+   partes que ya existen: nada de dibujos nuevos ni de tocar el layout. */
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="stretch"] .cat-pose { animation: header-cat-stretch 2.3s ease-in-out both; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="stretch"] .cat-leg-front { animation: header-cat-stretch-leg 2.3s ease-in-out both; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="stretch"] .cat-tail { animation: none; transform: rotate(-22deg); transition: transform .5s ease; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu):is([data-state="stretch"],[data-state="yawn"]) .cat-eyes { display: none; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu):is([data-state="stretch"],[data-state="yawn"]) .cat-happy-eyes { display: block; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="yawn"] .cat-head { animation: header-cat-yawn-head 1.7s ease-in-out both; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="yawn"] .cat-mouth { visibility: hidden; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="yawn"] .cat-tongue { display: block; transform-box: fill-box; transform-origin: center top; animation: header-cat-yawn-mouth 1.7s ease-in-out both; }
+/* Pancito: patas escondidas, cuerpo bajito, ojos entrecerrados. */
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="loaf"] .cat-pose { transform: translateY(3px) scale(1.06,.8); }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="loaf"] :is(.cat-leg-front,.cat-leg-rear) { visibility: hidden; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="loaf"] .cat-eyes { animation: none; transform: scaleY(.38); }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="loaf"] .cat-tail { animation-duration: 9s; }
+/* Perseguirse la cola: se da vuelta de un lado a otro con saltitos. */
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="spin"] .cat-pose { animation: header-cat-spin 1.7s steps(1,end) both; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="spin"] .cat-tail { animation-duration: .3s; }
+/* Agazapada antes de saltar: bien baja y moviendo la colita. */
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="crouch"] .cat-pose { animation: header-cat-wiggle .18s ease-in-out infinite alternate; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="crouch"] .cat-head { transform: translateY(6px); }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="crouch"] .cat-tail { animation-duration: .5s; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="pounce"] .cat-pose { transform: rotate(-10deg) scale(1.1,.9); }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="pounce"] .cat-leg-front { transform: translateX(7px) rotate(-38deg); }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="pounce"] .cat-leg-rear { transform: translateX(-5px) rotate(34deg); }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="pounce"] .cat-tail { animation: none; transform: rotate(-24deg); }
+/* Susto: se infla, cola de plumero. */
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="startle"] .cat-pose { transform: scale(1.06,1.12); }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="startle"] .cat-tail { animation: none; transform: rotate(-30deg); stroke-width: 19; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="startle"] .cat-eyes { animation: none; transform: scale(1.18); }
+/* Zarpazo juguetón: la misma pata del ataque, pero una sola vez y sin enojo. */
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="swat"] .cat-attack-paw { display: block; transform-origin: 77px 79px; animation: header-cat-swipe .55s ease-in-out 1 both; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="swat"] .cat-leg-front { visibility: hidden; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="swat"] .cat-head { transform: rotate(-6deg); }
+/* Mirando el punto rojo: cabeza gacha, cola nerviosa. */
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="watch"] .cat-head { transform: rotate(10deg) translate(3px,4px); }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="watch"] .cat-tail { animation-duration: .9s; }
+:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="watch"] .cat-eyes { animation: none; transform: scale(1.1); }
+@keyframes header-cat-stretch { 0%,100% { transform: none; } 25%,72% { transform: translateX(4px) rotate(9deg) scaleX(1.08); } }
+@keyframes header-cat-stretch-leg { 0%,100% { transform: none; } 25%,72% { transform: translate(10px,1px) rotate(-30deg); } }
+@keyframes header-cat-yawn-head { 0%,100% { transform: none; } 30%,70% { transform: rotate(-16deg) translateY(-2px); } }
+@keyframes header-cat-yawn-mouth { 0%,100% { transform: scale(.6,.3); } 30%,70% { transform: scale(1.5,1.4); } }
+@keyframes header-cat-spin { 0%,24%,48%,72%,100% { transform: scaleX(1); } 12%,36%,60%,84% { transform: scaleX(-1); } }
+@keyframes header-cat-wiggle { from { transform: translateY(5px) scale(1.08,.8) rotate(-1.5deg); } to { transform: translateY(5px) scale(1.08,.8) rotate(1.5deg); } }
+
+/* El punto rojo suelto: copia del "." del título que juega en el piso. */
+#ttra-cat-dot { position: fixed; top: 0; left: 0; z-index: 10039; border-radius: 50%; pointer-events: none; will-change: transform; box-shadow: 0 1px 0 #0002; }
+#ttra-cat-dot[hidden], html.ttra-scroll-locked #ttra-cat-dot { display: none; }
