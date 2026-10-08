@@ -22,11 +22,13 @@ const RUN=160;
 const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
 const easeOut=t=>1-(1-clamp(t))**3;
 
-export function createPlay({motion}) {
+export function createPlay({motion,summon}) {
   const dot=document.createElement('span');
   dot.id='ttra-cat-dot';dot.hidden=true;dot.setAttribute('aria-hidden','true');
   document.body.append(dot);
-  let page=null,game=null,requested=false,eligibleSince=0;
+  // Tocar el punto deja un pedido vigente unos segundos: si no hay gatos
+  // afuera se llama a uno (summon) y el juego arranca apenas llega.
+  let page=null,game=null,requestedUntil=0,eligibleSince=0;
   let lastPct=null,lastPctAt=0,startleAt=0,pointer=null;
   const cooldown=new WeakMap();
   const clicks=new WeakSet();
@@ -41,7 +43,8 @@ export function createPlay({motion}) {
     page=doc;eligibleSince=0;
     if(clicks.has(doc))return;clicks.add(doc);
     doc.addEventListener('click',event=>{
-      if(event.target.closest?.('#ttra-hero-title .ttra-accent'))requested=true;
+      if(!event.target.closest?.('#ttra-hero-title .ttra-accent'))return;
+      requestedUntil=Date.now()+6000;summon?.();
     });
     if(!doc.getElementById('ttra-cat-dot-style')){
       const style=doc.createElement('style');style.id='ttra-cat-dot-style';
@@ -85,8 +88,11 @@ export function createPlay({motion}) {
     c.s.phase.direction=dir;
   }
 
-  function start(now,g,cats) {
-    const players=cats.filter(free);
+  // Con un toque explícito también juegan las que duermen (en el celular se
+  // duermen al minuto y sin esto el punto nunca respondía); el juego
+  // automático no las despierta.
+  function start(now,g,cats,wake=false) {
+    const players=cats.filter(c=>free(c)||wake&&c.s.active&&c.s.phase.kind==='sleep');
     const a=anchor();
     if(!players.length||!onScreen(a,g))return false;
     const floorY=g.top+g.floor;
@@ -235,7 +241,7 @@ export function createPlay({motion}) {
 
   // cats: [{s, x, size}] con x = borde izquierdo ya dibujado de cada gato.
   function step(now,g,cats) {
-    if(motion.matches||!g){if(game)finish(true,now);requested=false;return false;}
+    if(motion.matches||!g){if(game)finish(true,now);requestedUntil=0;return false;}
     if(game){stepGame(now,g,cats);return Boolean(game);}
     stepStartle(now,cats);
     stepHunt(now,g,cats);
@@ -244,11 +250,11 @@ export function createPlay({motion}) {
       eligibleSince||=now;
       try{auto=now-eligibleSince>7000&&!sessionStorage.getItem(AUTO_KEY);}catch{}
     } else eligibleSince=0;
-    if((requested||auto)&&start(now,g,cats)){
+    const requested=requestedUntil>now;
+    if((requested||auto)&&start(now,g,cats,requested)){
       try{sessionStorage.setItem(AUTO_KEY,'1');}catch{}
-      requested=false;return true;
+      requestedUntil=0;return true;
     }
-    requested=false;
     return false;
   }
 
