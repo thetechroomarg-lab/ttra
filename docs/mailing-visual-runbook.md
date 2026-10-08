@@ -2,7 +2,7 @@
 
 ## Configuración esperada en Railway
 
-Servicio: `ttra`, entorno `production`, rama `web-ttra`.
+Servicio: `ttra`, entorno `production`, rama `main`.
 
 | Configuración | Valor |
 | --- | --- |
@@ -21,7 +21,7 @@ Verificar con una fila de prueba identificada por UUID explícito que se pueda l
 
 ## Despliegue
 
-1. Confirmar rama y commit exacto `web-ttra`; ejecutar toda la suite antes del push.
+1. Confirmar rama y commit exacto `main`; ejecutar toda la suite antes del push.
 2. Confirmar mount `/data`, variables anteriores y migración aplicada.
 3. Desplegar y esperar estado `Online` en Railway.
 4. No enviar correo durante el deploy ni el smoke test.
