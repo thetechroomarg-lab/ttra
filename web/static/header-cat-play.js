@@ -17,6 +17,8 @@ import {setPhase,clamp} from './header-cat-state.mjs';
 const FREE=['idle','walk','loaf','stretch','yawn','scratch','lick','spin'];
 const AUTO_KEY='ttra_cat_dot_auto_v1';
 const AWAY='ttra-cat-dot-away';
+// Velocidad de corrida en px/s: más rápido se ven deslizándose, no corriendo.
+const RUN=160;
 const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
 const easeOut=t=>1-(1-clamp(t))**3;
 
@@ -59,11 +61,12 @@ export function createPlay({motion}) {
       const r=el.getBoundingClientRect();if(!r.width||!r.height)return null;
       let ox=0,oy=0;const frame=page.defaultView.frameElement;
       if(frame){const f=frame.getBoundingClientRect();ox=f.left;oy=f.top;}
-      const css=page.defaultView.getComputedStyle(el);
-      const size=parseFloat(css.fontSize)||40;
-      const d=clamp(size*.2,9,18);
-      // El glifo del punto se apoya en la línea de base, a la izquierda de su caja.
-      return {x:ox+r.left+r.width*.42,y:oy+r.bottom-r.height*.27,d,color:css.color};
+      // El punto redondo es el ::after del acento (ver classic-editorial.css):
+      // la copia que juega en el piso sale con su mismo tamaño, lugar y color.
+      const dotCss=page.defaultView.getComputedStyle(el,'::after');
+      const d=parseFloat(dotCss.width);
+      if(!d)return null;
+      return {x:ox+r.left+(parseFloat(dotCss.left)||0)+d/2,y:oy+r.bottom-(parseFloat(dotCss.bottom)||0)-d/2,d,color:dotCss.backgroundColor};
     } catch {return null;}
   }
   const onScreen=(a,g)=>a&&a.y>g.top+g.height+a.d&&a.y<innerHeight-a.d;
@@ -75,6 +78,12 @@ export function createPlay({motion}) {
     dot.style.transform=`translate3d(${(x-game.d/2).toFixed(1)}px,${(y-game.d/2).toFixed(1)}px,0) scale(${squash.toFixed(2)},${(1/squash).toFixed(2)})`;
   }
   function face(c,x){c.s.phase.direction=x>c.x+c.size/2?1:-1;}
+  // Sale corriendo hasta dejar la pata sobre px; tarda según la distancia.
+  function run(c,px,now,g) {
+    const dir=px>c.x+c.size/2?1:-1,left=px-(dir>0?.8:.2)*c.size;
+    setPhase(c.s,'chase',now,Math.max(450,Math.abs(left-c.x)/RUN*1000),toNorm(left,g));
+    c.s.phase.direction=dir;
+  }
 
   function start(now,g,cats) {
     const players=cats.filter(free);
@@ -83,13 +92,16 @@ export function createPlay({motion}) {
     const floorY=g.top+g.floor;
     const minX=g.left+g.size*.3,maxX=g.left+g.travel+g.size*.7;
     if(maxX-minX<60)return false;
-    game={stage:'escape',at:now,until:now+700,players,turn:0,dashes:0,total:4+Math.floor(Math.random()*3),
-      d:a.d,floorY,minX,maxX,x:clamp(a.x,minX+20,maxX-20),from:a,deadline:now+30000};
-    game.y=floorY-game.d/2-1;
+    // El punto vuela directo a la pata de uno de los gatos, al azar.
+    const target=players[Math.floor(Math.random()*players.length)];
+    for(const c of players){setPhase(c.s,'watch',now,60000,c.s.x);face(c,a.x);}
+    const x=clamp(paw(target,target.s.phase.direction),minX,maxX),y=floorY-a.d/2-1;
+    const flight=clamp(Math.hypot(x-a.x,y-a.y)/1.1,450,900);
+    game={stage:'escape',at:now,until:now+flight,players,target,turn:players.indexOf(target)+1,dashes:0,
+      total:3+Math.floor(Math.random()*3),d:a.d,floorY,minX,maxX,x,y,from:a,deadline:now+60000};
     Object.assign(dot.style,{width:`${game.d}px`,height:`${game.d}px`,background:a.color});
     dot.hidden=false;place(a.x,a.y);
     page.documentElement.classList.add(AWAY);
-    for(const c of players){setPhase(c.s,'watch',now,30000,c.s.x);face(c,a.x);}
     return true;
   }
 
@@ -108,13 +120,15 @@ export function createPlay({motion}) {
   function dash(now,g) {
     const chaser=game.players[game.turn%game.players.length];
     const span=game.maxX-game.minX;
-    let to=game.minX+Math.random()*span;
-    if(Math.abs(to-game.x)<span*.25)to=clamp(game.x+(to<game.x?-1:1)*span*.4,game.minX,game.maxX);
+    // Escapadas cortas (entre un cuarto y la mitad del piso): a paso de
+    // corrida, cruzarlo entero dejaba al punto varios segundos esperando.
+    const jump=span*(.25+Math.random()*.25);
+    let dir=Math.random()<.5?-1:1;
+    if(game.x+dir*jump>game.maxX||game.x+dir*jump<game.minX)dir=-dir;
+    const to=clamp(game.x+dir*jump,game.minX,game.maxX);
     const dur=260+Math.random()*180;
     Object.assign(game,{stage:'dash',at:now,until:now+dur,fromX:game.x,toX:to,chaser});
-    const dir=to>chaser.x+chaser.size/2?1:-1;
-    const target=to-(dir>0?.8:.2)*chaser.size;
-    setPhase(chaser.s,'chase',now,dur+380,toNorm(target,g));chaser.s.phase.direction=dir;
+    run(chaser,to,now,g);
     for(const c of game.players)if(c!==chaser&&c.s.phase.kind!=='pounce')setPhase(c.s,'watch',now,30000,c.s.x);
   }
 
@@ -131,10 +145,17 @@ export function createPlay({motion}) {
     const p=clamp((now-game.at)/Math.max(1,game.until-game.at));
     if(game.stage==='escape') {
       const a=anchor()||game.from;
-      const x=a.x+(game.x-a.x)*ease(p),y=a.y+(game.y-a.y)*ease(p)-Math.sin(p*Math.PI)*70;
+      // Tiro directo, con apenas una comba (antes subía en vertical y
+      // después se iba sola hacia los gatos).
+      const x=a.x+(game.x-a.x)*ease(p),y=a.y+(game.y-a.y)*ease(p)-Math.sin(p*Math.PI)*30;
       place(x,y);
-      for(const c of game.players)face(c,x);
-      if(p>=1){place(game.x,game.y,.7);Object.assign(game,{stage:'pause',at:now,until:now+500});}
+      for(const c of game.players)if(c!==game.target)face(c,x);
+      if(p>=1){
+        // Lo recibe de un zarpazo y el punto sale disparado: arranca la persecución.
+        place(game.x,game.y,.7);
+        setPhase(game.target.s,'swat',now,700,game.target.s.x);face(game.target,game.x);
+        Object.assign(game,{stage:'pause',at:now,until:now,chaser:game.target,dashAt:now+260});
+      }
       return;
     }
     if(game.stage==='dash') {
@@ -148,8 +169,8 @@ export function createPlay({motion}) {
       place(game.x,game.y);
       const chaser=game.chaser||game.players[0];
       if(game.dashAt){if(now>=game.dashAt){game.dashAt=0;dash(now,g);}return;}
-      // Espera a que el gato llegue corriendo (con un tope por las dudas).
-      if(chaser.s.phase.kind==='chase'&&now<game.until+900)return;
+      // Espera a que el gato llegue corriendo.
+      if(chaser.s.phase.kind==='chase')return;
       if(now<game.until)return;
       const dir=game.x>chaser.x+chaser.size/2?1:-1;
       if(game.dashes<game.total) {
@@ -159,9 +180,7 @@ export function createPlay({motion}) {
         return;
       }
       if(Math.abs(paw(chaser,dir)-game.x)>chaser.size*.5&&!game.approached) {
-        game.approached=true;
-        setPhase(chaser.s,'chase',now,600,toNorm(game.x-(dir>0?.8:.2)*chaser.size,g));
-        chaser.s.phase.direction=dir;game.until=now+620;
+        game.approached=true;run(chaser,game.x,now,g);
         return;
       }
       // El último manotazo es el bueno: el punto vuelve volando a su lugar.

@@ -87,7 +87,7 @@ function next(s,now,mobile,travel) {
   else if(r<.88) {setPhase(s,'crouch',now,1400);s.phase.direction=s.x<.5?1:-1;}
   else {
     const to=s.x<.5?1:0;
-    setPhase(s,'zoom',now,Math.max(700,Math.abs(to-s.x)*travel/170*1000),to);
+    setPhase(s,'zoom',now,Math.max(700,Math.abs(to-s.x)*travel/160*1000),to);
   }
 }
 // Fases que agregan las travesuras (solas o del juego del punto rojo, ver
