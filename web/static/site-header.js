@@ -5,6 +5,7 @@
   if (document.body.classList.contains('bitu-page') || /^\/bitu\/?$/.test(location.pathname)) return;
   if (document.body.classList.contains('fendi-page') || /^\/fendi\/?$/.test(location.pathname)) return;
   import('/adaptive-dropdowns.js');
+  import('/header-hinge.js');
   if (root.classList.contains('ttra-cart-embedded')) {
     // Home inside cart-drawer.js: whichever floating panel is open (carrito,
     // perfil or pedidos) drives the parent dialog; all closed means close it.
