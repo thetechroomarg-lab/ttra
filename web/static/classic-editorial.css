@@ -710,9 +710,9 @@ html[data-modo="classic"] .ttra-fisher-catch { animation: ttra-fisher-catch 10s 
 @keyframes ttra-fisher-lift { 0%,55%,62%,66%,90%,100% { transform: translateY(0); } 58% { transform: translateY(calc(var(--fisher-u) * 3)); } 74%,82% { transform: translateY(var(--fisher-reel)); } }
 @keyframes ttra-fisher-catch { 0%,70%,86%,100% { opacity: 0; } 74%,82% { opacity: 1; } }
 
-/* Zoom hacia el pescador (6 s): se agranda .ttra-scroll-stage entero -tiene
-   fondo propio- por encima del header, los gatitos y el dock; la página no
-   scrollea ni recibe toques mientras tanto. */
+/* Zoom hacia el pescador: se agranda .ttra-scroll-stage entero -tiene fondo
+   propio- por encima del header, los gatitos y el dock. Hasta tocar "Volver"
+   la página no scrollea ni recibe toques. */
 html.ttra-fisher-zooming, html.ttra-fisher-zooming body { overflow: hidden; }
 html.ttra-fisher-zooming body { padding-right: var(--fisher-scrollbar, 0); }
 html[data-modo="classic"].ttra-fisher-zooming .ttra-scroll-stage { z-index: 10045; pointer-events: none; }
@@ -726,6 +726,17 @@ html[data-modo="classic"].ttra-fisher-zooming .ttra-scroll-stage { z-index: 1004
   transition: opacity .25s ease, transform .45s cubic-bezier(.3,1.6,.5,1); pointer-events: none;
 }
 .ttra-fisher-bubble.is-open { opacity: 1; transform: rotate(-1.5deg); transition-delay: 1.15s; }
+html[data-modo] button.ttra-fisher-back {
+  position: fixed; z-index: 10048; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  min-width: 140px; min-height: 48px; padding: 0 26px; margin: 0;
+  background: #fffdf6; color: #16130f; border: 3px solid #16130f; border-radius: 999px; box-shadow: 4px 4px 0 #16130f;
+  font: 800 17px/1 var(--ed-font-sans, var(--rc-font)), sans-serif; letter-spacing: .02em; cursor: pointer;
+  opacity: 0; transform: translate(-50%, 16px); transition: opacity .25s ease, transform .35s cubic-bezier(.3,1.5,.5,1);
+}
+html[data-modo] button.ttra-fisher-back.is-open { opacity: 1; transform: translate(-50%, 0); transition-delay: 1.3s; }
+html[data-modo] button.ttra-fisher-back:hover { background: #fff; }
+html[data-modo] button.ttra-fisher-back:active { transform: translate(-50%, 2px); box-shadow: 2px 2px 0 #16130f; }
+html[data-modo] button.ttra-fisher-back:focus-visible { outline: 3px solid var(--ed-accent, #e2483d); outline-offset: 3px; }
 /* Colita del globo: borde negro + relleno, apuntando a la cabeza. */
 .ttra-fisher-bubble::before, .ttra-fisher-bubble::after { content: ''; position: absolute; top: 100%; left: var(--tail-x, 40px); border-style: solid; }
 .ttra-fisher-bubble::before { margin-left: -14px; border-width: 24px 14px 0 4px; border-color: #16130f transparent transparent; }
@@ -737,4 +748,5 @@ html[data-modo="classic"] .ttra-fisher.is-told :is(.ttra-fisher-man, .ttra-fishe
   html[data-modo="classic"] .ttra-fisher :is(.ttra-fisher-rod, .ttra-fisher-bobber), html[data-modo="classic"] .ttra-hero-copy > .ttra-fisher { animation: none; }
   html[data-modo="classic"] .ttra-fisher :is(.ttra-fisher-line, .ttra-fisher-hook, .ttra-fisher-catch) { animation: none; }
   .ttra-fisher-bubble, .ttra-fisher-bubble.is-open { transform: none; transition: opacity .3s; transition-delay: 0s; }
+  html[data-modo] button.ttra-fisher-back, html[data-modo] button.ttra-fisher-back.is-open { transform: translate(-50%, 0); transition: opacity .3s; transition-delay: 0s; }
 }

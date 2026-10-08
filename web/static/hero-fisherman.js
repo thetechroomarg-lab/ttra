@@ -3,8 +3,8 @@
 // nene pescando en la luna de DreamWorks). Mide un pelito: de tamaño normal
 // es una manchita, solo se descubre haciendo zoom. Pesca todo el tiempo (le
 // pican, saca un celular, vuelve a tirar). Tocarlo hace zoom hacia él y dice
-// su frase en un globo de historieta durante 6 s, una sola vez por carga de
-// página.
+// su frase en un globo de historieta hasta que se toca "Volver", una sola vez
+// por carga de página.
 //
 // No toca el <h2>: classic-editorial.js le reescribe el innerHTML al hacer
 // rodar las letras, así que el pescador es una capa aparte dentro de
@@ -129,9 +129,11 @@
 
   let frame = 0;
   const schedule = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; place(); }); };
-  // --- Zoom hacia el pescador + globo de diálogo (6 s, una vez por carga) ---
+  // --- Zoom hacia el pescador + globo de diálogo (una vez por carga) ---
+  // Se queda agrandado hasta que se toca "Volver": es lo único que responde
+  // (ni la página, ni el scroll, ni Escape; el foco no sale del botón).
   const QUOTE = 'A veces se puede encontrar a alguien viviendo su vida, tranquilo, y no es necesario molestarlo. Tenés que aprender a respetar la paz, te deseo buena vida.';
-  const TOTAL = 6000, ZOOM_IN = .2, ZOOM_OUT = .8;
+  const ZOOM_MS = 1200;
   const stage = title.closest('.ttra-scroll-stage');
   let told = false;
   // Header y gatitos pueden vivir en el documento de arriba (shell con
@@ -143,7 +145,7 @@
     const seat = fisher.getBoundingClientRect(), man = fisher.querySelector('.ttra-fisher-man').getBoundingClientRect();
     const small = innerWidth <= 700;
     // Dónde queda el pescador ya agrandado, y cuánto se agranda: unos 130px de alto.
-    const cx = innerWidth * (small ? .3 : .36), cy = innerHeight * (small ? .74 : .68);
+    const cx = innerWidth * (small ? .3 : .36), cy = innerHeight * (small ? .66 : .62);
     const scale = Math.min(40, Math.max(6, Math.min(innerHeight * .17, 140) / Math.max(1, man.height)));
     const s = stage.getBoundingClientRect();
     const zoomed = `translate(${(cx - seat.left).toFixed(1)}px, ${(cy - seat.top).toFixed(1)}px) scale(${scale.toFixed(2)})`;
@@ -155,7 +157,11 @@
     bubble.className = 'ttra-fisher-bubble';
     bubble.setAttribute('role', 'status');
     bubble.textContent = QUOTE;
-    document.body.append(shield, bubble);
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'ttra-fisher-back';
+    back.textContent = 'Volver';
+    document.body.append(shield, bubble, back);
     // El globo arriba de la cabeza; la colita apunta a la cabeza.
     const width = Math.min(innerWidth - 32, 420);
     const left = Math.max(16, Math.min(innerWidth - width - 16, head.x - width * (small ? .25 : .18)));
@@ -167,34 +173,45 @@
     const scrollbar = innerWidth - root.clientWidth;
     root.style.setProperty('--fisher-scrollbar', `${scrollbar}px`);
     for (const r of roots()) r.classList.add('ttra-fisher-zooming');
-    // Tres tramos: entrar, quedarse quieto y salir. En el tramo quieto el
-    // transform va fijo (sin animación) para que el navegador redibuje todo
-    // nítido al tamaño grande; animado de punta a punta, la tilde se veía
-    // pixelada porque se estiraba la imagen tomada al tamaño original.
-    let zoom = null;
+    // El teclado no se escapa del botón: Tab vuelve a él y Escape no cierra.
+    const trap = event => {
+      if (event.target === back && (event.key === 'Enter' || event.key === ' ')) return;
+      event.preventDefault(); event.stopPropagation();
+      back.focus({preventScroll: true});
+    };
+    document.addEventListener('keydown', trap, true);
+    // Entrada animada y después el transform queda fijo, sin animación: así el
+    // navegador redibuja todo nítido al tamaño grande (animado, la tilde se
+    // veía pixelada porque se estiraba la imagen tomada al tamaño original).
     const motion = !reducedMotion.matches;
     const ease = 'cubic-bezier(.65,0,.25,1)';
     if (motion) {
       stage.style.transformOrigin = `${(seat.left - s.left).toFixed(1)}px ${(seat.top - s.top).toFixed(1)}px`;
-      zoom = stage.animate([{transform: 'none'}, {transform: zoomed}], {duration: TOTAL * ZOOM_IN, easing: ease});
-      zoom.onfinish = () => { stage.style.transform = zoomed; zoom.cancel(); zoom = null; };
-      setTimeout(() => {
-        stage.style.transform = '';
-        zoom = stage.animate([{transform: zoomed}, {transform: 'none'}], {duration: TOTAL * (1 - ZOOM_OUT), easing: ease});
-      }, TOTAL * ZOOM_OUT);
+      const zoomIn = stage.animate([{transform: 'none'}, {transform: zoomed}], {duration: ZOOM_MS, easing: ease});
+      zoomIn.onfinish = () => { stage.style.transform = zoomed; zoomIn.cancel(); };
     }
-    requestAnimationFrame(() => bubble.classList.add('is-open'));
-    setTimeout(() => bubble.classList.remove('is-open'), TOTAL * ZOOM_OUT - 250);
-    setTimeout(() => {
-      zoom?.cancel();
+    requestAnimationFrame(() => { bubble.classList.add('is-open'); back.classList.add('is-open'); });
+    setTimeout(() => back.focus({preventScroll: true}), motion ? ZOOM_MS : 0);
+
+    back.addEventListener('click', () => {
+      if (back.disabled) return;
+      back.disabled = true;
+      bubble.classList.remove('is-open'); back.classList.remove('is-open');
+      const finish = () => {
+        stage.style.transform = '';
+        stage.style.transformOrigin = '';
+        for (const r of roots()) r.classList.remove('ttra-fisher-zooming');
+        root.style.removeProperty('--fisher-scrollbar');
+        document.removeEventListener('keydown', trap, true);
+        shield.remove(); bubble.remove(); back.remove();
+        fisher.classList.add('is-told');
+        schedule();
+      };
+      if (!motion) { finish(); return; }
       stage.style.transform = '';
-      stage.style.transformOrigin = '';
-      for (const r of roots()) r.classList.remove('ttra-fisher-zooming');
-      root.style.removeProperty('--fisher-scrollbar');
-      shield.remove(); bubble.remove();
-      fisher.classList.add('is-told');
-      schedule();
-    }, TOTAL);
+      const zoomOut = stage.animate([{transform: zoomed}, {transform: 'none'}], {duration: ZOOM_MS, easing: ease});
+      zoomOut.onfinish = () => { zoomOut.cancel(); finish(); };
+    });
   }
   fisher.addEventListener('click', tell);
   title.addEventListener('animationend', schedule);

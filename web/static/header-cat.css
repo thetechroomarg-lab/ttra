@@ -280,4 +280,5 @@ html.ttra-shell-album #ttra-storefront-frame { top: 0; height: 100dvh; }
 /* Mientras el pescador del título cuenta su frase (hero-fisherman.js), con la
    home dentro del iframe del shell: el header y los gatitos de acá arriba se
    apartan para que el zoom quede solo. */
-html.ttra-fisher-zooming #ttra-header-cat-portal, html.ttra-fisher-zooming #ttra-cat-dot, html.ttra-fisher-zooming body > header.ttra-site-header { opacity: 0; transition: opacity .4s; }
+html.ttra-fisher-zooming :is(#ttra-header-cat-portal, #ttra-cat-dot, body > header.ttra-site-header, .ttra-dock) { opacity: 0; pointer-events: none !important; transition: opacity .4s; }
+html.ttra-fisher-zooming #ttra-header-cat-portal * { pointer-events: none !important; }
