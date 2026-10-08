@@ -685,9 +685,13 @@ html[data-modo="classic"] .rc-gate-tarjeta { font-family: var(--rc-font); }
    manchita y solo se descubre haciendo zoom. Silueta del color del título,
    corchito del color de acento; anda igual en Classic claro y oscuro. */
 html[data-modo="classic"] .ttra-hero-copy > .ttra-fisher { position: absolute; z-index: 2; width: 0; height: 0; color: var(--rc-green-bright); pointer-events: none; animation: ttra-fisher-in .6s ease both; }
-html[data-modo="classic"] .ttra-fisher[hidden] { display: none; }
+html[data-modo="classic"] .ttra-fisher[hidden], html[data-modo="classic"] .ttra-fisher-hit[hidden] { display: none; }
+/* Fuera del zoom el pescador no se ve: lo que se toca es la tilde. */
+html[data-modo="classic"] .ttra-hero-copy > .ttra-fisher { visibility: hidden; }
+html[data-modo="classic"].ttra-fisher-zooming .ttra-hero-copy > .ttra-fisher { visibility: visible; }
+html[data-modo="classic"] .ttra-fisher-hit { position: absolute; z-index: 3; border-radius: 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 html[data-modo="classic"] .ttra-fisher svg { position: absolute; overflow: visible; fill: currentColor; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
-html[data-modo="classic"] .ttra-fisher-man { left: -.0642em; top: -.1028em; width: .1456em; height: .1285em; pointer-events: auto; cursor: pointer; }
+html[data-modo="classic"] .ttra-fisher-man { left: -.0642em; top: -.1028em; width: .1456em; height: .1285em; }
 html[data-modo="classic"] .ttra-fisher-man path { stroke-width: 2.4; }
 html[data-modo="classic"] .ttra-fisher-man .ttra-fisher-body { stroke-width: 5.5; }
 /* Sillita plegable de camping: estructura del color del pescador, tela roja. */
@@ -715,23 +719,36 @@ html.ttra-fisher-zooming .ttra-fisher-man :is(.ttra-fire-red, .ttra-fire-yellow,
 @keyframes ttra-fire-spark { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(1.5px, -7px); } }
 /* El equipo de pesca se dibuja en px desde la cadera (viewBox 1x1 = 1px). */
 html[data-modo="classic"] .ttra-fisher-tackle { left: 0; top: 0; width: 1px; height: 1px; fill: none; }
-html[data-modo="classic"] .ttra-fisher-tackle > path, html[data-modo="classic"] .ttra-fisher-bobber { pointer-events: visibleStroke; cursor: pointer; }
 html[data-modo="classic"] .ttra-fisher-rod { stroke-width: calc(var(--fisher-u) * 1.4); transform-box: view-box; transform-origin: 0 0; animation: ttra-fisher-rod 10s ease-in-out infinite; }
+/* Al recoger, tira para atrás: torso, cabeza y brazo se inclinan sobre la
+   cadera (7°, sin tocar el respaldo) y la caña con la línea acompañan a los
+   brazos. Piernas y sillita quietas. Mismo ciclo de 10 s que el resto. */
+html[data-modo="classic"] .ttra-fisher-upper { transform-box: view-box; transform-origin: 0 -12px; animation: ttra-fisher-pull 10s ease-in-out infinite; }
+html[data-modo="classic"] .ttra-fisher-gear { transform-box: view-box; transform-origin: var(--fisher-hip, 0 0); animation: ttra-fisher-pull 10s ease-in-out infinite; }
 html[data-modo="classic"] .ttra-fisher-line { stroke-width: calc(var(--fisher-u) * .55); opacity: .75; transform-box: view-box; transform-origin: var(--fisher-tip); }
 html[data-modo="classic"] .ttra-fisher-bobber { fill: var(--ed-accent); stroke: none; animation: ttra-fisher-bob 2.2s ease-in-out infinite; }
-/* Lo que pesca: un celular chiquito colgando del anzuelo. */
-html[data-modo="classic"] .ttra-fisher-catch { fill: currentColor; stroke: var(--ed-accent); stroke-width: calc(var(--fisher-u) * .8); opacity: 0; }
+/* Lo que pesca: un pez naranja que se sacude colgado del anzuelo. */
+html[data-modo="classic"] .ttra-fisher-catch { opacity: 0; }
+html[data-modo="classic"] .ttra-fish-body { fill: #f28a24; stroke: #b85f12; stroke-width: .5; }
+html[data-modo="classic"] .ttra-fish-fin { fill: #c96a12; stroke: none; }
+html[data-modo="classic"] .ttra-fish-gill { fill: none; stroke: #b85f12; stroke-width: .6; }
+html[data-modo="classic"] .ttra-fish-eye { fill: #fff; stroke: none; }
+html[data-modo="classic"] .ttra-fish-pupil { fill: #16130f; stroke: none; }
+html[data-modo="classic"] .ttra-fish { transform-box: fill-box; transform-origin: 50% 0; animation: ttra-fish-wiggle .35s ease-in-out infinite alternate; }
+@keyframes ttra-fish-wiggle { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
 /* Pesca siempre, en un ciclo de 10 s: mece la caña, le pican (el corcho se
    hunde), recoge la línea con un celular colgando y vuelve a tirar. */
 html[data-modo="classic"] .ttra-fisher-line { animation: ttra-fisher-reel 10s ease-in-out infinite; }
 html[data-modo="classic"] .ttra-fisher-hook { animation: ttra-fisher-lift 10s ease-in-out infinite; }
 html[data-modo="classic"] .ttra-fisher-catch { animation: ttra-fisher-catch 10s ease-in-out infinite; }
 @keyframes ttra-fisher-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes ttra-fisher-rod { 0%,28%,55%,60%,92%,100% { transform: rotate(0); } 14%,42% { transform: rotate(-2deg); } 57% { transform: rotate(-5deg); } 68%,80% { transform: rotate(-11deg); } 86% { transform: rotate(4deg); } }
+@keyframes ttra-fisher-rod { 0%,28%,55%,60%,100% { transform: rotate(0); } 14%,42% { transform: rotate(-2deg); } 57% { transform: rotate(-4deg); } }
+@keyframes ttra-fisher-pull { 0%,62%,96%,100% { transform: rotate(0); } 70%,90% { transform: rotate(-7deg); } 93% { transform: rotate(2deg); } }
 @keyframes ttra-fisher-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(calc(var(--fisher-u) * 1.4)); } }
-@keyframes ttra-fisher-reel { 0%,66%,90%,100% { transform: scaleY(1); } 74%,82% { transform: scaleY(var(--fisher-reel-scale)); } }
-@keyframes ttra-fisher-lift { 0%,55%,62%,66%,90%,100% { transform: translateY(0); } 58% { transform: translateY(calc(var(--fisher-u) * 3)); } 74%,82% { transform: translateY(var(--fisher-reel)); } }
-@keyframes ttra-fisher-catch { 0%,70%,86%,100% { opacity: 0; } 74%,82% { opacity: 1; } }
+@keyframes ttra-fisher-reel { 0%,64%,95%,100% { transform: scaleY(1); } 70%,91% { transform: scaleY(var(--fisher-reel-scale)); } }
+@keyframes ttra-fisher-lift { 0%,55%,62%,64%,95%,100% { transform: translateY(0); } 58% { transform: translateY(calc(var(--fisher-u) * 3)); } 70%,91% { transform: translateY(var(--fisher-reel)); } }
+@keyframes ttra-fisher-catch { 0%,68%,94%,100% { opacity: 0; } 71%,91% { opacity: 1; } }
+
 
 /* Zoom hacia el pescador: se agranda .ttra-scroll-stage entero -tiene fondo
    propio- por encima del header, los gatitos y el dock. Hasta tocar "Volver"
@@ -739,18 +756,27 @@ html[data-modo="classic"] .ttra-fisher-catch { animation: ttra-fisher-catch 10s 
 html.ttra-fisher-zooming, html.ttra-fisher-zooming body { overflow: hidden; }
 html.ttra-fisher-zooming body { padding-right: var(--fisher-scrollbar, 0); }
 html[data-modo="classic"].ttra-fisher-zooming .ttra-scroll-stage { z-index: 10045; pointer-events: none; }
-.ttra-fisher-shield { position: fixed; inset: 0; z-index: 10046; }
+.ttra-fisher-shield { position: fixed; inset: 0; z-index: 10046; touch-action: none; }
+/* Globo y botón viven en una capa del tamaño de lo visible (ver hero-fisherman.js). */
+.ttra-fisher-ui { position: fixed; z-index: 10047; transform-origin: 0 0; touch-action: none; pointer-events: none; }
+.ttra-fisher-ui > * { pointer-events: auto; }
 .ttra-fisher-bubble {
-  position: fixed; z-index: 10047; box-sizing: border-box; padding: 18px 22px;
+  position: absolute; z-index: 1; box-sizing: border-box; padding: 18px 22px;
   background: #fffdf6; color: #16130f; border: 3px solid #16130f; border-radius: 28px;
   box-shadow: 6px 6px 0 #16130f;
   font: 700 clamp(16px, 2.2vw, 20px)/1.32 var(--ed-font-sans, var(--rc-font)), sans-serif; letter-spacing: -.01em;
   opacity: 0; transform: translateY(14px) scale(.6) rotate(-2deg); transform-origin: var(--tail-x, 40px) 100%;
   transition: opacity .25s ease, transform .45s cubic-bezier(.3,1.6,.5,1); pointer-events: none;
 }
+/* Globo al costado (pantallas bajas): la colita sale del borde izquierdo. */
+.ttra-fisher-bubble.is-side { transform-origin: 0 var(--tail-y, 30px); }
+.ttra-fisher-bubble.is-side::before { top: var(--tail-y, 30px); left: auto; right: 100%; margin: -8px 0 0; border-width: 4px 24px 14px 0; border-color: transparent #16130f transparent transparent; }
+.ttra-fisher-bubble.is-side::after { top: var(--tail-y, 30px); left: auto; right: 100%; margin: -4px -4px 0 0; border-width: 3px 18px 9px 0; border-color: transparent #fffdf6 transparent transparent; }
+.ttra-fisher-bubble > span { display: block; }
+.ttra-fisher-bubble > span + span { margin-top: .5em; }
 .ttra-fisher-bubble.is-open { opacity: 1; transform: rotate(-1.5deg); transition-delay: 1.15s; }
 html[data-modo] button.ttra-fisher-back {
-  position: fixed; z-index: 10048; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  position: absolute; z-index: 2; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); touch-action: manipulation;
   min-width: 140px; min-height: 48px; padding: 0 26px; margin: 0;
   background: #fffdf6; color: #16130f; border: 3px solid #16130f; border-radius: 999px; box-shadow: 4px 4px 0 #16130f;
   font: 800 17px/1 var(--ed-font-sans, var(--rc-font)), sans-serif; letter-spacing: .02em; cursor: pointer;
@@ -765,11 +791,9 @@ html[data-modo] button.ttra-fisher-back:focus-visible { outline: 3px solid var(-
 .ttra-fisher-bubble::before { margin-left: -14px; border-width: 24px 14px 0 4px; border-color: #16130f transparent transparent; }
 .ttra-fisher-bubble::after { margin-left: -9px; margin-top: -4px; border-width: 18px 9px 0 3px; border-color: #fffdf6 transparent transparent; }
 html.ttra-fisher-zooming #ttra-header-cat-portal, html.ttra-fisher-zooming #ttra-cat-dot { opacity: 0; transition: opacity .4s; }
-/* Ya contó su frase: sigue pescando, pero tocarlo no hace nada más. */
-html[data-modo="classic"] .ttra-fisher.is-told :is(.ttra-fisher-man, .ttra-fisher-tackle > path, .ttra-fisher-bobber) { cursor: default; }
 @media (prefers-reduced-motion: reduce) {
-  html[data-modo="classic"] .ttra-fisher :is(.ttra-fisher-rod, .ttra-fisher-bobber), html[data-modo="classic"] .ttra-hero-copy > .ttra-fisher { animation: none; }
-  html[data-modo="classic"] .ttra-fisher :is(.ttra-fisher-line, .ttra-fisher-hook, .ttra-fisher-catch) { animation: none; }
+  html[data-modo="classic"] .ttra-fisher :is(.ttra-fisher-rod, .ttra-fisher-bobber, .ttra-fisher-upper, .ttra-fisher-gear), html[data-modo="classic"] .ttra-hero-copy > .ttra-fisher { animation: none; }
+  html[data-modo="classic"] .ttra-fisher :is(.ttra-fisher-line, .ttra-fisher-hook, .ttra-fisher-catch, .ttra-fish) { animation: none; }
   html[data-modo="classic"] .ttra-fisher-man :is(.ttra-fire-red, .ttra-fire-yellow, .ttra-fire-glow, .ttra-fire-spark) { animation: none; }
   .ttra-fisher-bubble, .ttra-fisher-bubble.is-open { transform: none; transition: opacity .3s; transition-delay: 0s; }
   html[data-modo] button.ttra-fisher-back, html[data-modo] button.ttra-fisher-back.is-open { transform: translate(-50%, 0); transition: opacity .3s; transition-delay: 0s; }
