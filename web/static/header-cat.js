@@ -80,7 +80,9 @@ const catFendi=makeCompanion('ttra-header-cat-fendi',fendiArtwork,'Acariciar a F
 const catBitu=makeCompanion('ttra-header-cat-bitu',bituArtwork,'Acariciar a Bitu',bituState,()=>persistBitu(),true,()=>bubbleBitu);
 portal.append(cat,catFendi,catBitu);document.body.append(portal);
 const door3d=createDoor();
-const play=createPlay({motion});
+// Tocar el punto rojo con todas adentro saca una por la puerta (la misma
+// salida que el logo) para que haya con quién jugar.
+const play=createPlay({motion,summon:()=>{if(current&&!companions.some(c=>c.s().active))toggle();}});
 // Globito de "encontraste mi álbum secreto" a los 10 clicks/taps seguidos
 // (ver interact() en header-cat-state.mjs). Fábrica reusada por los tres gatos.
 function makeIntroBubble(id,s,persistFn,renderFn,focusEl,albumPath,accessPath) {
