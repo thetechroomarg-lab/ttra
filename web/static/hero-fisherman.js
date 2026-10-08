@@ -1,0 +1,140 @@
+// Easter egg: un pescador diminuto sentado sobre la tilde de "Buscás", con la
+// línea colgando y el corchito flotando sobre la letra siguiente (como el
+// nene pescando en la luna de DreamWorks). Mide un pelito: de tamaño normal
+// es una manchita, solo se descubre haciendo zoom. Tocarlo lo hace sacar un
+// celular del agua.
+//
+// No toca el <h2>: classic-editorial.js le reescribe el innerHTML al hacer
+// rodar las letras, así que el pescador es una capa aparte dentro de
+// .ttra-hero-copy, posicionada sobre la tilde real. Para encontrar la tilde se
+// dibuja la letra en un canvas oculto con la misma tipografía y se busca la
+// primera mancha de tinta desde arriba (funciona igual con "á" y con "Á").
+(() => {
+  'use strict';
+  const root = document.documentElement;
+  const title = document.getElementById('ttra-hero-title');
+  const copy = title?.closest('.ttra-hero-copy');
+  if (!title || !copy) return;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  const fisher = document.createElement('div');
+  fisher.className = 'ttra-fisher';
+  fisher.hidden = true;
+  fisher.setAttribute('aria-hidden', 'true');
+  // Dos dibujos: el muñequito (en unidades de 1/467 em, con el origen en la
+  // cadera, que es donde se sienta) y el equipo de pesca -caña, línea,
+  // corcho y lo que saca-, que se dibuja en px porque su largo depende de
+  // dónde cae la letra siguiente. SVG y no cajas de CSS: Chrome redondea a
+  // 1px cualquier caja más finita, y la línea tiene que ser un hilo.
+  fisher.innerHTML = `
+    <svg class="ttra-fisher-man" viewBox="-22 -40 60 52" focusable="false">
+      <circle cx="2" cy="-27" r="5"/>
+      <path d="M-5-29.5h14M-3.5-29.8q0-6.4 5.5-6.4t5.5 6.4z"/>
+      <path class="ttra-fisher-body" d="M1.5-21L0-4M2-16l8 6M0-2l10 1M10-1l1 10" fill="none"/>
+    </svg>
+    <svg class="ttra-fisher-tackle" viewBox="0 0 1 1" focusable="false">
+      <path class="ttra-fisher-rod"/>
+      <path class="ttra-fisher-line"/>
+      <g class="ttra-fisher-hook"><g class="ttra-fisher-catch"><rect/></g><circle class="ttra-fisher-bobber"/></g>
+    </svg>`;
+  copy.append(fisher);
+
+  function ink(char, css) {
+    const size = parseFloat(css.fontSize);
+    const canvas = document.createElement('canvas');
+    const pad = Math.ceil(size * .3), W = Math.ceil(size * 1.6), H = Math.ceil(size * 2);
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d', {willReadFrequently: true});
+    ctx.font = `${css.fontStyle} ${css.fontWeight} ${size}px ${css.fontFamily}`;
+    const base = Math.round(size * 1.5);
+    ctx.fillText(char, pad, base);
+    const data = ctx.getImageData(0, 0, W, H).data;
+    const rowInk = y => { let a = W, b = -1; for (let x = 0; x < W; x++) if (data[(y * W + x) * 4 + 3] > 90) { a = Math.min(a, x); b = x; } return b < 0 ? null : [a, b]; };
+    let top = -1, bottom = -1, left = W, right = -1;
+    for (let y = 0; y < H; y++) {
+      const row = rowInk(y);
+      if (!row) { if (top >= 0) { bottom = y; break; } continue; }
+      if (top < 0) top = y;
+      left = Math.min(left, row[0]); right = Math.max(right, row[1]);
+    }
+    if (top < 0) return null;
+    const metrics = ctx.measureText(char);
+    // Primera tinta desde arriba en una columna (para que el corcho se apoye
+    // justo sobre la curva de la letra, no sobre su punto más alto).
+    const topAt = x => { const col = Math.round(x + pad); if (col < 0 || col >= W) return top - base; for (let y = 0; y < H; y++) if (data[(y * W + col) * 4 + 3] > 90) return y - base; return top - base; };
+    // Coordenadas relativas al origen del glifo (x) y a la línea de base (y).
+    return {left: left - pad, right: right - pad, top: top - base, bottom: bottom - base, ascent: metrics.fontBoundingBoxAscent, topAt};
+  }
+
+  function charRect(char) {
+    const walker = document.createTreeWalker(title, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode, index = node.textContent.indexOf(char);
+      if (index < 0) continue;
+      const range = document.createRange();
+      range.setStart(node, index); range.setEnd(node, index + 1);
+      const next = document.createRange();
+      next.setStart(node, index + 1); next.setEnd(node, Math.min(node.textContent.length, index + 2));
+      return {glyph: range.getBoundingClientRect(), next: next.getBoundingClientRect(), nextChar: node.textContent[index + 1] || ''};
+    }
+    return null;
+  }
+
+  function place() {
+    if (root.dataset.modo !== 'classic' || title.classList.contains('ttra-text-rolling') || title.getAnimations().some(a => a.playState === 'running')) {
+      fisher.hidden = true; return;
+    }
+    const css = getComputedStyle(title);
+    const upper = css.textTransform === 'uppercase';
+    const found = charRect('á');
+    const accent = found && ink(upper ? 'Á' : 'á', css);
+    if (!accent || !found.glyph.width) { fisher.hidden = true; return; }
+    const nextChar = upper ? found.nextChar.toUpperCase() : found.nextChar;
+    const water = nextChar && ink(nextChar, css);
+    const parent = fisher.offsetParent || document.body;
+    const p = parent.getBoundingClientRect();
+    const baseline = found.glyph.top + accent.ascent;
+    const size = parseFloat(css.fontSize), u = size / 467;
+    // Sentado sobre el borde de arriba de la tilde, cerca de la punta, con
+    // las rodillas pasando apenas la esquina para que las piernas cuelguen.
+    const seatX = found.glyph.left + accent.right - 9 * u;
+    const seatY = baseline + accent.top;
+    // La punta de la caña queda sobre la letra siguiente, y el corcho flota
+    // apoyado arriba de ella: esa letra es "el agua".
+    const inWater = water ? water.left + (water.right - water.left) * .35 : 0;
+    const tipX = water ? found.next.left + inWater - seatX : 34 * u;
+    const tipY = -34 * u;
+    const lineEnd = water ? baseline + water.topAt(inWater) - seatY - 1.2 * u : size * .12;
+    const r = 3.6 * u, hand = [10 * u, -10 * u];
+    fisher.style.fontSize = `${size}px`;
+    fisher.style.left = `${(seatX - p.left - parent.clientLeft).toFixed(2)}px`;
+    fisher.style.top = `${(seatY - p.top - parent.clientTop).toFixed(2)}px`;
+    const f = n => n.toFixed(2);
+    fisher.querySelector('.ttra-fisher-rod').setAttribute('d', `M${f(hand[0] - 4 * u)} ${f(hand[1] + 4 * u)}L${f(tipX)} ${f(tipY)}`);
+    fisher.querySelector('.ttra-fisher-line').setAttribute('d', `M${f(tipX)} ${f(tipY)}V${f(lineEnd - r)}`);
+    const bobber = fisher.querySelector('.ttra-fisher-bobber');
+    bobber.setAttribute('cx', f(tipX)); bobber.setAttribute('cy', f(lineEnd - r)); bobber.setAttribute('r', f(r));
+    const phone = fisher.querySelector('.ttra-fisher-catch rect');
+    Object.entries({x: tipX - 4.5 * u, y: lineEnd, width: 9 * u, height: 15 * u, rx: 2 * u}).forEach(([k, v]) => phone.setAttribute(k, f(v)));
+    fisher.style.setProperty('--fisher-u', `${u}px`);
+    fisher.style.setProperty('--fisher-tip', `${f(tipX)}px ${f(tipY)}px`);
+    fisher.style.setProperty('--fisher-reel', `${f(tipY + 6 * u - lineEnd)}px`);
+    fisher.style.setProperty('--fisher-reel-scale', String(Math.max(.02, (6 * u) / Math.max(1, lineEnd - tipY))));
+    fisher.hidden = false;
+  }
+
+  let frame = 0;
+  const schedule = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; place(); }); };
+  fisher.addEventListener('click', () => {
+    if (fisher.classList.contains('is-reeling')) return;
+    fisher.classList.add('is-reeling');
+    setTimeout(() => fisher.classList.remove('is-reeling'), reducedMotion.matches ? 1200 : 2600);
+  });
+  title.addEventListener('animationend', schedule);
+  new MutationObserver(schedule).observe(title, {attributes: true, attributeFilter: ['class'], childList: true});
+  new MutationObserver(schedule).observe(root, {attributes: true, attributeFilter: ['data-modo', 'class']});
+  new ResizeObserver(schedule).observe(title);
+  window.addEventListener('resize', schedule, {passive: true});
+  document.fonts?.ready.then(schedule);
+  schedule();
+})();
