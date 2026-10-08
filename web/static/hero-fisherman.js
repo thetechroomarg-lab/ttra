@@ -29,10 +29,28 @@
   // dónde cae la letra siguiente. SVG y no cajas de CSS: Chrome redondea a
   // 1px cualquier caja más finita, y la línea tiene que ser un hilo.
   fisher.innerHTML = `
-    <svg class="ttra-fisher-man" viewBox="-22 -40 60 52" focusable="false">
-      <circle cx="2" cy="-27" r="5"/>
-      <path d="M-5-29.5h14M-3.5-29.8q0-6.4 5.5-6.4t5.5 6.4z"/>
-      <path class="ttra-fisher-body" d="M1.5-21L0-4M2-16l8 6M0-2l10 1M10-1l1 10" fill="none"/>
+    <svg class="ttra-fisher-man" viewBox="-30 -48 68 60" focusable="false">
+      <g class="ttra-fisher-fire">
+        <ellipse class="ttra-fire-glow" cx="0" cy="-4" rx="12" ry="9"/>
+        <g class="ttra-fire-flames">
+          <path class="ttra-fire-red" d="M0-15C3-11 6-8 5-4 4-1 2 0 0 0S-4-1-5-4C-6-8-2-9 0-15Z"/>
+          <path class="ttra-fire-yellow" d="M0-10C2-7 3.5-5 3-3 2.5-1 1.3-.4 0-.4S-2.5-1-3-3C-3.4-5-1.5-6 0-10Z"/>
+        </g>
+        <circle class="ttra-fire-spark" cx="-1.5" cy="-14" r=".7"/>
+        <circle class="ttra-fire-spark" cx="2" cy="-15" r=".6"/>
+        <path class="ttra-fire-log" d="M-6-3.8L5 .4"/>
+        <path class="ttra-fire-log" d="M6-3.8L-5 .4"/>
+        <path class="ttra-fire-log" d="M-7-.6H7"/>
+      </g>
+      <g class="ttra-fisher-chair">
+        <path class="ttra-chair-frame" d="M-5-7L9 0M9-7L-5 0M-5-7L-8-24"/>
+        <path class="ttra-chair-fabric" d="M-5-7.6H9.4M-5.6-9.5L-7.5-22.5"/>
+      </g>
+      <g transform="translate(0 -8)">
+        <circle cx="2" cy="-27" r="5"/>
+        <path d="M-5-29.5h14M-3.5-29.8q0-6.4 5.5-6.4t5.5 6.4z"/>
+        <path class="ttra-fisher-body" d="M1.5-21L0-4M2-16l8 6M0-2l10 1M10-1l1 9" fill="none"/>
+      </g>
     </svg>
     <svg class="ttra-fisher-tackle" viewBox="0 0 1 1" focusable="false">
       <path class="ttra-fisher-rod"/>
@@ -60,12 +78,14 @@
       left = Math.min(left, row[0]); right = Math.max(right, row[1]);
     }
     if (top < 0) return null;
+    // Dónde empieza (a la izquierda) el borde de arriba: el "piso" disponible.
+    const topLeft = rowInk(top)[0] - pad;
     const metrics = ctx.measureText(char);
     // Primera tinta desde arriba en una columna (para que el corcho se apoye
     // justo sobre la curva de la letra, no sobre su punto más alto).
     const topAt = x => { const col = Math.round(x + pad); if (col < 0 || col >= W) return top - base; for (let y = 0; y < H; y++) if (data[(y * W + col) * 4 + 3] > 90) return y - base; return top - base; };
     // Coordenadas relativas al origen del glifo (x) y a la línea de base (y).
-    return {left: left - pad, right: right - pad, top: top - base, bottom: bottom - base, ascent: metrics.fontBoundingBoxAscent, topAt};
+    return {left: left - pad, right: right - pad, top: top - base, bottom: bottom - base, ascent: metrics.fontBoundingBoxAscent, topAt, topLeft};
   }
 
   function charRect(char) {
@@ -99,9 +119,12 @@
     const p = parent.getBoundingClientRect();
     const baseline = found.glyph.top + accent.ascent;
     const size = parseFloat(css.fontSize), u = size / 467;
-    // Sentado sobre el borde de arriba de la tilde, cerca de la punta, con
-    // las rodillas pasando apenas la esquina para que las piernas cuelguen.
-    const seatX = found.glyph.left + accent.right - 9 * u;
+    // La sillita se apoya sobre el borde de arriba de la tilde, cerca de la
+    // punta; la fogata va detrás (a la izquierda), sin salirse del borde si
+    // entra.
+    const seatX = found.glyph.left + accent.right - 12 * u;
+    const floorLeft = (found.glyph.left + accent.topLeft - seatX) / u;
+    fisher.querySelector('.ttra-fisher-fire').setAttribute('transform', `translate(${Math.min(-19, Math.max(-24, floorLeft + 7)).toFixed(1)} 0)`);
     const seatY = baseline + accent.top;
     // La punta de la caña queda sobre la letra siguiente, y el corcho flota
     // apoyado arriba de ella: esa letra es "el agua".
@@ -109,7 +132,7 @@
     const tipX = water ? found.next.left + inWater - seatX : 34 * u;
     const tipY = -34 * u;
     const lineEnd = water ? baseline + water.topAt(inWater) - seatY - 1.2 * u : size * .12;
-    const r = 3.6 * u, hand = [10 * u, -10 * u];
+    const r = 3.6 * u, hand = [10 * u, -18 * u];
     fisher.style.fontSize = `${size}px`;
     fisher.style.left = `${(seatX - p.left - parent.clientLeft).toFixed(2)}px`;
     fisher.style.top = `${(seatY - p.top - parent.clientTop).toFixed(2)}px`;
