@@ -4,10 +4,10 @@ html body .grilla .card.ai-card{display:flex!important;flex-direction:column!imp
 html body .card.ai-card>[hidden]{display:none!important}
 .ai-face{position:relative;aspect-ratio:1;width:100%;container-type:inline-size;background:#10110e;color:#f5f4ed;isolation:isolate}
 .ai-logo{position:absolute;left:6.3%;top:4%;font:800 3.1cqw/.88 Arial,sans-serif;letter-spacing:-.15cqw}.ai-logo span{color:#ff503c}
-html body .card.ai-card .ai-title{display:block!important;position:absolute;left:6.3%;top:19%;width:40%;max-height:23%;overflow:auto!important;margin:0!important;padding:0!important;font:700 4.3cqw/1.16 Arial,sans-serif!important;color:#f5f4ed!important;white-space:normal!important;overflow-wrap:anywhere;-webkit-line-clamp:unset!important}
-.ai-color{position:absolute;left:6.3%;top:43%;max-width:43%;font:2.4cqw Arial,sans-serif;color:#bcbcb7}.ai-picture{position:absolute;left:49%;top:3%;width:49%;height:46%}.ai-picture img{position:absolute;width:100%;height:100%;object-fit:contain;opacity:1;transition:opacity 450ms ease}.ai-picture img.ai-enter{opacity:0}
+html body .card.ai-card .ai-title{display:block!important;position:absolute;left:6.3%;top:19%;width:40%;max-height:23%;overflow:auto!important;margin:0!important;padding:0!important;font:700 4.3cqw/1.16 var(--ed-font-sans,Arial),sans-serif!important;color:#f5f4ed!important;white-space:normal!important;overflow-wrap:anywhere;-webkit-line-clamp:unset!important}
+.ai-color{position:absolute;left:6.3%;top:43%;max-width:43%;font:2.4cqw var(--ed-font-sans,Arial),sans-serif;color:#bcbcb7}.ai-picture{position:absolute;left:49%;top:3%;width:49%;height:46%}.ai-picture img{position:absolute;width:100%;height:100%;object-fit:contain;opacity:1;transition:opacity 450ms ease}.ai-picture img.ai-enter{opacity:0}
 .ai-prices{position:absolute;left:6.3%;right:6.4%;top:51.5%;height:32%;display:grid;grid-template-rows:repeat(5,1fr)}
-.ai-price{display:flex;align-items:center;justify-content:space-between;gap:4px;border-bottom:1px solid #343630;font:3.05cqw Arial,sans-serif;color:#bcbcb7}.ai-price:first-child{color:#ff503c}.ai-price strong{font:600 3.657cqw Arial,sans-serif;color:#f5f4ed;white-space:nowrap;font-variant-numeric:tabular-nums}.ai-price:first-child strong{color:#ff503c}
+.ai-price{display:flex;align-items:center;justify-content:space-between;gap:4px;border-bottom:1px solid #343630;font:3.05cqw var(--ed-font-sans,Arial),sans-serif;color:#bcbcb7}.ai-price:first-child{color:#ff503c}.ai-price strong{font:600 3.657cqw var(--ed-font-num,Arial),sans-serif;color:#f5f4ed;white-space:nowrap;font-variant-numeric:tabular-nums}.ai-price:first-child strong{color:#ff503c}
 html body .ai-face>.catalog-product-links,html body .ai-face>.tarjeta-recomendado-iconos{position:absolute!important;top:85%;bottom:1%;left:0;right:0;display:flex!important;justify-content:center!important;align-items:center!important;gap:3%!important;margin:0!important}
 /* Cara estirada (más de 5 precios): mismas posiciones que la cara cuadrada,
    en unidades del ancho para que no se muevan al crecer el alto. */
@@ -30,12 +30,12 @@ html body .grilla .card.ai-card:focus-within{border-color:rgba(255,80,60,.52)!im
 @media(prefers-reduced-motion:reduce){html body .grilla .card.ai-card{transition:none}}
 .ai-prices.ai-prices-mayorista{grid-template-rows:repeat(6,1fr)}
 .ai-prices-mayorista .ai-price{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center}
-.ai-prices-mayorista .ai-price>:nth-child(2){text-align:center;font:600 3.2cqw Arial,sans-serif;color:#6fd08c;white-space:nowrap}
+.ai-prices-mayorista .ai-price>:nth-child(2){text-align:center;font:600 3.2cqw var(--ed-font-sans,Arial),sans-serif;color:#6fd08c;white-space:nowrap}
 .ai-prices-mayorista .ai-price>:nth-child(3){text-align:right}
 .ai-prices-mayorista .ai-price-head{color:#8a8a84!important;font-size:2.3cqw;text-transform:uppercase;letter-spacing:.05em}
 .ai-prices-mayorista .ai-price-head>:nth-child(2){font:inherit;color:inherit}
 .ai-prices-mayorista .ai-price:nth-child(2){color:#ff503c}.ai-prices-mayorista .ai-price:first-child strong{color:inherit}
-.ai-price:not(.ai-price-head)>:first-child:not(:only-child){font:600 3.4cqw Arial,sans-serif}
+.ai-price:not(.ai-price-head)>:first-child:not(:only-child){font:600 3.4cqw var(--ed-font-sans,Arial),sans-serif}
 
 /* Classic: mismo backlight sutil que las cards del home (--card-halo en
    classic-editorial.css), teñido de celeste hielo Martini (en light, azul Martini para que se lea sobre el crema). Halo tenue en
@@ -89,3 +89,5 @@ html[data-modo="classic"] body .grilla .card.ai-card.card-del-link:is(:hover, :f
   border-color: var(--cl-rojo) !important;
   box-shadow: 0 0 0 2px var(--cl-rojo), 0 0 34px -4px color-mix(in srgb, var(--cl-rojo) 55%, transparent) !important;
 }
+/* Classic: los montos van en Geist Mono, un poco más chicos para compensar el ancho. */
+html[data-modo="classic"] .ai-price strong{font-size:3.5cqw;font-weight:700;letter-spacing:-.03em}
