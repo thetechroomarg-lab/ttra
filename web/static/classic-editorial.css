@@ -137,7 +137,7 @@ html[data-modo="classic"] .ttra-accent { color: var(--ed-accent); }
    que sea la misma pelotita con la que juegan los gatitos (header-cat-play.js
    lee tamaño, posición y color de este ::after). El "." sigue en el texto,
    transparente, así que la lectura y la selección no cambian. */
-html[data-modo="classic"] #ttra-hero-title .ttra-accent { position: relative; color: transparent; }
+html[data-modo="classic"] #ttra-hero-title .ttra-accent { position: relative; color: transparent; cursor: pointer; }
 html[data-modo="classic"] #ttra-hero-title .ttra-accent::after { content: ''; position: absolute; left: .03em; bottom: .3em; width: .17em; height: .17em; border-radius: 50%; background: var(--ed-accent); pointer-events: none; }
 html[data-modo="classic"] .ttra-hero-description { margin: 0; color: var(--rc-green-dim); font-size: 16px; line-height: 1.75; }
 html[data-modo="classic"] .ttra-catalog-cta { display: inline-flex; align-items: center; justify-content: center; text-align: center; gap: 0; min-height: 60px; margin-top: 32px; padding: 16px 22px; background: #d52f27; color: #fff; font: 800 13px var(--rc-font); letter-spacing: .08em; text-decoration: none; box-shadow: 0 12px 28px #d52f2740; transition: background .25s, transform .3s var(--ed-ease), box-shadow .3s; }
@@ -632,7 +632,7 @@ html[data-modo="classic"] .ttra-sticker-peel.despegado > .ttra-personal-intro { 
 html[data-modo="classic"] .ttra-sticker-esquina {
   position: absolute; top: -6px; right: -6px; z-index: 3;
   width: 56px; height: 56px; padding: 0; border: 0; background: transparent;
-  cursor: grab; touch-action: none;
+  cursor: pointer; touch-action: none;
 }
 html[data-modo="classic"] .ttra-sticker-esquina:active { cursor: grabbing; }
 html[data-modo="classic"] .ttra-sticker-peel.despegado .ttra-sticker-esquina { display: none; }
