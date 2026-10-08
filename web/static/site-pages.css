@@ -109,7 +109,7 @@ html[data-modo="classic"] body.ttra-page .catalog-header-actions :is(.catalog-lo
 .ttra-back:hover, .ttra-back:focus-visible { color: var(--rc-green-bright); }
 .ttra-back:hover::before, .ttra-back:focus-visible::before { transform: translateX(-3px); }
 .ttra-page-display { margin: 0; color: var(--rc-green-bright); font-size: clamp(48px, 7vw, 104px); font-weight: 500; line-height: .96; letter-spacing: -.075em; }
-.ttra-page-display em { color: var(--ed-accent); font-family: Georgia, serif; font-weight: 400; }
+.ttra-page-display em { color: var(--ed-accent); font-family: var(--ed-font-serif, Georgia, serif); font-weight: 400; }
 .ttra-page-display span { color: var(--ed-accent); }
 .ttra-page-rule { height: 1px; background: var(--ed-line); }
 
