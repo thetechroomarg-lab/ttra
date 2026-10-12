@@ -141,3 +141,48 @@ def test_el_detalle_muestra_los_cinco_precios_de_cada_producto_y_del_total():
     assert "$ 594.700" in html and "$ 613.093" in html
     assert "$ 3.051.750" in html  # total U$D 1.950 en pesos
     assert "dólar a $ 1.565" in html
+
+
+def test_agregar_al_pedido_del_mismo_dia_manda_correccion_de_pedido(monkeypatch):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "_cargar_productos", lambda: [
+        {"nombre": "iPhone 13", "usd": 500, "colores": ["Negro"]},
+        {"nombre": "AirPods 4", "usd": 150},
+    ])
+    monkeypatch.setattr(
+        appmod.entregas, "ahora_argentina",
+        lambda: datetime(2026, 8, 24, 10, 0, tzinfo=ZoneInfo("America/Argentina/Cordoba")),
+    )
+    enviados = []
+    monkeypatch.setattr(mail_pedido, "enviar_email", lambda destino, asunto, html, **k: enviados.append((asunto, html)))
+    c = TestClient(appmod.app, base_url="https://testserver")
+    c.post("/registro", json={
+        "nombre": "Juan", "apellido": "Pérez", "celular": "3511234567",
+        "email": "juan@x.com", "password": "clave1234", "provincia": "Córdoba", "direccion": "Av. Colón 123, Córdoba"})
+    base = {"fecha_entrega": "2026-08-24", "direccion_entrega": "Av. Colón 123, Córdoba"}
+
+    c.post("/api/pedidos", json={**base, "productos": ["iPhone 13 (Negro)"], "total_usd": 500, "detalle": [
+        {"nombre": "iPhone 13", "color": "Negro", "cantidad": 1, "usd_unitario": 500, "usd_subtotal": 500}]})
+    c.post("/api/pedidos", json={**base, "productos": ["AirPods 4"], "total_usd": 150, "detalle": [
+        {"nombre": "AirPods 4", "cantidad": 1, "usd_unitario": 150, "usd_subtotal": 150}]})
+
+    pedidos = fake.table("pedidos").select("*").execute().data
+    assert len(pedidos) == 1
+    numero = mail_pedido.numero_pedido(pedidos[0])
+    assert [asunto for asunto, _ in enviados] == [
+        f"Pedido confirmado #{numero} — The Tech Room Arg",
+        f"Corrección de Pedido #{numero} — The Tech Room Arg",
+    ]
+    correccion = enviados[1][1]
+    assert "iPhone 13" in correccion and "AirPods 4" in correccion
+    assert correccion.count("+ Agregado") == 1
+    assert correccion.index("+ Agregado") > correccion.index("iPhone 13")
+    assert "U$D 650" in correccion
+
+
+def test_un_pedido_nuevo_no_es_correccion():
+    carga = {"id": "p1", "detalle": [{"nombre": "iPhone 13", "cantidad": 1}]}
+    assert not mail_pedido._es_correccion(dict(carga), carga)
+    assert mail_pedido._es_correccion(
+        {"id": "p1", "detalle": [{"nombre": "iPhone 13", "cantidad": 2}]}, carga)
