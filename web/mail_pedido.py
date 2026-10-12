@@ -211,17 +211,22 @@ def _encabezado(numero):
     return f'<tr><td class="px" style="padding:24px 32px;border-bottom:1px solid {_BORDE}">{_tabla(fila)}</td></tr>'
 
 
-def _hero(nombre, dia):
+def _hero(nombre, dia, correccion=False):
     saludo = f"¡Gracias, {html.escape(nombre)}!" if nombre else "¡Gracias por tu compra!"
     cuando = f' para el <b style="color:{_BLANCO};font-weight:600">{_fecha_larga(dia)}</b>' if dia else ""
+    if correccion:
+        texto = (f"Sumé lo que agregaste a tu pedido{cuando}. Abajo tenés el detalle actualizado, con lo nuevo "
+                 f"marcado, el nuevo total y la garantía de cada producto.")
+    else:
+        texto = (f"Tu pedido está confirmado y ya lo estoy preparando{cuando}. Abajo tenés todo el detalle "
+                 f"y la garantía de cada producto.")
     return _bloque(
         f'<p style="margin:0 0 22px;font:600 11px/1 {_MONO};letter-spacing:2px;text-transform:uppercase;color:{_CORAL}">'
-        f'&#9679;&nbsp;&nbsp;Pedido confirmado</p>'
+        f'&#9679;&nbsp;&nbsp;{"Corrección de pedido" if correccion else "Pedido confirmado"}</p>'
         f'<p class="titulo" style="margin:0;font:800 58px/0.95 {_SANS};letter-spacing:-2.6px;color:{_BLANCO}">'
         f'Ya casi es tuyo<span style="color:{_CORAL}">.</span></p>'
         f'<p style="margin:26px 0 0;font:italic 27px/1.15 {_SERIF};color:{_TEXTO}">{saludo}</p>'
-        f'<p style="margin:10px 0 0;font:400 16px/1.6 {_SANS};color:{_TENUE}">Tu pedido está confirmado y ya lo '
-        f'estoy preparando{cuando}. Abajo tenés todo el detalle y la garantía de cada producto.</p>',
+        f'<p style="margin:10px 0 0;font:400 16px/1.6 {_SANS};color:{_TENUE}">{texto}</p>',
         padding_top=44,
     )
 
@@ -274,7 +279,7 @@ def _lista_precios(usd, cotizacion, grande=False):
     return _tabla("".join(filas))
 
 
-def _fila_item(item, cotizacion):
+def _fila_item(item, cotizacion, agregado=False):
     cantidad = int(item.get("cantidad") or 1)
     meta = []
     if item.get("color") and item["color"] != "Color único":
@@ -285,9 +290,12 @@ def _fila_item(item, cotizacion):
     lista = (f'<div style="margin-top:16px;padding:16px;background:{_BG};border:1px solid {_BORDE}">'
              f'{_lista_precios(item["usd_subtotal"], cotizacion)}</div>'
              if item.get("usd_subtotal") is not None else "")
+    marca = (f'<p style="margin:0 0 10px"><span style="display:inline-block;padding:5px 8px;background:{_CORAL};'
+             f'font:700 10px/1 {_MONO};letter-spacing:2px;text-transform:uppercase;color:{_FONDO}">+ Agregado</span></p>'
+             if agregado else "")
     return (
-        f'<tr><td style="padding:20px;border-bottom:1px solid {_BORDE}">'
-        f'<p style="margin:0;font:600 16px/1.35 {_SANS};color:{_BLANCO};word-break:break-word">{html.escape(item.get("nombre") or "")}</p>'
+        f'<tr><td style="padding:20px;border-bottom:1px solid {_BORDE}{";border-left:3px solid " + _CORAL if agregado else ""}">'
+        f'{marca}<p style="margin:0;font:600 16px/1.35 {_SANS};color:{_BLANCO};word-break:break-word">{html.escape(item.get("nombre") or "")}</p>'
         f'<p style="margin:6px 0 0;font:500 11px/1.4 {_MONO};letter-spacing:1px;text-transform:uppercase;color:{_TENUE}">'
         f'{" · ".join(meta)}</p>{lista}</td></tr>'
     )
@@ -314,8 +322,14 @@ def _totales(pedido, items, cotizacion):
             f'{_lista_precios(total, cotizacion, grande=True)}{aviso}</div></td></tr>')
 
 
-def _compra(pedido, items, cotizacion):
-    filas = "".join(_fila_item(item, cotizacion) for item in items) + _totales(pedido, items, cotizacion)
+def _clave_item(item):
+    return (item.get("nombre"), item.get("color"))
+
+
+def _compra(pedido, items, cotizacion, agregados=()):
+    nuevos = {_clave_item(item) for item in agregados}
+    filas = ("".join(_fila_item(item, cotizacion, _clave_item(item) in nuevos) for item in items)
+             + _totales(pedido, items, cotizacion))
     return _bloque(_titulo_seccion("Tu compra") + _tabla(filas, f"background:{_PANEL};border:1px solid {_BORDE}"))
 
 
@@ -402,31 +416,40 @@ def _pie(url_sitio):
     )
 
 
-def html_pedido_confirmado(cliente, pedido, url_sitio=URL_SITIO, cotizacion=None):
+def asunto(pedido, correccion=False):
+    titulo = "Corrección de Pedido" if correccion else "Pedido confirmado"
+    return f"{titulo} #{numero_pedido(pedido)} — The Tech Room Arg"
+
+
+def html_pedido_confirmado(cliente, pedido, url_sitio=URL_SITIO, cotizacion=None, agregados=None):
+    """El mail del pedido. Con `agregados` es una Corrección de Pedido: `pedido` es el pedido
+    completo ya actualizado y `agregados` lo que se le sumó (va marcado)."""
+    correccion = bool(agregados)
     url_sitio = (url_sitio or URL_SITIO).rstrip("/")
     cotizacion = cotizacion or cotizacion_catalogo()
     items = _items(pedido)
     dia = _fecha(pedido.get("fecha_entrega"))
     numero = numero_pedido(pedido)
-    preheader = f"Pedido #{numero} confirmado"
+    preheader = f"Corrección de pedido #{numero}" if correccion else f"Pedido #{numero} confirmado"
     if pedido.get("total_usd") is not None:
-        preheader += f" · {_usd(pedido['total_usd'])}"
+        preheader += f" · {'nuevo total ' if correccion else ''}{_usd(pedido['total_usd'])}"
     if dia:
         preheader += f" · entrega el {_fecha_larga(dia)}"
     cuerpo = "".join((
         _encabezado(numero),
-        _hero(_primer_nombre(cliente), dia),
+        _hero(_primer_nombre(cliente), dia, correccion),
         _entrega(pedido, dia),
-        _compra(pedido, items, cotizacion),
+        _compra(pedido, items, cotizacion, agregados or ()),
         _garantias(garantias_resumidas(items), f"{url_sitio}/#ttra-garantias"),
         _boton(f"{url_sitio}/perfil"),
         _sticker(),
         _pie(url_sitio),
     ))
+    titulo = "Corrección de pedido" if correccion else "Pedido confirmado"
     return f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
-<title>Pedido confirmado</title><style>{_ESTILOS}</style></head>
+<title>{titulo}</title><style>{_ESTILOS}</style></head>
 <body style="margin:0;padding:0;background:{_FONDO};-webkit-text-size-adjust:100%">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">{html.escape(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:{_FONDO}">
@@ -438,22 +461,48 @@ def html_pedido_confirmado(cliente, pedido, url_sitio=URL_SITIO, cotizacion=None
 </body></html>"""
 
 
-def notificar_pedido(client, cliente_id, pedido, url_sitio=None):
-    """Manda el mail de pedido confirmado. Nunca levanta: un mail caído no rompe el pedido."""
+def _pedido_en_base(client, carga):
+    if not carga.get("id"):
+        return None
+    try:
+        filas = client.table("pedidos").select("*").eq("id", carga["id"]).execute().data
+    except Exception:
+        logger.exception("No se pudo leer el pedido %s", carga.get("id"))
+        return None
+    return filas[0] if filas else None
+
+
+def _es_correccion(pedido, carga):
+    """La carga se sumó a un pedido que ya existía (mismo día de entrega, sin entregar)."""
+    if not pedido or not pedido.get("detalle") or not carga.get("detalle"):
+        return False
+    if len(pedido["detalle"]) != len(carga["detalle"]):
+        return True
+    cantidades = lambda detalle: sorted((str(i.get("nombre")), str(i.get("color")), int(i.get("cantidad") or 0)) for i in detalle)
+    return cantidades(pedido["detalle"]) != cantidades(carga["detalle"])
+
+
+def notificar_pedido(client, cliente_id, carga, url_sitio=None):
+    """Manda el mail de lo que se acaba de cargar. Nunca levanta: un mail caído no rompe el pedido.
+
+    Si la carga se sumó a un pedido pendiente del mismo día, va como Corrección de Pedido
+    con el pedido completo; si no, como Pedido confirmado con lo cargado.
+    """
     try:
         filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
         cliente = filas[0] if filas else {}
         email = (cliente.get("email") or "").strip()
         if not email:
-            logger.info("Pedido %s sin mail de cliente: no se notifica", pedido.get("id"))
+            logger.info("Pedido %s sin mail de cliente: no se notifica", carga.get("id"))
             return False
         url = url_sitio or os.environ.get("PUBLIC_APP_URL") or URL_SITIO
-        enviar_email(
-            email,
-            f"Pedido confirmado #{numero_pedido(pedido)} — The Tech Room Arg",
-            html_pedido_confirmado(cliente, pedido, url),
-        )
+        pedido = _pedido_en_base(client, carga)
+        if _es_correccion(pedido, carga):
+            enviar_email(email, asunto(pedido, correccion=True),
+                         html_pedido_confirmado(cliente, pedido, url, agregados=carga["detalle"]))
+        else:
+            enviar_email(email, asunto(carga), html_pedido_confirmado(cliente, carga, url))
         return True
     except Exception:
-        logger.exception("No se pudo mandar el mail del pedido %s", pedido.get("id"))
+        logger.exception("No se pudo mandar el mail del pedido %s", carga.get("id"))
         return False
