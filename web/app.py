@@ -28,7 +28,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete
+from web import buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -4799,6 +4799,11 @@ def _avisar_pedido_nuevo(cliente_id, productos, total_usd=None):
         logger.exception("No se pudo avisar al admin del pedido nuevo")
 
 
+def _mandar_mail_pedido(request, cliente_id, pedido):
+    """Mail de pedido confirmado al cliente (ver web/mail_pedido.py)."""
+    mail_pedido.notificar_pedido(get_client(), cliente_id, pedido, _public_app_base_url(request))
+
+
 @app.post("/api/pedidos")
 def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: BackgroundTasks):
     cliente_id = request.session.get("cliente_id")
@@ -4821,7 +4826,7 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
                 },
                 status_code=409,
             )
-        pedidos.guardar_pedido(
+        guardado = pedidos.guardar_pedido(
             client,
             cliente_id,
             entrada.productos,
@@ -4830,6 +4835,10 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
             descuento_mayorista_usd=0,
         )
         background_tasks.add_task(_avisar_pedido_nuevo, cliente_id, list(entrada.productos or []))
+        background_tasks.add_task(
+            _mandar_mail_pedido, request, cliente_id,
+            {**guardado, "productos": list(entrada.productos or []), "detalle": None, "total_usd": None},
+        )
         return {"ok": True}
     if entrada.detalle and not (entrada.direccion_entrega or "").strip():
         return JSONResponse({"error": "Especificá dirección de entrega"}, status_code=400)
@@ -5068,7 +5077,8 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
         piso, depto = domicilios.opcional(entrada.piso_entrega), domicilios.opcional(entrada.depto_entrega)
         if piso or depto:
             extras.update({"piso_entrega": piso, "depto_entrega": depto})
-        pedido_id_rpc = resultado["pedido"].get("id")
+        guardado = resultado["pedido"]
+        pedido_id_rpc = guardado.get("id")
         if extras and pedido_id_rpc:
             try:
                 client.table("pedidos").update(extras).eq("id", pedido_id_rpc).execute()
@@ -5085,7 +5095,7 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
             except Exception:
                 logger.exception("No se pudo anotar el descuento aplicado de %s", fila_descuento["code"])
     else:
-        pedidos.guardar_pedido(
+        guardado = pedidos.guardar_pedido(
             client,
             cliente_id,
             productos_pedido,
@@ -5107,6 +5117,19 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
         _avisar_pedido_nuevo, cliente_id,
         [f"{item.get('nombre')} x{item.get('cantidad')}" for item in detalle], total_usd,
     )
+    # El mail muestra lo que se compró ahora, aunque se haya sumado a un pedido
+    # pendiente del mismo día y domicilio.
+    background_tasks.add_task(_mandar_mail_pedido, request, cliente_id, {
+        **(guardado or {}),
+        "productos": productos_pedido,
+        "detalle": detalle,
+        "total_usd": pedidos.numero_monetario_db(total_usd),
+        "descuento_usd": pedidos.numero_monetario_db(descuento_usd),
+        "fecha_entrega": entrada.fecha_entrega.isoformat(),
+        "direccion_entrega": (entrada.direccion_entrega or "").strip() or None,
+        "piso_entrega": domicilios.opcional(entrada.piso_entrega),
+        "depto_entrega": domicilios.opcional(entrada.depto_entrega),
+    })
     return {"ok": True}
 
 
@@ -6404,7 +6427,6 @@ _SALDO_CADETE_ESTILO = """
   #form-pago { display:grid; grid-template-columns:1fr; gap:8px; }
   .comprobante-label { display:grid; gap:4px; color:var(--op-text-dim); font-size:var(--op-fs-small); }
   .comprobante-label input { padding:8px 10px; }
-  .pagos h2 { font-size:var(--op-fs-body); margin:0 0 8px; color:var(--op-text-dim); }
   .movimiento.pago { border-color:var(--op-success); }
   .ver-comprobante, .btn-subir-comprobante { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; min-height:40px; margin-top:8px; padding:0 14px; border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; font:inherit; font-weight:700; text-decoration:none; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
   .ver-comprobante:hover, .btn-subir-comprobante:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
@@ -6435,8 +6457,6 @@ def admin_cadete_saldo(request: Request):
         return (f'<div class="movimiento{" pagado" if m.get("pagado_en") else ""}"><div>{html.escape(m.get("descripcion") or "")}'
                 f'<small>{fecha} {hora} · {estado}</small></div><div class="movimiento-monto">$ {_formatear_entero_ar(m.get("monto_ars"))}{acciones}</div></div>')
 
-    lista = "".join(_fila(m) for m in movimientos) or '<p class="vacio">Todavía no hay movimientos.</p>'
-
     def _fila_pago(p):
         fecha, _, hora = _formatear_fecha_ar(p.get("creado_en"))
         pid = html.escape(p.get("id") or "")
@@ -6457,8 +6477,14 @@ def admin_cadete_saldo(request: Request):
     if es_admin:
         saldo_cadete.registrar_pagos_viejos(get_client())
     pagos = saldo_cadete.listar_pagos(get_client())
-    pagos_html = (f'<section class="pagos"><h2>Pagos</h2>{"".join(_fila_pago(p) for p in pagos)}</section>'
-                  if pagos else "")
+    # Un solo historial por fecha, más nuevo arriba: cada pago queda en el día en
+    # que se hizo, con lo sumado después por encima y lo que pagó por debajo.
+    historial = sorted(
+        [(m.get("creado_en") or "", _fila(m)) for m in movimientos]
+        + [(p.get("creado_en") or "", _fila_pago(p)) for p in pagos],
+        key=lambda item: item[0], reverse=True,
+    )
+    lista = "".join(fila for _, fila in historial) or '<p class="vacio">Todavía no hay movimientos.</p>'
     admin_html = ""
     if es_admin:
         admin_html = (
@@ -6477,7 +6503,6 @@ def admin_cadete_saldo(request: Request):
   <div class="saldo-total"><p>{titulo_total}</p><strong>$ {_formatear_entero_ar(resumen["saldo_pendiente"])}</strong>
     <p>{resumen["movimientos_pendientes"]} movimientos sin pagar · {resumen["movimientos_total"]} en total</p></div>
   {admin_html}
-  {pagos_html}
   <section>{lista}</section>
 </div>
 <script>
