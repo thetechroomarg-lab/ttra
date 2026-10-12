@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 load_dotenv(PROJECT_DIR / "web" / ".env")
 
 from web.supabase_client import get_client
-from web import cuentas, domicilios, pedidos, email_util
+from web import cuentas, domicilios, mail_pedido, pedidos, email_util
 from web.productos import resolver_proveedor
 
 
@@ -155,6 +155,11 @@ def main():
 
     if not productos_pedido:
         mail_ok = mandar_credenciales(args, email_norm, password) if cliente_nuevo else None
+    # Mismo mail de pedido confirmado que le llega al cliente cuando compra en la web.
+    # Muestra lo cargado ahora, aunque se haya sumado a un pedido pendiente.
+    mail_pedido_ok = mail_pedido.notificar_pedido(client, cliente_id, {
+        **pedido, "detalle": detalle, "total_usd": total_usd, "descuento_usd": descuento_usd,
+    })
         print("OK (solo cliente, sin pedido)")
         print("cliente_id:", cliente_id)
         print("cliente_nuevo:", cliente_nuevo)
@@ -202,6 +207,11 @@ def main():
     )
 
     mail_ok = mandar_credenciales(args, email_norm, password) if cliente_nuevo else None
+    # Mismo mail de pedido confirmado que le llega al cliente cuando compra en la web.
+    # Muestra lo cargado ahora, aunque se haya sumado a un pedido pendiente.
+    mail_pedido_ok = mail_pedido.notificar_pedido(client, cliente_id, {
+        **pedido, "detalle": detalle, "total_usd": total_usd, "descuento_usd": descuento_usd,
+    })
 
     print("OK")
     print("cliente_id:", cliente_id)
@@ -215,6 +225,7 @@ def main():
     print("subtotal_usd:", usd_subtotal, "· descuento_usd:", descuento_usd, "· total_usd:", total_usd)
     if mail_ok is not None:
         print("mail_enviado:", mail_ok)
+    print("mail_pedido_enviado:", mail_pedido_ok)
 
 
 if __name__ == "__main__":

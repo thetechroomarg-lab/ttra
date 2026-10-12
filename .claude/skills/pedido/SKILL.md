@@ -47,6 +47,9 @@ cd "/Users/toraba/TTRA Project"
 4. Si el cliente es nuevo, manda un mail (vía `web/email_util.enviar_email`,
    Resend) con el email y la contraseña temporal — por
    [[feedback-mail-al-inyectar-cliente]].
+5. Siempre (cliente nuevo o existente) le manda el mail de pedido confirmado
+   (`web/mail_pedido.py`, el mismo que llega al comprar en la web): detalle,
+   entrega, total y garantía resumida. Sale como `mail_pedido_enviado:`.
 
 ## Gotchas
 
