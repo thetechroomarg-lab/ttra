@@ -365,3 +365,19 @@ def test_panel_admin_tambien_confirma_el_completado_con_el_modal(monkeypatch):
     assert "¿Estás seguro de que completaste esta tarea?" in html
     assert html.count('id="modal-confirmar-completado"') == 1
     assert ".modal-confirmar-completado {" in html
+
+
+def test_historial_intercala_los_pagos_por_fecha(monkeypatch):
+    fake, admin, cadete = _clientes(monkeypatch)
+    fake.table("movimientos_cadete").insert({"id": "m1", "tipo": "tarea", "referencia_id": "1", "descripcion": "Antes del pago",
+                                             "monto_ars": 6000, "creado_en": "2026-10-01T15:00:00+00:00",
+                                             "pagado_en": "2026-10-03T20:00:00+00:00", "pago_id": "p1"}).execute()
+    fake.table("pagos_cadete").insert({"id": "p1", "monto_ars": 6000, "movimientos": 1,
+                                       "creado_en": "2026-10-03T20:00:00+00:00"}).execute()
+    fake.table("movimientos_cadete").insert({"id": "m2", "tipo": "tarea", "referencia_id": "2", "descripcion": "Despues del pago",
+                                             "monto_ars": 6000, "creado_en": "2026-10-06T15:00:00+00:00"}).execute()
+
+    for cliente in (admin, cadete):
+        html = cliente.get("/admin/cadete/saldo").text
+        # Más nuevo arriba: lo sumado después del pago queda encima, lo anterior debajo.
+        assert html.index("Despues del pago") < html.index("Pago de 1 movimientos") < html.index("Antes del pago")
