@@ -23,6 +23,28 @@ _PS5_BASE = re.compile(r"(?i)\b(playstation\s*5|ps5)\b.*\b825\s*gb\b.*\bdigital\
 _PS5_EXCLUIR = re.compile(r"(?i)\bpro\b|\bdualsense\b|\bjoystick\b|\bcontrol\b")
 
 
+# Alias de productos que cada proveedor nombra distinto (texto normalizado, regex).
+_ALIAS = [
+    (re.compile(r"\bairpods 4 (with )?(active )?noise cancellation\b"), "airpods 4 anc"),
+    (re.compile(r"\bairpods pro 3(ra)?( g| generacion)?\b"), "airpods pro 3"),
+    (re.compile(r"\bairpods pro 2(da)?( g| generacion)?\b"), "airpods pro 2"),
+    (re.compile(r"\bairpods max( usb c| black)?$"), "airpods max"),
+    (re.compile(r"^(?!.*\b(funda|ps4|xbox|retro)\b).*\b(joystick|dualsense)\b.*\b(playstation 5|ps5)\b.*$|"
+                r"^(?!.*\b(funda|ps4|xbox|retro)\b).*\b(playstation 5|ps5)\b.*\b(joystick|dualsense)\b.*$"),
+     "joystick ps5 dualsense"),
+    (re.compile(r"\baluminum\b"), "aluminium"),
+    (re.compile(r"\bwi fi\b"), ""),
+    (re.compile(r"\b\d+ core (cpu|gpu)\b"), ""),
+    (re.compile(r"\baspirador[a]?\b(?=.*\bvacuum\b)"), ""),
+]
+
+# Palabras que muchos proveedores omiten ("5G", "NFC", "Mi", "RAM"...): no distinguen
+# el producto, salvo en las familias donde sí existen las dos versiones.
+_BLANDAS = {"5g", "nfc", "mi", "ram", "pulgadas", "with"}
+_CON_VERSION_4G = re.compile(r"\bnote (14|15|16|17)\b|\bredmi (15|16|17)\b(?! ?c)|\ba(06|07|16|17)\b")
+_CON_VERSION_NFC = re.compile(r"\b15c\b")
+
+
 def _clave(nombre):
     if _PS5_BASE.search(nombre) and not _PS5_EXCLUIR.search(nombre):
         nombre = "PS5 Digital 825GB"
@@ -33,26 +55,25 @@ def _clave(nombre):
     # repetida — un set la colapsaría a una sola aparición y confundiría el chip base
     # (M5) con su variante Pro/Max (ver bug 2026-09-25: MacBook Pro M5 Pro se perdía
     # porque su clave quedaba igual a la del MacBook Pro M5 a secas).
-    toks = [t for t in normalizar(nombre).split()
-            if t not in _RELLENO and not _NUCLEOS.match(t)]
+    texto = normalizar(nombre)
+    for patron, reemplazo in _ALIAS:
+        texto = patron.sub(reemplazo, texto)
+    blandas = set(_BLANDAS)
+    if _CON_VERSION_4G.search(texto):
+        blandas.discard("5g")
+    if _CON_VERSION_NFC.search(texto):
+        blandas.discard("nfc")
+    toks = [t for t in texto.split()
+            if t not in _RELLENO and t not in blandas and not _NUCLEOS.match(t)]
+    # La MacBook Neo sólo existe en 13": el tamaño es relleno
+    if "neo" in toks and "macbook" in toks and "13" in toks:
+        toks.remove("13")
     return " ".join(sorted(toks))
 
 
-# AZ es el proveedor preferido: mandar al cadete a buscar a otro cuesta ~US$4
-# de envío. Solo se elige a otro si lo tiene al menos US$10 más barato.
-PROVEEDOR_PREFERIDO = "az"
-VENTAJA_MINIMA_OTRO_PROVEEDOR = 10
-
-
+# Siempre el proveedor más barato, sin excepciones (aunque tenga menos colores).
 def _elegir_proveedor(grupo):
-    barato = min(grupo, key=lambda x: x["costo"])
-    preferidos = [x for x in grupo if str(x.get("proveedor", "")).lower() == PROVEEDOR_PREFERIDO]
-    if not preferidos:
-        return barato
-    az = min(preferidos, key=lambda x: x["costo"])
-    if az["costo"] - barato["costo"] >= VENTAJA_MINIMA_OTRO_PROVEEDOR:
-        return barato
-    return az
+    return min(grupo, key=lambda x: x["costo"])
 
 
 def consolidar(items):
