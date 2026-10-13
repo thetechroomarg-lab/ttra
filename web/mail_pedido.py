@@ -1,7 +1,8 @@
 """Mail de pedido confirmado: le llega al cliente cada vez que se le carga un pedido.
 
 Se manda tanto cuando el cliente confirma desde la web como cuando Vladimir lo
-carga a mano (skill /pedido). Es la web en modo Classic oscuro hecha mail:
+carga a mano (skill /pedido). Si el admin elimina un pedido sin entregar, le
+llega el de pedido cancelado, con las mismas piezas. Es la web en modo Classic oscuro hecha mail:
 grafito, títulos pesados que cierran con ":" o un punto coral, números grandes
 con la unidad en coral (como las cards de Garantías), cards con la flecha ↗ y
 el sticker "Hola, soy Vlad" como firma.
@@ -374,15 +375,15 @@ def _garantias(resumen, url_garantias):
     )
 
 
-def _boton(url_perfil):
+def _boton(url, texto="Ver mi pedido en la web"):
     return _bloque(_tabla(
         f'<tr><td align="center" style="background:{_CORAL}">'
-        f'<a href="{html.escape(url_perfil, quote=True)}" style="display:block;padding:19px 24px;'
-        f'font:800 16px/1 {_SANS};letter-spacing:-0.2px;color:{_FONDO}">Ver mi pedido en la web &#8599;</a></td></tr>'
+        f'<a href="{html.escape(url, quote=True)}" style="display:block;padding:19px 24px;'
+        f'font:800 16px/1 {_SANS};letter-spacing:-0.2px;color:{_FONDO}">{texto} &#8599;</a></td></tr>'
     ), padding_top=44)
 
 
-def _sticker():
+def _sticker(cierre="Cualquier duda con tu pedido, escribime y lo vemos."):
     """El sticker 'Hola, soy Vlad' de la home, como firma."""
     return (
         f'<tr><td class="px" align="center" style="padding:56px 32px 0">'
@@ -398,7 +399,7 @@ def _sticker():
         f'<p style="margin:0;font:500 20px/1.1 {_MANO};color:{_STICKER_TINTA}">vendo tecnología desde el año 2009.</p>'
         f'</td></tr></table>'
         f'<p style="margin:28px 0 0;font:italic 25px/1.25 {_SERIF};color:{_BLANCO}">Gracias por confiar en mí.</p>'
-        f'<p style="margin:8px 0 0;font:400 15px/1.6 {_SANS};color:{_TENUE}">Cualquier duda con tu pedido, escribime y lo vemos.</p>'
+        f'<p style="margin:8px 0 0;font:400 15px/1.6 {_SANS};color:{_TENUE}">{cierre}</p>'
         f'</td></tr>'
     )
 
@@ -446,6 +447,10 @@ def html_pedido_confirmado(cliente, pedido, url_sitio=URL_SITIO, cotizacion=None
         _pie(url_sitio),
     ))
     titulo = "Corrección de pedido" if correccion else "Pedido confirmado"
+    return _documento(titulo, preheader, cuerpo)
+
+
+def _documento(titulo, preheader, cuerpo):
     return f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
@@ -459,6 +464,84 @@ def html_pedido_confirmado(cliente, pedido, url_sitio=URL_SITIO, cotizacion=None
 </table>
 </td></tr></table>
 </body></html>"""
+
+
+# ── Pedido cancelado ────────────────────────────────────────────────────────
+
+def _hero_cancelado(nombre, dia):
+    saludo = f"Hola, {html.escape(nombre)}." if nombre else "Hola."
+    cuando = f' para el <b style="color:{_BLANCO};font-weight:600">{_fecha_larga(dia)}</b>' if dia else ""
+    return _bloque(
+        f'<p style="margin:0 0 22px;font:600 11px/1 {_MONO};letter-spacing:2px;text-transform:uppercase;color:{_CORAL}">'
+        f'&#9679;&nbsp;&nbsp;Pedido cancelado</p>'
+        f'<p class="titulo" style="margin:0;font:800 58px/0.95 {_SANS};letter-spacing:-2.6px;color:{_BLANCO}">'
+        f'Tu pedido fue cancelado<span style="color:{_CORAL}">.</span></p>'
+        f'<p style="margin:26px 0 0;font:italic 27px/1.15 {_SERIF};color:{_TEXTO}">{saludo}</p>'
+        f'<p style="margin:10px 0 0;font:400 16px/1.6 {_SANS};color:{_TENUE}">Cancelé tu pedido{cuando}. '
+        f'Abajo tenés el detalle de lo que se canceló. Si fue un error o tenés alguna duda, escribime y lo vemos.</p>',
+        padding_top=44,
+    )
+
+
+def _cancelado(pedido, items):
+    """Lo que se canceló, apagado: sin los 5 precios, con el total tachado."""
+    filas = []
+    for item in items:
+        meta = []
+        if item.get("color") and item["color"] != "Color único":
+            meta.append(html.escape(item["color"]))
+        meta.append(f"Cantidad {int(item.get('cantidad') or 1)}")
+        filas.append(
+            f'<tr><td style="padding:18px 20px;border-bottom:1px solid {_BORDE}">'
+            f'<p style="margin:0;font:600 16px/1.35 {_SANS};color:{_TEXTO};word-break:break-word">{html.escape(item.get("nombre") or "")}</p>'
+            f'<p style="margin:6px 0 0;font:500 11px/1.4 {_MONO};letter-spacing:1px;text-transform:uppercase;color:{_TENUE}">'
+            f'{" · ".join(meta)}</p></td></tr>'
+        )
+    if pedido.get("total_usd") is not None:
+        total = _tabla(
+            f'<tr><td valign="bottom">{_etiqueta("Total cancelado", _CORAL)}</td>'
+            f'<td valign="bottom" align="right" style="white-space:nowrap;font:700 22px/1 {_MONO};color:{_TENUE};'
+            f'text-decoration:line-through">{_usd(pedido["total_usd"])}</td></tr>'
+        )
+        filas.append(f'<tr><td style="padding:20px"><div style="border-top:2px solid {_CORAL};padding-top:16px">{total}</div></td></tr>')
+    return _bloque(_titulo_seccion("Lo que se canceló") + _tabla("".join(filas), f"background:{_PANEL};border:1px solid {_BORDE}"))
+
+
+def asunto_cancelado(pedido):
+    return f"Pedido cancelado #{numero_pedido(pedido)} — The Tech Room Arg"
+
+
+def html_pedido_cancelado(cliente, pedido, url_sitio=URL_SITIO):
+    url_sitio = (url_sitio or URL_SITIO).rstrip("/")
+    dia = _fecha(pedido.get("fecha_entrega"))
+    numero = numero_pedido(pedido)
+    preheader = f"Pedido #{numero} cancelado" + (f" · era para el {_fecha_larga(dia)}" if dia else "")
+    cuerpo = "".join((
+        _encabezado(numero),
+        _hero_cancelado(_primer_nombre(cliente), dia),
+        _cancelado(pedido, _items(pedido)),
+        _boton(url_sitio, "Ir a la tienda"),
+        _sticker("Cualquier duda, escribime y lo vemos."),
+        _pie(url_sitio),
+    ))
+    return _documento("Pedido cancelado", preheader, cuerpo)
+
+
+def notificar_cancelacion(client, pedido, url_sitio=None):
+    """Le avisa al cliente que se canceló su pedido. Nunca levanta: un mail caído no frena el borrado."""
+    try:
+        filas = client.table("clientes").select("*").eq("id", pedido.get("cliente_id")).execute().data
+        cliente = filas[0] if filas else {}
+        email = (cliente.get("email") or "").strip()
+        if not email:
+            logger.info("Pedido %s cancelado sin mail de cliente: no se notifica", pedido.get("id"))
+            return False
+        url = url_sitio or os.environ.get("PUBLIC_APP_URL") or URL_SITIO
+        enviar_email(email, asunto_cancelado(pedido), html_pedido_cancelado(cliente, pedido, url))
+        return True
+    except Exception:
+        logger.exception("No se pudo mandar el mail de cancelación del pedido %s", pedido.get("id"))
+        return False
 
 
 def _pedido_en_base(client, carga):

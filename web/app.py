@@ -5394,8 +5394,13 @@ def admin_papelera_restaurar(tipo: Literal["pedido", "tarea"], item_id: str, req
     return {"ok": True, "tipo": tipo, "id": item_id}
 
 
+def _mandar_mail_cancelacion(request, pedido):
+    """Mail de pedido cancelado al cliente (ver web/mail_pedido.py)."""
+    mail_pedido.notificar_cancelacion(get_client(), pedido, _public_app_base_url(request))
+
+
 @app.delete("/admin/pedidos/{pedido_id}")
-def admin_pedido_eliminar(pedido_id: str, request: Request):
+def admin_pedido_eliminar(pedido_id: str, request: Request, background_tasks: BackgroundTasks):
     if not _clientes_admin_activo(request):
         raise HTTPException(status_code=401, detail="Sesión de admin requerida")
     client = get_client()
@@ -5403,6 +5408,9 @@ def admin_pedido_eliminar(pedido_id: str, request: Request):
     if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     pedidos.eliminar_pedido(client, pedido_id, _quien_opera(request))
+    # Uno ya entregado se borra del historial como limpieza: no es una cancelación.
+    if not filas[0].get("recibo_enviado_en"):
+        background_tasks.add_task(_mandar_mail_cancelacion, request, filas[0])
     return {"ok": True}
 
 
