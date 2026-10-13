@@ -186,3 +186,47 @@ def test_un_pedido_nuevo_no_es_correccion():
     assert not mail_pedido._es_correccion(dict(carga), carga)
     assert mail_pedido._es_correccion(
         {"id": "p1", "detalle": [{"nombre": "iPhone 13", "cantidad": 2}]}, carga)
+
+
+def test_el_mail_de_cancelacion_trae_el_pedido_y_mantiene_el_estilo():
+    html = mail_pedido.html_pedido_cancelado({"nombre": "juan carlos"}, PEDIDO, "https://thetechroomarg.com")
+
+    assert "Pedido cancelado" in html and "#DF6A0E4D" in html
+    assert "Juan" in html and "martes 13 de octubre" in html
+    assert "iPhone 16 128GB" in html and "Moto Edge 50 5G 12GB 512GB" in html and "U$D 1.950" in html
+    assert "Vlad" in html and "#ff6b5e" in html
+    # Lo cancelado no lleva garantías ni el botón de ver el pedido.
+    assert "Garantía Apple" not in html and "Ver mi pedido" not in html
+    assert mail_pedido.asunto_cancelado(PEDIDO) == "Pedido cancelado #DF6A0E4D — The Tech Room Arg"
+
+
+def _admin_con_pedido(monkeypatch, **extra):
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    enviados = []
+    monkeypatch.setattr(mail_pedido, "enviar_email", lambda destino, asunto, html, **k: enviados.append((destino, asunto, html)))
+    fake.table("clientes").insert({"id": "c1", "nombre": "Juan", "email": "juan@x.com"}).execute()
+    fake.table("pedidos").insert({**PEDIDO, "cliente_id": "c1", **extra}).execute()
+    admin = TestClient(appmod.app, base_url="https://testserver")
+    admin.post("/admin/clientes/login", json={"password": "clave-admin"})
+    return admin, enviados
+
+
+def test_eliminar_un_pedido_desde_el_admin_le_avisa_al_cliente(monkeypatch):
+    admin, enviados = _admin_con_pedido(monkeypatch)
+
+    assert admin.delete(f"/admin/pedidos/{PEDIDO['id']}").status_code == 200
+
+    assert len(enviados) == 1
+    destino, asunto, html = enviados[0]
+    assert destino == "juan@x.com" and asunto.startswith("Pedido cancelado #DF6A0E4D")
+    assert "iPhone 16 128GB" in html
+
+
+def test_eliminar_un_pedido_ya_entregado_no_manda_mail(monkeypatch):
+    admin, enviados = _admin_con_pedido(monkeypatch, recibo_enviado_en="2026-10-13T15:00:00+00:00")
+
+    assert admin.delete(f"/admin/pedidos/{PEDIDO['id']}").status_code == 200
+
+    assert enviados == []
