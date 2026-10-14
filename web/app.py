@@ -6513,13 +6513,14 @@ def admin_cadete_saldo(request: Request):
         admin_html = (
             '<div class="saldo-admin"><form id="form-mov"><input id="mov-desc" required maxlength="300" placeholder="Movimiento manual">'
             f'<input id="mov-monto" type="number" min="0" required value="{saldo_cadete.MONTO_POR_MOVIMIENTO}"><button type="submit">Sumar</button></form>'
-            f'<form id="form-pago" data-saldo="{max(saldo, 0)}"><label class="comprobante-label">Monto transferido'
-            f'<input id="pago-monto" type="number" min="1" step="1" inputmode="numeric" value="{max(saldo, 0) or ""}" '
-            f'placeholder="Monto en pesos"></label>'
-            '<p class="pago-ayuda">Si transferís más de lo pendiente, lo de más queda a favor y se descuenta de lo próximo.</p>'
+            # El monto no viene precargado: Vlad lo ingresa al tocar el botón, así
+            # también puede pagar de más (o adelantar) cuando quiera.
+            f'<form id="form-pago" data-saldo="{saldo}">'
             '<label class="comprobante-label">Comprobante de transferencia (opcional)'
             '<input id="pago-comprobante" type="file" accept="image/*,application/pdf"></label>'
-            f'<button id="pagar" type="submit" data-etiqueta="Registrar pago de "{" disabled" if saldo <= 0 else ""}>Registrar pago de $ {_formatear_entero_ar(max(saldo, 0))}</button></form></div>'
+            '<button id="pagar" type="submit">Registrar pago</button>'
+            '<p class="pago-ayuda">Si pagás más de lo pendiente, lo de más queda a favor y se descuenta de lo próximo.</p>'
+            '</form></div>'
         )
     volver = "/admin/clientes" if es_admin else "/admin/cadete"
     if saldo < 0:
@@ -6549,23 +6550,21 @@ document.getElementById("form-mov")?.addEventListener("submit", (e) => {{
   enviar("/admin/cadete/movimientos", "POST", {{descripcion: document.getElementById("mov-desc").value, monto_ars: Number(document.getElementById("mov-monto").value)}});
 }});
 const formPago = document.getElementById("form-pago");
-const montoPago = document.getElementById("pago-monto");
 const pesos = (n) => "$ " + Math.round(n).toLocaleString("es-AR");
-montoPago?.addEventListener("input", () => {{
-  const monto = Number(montoPago.value) || 0;
-  const boton = document.getElementById("pagar");
-  boton.textContent = boton.dataset.etiqueta + pesos(monto);
-  boton.disabled = monto <= 0;
-}});
 formPago?.addEventListener("submit", async (e) => {{
   e.preventDefault();
   const saldo = Number(formPago.dataset.saldo) || 0;
-  const monto = Math.round(Number(montoPago.value) || 0);
+  const situacion = saldo > 0 ? `Le debés ${{pesos(saldo)}}.` : saldo < 0 ? `Tenés ${{pesos(-saldo)}} a favor.` : "No le debés nada.";
+  const valor = prompt(`¿Cuánto le transferiste? ${{situacion}}`, "");
+  if (valor === null) return;
+  const monto = Math.round(Number(valor.replace(/[^0-9]/g, "")) || 0);
+  if (monto <= 0) {{ alert("Ingresá un monto mayor a cero"); return; }}
   if (monto < saldo) {{ alert("El monto no alcanza para cubrir el saldo pendiente de " + pesos(saldo)); return; }}
-  const pregunta = monto > saldo
-    ? `¿Registrar un pago de ${{pesos(monto)}}? Cubre ${{pesos(saldo)}} pendientes y ${{pesos(monto - saldo)}} quedan a favor.`
-    : "¿Marcar todo el saldo pendiente como pagado?";
-  if (!confirm(pregunta)) return;
+  const aFavor = monto - saldo;
+  let pregunta = `¿Registrar un pago de ${{pesos(monto)}}?`;
+  if (saldo > 0) pregunta += ` Cubre los ${{pesos(saldo)}} pendientes`;
+  if (aFavor > 0) pregunta += `${{saldo > 0 ? " y" : ""}} tu saldo a favor queda en ${{pesos(aFavor)}}`;
+  if (!confirm(pregunta + ".")) return;
   const boton = document.getElementById("pagar");
   boton.disabled = true;
   const datos = new FormData();

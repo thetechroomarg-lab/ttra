@@ -411,7 +411,7 @@ def test_pagar_de_mas_deja_el_excedente_como_saldo_a_favor(monkeypatch):
     # El pago se ve como cualquier otro y el saldo a favor no tiene fila propia.
     assert "Pago de 1 movimientos<small>" in html and "$ 20.000" in html
     assert "Saldo a favor (pago de más)" not in html
-    assert 'id="pagar" type="submit" data-etiqueta="Registrar pago de " disabled' in html
+    assert 'data-saldo="-14000"' in html and '<button id="pagar" type="submit">Registrar pago</button>' in html
     assert "Ya cobrado por adelantado" in cadete.get("/admin/cadete/saldo").text
 
 
@@ -429,7 +429,7 @@ def test_lo_que_suma_alejo_se_descuenta_del_saldo_a_favor(monkeypatch):
 
     _sumar(fake, 4, dia=7)  # cubre 2.000 y se deben 4.000
     html = admin.get("/admin/cadete/saldo").text
-    assert "Saldo a pagar" in html and "Registrar pago de $ 4.000" in html
+    assert "Saldo a pagar" in html and 'data-saldo="4000"' in html
     assert "Pendiente · $ 2.000 descontados del saldo a favor" in html
     assert "1 movimientos sin pagar" in html
 
@@ -458,3 +458,17 @@ def test_no_se_puede_pagar_menos_que_lo_pendiente(monkeypatch):
     assert r.status_code == 400 and "no alcanza" in r.json()["error"]
     assert fake.table("pagos_cadete").select("*").execute().data == []
     assert not any(m.get("pagado_en") for m in _movimientos(fake))
+
+
+def test_pagar_de_mas_con_saldo_a_favor_lo_agranda(monkeypatch):
+    fake, admin, _ = _clientes(monkeypatch)
+    _sumar(fake, 1)
+    _pagar(admin, 20000)  # $ 14.000 a favor
+    _sumar(fake, 2, dia=5)  # quedan $ 8.000 a favor
+
+    r = _pagar(admin, 5000)
+
+    assert r.status_code == 200 and r.json()["saldo_a_favor"] == 13000
+    html = admin.get("/admin/cadete/saldo").text
+    assert "Saldo a favor tuyo (ya pagado)" in html and "$ 13.000" in html
+    assert "Pago de 1 movimientos<small>" in html  # la entrega que ya cubría el saldo a favor
