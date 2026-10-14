@@ -1,0 +1,70 @@
+/* Motion layer for the Classic home: load timeline, slide-ins, scroll-scrubbed
+   heading lines and card fades, and a brand marquee. Driven by ttra-motion.js;
+   nothing here hides content unless that script marked the page as ready. */
+:root {
+  --mo-expo-out: cubic-bezier(.16, 1, .3, 1);
+  --mo-expo-in-out: cubic-bezier(.87, 0, .13, 1);
+}
+
+/* Load timeline: header pieces drop from above (staggered from the edges), the
+   hero copy slides in from the left. */
+html.ttra-motion-ready:not(.ttra-motion-done) :is(header :is(.ttra-cat-logo-toggle, .rc-header-centro, .rc-header-derecha), .ttra-hero-copy, .ttra-mo-marquee) {
+  transition: opacity 1s var(--mo-expo-out), transform 1s var(--mo-expo-out);
+  transition-delay: .2s;
+}
+html.ttra-motion-ready:not(.ttra-motion-done) header .rc-header-centro { transition-delay: .3s; }
+html.ttra-motion-ready:not(.ttra-motion-done) .ttra-mo-marquee { transition-delay: .5s; }
+/* The logo itself is drawn by header-cat.js as .ttra-cat-logo-toggle, placed
+   from the measured .rc-titulo-grupo box, so only the toggle may move. */
+html.ttra-motion-ready:not(.ttra-motion-played) header :is(.ttra-cat-logo-toggle, .rc-header-centro, .rc-header-derecha) { opacity: 0; transform: translateY(-100%); }
+html.ttra-motion-ready:not(.ttra-motion-played) .ttra-hero-copy { opacity: 0; transform: translateX(-50%); }
+html.ttra-motion-ready:not(.ttra-motion-played) .ttra-mo-marquee { opacity: 0; transform: translateY(100%); }
+
+/* Slide in from the bottom when scrolled into view; replaces the 24px reveal. */
+html[data-modo="classic"].ttra-motion-ready [data-reveal].ttra-reveal-ready:not(.ttra-category):not(.ttra-garantia) {
+  transform: translateY(80px);
+  transition: opacity 1s var(--mo-expo-out), transform 1.1s var(--mo-expo-out);
+  transition-delay: var(--reveal-delay, 0s);
+}
+html[data-modo="classic"].ttra-motion-ready [data-reveal].ttra-reveal-ready.is-visible:not(.ttra-category):not(.ttra-garantia) { transform: none; }
+
+/* Section headings: two lines grow out from the title as it crosses the
+   viewport (--mo-line is 0..1, set on scroll). */
+html[data-modo="classic"] .ttra-section-heading.ttra-mo-lined { justify-content: center; align-items: center; gap: 24px; }
+.ttra-mo-line { flex: 1 1 0; height: 1px; display: flex; }
+.ttra-mo-line::before {
+  content: ""; height: 100%; width: calc(var(--mo-line, 1) * 100%);
+  background: currentColor; opacity: .35;
+}
+.ttra-mo-line-left { justify-content: flex-end; }
+.ttra-mo-line-left::before { background: linear-gradient(to left, currentColor, transparent); }
+.ttra-mo-line-right::before { background: linear-gradient(to right, currentColor, transparent); }
+.ttra-mo-lined > div { flex: none; opacity: var(--mo-title, 1); }
+
+/* Cards fade with scroll position: in over the lower part of the viewport,
+   out again as they leave the top. Focus always shows the card. */
+html[data-modo="classic"].ttra-motion-ready .ttra-mo-fade[data-reveal].ttra-reveal-ready.is-visible {
+  opacity: var(--mo-fade, 1); transition-delay: 0s; will-change: opacity;
+}
+html[data-modo="classic"].ttra-motion-ready .ttra-mo-fade[data-reveal].ttra-reveal-ready.is-visible:is(:hover, :focus-within) { opacity: 1; }
+
+/* Brand marquee under the hero: one copy scrolls the full width every 30s. */
+.ttra-mo-marquee {
+  overflow: hidden; padding: 18px 0; margin: 0 0 8px;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+          mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+.ttra-mo-marquee-track { display: flex; width: max-content; animation: ttra-mo-marquee 30s linear 1s infinite; }
+.ttra-mo-marquee:hover .ttra-mo-marquee-track { animation-play-state: paused; }
+.ttra-mo-marquee ul { display: flex; gap: clamp(36px, 6vw, 80px); padding: 0 clamp(18px, 3vw, 40px); margin: 0; list-style: none; }
+.ttra-mo-marquee li {
+  font: 600 clamp(15px, 1.6vw, 20px)/1 var(--rc-font, inherit);
+  letter-spacing: -.02em; white-space: nowrap; opacity: .55;
+}
+@keyframes ttra-mo-marquee { to { transform: translateX(-50%); } }
+html:not([data-modo="classic"]) .ttra-mo-marquee { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ttra-mo-marquee-track { animation: none; }
+  html.ttra-motion-ready .ttra-mo-fade.is-visible { opacity: 1 !important; }
+}
