@@ -111,3 +111,11 @@ def test_macbook_pro_m5_y_m5_pro_siguen_separadas():
         {"nombre": "MacBook Pro 14 M5 10CPU 10GPU 1TB 24GB", "costo": 2420, "proveedor": "em"},
         {"nombre": "MacBook Pro 14 M5 PRO 15CPU 16GPU 1TB 24GB", "costo": 2820, "proveedor": "em"},
     ])["lista"]) == 2
+
+
+def test_unifica_ipad_a16_con_nombres_distintos():
+    lista = consolidar([
+        {"nombre": "iPad 11\u00aa Generaci\u00f3n A16 \u2013 256GB Wi-Fi", "costo": 620, "proveedor": "fr"},
+        {"nombre": "iPad A16 11\" 2025 256GB", "costo": 610, "proveedor": "em"},
+    ])["lista"]
+    assert len(lista) == 1 and lista[0]["proveedor"] == "em"
