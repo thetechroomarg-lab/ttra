@@ -65,6 +65,9 @@ def _clave(nombre):
         blandas.discard("nfc")
     toks = [t for t in texto.split()
             if t not in _RELLENO and t not in blandas and not _NUCLEOS.match(t)]
+    # iPad A16: sólo existe en 11" (2025); "11ª generación" y el año son relleno
+    if "ipad" in toks and "a16" in toks:
+        toks = [t for t in toks if t not in {"11", "11a", "generacion", "2025"}]
     # La MacBook Neo sólo existe en 13": el tamaño es relleno
     if "neo" in toks and "macbook" in toks and "13" in toks:
         toks.remove("13")
