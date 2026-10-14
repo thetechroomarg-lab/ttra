@@ -381,3 +381,80 @@ def test_historial_intercala_los_pagos_por_fecha(monkeypatch):
         html = cliente.get("/admin/cadete/saldo").text
         # Más nuevo arriba: lo sumado después del pago queda encima, lo anterior debajo.
         assert html.index("Despues del pago") < html.index("Pago de 1 movimientos") < html.index("Antes del pago")
+
+
+def _sumar(fake, i, monto=6000, dia=1):
+    fake.table("movimientos_cadete").insert({"id": f"m{i}", "tipo": "tarea", "referencia_id": str(i), "descripcion": f"Entrega {i}",
+                                             "monto_ars": monto, "creado_en": f"2026-10-{dia:02d}T15:00:00+00:00"}).execute()
+
+
+def _pagar(admin, monto=None):
+    datos = {"monto": str(monto)} if monto is not None else None
+    return admin.post("/admin/cadete/movimientos/pagar", data=datos, files={"x": ("", b"")} if datos else None)
+
+
+def test_pagar_de_mas_deja_el_excedente_como_saldo_a_favor(monkeypatch):
+    fake, admin, cadete = _clientes(monkeypatch)
+    _sumar(fake, 1)
+
+    r = _pagar(admin, 20000)
+
+    assert r.status_code == 200
+    assert r.json()["saldo_a_favor"] == 14000
+    pago = fake.table("pagos_cadete").select("*").execute().data[0]
+    assert pago["monto_ars"] == 20000 and pago["movimientos"] == 1
+    credito = [m for m in _movimientos(fake) if m["tipo"] == "saldo_a_favor"][0]
+    assert credito["monto_ars"] == -14000 and not credito.get("pagado_en") and credito["referencia_id"] == pago["id"]
+
+    html = admin.get("/admin/cadete/saldo").text
+    assert "Saldo a favor tuyo (ya pagado)" in html and "$ 14.000" in html
+    # El pago se ve como cualquier otro y el saldo a favor no tiene fila propia.
+    assert "Pago de 1 movimientos<small>" in html and "$ 20.000" in html
+    assert "Saldo a favor (pago de más)" not in html
+    assert 'id="pagar" type="submit" data-etiqueta="Registrar pago de " disabled' in html
+    assert "Ya cobrado por adelantado" in cadete.get("/admin/cadete/saldo").text
+
+
+def test_lo_que_suma_alejo_se_descuenta_del_saldo_a_favor(monkeypatch):
+    fake, admin, _ = _clientes(monkeypatch)
+    _sumar(fake, 1)
+    _pagar(admin, 20000)  # $ 14.000 a favor
+
+    _sumar(fake, 2, dia=5)
+    _sumar(fake, 3, dia=6)
+    html = admin.get("/admin/cadete/saldo").text  # 14.000 - 12.000
+    assert "Saldo a favor tuyo (ya pagado)" in html and "$ 2.000" in html
+    assert html.count("Descontado del saldo a favor") == 2
+    assert _pagar(admin).status_code == 400  # todavía no hay nada para pagar
+
+    _sumar(fake, 4, dia=7)  # cubre 2.000 y se deben 4.000
+    html = admin.get("/admin/cadete/saldo").text
+    assert "Saldo a pagar" in html and "Registrar pago de $ 4.000" in html
+    assert "Pendiente · $ 2.000 descontados del saldo a favor" in html
+    assert "1 movimientos sin pagar" in html
+
+    r = _pagar(admin, 4000)
+    assert r.status_code == 200 and r.json()["saldo_a_favor"] == 0
+    assert all(m.get("pagado_en") for m in _movimientos(fake))
+
+
+def test_pago_a_cuenta_sin_movimientos_pendientes(monkeypatch):
+    fake, admin, _ = _clientes(monkeypatch)
+
+    assert _pagar(admin, 10000).status_code == 200
+
+    html = admin.get("/admin/cadete/saldo").text
+    assert "Pago a cuenta<small>" in html
+    assert "Saldo a favor tuyo (ya pagado)" in html
+
+
+def test_no_se_puede_pagar_menos_que_lo_pendiente(monkeypatch):
+    fake, admin, _ = _clientes(monkeypatch)
+    _sumar(fake, 1)
+    _sumar(fake, 2)
+
+    r = _pagar(admin, 5000)
+
+    assert r.status_code == 400 and "no alcanza" in r.json()["error"]
+    assert fake.table("pagos_cadete").select("*").execute().data == []
+    assert not any(m.get("pagado_en") for m in _movimientos(fake))

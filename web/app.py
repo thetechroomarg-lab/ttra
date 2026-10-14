@@ -2358,8 +2358,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         saldo_resumen_html = (
             f'<a class="saldo-cadete-resumen" href="/admin/cadete/saldo"><span>Movimientos de Alejo: '
             f'<strong>{resumen_saldo["movimientos_pendientes"]}</strong> sin pagar '
-            f'({resumen_saldo["movimientos_total"]} en total)</span><span>Saldo a pagar: '
-            f'<strong>$ {_formatear_entero_ar(resumen_saldo["saldo_pendiente"])}</strong></span></a>'
+            f'({resumen_saldo["movimientos_total"]} en total)</span><span>'
+            f'{"Saldo a favor" if resumen_saldo["saldo_pendiente"] < 0 else "Saldo a pagar"}: '
+            f'<strong>$ {_formatear_entero_ar(abs(resumen_saldo["saldo_pendiente"]))}</strong></span></a>'
         )
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}</head><body>
@@ -3553,8 +3554,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     try:
         saldo_alejo = saldo_cadete.resumen(saldo_cadete.listar(client))["saldo_pendiente"]
         saldo_alejo_html = (
-            f'<a class="saldo-cadete-titulo" href="/admin/cadete/saldo">Te debo: '
-            f'<strong>$ {_formatear_entero_ar(saldo_alejo)}</strong></a>'
+            f'<a class="saldo-cadete-titulo" href="/admin/cadete/saldo">'
+            f'{"Cobrado por adelantado" if saldo_alejo < 0 else "Te debo"}: '
+            f'<strong>$ {_formatear_entero_ar(abs(saldo_alejo))}</strong></a>'
         )
     except Exception:
         logger.exception("No se pudo calcular el saldo del cadete")
@@ -6436,6 +6438,10 @@ _SALDO_CADETE_ESTILO = """
   .comprobante-label { display:grid; gap:4px; color:var(--op-text-dim); font-size:var(--op-fs-small); }
   .comprobante-label input { padding:8px 10px; }
   .movimiento.pago { border-color:var(--op-success); }
+  .movimiento.a-favor { border-style:dashed; border-color:var(--op-success); }
+  .movimiento.a-favor small { color:var(--op-success); }
+  .saldo-total.a-favor strong { color:var(--op-success); }
+  .pago-ayuda { margin:0; color:var(--op-text-dim); font-size:var(--op-fs-small); }
   .ver-comprobante, .btn-subir-comprobante { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; min-height:40px; margin-top:8px; padding:0 14px; border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; font:inherit; font-weight:700; text-decoration:none; cursor:pointer; transition:background-color var(--op-dur) var(--op-ease), transform var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
   .ver-comprobante:hover, .btn-subir-comprobante:hover { background:var(--op-accent-hover); transform:translateY(-1px); box-shadow:0 4px 10px rgba(200,16,46,.35); }
   .ver-comprobante:active, .btn-subir-comprobante:active { background:var(--op-accent-press); transform:translateY(0); }
@@ -6452,6 +6458,7 @@ def admin_cadete_saldo(request: Request):
         return RedirectResponse("/admin/cadete", status_code=303)
     movimientos = saldo_cadete.listar(get_client())
     resumen = saldo_cadete.resumen(movimientos)
+    saldo = resumen["saldo_pendiente"]
 
     def _fila(m):
         fecha, dia, hora = _formatear_fecha_ar(m.get("creado_en"))
@@ -6462,7 +6469,11 @@ def admin_cadete_saldo(request: Request):
             acciones = (f'<div class="movimiento-acciones"><button type="button" class="btn-monto" data-id="{mid}" '
                         f'data-monto="{int(m.get("monto_ars") or 0)}">Editar monto</button>'
                         f'<button type="button" class="btn-borrar-mov" data-id="{mid}">Borrar</button></div>')
-        return (f'<div class="movimiento{" pagado" if m.get("pagado_en") else ""}"><div>{html.escape(m.get("descripcion") or "")}'
+        cubierto = cubiertos.get(m.get("id"), 0)
+        if cubierto:
+            estado = ("Descontado del saldo a favor" if cubierto >= int(m.get("monto_ars") or 0)
+                      else f"Pendiente · $ {_formatear_entero_ar(cubierto)} descontados del saldo a favor")
+        return (f'<div class="movimiento{" pagado" if m.get("pagado_en") else ""}{" a-favor" if cubierto else ""}"><div>{html.escape(m.get("descripcion") or "")}'
                 f'<small>{fecha} {hora} · {estado}</small></div><div class="movimiento-monto">$ {_formatear_entero_ar(m.get("monto_ars"))}{acciones}</div></div>')
 
     def _fila_pago(p):
@@ -6478,17 +6489,21 @@ def admin_cadete_saldo(request: Request):
             f'<input type="file" accept="image/*,application/pdf" data-pago="{pid}" hidden></label>'
             if es_admin and not p.get("comprobante") else ""
         )
-        return (f'<div class="movimiento pago"><div>Pago de {int(p.get("movimientos") or 0)} movimientos'
+        cantidad = int(p.get("movimientos") or 0)
+        titulo = f"Pago de {cantidad} movimientos" if cantidad else "Pago a cuenta"
+        return (f'<div class="movimiento pago"><div>{html.escape(titulo)}'
                 f'<small>{fecha} {hora}</small>{comprobante}{subir}</div>'
                 f'<div class="movimiento-monto">$ {_formatear_entero_ar(p.get("monto_ars"))}</div></div>')
 
     if es_admin:
         saldo_cadete.registrar_pagos_viejos(get_client())
     pagos = saldo_cadete.listar_pagos(get_client())
+    # El saldo a favor no tiene fila propia: se ve en el total y en lo que va cubriendo.
+    cubiertos, _ = saldo_cadete.cobertura(movimientos)
     # Un solo historial por fecha, más nuevo arriba: cada pago queda en el día en
     # que se hizo, con lo sumado después por encima y lo que pagó por debajo.
     historial = sorted(
-        [(m.get("creado_en") or "", _fila(m)) for m in movimientos]
+        [(m.get("creado_en") or "", _fila(m)) for m in movimientos if not saldo_cadete.es_saldo_a_favor(m)]
         + [(p.get("creado_en") or "", _fila_pago(p)) for p in pagos],
         key=lambda item: item[0], reverse=True,
     )
@@ -6498,18 +6513,28 @@ def admin_cadete_saldo(request: Request):
         admin_html = (
             '<div class="saldo-admin"><form id="form-mov"><input id="mov-desc" required maxlength="300" placeholder="Movimiento manual">'
             f'<input id="mov-monto" type="number" min="0" required value="{saldo_cadete.MONTO_POR_MOVIMIENTO}"><button type="submit">Sumar</button></form>'
-            '<form id="form-pago"><label class="comprobante-label">Comprobante de transferencia (opcional)'
+            f'<form id="form-pago" data-saldo="{max(saldo, 0)}"><label class="comprobante-label">Monto transferido'
+            f'<input id="pago-monto" type="number" min="1" step="1" inputmode="numeric" value="{max(saldo, 0) or ""}" '
+            f'placeholder="Monto en pesos"></label>'
+            '<p class="pago-ayuda">Si transferís más de lo pendiente, lo de más queda a favor y se descuenta de lo próximo.</p>'
+            '<label class="comprobante-label">Comprobante de transferencia (opcional)'
             '<input id="pago-comprobante" type="file" accept="image/*,application/pdf"></label>'
-            f'<button id="pagar" type="submit"{" disabled" if not resumen["saldo_pendiente"] else ""}>Registrar pago de $ {_formatear_entero_ar(resumen["saldo_pendiente"])}</button></form></div>'
+            f'<button id="pagar" type="submit" data-etiqueta="Registrar pago de "{" disabled" if saldo <= 0 else ""}>Registrar pago de $ {_formatear_entero_ar(max(saldo, 0))}</button></form></div>'
         )
     volver = "/admin/clientes" if es_admin else "/admin/cadete"
-    titulo_total = "Saldo a pagar" if es_admin else "Total a cobrar"
+    if saldo < 0:
+        titulo_total = "Saldo a favor tuyo (ya pagado)" if es_admin else "Ya cobrado por adelantado"
+        detalle_total = f"Cada movimiento nuevo se descuenta de acá · {resumen['movimientos_total']} en total"
+    else:
+        titulo_total = "Saldo a pagar" if es_admin else "Total a cobrar"
+        detalle_total = f'{resumen["movimientos_pendientes"]} movimientos sin pagar · {resumen["movimientos_total"]} en total'
+
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Saldo</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}{_SALDO_CADETE_ESTILO}</head><body class="op-cadete">
 <div class="panel">
   <div class="panel-header"><h1>Saldo</h1><a class="volver" href="{volver}">← Volver</a></div>
-  <div class="saldo-total"><p>{titulo_total}</p><strong>$ {_formatear_entero_ar(resumen["saldo_pendiente"])}</strong>
-    <p>{resumen["movimientos_pendientes"]} movimientos sin pagar · {resumen["movimientos_total"]} en total</p></div>
+  <div class="saldo-total{" a-favor" if saldo < 0 else ""}"><p>{titulo_total}</p><strong>$ {_formatear_entero_ar(abs(saldo))}</strong>
+    <p>{detalle_total}</p></div>
   {admin_html}
   <section>{lista}</section>
 </div>
@@ -6523,12 +6548,28 @@ document.getElementById("form-mov")?.addEventListener("submit", (e) => {{
   e.preventDefault();
   enviar("/admin/cadete/movimientos", "POST", {{descripcion: document.getElementById("mov-desc").value, monto_ars: Number(document.getElementById("mov-monto").value)}});
 }});
-document.getElementById("form-pago")?.addEventListener("submit", async (e) => {{
+const formPago = document.getElementById("form-pago");
+const montoPago = document.getElementById("pago-monto");
+const pesos = (n) => "$ " + Math.round(n).toLocaleString("es-AR");
+montoPago?.addEventListener("input", () => {{
+  const monto = Number(montoPago.value) || 0;
+  const boton = document.getElementById("pagar");
+  boton.textContent = boton.dataset.etiqueta + pesos(monto);
+  boton.disabled = monto <= 0;
+}});
+formPago?.addEventListener("submit", async (e) => {{
   e.preventDefault();
-  if (!confirm("¿Marcar todo el saldo pendiente como pagado?")) return;
+  const saldo = Number(formPago.dataset.saldo) || 0;
+  const monto = Math.round(Number(montoPago.value) || 0);
+  if (monto < saldo) {{ alert("El monto no alcanza para cubrir el saldo pendiente de " + pesos(saldo)); return; }}
+  const pregunta = monto > saldo
+    ? `¿Registrar un pago de ${{pesos(monto)}}? Cubre ${{pesos(saldo)}} pendientes y ${{pesos(monto - saldo)}} quedan a favor.`
+    : "¿Marcar todo el saldo pendiente como pagado?";
+  if (!confirm(pregunta)) return;
   const boton = document.getElementById("pagar");
   boton.disabled = true;
   const datos = new FormData();
+  datos.append("monto", String(monto));
   const archivo = document.getElementById("pago-comprobante").files[0];
   if (archivo) datos.append("comprobante", archivo);
   const r = await fetch("/admin/cadete/movimientos/pagar", {{method: "POST", body: datos}});
@@ -6623,10 +6664,25 @@ async def _subir_comprobante(request: Request, client):
 async def admin_cadete_registrar_pago(request: Request):
     _exigir_admin(request)
     client = get_client()
+    monto = None
+    if request.headers.get("content-type", "").startswith("multipart/"):
+        valor = str((await request.form()).get("monto") or "").strip()
+        if valor:
+            try:
+                monto = int(round(float(valor)))
+            except ValueError:
+                return JSONResponse({"error": "El monto no es válido"}, status_code=400)
+    try:
+        saldo_cadete.validar_pago(client, monto)
+    except saldo_cadete.PagoInvalido as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
     ruta, error = await _subir_comprobante(request, client)
     if error:
         return error
-    return {"ok": True, **saldo_cadete.registrar_pago(client, ruta)}
+    try:
+        return {"ok": True, **saldo_cadete.registrar_pago(client, ruta, monto)}
+    except saldo_cadete.PagoInvalido as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
 
 
 @app.post("/admin/cadete/pagos/{pago_id}/comprobante")
