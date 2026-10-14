@@ -51,6 +51,9 @@ html[data-modo="classic"].ttra-motion-ready .ttra-mo-fade[data-reveal].ttra-reve
 /* Brand marquee under the hero: one copy scrolls the full width every 30s. */
 .ttra-mo-marquee {
   overflow: hidden; padding: 18px 0; margin: 0 0 8px;
+  /* Set by ttra-motion.js: centres it between the sticker card and the
+     categories section without moving the layout. */
+  translate: 0 var(--mo-marquee-y, 0px);
   -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
           mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
 }
@@ -58,7 +61,7 @@ html[data-modo="classic"].ttra-motion-ready .ttra-mo-fade[data-reveal].ttra-reve
 .ttra-mo-marquee:hover .ttra-mo-marquee-track { animation-play-state: paused; }
 .ttra-mo-marquee ul { display: flex; gap: clamp(36px, 6vw, 80px); padding: 0 clamp(18px, 3vw, 40px); margin: 0; list-style: none; }
 .ttra-mo-marquee li {
-  font: 600 clamp(15px, 1.6vw, 20px)/1 var(--rc-font, inherit);
+  font: 600 clamp(19.84px, 2.116vw, 26.45px)/1 var(--rc-font, inherit);
   letter-spacing: -.02em; white-space: nowrap; opacity: .55;
 }
 @keyframes ttra-mo-marquee { to { transform: translateX(-50%); } }

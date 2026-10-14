@@ -35,6 +35,28 @@
     hero.append(marquee);
   }
 
+  // Centre the marquee in the gap between the "Hola soy Vlad" card and the
+  // categories section as it rests at the top of the page (classic-editorial.js
+  // pushes that section 96px down, 32px on mobile, until the user scrolls).
+  function placeMarquee() {
+    const hero = document.querySelector('.ttra-hero');
+    const marquee = hero?.querySelector('.ttra-mo-marquee');
+    // sticker-peel.js wraps the card later; until then measure the card itself.
+    const card = hero?.querySelector('.ttra-sticker-peel') || hero?.querySelector('.ttra-personal-intro');
+    if (!marquee || !card) return;
+    // Layout offsets (not rects), so the entry transforms don't skew them.
+    const topIn = el => {
+      let y = 0;
+      while (el && el !== hero) { y += el.offsetTop; el = el.offsetParent; }
+      return el === hero ? y : NaN;
+    };
+    const restOffset = window.matchMedia('(max-width: 700px)').matches ? 32 : 96;
+    const cardBottom = topIn(card) + card.offsetHeight;
+    const sectionTop = hero.offsetHeight + restOffset;
+    const shift = (cardBottom + sectionTop) / 2 - (topIn(marquee) + marquee.offsetHeight / 2);
+    if (Number.isFinite(shift)) marquee.style.setProperty('--mo-marquee-y', `${shift.toFixed(1)}px`);
+  }
+
   function play() {
     // Force a style flush so the hidden state is committed before the transition
     // starts (no rAF: it never fires in a hidden tab and the page would stay blank).
@@ -104,6 +126,12 @@
       return;
     }
     buildMarquee();
+    placeMarquee();
+    const hero = document.querySelector('.ttra-hero');
+    if (hero && window.ResizeObserver) new ResizeObserver(placeMarquee).observe(hero);
+    window.addEventListener('resize', placeMarquee);
+    window.addEventListener('load', placeMarquee, {once: true});
+    document.fonts?.ready.then(placeMarquee);
     setupScrollScrub();
     playAfterWelcome();
   }
