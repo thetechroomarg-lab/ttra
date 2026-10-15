@@ -1080,7 +1080,7 @@ function abrirPanelCompartir(url, nombre) {
   campo.select();
 }
 
-// Arma el link directo al producto (?producto=<nombre>, preserva el modo
+// Arma el link directo al producto (?producto=<slug>, preserva el modo
 // Fallout si corresponde) y abre el selector nativo de compartir. Quien lo abra: si
 // está logueado, landing.js lo lleva directo a la sección y abre la card
 // (ver abrirProductoCompartido); si no tiene cuenta, cae en login.html que
@@ -1094,7 +1094,9 @@ async function compartirProducto(nombre) {
     marca: producto ? (producto.marca || "Otras marcas") : null,
   });
   const params = new URLSearchParams();
-  params.set("producto", nombre);
+  // El slug sobrevive a que el proveedor cambie el nombre: el server lo
+  // resuelve contra el catálogo del día (ver /api/link-producto).
+  params.set("producto", producto?.slug || nombre);
   if (modoVisual === "fallout") params.set("modo", "fallout");
   const url = `${location.origin}/?${params.toString()}`;
   abrirPanelCompartir(url, nombre);
@@ -3174,11 +3176,56 @@ function buscarProductoYSeccion(nombre) {
   return null;
 }
 
-function abrirProductoCompartido() {
-  const nombreObjetivo = paramsMailingActuales().producto;
-  if (!nombreObjetivo) return;
+// ?producto= trae el slug de un link nuevo o el nombre crudo de un link
+// viejo. Si no matchea tal cual, el server lo resuelve contra el catálogo de
+// hoy (tolera que el proveedor haya cambiado el nombre); si el producto ya no
+// está, se muestra el panel de sin stock.
+async function resolverProductoDelLink(ref) {
+  if (buscarProductoYSeccion(ref)) return ref;
+  try {
+    const r = await fetch(`/api/link-producto?ref=${encodeURIComponent(ref)}`);
+    if (!r.ok) return null;
+    const { nombre } = await r.json();
+    return nombre && buscarProductoYSeccion(nombre) ? nombre : null;
+  } catch {
+    return null;
+  }
+}
+
+function mostrarProductoSinStock() {
+  let panel = document.getElementById("rc-panel-sin-stock");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "rc-panel-sin-stock";
+    panel.innerHTML = `
+      <section class="rc-panel-sin-stock-contenido" role="dialog" aria-modal="true" aria-label="Producto sin stock">
+        <img class="rc-panel-sin-stock-imagen" src="/producto-sin-stock.webp" alt="Lo siento, pero ese producto no está en stock actualmente">
+        <p class="rc-panel-sin-stock-texto" hidden>Lo siento, pero ese producto no está en stock actualmente.</p>
+        <button type="button" class="rc-panel-sin-stock-volver">Volver</button>
+      </section>`;
+    const imagen = panel.querySelector(".rc-panel-sin-stock-imagen");
+    imagen.addEventListener("error", () => {
+      imagen.hidden = true;
+      panel.querySelector(".rc-panel-sin-stock-texto").hidden = false;
+    });
+    panel.querySelector(".rc-panel-sin-stock-volver").addEventListener("click", () => {
+      location.href = modoVisual === "fallout" ? "/?modo=fallout" : "/";
+    });
+    document.body.appendChild(panel);
+  }
+  panel.hidden = false;
+  document.body.classList.add("sin-stock-abierto");
+}
+
+async function abrirProductoCompartido() {
+  const ref = paramsMailingActuales().producto;
+  if (!ref) return;
+  const nombreObjetivo = await resolverProductoDelLink(ref);
+  if (!nombreObjetivo) {
+    mostrarProductoSinStock();
+    return;
+  }
   const clave = buscarProductoYSeccion(nombreObjetivo);
-  if (!clave) return;
   productoDelLink = nombreObjetivo;
   seccionActiva = clave;
   subFiltrosActivos = new Set();
@@ -3195,9 +3242,11 @@ function abrirProductoCompartido() {
 }
 
 async function procesarLinkMailing() {
-  const { producto: nombreObjetivo, codigo, agregar } = paramsMailingActuales();
-  if (!nombreObjetivo || !agregar) return;
+  const { producto: ref, codigo, agregar } = paramsMailingActuales();
+  if (!ref || !agregar) return;
 
+  const nombreObjetivo = await resolverProductoDelLink(ref);
+  if (!nombreObjetivo) return;
   const clave = buscarProductoYSeccion(nombreObjetivo);
   if (!clave) return;
   const producto = (SECCIONES_DATA[clave] || []).find((p) => p.nombre === nombreObjetivo);
@@ -3227,7 +3276,7 @@ cargarCatalogo().then(async () => {
     document.getElementById('input-busqueda').value = regresoComparativa.query || '';
     actualizarVista();
     window.TTRAComparar.restorePosition();
-  } else abrirProductoCompartido();
+  } else await abrirProductoCompartido();
   await procesarLinkMailing();
   const parametrosPanel = new URLSearchParams(location.search);
   const panelPedido = parametrosPanel.get("panel");

@@ -1,5 +1,7 @@
 import re
 
+from web.slugs import slug
+
 SECCIONES = [
     "Celulares",
     "Accesorios Celulares",
@@ -132,6 +134,6 @@ def marca_de(producto):
 def secciones_catalogo(productos):
     resultado = {seccion: [] for seccion in SECCIONES}
     for producto in productos:
-        enriquecido = {**producto, "marca": marca_de(producto)}
+        enriquecido = {**producto, "marca": marca_de(producto), "slug": slug(producto["nombre"])}
         resultado[_seccion_de(producto)].append(enriquecido)
     return resultado

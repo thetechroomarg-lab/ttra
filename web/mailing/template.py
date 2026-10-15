@@ -6,6 +6,7 @@ import html
 from urllib.parse import urlencode, urlparse
 
 from web.reglas import WHATSAPP
+from web.slugs import slug
 BASE_URL = "https://www.thetechroomarg.com"
 
 _INSTAGRAM = "https://instagram.com/thetechroomarg"
@@ -43,7 +44,7 @@ def _tarjeta_producto(producto, base_url):
     nombre = html.escape(producto.get("nombre", ""))
     colores = producto.get("colores") or []
     texto_colores = html.escape(", ".join(colores)) if colores else "&nbsp;"
-    link = f"{base_url.rstrip('/')}/?{urlencode({'producto': producto.get('nombre', '')})}"
+    link = f"{base_url.rstrip('/')}/?{urlencode({'producto': slug(producto.get('nombre', ''))})}"
 
     fila_nombre = _fila_fija(
         _ALTO_NOMBRE,
