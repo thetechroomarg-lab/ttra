@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 load_dotenv(PROJECT_DIR / "web" / ".env")
 
 from web.supabase_client import get_client
-from web import cuentas, domicilios, mail_pedido, pedidos, email_util
+from web import cuentas, domicilios, mail_cuenta, mail_pedido, pedidos, email_util
 from web.productos import resolver_proveedor
 
 
@@ -56,15 +56,10 @@ def resolver_fecha(valor):
 
 
 def mandar_credenciales(args, email_norm, password):
-    html = f"""
-<p>Hola {cuentas.capitalizar_nombre(args.nombre)}, ¿cómo estás? Soy Vladimir de The Tech Room Arg.</p>
-<p>Te creé tu cuenta para que puedas hacer seguimiento de tus pedidos en la web:</p>
-<p><b>Email:</b> {email_norm}<br><b>Contraseña temporal:</b> {password}</p>
-<p>Al entrar por primera vez te va a pedir que elijas una contraseña nueva.</p>
-<p>Cualquier cosa, quedo a disposición.</p>
-"""
+    # Mismo mail que manda el alta desde /admin/clientes/lista.
+    html = mail_cuenta.html_cuenta_creada(cuentas.capitalizar_nombre(args.nombre), email_norm, password)
     try:
-        email_util.enviar_email(email_norm, "Tu cuenta en The Tech Room Arg", html)
+        email_util.enviar_email(email_norm, mail_cuenta.ASUNTO, html)
         return True
     except Exception as e:
         return f"FALLÓ: {e}"

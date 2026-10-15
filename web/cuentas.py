@@ -228,6 +228,67 @@ def generar_password_temporal():
     return "".join(secrets.choice(alfabeto) for _ in range(12))
 
 
+def crear_cliente_por_admin(client, nombre, apellido, celular, email, provincia="Córdoba", direccion=None):
+    """Alta de un cliente hecha por el admin: misma cuenta que arma la skill /pedido.
+
+    La cuenta queda confirmada, con una contraseña temporal que el cliente tiene
+    que cambiar al entrar por primera vez. Devuelve el cliente creado más la
+    contraseña, para mandársela por mail.
+    """
+    nombre = capitalizar_nombre(nombre)
+    apellido = capitalizar_nombre(apellido)
+    celular_norm = normalizar_celular(celular)
+    email = (email or "").strip().lower()
+    provincia = (provincia or "").strip()
+    direccion = (direccion or "").strip() or None
+    if not nombre or not apellido:
+        raise ValueError("Completá nombre y apellido")
+    if "@" not in email:
+        raise ValueError("El email ingresado no es válido")
+    if not celular_norm:
+        raise ValueError("El celular ingresado no es válido")
+    if not provincia:
+        raise ValueError("Elegí la provincia")
+
+    if client.table("clientes").select("id").eq("celular", celular_norm).execute().data:
+        raise CelularDuplicadoError(f"Ya existe un cliente con el celular {celular_norm}")
+    if client.table("clientes").select("id").eq("email", email).execute().data:
+        raise EmailDuplicadoError(f"Ya existe un cliente con el email {email}")
+
+    password = generar_password_temporal()
+    try:
+        auth_resp = client.auth.admin.create_user({"email": email, "password": password, "email_confirm": True})
+    except Exception as e:
+        if "already" in str(e).lower():
+            raise EmailDuplicadoError(f"Ya existe una cuenta con el email {email}") from e
+        raise
+    auth_id = auth_resp.user.id
+    cliente_id = str(uuid.uuid4())
+    try:
+        client.table("clientes").insert({
+            "id": cliente_id,
+            "auth_id": auth_id,
+            "nombre": nombre,
+            "apellido": apellido,
+            "celular": celular_norm,
+            "email": email,
+            "provincia": provincia,
+            "direccion": direccion,
+            "tipo_cliente": "minorista",
+            "debe_cambiar_password": True,
+        }).execute()
+    except Exception:
+        # Sin perfil, el usuario de auth queda huérfano y bloquea ese email.
+        try:
+            client.auth.admin.delete_user(auth_id)
+        except Exception:
+            pass
+        raise
+    return {"id": cliente_id, "auth_id": auth_id, "nombre": nombre, "apellido": apellido,
+            "celular": celular_norm, "email": email, "provincia": provincia,
+            "direccion": direccion, "password": password}
+
+
 def resetear_password_cliente(client, cliente_id):
     filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
     if not filas:
