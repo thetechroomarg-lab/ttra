@@ -29,6 +29,7 @@ try:
     from mayoristas import descuento_por_margen
 except ImportError:
     descuento_por_margen = None
+from slugs import slug
 
 PRODUCTOS_JSON = PROJECT_DIR / "web" / "productos.json"
 BASE_URL = "https://www.thetechroomarg.com"
@@ -175,7 +176,8 @@ def formatear_pesos(n):
 
 def link_producto(termino):
     """Link real de producción — el mismo que arma "compartir producto" en la
-    web (ver web/static/landing.js:compartirProducto): https://www.thetechroomarg.com/?producto=<nombre>.
+    web (ver web/static/landing.js:compartirProducto): https://www.thetechroomarg.com/?producto=<slug>.
+    El slug sigue funcionando aunque el proveedor cambie el nombre (ver web/slugs.py).
     Busca `termino` en web/productos.json (fuente canónica del nombre — el
     CSV local puede tener el nombre levemente distinto, ej. sin prefijo de
     marca). None si no hay match único o faltan las piezas."""
@@ -187,7 +189,7 @@ def link_producto(termino):
     if len(candidatos) != 1:
         return None
     nombre = candidatos[0]["nombre"]
-    return f"{BASE_URL}/?{urlencode({'producto': nombre})}"
+    return f"{BASE_URL}/?{urlencode({'producto': slug(nombre)})}"
 
 
 def cargar_proveedores():

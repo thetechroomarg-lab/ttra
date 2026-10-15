@@ -28,7 +28,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete
+from web import buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -176,7 +176,7 @@ def _public_login_url(request: Request):
 
 def _public_producto_mailing_url(request: Request, nombre_producto: str, codigo: str):
     query = urlencode({
-        "producto": nombre_producto,
+        "producto": slugs.slug(nombre_producto),
         "agregar": "1",
         "codigo": codigo,
     })
@@ -6188,6 +6188,14 @@ def mailing_baja_confirmar(cliente_id: str):
         f"<p class='colores'>No vas a recibir más mails de novedades. Si te arrepentís, escribime por WhatsApp.</p>"
         f"<a class='btn-wa' href='{WHATSAPP}'>Escribir por WhatsApp</a></div></body></html>"
     )
+
+
+@app.get("/api/link-producto")
+def api_link_producto(ref: str = ""):
+    """Resuelve el ?producto= de un link compartido (slug nuevo o nombre de un
+    link viejo) al nombre del producto en el catálogo de hoy. None = ya no está
+    en stock: la landing muestra el cartel de sin stock."""
+    return {"nombre": slugs.resolver_producto(ref, _cargar_productos())}
 
 
 @app.get("/api/productos")

@@ -1790,6 +1790,44 @@ html[data-modo="fallout"] .card:focus-within::before {
   .rc-panel-compartir-acciones { flex-direction: column; }
 }
 
+/* Link a un producto que ya no está en el catálogo (ver mostrarProductoSinStock):
+   tapa todo con blur y solo se sale con "Volver", que lleva a la home. */
+#rc-panel-sin-stock {
+  position: fixed; inset: 0; z-index: 10030; display: flex;
+  align-items: center; justify-content: center; padding: 16px;
+  box-sizing: border-box;
+  background: rgba(16, 20, 24, .55);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+#rc-panel-sin-stock[hidden] { display: none; }
+body.sin-stock-abierto { overflow: hidden; }
+/* Header, dock y el resto de la página no se ven ni responden: la única
+   salida es "Volver". */
+body.sin-stock-abierto > :not(#rc-panel-sin-stock) { visibility: hidden; pointer-events: none; }
+/* Imagen + CTA en columna: el lado de la imagen se achica con el ancho y con
+   el alto disponible (descontando el botón), así entra entera y centrada
+   tanto en mobile como en desktop, sin que el botón la pise. */
+.rc-panel-sin-stock-contenido {
+  display: flex; flex-direction: column; align-items: center; gap: 28px;
+  max-height: 100%;
+}
+.rc-panel-sin-stock-imagen {
+  display: block; aspect-ratio: 1; object-fit: contain;
+  width: min(520px, calc(100vw - 48px), calc(100dvh - 140px));
+  border-radius: 50%;
+  /* Backlight blanco detrás del círculo. */
+  box-shadow: 0 0 36px 10px rgba(255, 255, 255, .85), 0 0 90px 30px rgba(255, 255, 255, .35);
+}
+.rc-panel-sin-stock-texto {
+  margin: 0; padding: 22px; border-radius: 14px; text-align: center; font-size: 18px; font-weight: 700;
+  background: var(--rc-bg-panel); color: var(--rc-green-bright);
+}
+.rc-panel-sin-stock-volver {
+  flex: none; min-width: 180px; min-height: 48px; padding: 0 32px; border: 0; border-radius: 12px;
+  background: #fff; color: #111; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+}
+
 /* Carrito sin sesión: productos, total, "Aplicar código" y "Confirmar pedido". */
 #panel-carrito.carrito-invitado :is(label[for="fecha-entrega"], #fecha-entrega, #nota-entrega, #direccion-entrega-actual, #btn-abrir-direccion,
   #selector-domicilio-entrega, #direccion-entrega-wrap, #btn-vaciar-carrito) {

@@ -13,7 +13,7 @@ def test_incluye_nombre_precio_y_link_del_producto():
 
     assert "IPHONE 11 128GB" in html
     assert "U$D 425" in html
-    assert 'href="https://www.thetechroomarg.com/?producto=IPHONE+11+128GB"' in html
+    assert 'href="https://www.thetechroomarg.com/?producto=iphone-11-128gb"' in html
 
 
 def test_cta_producto_usa_url_de_busqueda_publica_con_nombre_codificado():
@@ -21,7 +21,7 @@ def test_cta_producto_usa_url_de_busqueda_publica_con_nombre_codificado():
         [_producto(nombre="POCO X8 PRO MAX 5G 12GB 512GB")]
     )
 
-    assert 'href="https://www.thetechroomarg.com/?producto=POCO+X8+PRO+MAX+5G+12GB+512GB"' in html
+    assert 'href="https://www.thetechroomarg.com/?producto=poco-x8-pro-max-5g-12gb-512gb"' in html
     assert "/p/poco-x8-pro-max-5g-12gb-512gb" not in html
 
 
