@@ -404,16 +404,16 @@ def _sticker(cierre="Cualquier duda con tu pedido, escribime y lo vemos."):
     )
 
 
-def _pie(url_sitio):
+def _pie(url_sitio, motivo="se registró un pedido a tu nombre", aclaracion=" No es válido como factura."):
     dominio = html.escape(url_sitio.split("://")[-1])
     return (
         f'<tr><td class="px" style="padding:48px 32px 32px">'
         f'<div style="border-top:1px solid {_BORDE};padding-top:20px">'
         f'<p style="margin:0;font:800 15px/1 {_SANS};letter-spacing:-0.5px;color:{_BLANCO}">'
         f'The Tech Room Arg<span style="color:{_CORAL}">.</span></p>'
-        f'<p style="margin:10px 0 0;font:400 12px/1.6 {_SANS};color:#7a7a7a">Te llegó este mail porque se registró un '
-        f'pedido a tu nombre en <a href="{html.escape(url_sitio, quote=True)}" style="color:{_TENUE};text-decoration:underline">'
-        f'{dominio}</a>. No es válido como factura.</p></div></td></tr>'
+        f'<p style="margin:10px 0 0;font:400 12px/1.6 {_SANS};color:#7a7a7a">Te llegó este mail porque {motivo} '
+        f'en <a href="{html.escape(url_sitio, quote=True)}" style="color:{_TENUE};text-decoration:underline">'
+        f'{dominio}</a>.{aclaracion}</p></div></td></tr>'
     )
 
 
