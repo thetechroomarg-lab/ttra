@@ -1,0 +1,80 @@
+<style>
+  /* Alta de cliente desde /admin/clientes/lista: panel flotante sobre fondo blureado. */
+  .btn-nuevo-cliente { border:0; border-radius:var(--op-r-sm); background:var(--op-accent); color:#fff; cursor:pointer; font:inherit; font-size:14px; font-weight:700; padding:8px 14px; transition:background-color var(--op-dur) var(--op-ease); }
+  .btn-nuevo-cliente:hover { background:var(--op-accent-hover); }
+  .btn-nuevo-cliente:active { background:var(--op-accent-press); }
+
+  .alta-cliente {
+    --alta-glow: rgba(213, 47, 39, .42);
+    width:min(560px, calc(100% - 32px)); max-height:calc(100dvh - 32px); margin:auto; padding:0; box-sizing:border-box;
+    border:1px solid var(--op-border-strong); border-top:4px solid var(--op-accent); border-radius:var(--op-r-md);
+    background:var(--op-surface); color:var(--op-text); overflow-y:auto; overscroll-behavior:contain;
+    /* El backlight: un halo coral que sale de atrás del panel. */
+    box-shadow:0 0 0 1px rgba(255,113,91,.08), 0 0 60px -6px var(--alta-glow), 0 40px 120px -20px var(--alta-glow), 0 24px 48px -12px rgba(0,0,0,.6);
+  }
+  html[data-classic-theme="light"] .alta-cliente { --alta-glow: rgba(213, 47, 39, .28); }
+  .alta-cliente::backdrop { background:rgba(12, 13, 11, .62); backdrop-filter:blur(10px) saturate(.8); -webkit-backdrop-filter:blur(10px) saturate(.8); }
+  html[data-classic-theme="light"] .alta-cliente::backdrop { background:rgba(36, 38, 32, .38); }
+  .alta-cliente[open] { animation:alta-entrar 220ms var(--op-ease); }
+  .alta-cliente[open]::backdrop { animation:alta-fondo 220ms ease-out; }
+  @keyframes alta-entrar { from { opacity:0; transform:translateY(12px) scale(.985); } }
+  @keyframes alta-fondo { from { opacity:0; } }
+
+  .alta-cliente-cabecera { position:sticky; top:0; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:24px 24px 18px; border-bottom:1px solid var(--op-border); background:var(--op-surface); }
+  .alta-cliente-eyebrow { margin:0 0 8px; color:#ff715b; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+  html[data-classic-theme="light"] .alta-cliente-eyebrow { color:var(--op-accent-border); }
+  .alta-cliente h2 { margin:0; font-size:clamp(26px, 4vw, 34px); font-weight:500; line-height:1; letter-spacing:-.05em; }
+  .alta-cliente h2 span { color:var(--op-accent); }
+  .alta-cliente-cerrar { flex:none; display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; margin:-8px -10px 0 0; border:1px solid transparent; border-radius:var(--op-r-sm); background:transparent; color:var(--op-text-dim); cursor:pointer; font-size:22px; line-height:1; transition:background-color var(--op-dur) var(--op-ease), color var(--op-dur) var(--op-ease); }
+  .alta-cliente-cerrar:hover { background:var(--op-surface-2); color:var(--op-text); }
+
+  .alta-cliente form, .alta-cliente-exito { padding:20px 24px 24px; }
+  .alta-cliente-intro { margin:0 0 20px; color:var(--op-text-dim); font-size:14px; line-height:1.55; }
+  .alta-cliente-grilla { display:grid; grid-template-columns:1fr 1fr; gap:14px 12px; }
+  .alta-campo { display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .alta-campo-ancho { grid-column:1 / -1; }
+  .alta-campo label { color:var(--op-text); font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .alta-campo label small { color:var(--op-text-faint); font-size:11px; font-weight:500; letter-spacing:0; text-transform:none; }
+  .alta-campo :is(input, select) { box-sizing:border-box; width:100%; min-height:46px; padding:0 12px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); background:var(--op-input-bg); color:var(--op-text); font:inherit; font-size:16px; transition:border-color var(--op-dur) var(--op-ease), box-shadow var(--op-dur) var(--op-ease); }
+  .alta-campo :is(input, select):hover { border-color:var(--op-text-faint); }
+  .alta-campo :is(input, select):focus { border-color:var(--op-accent); box-shadow:0 0 0 3px rgba(213,47,39,.18); outline:none; }
+  .alta-campo :is(input, select):focus-visible { outline:none; }
+  .alta-campo input[aria-invalid="true"] { border-color:var(--op-accent); }
+  .alta-cliente-separador { grid-column:1 / -1; margin:6px 0 -2px; padding-top:16px; border-top:1px solid var(--op-border); color:var(--op-text-dim); font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+
+  .alta-cliente-aviso { display:flex; gap:10px; margin:20px 0 0; padding:12px 14px; border-left:3px solid var(--op-accent); background:var(--op-surface-2); color:var(--op-text-dim); font-size:13px; line-height:1.5; }
+  .alta-cliente-aviso b { color:var(--op-text); }
+  .alta-cliente-error { margin:16px 0 0; padding:12px 14px; border:1px solid var(--op-accent-border); border-radius:var(--op-r-sm); background:var(--op-accent-bg); color:var(--op-danger-text); font-size:14px; font-weight:600; }
+  .alta-cliente-error[hidden] { display:none; }
+
+  .alta-cliente-acciones { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+  .alta-cliente-acciones button { min-height:46px; padding:0 18px; border-radius:var(--op-r-sm); cursor:pointer; font:inherit; font-size:15px; font-weight:700; transition:background-color var(--op-dur) var(--op-ease), opacity var(--op-dur) var(--op-ease); }
+  .alta-cliente-secundario { border:1px solid var(--op-border-strong); background:var(--op-surface-2); color:var(--op-text); }
+  .alta-cliente-secundario:hover { background:var(--op-surface-3); }
+  .alta-cliente-primario { border:0; background:var(--op-accent); color:#fff; }
+  .alta-cliente-primario:hover { background:var(--op-accent-hover); }
+  .alta-cliente-primario:active { background:var(--op-accent-press); }
+  .alta-cliente-primario:disabled { cursor:progress; opacity:.65; }
+
+  .alta-cliente-exito[hidden], .alta-cliente form[hidden] { display:none; }
+  .alta-cliente-exito-marca { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; margin-bottom:16px; border-radius:50%; background:var(--op-success-bg); color:var(--op-success); font-size:22px; font-weight:800; }
+  .alta-cliente-exito h3 { margin:0 0 8px; font-size:24px; font-weight:600; letter-spacing:-.03em; }
+  .alta-cliente-exito p { margin:0; color:var(--op-text-dim); font-size:15px; line-height:1.55; }
+  .alta-cliente-exito p b { color:var(--op-text); }
+  .alta-cliente-clave { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; padding:14px 16px; border:1px dashed var(--op-accent-border); background:var(--op-surface-2); }
+  .alta-cliente-clave[hidden] { display:none; }
+  .alta-cliente-clave code { font:700 20px/1.2 'Geist Mono', Menlo, Consolas, monospace; letter-spacing:.06em; color:var(--op-text); word-break:break-all; }
+
+  @media (max-width: 560px) {
+    .alta-cliente { width:100%; max-width:100%; max-height:92dvh; margin:auto 0 0; border-radius:0; border-left:0; border-right:0; }
+    .alta-cliente[open] { animation-name:alta-subir; }
+    @keyframes alta-subir { from { transform:translateY(40px); opacity:0; } }
+    .alta-cliente-cabecera, .alta-cliente form, .alta-cliente-exito { padding-left:20px; padding-right:20px; }
+    .alta-cliente-grilla { grid-template-columns:1fr; }
+    .alta-cliente-acciones { flex-direction:column-reverse; }
+    .alta-cliente-acciones button { width:100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .alta-cliente[open], .alta-cliente[open]::backdrop { animation:none; }
+  }
+</style>

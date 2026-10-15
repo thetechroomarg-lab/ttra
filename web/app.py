@@ -28,7 +28,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete
+from web import buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -149,6 +149,8 @@ async def _manejar_error_validacion(request: Request, exc: RequestValidationErro
     campos = {".".join(str(p) for p in err["loc"] if p != "body") for err in exc.errors()}
     if "password" in campos:
         mensaje = "La contraseña tiene que tener al menos 8 caracteres."
+    elif "email" in campos:
+        mensaje = "Revisá el email: no parece válido."
     else:
         mensaje = "Revisá los datos ingresados e intentá de nuevo."
     return JSONResponse(status_code=422, content={"error": mensaje})
@@ -458,6 +460,17 @@ class MailingCampaniaIn(BaseModel):
 
 class MailingConfirmacionIn(BaseModel):
     confirmacion: str
+
+
+class ClienteNuevoAdminIn(BaseModel):
+    nombre: str = Field(min_length=1, max_length=80)
+    apellido: str = Field(min_length=1, max_length=80)
+    celular: str = Field(min_length=6, max_length=30)
+    email: EmailStr
+    provincia: str = Field(default="Córdoba", min_length=2, max_length=80)
+    direccion: str | None = Field(default=None, max_length=500)
+    piso: str | None = Field(default=None, max_length=20)
+    depto: str | None = Field(default=None, max_length=20)
 
 
 class ClientesSeleccionadosIn(BaseModel):
@@ -1097,6 +1110,49 @@ def admin_clientes_enviar_mail_masivo(entrada: MailingMasivoIn, request: Request
             logger.exception("No se pudo enviar mail masivo a %s", cliente.get("id"))
             fallidos += 1
     return {"ok": True, "enviados": enviados, "fallidos": fallidos}
+
+
+@app.post("/admin/clientes/nuevo")
+def admin_clientes_crear(entrada: ClienteNuevoAdminIn, request: Request):
+    """Alta manual: misma cuenta que arma la skill /pedido, con mail de credenciales."""
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    try:
+        nuevo = cuentas.crear_cliente_por_admin(
+            client, entrada.nombre, entrada.apellido, entrada.celular, entrada.email,
+            provincia=entrada.provincia, direccion=entrada.direccion,
+        )
+    except (cuentas.CelularDuplicadoError, cuentas.EmailDuplicadoError) as e:
+        return JSONResponse({"error": str(e)}, status_code=409)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception:
+        logger.exception("No se pudo crear el cliente desde el admin")
+        return JSONResponse({"error": "Supabase no está disponible en este momento"}, status_code=503)
+    if nuevo["direccion"]:
+        try:
+            domicilios.crear(client, nuevo["id"], "Principal", nuevo["direccion"], predeterminado=True,
+                             piso=entrada.piso, depto=entrada.depto)
+        except Exception:
+            logger.exception("No se pudo guardar el domicilio inicial del cliente %s", nuevo["id"])
+    mail_enviado = True
+    try:
+        enviar_email(
+            nuevo["email"], mail_cuenta.ASUNTO,
+            mail_cuenta.html_cuenta_creada(nuevo["nombre"], nuevo["email"], nuevo["password"],
+                                           _public_app_base_url(request)),
+        )
+    except EnvioEmailError:
+        logger.exception("Cliente %s creado pero no se pudo mandar el mail de credenciales", nuevo["id"])
+        mail_enviado = False
+    respuesta = {"ok": True, "id": nuevo["id"], "nombre": f'{nuevo["nombre"]} {nuevo["apellido"]}',
+                 "email": nuevo["email"], "mail_enviado": mail_enviado}
+    if not mail_enviado:
+        # Sin mail, la única forma de que el cliente reciba la contraseña es que
+        # el admin se la pase a mano.
+        respuesta["password_temporal"] = nuevo["password"]
+    return respuesta
 
 
 @app.post("/admin/clientes/acciones/eliminar")
@@ -1994,6 +2050,117 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch(() => {});
 }
 </script>
+"""
+
+
+# Alta de cliente desde /admin/clientes/lista: panel flotante (<dialog>) que
+# llama a POST /admin/clientes/nuevo. Strings planos, no f-strings.
+_ALTA_CLIENTE_ESTILO = _leer_ui("alta_cliente.css.html")
+_ALTA_CLIENTE_HTML = """<dialog class="alta-cliente" id="alta-cliente" aria-labelledby="alta-cliente-titulo">
+  <div class="alta-cliente-cabecera">
+    <div><p class="alta-cliente-eyebrow">Clientes</p><h2 id="alta-cliente-titulo">Nuevo cliente<span>.</span></h2></div>
+    <button class="alta-cliente-cerrar" id="alta-cliente-cerrar" type="button" aria-label="Cerrar">&#x2715;</button>
+  </div>
+  <form id="alta-cliente-form" novalidate>
+    <p class="alta-cliente-intro">Se crea la cuenta con una contraseña temporal y le llega por mail. Al entrar por primera vez la tiene que cambiar.</p>
+    <div class="alta-cliente-grilla">
+      <div class="alta-campo"><label for="alta-nombre">Nombre</label><input id="alta-nombre" name="nombre" autocomplete="off" maxlength="80" required></div>
+      <div class="alta-campo"><label for="alta-apellido">Apellido</label><input id="alta-apellido" name="apellido" autocomplete="off" maxlength="80" required></div>
+      <div class="alta-campo alta-campo-ancho"><label for="alta-email">Email</label><input id="alta-email" name="email" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200" required></div>
+      <div class="alta-campo"><label for="alta-celular">Celular</label><input id="alta-celular" name="celular" type="tel" inputmode="tel" autocomplete="off" placeholder="351 123 4567" maxlength="30" required></div>
+      <div class="alta-campo"><label for="alta-provincia">Provincia</label><select id="alta-provincia" name="provincia" required>OPCIONES</select></div>
+      <p class="alta-cliente-separador">Domicilio <small>(opcional)</small></p>
+      <div class="alta-campo alta-campo-ancho"><label for="alta-direccion">Dirección</label><input id="alta-direccion" name="direccion" autocomplete="off" placeholder="Ej.: Av. Colón 123, Córdoba" maxlength="500"></div>
+      <div class="alta-campo"><label for="alta-piso">Piso <small>(opcional)</small></label><input id="alta-piso" name="piso" autocomplete="off" maxlength="20"></div>
+      <div class="alta-campo"><label for="alta-depto">Depto <small>(opcional)</small></label><input id="alta-depto" name="depto" autocomplete="off" maxlength="20"></div>
+    </div>
+    <p class="alta-cliente-error" id="alta-cliente-error" role="alert" hidden></p>
+    <div class="alta-cliente-acciones">
+      <button class="alta-cliente-secundario" id="alta-cliente-cancelar" type="button">Cancelar</button>
+      <button class="alta-cliente-primario" id="alta-cliente-crear" type="submit">Crear y enviar mail</button>
+    </div>
+  </form>
+  <div class="alta-cliente-exito" id="alta-cliente-exito" hidden aria-live="polite">
+    <span class="alta-cliente-exito-marca" aria-hidden="true">&#x2713;</span>
+    <h3 id="alta-cliente-exito-titulo">Cliente creado</h3>
+    <p id="alta-cliente-exito-texto"></p>
+    <div class="alta-cliente-clave" id="alta-cliente-clave" hidden><code id="alta-cliente-clave-valor"></code><button class="alta-cliente-secundario" id="alta-cliente-copiar" type="button">Copiar</button></div>
+    <div class="alta-cliente-acciones">
+      <button class="alta-cliente-secundario" id="alta-cliente-otro" type="button">Cargar otro</button>
+      <button class="alta-cliente-primario" id="alta-cliente-listo" type="button">Listo</button>
+    </div>
+  </div>
+</dialog>""".replace("OPCIONES", '<option>Buenos Aires</option><option>Catamarca</option><option>Chaco</option><option>Chubut</option><option>Ciudad Autónoma de Buenos Aires</option><option selected>Córdoba</option><option>Corrientes</option><option>Entre Ríos</option><option>Formosa</option><option>Jujuy</option><option>La Pampa</option><option>La Rioja</option><option>Mendoza</option><option>Misiones</option><option>Neuquén</option><option>Río Negro</option><option>Salta</option><option>San Juan</option><option>San Luis</option><option>Santa Cruz</option><option>Santa Fe</option><option>Santiago del Estero</option><option>Tierra del Fuego</option><option>Tucumán</option>')
+_ALTA_CLIENTE_JS = """
+(() => {
+  const dialogo = document.getElementById("alta-cliente");
+  const form = document.getElementById("alta-cliente-form");
+  const error = document.getElementById("alta-cliente-error");
+  const crear = document.getElementById("alta-cliente-crear");
+  const exito = document.getElementById("alta-cliente-exito");
+  let huboAlta = false;
+  const mostrarError = (texto) => { error.textContent = texto; error.hidden = !texto; };
+  const reiniciar = () => {
+    form.reset(); mostrarError(""); form.hidden = false; exito.hidden = true;
+    form.querySelectorAll("[aria-invalid]").forEach((el) => el.removeAttribute("aria-invalid"));
+  };
+  const abrir = () => { reiniciar(); dialogo.showModal(); document.getElementById("alta-nombre").focus(); };
+  const cerrar = () => dialogo.close();
+  document.getElementById("btn-nuevo-cliente").addEventListener("click", abrir);
+  document.getElementById("alta-cliente-cerrar").addEventListener("click", cerrar);
+  document.getElementById("alta-cliente-cancelar").addEventListener("click", cerrar);
+  document.getElementById("alta-cliente-listo").addEventListener("click", cerrar);
+  document.getElementById("alta-cliente-otro").addEventListener("click", () => { reiniciar(); document.getElementById("alta-nombre").focus(); });
+  dialogo.addEventListener("close", () => { if (huboAlta) location.reload(); });
+  document.getElementById("alta-cliente-copiar").addEventListener("click", async (ev) => {
+    try { await navigator.clipboard.writeText(document.getElementById("alta-cliente-clave-valor").textContent); ev.target.textContent = "Copiada"; } catch {}
+  });
+  form.addEventListener("input", (ev) => ev.target.removeAttribute("aria-invalid"));
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    mostrarError("");
+    const faltantes = [...form.querySelectorAll("[required]")].filter((el) => !el.value.trim() || !el.checkValidity());
+    form.querySelectorAll("[aria-invalid]").forEach((el) => el.removeAttribute("aria-invalid"));
+    faltantes.forEach((el) => el.setAttribute("aria-invalid", "true"));
+    if (faltantes.length) {
+      mostrarError(faltantes.some((el) => el.type === "email" && el.value.trim()) ? "Revisá el email: no parece válido." : "Completá los campos marcados.");
+      faltantes[0].focus();
+      return;
+    }
+    const datos = Object.fromEntries(new FormData(form).entries());
+    for (const k of Object.keys(datos)) { datos[k] = datos[k].trim(); if (!datos[k]) delete datos[k]; }
+    crear.disabled = true; crear.textContent = "Creando…";
+    let r, respuesta = {};
+    try {
+      r = await fetch("/admin/clientes/nuevo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos) });
+      respuesta = await r.json().catch(() => ({}));
+    } catch { r = null; }
+    crear.disabled = false; crear.textContent = "Crear y enviar mail";
+    if (!r || !r.ok) {
+      const detalle = Array.isArray(respuesta.detail) ? "Revisá los datos: hay un campo con un formato inválido." : (respuesta.error || respuesta.detail);
+      mostrarError(detalle || "No se pudo crear el cliente. Probá de nuevo.");
+      return;
+    }
+    huboAlta = true;
+    const texto = document.getElementById("alta-cliente-exito-texto");
+    texto.textContent = "";
+    const nombre = document.createElement("b"); nombre.textContent = respuesta.nombre;
+    const email = document.createElement("b"); email.textContent = respuesta.email;
+    const clave = document.getElementById("alta-cliente-clave");
+    if (respuesta.mail_enviado) {
+      texto.append("La cuenta de ", nombre, " quedó creada y le mandé el mail con la contraseña temporal a ", email, ".");
+      clave.hidden = true;
+    } else {
+      texto.append("La cuenta de ", nombre, " quedó creada, pero el mail a ", email, " no salió. Pasale esta contraseña temporal a mano:");
+      document.getElementById("alta-cliente-clave-valor").textContent = respuesta.password_temporal || "";
+      document.getElementById("alta-cliente-copiar").textContent = "Copiar";
+      clave.hidden = false;
+    }
+    document.getElementById("alta-cliente-exito-titulo").textContent = respuesta.mail_enviado ? "Cliente creado" : "Cliente creado, sin mail";
+    form.hidden = true; exito.hidden = false;
+    document.getElementById("alta-cliente-listo").focus();
+  });
+})();
 """
 
 
@@ -2899,11 +3066,11 @@ document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
             for c in clientes
         )
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Clientes</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
+<title>Clientes</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_ALTA_CLIENTE_ESTILO}</head><body>
 <div class="panel">
   <div class="panel-header">
     <h1>Clientes ({len(clientes)})</h1>
-    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes">Pedidos y recibos</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
+    <div class="panel-header-acciones"><button id="btn-nuevo-cliente" class="btn-nuevo-cliente" type="button">+ Nuevo cliente</button><a class="btn-clientes" href="/admin/clientes">Pedidos y recibos</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
   </div>
   <div class="filtros-clientes">
     <input id="filtro-clientes" type="search" placeholder="Buscar por nombre, email, celular o provincia">
@@ -2921,6 +3088,7 @@ document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
   </table></div>
   <div class="paginacion-clientes" id="paginacion-clientes" hidden></div>
 </div>
+{_ALTA_CLIENTE_HTML}
 <div class="modal-mail" id="modal-mail" hidden>
   <div class="modal-mail-contenido" role="dialog" aria-modal="true" aria-labelledby="modal-mail-titulo">
     <h2 id="modal-mail-titulo">Enviar mail</h2>
@@ -2936,6 +3104,7 @@ document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
   </div>
 </div>
 <script>
+{_ALTA_CLIENTE_JS}
 document.getElementById("salir").addEventListener("click", async () => {{
   await fetch("/admin/clientes/logout", {{ method: "POST" }});
   location.reload();
