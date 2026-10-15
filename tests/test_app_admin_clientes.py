@@ -807,7 +807,7 @@ def test_admin_envia_mailing_solo_con_productos_disponibles(monkeypatch):
     assert r.json()["codigo"] in mails_enviados[0][2]
     assert f"codigo={r.json()['codigo']}" in mails_enviados[0][2]
     assert "agregar=1" in mails_enviados[0][2]
-    assert "producto=iPhone+13" in mails_enviados[0][2]
+    assert "producto=iphone-13" in mails_enviados[0][2]
     filas_codigo = fake.table("codigos_descuento").select("*").eq("code", r.json()["codigo"]).execute().data
     assert len(filas_codigo) == 1
     assert filas_codigo[0]["cliente_id"] == cliente_id
