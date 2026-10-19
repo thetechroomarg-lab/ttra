@@ -2346,9 +2346,13 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'data-piso="{html.escape(pedido.get("piso_entrega") or "")}" data-depto="{html.escape(pedido.get("depto_entrega") or "")}">Editar dirección</button>'
             if direccion else f'<button class="btn-agregar-direccion" type="button" data-id="{pedido_id}">Agregar dirección</button>'
         )
+        cliente = clientes_por_id.get(pedido.get("cliente_id"), {})
+        whatsapp = _link_whatsapp_cliente(cliente.get("celular"))
+        boton_whatsapp = (f'<a class="btn-whatsapp-cliente" href="{html.escape(whatsapp)}" '
+                          'target="_blank" rel="noopener noreferrer">WhatsApp</a>' if whatsapp else '')
         return (
             '<div class="pedido-acciones">'
-            f'{_boton_recibo(pedido)}'
+            f'{_boton_recibo(pedido)}{boton_whatsapp}'
             '<details class="entrega-mas"><summary>Más opciones</summary><div class="entrega-menu">'
             f'{boton_direcciones}'
             f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}" data-tipo="pedido">Editar fecha</button>'

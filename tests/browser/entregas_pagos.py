@@ -1,4 +1,5 @@
 """Browser QA through TestClient: no real database or email/network required."""
+import re
 import pytest
 from tests.test_pagos_entrega import entorno
 from tests.test_recibos import _jpeg_minimo
@@ -9,6 +10,8 @@ from playwright.sync_api import sync_playwright, expect
 @pytest.mark.parametrize('width,theme', [(1440,'dark'), (1440,'light'), (768,'light'), (390,'dark'), (390,'light')])
 def test_entrega_pagos_en_navegador(entorno, tmp_path, monkeypatch, width, theme):
     client, fake, enviados = entorno
+    fake.table('clientes').update({'celular': '3512145217'}).eq('id', 'cliente-pago').execute()
+    fake.table('pedidos').update({'direccion_entrega': 'Av. Colón 123, Córdoba'}).eq('id', 'pago').execute()
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         context = browser.new_context(viewport={'width':width,'height':1000}, service_workers='block')
@@ -35,6 +38,7 @@ def test_entrega_pagos_en_navegador(entorno, tmp_path, monkeypatch, width, theme
         fila.get_by_role('button', name='Enviar recibo').click()
         dialog = page.get_by_role('dialog', name='¿Cómo pagó el cliente?')
         expect(dialog).to_be_visible()
+        assert dialog.evaluate('(el) => getComputedStyle(el).backgroundColor') == ('rgb(30, 32, 29)' if theme == 'dark' else 'rgb(255, 253, 248)')
         page.locator('#metodo-usd').check()
         expect(dialog.get_by_text('Pago completo: U$D 820')).to_be_visible()
         expect(dialog.locator('.pago-importe:visible')).to_have_count(0)
@@ -54,7 +58,21 @@ def test_entrega_pagos_en_navegador(entorno, tmp_path, monkeypatch, width, theme
         expect(dialog).not_to_be_visible()
         expect(fila.get_by_role('button', name='Enviar recibo')).to_be_focused()
         fila.locator('summary').click()
-        fila.get_by_role('button', name='Agregar dirección').click()
+        menu = fila.locator('.entrega-menu')
+        vamos = menu.get_by_role('button', name='Vamos', exact=True)
+        expect(vamos).to_be_visible()
+        expect(vamos).to_have_attribute('data-maps', re.compile('.*Col.*'))
+        assert menu.evaluate('(el) => el.scrollWidth <= el.clientWidth')
+        boxes = [button.bounding_box() for button in menu.locator('button').all()]
+        assert all(box['x'] >= 0 and box['x'] + box['width'] <= width for box in boxes)
+        assert all(a['y'] + a['height'] <= b['y'] for a, b in zip(boxes, boxes[1:]))
+        page.screenshot(path=str(tmp_path / f'menu-{width}-{theme}.png'))
+        with page.expect_popup() as mapa:
+            vamos.click()
+        mapa.value.close()
+        fila.locator(".entrega-mas > summary").click()
+        expect(fila.get_by_role('link', name='WhatsApp', exact=True)).to_have_attribute('href', 'https://wa.me/5493512145217')
+        fila.get_by_role('button', name='Editar dirección', exact=True).click()
         expect(page.locator('#modal-direccion')).to_be_visible()
         page.locator('#direccion-cancelar').click()
         fila.get_by_role('button', name='Enviar recibo').click()
