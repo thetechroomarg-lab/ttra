@@ -373,3 +373,16 @@ html[data-modo="classic"] body.ttra-page .catalog-price-reset:focus-visible { bo
 @media (max-width: 700px) {
   .catalog-price-tag { display: none; }
 }
+
+#compartir-busqueda {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--ed-line);
+  border-radius: 8px;
+  background: var(--rc-bg-panel);
+  color: var(--rc-green);
+  font: 600 14px var(--rc-font);
+  cursor: pointer;
+}
+#compartir-busqueda:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 2px; }

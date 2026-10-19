@@ -413,7 +413,24 @@ function botonCompartirHtml() {
 }
 
 
-function abrirCompartirCatalogo(producto) {
+function urlBusquedaCatalogo() {
+  // Construir desde cero: nunca heredar producto, restaurar, ni acciones de carrito.
+  const url = new URL('/catalogo', location.origin);
+  url.searchParams.set('buscar', '1');
+  const filtros = {
+    q: document.getElementById('catalog-search').value.trim(),
+    categoria: categoriaActiva === 'Todos' ? '' : categoriaActiva,
+    marca: marcaActiva, tipo: tipoActivo, condicion: condicionActiva,
+    orden: ordenActivo === 'destacados' ? '' : ordenActivo,
+    cuotas: soloCuotas ? '1' : '', min: precioMin, max: precioMax,
+  };
+  for (const [clave, valor] of Object.entries(filtros)) {
+    if (valor !== '' && valor != null) url.searchParams.set(clave, valor);
+  }
+  return url;
+}
+
+function abrirCompartirCatalogo(producto = null) {
   let panel = document.getElementById('catalog-share');
   if (!panel) {
     panel = document.createElement('dialog');
@@ -446,12 +463,15 @@ function abrirCompartirCatalogo(producto) {
     });
     panel.addEventListener('close', () => document.body.classList.remove('catalog-share-open'));
   }
-  const url = new URL('/', location.origin);
-  url.searchParams.set('producto', producto.nombre);
-  panel.querySelector('.catalog-share-name').textContent = producto.nombre;
+  const url = producto ? new URL('/', location.origin) : urlBusquedaCatalogo();
+  if (producto) url.searchParams.set('producto', producto.nombre);
+  const nombre = producto ? producto.nombre : (document.getElementById('catalog-search').value.trim() || 'Todo el catálogo');
+  panel.querySelector('h2').textContent = producto ? 'Compartir producto' : 'Compartir búsqueda';
+  panel.querySelector('input').setAttribute('aria-label', producto ? 'Link del producto' : 'Link de la búsqueda');
+  panel.querySelector('.catalog-share-name').textContent = nombre;
   panel.querySelector('input').value = url.href;
   panel.querySelector('.catalog-share-whatsapp').href = 'https://wa.me/?text=' +
-    encodeURIComponent(producto.nombre + '\n' + url.href);
+    encodeURIComponent(nombre + '\n' + url.href);
   panel.querySelector('[role="status"]').textContent = '';
   document.body.classList.add('catalog-share-open');
   panel.showModal();
@@ -492,6 +512,12 @@ function tarjetaProducto(p, indice = 0) {
   `;
 }
 
+function leerPrecioParametro(valor) {
+  if (valor == null || !valor.trim()) return null;
+  const numero = Number(valor);
+  return Number.isFinite(numero) && numero >= 0 ? numero : null;
+}
+
 async function cargarCatalogo() {
   try {
     const r = await fetch("/api/catalogo");
@@ -516,21 +542,28 @@ async function cargarCatalogo() {
       return;
     }
     marcaActiva = (regreso ? regreso.marca : parametros.get("marca")) || "";
-    tipoActivo = ["Notebook", "Mac"].includes(regreso?.tipo) ? regreso.tipo : "";
+    const tipoSolicitado = regreso ? regreso.tipo : parametros.get('tipo');
+    tipoActivo = ['Notebook', 'Mac'].includes(tipoSolicitado) ? tipoSolicitado : '';
     document.getElementById("catalog-search").value = regreso ? regreso.query : parametros.get("q") || "";
-    if (regreso) {
-      condicionActiva = regreso.condicion || '';
-      document.getElementById('condition-filter').value = condicionActiva;
-      ordenActivo = regreso.orden || "destacados";
-      precioMin = Number.isFinite(regreso.precioMin) ? regreso.precioMin : null;
-      precioMax = Number.isFinite(regreso.precioMax) ? regreso.precioMax : null;
-      soloCuotas = regreso.soloCuotas === true;
-      document.getElementById("cuotas-filter").checked = soloCuotas;
-      const radio = document.querySelector(`#catalog-sort input[value="${ordenActivo}"]`);
-      if (radio) radio.checked = true;
+    const estado = regreso || {
+      condicion: parametros.get('condicion'), orden: parametros.get('orden'),
+      precioMin: leerPrecioParametro(parametros.get('min')),
+      precioMax: leerPrecioParametro(parametros.get('max')),
+      soloCuotas: parametros.get('cuotas') === '1',
+    };
+    condicionActiva = ['nuevo', 'usado', 'cpo'].includes(estado.condicion) ? estado.condicion : '';
+    document.getElementById('condition-filter').value = condicionActiva;
+    ordenActivo = ['precio-asc', 'precio-desc'].includes(estado.orden) ? estado.orden : 'destacados';
+    precioMin = Number.isFinite(estado.precioMin) ? estado.precioMin : null;
+    precioMax = Number.isFinite(estado.precioMax) ? estado.precioMax : null;
+    if (precioMin != null && precioMax != null && precioMin > precioMax) {
+      [precioMin, precioMax] = [precioMax, precioMin];
     }
+    soloCuotas = estado.soloCuotas === true;
+    document.getElementById('cuotas-filter').checked = soloCuotas;
+    document.querySelector(`#catalog-sort input[value="${ordenActivo}"]`).checked = true;
     pintarSeccion(SECCIONES.includes(categoriaSolicitada) ? categoriaSolicitada : "Todos");
-    if (regreso ? regreso.searchVisible : parametros.get("buscar") === "1") {
+    if (regreso ? regreso.searchVisible : (parametros.get("buscar") === "1" || parametros.has("q"))) {
       document.querySelector('.catalog-search-wrap').hidden = false;
       document.getElementById("catalog-search").focus();
     }
@@ -573,6 +606,8 @@ document.getElementById("condition-filter").addEventListener("change", (event) =
   condicionActiva = event.target.value;
   pintarSeccion(categoriaActiva);
 });
+
+document.getElementById('compartir-busqueda').addEventListener('click', () => abrirCompartirCatalogo());
 
 document.getElementById('catalog-search').addEventListener('input', () => pintarSeccion(categoriaActiva));
 
