@@ -14,6 +14,8 @@
 .admin-entregas .entrega-mas > summary { cursor:pointer; list-style:none; min-height:44px; display:flex; align-items:center; padding:0 12px; border:1px solid var(--op-border-strong); color:var(--op-text); }
 .admin-entregas .entrega-mas > summary::-webkit-details-marker { display:none; }
 .admin-entregas .entrega-menu { position:absolute; right:0; top:50px; z-index:4; min-width:190px; padding:8px; display:grid; gap:6px; background:var(--op-surface); border:1px solid var(--op-border-strong); box-shadow:0 8px 20px #0002; }
+.admin-entregas .entrega-menu > * { grid-area:auto; }
+.admin-entregas .pedido-acciones > .btn-whatsapp-cliente { box-sizing:border-box; min-height:44px; padding:10px 12px; }
 .admin-entregas .entrega-menu button { min-height:44px; text-align:left; width:100%; }
 .admin-entregas .entrega-totales { grid-column:2 / -1; padding:16px 0 0; border-top:1px solid var(--op-border); }
 .admin-entregas .entrega-totales-titulo { color:var(--op-text-dim); font-size:12px; letter-spacing:.04em; }
@@ -22,45 +24,45 @@
 .admin-entregas .entrega-totales dd { margin:5px 0 0; color:var(--op-text); font-size:16px; font-weight:600; font-variant-numeric:tabular-nums; }
 .admin-entregas .entrega-totales small { color:var(--op-text-dim); font-size:12px; }
 .admin-entregas .pedido-historico .entrega-totales { margin-top:14px; }
-.admin-entregas #modal-pago { box-sizing:border-box; width:min(620px,calc(100% - 32px)); max-height:calc(100dvh - 32px); padding:0; border:1px solid #c9ccc7; border-top:4px solid #ba2922; border-radius:4px; background:#fff; color:#20231f; box-shadow:0 20px 70px #20231f30; overflow:hidden; overscroll-behavior:contain; }
-.admin-entregas #modal-pago::backdrop { background:rgba(255,255,255,.78); backdrop-filter:blur(3px); }
+.admin-entregas #modal-pago { box-sizing:border-box; width:min(620px,calc(100% - 32px)); max-height:calc(100dvh - 32px); padding:0; border:1px solid var(--op-border-strong); border-top:4px solid var(--op-accent); border-radius:4px; background:var(--op-surface); color:var(--op-text); box-shadow:0 20px 70px #0006; overflow:hidden; overscroll-behavior:contain; }
+.admin-entregas #modal-pago::backdrop { background:rgba(16,20,18,.72); backdrop-filter:blur(3px); }
 .admin-entregas #modal-pago [hidden] { display:none; }
 .admin-entregas #pago-form { padding:0; display:flex; flex-direction:column; max-height:calc(100dvh - 40px); }
 .admin-entregas .pago-scroll { padding:28px; min-height:0; overflow-y:auto; overscroll-behavior:contain; }
 .admin-entregas .pago-cabecera { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
-.admin-entregas .pago-ceja { color:#656a61; text-transform:uppercase; letter-spacing:.09em; font-size:11px; font-weight:600; }
+.admin-entregas .pago-ceja { color:var(--op-text-dim); text-transform:uppercase; letter-spacing:.09em; font-size:11px; font-weight:600; }
 .admin-entregas #pago-titulo { margin:8px 0; font-size:26px; line-height:1.15; letter-spacing:-.035em; }
 .admin-entregas #pago-cliente { margin:0; font-size:15px; }
-.admin-entregas #pago-ayuda { color:#5b6057; font-size:14px; line-height:1.55; margin:18px 0; }
-.admin-entregas #modal-pago button { font:inherit; cursor:pointer; min-height:44px; border:1px solid #a3a99e; border-radius:3px; padding:10px 14px; background:#fff; color:#20231f; }
+.admin-entregas #pago-ayuda { color:var(--op-text-dim); font-size:14px; line-height:1.55; margin:18px 0; }
+.admin-entregas #modal-pago button { font:inherit; cursor:pointer; min-height:44px; border:1px solid var(--op-border-strong); border-radius:3px; padding:10px 14px; background:var(--op-surface); color:var(--op-text); }
 .admin-entregas #modal-pago button:disabled { opacity:.55; cursor:not-allowed; }
 .admin-entregas #modal-pago #pago-cerrar { border:0; font-size:26px; padding:0; min-width:44px; }
-.admin-entregas .pago-base { display:flex; justify-content:space-between; gap:12px; background:#f3f4f0; padding:16px; font-size:14px; }
+.admin-entregas .pago-base { display:flex; justify-content:space-between; gap:12px; background:var(--op-surface-2); padding:16px; font-size:14px; }
 .admin-entregas #pago-total { font-size:20px; font-variant-numeric:tabular-nums; }
 .admin-entregas #pago-metodos { padding:0; margin:20px 0 12px; border:0; min-width:0; }
-.admin-entregas #pago-metodos legend { font-size:12px; font-weight:600; color:#5b6057; margin-bottom:8px; }
-.admin-entregas .pago-opcion { border-top:1px solid #ddd; }
-.admin-entregas .pago-opcion:has(input:checked) { background:#f3f4f0; }
+.admin-entregas #pago-metodos legend { font-size:12px; font-weight:600; color:var(--op-text-dim); margin-bottom:8px; }
+.admin-entregas .pago-opcion { border-top:1px solid var(--op-border); }
+.admin-entregas .pago-opcion:has(input:checked) { background:var(--op-surface-2); }
 .admin-entregas .pago-opcion > label { display:flex; align-items:center; gap:12px; min-height:52px; padding:6px 12px; cursor:pointer; font-size:14px; }
-.admin-entregas .pago-opcion input[type=checkbox] { width:19px; height:19px; accent-color:#ad241e; flex-shrink:0; }
+.admin-entregas .pago-opcion input[type=checkbox] { width:19px; height:19px; accent-color:var(--op-accent); flex-shrink:0; }
 .admin-entregas .pago-opcion .pago-alternativa { margin-left:auto; font-weight:600; font-variant-numeric:tabular-nums; text-align:right; }
 .admin-entregas .pago-importe { padding:0 12px 12px 43px; }
-.admin-entregas .pago-importe label { display:block; color:#5b6057; font-size:12px; margin:0 0 5px; }
-.admin-entregas .pago-importe input { box-sizing:border-box; width:100%; min-height:44px; border:1px solid #92988d; background:#fff; color:#20231f; border-radius:3px; padding:10px 12px; font:inherit; font-variant-numeric:tabular-nums; }
-.admin-entregas .pago-nota { color:#5b6057; font-size:12px; line-height:1.5; }
-.admin-entregas #pago-resumen { padding:14px 16px; margin:16px 0; background:#f3f4f0; border-left:3px solid #7d8476; font-size:14px; line-height:1.6; }
-.admin-entregas #pago-resumen[data-completo=true] { border-color:#327047; }
+.admin-entregas .pago-importe label { display:block; color:var(--op-text-dim); font-size:12px; margin:0 0 5px; }
+.admin-entregas .pago-importe input { box-sizing:border-box; width:100%; min-height:44px; border:1px solid var(--op-border-strong); background:var(--op-surface); color:var(--op-text); border-radius:3px; padding:10px 12px; font:inherit; font-variant-numeric:tabular-nums; }
+.admin-entregas .pago-nota { color:var(--op-text-dim); font-size:12px; line-height:1.5; }
+.admin-entregas #pago-resumen { padding:14px 16px; margin:16px 0; background:var(--op-surface-2); border-left:3px solid var(--op-text-faint); font-size:14px; line-height:1.6; }
+.admin-entregas #pago-resumen[data-completo=true] { border-color:var(--op-success); }
 .admin-entregas #pago-resumen strong { display:block; }
-.admin-entregas .pago-fotos { border-top:1px solid #ddd; padding:16px 0; font-size:14px; }
+.admin-entregas .pago-fotos { border-top:1px solid var(--op-border); padding:16px 0; font-size:14px; }
 .admin-entregas .pago-fotos summary { cursor:pointer; min-height:32px; }
-.admin-entregas .pago-fotos summary span { color:#5b6057; }
+.admin-entregas .pago-fotos summary span { color:var(--op-text-dim); }
 .admin-entregas #pago-fotos { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 .admin-entregas #pago-fotos img { width:100%; height:85px; object-fit:contain; }
 .admin-entregas #pago-fotos button { width:100%; font-size:12px; }
-.admin-entregas #pago-error { padding:12px; background:#fff1ee; color:#a0211d; border:1px solid #dba29e; line-height:1.5; }
-.admin-entregas .pago-pie { flex-shrink:0; background:#fff; display:flex; justify-content:flex-end; gap:8px; padding:16px 28px; border-top:1px solid #ddd; }
-.admin-entregas #modal-pago #pago-enviar { background:#b62821; border-color:#b62821; color:#fff; font-weight:600; }
-.admin-entregas #modal-pago :focus-visible { outline:2px solid #a32921; outline-offset:3px; }
+.admin-entregas #pago-error { padding:12px; background:var(--op-accent-bg); color:var(--op-danger-text); border:1px solid var(--op-accent-border); line-height:1.5; }
+.admin-entregas .pago-pie { flex-shrink:0; background:var(--op-surface); display:flex; justify-content:flex-end; gap:8px; padding:16px 28px; border-top:1px solid var(--op-border); }
+.admin-entregas #modal-pago #pago-enviar { background:var(--op-accent); border-color:var(--op-accent); color:#fff; font-weight:600; }
+.admin-entregas #modal-pago :focus-visible { outline:2px solid var(--op-accent-hover); outline-offset:3px; }
 @media(max-width:850px) {
   .admin-entregas .entrega-totales dl { grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
   .admin-entregas .pedido-hoy { grid-template-columns:44px minmax(0,1fr); gap:12px; }
