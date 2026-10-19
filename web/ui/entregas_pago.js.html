@@ -9,18 +9,40 @@
   const contenido = document.getElementById('pago-contenido');
   const cargando = document.getElementById('pago-cargando');
   const fotosVista = document.getElementById('pago-fotos');
-  let datos = null, origen = null, ocupado = false, cargandoFotos = false, fotos = [], consulta = 0;
+  let datos = null, origen = null, ocupado = false, cargandoFotos = false, fotos = [], consulta = 0, saldoAutomatico = null;
   const formato = (n, moneda = 'USD') => `${({USD:'U$D', ARS:'$', USDT:'USDT'})[moneda]} ${Number(n).toLocaleString('es-AR', {maximumFractionDigits:2})}`;
   const mostrarError = (mensaje) => { error.textContent = mensaje; error.hidden = !mensaje; };
   const elegidos = () => [...metodos.querySelectorAll('input[type=checkbox]:checked')].map(c => ({
     opcion: datos.opciones.find(o => o.metodo === c.value),
     campo: document.getElementById(`importe-${c.value}`)
   }));
+  function completarSaldo() {
+    if (!saldoAutomatico || !datos) return;
+    const seleccion = elegidos();
+    const destino = seleccion.find(({opcion}) => opcion.metodo === saldoAutomatico);
+    if (!destino) return;
+    let cubierto = 0;
+    for (const {opcion, campo} of seleccion) {
+      if (opcion.metodo === saldoAutomatico) continue;
+      const valor = Number(campo.value);
+      if (campo.value && (!Number.isFinite(valor) || valor < 0 || !campo.checkValidity())) {
+        destino.campo.value = ''; return;
+      }
+      cubierto += valor * Number(opcion.factor) / Number(opcion.escala);
+    }
+    const restante = Math.max(0, Number(datos.total_usd) - cubierto);
+    const p = destino.opcion;
+    const bruto = restante * Number(p.escala) / Number(p.factor);
+    // Same published rounding as pagos_entrega.opciones: whole units for adjusted methods.
+    const unidades = ['usd_usa', 'usdt', 'ars_transferencia'].includes(p.metodo);
+    const monto = unidades ? Math.ceil(bruto - 1e-8) : Math.round((bruto + 1e-8) * 100) / 100;
+    destino.campo.value = monto > 0 || (seleccion.length === 1 && Number(datos.total_usd) === 0) ? String(monto) : '';
+  }
   function actualizar() {
     if (!datos) return;
     const seleccion = elegidos(), mixto = seleccion.length > 1;
     metodos.querySelectorAll('.pago-opcion').forEach(fila => {
-      const activo = fila.querySelector('[type=checkbox]').checked && mixto;
+      const activo = fila.querySelector('[type=checkbox]').checked;
       fila.querySelector('.pago-importe').hidden = !activo;
       fila.querySelector('[type=number]').disabled = !activo || ocupado;
     });
@@ -32,10 +54,11 @@
       titulo.textContent = 'Seleccioná una forma de pago';
       detalle.textContent = 'Con un solo método, se cobra automáticamente el total.';
     } else if (!mixto) {
-      valido = true;
-      const p = seleccion[0].opcion;
-      titulo.textContent = `Pago completo: ${formato(p.monto, p.moneda)}`;
-      detalle.textContent = `${p.nombre} · El recibo mostrará este importe.`;
+      const {opcion:p, campo} = seleccion[0];
+      valido = campo.value !== '' && campo.checkValidity() && Number(campo.value) === Number(p.monto);
+      const diferencia = Number(datos.total_usd) - Number(campo.value) * Number(p.factor) / Number(p.escala);
+      titulo.textContent = valido ? `Pago completo: ${formato(p.monto, p.moneda)}` : diferencia >= 0 ? `Falta cubrir ${formato(diferencia)}` : `Excede el total en ${formato(-diferencia)}`;
+      detalle.textContent = valido ? `${p.nombre} · El recibo mostrará este importe.` : 'Agregá otro método para completar el saldo pendiente.';
     } else {
       let neto = 0, tolerancia = .005;
       let completos = true;
@@ -57,6 +80,7 @@
     enviar.disabled = !valido || ocupado || cargandoFotos;
   }
   function renderMetodos() {
+    saldoAutomatico = null;
     metodos.replaceChildren();
     const leyenda = document.createElement('legend'); leyenda.textContent = 'Formas de pago'; metodos.append(leyenda);
     datos.opciones.forEach(p => {
@@ -68,10 +92,25 @@
       label.append(check, nombre, total);
       const wrapper = document.createElement('div'); wrapper.className = 'pago-importe'; wrapper.hidden = true;
       const etiqueta = document.createElement('label'); etiqueta.htmlFor = `importe-${p.metodo}`; etiqueta.textContent = `Importe recibido en ${p.moneda}`;
-      const campo = document.createElement('input'); campo.id = etiqueta.htmlFor; campo.type = 'number'; campo.inputMode = 'decimal'; campo.min = '.01'; campo.step = '.01'; campo.max = '1000000000000'; campo.placeholder = '0,00'; campo.disabled = true;
+      const campo = document.createElement('input'); campo.id = etiqueta.htmlFor; campo.type = 'number'; campo.inputMode = 'decimal'; campo.min = Number(datos.total_usd) === 0 ? '0' : '.01'; campo.step = '.01'; campo.max = '1000000000000'; campo.placeholder = '0,00'; campo.disabled = true;
       wrapper.append(etiqueta, campo); fila.append(label, wrapper); metodos.append(fila);
-      check.addEventListener('change', () => { mostrarError(''); actualizar(); });
-      campo.addEventListener('input', () => { mostrarError(''); actualizar(); });
+      check.addEventListener('change', () => {
+        mostrarError('');
+        if (check.checked) {
+          saldoAutomatico = p.metodo;
+          completarSaldo();
+        } else {
+          campo.value = '';
+          if (saldoAutomatico === p.metodo) saldoAutomatico = null;
+          completarSaldo();
+        }
+        actualizar();
+      });
+      campo.addEventListener('input', () => {
+        mostrarError('');
+        if (saldoAutomatico === p.metodo) saldoAutomatico = null;
+        completarSaldo(); actualizar();
+      });
     });
     const guardado = datos.pago_guardado;
     if (guardado && Number(guardado.cotizacion) === Number(datos.cotizacion)) {
