@@ -2339,9 +2339,12 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         pedido_id = html.escape(pedido.get("id", ""))
         fecha = html.escape(pedido.get("fecha_entrega", ""))
         direccion = (pedido.get("direccion_entrega") or "").strip()
-        boton_direcciones = (
+        boton_vamos = (
             f'<button class="btn-direcciones" type="button" '
             f'data-maps="https://www.google.com/maps/search/?{html.escape(urlencode({"api": 1, "query": _query_maps(direccion, pedido.get("lat"), pedido.get("lng"))}))}">Vamos</button>'
+            if direccion else '<button class="btn-direcciones" type="button" disabled title="Agregá una dirección desde Más opciones">Vamos</button>'
+        )
+        boton_direcciones = (
             f'<button class="btn-editar-direccion" type="button" data-id="{pedido_id}" data-direccion="{html.escape(direccion)}" '
             f'data-piso="{html.escape(pedido.get("piso_entrega") or "")}" data-depto="{html.escape(pedido.get("depto_entrega") or "")}">Editar dirección</button>'
             if direccion else f'<button class="btn-agregar-direccion" type="button" data-id="{pedido_id}">Agregar dirección</button>'
@@ -2352,7 +2355,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                           'target="_blank" rel="noopener noreferrer">WhatsApp</a>' if whatsapp else '')
         return (
             '<div class="pedido-acciones">'
-            f'{_boton_recibo(pedido)}{boton_whatsapp}'
+            f'{_boton_recibo(pedido)}{boton_vamos}{boton_whatsapp}'
             '<details class="entrega-mas"><summary>Más opciones</summary><div class="entrega-menu">'
             f'{boton_direcciones}'
             f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}" data-tipo="pedido">Editar fecha</button>'
