@@ -10,7 +10,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import CondPageBreak, Image, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from . import garantias
+from . import garantias, pagos_entrega
 
 _ZONA_ARGENTINA = timezone(timedelta(hours=-3))
 
@@ -194,7 +194,8 @@ def html_recibo(cliente, pedido, logo_url="", beneficios=None):
     <tbody>{filas}</tbody>
   </table>
   {descuento_html}
-  <p style='font-size:20px;font-weight:700;text-align:right'>Total: {_formatear_usd(pedido.get('total_usd'))}</p>
+  <p style='font-size:20px;font-weight:700;text-align:right'>{'Total base' if pedido.get('recibo_pago') else 'Total'}: {_formatear_usd(pedido.get('total_usd'))}</p>
+  {''.join('<p style="margin:8px 0">' + html.escape(linea) + '</p>' for linea in pagos_entrega.lineas_recibo(pedido))}
   <section style='border-top:1px solid #ddd;margin-top:24px;padding-top:18px'><h2 style='font-size:17px;margin:0'>Garantía de tu compra</h2>
     <p style='font-size:13px;color:#555;margin:6px 0 0'>Estas son las condiciones de garantía de los productos que compraste.</p>
     {garantias_html}
@@ -424,7 +425,8 @@ def pdf_recibo(cliente, pedido, fotos=None):
     descuento = int(pedido.get("descuento_usd") or 0)
     if descuento:
         elementos.append(Paragraph(f"Descuentos aplicados: -{_formatear_usd(descuento)}", normal))
-    elementos.append(Paragraph(f"<b>Total: {_formatear_usd(pedido.get('total_usd'))}</b>", normal))
+    elementos.append(Paragraph(f"<b>{'Total base' if pedido.get('recibo_pago') else 'Total'}: {_formatear_usd(pedido.get('total_usd'))}</b>", normal))
+    elementos.extend(Paragraph(html.escape(linea), normal) for linea in pagos_entrega.lineas_recibo(pedido))
     elementos.extend(_garantias_pdf(pedido.get("detalle"), normal))
     elementos.extend([Spacer(1, 22), _cierre_pdf(normal), Spacer(1, 10),
         Paragraph("Documento no válido como factura.", ParagraphStyle("Leyenda", parent=normal, fontSize=8, textColor=colors.HexColor("#888888"))),

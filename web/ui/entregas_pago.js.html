@@ -1,0 +1,165 @@
+<script>
+(() => {
+  const modal = document.getElementById('modal-pago');
+  const form = document.getElementById('pago-form');
+  const metodos = document.getElementById('pago-metodos');
+  const enviar = document.getElementById('pago-enviar');
+  const error = document.getElementById('pago-error');
+  const resumen = document.getElementById('pago-resumen');
+  const contenido = document.getElementById('pago-contenido');
+  const cargando = document.getElementById('pago-cargando');
+  const fotosVista = document.getElementById('pago-fotos');
+  let datos = null, origen = null, ocupado = false, cargandoFotos = false, fotos = [], consulta = 0;
+  const formato = (n, moneda = 'USD') => `${({USD:'U$D', ARS:'$', USDT:'USDT'})[moneda]} ${Number(n).toLocaleString('es-AR', {maximumFractionDigits:2})}`;
+  const mostrarError = (mensaje) => { error.textContent = mensaje; error.hidden = !mensaje; };
+  const elegidos = () => [...metodos.querySelectorAll('input[type=checkbox]:checked')].map(c => ({
+    opcion: datos.opciones.find(o => o.metodo === c.value),
+    campo: document.getElementById(`importe-${c.value}`)
+  }));
+  function actualizar() {
+    if (!datos) return;
+    const seleccion = elegidos(), mixto = seleccion.length > 1;
+    metodos.querySelectorAll('.pago-opcion').forEach(fila => {
+      const activo = fila.querySelector('[type=checkbox]').checked && mixto;
+      fila.querySelector('.pago-importe').hidden = !activo;
+      fila.querySelector('[type=number]').disabled = !activo || ocupado;
+    });
+    let valido = false;
+    resumen.replaceChildren();
+    const titulo = document.createElement('strong');
+    const detalle = document.createElement('span');
+    if (!seleccion.length) {
+      titulo.textContent = 'Seleccioná una forma de pago';
+      detalle.textContent = 'Con un solo método, se cobra automáticamente el total.';
+    } else if (!mixto) {
+      valido = true;
+      const p = seleccion[0].opcion;
+      titulo.textContent = `Pago completo: ${formato(p.monto, p.moneda)}`;
+      detalle.textContent = `${p.nombre} · El recibo mostrará este importe.`;
+    } else {
+      let neto = 0, tolerancia = .005;
+      let completos = true;
+      const desglose = [];
+      seleccion.forEach(({opcion:p, campo}) => {
+        const valor = Number(campo.value);
+        if (!campo.value || !Number.isFinite(valor) || valor <= 0 || !campo.checkValidity()) completos = false;
+        neto += (Number.isFinite(valor) ? valor : 0) * Number(p.factor) / Number(p.escala);
+        if (p.metodo !== 'usd') tolerancia += Number(p.factor) / Number(p.escala);
+        if (campo.value) desglose.push(`${p.nombre}: ${formato(valor, p.moneda)}`);
+      });
+      const diferencia = neto - Number(datos.total_usd);
+      valido = completos && diferencia >= -.005 - 1e-8 && diferencia < tolerancia - 1e-8;
+      titulo.textContent = valido ? 'Pago completo · Sin saldo pendiente' : diferencia > 0 ? `Excede el total en ${formato(diferencia)}` : `Falta cubrir ${formato(-diferencia)}`;
+      detalle.textContent = desglose.length ? desglose.join(' · ') : 'Ingresá lo recibido en la moneda de cada método.';
+    }
+    resumen.append(titulo, detalle);
+    resumen.dataset.completo = String(valido);
+    enviar.disabled = !valido || ocupado || cargandoFotos;
+  }
+  function renderMetodos() {
+    metodos.replaceChildren();
+    const leyenda = document.createElement('legend'); leyenda.textContent = 'Formas de pago'; metodos.append(leyenda);
+    datos.opciones.forEach(p => {
+      const fila = document.createElement('div'); fila.className = 'pago-opcion';
+      const label = document.createElement('label');
+      const check = document.createElement('input'); check.type = 'checkbox'; check.value = p.metodo; check.id = `metodo-${p.metodo}`;
+      const nombre = document.createElement('span'); nombre.textContent = p.nombre;
+      const total = document.createElement('span'); total.className = 'pago-alternativa'; total.textContent = formato(p.monto, p.moneda);
+      label.append(check, nombre, total);
+      const wrapper = document.createElement('div'); wrapper.className = 'pago-importe'; wrapper.hidden = true;
+      const etiqueta = document.createElement('label'); etiqueta.htmlFor = `importe-${p.metodo}`; etiqueta.textContent = `Importe recibido en ${p.moneda}`;
+      const campo = document.createElement('input'); campo.id = etiqueta.htmlFor; campo.type = 'number'; campo.inputMode = 'decimal'; campo.min = '.01'; campo.step = '.01'; campo.max = '1000000000000'; campo.placeholder = '0,00'; campo.disabled = true;
+      wrapper.append(etiqueta, campo); fila.append(label, wrapper); metodos.append(fila);
+      check.addEventListener('change', () => { mostrarError(''); actualizar(); });
+      campo.addEventListener('input', () => { mostrarError(''); actualizar(); });
+    });
+    const guardado = datos.pago_guardado;
+    if (guardado && Number(guardado.cotizacion) === Number(datos.cotizacion)) {
+      guardado.metodos.forEach(p => {
+        const check = document.getElementById(`metodo-${p.metodo}`), campo = document.getElementById(`importe-${p.metodo}`);
+        if (check && campo) { check.checked = true; campo.value = p.monto; }
+      });
+    }
+    actualizar();
+  }
+  function renderFotos() {
+    fotosVista.replaceChildren();
+    fotos.forEach((f, i) => {
+      const div = document.createElement('div'), img = document.createElement('img'), quitar = document.createElement('button');
+      img.src = f.url; img.alt = `Foto de serie ${i + 1}`; quitar.type = 'button'; quitar.textContent = 'Quitar foto'; quitar.disabled = ocupado;
+      quitar.addEventListener('click', () => { URL.revokeObjectURL(f.url); fotos.splice(i, 1); renderFotos(); });
+      div.append(img, quitar); fotosVista.append(div);
+    });
+  }
+  function cerrar() { if (!ocupado && !cargandoFotos) modal.close(); }
+  ['pago-cerrar','pago-cancelar'].forEach(id => document.getElementById(id).addEventListener('click', cerrar));
+  modal.addEventListener('cancel', e => { if (ocupado || cargandoFotos) e.preventDefault(); });
+  modal.addEventListener('close', () => {
+    consulta++; datos = null;
+    fotos.forEach(f => URL.revokeObjectURL(f.url)); fotos = []; renderFotos();
+    document.body.style.overflow = ''; origen?.focus();
+  });
+  document.querySelectorAll('.btn-enviar-recibo').forEach(btn => btn.addEventListener('click', async () => {
+    origen = btn; datos = null; ocupado = false; enviar.disabled = true; contenido.hidden = true; cargando.hidden = false; mostrarError('');
+    metodos.replaceChildren(); resumen.replaceChildren();
+    enviar.textContent = 'Confirmar y enviar recibo'; document.getElementById('pago-cliente').textContent = '';
+    modal.showModal(); document.body.style.overflow = 'hidden';
+    const actual = ++consulta;
+    try {
+      const r = await fetch(`/admin/pedidos/${encodeURIComponent(btn.dataset.id)}/pagos`, {cache:'no-store'});
+      const respuesta = await r.json();
+      if (actual !== consulta || !modal.open) return;
+      if (!r.ok) throw new Error(respuesta.detail || respuesta.error || 'No se pudieron cargar los importes.');
+      datos = respuesta; document.getElementById('pago-cliente').textContent = datos.cliente;
+      document.getElementById('pago-total').textContent = formato(datos.total_usd);
+      document.getElementById('pago-cotizacion').textContent = `Cotización: ${formato(datos.cotizacion,'ARS')} por USD. Los importes incluyen el ajuste de cada método.`;
+      renderMetodos(); contenido.hidden = false;
+      metodos.querySelector('input')?.focus();
+    } catch(e) { if (actual === consulta) mostrarError(e.message || 'No se pudo conectar. Cerrá y volvé a intentar.'); }
+    finally { if (actual === consulta) cargando.hidden = true; }
+  }));
+  const inputFoto = document.getElementById('pago-foto-input');
+  const agregarFoto = document.getElementById('pago-agregar-foto');
+  agregarFoto.addEventListener('click', () => inputFoto.click());
+  inputFoto.addEventListener('change', async () => {
+    cargandoFotos = true; agregarFoto.disabled = true; actualizar(); mostrarError('');
+    try {
+      for (const archivo of inputFoto.files) {
+        if (fotos.length >= 10) throw new Error('Podés adjuntar hasta 10 fotos.');
+        const imagen = await createImageBitmap(archivo);
+        const escala = Math.min(1, 1600 / Math.max(imagen.width, imagen.height));
+        const canvas = document.createElement('canvas'); canvas.width = Math.round(imagen.width * escala); canvas.height = Math.round(imagen.height * escala);
+        canvas.getContext('2d').drawImage(imagen,0,0,canvas.width,canvas.height); imagen.close();
+        const blob = await new Promise(ok => canvas.toBlob(ok,'image/jpeg',.75));
+        if (!blob || blob.size > 2500000) throw new Error('No se pudo preparar la foto. Probá con otra imagen.');
+        const file = new File([blob], 'numero-serie.jpg', {type:'image/jpeg'});
+        fotos.push({file, url: URL.createObjectURL(file)});
+      }
+    } catch(e) { mostrarError(e.message || 'No se pudo leer la foto.'); }
+    finally { inputFoto.value = ''; cargandoFotos = false; agregarFoto.disabled = false; renderFotos(); actualizar(); }
+  });
+  form.addEventListener('submit', async e => {
+    e.preventDefault(); if (enviar.disabled || ocupado || !datos) return;
+    const seleccion = elegidos(), mixto = seleccion.length > 1;
+    const adjuntos = new FormData();
+    adjuntos.append('pagos', JSON.stringify({cotizacion: datos.cotizacion, total_usd: datos.total_usd, metodos: seleccion.map(({opcion:p,campo}) => ({metodo:p.metodo, ...(mixto ? {monto:campo.value} : {})}))}));
+    fotos.forEach(f => adjuntos.append('fotos',f.file));
+    ocupado = true; mostrarError(''); enviar.textContent = 'Enviando recibo…';
+    form.querySelectorAll('button,input').forEach(el => el.disabled = true);
+    try {
+      const r = await fetch(`/admin/pedidos/${encodeURIComponent(origen.dataset.id)}/recibo`, {method:'POST', body:adjuntos});
+      const respuesta = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(respuesta.error || respuesta.detail || 'No se pudo enviar el recibo.');
+      location.reload();
+    } catch(e) {
+      ocupado = false; form.querySelectorAll('button,input').forEach(el => el.disabled = false);
+      enviar.textContent = 'Confirmar y enviar recibo'; actualizar();
+      mostrarError(e.message || 'No se pudo conectar. Revisá el historial antes de volver a enviar.');
+    }
+  });
+  document.querySelectorAll('.entrega-mas').forEach(menu => {
+    menu.addEventListener('keydown', e => { if (e.key === 'Escape') { menu.open = false; menu.querySelector('summary').focus(); } });
+    menu.addEventListener('click', e => { if (e.target.closest('button')) menu.open = false; });
+  });
+})();
+</script>

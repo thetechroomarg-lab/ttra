@@ -1,0 +1,82 @@
+"""Browser QA through TestClient: no real database or email/network required."""
+import pytest
+from tests.test_pagos_entrega import entorno
+from tests.test_recibos import _jpeg_minimo
+import web.app as appmod
+from playwright.sync_api import sync_playwright, expect
+
+
+@pytest.mark.parametrize('width,theme', [(1440,'dark'), (1440,'light'), (768,'light'), (390,'dark'), (390,'light')])
+def test_entrega_pagos_en_navegador(entorno, tmp_path, monkeypatch, width, theme):
+    client, fake, enviados = entorno
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        context = browser.new_context(viewport={'width':width,'height':1000}, service_workers='block')
+        context.add_init_script(f"localStorage.setItem('ttra_classic_theme', '{theme}')")
+        def local(route):
+            req = route.request
+            if not req.url.startswith('https://testserver/'):
+                route.abort(); return
+            headers = {k:v for k,v in req.headers.items() if k.lower() not in ('host','cookie','content-length')}
+            res = client.request(req.method, req.url, headers=headers, content=req.post_data_buffer)
+            route.fulfill(status=res.status_code, body=res.content,
+                          headers={k:v for k,v in res.headers.items() if k.lower() not in ('content-length','content-encoding')})
+        context.route('**/*', local)
+        page = context.new_page()
+        errores = []
+        page.on('pageerror', lambda e: errores.append(str(e)))
+        page.goto('https://testserver/admin/clientes')
+        fila = page.locator('[data-pedido-id="pago"]')
+        expect(fila.locator('.entrega-productos li')).to_have_count(1)
+        expect(fila.locator('.entrega-totales dd')).to_have_count(5)
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        fila.scroll_into_view_if_needed()
+        page.screenshot(path=str(tmp_path / f'entregas-{width}-{theme}.png'), full_page=True)
+        fila.get_by_role('button', name='Enviar recibo').click()
+        dialog = page.get_by_role('dialog', name='¿Cómo pagó el cliente?')
+        expect(dialog).to_be_visible()
+        page.locator('#metodo-usd').check()
+        expect(dialog.get_by_text('Pago completo: U$D 820')).to_be_visible()
+        expect(dialog.locator('.pago-importe:visible')).to_have_count(0)
+        expect(page.locator('#pago-enviar')).to_be_enabled()
+        page.locator('#metodo-ars_transferencia').check()
+        expect(dialog.locator('.pago-importe:visible')).to_have_count(2)
+        expect(page.locator('#pago-enviar')).to_be_disabled()
+        page.locator('#importe-usd').fill('800')
+        page.locator('#importe-ars_transferencia').fill('1000')
+        expect(page.locator('#pago-enviar')).to_be_disabled()
+        page.locator('#importe-ars_transferencia').fill('30928')
+        expect(page.locator('#pago-enviar')).to_be_enabled()
+        expect(page.locator('#pago-resumen')).to_contain_text('Sin saldo pendiente')
+        assert dialog.evaluate('(el) => el.scrollWidth <= el.clientWidth')
+        page.screenshot(path=str(tmp_path / f'pago-{width}-{theme}.png'))
+        page.keyboard.press('Escape')
+        expect(dialog).not_to_be_visible()
+        expect(fila.get_by_role('button', name='Enviar recibo')).to_be_focused()
+        fila.locator('summary').click()
+        fila.get_by_role('button', name='Agregar dirección').click()
+        expect(page.locator('#modal-direccion')).to_be_visible()
+        page.locator('#direccion-cancelar').click()
+        fila.get_by_role('button', name='Enviar recibo').click()
+        page.locator('#metodo-usd').check()
+        page.locator('#metodo-ars_transferencia').check()
+        page.locator('#importe-usd').fill('800')
+        page.locator('#importe-ars_transferencia').fill('30928')
+        dialog.locator('.pago-fotos summary').click()
+        page.locator('#pago-foto-input').set_input_files({'name':'serie.jpg', 'mimeType':'image/jpeg', 'buffer':_jpeg_minimo()})
+        expect(page.locator('#pago-fotos img')).to_have_count(1)
+        page.get_by_role('button', name='Quitar foto').click()
+        expect(page.locator('#pago-fotos img')).to_have_count(0)
+        def fallo(*args):
+            raise appmod.EnvioEmailError('Fallo temporal de prueba')
+        monkeypatch.setattr(appmod, 'enviar_email', fallo)
+        page.locator('#pago-enviar').click()
+        expect(page.locator('#pago-error')).to_contain_text('Fallo temporal')
+        expect(page.locator('#importe-usd')).to_have_value('800')
+        expect(page.locator('#pago-enviar')).to_be_enabled()
+        monkeypatch.setattr(appmod, 'enviar_email', lambda *args: enviados.append(args))
+        page.locator('#pago-enviar').click()
+        expect(page.locator('[data-pedido-id="pago"]')).to_have_count(0)
+        assert enviados and 'Dólar contado' in enviados[0][2]
+        assert not errores
+        browser.close()

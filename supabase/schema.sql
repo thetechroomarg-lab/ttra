@@ -202,6 +202,7 @@ alter table pedidos add column if not exists modo_precio text not null default '
 alter table pedidos add column if not exists descuento_mayorista_usd numeric not null default 0;
 alter table pedidos add column if not exists recibo_id text;
 alter table pedidos add column if not exists recibo_emitido_en timestamptz;
+alter table pedidos add column if not exists recibo_pago jsonb;
 alter table pedidos add column if not exists recibo_enviado_en timestamptz;
 alter table pedidos add column if not exists direccion_entrega text;
 alter table pedidos add column if not exists piso_entrega text;
