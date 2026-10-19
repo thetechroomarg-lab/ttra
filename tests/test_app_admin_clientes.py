@@ -644,7 +644,8 @@ def test_admin_puede_agregar_direccion_a_una_entrega_pendiente(monkeypatch):
     assert "Agregar dirección" in panel.text
     assert 'id="modal-direccion"' in panel.text
     assert 'id="direccion-entrega-admin"' in panel.text
-    assert 'id="modal-series"' in panel.text
+    assert 'id="modal-pago"' in panel.text
+    assert 'id="pago-fotos"' in panel.text
     assert guardar.status_code == 200
     pedido = fake.table("pedidos").select("*").eq("id", "sin-direccion").execute().data[0]
     assert pedido["direccion_entrega"] == "Av. Colón 123, Córdoba"

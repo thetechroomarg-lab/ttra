@@ -1,0 +1,18 @@
+<dialog id="modal-pago" aria-labelledby="pago-titulo" aria-describedby="pago-ayuda">
+  <form id="pago-form">
+    <div class="pago-scroll">
+    <header class="pago-cabecera"><div><span class="pago-ceja">Confirmar entrega</span><h2 id="pago-titulo">¿Cómo pagó el cliente?</h2><p id="pago-cliente"></p></div><button type="button" id="pago-cerrar" aria-label="Cerrar ventana">×</button></header>
+    <p id="pago-ayuda">Elegí una o varias formas de pago. Si combinás, indicá cuánto recibiste de cada una.</p>
+    <p id="pago-cargando" role="status">Cargando importes…</p>
+    <div id="pago-contenido" hidden>
+      <div class="pago-base"><span>Total base de la entrega</span><strong id="pago-total"></strong></div>
+      <fieldset id="pago-metodos"><legend>Formas de pago</legend></fieldset>
+      <p id="pago-cotizacion" class="pago-nota"></p>
+      <div id="pago-resumen" role="status" aria-live="polite"></div>
+      <details class="pago-fotos"><summary>Fotos de números de serie <span>(opcional)</span></summary><p class="pago-nota">Se adjuntan al recibo. Hasta 10 fotos.</p><input id="pago-foto-input" type="file" accept="image/*" multiple hidden><div id="pago-fotos"></div><button type="button" id="pago-agregar-foto">Agregar fotos</button></details>
+    </div>
+    <p id="pago-error" role="alert" hidden></p>
+    </div>
+    <footer class="pago-pie"><button type="button" id="pago-cancelar">Cancelar</button><button id="pago-enviar" type="submit" disabled>Confirmar y enviar recibo</button></footer>
+  </form>
+</dialog>

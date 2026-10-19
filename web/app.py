@@ -28,7 +28,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
+from web import pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -1263,6 +1263,31 @@ def _beneficios_para_recibo(client, cliente, request, primer_envio):
     }
 
 
+@app.get("/admin/pedidos/{pedido_id}/pagos")
+def admin_pedido_opciones_pago(pedido_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas or not _activo(filas[0]):
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    pedido = filas[0]
+    if pedido.get("total_usd") is None or not pedido.get("detalle"):
+        raise HTTPException(status_code=400, detail="El pedido no tiene detalle suficiente")
+    if pedido.get("recibo_enviado_en"):
+        raise HTTPException(status_code=409, detail="El recibo ya fue enviado. Actualizá la página.")
+    clientes = client.table("clientes").select("*").eq("id", pedido.get("cliente_id")).execute().data
+    cliente = clientes[0] if clientes else {}
+    guardado = pedido.get("recibo_pago")
+    if guardado and pagos_entrega.numero(guardado["total_usd"]) != pagos_entrega.numero(pedido["total_usd"]):
+        raise HTTPException(status_code=409, detail="El pedido cambió después de registrar el cobro. Revisá el pedido antes de enviar.")
+    cotizacion = float(guardado["cotizacion"]) if guardado else _cargar_cotizacion_catalogo()
+    return JSONResponse({"total_usd": pedido["total_usd"], "cotizacion": cotizacion,
+            "cliente": " ".join(filter(None, [cliente.get("nombre"), cliente.get("apellido")])),
+            "opciones": pagos_entrega.opciones(pedido["total_usd"], cotizacion),
+            "pago_guardado": pedido.get("recibo_pago")}, headers={"Cache-Control": "no-store"})
+
+
 @app.post("/admin/pedidos/{pedido_id}/recibo")
 async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     if not (_clientes_admin_activo(request) or _cadete_activo(request)):
@@ -1283,6 +1308,22 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     if not filas_cliente or not (filas_cliente[0].get("email") or "").strip():
         return JSONResponse({"error": "El cliente no tiene un email disponible"}, status_code=400)
     cliente = filas_cliente[0]
+    formulario = await request.form() if request.headers.get("content-type", "").startswith("multipart/") else {}
+    pago_recibo = pedido.get("recibo_pago")
+    if "pagos" in formulario and not pedido.get("recibo_enviado_en"):
+        try:
+            entrada_pago = json.loads(formulario["pagos"])
+            cotizacion = pago_recibo["cotizacion"] if pago_recibo else _cargar_cotizacion_catalogo()
+            if not isinstance(entrada_pago, dict):
+                raise ValueError("Seleccioná una forma de pago.")
+            total_esperado = pago_recibo["total_usd"] if pago_recibo else entrada_pago.get("total_usd", pedido["total_usd"])
+            if pagos_entrega.numero(total_esperado) != pagos_entrega.numero(pedido["total_usd"]):
+                return JSONResponse({"error": "Cambió el total del pedido. Cerrá la ventana y revisá los importes antes de enviar."}, status_code=409)
+            if pagos_entrega.numero(entrada_pago.get("cotizacion")) != pagos_entrega.numero(cotizacion):
+                return JSONResponse({"error": "Cambió la cotización. Cerrá la ventana y volvé a abrirla para revisar los importes."}, status_code=409)
+            pago_recibo = pagos_entrega.validar(pedido["total_usd"], cotizacion, entrada_pago)
+        except (ValueError, TypeError):
+            return JSONResponse({"error": "Revisá las formas de pago y sus importes: deben cubrir exactamente el total."}, status_code=400)
     recibo_id = pedido.get("recibo_id") or _nuevo_recibo_id(client)
     ahora_recibo = datetime.now(timezone.utc).isoformat()
     emitido_en = pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en") or ahora_recibo
@@ -1291,10 +1332,13 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     enviado_por_cadete = _quien_opera(request) == CADETE_SLUG
     pedido_para_mail = {
         **pedido, "recibo_id": recibo_id, "recibo_emitido_en": emitido_en,
-        "entregado_por_cadete": enviado_por_cadete,
+        "entregado_por_cadete": enviado_por_cadete, "recibo_pago": pago_recibo,
     }
     try:
-        formulario = await request.form() if request.headers.get("content-type", "").startswith("multipart/") else {}
+        # Guardar antes del correo: si el proveedor falla, el cobro sigue disponible.
+        if pago_recibo and not pedido.get("recibo_enviado_en"):
+            client.table("pedidos").update({"recibo_pago": pago_recibo, "recibo_id": recibo_id,
+                                           "recibo_emitido_en": emitido_en}).eq("id", pedido_id).execute()
         adjuntos_fotos = []
         fotos_pdf = []
         fotos_guardadas = list(pedido.get("fotos_series") or [])
@@ -2304,12 +2348,13 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         )
         return (
             '<div class="pedido-acciones">'
-            f'{boton_direcciones}'
             f'{_boton_recibo(pedido)}'
+            '<details class="entrega-mas"><summary>Más opciones</summary><div class="entrega-menu">'
+            f'{boton_direcciones}'
             f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}" data-tipo="pedido">Editar fecha</button>'
             f'{_control_derivar(pedido_id, "pedido", pedido.get("asignado_a") == CADETE_SLUG)}'
             f'<button class="btn-eliminar-entrega" type="button" data-id="{pedido_id}">Eliminar entrega</button>'
-            '</div>'
+            '</div></details></div>'
         )
 
     def _acciones_tarea(tarea):
@@ -2372,12 +2417,26 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         aclaracion = _aclaracion_piso_depto(pedido)
         return f'<br><span class="piso-depto">{html.escape(aclaracion)}</span>' if aclaracion else ""
 
+    cotizacion_entregas = _cargar_cotizacion_catalogo()
+
+    def _productos_entrega(pedido):
+        filas = []
+        for item in pedido.get("detalle") or []:
+            nombre = html.escape(item.get("nombre") or "Producto")
+            color = f" · {html.escape(item['color'])}" if item.get("color") else ""
+            proveedor = html.escape(item.get("proveedor") or "Proveedor no identificado")
+            filas.append(f'<li><span>{nombre}{color} × {html.escape(str(item.get("cantidad") or 0))}</span>'
+                         f'<span>{pagos_entrega.formatear(item.get("usd_subtotal") or 0)}</span><small>Proveedor: {proveedor}</small></li>')
+        if not filas:
+            filas = [f'<li><span>{html.escape(nombre)}</span></li>' for nombre in pedido.get("productos") or []]
+        return '<ul class="entrega-productos">' + ''.join(filas) + '</ul>'
+
     def _tarjeta_pedido(pedido):
         return (
             f'<div class="pedido-hoy" data-pedido-id="{html.escape(pedido.get("id", ""))}" data-tipo-entrega="pedido" data-entrega-id="{html.escape(pedido.get("id", ""))}"><button class="arrastrar-entrega" draggable="true" type="button" aria-label="Arrastrar pedido">≡</button><div class="pedido-hoy-detalle"><strong>{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("nombre", "Cliente"))}{_monto_viaje_pedido(pedido)}</strong> · '
-            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}{_html_direccion_entrega(pedido.get("direccion_entrega"))}<br><span>{html.escape(_descripcion_pedido(pedido))} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}</span>'
+            f'{html.escape(clientes_por_id.get(pedido.get("cliente_id"), {}).get("celular", "—"))}{_html_direccion_entrega(pedido.get("direccion_entrega"))}{_productos_entrega(pedido)}'
             f'{_linea_piso_depto(pedido)}{_leyenda_visto(pedido)}</div>'
-            f'{_controles_entrega(pedido)}</div>'
+            f'{_controles_entrega(pedido)}{pagos_entrega.resumen_html(pedido.get("total_usd"), cotizacion_entregas)}</div>'
         )
 
     entregas_pendientes = [
@@ -2424,7 +2483,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             return (
                 f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{html.escape(nombre_cliente)}</strong> · '
                 f'{html.escape(descripcion)} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}<br><span class="estado-recibo">'
-                f'{estado}</span>{detalle_obs}{_leyenda_visto(pedido)}{acciones}</div>'
+                f'{estado}</span>{detalle_obs}{_leyenda_visto(pedido)}{acciones}'
+                f'{pagos_entrega.resumen_html(pedido.get("total_usd"), cotizacion_entregas) if not pedido.get("recibo_enviado_en") else ""}'
+                f'{"".join("<p>" + html.escape(linea) + "</p>" for linea in pagos_entrega.lineas_recibo(pedido))}</div>'
             )
 
         def _tarea_historial_html(tarea):
@@ -2530,7 +2591,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<strong>$ {_formatear_entero_ar(abs(resumen_saldo["saldo_pendiente"]))}</strong></span></a>'
         )
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}</head><body>
+<title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}{_leer_ui("entregas_pago.css.html")}</head><body class="admin-entregas">
 <div class="panel">
   <div class="panel-header">
     <h1>Pedidos y recibos</h1>
@@ -2542,50 +2603,13 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   {pendientes_hoy_seccion_html}
 </div>
 {_CONFIRMAR_COMPLETADO_HTML}
-<div class="modal-series" id="modal-series" hidden><div class="modal-series-contenido" role="dialog" aria-modal="true" aria-labelledby="series-titulo"><h2 id="series-titulo">Fotos de números de serie</h2><p>Sacá o seleccioná todas las fotos antes de enviar el recibo.</p><div id="series-fotos" class="series-fotos"></div><div class="series-acciones"><button id="series-agregar" type="button">Agregar foto</button><button id="series-cancelar" type="button">Cancelar</button><button id="series-enviar" type="button">Enviar recibo</button></div></div></div>
+{_leer_ui("entregas_pago.html")}
+{_leer_ui("entregas_pago.js.html")}
 <div class="modal-direccion" id="modal-direccion" hidden><div class="modal-direccion-contenido" role="dialog" aria-modal="true" aria-labelledby="direccion-titulo"><h2 id="direccion-titulo">Dirección de entrega</h2><div class="tarea-direccion-wrap"><input id="direccion-entrega-admin" type="text" maxlength="500" placeholder="Ej.: Av. Colón 123, Córdoba" autocomplete="off"><ul id="direccion-entrega-admin-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div><div class="piso-depto-fila" id="piso-depto-admin"><input id="piso-entrega-admin" type="text" maxlength="20" placeholder="Piso (opcional)" aria-label="Piso"><input id="depto-entrega-admin" type="text" maxlength="20" placeholder="Depto (opcional)" aria-label="Departamento"></div><div class="direccion-acciones"><button id="direccion-cancelar" type="button">Cancelar</button><button id="direccion-guardar" type="button">Guardar dirección</button></div></div></div>
 <div class="modal-fecha-entrega" id="modal-fecha-entrega" hidden><div class="modal-fecha-contenido" role="dialog" aria-modal="true" aria-labelledby="fecha-entrega-titulo"><h2 id="fecha-entrega-titulo">Editar fecha de entrega</h2><input id="fecha-entrega-admin" type="date"><div class="fecha-entrega-acciones"><button id="fecha-entrega-cancelar" type="button">Cancelar</button><button id="fecha-entrega-guardar" type="button">Guardar fecha</button></div></div></div>
 <script>
 document.getElementById("salir").addEventListener("click", async () => {{
   await fetch("/admin/clientes/logout", {{ method: "POST" }});
-  location.reload();
-}});
-async function comprimirFotoSerie(archivo) {{
-  const imagen = await createImageBitmap(archivo);
-  const escala = Math.min(1, 1600 / Math.max(imagen.width, imagen.height));
-  const lienzo = document.createElement("canvas");
-  lienzo.width = Math.round(imagen.width * escala); lienzo.height = Math.round(imagen.height * escala);
-  lienzo.getContext("2d").drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
-  const blob = await new Promise((ok) => lienzo.toBlob(ok, "image/jpeg", .75));
-  return new File([blob], "numero-serie.jpg", {{ type:"image/jpeg" }});
-}}
-let pedidoReciboActivo = null;
-let fotosSerie = [];
-const modalSeries = document.getElementById("modal-series");
-const vistaFotosSerie = document.getElementById("series-fotos");
-function renderFotosSerie() {{
-  vistaFotosSerie.innerHTML = fotosSerie.map((foto, indice) => `<div class="serie-foto"><img src="${{URL.createObjectURL(foto)}}" alt="Foto de número de serie ${{indice + 1}}"><button type="button" data-indice="${{indice}}" aria-label="Quitar foto">×</button></div>`).join("");
-  vistaFotosSerie.querySelectorAll("button").forEach((boton) => boton.addEventListener("click", () => {{ fotosSerie.splice(Number(boton.dataset.indice), 1); renderFotosSerie(); }}));
-}}
-function agregarFotoSerie() {{
-  const selector = Object.assign(document.createElement("input"), {{ type:"file", accept:"image/*", capture:"environment" }});
-  selector.addEventListener("change", async () => {{ if (selector.files?.[0]) {{ fotosSerie.push(await comprimirFotoSerie(selector.files[0])); renderFotosSerie(); }} }});
-  selector.click();
-}}
-document.querySelectorAll(".btn-enviar-recibo").forEach((btn) => {{
-  btn.addEventListener("click", async () => {{
-    pedidoReciboActivo = btn; fotosSerie = []; renderFotosSerie(); modalSeries.hidden = false;
-  }});
-}});
-document.getElementById("series-agregar").addEventListener("click", agregarFotoSerie);
-document.getElementById("series-cancelar").addEventListener("click", () => {{ modalSeries.hidden = true; }});
-document.getElementById("series-enviar").addEventListener("click", async () => {{
-  if (!pedidoReciboActivo) return;
-  const boton = document.getElementById("series-enviar"); boton.disabled = true; boton.textContent = "Enviando...";
-  const adjuntos = new FormData(); fotosSerie.forEach((foto) => adjuntos.append("fotos", foto));
-  const r = await fetch(`/admin/pedidos/${{pedidoReciboActivo.dataset.id}}/recibo`, {{ method:"POST", body:adjuntos }});
-  const respuesta = await r.json().catch(() => ({{}}));
-  if (!r.ok) {{ alert(respuesta.error || "No se pudo enviar el recibo."); boton.disabled = false; boton.textContent = "Enviar recibo"; return; }}
   location.reload();
 }});
 document.querySelectorAll(".btn-reenviar-recibo").forEach((btn) => {{
