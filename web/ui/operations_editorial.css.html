@@ -56,7 +56,20 @@
   .tarjeta :is(input, button) { min-height: 46px; }
   :is(input, select, textarea) { border-radius: 2px; }
   :is(.pedido-hoy, .modal-series-contenido, .subseccion, .proximos-dia) { border-radius: 2px; box-shadow: none; }
-  .pedido-hoy { border-color: var(--op-border); }
+  /* Each delivery/task is a self-contained stop, including history. */
+  :is(.pedido-hoy, .pedido-historico) {
+    box-sizing: border-box;
+    margin: 0 0 24px;
+    padding: 24px;
+    background: var(--op-surface);
+    border: 1px solid var(--op-border-strong);
+    border-radius: 8px;
+    box-shadow: 0 2px 0 #0002;
+  }
+  .pedido-hoy-detalle > strong { font-size: 19px; line-height: 1.35; }
+  @media (max-width: 700px) {
+    :is(.pedido-hoy, .pedido-historico) { padding: 16px; margin-bottom: 20px; }
+  }
   .modal-series { background: rgba(16, 20, 18, .66); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
   .modal-series-contenido { max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; }
   :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #ff715b; outline-offset: 3px; }

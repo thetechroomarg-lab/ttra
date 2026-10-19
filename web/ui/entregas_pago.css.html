@@ -1,6 +1,10 @@
 <style>
 /* Isolated to the operations page; storefront themes remain untouched. */
-.admin-entregas .pedido-hoy { display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:16px; align-items:start; padding:24px 0; }
+.admin-entregas .pedido-hoy { display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:16px; align-items:start; padding:24px; }
+.admin-entregas .pedido-hoy:not([data-pedido-id]) { grid-template-columns:44px minmax(0,1fr); }
+.admin-entregas .pedido-hoy:not([data-pedido-id]) > .pedido-acciones { grid-column:2; }
+.admin-entregas .pedido-hoy:not(:has(> .arrastrar-entrega)) { grid-template-columns:minmax(0,1fr); }
+.admin-entregas .pedido-hoy:not(:has(> .arrastrar-entrega)) > .pedido-acciones { grid-column:1; }
 .admin-entregas .arrastrar-entrega { width:44px; min-height:44px; }
 .admin-entregas .pedido-hoy-detalle { min-width:0; line-height:1.6; }
 .admin-entregas .pedido-hoy-detalle > strong { font-size:19px; }
@@ -65,7 +69,7 @@
 .admin-entregas #modal-pago :focus-visible { outline:2px solid var(--op-accent-hover); outline-offset:3px; }
 @media(max-width:850px) {
   .admin-entregas .entrega-totales dl { grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
-  .admin-entregas .pedido-hoy { grid-template-columns:44px minmax(0,1fr); gap:12px; }
+  .admin-entregas .pedido-hoy { grid-template-columns:44px minmax(0,1fr); gap:12px; padding:16px; }
   .admin-entregas .pedido-hoy > .pedido-acciones { grid-column:2; justify-content:flex-start; }
 }
 @media(max-width:480px) {
