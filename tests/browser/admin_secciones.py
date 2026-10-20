@@ -4,8 +4,9 @@ from playwright.sync_api import sync_playwright, expect
 from tests.test_pagos_entrega import entorno
 
 
+@pytest.mark.parametrize('theme',['dark','light'])
 @pytest.mark.parametrize('width',[390,1280])
-def test_secciones(entorno,width):
+def test_secciones(entorno,width,theme):
     client,fake,_=entorno
     from web import ganancia
     from tests.test_ganancia import venta
@@ -21,7 +22,35 @@ def test_secciones(entorno,width):
         context.route('**/*',responder)
         page=context.new_page(); errores=[]
         page.on('pageerror',lambda e:errores.append(str(e)))
+        context.add_init_script(f"localStorage.setItem('ttra_classic_theme', '{theme}')")
         page.goto('https://testserver/admin/clientes')
+        expect(page.locator('.panel-header-acciones > *')).to_have_count(1)
+        nav=page.get_by_role('navigation',name='Secciones de administración')
+        nav.get_by_role('link',name='Clientes',exact=True).click()
+        expect(page.locator('#filtro-clientes')).to_be_visible()
+        page.locator('#filtro-clientes').fill('no existe')
+        expect(page.locator('.cliente-fila:visible')).to_have_count(0)
+        page.locator('#filtro-clientes').fill('Ana')
+        expect(page.locator('.cliente-fila:visible')).to_have_count(1)
+        page.get_by_role('button',name='+ Nuevo cliente',exact=True).click()
+        expect(page.locator('#alta-cliente')).to_be_visible()
+        page.keyboard.press('Escape')
+        page.reload()
+        expect(page.locator('#filtro-clientes')).to_be_visible()
+        nav.get_by_role('link',name='Borrados',exact=True).click()
+        expect(page.locator('#borrados-listado')).to_contain_text('No hay elementos borrados')
+        from datetime import datetime, timezone
+        fake.table('tareas_entrega').insert({'id':'restaurar-demo','titulo':'Nota para restaurar','borrado_en':datetime.now(timezone.utc).isoformat(),'borrado_por':'Vlad'}).execute()
+        page.get_by_role('button',name='Actualizar',exact=True).click()
+        expect(page.locator('#borrados-listado')).to_contain_text('Nota para restaurar')
+        expect(nav.locator('[aria-current=page]')).to_have_text('Borrados')
+        expect(nav.locator('[aria-current=page]')).to_have_css('background-color','rgb(213, 47, 39)')
+        from pathlib import Path
+        Path('tmp/admin-navegacion').mkdir(parents=True,exist_ok=True)
+        page.screenshot(path=f'tmp/admin-navegacion/{theme}-{width}.png',full_page=True)
+        page.get_by_role('button',name='Restaurar',exact=True).click()
+        expect(page.locator('#borrados-listado')).to_contain_text('No hay elementos borrados')
+        assert fake.table('tareas_entrega').select('*').eq('id','restaurar-demo').execute().data[0]['borrado_en'] is None
         page.get_by_role('link',name='Ganancia',exact=True).click()
         expect(page.locator('#admin-seccion-pedidos')).to_be_hidden()
         expect(page.locator('#ganancia-totales')).to_contain_text('Ganancia confirmada')

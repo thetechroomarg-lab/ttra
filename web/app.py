@@ -2262,7 +2262,7 @@ def admin_clientes(request: Request):
 
 @app.get("/admin/clientes/lista", response_class=HTMLResponse)
 def admin_clientes_lista(request: Request):
-    return _admin_clientes_pagina(request, mostrar_clientes=True)
+    return RedirectResponse("/admin/clientes#clientes", status_code=303)
 
 
 def _admin_clientes_pagina(request: Request, mostrar_clientes: bool):
@@ -2642,19 +2642,21 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<strong>$ {_formatear_entero_ar(abs(resumen_saldo["saldo_pendiente"]))}</strong></span></a>'
         )
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}{_leer_ui("entregas_pago.css.html")}{_leer_ui("admin_secciones.css.html")}</head><body class="admin-entregas">
+<title>Administración — The Tech Room Arg.</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}{_leer_ui("entregas_pago.css.html")}{_leer_ui("admin_secciones.css.html")}</head><body class="admin-entregas">
 <div class="panel">
   <div class="panel-header">
-    <h1>Pedidos y recibos</h1>
-    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes#cotizacion">Cotización del dólar</a><button id="btn-notificaciones-admin" class="btn-clientes" type="button" style="cursor:pointer" hidden>🔔 Activar notificaciones</button><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
+    <h1>Administración</h1>
+    <div class="panel-header-acciones"><button id="salir" type="button">Cerrar sesión</button></div>
   </div>
   {_leer_ui("admin_secciones.html")}
   <div id="admin-seccion-pedidos">
+  <div class="admin-seccion-cabecera"><h2>Pedidos y recibos</h2><button id="btn-notificaciones-admin" class="btn-clientes" type="button" hidden>Activar notificaciones</button></div>
   {saldo_resumen_html}
   {_punto_encuentro_html(_punto_encuentro(client, fecha_hoy), fecha_hoy, "Punto de encuentro con Alejo")}
   <section class="historial-pedidos"><h2>Historial de pedidos</h2><input id="filtro-historial-pedidos" type="search" placeholder="Buscar por cliente o producto"><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
   {pendientes_hoy_seccion_html}
   </div>
+<section id="admin-seccion-clientes" hidden>{_admin_clientes_pagina(request, True)}</section>
 </div>
 {_leer_ui("admin_secciones.js.html")}
 {_CONFIRMAR_COMPLETADO_HTML}
@@ -3144,13 +3146,9 @@ document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
             f"<td>{_celda_cuenta(c)}</td></tr>"
             for c in clientes
         )
-    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Clientes</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_ALTA_CLIENTE_ESTILO}</head><body>
-<div class="panel">
-  <div class="panel-header">
-    <h1>Clientes ({len(clientes)})</h1>
-    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes#cotizacion">Cotización del dólar</a><button id="btn-nuevo-cliente" class="btn-nuevo-cliente" type="button">+ Nuevo cliente</button><a class="btn-clientes" href="/admin/clientes">Pedidos y recibos</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
-  </div>
+    return f"""{_ALTA_CLIENTE_ESTILO}
+<div class="admin-clientes-contenido">
+  <div class="admin-seccion-cabecera"><h2>Clientes ({len(clientes)})</h2><button id="btn-nuevo-cliente" class="btn-nuevo-cliente" type="button">+ Nuevo cliente</button></div>
   <div class="filtros-clientes">
     <input id="filtro-clientes" type="search" placeholder="Buscar por nombre, email, celular o provincia">
     <select id="filtro-provincia"><option value="">Todas las provincias</option>{opciones_provincia_html}</select>
@@ -3182,12 +3180,8 @@ document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
     <div class="modal-mail-acciones"><button id="mail-cancelar" type="button">Cancelar</button><button id="mail-enviar" type="button">Enviar</button></div>
   </div>
 </div>
-<script>
+<script>(() => {{
 {_ALTA_CLIENTE_JS}
-document.getElementById("salir").addEventListener("click", async () => {{
-  await fetch("/admin/clientes/logout", {{ method: "POST" }});
-  location.reload();
-}});
 document.querySelectorAll(".btn-reset").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
     if (!confirm("¿Generar una contraseña nueva para este cliente y mandársela por mail?")) return;
@@ -3228,76 +3222,6 @@ document.querySelectorAll(".btn-mayorista").forEach((btn) => {{
     }});
     const datos = await r.json().catch(() => ({{}}));
     if (!r.ok) {{ alert(datos.error || datos.detail || "No se pudo actualizar el acceso mayorista."); btn.disabled = false; return; }}
-    location.reload();
-  }});
-}});
-document.querySelectorAll(".btn-enviar-recibo").forEach((btn) => {{
-  btn.addEventListener("click", async () => {{
-    if (!confirm("¿Enviar el recibo por email a este cliente?")) return;
-    btn.disabled = true;
-    btn.textContent = "Enviando...";
-    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/recibo`, {{ method: "POST" }});
-    const datos = await r.json().catch(() => ({{}}));
-    if (!r.ok) {{ alert(datos.error || "No se pudo enviar el recibo."); btn.disabled = false; btn.textContent = "Enviar recibo"; return; }}
-    location.reload();
-  }});
-}});
-document.querySelectorAll(".btn-reenviar-recibo").forEach((btn) => {{
-  btn.addEventListener("click", async () => {{
-    if (!confirm("¿Reenviar el recibo original por email?")) return;
-    btn.disabled = true;
-    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/recibo`, {{ method: "POST" }});
-    const datos = await r.json().catch(() => ({{}}));
-    if (!r.ok) {{ alert(datos.error || "No se pudo reenviar el recibo."); btn.disabled = false; return; }}
-    location.reload();
-  }});
-}});
-document.querySelectorAll(".btn-editar-entrega").forEach((btn) => {{
-  btn.addEventListener("click", async () => {{
-    const fecha = prompt("Nueva fecha de entrega (AAAA-MM-DD)", btn.dataset.fecha);
-    if (!fecha || fecha === btn.dataset.fecha) return;
-    btn.disabled = true;
-    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}/fecha-entrega`, {{
-      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{fecha_entrega: fecha}}),
-    }});
-    const datos = await r.json().catch(() => ({{}}));
-    if (!r.ok) {{ alert(datos.error || "No se pudo editar la fecha de entrega."); btn.disabled = false; return; }}
-    location.reload();
-  }});
-}});
-document.querySelectorAll(".btn-eliminar-entrega").forEach((btn) => {{
-  btn.addEventListener("click", async () => {{
-    if (!confirm("¿Eliminar esta entrega? Esta acción no se puede deshacer.")) return;
-    btn.disabled = true;
-    const r = await fetch(`/admin/pedidos/${{btn.dataset.id}}`, {{ method: "DELETE" }});
-    const datos = await r.json().catch(() => ({{}}));
-    if (!r.ok) {{ alert(datos.error || "No se pudo eliminar la entrega."); btn.disabled = false; return; }}
-    location.reload();
-  }});
-}});
-function _rutaDerivar(tipo, id) {{
-  return tipo === "pedido" ? `/admin/pedidos/${{id}}/derivar` : `/admin/tareas-entrega/${{id}}/derivar`;
-}}
-document.querySelectorAll(".btn-derivar-entrega").forEach((btn) => {{
-  btn.addEventListener("click", async () => {{
-    const observaciones = prompt("Dejale una observación a Alejo (opcional)", "");
-    if (observaciones === null) return;
-    btn.disabled = true;
-    const r = await fetch(_rutaDerivar(btn.dataset.tipo, btn.dataset.id), {{
-      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: true, observaciones}}),
-    }});
-    if (!r.ok) {{ alert("No se pudo derivar la entrega."); btn.disabled = false; return; }}
-    location.reload();
-  }});
-}});
-document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
-  btn.addEventListener("click", async () => {{
-    if (!confirm(btn.dataset.tipo === "pedido" ? "¿Quitar pedido a Alejo?" : "¿Quitar tarea a Alejo?")) return;
-    btn.disabled = true;
-    const r = await fetch(_rutaDerivar(btn.dataset.tipo, btn.dataset.id), {{
-      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: false}}),
-    }});
-    if (!r.ok) {{ alert("No se pudo quitar la derivación."); btn.disabled = false; return; }}
     location.reload();
   }});
 }});
@@ -3450,9 +3374,8 @@ document.getElementById("btn-eliminar-masivo").addEventListener("click", async (
   if (!r.ok) {{ alert(datos.error || "No se pudieron eliminar las cuentas."); return; }}
   location.reload();
 }});
-</script>
-{_ADMIN_CLIENTES_PWA_SCRIPT}
-</body></html>"""
+}})();</script>
+"""
 
 
 
@@ -5606,7 +5529,12 @@ def admin_papelera(request: Request):
     client = get_client()
     pedidos_borrados, tareas_borradas = _purgar_y_listar_papelera(client)
     clientes_por_id = {c.get("id"): c for c in client.table("clientes").select("*").execute().data}
-    return _pagina_papelera(request, "Borrados", pedidos_borrados, tareas_borradas, clientes_por_id, "/admin/clientes")
+    if request.query_params.get("fragmento") == "1":
+        return "".join(
+            [_tarjeta_papelera("pedido", p, clientes_por_id) for p in pedidos_borrados]
+            + [_tarjeta_papelera("tarea", t, clientes_por_id) for t in tareas_borradas]
+        ) or '<p class="papelera-vacia">No hay elementos borrados.</p>'
+    return RedirectResponse("/admin/clientes#borrados", status_code=303)
 
 
 @app.get("/admin/cadete/papelera", response_class=HTMLResponse)
