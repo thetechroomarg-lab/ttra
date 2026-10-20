@@ -46,22 +46,11 @@ def test_admin_clientes_lista_pagina_de_a_50(monkeypatch):
     assert r.text.count('class="cliente-fila"') == 61
 
 
-def test_admin_clientes_lista_no_depende_de_tablas_del_panel_de_pedidos(monkeypatch):
+def test_admin_clientes_lista_redirige_a_seccion_integrada(monkeypatch):
     c = _cliente_logueado(monkeypatch)
-    fake = appmod.get_client()
-
-    class SoloClientes:
-        def table(self, nombre):
-            if nombre != "clientes":
-                raise Exception(f'La tabla "{nombre}" no esta disponible')
-            return fake.table(nombre)
-
-    monkeypatch.setattr(appmod, "get_client", lambda: SoloClientes())
-
-    r = c.get("/admin/clientes/lista")
-
-    assert r.status_code == 200
-    assert "Juan" in r.text
+    r = c.get("/admin/clientes/lista", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/admin/clientes#clientes"
 
 
 def test_admin_clientes_lista_admite_campos_nulos_de_clientes_legados(monkeypatch):
@@ -142,14 +131,15 @@ def test_admin_lista_explica_que_no_habilita_mayorista_sin_cuenta(monkeypatch):
     assert "El cliente todavía no tiene una cuenta" in r.text
 
 
-def test_landing_admin_separa_clientes_en_una_vista_accesible(monkeypatch):
+def test_landing_admin_integra_clientes_en_una_seccion_accesible(monkeypatch):
     c = _cliente_logueado(monkeypatch)
 
     r = c.get("/admin/clientes")
 
-    assert 'href="/admin/clientes/lista"' in r.text
+    assert 'href="#clientes"' in r.text
+    assert 'id="admin-seccion-clientes" hidden' in r.text
     assert "Clientes" in r.text
-    assert "Buscar por nombre, email, celular o provincia" not in r.text
+    assert "Buscar por nombre, email, celular o provincia" in r.text
 
 
 def test_admin_historial_muestra_el_icono_de_calendario_claro(monkeypatch):
@@ -907,8 +897,8 @@ def test_panel_pedidos_tiene_link_a_papelera(monkeypatch):
     cliente = TestClient(appmod.app, base_url="https://testserver")
     cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
 
-    assert 'href="/admin/papelera"' in cliente.get("/admin/clientes").text
-    assert 'href="/admin/papelera"' in cliente.get("/admin/clientes/lista").text
+    assert 'href="#borrados"' in cliente.get("/admin/clientes").text
+    assert 'href="#borrados"' in cliente.get("/admin/clientes/lista").text
 
 
 def test_admin_ve_piso_y_depto_como_aclaracion_y_puede_editarlos(monkeypatch):

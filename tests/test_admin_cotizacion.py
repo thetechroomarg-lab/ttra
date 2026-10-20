@@ -131,4 +131,4 @@ def test_admin_tiene_acceso_desde_ambos_paneles(contexto, monkeypatch):
     for ruta in ["/admin/clientes", "/admin/clientes/lista"]:
         respuesta = c.get(ruta)
         assert respuesta.status_code == 200
-        assert 'href="/admin/clientes#cotizacion"' in respuesta.text
+        assert 'href="#cotizacion"' in respuesta.text

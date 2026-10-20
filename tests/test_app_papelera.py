@@ -31,7 +31,7 @@ def test_admin_papelera_lista_borrados_recientes_y_purga_vencidos(monkeypatch):
         "borrado_en": _iso_hace(1), "borrado_por": "alejo",
     }).execute()
 
-    respuesta = cliente.get("/admin/papelera")
+    respuesta = cliente.get("/admin/papelera?fragmento=1")
     assert respuesta.status_code == 200
     assert "reciente" in respuesta.text
     assert "vencido" not in respuesta.text
@@ -94,7 +94,7 @@ def test_papelera_muestra_cuenta_regresiva_de_purga(monkeypatch):
         "borrado_en": _iso_hace(2), "borrado_por": "Vlad",
     }).execute()
 
-    respuesta = cliente.get("/admin/papelera")
+    respuesta = cliente.get("/admin/papelera?fragmento=1")
     assert respuesta.status_code == 200
     assert re.search(r"se borra definitivamente en 4[56] h", respuesta.text)
     assert "T00:00" not in respuesta.text  # no muestra el ISO crudo
@@ -120,7 +120,7 @@ def test_admin_papelera_usa_manifest_y_estilo_admin(monkeypatch):
     cliente = TestClient(appmod.app, base_url="https://testserver")
     cliente.post("/admin/clientes/login", json={"password": "clave-admin"})
 
-    respuesta = cliente.get("/admin/papelera")
+    respuesta = cliente.get("/admin/papelera?fragmento=1")
     assert respuesta.status_code == 200
     assert "admin-cadete.webmanifest" not in respuesta.text
 
@@ -129,7 +129,7 @@ def test_papelera_requiere_sesion(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
     cliente = TestClient(appmod.app, base_url="https://testserver")
-    assert cliente.get("/admin/papelera").status_code in (401, 303, 307)
+    assert cliente.get("/admin/papelera?fragmento=1").status_code in (401, 303, 307)
     assert cliente.get("/admin/cadete/papelera").status_code in (401, 303, 307)
 
 
