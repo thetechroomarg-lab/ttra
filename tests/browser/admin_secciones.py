@@ -1,0 +1,58 @@
+"""Panel integrado: navegación, carga manual, corrección y anulación, sin datos reales."""
+import pytest
+from playwright.sync_api import sync_playwright, expect
+from tests.test_pagos_entrega import entorno
+
+
+@pytest.mark.parametrize('width',[390,1280])
+def test_secciones(entorno,width):
+    client,fake,_=entorno
+    from web import ganancia
+    from tests.test_ganancia import venta
+    ganancia.registrar_movimiento(fake,ganancia.calcular_venta(venta(),{}))
+    with sync_playwright() as p:
+        browser=p.chromium.launch()
+        context=browser.new_context(viewport={'width':width,'height':900})
+        def responder(route):
+            req=route.request
+            if not req.url.startswith('https://testserver/'): route.abort(); return
+            res=client.request(req.method,req.url,content=req.post_data_buffer,headers={'content-type':req.headers.get('content-type','text/html')})
+            route.fulfill(status=res.status_code,body=res.content,headers={'content-type':res.headers.get('content-type','text/html')})
+        context.route('**/*',responder)
+        page=context.new_page(); errores=[]
+        page.on('pageerror',lambda e:errores.append(str(e)))
+        page.goto('https://testserver/admin/clientes')
+        page.get_by_role('link',name='Ganancia',exact=True).click()
+        expect(page.locator('#admin-seccion-pedidos')).to_be_hidden()
+        expect(page.locator('#ganancia-totales')).to_contain_text('Ganancia confirmada')
+        page.locator('#ganancia-carga summary').click()
+        page.locator('#ganancia-fecha').fill('2026-10-20')
+        page.locator('#ganancia-concepto').fill('Trabajo de prueba')
+        page.locator('#ganancia-monto').fill('35,50')
+        page.get_by_role('button',name='Guardar movimiento',exact=True).click()
+        expect(page.locator('#ganancia-manual-estado')).to_have_text('Movimiento guardado en USD.')
+        page.locator('#ganancia-desde').fill('2026-10-20');page.locator('#ganancia-hasta').fill('2026-10-20')
+        page.get_by_role('button',name='Consultar',exact=True).click()
+        fila=page.locator('.ganancia-fila').filter(has_text='Trabajo de prueba')
+        expect(fila).to_contain_text('35,50')
+        fila.get_by_role('button',name='Editar',exact=True).click()
+        page.locator('#ganancia-monto').fill('50')
+        page.get_by_role('button',name='Guardar corrección').click()
+        expect(fila).to_contain_text('50,00')
+        page.on('dialog',lambda d:d.accept())
+        fila.get_by_role('button',name='Anular').click()
+        expect(fila).to_have_count(0)
+        page.get_by_role('button',name='Completar o corregir').click()
+        page.locator('#ganancia-costo_usd').fill('400')
+        page.locator('#ganancia-comision_usd').fill('5')
+        page.locator('#ganancia-motivo').fill('Costo estimado de prueba')
+        page.get_by_role('button',name='Guardar importes',exact=True).click()
+        expect(page.locator('#ganancia-listado')).to_contain_text('95,00')
+        page.get_by_role('navigation',name='Secciones de administración').get_by_role('link',name='Cotización del dólar',exact=True).click()
+        expect(page.locator('#cotizacion-valor')).to_be_visible()
+        page.go_back();expect(page.locator('#admin-seccion-ganancia')).to_be_visible()
+        page.reload();expect(page.locator('#admin-seccion-ganancia')).to_be_visible()
+        assert len(context.pages)==1
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        assert not errores
+        browser.close()

@@ -9,6 +9,10 @@
   const contenido = document.getElementById('pago-contenido');
   const cargando = document.getElementById('pago-cargando');
   const fotosVista = document.getElementById('pago-fotos');
+  const preciosLista = document.getElementById('pago-precios-lista');
+  const guardarPrecios = document.getElementById('pago-guardar-precios');
+  const estadoPrecios = document.getElementById('pago-precios-estado');
+  let preciosPendientes = false, guardandoPrecios = false, camaraAbierta = false, stream = null, solicitudCamara = 0, timerPrecio = null;
   let datos = null, origen = null, ocupado = false, cargandoFotos = false, fotos = [], consulta = 0, saldoAutomatico = null;
   const formato = (n, moneda = 'USD') => `${({USD:'U$D', ARS:'$', USDT:'USDT'})[moneda]} ${Number(n).toLocaleString('es-AR', {maximumFractionDigits:2})}`;
   const mostrarError = (mensaje) => { error.textContent = mensaje; error.hidden = !mensaje; };
@@ -16,35 +20,40 @@
     opcion: datos.opciones.find(o => o.metodo === c.value),
     campo: document.getElementById(`importe-${c.value}`)
   }));
+  function saldoParaMetodo(p, seleccion, totalUsd) {
+    let cubierto = 0;
+    for (const {opcion, campo} of seleccion) {
+      if (opcion.metodo === p.metodo) continue;
+      const valor = Number(campo.value);
+      if (!campo.value || !Number.isFinite(valor) || valor < 0 || !campo.checkValidity()) return null;
+      cubierto += valor * Number(opcion.factor) / Number(opcion.escala);
+    }
+    const bruto = Math.max(0, Number(totalUsd) - cubierto) * Number(p.escala) / Number(p.factor);
+    return ['usd_usa','usdt','ars_transferencia'].includes(p.metodo)
+      ? Math.max(0, Math.ceil(bruto - 1e-8)) : Math.round((bruto + 1e-8) * 100) / 100;
+  }
   function completarSaldo() {
     if (!saldoAutomatico || !datos) return;
     const seleccion = elegidos();
     const destino = seleccion.find(({opcion}) => opcion.metodo === saldoAutomatico);
     if (!destino) return;
-    let cubierto = 0;
-    for (const {opcion, campo} of seleccion) {
-      if (opcion.metodo === saldoAutomatico) continue;
-      const valor = Number(campo.value);
-      if (campo.value && (!Number.isFinite(valor) || valor < 0 || !campo.checkValidity())) {
-        destino.campo.value = ''; return;
-      }
-      cubierto += valor * Number(opcion.factor) / Number(opcion.escala);
-    }
-    const restante = Math.max(0, Number(datos.total_usd) - cubierto);
-    const p = destino.opcion;
-    const bruto = restante * Number(p.escala) / Number(p.factor);
-    // Same published rounding as pagos_entrega.opciones: whole units for adjusted methods.
-    const unidades = ['usd_usa', 'usdt', 'ars_transferencia'].includes(p.metodo);
-    const monto = unidades ? Math.ceil(bruto - 1e-8) : Math.round((bruto + 1e-8) * 100) / 100;
-    destino.campo.value = monto > 0 || (seleccion.length === 1 && Number(datos.total_usd) === 0) ? String(monto) : '';
+    const monto = saldoParaMetodo(destino.opcion, seleccion, datos.total_usd);
+    destino.campo.value = monto !== null && (monto > 0 || (seleccion.length === 1 && Number(datos.total_usd) === 0)) ? String(monto) : '';
   }
   function actualizar() {
     if (!datos) return;
     const seleccion = elegidos(), mixto = seleccion.length > 1;
     metodos.querySelectorAll('.pago-opcion').forEach(fila => {
       const activo = fila.querySelector('[type=checkbox]').checked;
+      const metodo = fila.querySelector('[type=checkbox]').value;
+      const opcion = datos.opciones.find(p => p.metodo === metodo);
+      const campo = fila.querySelector('[type=number]');
+      const importe = activo ? (campo.value && campo.checkValidity() ? Number(campo.value) : null)
+        : saldoParaMetodo(opcion, seleccion, datos.total_usd);
+      fila.querySelector('.pago-alternativa').textContent = importe === null ? 'Revisá importes' : formato(importe, opcion.moneda);
       fila.querySelector('.pago-importe').hidden = !activo;
-      fila.querySelector('[type=number]').disabled = !activo || ocupado;
+      fila.querySelector('[type=number]').disabled = !activo || ocupado || preciosPendientes || guardandoPrecios;
+      fila.querySelector('[type=checkbox]').disabled = ocupado || preciosPendientes || guardandoPrecios;
     });
     let valido = false;
     resumen.replaceChildren();
@@ -77,8 +86,76 @@
     }
     resumen.append(titulo, detalle);
     resumen.dataset.completo = String(valido);
-    enviar.disabled = !valido || ocupado || cargandoFotos;
+    enviar.disabled = !valido || ocupado || cargandoFotos || preciosPendientes || guardandoPrecios || camaraAbierta;
   }
+  function renderPrecios() {
+    preciosPendientes = false;
+    preciosLista.replaceChildren();
+    document.getElementById('pago-precios').hidden = !datos.precio_editable;
+    guardarPrecios.disabled = true;
+    (datos.detalle || []).forEach((item, indice) => {
+      const fila = document.createElement('div'); fila.className = 'pago-precio-fila';
+      const label = document.createElement('label'); label.htmlFor = `pago-precio-${indice}`;
+      label.textContent = `${item.nombre}${item.color ? ' · ' + item.color : ''} · ${item.cantidad} un. · USD`;
+      const input = document.createElement('input');
+      input.id = label.htmlFor; input.type = 'text'; input.inputMode = 'decimal'; input.autocomplete = 'off';
+      input.value = item.usd_unitario; input.required = true; input.maxLength = 13;
+      input.setAttribute('pattern', '[0-9]+([.,][0-9]{1,2})?');
+      input.addEventListener('input', () => {
+        clearTimeout(timerPrecio);
+        preciosPendientes = true;
+        estadoPrecios.textContent = 'El precio se guardará automáticamente al terminar de escribir.';
+        guardarPrecios.disabled = false;
+        actualizar();
+        if ([...preciosLista.querySelectorAll('input')].every(c => c.checkValidity())) {
+          timerPrecio = setTimeout(guardarPrecioEditado, 650);
+        }
+      });
+      input.addEventListener('change', () => {
+        if (preciosPendientes && input.checkValidity()) guardarPrecioEditado();
+      });
+      fila.append(label, input); preciosLista.append(fila);
+    });
+  }
+  async function guardarPrecioEditado() {
+    clearTimeout(timerPrecio);
+    if (!datos || !datos.precio_editable || ocupado || guardandoPrecios || !preciosPendientes) return;
+    const campos = [...preciosLista.querySelectorAll('input')];
+    if (campos.some(c => !c.reportValidity())) return;
+    const seleccionAnterior = elegidos().map(({opcion, campo}) => ({metodo: opcion.metodo, monto: campo.value}));
+    const automaticoAnterior = saldoAutomatico;
+    guardandoPrecios = true; mostrarError('');
+    guardarPrecios.disabled = true; campos.forEach(c => c.readOnly = true); actualizar();
+    estadoPrecios.textContent = 'Guardando precios…';
+    try {
+      const r = await fetch(`/admin/pedidos/${encodeURIComponent(origen.dataset.id)}/precios`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({version:datos.version_precio, precios:campos.map(c => c.value.replace(',', '.'))})
+      });
+      const respuesta = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(respuesta.detail || 'No se pudieron guardar los precios.');
+      datos = respuesta;
+      document.getElementById('pago-total').textContent = formato(datos.total_usd);
+      document.getElementById('pago-cotizacion').textContent = `Cotización: ${formato(datos.cotizacion,'ARS')} por USD. Los importes incluyen el ajuste de cada método.`;
+      preciosPendientes = false;
+      renderMetodos();
+      seleccionAnterior.forEach(p => {
+        document.getElementById(`metodo-${p.metodo}`).checked = true;
+        document.getElementById(`importe-${p.metodo}`).value = p.monto;
+      });
+      saldoAutomatico = seleccionAnterior.length === 1
+        ? seleccionAnterior[0].metodo : automaticoAnterior;
+      completarSaldo();
+      estadoPrecios.textContent = 'Precio guardado. Las formas de pago ya están actualizadas.';
+    } catch(e) {
+      mostrarError(e instanceof TypeError ? 'No se pudo confirmar el guardado. Revisá la conexión y volvé a abrir para consultar el precio.' : e.message || 'No se pudo guardar el precio.');
+      estadoPrecios.textContent = 'Revisá los precios antes de enviar.';
+    } finally {
+      guardandoPrecios = false; campos.forEach(c => c.readOnly = false);
+      guardarPrecios.disabled = !preciosPendientes; actualizar();
+    }
+  }
+  guardarPrecios.addEventListener('click', guardarPrecioEditado);
   function renderMetodos() {
     saldoAutomatico = null;
     metodos.replaceChildren();
@@ -130,16 +207,18 @@
       div.append(img, quitar); fotosVista.append(div);
     });
   }
-  function cerrar() { if (!ocupado && !cargandoFotos) modal.close(); }
+  function cerrar() { if (!ocupado && !cargandoFotos && !guardandoPrecios) modal.close(); }
   ['pago-cerrar','pago-cancelar'].forEach(id => document.getElementById(id).addEventListener('click', cerrar));
-  modal.addEventListener('cancel', e => { if (ocupado || cargandoFotos) e.preventDefault(); });
+  modal.addEventListener('cancel', e => { if (ocupado || cargandoFotos || guardandoPrecios) e.preventDefault(); });
   modal.addEventListener('close', () => {
+    clearTimeout(timerPrecio);
     consulta++; datos = null;
+    cerrarCamara(); selectorFoto.hidden = true; agregarFoto.setAttribute('aria-expanded','false');
     fotos.forEach(f => URL.revokeObjectURL(f.url)); fotos = []; renderFotos();
     document.body.style.overflow = ''; origen?.focus();
   });
   document.querySelectorAll('.btn-enviar-recibo').forEach(btn => btn.addEventListener('click', async () => {
-    origen = btn; datos = null; ocupado = false; enviar.disabled = true; contenido.hidden = true; cargando.hidden = false; mostrarError('');
+    origen = btn; datos = null; ocupado = false; preciosPendientes = false; guardandoPrecios = false; estadoPrecios.textContent = ''; enviar.disabled = true; contenido.hidden = true; cargando.hidden = false; mostrarError('');
     metodos.replaceChildren(); resumen.replaceChildren();
     enviar.textContent = 'Confirmar y enviar recibo'; document.getElementById('pago-cliente').textContent = '';
     modal.showModal(); document.body.style.overflow = 'hidden';
@@ -152,28 +231,87 @@
       datos = respuesta; document.getElementById('pago-cliente').textContent = datos.cliente;
       document.getElementById('pago-total').textContent = formato(datos.total_usd);
       document.getElementById('pago-cotizacion').textContent = `Cotización: ${formato(datos.cotizacion,'ARS')} por USD. Los importes incluyen el ajuste de cada método.`;
-      renderMetodos(); contenido.hidden = false;
+      renderPrecios(); renderMetodos(); contenido.hidden = false;
       metodos.querySelector('input')?.focus();
     } catch(e) { if (actual === consulta) mostrarError(e.message || 'No se pudo conectar. Cerrá y volvé a intentar.'); }
     finally { if (actual === consulta) cargando.hidden = true; }
   }));
   const inputFoto = document.getElementById('pago-foto-input');
   const agregarFoto = document.getElementById('pago-agregar-foto');
-  agregarFoto.addEventListener('click', () => inputFoto.click());
+  const selectorFoto = document.getElementById('pago-origen-foto');
+  const camara = document.getElementById('pago-camara');
+  const video = document.getElementById('pago-video');
+  const capturar = document.getElementById('pago-capturar');
+  agregarFoto.addEventListener('click', () => {
+    if (ocupado || cargandoFotos) return;
+    if (fotos.length >= 10) { mostrarError('Podés adjuntar hasta 10 fotos.'); return; }
+    selectorFoto.hidden = !selectorFoto.hidden;
+    agregarFoto.setAttribute('aria-expanded', String(!selectorFoto.hidden));
+  });
+  function ocultarSelector() {
+    selectorFoto.hidden = true; agregarFoto.setAttribute('aria-expanded','false');
+  }
+  function cerrarCamara() {
+    solicitudCamara++;
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = null; video.srcObject = null; camara.hidden = true; camaraAbierta = false; capturar.disabled = true;
+    actualizar();
+  }
+  document.getElementById('pago-camara-cerrar').addEventListener('click', cerrarCamara);
+  window.addEventListener('pagehide', cerrarCamara);
+  document.getElementById('pago-elegir-foto').addEventListener('click', () => {
+    if (ocupado || cargandoFotos) return;
+    cerrarCamara(); ocultarSelector(); inputFoto.click();
+  });
+  document.getElementById('pago-sacar-foto').addEventListener('click', async () => {
+    if (ocupado || cargandoFotos) return;
+    cerrarCamara(); ocultarSelector(); mostrarError('');
+    const solicitud = ++solicitudCamara;
+    camaraAbierta = true; camara.hidden = false; actualizar();
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('Cámara no disponible');
+      const nuevo = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+      if (solicitud !== solicitudCamara || !modal.open) { nuevo.getTracks().forEach(t => t.stop()); return; }
+      stream = nuevo; video.srcObject = stream; await video.play();
+      if (solicitud === solicitudCamara) capturar.disabled = false;
+    } catch(e) {
+      if (solicitud !== solicitudCamara) return;
+      cerrarCamara();
+      mostrarError('No se pudo abrir la cámara. Permití el acceso en tu navegador o elegí una foto de la galería.');
+      selectorFoto.hidden = false; agregarFoto.setAttribute('aria-expanded','true');
+    }
+  });
+  async function agregarArchivo(archivo) {
+    if (fotos.length >= 10) throw new Error('Podés adjuntar hasta 10 fotos.');
+    const imagen = await createImageBitmap(archivo);
+    const escala = Math.min(1, 1600 / Math.max(imagen.width, imagen.height));
+    const canvas = document.createElement('canvas'); canvas.width = Math.round(imagen.width * escala); canvas.height = Math.round(imagen.height * escala);
+    canvas.getContext('2d').drawImage(imagen,0,0,canvas.width,canvas.height); imagen.close();
+    const blob = await new Promise(ok => canvas.toBlob(ok,'image/jpeg',.75));
+    if (!blob || blob.size > 2500000) throw new Error('No se pudo preparar la foto. Probá con otra imagen.');
+    const file = new File([blob], 'numero-serie.jpg', {type:'image/jpeg'});
+    fotos.push({file, url: URL.createObjectURL(file)});
+  }
+  capturar.addEventListener('click', async () => {
+    if (!stream || !video.videoWidth || cargandoFotos || ocupado) return;
+    cargandoFotos = true; capturar.disabled = true; agregarFoto.disabled = true; actualizar();
+    try {
+      const canvas = document.createElement('canvas');
+      const escala = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
+      canvas.width = Math.round(video.videoWidth * escala); canvas.height = Math.round(video.videoHeight * escala);
+      canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+      const blob = await new Promise(ok => canvas.toBlob(ok,'image/jpeg',.9));
+      if (!blob) throw new Error('No se pudo capturar la foto.');
+      await agregarArchivo(blob);
+      cerrarCamara();
+    } catch(e) { mostrarError(e.message || 'No se pudo capturar la foto.'); }
+    finally { cargandoFotos = false; agregarFoto.disabled = false; capturar.disabled = !stream; renderFotos(); actualizar(); }
+  });
   inputFoto.addEventListener('change', async () => {
+    if (ocupado || cargandoFotos || !modal.open) return;
     cargandoFotos = true; agregarFoto.disabled = true; actualizar(); mostrarError('');
     try {
-      for (const archivo of inputFoto.files) {
-        if (fotos.length >= 10) throw new Error('Podés adjuntar hasta 10 fotos.');
-        const imagen = await createImageBitmap(archivo);
-        const escala = Math.min(1, 1600 / Math.max(imagen.width, imagen.height));
-        const canvas = document.createElement('canvas'); canvas.width = Math.round(imagen.width * escala); canvas.height = Math.round(imagen.height * escala);
-        canvas.getContext('2d').drawImage(imagen,0,0,canvas.width,canvas.height); imagen.close();
-        const blob = await new Promise(ok => canvas.toBlob(ok,'image/jpeg',.75));
-        if (!blob || blob.size > 2500000) throw new Error('No se pudo preparar la foto. Probá con otra imagen.');
-        const file = new File([blob], 'numero-serie.jpg', {type:'image/jpeg'});
-        fotos.push({file, url: URL.createObjectURL(file)});
-      }
+      for (const archivo of inputFoto.files) await agregarArchivo(archivo);
     } catch(e) { mostrarError(e.message || 'No se pudo leer la foto.'); }
     finally { inputFoto.value = ''; cargandoFotos = false; agregarFoto.disabled = false; renderFotos(); actualizar(); }
   });

@@ -179,7 +179,7 @@ def validar_pago(client, monto_transferido=None):
     return pendientes, saldo, monto
 
 
-def registrar_pago(client, comprobante=None, monto_transferido=None):
+def registrar_pago(client, comprobante=None, monto_transferido=None, cotizacion=None):
     """Marca los pendientes como pagados y deja un registro del pago.
 
     `comprobante` es la ruta en Storage del archivo de la transferencia, si
@@ -197,7 +197,14 @@ def registrar_pago(client, comprobante=None, monto_transferido=None):
         "comprobante": comprobante,
         "creado_en": ahora,
     }
+    if cotizacion is not None:
+        from web.ganancia import numero
+        if numero(cotizacion) <= 0:
+            raise PagoInvalido("Cotización inválida")
+        pago["cotizacion_ars_usd"] = float(cotizacion)
     client.table(TABLA_PAGOS).insert(pago).execute()
+    from web import ganancia_servicio
+    ganancia_servicio.intentar(ganancia_servicio.conciliar_pago_cadete, client, pago["id"])
     for movimiento in pendientes:
         client.table(TABLA).update({"pagado_en": ahora, "pago_id": pago["id"]}).eq("id", movimiento["id"]).execute()
     if excedente:

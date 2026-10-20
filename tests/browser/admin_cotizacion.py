@@ -10,6 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from fastapi.testclient import TestClient
 from playwright.sync_api import sync_playwright
 import web.app as appmod
+from tests.fakes_supabase import FakeSupabaseClient
+appmod.get_client = lambda: FakeSupabaseClient()
 
 
 with TemporaryDirectory() as directorio:
@@ -41,7 +43,7 @@ with TemporaryDirectory() as directorio:
             contexto = browser.new_context(viewport={"width": ancho, "height": 850}, has_touch=ancho < 600)
             contexto.route("https://testserver/**", responder)
             page = contexto.new_page()
-            page.goto("https://testserver/admin/cotizacion")
+            page.goto("https://testserver/admin/clientes#cotizacion")
             campo = page.get_by_label("Nueva cotización en pesos")
             campo.tap() if ancho < 600 else campo.click()
             assert campo.get_attribute("inputmode") == "numeric"
@@ -51,7 +53,8 @@ with TemporaryDirectory() as directorio:
             page.get_by_role("button", name="Guardar cotización").click()
             page.get_by_role("status").filter(has_text="Cotización guardada").wait_for()
             page.reload()
-            assert campo.input_value() == "1700"
+            from playwright.sync_api import expect
+            expect(campo).to_have_value("1700")
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             assert cliente.get("/api/catalogo").json()["secciones"]["Celulares"][0]["pesos"] == 170000
             if ancho == 390:

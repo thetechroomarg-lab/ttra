@@ -67,7 +67,9 @@ def test_error_de_escritura_no_informa_exito(contexto, monkeypatch):
     assert c.get("/api/cotizacion").json()["valor"] == 1565
 
 
-def test_formulario_protegido_y_teclado_numerico(contexto):
+def test_formulario_protegido_y_teclado_numerico(contexto, monkeypatch):
+    from tests.fakes_supabase import FakeSupabaseClient
+    monkeypatch.setattr(appmod, "get_client", lambda: FakeSupabaseClient())
     from html.parser import HTMLParser
     class Inputs(HTMLParser):
         campo = None
@@ -84,7 +86,7 @@ def test_formulario_protegido_y_teclado_numerico(contexto):
     campo = parser.campo
     assert campo["inputmode"] == "numeric"
     assert campo["pattern"] == "[0-9]+"
-    assert campo["value"] == "1565"
+    assert c.get("/api/cotizacion").json()["valor"] == 1565
 
 
 def test_actualizar_catalogo_no_pisa_cotizacion_manual_y_mail_la_reutiliza(contexto, monkeypatch):
@@ -129,4 +131,4 @@ def test_admin_tiene_acceso_desde_ambos_paneles(contexto, monkeypatch):
     for ruta in ["/admin/clientes", "/admin/clientes/lista"]:
         respuesta = c.get(ruta)
         assert respuesta.status_code == 200
-        assert 'href="/admin/cotizacion"' in respuesta.text
+        assert 'href="/admin/clientes#cotizacion"' in respuesta.text
