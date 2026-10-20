@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cotización — Administración</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#111318;color:#f2f4f8;font-family:system-ui,sans-serif;padding:24px 16px}
+    main{max-width:440px;margin:24px auto}a{color:#d3d8e1;display:inline-block;padding:12px 0}
+    section{background:#1b1e24;border:1px solid #343842;border-radius:18px;padding:24px;margin-top:16px}
+    h1{font-size:26px;margin:0 0 12px}p{line-height:1.5}.nota{color:#c0c5cf;font-size:14px}
+    label{display:block;font-weight:700;margin:24px 0 8px}
+    input{width:100%;font:600 28px system-ui;padding:14px;background:#111318;color:#fff;border:2px solid #707785;border-radius:10px}
+    input:focus{outline:3px solid #ff927c;outline-offset:2px}button{width:100%;min-height:52px;margin-top:20px;border:0;border-radius:10px;background:#ff927c;color:#171717;font:700 17px system-ui;cursor:pointer}
+    button:disabled{opacity:.6;cursor:wait}#resultado{min-height:24px}#resultado[data-error="true"]{color:#ffb4aa}#resultado[data-error="false"]{color:#b3ebc4}
+  </style>
+</head>
+<body><main>
+  <a href="/admin/clientes">← Volver al panel</a>
+  <section>
+    <h1>Cotización del dólar</h1>
+    <p>Actual: <strong id="cotizacion-actual">__VALOR__</strong> pesos por dólar.</p>
+    <form id="cotizacion-form">
+      <label for="cotizacion-valor">Nueva cotización en pesos</label>
+      <input id="cotizacion-valor" name="valor" type="text" inputmode="numeric" pattern="[0-9]+" maxlength="9" required autocomplete="off" enterkeyhint="done" aria-describedby="cotizacion-ayuda" value="__VALOR__">
+      <p id="cotizacion-ayuda" class="nota">Ingresá solo números, sin puntos ni comas. Por ejemplo: 1600.</p>
+      <p class="nota">Se actualizarán los precios en pesos y transferencia en pesos de la web.</p>
+      <button id="cotizacion-guardar" type="submit">Guardar cotización</button>
+      <p id="resultado" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+</main>
+<script>
+const form = document.getElementById('cotizacion-form');
+const campo = document.getElementById('cotizacion-valor');
+const boton = document.getElementById('cotizacion-guardar');
+const resultado = document.getElementById('resultado');
+campo.addEventListener('input', () => {
+  campo.setCustomValidity(/^[0-9]+$/.test(campo.value) && Number(campo.value) > 0
+    ? '' : 'Ingresá solo números mayores que cero, sin puntos ni comas.');
+});
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!form.reportValidity()) return;
+  boton.disabled = true;
+  campo.readOnly = true;
+  resultado.textContent = 'Guardando…';
+  delete resultado.dataset.error;
+  try {
+    const respuesta = await fetch('/admin/cotizacion', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({valor: campo.value})
+    });
+    const datos = await respuesta.json();
+    if (!respuesta.ok) throw new Error(datos.error || datos.detail || 'No se pudo guardar la cotización.');
+    document.getElementById('cotizacion-actual').textContent = datos.valor;
+    campo.value = datos.valor;
+    resultado.dataset.error = 'false';
+    resultado.textContent = 'Cotización guardada. Los nuevos precios ya están disponibles en la web.';
+  } catch (error) {
+    resultado.dataset.error = 'true';
+    resultado.textContent = error instanceof TypeError
+      ? 'No se pudo confirmar el guardado. Revisá tu conexión y recargá para consultar el valor actual.'
+      : error.message;
+  } finally {
+    boton.disabled = false;
+    campo.readOnly = false;
+  }
+});
+</script></body></html>

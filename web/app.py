@@ -35,6 +35,7 @@ from web.email_util import EnvioEmailError, enviar_email
 from web.mailing import assets as mailing_assets, campanias, destinatarios, envio as mailing_envio, servicio as mailing_servicio, template as mailing_template
 from web.productos import resolver_proveedor
 from web.supabase_client import get_client
+from web import cotizacion as cotizacion_admin
 from web.ui_helpers import (
     _html_direccion_entrega,
     CADETE_SLUG,
@@ -298,7 +299,10 @@ app.add_middleware(SessionMiddleware, secret_key=_session_secret, https_only=_se
 def _cargar_productos():
     if not PRODUCTOS_PATH.exists():
         return []
-    return json.loads(PRODUCTOS_PATH.read_text(encoding="utf-8"))
+    return cotizacion_admin.aplicar(
+        json.loads(PRODUCTOS_PATH.read_text(encoding="utf-8")),
+        cotizacion_admin.leer(PRODUCTOS_PATH),
+    )
 
 
 def _cargar_proveedores():
@@ -356,7 +360,7 @@ def _cargar_snapshot_mayorista():
         costos = json.loads(costos_bytes)
         if not isinstance(productos, list) or not isinstance(costos, dict):
             return [], {}
-        return productos, costos
+        return cotizacion_admin.aplicar(productos, cotizacion_admin.leer(PRODUCTOS_PATH)), costos
     except (OSError, json.JSONDecodeError, UnicodeError, TypeError, ValueError):
         logger.exception("No se pudo cargar un snapshot mayorista consistente")
         return [], {}
@@ -2602,7 +2606,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 <div class="panel">
   <div class="panel-header">
     <h1>Pedidos y recibos</h1>
-    <div class="panel-header-acciones"><button id="btn-notificaciones-admin" class="btn-clientes" type="button" style="cursor:pointer" hidden>🔔 Activar notificaciones</button><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
+    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/cotizacion">Cotización del dólar</a><button id="btn-notificaciones-admin" class="btn-clientes" type="button" style="cursor:pointer" hidden>🔔 Activar notificaciones</button><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
   </div>
   {saldo_resumen_html}
   {_punto_encuentro_html(_punto_encuentro(client, fecha_hoy), fecha_hoy, "Punto de encuentro con Alejo")}
@@ -3101,7 +3105,7 @@ document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
 <div class="panel">
   <div class="panel-header">
     <h1>Clientes ({len(clientes)})</h1>
-    <div class="panel-header-acciones"><button id="btn-nuevo-cliente" class="btn-nuevo-cliente" type="button">+ Nuevo cliente</button><a class="btn-clientes" href="/admin/clientes">Pedidos y recibos</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
+    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/cotizacion">Cotización del dólar</a><button id="btn-nuevo-cliente" class="btn-nuevo-cliente" type="button">+ Nuevo cliente</button><a class="btn-clientes" href="/admin/clientes">Pedidos y recibos</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
   </div>
   <div class="filtros-clientes">
     <input id="filtro-clientes" type="search" placeholder="Buscar por nombre, email, celular o provincia">
@@ -6283,6 +6287,9 @@ COTIZACION_DOLAR = 1565
 
 
 def _cargar_cotizacion_catalogo():
+    manual = cotizacion_admin.leer(PRODUCTOS_PATH)
+    if manual is not None:
+        return manual["valor"]
     try:
         manifiesto = json.loads(CATALOGO_MANIFEST_PATH.read_text(encoding="utf-8"))
         cotizacion = manifiesto.get("cotizacion")
@@ -6302,6 +6309,31 @@ def _cargar_cotizacion_catalogo():
 @app.get("/api/cotizacion")
 def api_cotizacion():
     return {"valor": _cargar_cotizacion_catalogo()}
+
+
+@app.get("/admin/cotizacion", response_class=HTMLResponse)
+def admin_cotizacion(request: Request):
+    if not _clientes_admin_activo(request):
+        return RedirectResponse("/admin/clientes", status_code=303)
+    pagina = _leer_ui("cotizacion.html")
+    return HTMLResponse(pagina.replace("__VALOR__", str(_cargar_cotizacion_catalogo())))
+
+
+@app.post("/admin/cotizacion")
+async def admin_cotizacion_guardar(request: Request):
+    if not _clientes_admin_activo(request):
+        return JSONResponse({"error": "Ingresá al panel de administración para cambiar la cotización."}, status_code=401)
+    try:
+        datos = await request.json()
+        valor = cotizacion_admin.validar(datos.get("valor") if isinstance(datos, dict) else None)
+    except (ValueError, TypeError):
+        return JSONResponse({"error": "Ingresá un número mayor que cero, de hasta 9 dígitos, sin puntos ni comas."}, status_code=400)
+    try:
+        guardado = cotizacion_admin.guardar(PRODUCTOS_PATH, valor)
+    except OSError:
+        logger.exception("No se pudo guardar la cotización administrativa")
+        return JSONResponse({"error": "No se pudo guardar la cotización. Intentá nuevamente."}, status_code=503)
+    return {"ok": True, **guardado}
 
 
 NOTICIAS_RSS_URL = (

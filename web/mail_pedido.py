@@ -20,13 +20,13 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 
-from . import garantias
+from . import garantias, cotizacion
 from .email_util import enviar_email
 
 logger = logging.getLogger(__name__)
 
 URL_SITIO = "https://thetechroomarg.com"
-PRODUCTOS_PATH = Path(__file__).resolve().parent / "productos.json"
+PRODUCTOS_PATH = Path(os.environ.get("PRODUCTOS_PATH") or Path(__file__).resolve().parent / "productos.json")
 
 # Tokens de Classic oscuro (web/static/classic.css) y del sticker
 # (classic-editorial.css).
@@ -83,6 +83,9 @@ def cotizacion_catalogo():
 
     Así los pesos del mail son los mismos que el cliente vio en la web.
     """
+    manual = cotizacion.leer(PRODUCTOS_PATH)
+    if manual is not None:
+        return manual["valor"]
     try:
         productos = json.loads(PRODUCTOS_PATH.read_text(encoding="utf-8"))
         ratios = Counter(
