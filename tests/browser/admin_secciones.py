@@ -25,6 +25,7 @@ def test_secciones(entorno,width):
         page.get_by_role('link',name='Ganancia',exact=True).click()
         expect(page.locator('#admin-seccion-pedidos')).to_be_hidden()
         expect(page.locator('#ganancia-totales')).to_contain_text('Ganancia confirmada')
+        assert page.locator('#ganancia-desde-visible').evaluate('''e=>{const s=getComputedStyle(e),c=document.createElement('canvas').getContext('2d');c.font=s.font;return e.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight)>=c.measureText(e.value).width}''')
         page.locator('#ganancia-carga summary').click()
         page.locator('#ganancia-fecha').fill('2026-10-20')
         page.locator('#ganancia-concepto').fill('Trabajo de prueba')
