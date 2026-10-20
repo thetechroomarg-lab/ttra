@@ -67,5 +67,4 @@ def etiqueta_entrega(fecha_iso, ahora=None):
     fecha = datetime.fromisoformat(fecha_iso).date()
     dias = (fecha - ahora.date()).days
     prefijo = "HOY" if dias == 0 else "MAÑANA" if dias == 1 else "PASADO MAÑANA"
-    meses = ("Ene.", "Feb.", "Mar.", "Abr.", "May.", "Jun.", "Jul.", "Ago.", "Sep.", "Oct.", "Nov.", "Dic.")
-    return f"{prefijo} {fecha.day} de {meses[fecha.month - 1]}"
+    return f"{prefijo} {fecha:%d/%m/%Y}"

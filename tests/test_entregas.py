@@ -64,3 +64,9 @@ def test_domingo_programa_directamente_lunes():
     domingo = datetime(2026, 8, 30, 11, 0, tzinfo=TZ)
 
     assert _fechas(domingo) == ["2026-08-31"]
+
+
+def test_etiquetas_selector_muestran_dia_mes_anio():
+    ahora = datetime(2026, 8, 24, 10, 0, tzinfo=TZ)
+    assert entregas.etiqueta_entrega('2026-08-24', ahora) == 'HOY 24/08/2026'
+    assert entregas.etiqueta_entrega('2026-08-25', ahora) == 'MAÑANA 25/08/2026'
