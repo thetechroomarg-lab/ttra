@@ -2117,6 +2117,7 @@ _CADETE_ESTILO = """
 """
 
 _ADMIN_CLIENTES_PWA_HEAD = """
+<script src="/fechas.js" defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="/admin-clientes.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -2124,6 +2125,7 @@ _ADMIN_CLIENTES_PWA_HEAD = """
 """
 
 _CADETE_PWA_HEAD = """
+<script src="/fechas.js" defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="/admin-cadete.webmanifest">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
