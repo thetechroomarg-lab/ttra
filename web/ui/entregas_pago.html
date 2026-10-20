@@ -5,11 +5,27 @@
     <p id="pago-ayuda">El total se completa automáticamente. Para combinar pagos, ajustá el primer importe y elegí otro método: completaremos el saldo pendiente.</p>
     <p id="pago-cargando" role="status">Cargando importes…</p>
     <div id="pago-contenido" hidden>
+      <fieldset id="pago-precios"><legend>Precio por producto en dólares</legend><div id="pago-precios-lista"></div><p class="pago-nota">Editá el precio unitario en USD. Se guarda automáticamente y actualiza el total y las formas de pago de este pedido.</p><button id="pago-guardar-precios" type="button" disabled>Guardar precios</button><p id="pago-precios-estado" role="status" aria-live="polite"></p></fieldset>
       <div class="pago-base"><span>Total base de la entrega</span><strong id="pago-total"></strong></div>
       <fieldset id="pago-metodos"><legend>Formas de pago</legend></fieldset>
       <p id="pago-cotizacion" class="pago-nota"></p>
       <div id="pago-resumen" role="status" aria-live="polite"></div>
-      <details class="pago-fotos"><summary>Fotos de números de serie <span>(opcional)</span></summary><p class="pago-nota">Se adjuntan al recibo. Hasta 10 fotos.</p><input id="pago-foto-input" type="file" accept="image/*" multiple hidden><div id="pago-fotos"></div><button type="button" id="pago-agregar-foto">Agregar fotos</button></details>
+      <section class="pago-fotos" aria-label="Fotos para el recibo">
+        <button type="button" id="pago-agregar-foto" aria-expanded="false" aria-controls="pago-origen-foto">Agregar foto</button>
+        <p class="pago-nota">Se adjuntan al recibo. Hasta 10 fotos.</p>
+        <div id="pago-origen-foto" hidden>
+          <button type="button" id="pago-sacar-foto">Sacar foto</button>
+          <button type="button" id="pago-elegir-foto">Elegir de la galería</button>
+        </div>
+        <input id="pago-foto-input" type="file" accept="image/*" multiple hidden>
+        <div id="pago-camara" hidden>
+          <p class="pago-nota">La foto se adjunta al recibo. La aplicación no guarda una copia en tu galería.</p>
+          <video id="pago-video" autoplay muted playsinline aria-label="Vista de cámara"></video>
+          <button type="button" id="pago-capturar" disabled>Capturar foto</button>
+          <button type="button" id="pago-camara-cerrar">Cerrar cámara</button>
+        </div>
+        <div id="pago-fotos"></div>
+      </section>
     </div>
     <p id="pago-error" role="alert" hidden></p>
     </div>

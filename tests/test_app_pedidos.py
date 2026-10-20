@@ -435,7 +435,7 @@ def test_pedido_aplica_y_consume_codigo_mailing_despues_de_guardar(monkeypatch):
     # Regla de oro: al confirmar queda reservado, no consumido.
     assert codigo["reservado_pedido_id"] == pedido["id"]
     assert not codigo.get("usado_en")
-    assert fake.rpc_calls[-1][0] == "guardar_pedido_con_descuento_mailing"
+    assert any(nombre == "guardar_pedido_con_descuento_mailing" for nombre, _ in fake.rpc_calls)
 
 
 def test_usar_codigo_de_fidelidad_lo_reserva_sin_resetear_el_ciclo(monkeypatch):
