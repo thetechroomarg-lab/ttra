@@ -1,5 +1,5 @@
 <nav class="admin-secciones" aria-label="Secciones de administración">
- <a href="#pedidos">Pedidos</a><a href="#cotizacion">Cotización del dólar</a><a href="#ganancia">Ganancia</a>
+ <a href="#pedidos">Pedidos</a><a href="#clientes">Clientes</a><a href="#borrados">Borrados</a><a href="#cotizacion">Cotización del dólar</a><a href="#ganancia">Ganancia</a>
 </nav>
 <section id="admin-seccion-cotizacion" class="admin-vista" hidden aria-labelledby="cotizacion-titulo">
  <h2 id="cotizacion-titulo">Cotización del dólar</h2>
@@ -29,3 +29,5 @@
  <button type="submit">Guardar importes</button><p id="ganancia-completar-estado" role="status"></p></form></details>
  <div id="ganancia-listado" aria-live="polite"></div>
 </section>
+
+<section id="admin-seccion-borrados" hidden aria-labelledby="borrados-titulo"><h2 id="borrados-titulo">Borrados</h2><p>Podés restaurar pedidos y notas durante 48 horas.</p><p id="borrados-estado" role="status"></p><button id="borrados-recargar" type="button">Actualizar</button><div id="borrados-listado"></div></section>

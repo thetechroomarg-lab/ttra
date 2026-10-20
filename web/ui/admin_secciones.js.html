@@ -1,13 +1,16 @@
 <script>
 (() => {
- const secciones=['pedidos','cotizacion','ganancia'];
+ const secciones=['pedidos','clientes','borrados','cotizacion','ganancia'];
  const porId=id=>document.getElementById(id);
  const usd=v=>'USD '+Number(v).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
  const elemento=(tag,texto,clase)=>{const e=document.createElement(tag);e.textContent=texto;if(clase)e.className=clase;return e;};
  async function api(url,opciones={}){const r=await fetch(url,{cache:'no-store',...opciones});const datos=await r.json().catch(()=>({}));if(!r.ok)throw new Error(datos.detail||datos.error||'No se pudo completar la operación.');return datos;}
  let consultando=0, cargadoCambio=false, claveManual=crypto.randomUUID(), editando=null, completando=null;
  async function cargarCotizacion(){try{const d=await api('/api/cotizacion');porId('cotizacion-actual').textContent=d.valor;porId('cotizacion-valor').value=d.valor;cargadoCambio=true;}catch(e){porId('cotizacion-resultado').textContent=e.message;}}
- function abrirSeccionAdmin(){const nombre=secciones.includes(location.hash.slice(1))?location.hash.slice(1):'pedidos';secciones.forEach(s=>porId('admin-seccion-'+s).hidden=s!==nombre);document.querySelectorAll('.admin-secciones a').forEach(a=>{if(a.hash==='#'+nombre)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});if(nombre==='cotizacion'&&!cargadoCambio)cargarCotizacion();if(nombre==='ganancia')cargarGanancia();}
+ function abrirSeccionAdmin(){const nombre=secciones.includes(location.hash.slice(1))?location.hash.slice(1):'pedidos';secciones.forEach(s=>porId('admin-seccion-'+s).hidden=s!==nombre);document.querySelectorAll('.admin-secciones a').forEach(a=>{if(a.hash==='#'+nombre)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});if(nombre==='cotizacion'&&!cargadoCambio)cargarCotizacion();if(nombre==='ganancia')cargarGanancia();if(nombre==='borrados')cargarBorrados();}
+ async function cargarBorrados(){const b=porId('borrados-recargar');b.disabled=true;porId('borrados-estado').textContent='Cargando…';try{const r=await fetch('/admin/papelera?fragmento=1',{cache:'no-store'});if(!r.ok)throw new Error('No se pudo cargar Borrados. Volvé a intentarlo.');porId('borrados-listado').innerHTML=await r.text();porId('borrados-estado').textContent='';}catch(e){porId('borrados-estado').textContent=e.message;}finally{b.disabled=false;}}
+ porId('borrados-recargar').addEventListener('click',cargarBorrados);
+ porId('borrados-listado').addEventListener('click',async e=>{const b=e.target.closest('.btn-restaurar-papelera');if(!b)return;b.disabled=true;try{await api(`/admin/papelera/${b.dataset.tipo}/${b.dataset.id}/restaurar`,{method:'POST'});location.reload();}catch(e){porId('borrados-estado').textContent=e.message;b.disabled=false;}});
  window.addEventListener('hashchange',abrirSeccionAdmin);
  porId('cotizacion-form').addEventListener('submit',async e=>{e.preventDefault();const btn=porId('cotizacion-guardar');btn.disabled=true;porId('cotizacion-resultado').textContent='Guardando…';try{const d=await api('/admin/cotizacion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor:porId('cotizacion-valor').value})});porId('cotizacion-actual').textContent=d.valor;porId('cotizacion-resultado').textContent='Cotización guardada.';}catch(e){porId('cotizacion-resultado').textContent=e.message;}finally{btn.disabled=false;}});
  const partes=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Cordoba',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());

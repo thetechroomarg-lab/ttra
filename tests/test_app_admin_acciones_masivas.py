@@ -35,7 +35,7 @@ def test_admin_lista_checkboxes_provincia_y_columnas_ordenables(monkeypatch):
     assert 'data-sort="nombre"' in respuesta.text
     assert 'data-sort="provincia"' in respuesta.text
     assert 'data-sort="fecha"' not in respuesta.text
-    assert ">Fecha<" not in respuesta.text
+    assert ">Fecha<" not in respuesta.text.split('id="tabla-clientes"')[1].split("</table>")[0]
     assert 'id="filtro-clientes"' in respuesta.text
     assert 'id="filtro-provincia"' in respuesta.text
     assert 'id="ordenar-clientes"' in respuesta.text

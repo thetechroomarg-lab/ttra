@@ -2,4 +2,21 @@
 .admin-secciones{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 24px}.admin-secciones a{padding:12px 16px;border:1px solid var(--op-border-strong);color:var(--op-text);text-decoration:none;border-radius:4px}.admin-secciones a[aria-current=page]{background:var(--op-accent);color:white;border-color:var(--op-accent)}
 .admin-vista{background:var(--op-surface);color:var(--op-text);padding:24px;border:1px solid var(--op-border);margin-bottom:24px}.admin-vista[hidden],#admin-seccion-pedidos[hidden]{display:none!important}.admin-vista h2{margin-top:0}.admin-vista label{display:block;margin:12px 0}.admin-vista input,.admin-vista select{display:block;box-sizing:border-box;width:100%;font:inherit;font-size:16px;min-height:44px;margin-top:6px;padding:10px;background:var(--op-surface-2);color:var(--op-text);border:1px solid var(--op-border-strong)}.admin-vista button{min-height:44px;padding:10px 16px;cursor:pointer;font:inherit;background:var(--op-accent);color:#fff;border:0;border-radius:3px}.admin-vista button:disabled{opacity:.5;cursor:wait}.admin-vista p{line-height:1.5}.admin-vista form{max-width:580px}.ganancia-filtros{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.ganancia-filtros label{flex:1;min-width:190px}.ganancia-filtros button{margin-bottom:12px}.ganancia-resumen{padding:16px;background:var(--op-surface-2);margin:12px 0}.ganancia-resumen strong{font-size:24px}.ganancia-desglose{display:flex;gap:18px;flex-wrap:wrap}.ganancia-desglose dt{font-size:13px;color:var(--op-text-dim)}.ganancia-desglose dd{margin:4px 0}.ganancia-fila{border-top:1px solid var(--op-border);padding:16px 0;overflow-wrap:anywhere}.ganancia-fila h3{font-size:16px}.ganancia-fila button{margin-right:8px}.admin-vista details{margin:24px 0;padding:16px;border:1px solid var(--op-border)}.admin-vista summary{cursor:pointer;min-height:32px}.admin-vista :focus-visible{outline:2px solid var(--op-accent);outline-offset:3px}
 @media(max-width:480px){.admin-vista{padding:16px}.admin-secciones a{flex:1;text-align:center;font-size:14px}}
+
+.admin-entregas > .panel > .panel-header{display:flex;flex-direction:row;align-items:center;justify-content:space-between}
+.admin-entregas > .panel > .panel-header h1{font-size:clamp(26px,4vw,44px)}
+.admin-entregas .panel-header-acciones{margin-left:auto;flex-shrink:0}
+.admin-seccion-cabecera{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.admin-seccion-cabecera h2{margin:0}
+.admin-entregas :where(.admin-secciones a,#salir,#btn-nuevo-cliente,#btn-notificaciones-admin,#borrados-recargar,.btn-restaurar-papelera){display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:44px;padding:10px 16px;font:inherit;font-weight:600;line-height:1.3;border-radius:4px;border:1px solid var(--op-border-strong);background:var(--op-surface);color:var(--op-text);text-decoration:none;cursor:pointer}
+.admin-entregas .admin-secciones a[aria-current=page],.admin-entregas #btn-nuevo-cliente{background:var(--op-accent);border-color:var(--op-accent);color:#fff}
+.admin-entregas :where(.admin-secciones a,#salir,#btn-notificaciones-admin,#borrados-recargar,.btn-restaurar-papelera):hover{background:var(--op-surface-2)}
+.admin-entregas .admin-secciones a[aria-current=page]:hover,.admin-entregas #btn-nuevo-cliente:hover{background:var(--op-accent-hover)}
+.admin-entregas :is(button,a):focus-visible{outline:2px solid var(--op-accent);outline-offset:3px}
+.admin-entregas button:disabled{opacity:.55;cursor:wait}
+.admin-entregas [hidden]{display:none!important}
+#borrados-listado{margin-top:20px}
+.papelera-item{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px;border:1px solid var(--op-border);background:var(--op-surface);margin-bottom:12px}
+.papelera-item-detalle{overflow-wrap:anywhere;min-width:0}.papelera-item-detalle span{color:var(--op-text-dim)}
+@media(max-width:480px){.admin-entregas > .panel > .panel-header{gap:12px}.admin-entregas #salir{padding:10px;font-size:13px}.admin-secciones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.admin-secciones a:last-child{grid-column:1/-1}}
 </style>
