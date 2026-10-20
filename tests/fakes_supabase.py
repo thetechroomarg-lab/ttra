@@ -2,6 +2,7 @@
 usa web/cuentas.py (auth.sign_up, auth.sign_in_with_password,
 auth.admin.delete_user, table().select/insert/update().eq().execute())."""
 import copy
+import json
 import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -123,8 +124,21 @@ class _FakeQuery:
         self._operacion = operacion
         self._payload = payload
         self._filtros = []
+        self._rango = None
+        self._orden = None
+
+    def order(self, campo, **kwargs):
+        self._orden = campo
+        return self
+
+    def range(self, inicio, fin):
+        self._rango = (inicio, fin)
+        return self
 
     def eq(self, campo, valor):
+        # PostgREST representa la igualdad JSONB como JSON en el filtro URL.
+        if campo == "detalle" and isinstance(valor, str):
+            valor = json.loads(valor)
         self._filtros.append((campo, valor))
         return self
 
@@ -148,7 +162,20 @@ class _FakeQuery:
 
     def execute(self):
         if self._operacion == "select":
-            return _FakeExecuteResult(self._filtrar(list(self._tabla._filas)))
+            filas = self._filtrar(list(self._tabla._filas))
+            if self._orden: filas.sort(key=lambda f: str(f.get(self._orden, '')))
+            if self._rango: filas = filas[self._rango[0]:self._rango[1]+1]
+            return _FakeExecuteResult(filas)
+        if self._operacion == "upsert":
+            valores, conflicto, ignorar = self._payload
+            campos = conflicto.split(',')
+            anterior = next((f for f in self._tabla._filas if all(f.get(k)==valores.get(k) for k in campos)), None)
+            if anterior is not None:
+                if not ignorar: anterior.update(valores)
+                return _FakeExecuteResult([anterior])
+            fila = {'id':str(uuid.uuid4()), 'version':1, **valores}
+            self._tabla._filas.append(fila)
+            return _FakeExecuteResult([fila])
         if self._operacion == "insert":
             fila = dict(self._payload)
             if self._tabla._nombre in {"mailing_campanias", "mailing_envios_detalle"}:
@@ -184,6 +211,9 @@ class _FakeTable:
             }
         return _FakeQuery(self, "insert", payload)
 
+    def upsert(self, payload, on_conflict='id', ignore_duplicates=False):
+        return _FakeQuery(self, 'upsert', (payload, on_conflict, ignore_duplicates))
+
     def update(self, payload):
         return _FakeQuery(self, "update", payload)
 
@@ -204,6 +234,36 @@ class FakeSupabaseClient:
 
     def rpc(self, nombre, parametros=None):
         self.rpc_calls.append((nombre, parametros))
+        if nombre == "capturar_ganancia_costos":
+            def capturar():
+                filas = self.table("ganancia_costos")._filas
+                previo = next((f for f in filas if f["id"] == parametros["p_id"]), None)
+                if previo is None:
+                    previo = {"id":parametros["p_id"],"costos":{},"fuente":parametros["p_fuente"]}
+                    filas.append(previo)
+                conflictos = previo.setdefault("conflictos", {})
+                for clave, valor in parametros["p_costos"].items():
+                    if clave in previo["costos"] and previo["costos"][clave] != valor:
+                        conflictos[clave] = {"anterior":previo["costos"][clave],"nuevo":valor}
+                previo["costos"] = {**parametros["p_costos"],**previo["costos"]}
+                return [copy.deepcopy(previo)]
+            return _FakeRpcCall(capturar)
+        if nombre in ("editar_ganancia_manual", "completar_ganancia"):
+            def editar():
+                from datetime import datetime, timezone
+                filas = self.table("ganancia_movimientos")._filas
+                anterior = next((f for f in filas if f["id"] == parametros["p_id"] and (f["fuente_tipo"] == "manual" if nombre == "editar_ganancia_manual" else f["fuente_tipo"] != "manual") and f.get("version", 1) == parametros["p_version"] and not f.get("anulado_en")), None)
+                if anterior is None: return []
+                copia = copy.deepcopy(anterior)
+                cambios = dict(parametros["p_cambios"])
+                if cambios.pop("anular", False): cambios["anulado_en"] = datetime.now(timezone.utc).isoformat()
+                if "motivo" in cambios:
+                    anterior["evidencia"] = {**anterior.get("evidencia", {}), "faltantes": [], "correccion_admin": cambios.pop("motivo")}
+                anterior.update(cambios)
+                anterior["version"] = parametros["p_version"] + 1
+                self.table("ganancia_revisiones").insert({"movimiento_id":anterior["id"],"anterior":copia,"nuevo":copy.deepcopy(anterior)}).execute()
+                return [copy.deepcopy(anterior)]
+            return _FakeRpcCall(editar)
         if nombre == "siguiente_numero_recibo":
             self._ultimo_recibo = getattr(self, "_ultimo_recibo", 1992) + 1
             return _FakeRpcResult(f"0001-{self._ultimo_recibo}")

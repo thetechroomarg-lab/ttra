@@ -36,6 +36,8 @@ from web.mailing import assets as mailing_assets, campanias, destinatarios, envi
 from web.productos import resolver_proveedor
 from web.supabase_client import get_client
 from web import cotizacion as cotizacion_admin
+from web import precios_recibo
+from web import ganancia_servicio
 from web.ui_helpers import (
     _html_direccion_entrega,
     CADETE_SLUG,
@@ -1287,9 +1289,38 @@ def admin_pedido_opciones_pago(pedido_id: str, request: Request):
         raise HTTPException(status_code=409, detail="El pedido cambió después de registrar el cobro. Revisá el pedido antes de enviar.")
     cotizacion = float(guardado["cotizacion"]) if guardado else _cargar_cotizacion_catalogo()
     return JSONResponse({"total_usd": pedido["total_usd"], "cotizacion": cotizacion,
+            "detalle": [{k: item.get(k) for k in ("nombre", "color", "cantidad", "usd_unitario")} for item in pedido["detalle"]],
+            "version_precio": precios_recibo.version(pedido),
+            "precio_editable": precios_recibo.editable(pedido),
             "cliente": " ".join(filter(None, [cliente.get("nombre"), cliente.get("apellido")])),
             "opciones": pagos_entrega.opciones(pedido["total_usd"], cotizacion),
             "pago_guardado": pedido.get("recibo_pago")}, headers={"Cache-Control": "no-store"})
+
+
+@app.post("/admin/pedidos/{pedido_id}/precios")
+async def admin_pedido_editar_precios(pedido_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas or not _activo(filas[0]):
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    pedido = filas[0]
+    if not precios_recibo.editable(pedido):
+        raise HTTPException(status_code=409, detail="El recibo ya está emitido o el cobro registrado. No se puede cambiar el precio.")
+    try:
+        entrada = await request.json()
+        if not isinstance(entrada, dict):
+            raise ValueError("Revisá los precios.")
+        if entrada.get("version") != precios_recibo.version(pedido):
+            raise HTTPException(status_code=409, detail="El pedido cambió. Cerrá y volvé a abrir el recibo antes de editar.")
+        cambios = precios_recibo.actualizar(pedido, entrada.get("precios"))
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    resultado = precios_recibo.filtrar_snapshot(client.table("pedidos").update(cambios), pedido).execute()
+    if not resultado.data:
+        raise HTTPException(status_code=409, detail="El pedido cambió o se está emitiendo. Cerrá y volvé a abrir el recibo.")
+    return admin_pedido_opciones_pago(pedido_id, request)
 
 
 @app.post("/admin/pedidos/{pedido_id}/recibo")
@@ -1340,7 +1371,13 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     }
     try:
         # Guardar antes del correo: si el proveedor falla, el cobro sigue disponible.
-        if pago_recibo and not pedido.get("recibo_enviado_en"):
+        if not pedido.get("recibo_emitido_en") and not pedido.get("recibo_pago") and not pedido.get("recibo_enviado_en"):
+            reserva = precios_recibo.filtrar_snapshot(
+                client.table("pedidos").update({"recibo_pago": pago_recibo, "recibo_id": recibo_id,
+                                               "recibo_emitido_en": emitido_en}), pedido).execute()
+            if not reserva.data:
+                return JSONResponse({"error": "El pedido cambió o se está emitiendo. Cerrá y revisá los importes."}, status_code=409)
+        elif pago_recibo and not pedido.get("recibo_enviado_en"):
             client.table("pedidos").update({"recibo_pago": pago_recibo, "recibo_id": recibo_id,
                                            "recibo_emitido_en": emitido_en}).eq("id", pedido_id).execute()
         adjuntos_fotos = []
@@ -1384,6 +1421,7 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     # Solo el primer envío cuenta como entrega: reenviar el recibo no suma otro sello.
     primer_envio = not pedido.get("recibo_enviado_en")
     client.table("pedidos").update(actualizacion_pedido).eq("id", pedido_id).execute()
+    ganancia_servicio.intentar(ganancia_servicio.conciliar_venta, client, pedido_id)
     if primer_envio:
         # Regla de oro: el descuento usado en esta venta se le resta al
         # cliente recién ahora, con el recibo enviado.
@@ -2602,17 +2640,21 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<strong>$ {_formatear_entero_ar(abs(resumen_saldo["saldo_pendiente"]))}</strong></span></a>'
         )
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}{_leer_ui("entregas_pago.css.html")}</head><body class="admin-entregas">
+<title>Pedidos y recibos</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}{_leer_ui("entregas_pago.css.html")}{_leer_ui("admin_secciones.css.html")}</head><body class="admin-entregas">
 <div class="panel">
   <div class="panel-header">
     <h1>Pedidos y recibos</h1>
-    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/cotizacion">Cotización del dólar</a><button id="btn-notificaciones-admin" class="btn-clientes" type="button" style="cursor:pointer" hidden>🔔 Activar notificaciones</button><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
+    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes#cotizacion">Cotización del dólar</a><button id="btn-notificaciones-admin" class="btn-clientes" type="button" style="cursor:pointer" hidden>🔔 Activar notificaciones</button><a class="btn-clientes" href="/admin/clientes/lista">Clientes</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
   </div>
+  {_leer_ui("admin_secciones.html")}
+  <div id="admin-seccion-pedidos">
   {saldo_resumen_html}
   {_punto_encuentro_html(_punto_encuentro(client, fecha_hoy), fecha_hoy, "Punto de encuentro con Alejo")}
   <section class="historial-pedidos"><h2>Historial de pedidos</h2><input id="filtro-historial-pedidos" type="search" placeholder="Buscar por cliente o producto"><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
   {pendientes_hoy_seccion_html}
+  </div>
 </div>
+{_leer_ui("admin_secciones.js.html")}
 {_CONFIRMAR_COMPLETADO_HTML}
 {_leer_ui("entregas_pago.html")}
 {_leer_ui("entregas_pago.js.html")}
@@ -3105,7 +3147,7 @@ document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
 <div class="panel">
   <div class="panel-header">
     <h1>Clientes ({len(clientes)})</h1>
-    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/cotizacion">Cotización del dólar</a><button id="btn-nuevo-cliente" class="btn-nuevo-cliente" type="button">+ Nuevo cliente</button><a class="btn-clientes" href="/admin/clientes">Pedidos y recibos</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
+    <div class="panel-header-acciones"><a class="btn-clientes" href="/admin/clientes#cotizacion">Cotización del dólar</a><button id="btn-nuevo-cliente" class="btn-nuevo-cliente" type="button">+ Nuevo cliente</button><a class="btn-clientes" href="/admin/clientes">Pedidos y recibos</a><a class="btn-clientes" href="/admin/papelera">Borrados</a><button id="salir">Cerrar sesión</button></div>
   </div>
   <div class="filtros-clientes">
     <input id="filtro-clientes" type="search" placeholder="Buscar por nombre, email, celular o provincia">
@@ -5319,6 +5361,7 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
             piso_entrega=domicilios.opcional(entrada.piso_entrega),
             depto_entrega=domicilios.opcional(entrada.depto_entrega),
         )
+    ganancia_servicio.capturar_al_crear(client, guardado)
     background_tasks.add_task(
         _avisar_pedido_nuevo, cliente_id,
         [f"{item.get('nombre')} x{item.get('cantidad')}" for item in detalle], total_usd,
@@ -6315,8 +6358,7 @@ def api_cotizacion():
 def admin_cotizacion(request: Request):
     if not _clientes_admin_activo(request):
         return RedirectResponse("/admin/clientes", status_code=303)
-    pagina = _leer_ui("cotizacion.html")
-    return HTMLResponse(pagina.replace("__VALOR__", str(_cargar_cotizacion_catalogo())))
+    return RedirectResponse("/admin/clientes#cotizacion", status_code=303)
 
 
 @app.post("/admin/cotizacion")
@@ -6919,7 +6961,7 @@ async def admin_cadete_registrar_pago(request: Request):
     if error:
         return error
     try:
-        return {"ok": True, **saldo_cadete.registrar_pago(client, ruta, monto)}
+        return {"ok": True, **saldo_cadete.registrar_pago(client, ruta, monto, cotizacion=_cargar_cotizacion_catalogo())}
     except saldo_cadete.PagoInvalido as e:
         return JSONResponse({"error": str(e)}, status_code=400)
 
@@ -6968,5 +7010,8 @@ def _comparison_client():
 
 
 install_comparison_routes(app, lambda request: _catalogo_autorizado(request), PRODUCTOS_PATH, lambda: _comparison_client())
+
+from web.ganancia_routes import router as ganancia_router
+app.include_router(ganancia_router)
 
 app.mount("/", PublicStaticFiles(directory=str(BASE / "static"), html=False), name="static")

@@ -1,4 +1,5 @@
 import uuid
+from web import ganancia_servicio
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 
@@ -116,6 +117,8 @@ def guardar_pedido(
             ),
             None,
         )
+        if pendiente and ganancia_servicio.tiene_costos(client, pendiente["id"]):
+            pendiente = None
         if pendiente:
             actualizado = {
                 "productos": _unir_productos(pendiente.get("productos"), productos),
@@ -133,7 +136,7 @@ def guardar_pedido(
                 "lng": lng if lng is not None else pendiente.get("lng"),
             }
             client.table("pedidos").update(actualizado).eq("id", pendiente["id"]).execute()
-            return {**pendiente, **actualizado}
+            return ganancia_servicio.capturar_al_crear(client, {**pendiente, **actualizado})
 
     fila = {
         "id": str(uuid.uuid4()),
@@ -154,7 +157,7 @@ def guardar_pedido(
         "depto_entrega": depto_entrega or None,
     }
     client.table("pedidos").insert(fila).execute()
-    return fila
+    return ganancia_servicio.capturar_al_crear(client, fila)
 
 
 def editar_fecha_entrega(client, pedido_id, fecha_entrega):
@@ -186,6 +189,8 @@ def editar_fecha_entrega(client, pedido_id, fecha_entrega):
         ),
         None,
     )
+    if destino and (ganancia_servicio.tiene_costos(client, pedido_id) or ganancia_servicio.tiene_costos(client, destino["id"])):
+        destino = None
     if destino:
         actualizado = {
             "productos": _unir_productos(destino.get("productos"), pedido.get("productos")),

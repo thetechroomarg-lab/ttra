@@ -1,0 +1,31 @@
+<nav class="admin-secciones" aria-label="Secciones de administración">
+ <a href="#pedidos">Pedidos</a><a href="#cotizacion">Cotización del dólar</a><a href="#ganancia">Ganancia</a>
+</nav>
+<section id="admin-seccion-cotizacion" class="admin-vista" hidden aria-labelledby="cotizacion-titulo">
+ <h2 id="cotizacion-titulo">Cotización del dólar</h2>
+ <p>Actual: <strong id="cotizacion-actual">Cargando…</strong> pesos por dólar</p>
+ <form id="cotizacion-form"><label for="cotizacion-valor">Nueva cotización en pesos</label>
+ <input id="cotizacion-valor" type="text" inputmode="numeric" pattern="[0-9]+" maxlength="9" required autocomplete="off" aria-describedby="cotizacion-ayuda">
+ <p id="cotizacion-ayuda">Solo números, sin puntos ni comas. Por ejemplo: 1600.</p>
+ <button id="cotizacion-guardar" type="submit">Guardar cotización</button><p id="cotizacion-resultado" role="status"></p></form>
+</section>
+<section id="admin-seccion-ganancia" class="admin-vista" hidden aria-labelledby="ganancia-titulo">
+ <h2 id="ganancia-titulo">Ganancia</h2><p>Resultado neto en dólares. Las ventas cuentan por emisión del recibo y los gastos por fecha de pago.</p>
+ <form id="ganancia-filtro" class="ganancia-filtros"><label>Desde<input id="ganancia-desde" type="date" required></label><label>Hasta<input id="ganancia-hasta" type="date" required></label><button type="submit">Consultar</button></form>
+ <p id="ganancia-estado" role="status"></p><div id="ganancia-totales"></div>
+ <details id="ganancia-carga"><summary>Agregar ingreso o gasto manual</summary>
+ <form id="ganancia-manual"><label>Tipo<select id="ganancia-tipo"><option value="ingreso">Ingreso</option><option value="gasto">Gasto</option></select></label>
+ <label>Fecha<input id="ganancia-fecha" type="date" required></label><label>Concepto<input id="ganancia-concepto" maxlength="300" required></label>
+ <label>Importe en USD<input id="ganancia-monto" inputmode="decimal" type="text" pattern="[0-9]+([.,][0-9]{1,2})?" required></label>
+ <button id="ganancia-guardar" type="submit">Guardar movimiento</button><button id="ganancia-cancelar" type="button" hidden>Cancelar edición</button><p id="ganancia-manual-estado" role="status"></p></form></details>
+ <details id="ganancia-completar" hidden><summary>Completar o corregir importes</summary>
+ <form id="ganancia-completar-form"><p id="ganancia-completar-concepto"></p>
+ <label>Ingresos en USD<input id="ganancia-ingreso_usd" inputmode="decimal" required></label>
+ <label>Costo de productos en USD<input id="ganancia-costo_usd" inputmode="decimal" required></label>
+ <label>Comisiones en USD<input id="ganancia-comision_usd" inputmode="decimal" required></label>
+ <label>Otros gastos en USD<input id="ganancia-gasto_usd" inputmode="decimal" required></label>
+ <label>Evidencia<select id="ganancia-evidencia"><option value="estimado">Estimado</option><option value="confirmado">Comprobado con documentación</option></select></label>
+ <label>Fuente o motivo<input id="ganancia-motivo" minlength="5" maxlength="1000" required></label>
+ <button type="submit">Guardar importes</button><p id="ganancia-completar-estado" role="status"></p></form></details>
+ <div id="ganancia-listado" aria-live="polite"></div>
+</section>

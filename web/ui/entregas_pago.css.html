@@ -43,6 +43,15 @@
 .admin-entregas #modal-pago #pago-cerrar { border:0; font-size:26px; padding:0; min-width:44px; }
 .admin-entregas .pago-base { display:flex; justify-content:space-between; gap:12px; background:var(--op-surface-2); padding:16px; font-size:14px; }
 .admin-entregas #pago-total { font-size:20px; font-variant-numeric:tabular-nums; }
+.admin-entregas #pago-precios { border:1px solid var(--op-border); padding:14px; margin:18px 0; min-width:0; }
+.admin-entregas #pago-precios legend { font-weight:600; font-size:14px; }
+.admin-entregas .pago-precio-fila { display:grid; grid-template-columns:minmax(0,1fr) 110px; gap:12px; align-items:center; margin:10px 0; }
+.admin-entregas .pago-precio-fila label { font-size:14px; overflow-wrap:anywhere; }
+.admin-entregas .pago-precio-fila input { box-sizing:border-box; width:100%; min-height:44px; padding:10px; font:inherit; font-size:16px; color:var(--op-text); background:var(--op-surface); border:1px solid var(--op-border-strong); }
+.admin-entregas #pago-precios-estado { font-size:13px; line-height:1.5; }
+.admin-entregas #pago-origen-foto { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.admin-entregas #pago-video { display:block; width:100%; max-height:300px; background:#111; object-fit:contain; margin-bottom:8px; }
+.admin-entregas #pago-camara { margin-bottom:16px; }
 .admin-entregas #pago-metodos { padding:0; margin:20px 0 12px; border:0; min-width:0; }
 .admin-entregas #pago-metodos legend { font-size:12px; font-weight:600; color:var(--op-text-dim); margin-bottom:8px; }
 .admin-entregas .pago-opcion { border-top:1px solid var(--op-border); }
@@ -65,7 +74,8 @@
 .admin-entregas #pago-fotos button { width:100%; font-size:12px; }
 .admin-entregas #pago-error { padding:12px; background:var(--op-accent-bg); color:var(--op-danger-text); border:1px solid var(--op-accent-border); line-height:1.5; }
 .admin-entregas .pago-pie { flex-shrink:0; background:var(--op-surface); display:flex; justify-content:flex-end; gap:8px; padding:16px 28px; border-top:1px solid var(--op-border); }
-.admin-entregas #modal-pago #pago-enviar { background:var(--op-accent); border-color:var(--op-accent); color:#fff; font-weight:600; }
+.admin-entregas #modal-pago #pago-enviar,
+.admin-entregas #modal-pago #pago-guardar-precios { background:var(--op-accent); border-color:var(--op-accent); color:#fff; font-weight:600; }
 .admin-entregas #modal-pago :focus-visible { outline:2px solid var(--op-accent-hover); outline-offset:3px; }
 @media(max-width:850px) {
   .admin-entregas .entrega-totales dl { grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }

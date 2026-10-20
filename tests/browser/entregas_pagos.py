@@ -46,6 +46,8 @@ def test_entrega_pagos_en_navegador(entorno, tmp_path, monkeypatch, width, theme
         expect(page.locator('#pago-enviar')).to_be_enabled()
         page.locator('#importe-usd').fill('800')
         expect(page.locator('#pago-enviar')).to_be_disabled()
+        expect(page.locator('#metodo-ars').locator('..').locator('.pago-alternativa')).to_have_text('$ 30.000')
+        expect(page.locator('#metodo-ars_transferencia').locator('..').locator('.pago-alternativa')).to_have_text('$ 30.928')
         for metodo, monto in [('ars', '30000'), ('ars_transferencia', '30928'), ('usd_usa', '21'), ('usdt', '21')]:
             page.locator('#metodo-' + metodo).check()
             expect(page.locator('#importe-' + metodo)).to_have_value(monto)
@@ -104,7 +106,7 @@ def test_entrega_pagos_en_navegador(entorno, tmp_path, monkeypatch, width, theme
         page.locator('#metodo-ars_transferencia').check()
         page.locator('#importe-usd').fill('800')
         page.locator('#importe-ars_transferencia').fill('30928')
-        dialog.locator('.pago-fotos summary').click()
+        page.get_by_role('button', name='Agregar foto', exact=True).click()
         page.locator('#pago-foto-input').set_input_files({'name':'serie.jpg', 'mimeType':'image/jpeg', 'buffer':_jpeg_minimo()})
         expect(page.locator('#pago-fotos img')).to_have_count(1)
         page.get_by_role('button', name='Quitar foto').click()
