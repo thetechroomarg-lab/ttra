@@ -5,7 +5,9 @@
   if (document.body.classList.contains('bitu-page') || /^\/bitu\/?$/.test(location.pathname)) return;
   if (document.body.classList.contains('fendi-page') || /^\/fendi\/?$/.test(location.pathname)) return;
   import('/adaptive-dropdowns.js');
-  import('/header-hinge.js');
+  // Easter eggs (header que se abre, gatitos) solo con sesión: ver sesion.js.
+  const conSesion = window.TTRASesion || Promise.resolve(false);
+  conSesion.then((ok) => { if (ok) import('/header-hinge.js'); });
   if (root.classList.contains('ttra-cart-embedded')) {
     // Home inside cart-drawer.js: whichever floating panel is open (carrito,
     // perfil or pedidos) drives the parent dialog; all closed means close it.
@@ -90,7 +92,7 @@
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>catHost.ready?.(document),{once:true});
     else queueMicrotask(()=>catHost.ready?.(document));
   }
-  else import('/header-cat.js');
+  else conSesion.then((ok) => { if (ok) import('/header-cat.js'); });
 
   // Reuse the home contact footer on every storefront page, including products.
   const previousFooter = document.querySelector('body > .ttra-page-footer');

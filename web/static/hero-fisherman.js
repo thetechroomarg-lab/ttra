@@ -11,8 +11,10 @@
 // .ttra-hero-copy, posicionada sobre la tilde real. Para encontrar la tilde se
 // dibuja la letra en un canvas oculto con la misma tipografía y se busca la
 // primera mancha de tinta desde arriba (funciona igual con "á" y con "Á").
-(() => {
+// Easter egg solo para clientes logueados (ver sesion.js).
+(window.TTRASesion || Promise.resolve(false)).then((conSesion) => {
   'use strict';
+  if (!conSesion) return;
   const root = document.documentElement;
   const title = document.getElementById('ttra-hero-title');
   const copy = title?.closest('.ttra-hero-copy');
@@ -308,4 +310,4 @@
   window.addEventListener('resize', schedule, {passive: true});
   document.fonts?.ready.then(schedule);
   schedule();
-})();
+});

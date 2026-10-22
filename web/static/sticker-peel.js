@@ -2,7 +2,9 @@
 // derecha) arrastrando con el dedo o el mouse. La solapa sigue el puntero en
 // ida y vuelta; si no se despega del todo, vuelve a su lugar. Atrás aparece
 // la caricatura. Despegado del todo, un toque lo vuelve a pegar.
-(function () {
+// Easter egg solo para clientes logueados (ver sesion.js).
+(window.TTRASesion || Promise.resolve(false)).then((conSesion) => {
+  if (!conSesion) return;
   const sticker = document.querySelector(".ttra-personal-intro");
   if (!sticker || sticker.closest(".ttra-sticker-peel")) return;
 
@@ -124,4 +126,4 @@
   });
   window.addEventListener("resize", () => { medir(); if (despegado) { P = DESPEGADO(); pintar(); } });
   medir();
-})();
+});

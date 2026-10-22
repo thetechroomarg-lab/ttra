@@ -1,0 +1,29 @@
+/* web/static/pizarra-gatos.css — Los rinconcitos de Vaivén, Fendi y Bitu con
+   la tipografía y los botones de la pizarra (ver pizarra.css). Las polaroids
+   y la letra manuscrita se quedan: son fotos pegadas sobre el tablero. */
+html[data-modo="classic"] :is(.vaiven-page, .fendi-page, .bitu-page) h1 {
+  color: var(--pz-plate);
+  font: 700 clamp(54px, 9vw, 128px)/.92 var(--pz-font);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+html[data-modo="classic"] :is(.vaiven-page, .fendi-page, .bitu-page) h1 em { text-transform: none; color: var(--pz-amber); }
+html[data-modo="classic"] :is(.vaiven-page, .fendi-page, .bitu-page) h2 {
+  color: var(--pz-plate); font-family: var(--pz-font); font-weight: 700; letter-spacing: .01em; text-transform: uppercase;
+}
+html[data-modo="classic"] :is(.vaiven-page .vaiven-kicker, .fendi-page .fendi-kicker, .bitu-page .bitu-kicker) {
+  display: inline-block; justify-self: start; align-self: flex-start;
+  padding: 5px 9px 4px; border-radius: 2px;
+  background: var(--pz-amber); color: var(--pz-ink);
+  font: 700 15px/1 var(--pz-font); letter-spacing: .06em;
+}
+html[data-modo="classic"] :is(.vaiven-page .vaiven-back, .fendi-page .fendi-back, .bitu-page .bitu-back) {
+  border: 2px solid var(--pz-red); border-radius: 3px; background: var(--pz-red); color: #fff;
+  font: 700 19px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase;
+  transition: background-color .15s ease, scale .16s var(--pz-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] :is(.vaiven-page .vaiven-back, .fendi-page .fendi-back, .bitu-page .bitu-back):hover { filter: none; border-color: var(--pz-red-hover); background: var(--pz-red-hover); }
+}
+html[data-modo="classic"] :is(.vaiven-page .vaiven-back, .fendi-page .fendi-back, .bitu-page .bitu-back):active { scale: .97; }
+html[data-modo="classic"] :is(.vaiven-page .vaiven-back, .fendi-page .fendi-back, .bitu-page .bitu-back):focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 3px; }

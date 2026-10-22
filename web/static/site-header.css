@@ -274,8 +274,8 @@ html[data-modo="classic"] .ttra-header-account .ttra-site-profile svg { width: 2
 html[data-modo="classic"] .ttra-header-account .rc-perfil-icono-classic > circle:first-child,
 html[data-modo="classic"] .ttra-header-account .ttra-site-profile svg > circle:first-child { display: none; }
 
-/* Hide the quote on the home only; shared and in-page catalog headers retain it. */
-body#rc-body-landing:not(.rc-vista-seccion) :is(.ttra-site-rate, #dolar-linea) { display: none; }
+/* The home keeps the shared quote under the profile icon; only the old in-page date/quote line stays hidden. */
+body#rc-body-landing:not(.rc-vista-seccion) #dolar-linea { display: none; }
 
 /* Embedded pages keep their account logic, but only the host paints a header. */
 html.ttra-shell-content body > header.ttra-site-header {
