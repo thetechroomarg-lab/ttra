@@ -45,6 +45,12 @@ let tipoActivo = "";
 
 const SECCION_NOTEBOOKS = "Notebooks y Macbooks";
 
+// Filtros por especificación (RAM, memoria, procesador...), leídos del nombre
+// del producto en especificaciones.js. Clave -> valor elegido, como texto.
+let filtrosEspec = {};
+let seccionEspec = null;
+const ESPEC = window.TTRAEspecificaciones;
+
 // Orden y rango de precio (en dólar contado, el precio principal de la card).
 // null = sin límite de ese lado.
 let ordenActivo = "destacados";
@@ -264,6 +270,48 @@ function pintarTitulo(nombre) {
   document.title = `THE TECH ROOM ARG — ${titulo}`;
 }
 
+function cumpleEspec(producto, seccion, excepto = null) {
+  const espec = ESPEC.especificacionesDe(producto, seccion);
+  return Object.entries(filtrosEspec).every(([clave, valor]) =>
+    clave === excepto || (espec[clave] != null && String(espec[clave]) === valor));
+}
+
+// Un menú por especificación de la sección. Cada uno ofrece solo los valores
+// que tienen los productos que quedan con los demás filtros; un menú con una
+// sola opción no filtra nada y no se muestra.
+function filtrarPorEspec(productos, seccion) {
+  const claves = (ESPEC && ESPEC.FILTROS_POR_SECCION[seccion]) || [];
+  const cont = document.getElementById("spec-filters");
+  if (seccion !== seccionEspec) { filtrosEspec = {}; seccionEspec = seccion; }
+  for (const clave of Object.keys(filtrosEspec)) if (!claves.includes(clave)) delete filtrosEspec[clave];
+  const enfocado = document.activeElement?.dataset?.spec || null;
+  const campos = [];
+  for (const clave of claves) {
+    const opciones = ESPEC.opcionesDe(productos.filter((p) => cumpleEspec(p, seccion, clave)), seccion, clave);
+    if (filtrosEspec[clave] && !opciones.some((o) => String(o.valor) === filtrosEspec[clave])) delete filtrosEspec[clave];
+    if (opciones.length < 2 && !filtrosEspec[clave]) continue;
+    const campo = document.createElement("div");
+    campo.className = "catalog-filter-field";
+    const label = document.createElement("label");
+    label.htmlFor = `spec-${clave}`;
+    label.textContent = ESPEC.FILTROS[clave].etiqueta;
+    const select = document.createElement("select");
+    select.id = `spec-${clave}`;
+    select.dataset.spec = clave;
+    select.append(new Option("Todas", ""), ...opciones.map((o) =>
+      new Option(`${o.etiqueta} (${o.cantidad})`, String(o.valor))));
+    select.value = filtrosEspec[clave] || "";
+    campo.append(label, select);
+    campos.push(campo);
+  }
+  cont.replaceChildren(...campos);
+  cont.hidden = campos.length === 0;
+  if (enfocado) document.getElementById(`spec-${enfocado}`)?.focus();
+  return Object.keys(filtrosEspec).length
+    ? productos.filter((p) => cumpleEspec(p, seccion))
+    : productos;
+}
+
 function pintarSeccion(nombre) {
   categoriaActiva = nombre;
   const base = pintarFiltrosDeSeccion(nombre);
@@ -287,12 +335,13 @@ function pintarSeccion(nombre) {
   const porCondicion = filtrarCondicion && condicionActiva
     ? porMarca.filter(producto => condicionProducto(producto) === condicionActiva)
     : porMarca;
+  const porEspec = filtrarPorEspec(porCondicion, nombre);
   const porBusqueda = palabrasBusqueda.length
-    ? porCondicion.filter(producto => {
+    ? porEspec.filter(producto => {
         const texto = normalizarBusqueda(`${producto.nombre || ''} ${producto.marca || ''}`);
         return palabrasBusqueda.every(palabra => texto.includes(palabra));
       })
-    : porCondicion;
+    : porEspec;
   const enCuotas = porBusqueda.filter(calificaCuotas);
   document.getElementById("cuotas-count").textContent =
     `${enCuotas.length} ${enCuotas.length === 1 ? "producto disponible" : "productos disponibles"}`;
@@ -328,6 +377,7 @@ function pintarSeccion(nombre) {
   el.innerHTML = `<div class="grilla">${productos.map(tarjetaProducto).join("")}</div>`;
   window.TTRAComparar?.bind(el, productos, SECCIONES_DATA, () => ({
     categoria: categoriaActiva, marca: marcaActiva, condicion: condicionActiva, tipo: tipoActivo,
+    especificaciones: { ...filtrosEspec },
     orden: ordenActivo, precioMin, precioMax, soloCuotas,
     query: document.getElementById('catalog-search').value,
     searchVisible: !document.querySelector('.catalog-search-wrap').hidden
@@ -560,6 +610,11 @@ async function cargarCatalogo() {
       [precioMin, precioMax] = [precioMax, precioMin];
     }
     soloCuotas = estado.soloCuotas === true;
+    // Comparativa -> volver: los menús de especificación se restauran tal cual.
+    if (regreso && regreso.especificaciones) {
+      filtrosEspec = { ...regreso.especificaciones };
+      seccionEspec = regreso.categoria;
+    }
     document.getElementById('cuotas-filter').checked = soloCuotas;
     document.querySelector(`#catalog-sort input[value="${ordenActivo}"]`).checked = true;
     pintarSeccion(SECCIONES.includes(categoriaSolicitada) ? categoriaSolicitada : "Todos");
@@ -599,6 +654,14 @@ document.getElementById("tipo-filter").addEventListener("change", (event) => {
 
 document.getElementById("marca-filter").addEventListener("change", (event) => {
   marcaActiva = event.target.value;
+  pintarSeccion(categoriaActiva);
+});
+
+document.getElementById("spec-filters").addEventListener("change", (event) => {
+  const clave = event.target.dataset.spec;
+  if (!clave) return;
+  if (event.target.value) filtrosEspec[clave] = event.target.value;
+  else delete filtrosEspec[clave];
   pintarSeccion(categoriaActiva);
 });
 

@@ -1,0 +1,228 @@
+/* web/static/pizarra.css — Sistema visual de la tienda: la pizarra de
+   cotizaciones. Tablero negro en marco pesado, placas esmaltadas para las
+   etiquetas, dígitos de paleta ámbar para las cifras y un solo rojo para la
+   acción. Lo cargan todas las páginas de cliente (no admin ni cadete); todo
+   bajo html[data-modo="classic"], sin cambiar IDs, nombres ni hooks. Cada
+   pantalla suma su archivo: pizarra-home.css, pizarra-catalogo.css,
+   pizarra-cuenta.css. */
+
+@font-face { font-family: 'Barlow Condensed'; src: url('/fonts/barlow-condensed-latin-600-normal.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Barlow Condensed'; src: url('/fonts/barlow-condensed-latin-700-normal.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+
+html[data-modo="classic"] {
+  --pz-board: #0d0d0c;
+  --pz-frame: #2a2926;
+  --pz-gap: #000;
+  --pz-cell: #1c1c1a;
+  --pz-plate: #ecebe4;
+  --pz-ink: #121211;
+  --pz-amber: #ffb21a;
+  --pz-red: #d52f27;
+  --pz-red-hover: #b3231c;
+  --pz-dim: #9d9b92;
+  --pz-font: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --pz-ease: cubic-bezier(.23, 1, .32, 1);
+}
+html[data-modo="classic"] ::selection { background: var(--pz-amber); color: var(--pz-ink); }
+
+
+html[data-modo="classic"] .ttra-pz-plate {
+  display: inline-block;
+  justify-self: start;
+  padding: 5px 9px 4px;
+  border-radius: 2px;
+  background: var(--pz-plate);
+  color: var(--pz-ink);
+  font: 700 15px/1 var(--pz-font);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Dígitos de paleta: cada carácter es una celda con la raya del medio. */
+html[data-modo="classic"] .ttra-flap {
+  display: inline-flex; gap: 2px;
+  color: var(--pz-amber);
+  font: 700 30px/1 var(--pz-font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+html[data-modo="classic"] .ttra-flap-c {
+  position: relative;
+  display: inline-grid; place-items: center;
+  width: .62em; height: 1.22em;
+  border-radius: 2px;
+  background: linear-gradient(#232321 0 50%, var(--pz-cell) 50% 100%);
+  box-shadow: inset 0 1px 0 #ffffff10, 0 1px 0 #000;
+  overflow: hidden;
+}
+html[data-modo="classic"] .ttra-flap-c::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px;
+  background: #000; box-shadow: 0 1px 0 #ffffff0d;
+}
+html[data-modo="classic"] .ttra-flap-c.is-sep { width: .26em; background: none; box-shadow: none; }
+html[data-modo="classic"] .ttra-flap-c.is-sep::after { display: none; }
+html[data-modo="classic"] .ttra-flap-c.is-flipping { animation: ttra-pz-flip 110ms var(--pz-ease); }
+@keyframes ttra-pz-flip {
+  from { transform: perspective(160px) rotateX(-70deg); filter: brightness(1.6) blur(.4px); }
+  to { transform: none; filter: none; }
+}
+
+
+
+
+/* ---- Superficies: el marco reemplaza al halo ----
+   Paneles, menús y diálogos ya leen --ed-halo; las cards, --card-halo y
+   --ai-card-halo. Redefinirlos acá los enmarca a todos de una vez. */
+html[data-modo="classic"],
+html[data-modo="classic"][data-classic-theme="light"] {
+  --ed-halo: 0 0 0 6px var(--pz-frame), 0 22px 48px #000000b3;
+  --card-halo: 0 0 0 4px var(--pz-frame), 0 16px 34px #00000080;
+  --card-halo-activo: 0 0 0 4px #45433e, 0 20px 40px #00000099;
+  --ai-card-halo: 0 0 0 4px var(--pz-frame), 0 16px 34px #00000080;
+  --ai-card-halo-activo: 0 0 0 4px #45433e, 0 20px 40px #00000099;
+  --ed-header-bg: var(--pz-board);
+}
+html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-logout-tarjeta, .rc-terminos-tarjeta, .ttra-auth-form-wrap .tarjeta,
+  #rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, .ttra-dock-category-panel, .ttra-garantia-panel, .ttra-oferta-cargador, .compare-picker) {
+  border-radius: 4px;
+  background-color: var(--pz-board);
+}
+
+/* ---- Encabezado: la cotización es una placa con su cifra ---- */
+html[data-modo="classic"] body > header.ttra-site-header { border-bottom: 2px solid var(--pz-gap); box-shadow: 0 1px 0 var(--pz-frame); }
+html[data-modo="classic"] .ttra-site-header .ttra-site-rate { display: grid; justify-items: end; gap: 6px; text-align: right; }
+html[data-modo="classic"] .ttra-site-rate .ttra-rate-label {
+  display: inline-block; padding: 5px 9px 4px; border-radius: 2px;
+  background: var(--pz-plate); color: var(--pz-ink);
+  font: 700 14px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase;
+}
+html[data-modo="classic"] .ttra-rate-label::after { content: none; }
+html[data-modo="classic"] .ttra-site-rate .ttra-rate-amount {
+  display: block; color: var(--pz-amber);
+  font: 700 30px/1 var(--pz-font); font-variant-numeric: tabular-nums; letter-spacing: .04em;
+}
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-site-rate .ttra-rate-label { font-size: 12px; }
+  html[data-modo="classic"] .ttra-site-rate .ttra-rate-amount { font-size: 24px; }
+}
+
+/* ---- Dock: una botonera del mismo tablero ---- */
+html[data-modo="classic"] .ttra-dock { border: 2px solid var(--pz-frame); background: var(--pz-board); box-shadow: 0 16px 34px #000000b3; }
+html[data-modo="classic"] .ttra-dock .ttra-dock-control,
+html[data-modo="classic"] .ttra-dock :is(#btn-carrito, .ttra-site-cart) { border-color: var(--pz-frame); background: var(--pz-cell); color: var(--pz-plate); }
+html[data-modo="classic"] .ttra-dock .ttra-dock-search { border-color: var(--pz-red); background: var(--pz-red); color: #fff; }
+html[data-modo="classic"] .ttra-dock :is(#carrito-contador, .ttra-site-count) { background: var(--pz-amber); color: var(--pz-ink); font-family: var(--pz-font); font-size: 13px; }
+html[data-modo="classic"] .ttra-dock-control:focus-visible { outline-color: var(--pz-amber); }
+html[data-modo="classic"] .ttra-dock-label { border-color: var(--pz-frame); background: var(--pz-plate); color: var(--pz-ink); font: 700 14px/1.1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+
+/* Menús (categorías del dock, cuenta, colores): filas de tablero. */
+html[data-modo="classic"] :is(.ttra-dock-category-panel a, .ttra-site-menu :is(a, button), .rc-perfil-opcion) {
+  font: 700 18px/1.15 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; color: var(--pz-plate);
+}
+html[data-modo="classic"] :is(.ttra-dock-category-panel a, .ttra-site-menu :is(a, button), .rc-perfil-opcion):focus-visible { background: var(--pz-cell); color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] :is(.ttra-dock-category-panel a, .ttra-site-menu :is(a, button), .rc-perfil-opcion):hover { background: var(--pz-cell); color: #fff; }
+}
+
+/* ---- Títulos de página: letras de tablero ---- */
+html[data-modo="classic"] :is(.catalog-intro h1, .comparison-intro h1, .ttra-auth-form-wrap .tarjeta h1, .ttra-account-section h2, .ttra-page-footer-title,
+  #panel-carrito h2, #panel-perfil h2, #panel-pedidos h2, .ttra-garantia-panel h2, .ttra-oferta-cargador h2, #pedido-confirmado h3, .ttra-footer-title) {
+  color: var(--pz-plate);
+  font-family: var(--pz-font);
+  font-weight: 700;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+}
+/* Rótulos encima del título: el título se sostiene solo. */
+html[data-modo="classic"] :is(.ttra-eyebrow, .comparison-eyebrow) { display: none; }
+
+/* ---- Controles de formulario ---- */
+html[data-modo="classic"] :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"]), select, textarea) {
+  border: 2px solid var(--pz-frame);
+  border-radius: 3px;
+  background-color: var(--pz-board);
+  color: var(--pz-plate);
+  caret-color: var(--pz-amber);
+  box-shadow: none;
+}
+html[data-modo="classic"] :is(input, textarea)::placeholder { color: #8c8a82; opacity: 1; }
+html[data-modo="classic"] :is(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):focus { border-color: var(--pz-amber); outline: none; }
+html[data-modo="classic"] :is(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 2px; }
+html[data-modo="classic"] :is(input[type="checkbox"], input[type="radio"]) { accent-color: var(--pz-amber); }
+html[data-modo="classic"] :is(label, legend) { font-family: var(--pz-font); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+
+/* ---- Acciones: placa (secundaria) o rojo (la que cierra la venta) ---- */
+html[data-modo="classic"] :is(.btn-agregar, #btn-whatsapp, #btn-whatsapp-pedido, .ttra-product-cta, .ttra-auth-form-wrap .form button[type="submit"], .ttra-account-section .form button[type="submit"],
+  .comparison-add, .comparison-return, #pedido-confirmado button, .ttra-oferta-cargador-acciones button, #compartir-busqueda, .catalog-back, .catalog-login, #btn-logout,
+  #btn-vaciar-carrito, .rc-logout-tarjeta button, .btn-usar-ubicacion, #btn-cancelar-edicion-domicilio) {
+  border-radius: 3px;
+  box-shadow: none;
+  font-family: var(--pz-font);
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+html[data-modo="classic"] :is(.btn-agregar, #btn-whatsapp, .ttra-product-cta, .ttra-auth-form-wrap .form button[type="submit"], .ttra-account-section .form button[type="submit"], .comparison-add) {
+  border: 2px solid var(--pz-red);
+  background: var(--pz-red);
+  color: #fff;
+  font-size: 18px;
+}
+html[data-modo="classic"] :is(#compartir-busqueda, .catalog-back, .catalog-login, #btn-logout, .comparison-return, #btn-vaciar-carrito, .btn-usar-ubicacion, #btn-cancelar-edicion-domicilio) {
+  border: 2px solid var(--pz-plate);
+  background: transparent;
+  color: var(--pz-plate);
+  font-size: 16px;
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] :is(.btn-agregar, #btn-whatsapp, .ttra-product-cta, .ttra-auth-form-wrap .form button[type="submit"], .ttra-account-section .form button[type="submit"], .comparison-add):hover:not(:disabled) {
+    border-color: var(--pz-red-hover); background: var(--pz-red-hover); color: #fff;
+  }
+  html[data-modo="classic"] :is(#compartir-busqueda, .catalog-back, .catalog-login, #btn-logout, .comparison-return, #btn-vaciar-carrito, .btn-usar-ubicacion, #btn-cancelar-edicion-domicilio):hover {
+    border-color: var(--pz-plate); background: var(--pz-plate); color: var(--pz-ink);
+  }
+}
+html[data-modo="classic"] .btn-agregar:disabled { border-color: #3a3632; background: #24211f; color: #8c8a82; filter: none; opacity: 1; }
+
+/* ---- Pie de página ---- */
+html[data-modo="classic"] .ttra-page-footer { border-top: 2px solid var(--pz-gap); background: var(--pz-board); box-shadow: inset 0 1px 0 var(--pz-frame); }
+html[data-modo="classic"] .ttra-page-footer p { font-family: var(--pz-font); letter-spacing: .05em; text-transform: uppercase; color: var(--pz-dim); }
+
+/* ---- Superficies del navegador ---- */
+html[data-modo="classic"] { scrollbar-color: #45433e var(--pz-board); }
+html[data-modo="classic"] a { text-underline-offset: .2em; }
+
+/* ---- Sin sesión, nada de easter eggs ----
+   Gatitos, puerta y pescador ni se cargan (sesion.js); acá se apaga lo que
+   quedaba a la vista: el punto rojo deja de ser un juguete y el logo no
+   responde a nada (el dock tiene "Inicio"). */
+html[data-modo="classic"]:not(.ttra-logueado) #ttra-hero-title .ttra-accent { cursor: inherit; }
+html[data-modo="classic"]:not(.ttra-logueado) body > header :is(.ttra-page-brand, .rc-titulo-grupo, .rc-logo) { pointer-events: none; cursor: default; }
+/* Same look as the cat door the logged-in header draws (header-cat-door.js:
+   #181410 panel, wordmark at about two thirds), but flat and inert. The
+   transform keeps the layout box, so the header does not move. */
+html[data-modo="classic"]:not(.ttra-logueado) body > header :is(.ttra-page-brand, #titulo-inicio) {
+  transform: scale(.65);
+  background: #181410;
+  box-shadow: 0 0 0 30px #181410;
+  border-radius: 1px;
+}
+
+/* ---- Detalles de interacción ----
+   Todo lo que se toca responde al presionar; los hover solo con mouse; los
+   menús cierran más rápido de lo que abren y llevan un solo borde (el marco). */
+html[data-modo="classic"] :is(.tabs button, .btn-categoria, .btn-vista, .btn-volver, .catalog-brand-card, .pedidos-tab, .item-controles :is(.btn-menos, .btn-mas),
+  #btn-cerrar-carrito, #btn-cerrar-panel-perfil, #btn-cerrar-panel-pedidos, .ttra-garantia-cerrar, .catalog-share-actions :is(button, a), #compartir-busqueda,
+  .catalog-back, .catalog-login, #btn-logout, .comparison-share, .comparison-add, .comparison-return, .dropdown-color-boton, .catalog-price-reset) {
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, scale .16s var(--pz-ease);
+}
+html[data-modo="classic"] :is(.tabs button, .btn-categoria, .btn-vista, .btn-volver, .catalog-brand-card, .pedidos-tab, .item-controles :is(.btn-menos, .btn-mas),
+  #btn-cerrar-carrito, #btn-cerrar-panel-perfil, #btn-cerrar-panel-pedidos, .ttra-garantia-cerrar, .catalog-share-actions :is(button, a), #compartir-busqueda,
+  .catalog-back, .catalog-login, #btn-logout, .comparison-share, .comparison-add, .comparison-return, .dropdown-color-boton, .catalog-price-reset):active { scale: .97; }
+html[data-modo="classic"] .catalog-brand-card:active { scale: .985; }
+
+html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, #sugerencias-direccion, #perfil-sugerencias-direccion, .ttra-dock-category-panel) { border: 0; }
+html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, #sugerencias-direccion, #perfil-sugerencias-direccion, .ttra-dock-category-panel):is([hidden], .oculto) {
+  transition-duration: .12s, .16s, .16s, .16s;
+}

@@ -196,6 +196,8 @@ body.catalog-share-open { overflow: hidden; }
 
 .catalog-filter-field { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .catalog-filter-field[hidden] { display: none; }
+/* Filtros por especificación (RAM, procesador...): mismos campos, misma fila. */
+.catalog-spec-filters:not([hidden]) { display: contents; }
 @media (max-width: 700px) {
   .catalog-filter-field { width: 100%; flex-direction: column; align-items: stretch; gap: 10px; }
 }
@@ -282,7 +284,7 @@ html[data-modo="classic"] .catalog-brand-card:hover { box-shadow: var(--ed-halo)
 .catalog-price-hist { display: flex; align-items: flex-end; gap: 2px; height: 56px; padding: 0 11px; }
 /* En reposo el histograma es neutro (informa sin competir con el rojo de las
    cards); al acotar el rango, lo elegido se enciende en coral. */
-.catalog-price-hist span { flex: 1; height: calc(var(--alto, 0) * 100%); background: color-mix(in srgb, var(--rc-green-dim) 42%, transparent); transition: height .45s var(--ed-ease), background-color .2s; }
+.catalog-price-hist span { flex: 1; height: 100%; transform: scaleY(var(--alto, 0)); transform-origin: 50% 100%; background: color-mix(in srgb, var(--rc-green-dim) 42%, transparent); transition: transform .28s var(--ed-ease), background-color .2s; }
 .catalog-price.activo .catalog-price-hist span { background: var(--ed-accent); }
 .catalog-price.activo .catalog-price-hist span.fuera { background: var(--ed-line); }
 
@@ -354,7 +356,8 @@ html[data-modo="classic"] body.ttra-page .catalog-price-reset:focus-visible { bo
    Solo CSS: mismos IDs, inputs y eventos. Mobile (≤700px) no cambia. */
 @media (min-width: 701px) {
   .catalog-brand-filter { align-items: flex-end; column-gap: 24px; row-gap: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--ed-line); }
-  .catalog-brand-filter > .catalog-filter-field { align-self: auto; flex-direction: column; align-items: stretch; gap: 8px; }
+  .catalog-brand-filter > .catalog-filter-field,
+  .catalog-brand-filter > .catalog-spec-filters > .catalog-filter-field { align-self: auto; flex-direction: column; align-items: stretch; gap: 8px; }
   .catalog-brand-filter select { min-width: 160px; }
 
   .catalog-cuotas { order: 1; flex: 0 0 100%; justify-content: flex-start; gap: 12px; }

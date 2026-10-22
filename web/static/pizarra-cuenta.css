@@ -1,0 +1,133 @@
+/* web/static/pizarra-cuenta.css — Carrito, perfil, pedidos, login y diálogos
+   en el lenguaje de la pizarra (ver pizarra.css). Solo presentación: mismos
+   IDs, formularios y botones; ningún texto cambia. */
+
+/* ---- Paneles: tablero con cabecera de placa ---- */
+html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos) { border: 0; color: var(--pz-plate); }
+html[data-modo="classic"] .panel-carrito-header { padding-bottom: 12px; border-bottom: 2px solid var(--pz-gap); }
+html[data-modo="classic"] .panel-carrito-header h2 { margin: 0; font-size: 30px; line-height: 1; }
+html[data-modo="classic"] :is(#panel-perfil, #panel-pedidos) > h2,
+html[data-modo="classic"] :is(#panel-perfil, #panel-pedidos) section > h2 {
+  display: inline-block; align-self: flex-start; width: auto; margin: 26px 0 12px; padding: 5px 9px 4px; border-radius: 2px;
+  background: var(--pz-plate); color: var(--pz-ink); font-size: 16px; line-height: 1; letter-spacing: .06em;
+}
+html[data-modo="classic"] :is(#btn-cerrar-carrito, #btn-cerrar-panel-perfil, #btn-cerrar-panel-pedidos, .ttra-garantia-cerrar, .ttra-login-cerrar) {
+  border: 2px solid var(--pz-frame); border-radius: 3px; background: var(--pz-cell); color: var(--pz-plate); box-shadow: none;
+}
+html[data-modo="classic"] :is(.carrito-nota, .carrito-disclaimer, .referidos-ayuda, .fidelidad-ayuda) { color: var(--pz-dim); }
+
+/* Buttons inside panels default to a secondary plate; the ones that save or
+   send stay red. Close buttons and +/- keep their own compact shape. */
+html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-terminos-tarjeta, .rc-logout-tarjeta)
+  button:not(#btn-cerrar-carrito, #btn-cerrar-panel-perfil, #btn-cerrar-panel-pedidos, .btn-menos, .btn-mas, #btn-whatsapp, [type="submit"], .pedidos-tab) {
+  min-height: 46px;
+  border: 2px solid var(--pz-plate); border-radius: 3px;
+  background: transparent; color: var(--pz-plate); box-shadow: none;
+  font: 700 16px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase;
+  transition: background-color .15s ease, color .15s ease, scale .16s var(--pz-ease);
+}
+html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-terminos-tarjeta, .rc-logout-tarjeta) button[type="submit"],
+html[data-modo="classic"] #btn-guardar-direccion,
+html[data-modo="classic"] #btn-aplicar-codigo,
+html[data-modo="classic"] #btn-logout-confirmar-si {
+  min-height: 48px;
+  border: 2px solid var(--pz-red); border-radius: 3px;
+  background: var(--pz-red); color: #fff; box-shadow: none;
+  font: 700 17px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase;
+}
+html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos) button:disabled { opacity: .45; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-terminos-tarjeta, .rc-logout-tarjeta)
+    button:not(#btn-cerrar-carrito, #btn-cerrar-panel-perfil, #btn-cerrar-panel-pedidos, .btn-menos, .btn-mas, #btn-whatsapp, [type="submit"], .pedidos-tab, #btn-guardar-direccion, #btn-aplicar-codigo, #btn-logout-confirmar-si):hover:not(:disabled) {
+    background: var(--pz-plate); color: var(--pz-ink);
+  }
+  html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-terminos-tarjeta, .rc-logout-tarjeta) button[type="submit"]:hover:not(:disabled),
+  html[data-modo="classic"] :is(#btn-guardar-direccion, #btn-aplicar-codigo, #btn-logout-confirmar-si):hover { border-color: var(--pz-red-hover); background: var(--pz-red-hover); color: #fff; }
+}
+html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc-terminos-tarjeta, .rc-logout-tarjeta) button:active:not(:disabled) { scale: .97; }
+
+/* ---- Carrito: cada ítem es un renglón del tablero ---- */
+html[data-modo="classic"] #items-carrito { display: grid; gap: 2px; background: var(--pz-gap); }
+html[data-modo="classic"] .item-carrito { margin: 0; border: 0; border-radius: 0; background: var(--pz-board); padding: 14px 4px; }
+html[data-modo="classic"] .item-carrito .item-nombre { color: var(--pz-plate); font: 700 20px/1.1 var(--pz-font); letter-spacing: .02em; text-transform: uppercase; }
+html[data-modo="classic"] :is(#items-carrito .item-precios, .item-descuento-valor, #total-carrito) { display: grid; gap: 4px; }
+html[data-modo="classic"] :is(#items-carrito .item-precios, .item-descuento-valor, #total-carrito) > span {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  color: var(--pz-dim); font: 600 14px/1.2 var(--pz-font); letter-spacing: .05em; text-transform: uppercase;
+}
+html[data-modo="classic"] :is(#items-carrito .item-precios, .item-descuento-valor, #total-carrito) > span > strong {
+  color: var(--pz-amber); font: 700 20px/1 var(--pz-font); font-variant-numeric: tabular-nums; letter-spacing: .03em;
+}
+html[data-modo="classic"] #total-carrito { margin: 4px 0 8px; padding: 14px 0 0; border-top: 2px solid var(--pz-gap); }
+html[data-modo="classic"] #total-carrito > strong { display: inline-block; justify-self: start; margin-bottom: 6px; padding: 5px 9px 4px; border-radius: 2px; background: var(--pz-plate); color: var(--pz-ink); font: 700 16px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] #total-carrito > span > strong { font-size: 26px; }
+html[data-modo="classic"] .item-controles > span { min-width: 2ch; color: var(--pz-amber); font: 700 22px/1 var(--pz-font); text-align: center; font-variant-numeric: tabular-nums; }
+html[data-modo="classic"] .item-controles :is(.btn-menos, .btn-mas) {
+  width: 40px; height: 40px; padding: 0; border: 2px solid var(--pz-frame); border-radius: 3px;
+  background: var(--pz-cell); color: var(--pz-plate); box-shadow: none; font: 700 22px/1 var(--pz-font);
+}
+html[data-modo="classic"] #btn-whatsapp { min-height: 54px; font-size: 20px; }
+html[data-modo="classic"] .lista-domicilios-entrega button,
+html[data-modo="classic"] .sugerencias-direccion button { border-radius: 0; font-family: var(--pz-font); letter-spacing: .03em; }
+
+/* Pedido registrado: la placa del estado y el resumen en su tablero. */
+html[data-modo="classic"] .pedido-confirmado-etiqueta { display: inline-block; padding: 5px 9px 4px; border-radius: 2px; background: var(--pz-amber); color: var(--pz-ink); font: 700 15px/1 var(--pz-font); letter-spacing: .06em; }
+html[data-modo="classic"] #pedido-confirmado h3 { font-size: 32px; line-height: 1; }
+html[data-modo="classic"] #btn-whatsapp-pedido { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 20px; border: 2px solid var(--pz-red); background: var(--pz-red); color: #fff; font-size: 18px; text-decoration: none; }
+@media (hover: hover) and (pointer: fine) { html[data-modo="classic"] #btn-whatsapp-pedido:hover { border-color: var(--pz-red-hover); background: var(--pz-red-hover); text-decoration: none; } }
+html[data-modo="classic"] #pedido-confirmado-texto { font: 500 14px/1.5 var(--rc-font, inherit); }
+
+/* Oferta de cargador: un diálogo del mismo tablero. */
+html[data-modo="classic"] .ttra-oferta-cargador { border: 0; color: var(--pz-plate); box-shadow: var(--ed-halo); }
+html[data-modo="classic"] .ttra-oferta-cargador-etiqueta { display: inline-block; padding: 5px 9px 4px; border-radius: 2px; background: var(--pz-amber); color: var(--pz-ink); font: 700 15px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-oferta-cargador-precio strong { color: var(--pz-amber); font: 700 40px/1 var(--pz-font); }
+html[data-modo="classic"] .ttra-oferta-cargador-precio span { color: var(--pz-dim); font-family: var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-oferta-cargador-acciones button { min-height: 48px; border: 2px solid var(--pz-plate); background: transparent; color: var(--pz-plate); font-size: 17px; }
+html[data-modo="classic"] .ttra-oferta-cargador-acciones button[value="aceptar"] { border-color: var(--pz-red); background: var(--pz-red); color: #fff; filter: none; }
+
+/* ---- Perfil y pedidos ---- */
+html[data-modo="classic"] :is(.item-domicilio, .item-pedido) { border: 0; border-radius: 3px; background: var(--pz-cell); box-shadow: inset 0 0 0 2px var(--pz-frame); }
+html[data-modo="classic"] :is(.item-domicilio-titulo, .item-pedido-info strong) { color: var(--pz-plate); font-family: var(--pz-font); font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+html[data-modo="classic"] .pedidos-tabs { display: flex; gap: 2px; padding: 2px; border-radius: 3px; background: var(--pz-gap); box-shadow: 0 0 0 2px var(--pz-frame); }
+html[data-modo="classic"] .pedidos-tab {
+  flex: 1; min-height: 44px; border: 0; border-radius: 0; background: var(--pz-board); color: var(--pz-plate); box-shadow: none;
+  font: 700 16px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase;
+}
+html[data-modo="classic"] .pedidos-tab.activo { background: var(--pz-plate); color: var(--pz-ink); }
+html[data-modo="classic"] :is(#panel-perfil, #panel-pedidos, .ttra-auth-form-wrap) .error { color: #ff8a7a; }
+html[data-modo="classic"] :is(#panel-perfil, #panel-pedidos, .ttra-auth-form-wrap) .ok { color: #7fd88f; }
+
+/* ---- Login y registro ---- */
+html[data-modo="classic"] .ttra-auth-form-wrap .tarjeta { border: 0 !important; }
+html[data-modo="classic"] .ttra-auth-form-wrap .tarjeta h1 { font-size: clamp(34px, 9vw, 48px); line-height: 1; }
+html[data-modo="classic"] .ttra-auth-form-wrap .rc-switch-form { color: var(--pz-dim); }
+html[data-modo="classic"] .ttra-auth-form-wrap .rc-switch-form a { color: var(--pz-amber); }
+html[data-modo="classic"] .rc-password-toggle { color: var(--pz-dim); }
+html[data-modo="classic"] .rc-password-toggle:is(:hover, :focus-visible) { color: var(--pz-amber); }
+
+/* ---- Diálogos de confirmación y garantía ---- */
+html[data-modo="classic"] :is(.rc-logout-tarjeta, .rc-terminos-tarjeta, .ttra-page .rc-terminos-tarjeta) { border: 0 !important; border-radius: 4px; background: var(--pz-board); box-shadow: var(--ed-halo); }
+html[data-modo="classic"] :is(.rc-logout-tarjeta, .rc-terminos-tarjeta) h2 { color: var(--pz-plate); font-family: var(--pz-font); font-weight: 700; letter-spacing: .01em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-garantia-panel { border: 0; color: var(--pz-plate); }
+html[data-modo="classic"] .ttra-garantia-panel h2 { font-size: clamp(34px, 6vw, 52px); line-height: 1; }
+html[data-modo="classic"] .ttra-garantia-panel-plazo strong { color: var(--pz-amber); font: 700 56px/1 var(--pz-font); }
+html[data-modo="classic"] .ttra-garantia-panel-plazo span { color: var(--pz-amber); font: 700 18px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-garantia-panel-desde { color: var(--pz-dim); font-family: var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-garantia-panel-cuerpo h3 { display: inline-block; padding: 5px 9px 4px; border-radius: 2px; background: var(--pz-plate); color: var(--pz-ink); font: 700 15px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+
+/* Lista de colores de la tarjeta (dropdown propio de la home). */
+html[data-modo="classic"] .dropdown-color-lista li { font: 700 17px/1.2 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; color: var(--pz-plate); }
+html[data-modo="classic"] .dropdown-color-lista li[aria-selected="true"] { background: var(--pz-cell); }
+@media (hover: hover) and (pointer: fine) { html[data-modo="classic"] .dropdown-color-lista li:hover { background: var(--pz-cell); } }
+html[data-modo="classic"] body #registro-provincia { border: 2px solid var(--pz-frame); border-radius: 3px; background-color: var(--pz-board); color: var(--pz-plate); box-shadow: none; }
+html[data-modo="classic"] body #registro-provincia:focus { border-color: var(--pz-amber); }
+
+/* Producto sin stock: la caricatura sigue; el botón y el texto, de tablero. */
+html[data-modo="classic"] .rc-panel-sin-stock-volver {
+  min-height: 52px; padding: 0 28px; border: 2px solid var(--pz-plate); border-radius: 3px;
+  background: var(--pz-plate); color: var(--pz-ink); box-shadow: none;
+  font: 700 19px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase;
+}
+html[data-modo="classic"] .rc-panel-sin-stock-volver:active { scale: .97; }
+html[data-modo="classic"] .rc-panel-sin-stock-volver:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 3px; }
+html[data-modo="classic"] .rc-panel-sin-stock-texto { color: var(--pz-plate); font: 700 26px/1.1 var(--pz-font); letter-spacing: .02em; text-transform: uppercase; }

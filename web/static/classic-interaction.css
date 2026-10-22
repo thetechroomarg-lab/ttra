@@ -1,0 +1,72 @@
+/* web/static/classic-interaction.css — Capa de interacción del modo Classic.
+   Se carga última en cada página Classic y no toca layout ni colores: suma
+   respuesta al presionar, deja los hover solo para mouse y afina la
+   tipografía. Todo bajo html[data-modo="classic"]; Fallout no se entera. */
+
+html[data-modo="classic"] {
+  --ix-ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ix-press: .97;
+  /* Las cards grandes se achican menos: .97 en 360px de ancho ya es un salto. */
+  --ix-press-card: .985;
+}
+
+/* Presionar: la propiedad `scale` (no `transform`) compone con los
+   transform/translate que ya usa cada elemento en vez de pisarlos. Cada
+   transition repite las que el elemento ya tenía y suma scale. */
+html[data-modo="classic"] .ttra-dock .ttra-dock-control {
+  transition: transform .18s ease, background .18s ease, scale .16s var(--ix-ease-out);
+}
+html[data-modo="classic"] :is(.ttra-button) {
+  transition: background .25s, transform .35s var(--ed-ease), scale .16s var(--ix-ease-out);
+}
+html[data-modo="classic"] :is(.btn-agregar, #btn-whatsapp, .rc-perfil-boton, .catalog-product-links button) {
+  transition: box-shadow .15s, color .15s, border-color .15s, scale .16s var(--ix-ease-out);
+}
+html[data-modo="classic"] :is(.catalog-product-links a, .ttra-product-cta, .ttra-auth-form-wrap .form button[type="submit"], .ttra-oferta-cargador-acciones button) {
+  transition: background-color .2s, border-color .2s, color .2s, filter .2s, scale .16s var(--ix-ease-out);
+}
+html[data-modo="classic"] .catalog-sort label span {
+  transition: background .2s, color .2s, scale .16s var(--ix-ease-out);
+}
+/* Mismos selectores que la entrada escalonada (classic-editorial.css y
+   garantias.css) para ganarles en el orden y conservar sus delays. */
+html[data-modo="classic"] .ttra-category[data-reveal].ttra-reveal-ready {
+  transition: opacity .65s var(--ed-ease), transform .8s var(--ed-ease), filter .8s var(--ed-ease),
+    translate .35s var(--ed-ease), box-shadow .35s var(--ed-ease), scale .2s var(--ix-ease-out);
+  transition-delay: var(--reveal-delay, 0s), var(--reveal-delay, 0s), var(--reveal-delay, 0s), 0s, 0s, 0s;
+}
+html[data-modo="classic"] .ttra-category[data-reveal]:focus-within { transition-delay: 0s; }
+html[data-modo="classic"] .ttra-garantia[data-reveal].ttra-reveal-ready {
+  transition: opacity .7s var(--ed-ease), transform .8s var(--ed-ease), translate .35s var(--ed-ease),
+    border-color .25s, box-shadow .35s var(--ed-ease), scale .2s var(--ix-ease-out);
+  transition-delay: var(--reveal-delay, 0s), var(--reveal-delay, 0s), 0s, 0s, 0s, 0s;
+}
+html[data-modo="classic"] :is(.ttra-dock-control, .ttra-button, .btn-agregar, #btn-whatsapp, .rc-perfil-boton,
+  .catalog-product-links :is(a, button), .ttra-product-cta, .ttra-auth-form-wrap .form button[type="submit"],
+  .ttra-oferta-cargador-acciones button, .catalog-sort label span):active:not(:disabled) {
+  scale: var(--ix-press);
+}
+html[data-modo="classic"] .catalog-sort label:active span { scale: var(--ix-press); }
+html[data-modo="classic"] :is(.ttra-category, .ttra-garantia):active { scale: var(--ix-press-card); }
+
+/* Hover solo con mouse. En el celular un tap dispara :hover y la card queda
+   levantada (o el tooltip del dock clavado) hasta tocar otra cosa. Acá se
+   neutralizan los hover que mueven cosas o muestran etiquetas; el foco por
+   teclado los sigue mostrando porque esas reglas van por :focus-visible. */
+@media (hover: none), (pointer: coarse) {
+  html[data-modo="classic"] .ttra-dock-control:hover:not(:focus-visible) > .ttra-dock-label { opacity: 0; }
+  html[data-modo="classic"] :is(.card:not(.expandida), .tarjeta-recomendado, .catalog-brand-card,
+    .catalog-page .card):hover:not(:focus-visible) { transform: none; }
+  html[data-modo="classic"] :is(.ttra-button):hover:not(:focus-visible) { transform: none; }
+  html[data-modo="classic"] .ttra-category:hover :is(.ttra-mini-phone, .ttra-laptop, .ttra-headphones, .ttra-tablet) { transform: none; }
+  html[data-modo="classic"] .ttra-category:hover :is(.ttra-controller, .ttra-brand-lens) { transform: translateX(-50%); }
+  html[data-modo="classic"] .ttra-mo-marquee:hover .ttra-mo-marquee-track { animation-play-state: running; }
+}
+
+/* Tipografía: títulos sin viudas, párrafos sin una palabra sola al final, y
+   cifras de ancho fijo donde se comparan precios en columna. */
+html[data-modo="classic"] :is(h1, h2, h3, .ai-title) { text-wrap: balance; }
+html[data-modo="classic"] :is(p, .ttra-section-lead) { text-wrap: pretty; }
+html[data-modo="classic"] :is(.ai-price strong, .catalog-price-values, #carrito-total, .ttra-site-count, #carrito-contador) {
+  font-variant-numeric: tabular-nums;
+}

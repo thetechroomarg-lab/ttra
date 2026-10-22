@@ -24,13 +24,22 @@
       clearTimeout(cleanupTimer);
       heroTitle.innerHTML = originalTitle;
       heroTitle.classList.remove('ttra-text-rolling');
+      heroTitle.style.removeProperty('--lit-end');
       heroTitle.removeAttribute('aria-label');
     }
+    // The board lights the headline once per visit: every letter fades from
+    // dark, soft and amber to enamel white, left to right. Only opacity,
+    // color and blur change, so nothing moves into the sticker below.
+    // ttra-text-rolling stays as the "busy" flag the cat ball and the
+    // fisherman already check.
+    const LIT_KEY = 'ttra_titulo_encendido';
     function startRoll() {
       if (played || !isClassic() || root.classList.contains('ttra-welcome-pending')) return;
       played = true;
       titleObserver.disconnect();
-      if (reducedMotion.matches) return;
+      let seen = false;
+      try { seen = sessionStorage.getItem(LIT_KEY) === '1'; sessionStorage.setItem(LIT_KEY, '1'); } catch {}
+      if (seen || reducedMotion.matches) return;
       heroTitle.setAttribute('aria-label', 'Lo Buscás? Lo tenés.');
       let index = 0;
       heroTitle.querySelectorAll('.ttra-cat-word').forEach(line => {
@@ -41,24 +50,20 @@
           const fragment = document.createDocumentFragment();
           for (const letter of node.textContent) {
             const glyph = document.createElement('span');
-            glyph.className = 'ttra-roll-glyph';
+            glyph.className = 'ttra-lit-glyph';
             glyph.setAttribute('aria-hidden', 'true');
-            glyph.style.setProperty('--roll-delay', `${.18 + index++ * .055}s`);
-            const outgoing = document.createElement('span');
-            outgoing.className = 'ttra-roll-out';
-            outgoing.textContent = letter === ' ' ? '\u00a0' : letter;
-            const incoming = outgoing.cloneNode(true);
-            incoming.className = 'ttra-roll-in';
-            glyph.append(outgoing, incoming);
+            glyph.style.setProperty('--lit-delay', `${.15 + index++ * .045}s`);
+            glyph.textContent = letter;
             fragment.append(glyph);
           }
           node.replaceWith(fragment);
         }
       });
+      heroTitle.style.setProperty('--lit-end', `${.15 + index * .045}s`);
       heroTitle.classList.add('ttra-text-rolling');
       // Restore the original text after the flourish: selection and mascot geometry
       // then use the same unfragmented heading as before.
-      cleanupTimer = setTimeout(finishRoll, 850 + index * 55);
+      cleanupTimer = setTimeout(finishRoll, 1300 + index * 45);
     }
     const titleObserver = new MutationObserver(startRoll);
     titleObserver.observe(root, {attributes: true, attributeFilter: ['class', 'data-modo']});

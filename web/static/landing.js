@@ -1265,7 +1265,8 @@ function formatearPesos(valor) {
 }
 
 function preciosCarritoHtml(precios, signo = "") {
-  const monto = (valor) => `${signo}$${formatearPesos(valor)}`;
+  // El monto va en <strong> para que la pizarra lo muestre como cifra.
+  const monto = (valor) => `<strong>${signo}$${formatearPesos(valor)}</strong>`;
   return `
     <span>Dólares: ${monto(precios.dolares)}</span>
     <span>Dólar banco USA: ${monto(precios.bancoUsa)}</span>
@@ -1671,6 +1672,8 @@ async function cargarCatalogo() {
   refrescarPreciosCarrito();
   catalogoListo = true;
   renderCarrito();
+  // La pizarra de la home (pizarra.js) reusa este mismo catálogo.
+  window.dispatchEvent(new CustomEvent("ttra:catalogo", { detail: datos }));
   if (datos.mensaje) {
     ocultarNavegacionCatalogo();
     document.getElementById("productos").innerHTML = `<p class="mensaje-vacio">${datos.mensaje}</p>`;

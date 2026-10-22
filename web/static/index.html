@@ -99,10 +99,16 @@
   <link rel="stylesheet" href="/welcome-intro.css">
   <script src="/welcome-intro.js" defer></script>
   <script src="/product-cards.js" defer></script>
+  <script src="/sesion.js"></script>
   <script src="/site-header.js" defer></script>
   <link rel="stylesheet" href="/comparar-productos.css">
   <link rel="stylesheet" href="/catalog-images.css?v=2">
   <link rel="stylesheet" href="/ttra-motion.css">
+  <link rel="stylesheet" href="/pizarra.css">
+  <link rel="stylesheet" href="/pizarra-home.css">
+  <link rel="stylesheet" href="/pizarra-catalogo.css">
+  <link rel="stylesheet" href="/pizarra-cuenta.css">
+  <link rel="stylesheet" href="/classic-interaction.css">
   <script src="/ttra-motion.js"></script>
 </head>
 <body id="rc-body-landing">
@@ -111,7 +117,11 @@
   <div id="rc-portada-ingreso" class="ttra-intro" tabindex="-1" role="dialog" aria-modal="true" aria-label="Bienvenido a TTRA" data-phase="loading">
     <div class="ttra-intro-scene" aria-hidden="true"></div>
     <div class="ttra-intro-shade" aria-hidden="true"></div>
-    <h1 class="ttra-intro-title"><span>BIENVENIDO A</span><strong>TTRA<span>.</span></strong></h1>
+    <h1 class="ttra-intro-title" aria-label="Bienvenido a TTRA.">
+      <span class="ttra-intro-placa" aria-hidden="true">Bienvenido a</span>
+      <strong aria-hidden="true"><i style="--i:0">T</i><i style="--i:1">T</i><i style="--i:2">R</i><i style="--i:3">A</i><b></b></strong>
+      <small aria-hidden="true">Córdoba · desde 2009</small>
+    </h1>
     <noscript><style>.ttra-intro{display:none!important}html.ttra-welcome-pending{overflow:auto}html.ttra-welcome-pending body>header{display:flex!important}</style></noscript>
   </div>
   <div class="rc-crt"></div>
@@ -268,6 +278,18 @@
     <div class="ttra-hero-copy">
       <h2 id="ttra-hero-title"><span class="ttra-cat-word">Lo Buscás?</span> <br><span class="ttra-cat-word">Lo tenés<span class="ttra-accent">.</span></span></h2>
       <p class="ttra-hero-description ttra-personal-intro"><span class="ttra-intro-hello">Hola</span> <span class="ttra-intro-name"><span class="ttra-intro-soy">soy</span> <strong>Vlad</strong></span> <span class="ttra-intro-detail">vendo tecnología desde el año <strong>2009.</strong></span></p>
+    </div>
+    <div class="ttra-pizarra" aria-label="Pizarra de precios">
+      <a class="ttra-pz-destacado" href="/catalogo" data-pz="link">
+        <span class="ttra-pz-product"><span data-pz="name">Cargando precios</span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
+        <dl class="ttra-pz-rows">
+          <div><dt class="ttra-pz-plate">Dólar</dt><dd class="ttra-flap" data-pz="dolares">—</dd></div>
+          <div><dt class="ttra-pz-plate">Transf. USA</dt><dd class="ttra-flap" data-pz="bancoUsa">—</dd></div>
+          <div><dt class="ttra-pz-plate">USDT</dt><dd class="ttra-flap" data-pz="usdt">—</dd></div>
+          <div><dt class="ttra-pz-plate">Pesos</dt><dd class="ttra-flap" data-pz="pesos">—</dd></div>
+          <div><dt class="ttra-pz-plate">Transf. pesos</dt><dd class="ttra-flap" data-pz="pesosTransf">—</dd></div>
+        </dl>
+      </a>
     </div>
   </section>
   <section id="ttra-explorar" class="ttra-collection ttra-editorial ttra-home-only" aria-labelledby="ttra-collection-title">
@@ -661,6 +683,7 @@
   <script src="hero-fisherman.js"></script>
   <script src="garantias.js"></script>
   <script src="sticker-peel.js"></script>
+  <script src="pizarra.js"></script>
   <script src="ttra-grid-hover.js" defer></script>
   <script src="scroll-lock.js"></script>
 </body>
