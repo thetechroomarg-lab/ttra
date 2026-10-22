@@ -257,3 +257,10 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
 @media (prefers-reduced-motion: reduce) {
   html[data-modo="classic"] .ttra-flap-c.is-flipping { animation: none; }
 }
+
+/* Entrance without vertical travel: the headline lights up letter by letter
+   (classic-editorial.js) and the sticker only fades, so neither crosses into
+   the other. The copy no longer slides in sideways either. */
+html[data-modo="classic"] .ttra-hero-copy > * { animation-name: ttra-pz-fade; }
+@keyframes ttra-pz-fade { from { opacity: 0; } to { opacity: 1; } }
+html.ttra-motion-ready:not(.ttra-motion-played) .ttra-hero-copy { transform: none; }
