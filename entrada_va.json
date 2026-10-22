@@ -9,50 +9,83 @@
       ]
     },
     {
-      "nombre": "MOTO Edge 60 fusion 5g 12GB 256GB (s/ cargador)",
-      "costo": 321,
+      "nombre": "MOTO Edge 50 fusion 5g 512/12gb (s/ cargador)",
+      "costo": 345,
+      "proveedor": "va",
+      "colores": [
+        "Forest Blue"
+      ]
+    },
+    {
+      "nombre": "MOTO Edge 50 fusion 5g 256/8gb (s/ cargador)",
+      "costo": 272,
+      "proveedor": "va",
+      "colores": [
+        "Forest Blue"
+      ]
+    },
+    {
+      "nombre": "MOTO Edge 60 fusion 5g 256/12gb (s/ cargador)",
+      "costo": 330,
       "proveedor": "va",
       "colores": [
         "Blue"
       ]
     },
     {
-      "nombre": "MOTO Edge 60 fusion 5g 8GB 256GB (s/ cargador)",
-      "costo": 278,
+      "nombre": "MOTO Edge 60 fusion 5g 128/8gb (s/ cargador)",
+      "costo": 270,
       "proveedor": "va",
       "colores": [
-        "Blue"
+        "Green",
+        "Pink"
       ]
     },
     {
-      "nombre": "MOTO Edge 60 PRO 5g 12GB 512GB (s/ cargador)",
-      "costo": 505,
+      "nombre": "MOTO Edge 60 fusion 5g 256/8gb",
+      "costo": 315,
       "proveedor": "va",
       "colores": [
         "Green"
       ]
     },
     {
-      "nombre": "MOTO Edge 70 5g 8GB 256GB",
-      "costo": 415,
+      "nombre": "MOTO Edge 60 fusion 5g 256/8gb (s/ cargador)",
+      "costo": 305,
       "proveedor": "va",
       "colores": [
-        "Bronze Green",
-        "Gadget Gray"
+        "Blue"
       ]
     },
     {
-      "nombre": "MOTO Edge 70 FUSION 5g 8GB 256GB",
-      "costo": 383,
+      "nombre": "MOTO Edge 70 5g 256/8gb",
+      "costo": 407,
+      "proveedor": "va",
+      "colores": [
+        "Lili pad",
+        "Bronze Green"
+      ]
+    },
+    {
+      "nombre": "MOTO Edge 70 FUSION 5g 256/8gb",
+      "costo": 365,
       "proveedor": "va",
       "colores": [
         "Verde",
-        "Negro"
+        "Azul"
       ]
     },
     {
-      "nombre": "MOTO G04S 4GB 256GB Dual",
-      "costo": 147,
+      "nombre": "MOTO Edge 70 pro 5g 512/12gb",
+      "costo": 802,
+      "proveedor": "va",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "MOTO G04S 256/4GB Dual",
+      "costo": 148,
       "proveedor": "va",
       "colores": [
         "Green",
@@ -60,24 +93,24 @@
       ]
     },
     {
-      "nombre": "MOTO G05 4GB 128GB Dual",
-      "costo": 142,
+      "nombre": "MOTO G05 128/4GB Dual",
+      "costo": 145,
       "proveedor": "va",
       "colores": [
         "Red"
       ]
     },
     {
-      "nombre": "MOTO G06 4GB 128GB Dual",
-      "costo": 139,
+      "nombre": "MOTO G06 128/4GB Dual",
+      "costo": 132,
       "proveedor": "va",
       "colores": [
         "PANTONE Tapestri (AZUL)"
       ]
     },
     {
-      "nombre": "MOTO G06 4GB 256GB Dual",
-      "costo": 158,
+      "nombre": "MOTO G06 256/4GB Dual",
+      "costo": 150,
       "proveedor": "va",
       "colores": [
         "Blue",
@@ -85,17 +118,16 @@
       ]
     },
     {
-      "nombre": "MOTO G06 4GB 64GB Dual",
-      "costo": 122,
+      "nombre": "MOTO G06 64/4GB Dual",
+      "costo": 129,
       "proveedor": "va",
       "colores": [
         "Orange",
-        "Blue",
-        "Green"
+        "Blue"
       ]
     },
     {
-      "nombre": "MOTO G06 POWER 4GB 64GB Dual (s/ cargador)",
+      "nombre": "MOTO G06 POWER 64/4GB Dual (s/ cargador)",
       "costo": 136,
       "proveedor": "va",
       "colores": [
@@ -104,26 +136,17 @@
       ]
     },
     {
-      "nombre": "MOTO G15 4GB 128GB Dual",
-      "costo": 157,
-      "proveedor": "va",
-      "colores": [
-        "Gray"
-      ]
-    },
-    {
-      "nombre": "MOTO G15 4GB 256GB Dual",
-      "costo": 171,
+      "nombre": "MOTO G15 256/4GB Dual",
+      "costo": 169,
       "proveedor": "va",
       "colores": [
         "Gray",
-        "Green",
-        "Orange"
+        "Green"
       ]
     },
     {
-      "nombre": "MOTO G15 4GB 512GB Dual",
-      "costo": 181,
+      "nombre": "MOTO G15 512/4GB Dual",
+      "costo": 173,
       "proveedor": "va",
       "colores": [
         "Blue",
@@ -131,18 +154,17 @@
       ]
     },
     {
-      "nombre": "MOTO G17 4GB 256GB Dual",
-      "costo": 206,
+      "nombre": "MOTO G17 256/4GB Dual",
+      "costo": 195,
       "proveedor": "va",
       "colores": [
-        "Celeste",
-        "Violeta",
-        "Rosa"
+        "Rosa",
+        "Violeta"
       ]
     },
     {
-      "nombre": "MOTO G17 POWER 8GB 256GB Dual",
-      "costo": 247,
+      "nombre": "MOTO G17 POWER 256/8GB Dual",
+      "costo": 234,
       "proveedor": "va",
       "colores": [
         "Celeste",
@@ -150,25 +172,16 @@
       ]
     },
     {
-      "nombre": "MOTO G35 4GB 256GB Dual",
-      "costo": 185,
+      "nombre": "MOTO G35 256/4GB Dual",
+      "costo": 177,
       "proveedor": "va",
       "colores": [
         "Negro"
       ]
     },
     {
-      "nombre": "MOTO G47 8GB 128GB 5g Dual (s/ cargador)",
-      "costo": 208,
-      "proveedor": "va",
-      "colores": [
-        "Grey",
-        "Blue"
-      ]
-    },
-    {
-      "nombre": "MOTO G56 12GB 256GB 5g Dual",
-      "costo": 265,
+      "nombre": "MOTO G56 256/12GB 5g Dual",
+      "costo": 262,
       "proveedor": "va",
       "colores": [
         "Green",
@@ -176,62 +189,53 @@
       ]
     },
     {
-      "nombre": "MOTO G56 8GB 256GB 5g Dual",
-      "costo": 255,
+      "nombre": "MOTO G56 256/8GB 5g Dual",
+      "costo": 250,
       "proveedor": "va",
       "colores": [
         "Blue"
       ]
     },
     {
-      "nombre": "MOTO G67 5G 4GB 256GB Dual",
-      "costo": 270,
+      "nombre": "MOTO G67 5G 256/4GB Dual",
+      "costo": 260,
       "proveedor": "va",
       "colores": [
-        "Gris",
         "Lima"
       ]
     },
     {
-      "nombre": "MOTO G77 5g 8GB 256GB Dual",
+      "nombre": "MOTO G86 POWER 5g 256/8GB Dual",
+      "costo": 278,
+      "proveedor": "va",
+      "colores": [
+        "Blue",
+        "Cereza"
+      ]
+    },
+    {
+      "nombre": "MOTO G86 5g 256/8GB Dual",
+      "costo": 312,
+      "proveedor": "va",
+      "colores": [
+        "Pink",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "MOTO G86 5g 256/8GB Dual (s/ cargador)",
       "costo": 285,
       "proveedor": "va",
       "colores": [
-        "Cafe",
-        "Esmeralda"
-      ]
-    },
-    {
-      "nombre": "MOTO G86 POWER 5g 8GB 256GB Dual",
-      "costo": 294,
-      "proveedor": "va",
-      "colores": [
-        "Blue"
-      ]
-    },
-    {
-      "nombre": "MOTO G86 5g 8GB 256GB Dual",
-      "costo": 295,
-      "proveedor": "va",
-      "colores": [
         "Pink",
         "Blue"
       ]
     },
     {
-      "nombre": "MOTO G86 5g 8GB 256GB Dual (s/ cargador)",
-      "costo": 265,
-      "proveedor": "va",
-      "colores": [
-        "Pink"
-      ]
-    },
-    {
-      "nombre": "MOTO G96 5g 8GB 128GB Dual",
+      "nombre": "MOTO G96 5g 128/8GB Dual",
       "costo": 235,
       "proveedor": "va",
       "colores": [
-        "Pink",
         "Green"
       ]
     },
@@ -260,15 +264,15 @@
       ]
     },
     {
-      "nombre": "SAMSUNG X526 TAB S10 FE 128GB WIFI+5g 10.9¨+PEN",
-      "costo": 550,
+      "nombre": "SAMSUNG A06 128/4GB Dual 5g",
+      "costo": 145,
       "proveedor": "va",
       "colores": [
-        "Gray"
+        "Black"
       ]
     },
     {
-      "nombre": "SAMSUNG A06 4GB 128GB Dual",
+      "nombre": "SAMSUNG A06 128/4GB Dual",
       "costo": 150,
       "proveedor": "va",
       "colores": [
@@ -276,55 +280,51 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A06 4GB 64GB Dual",
-      "costo": 130,
+      "nombre": "SAMSUNG A07 128/4GB Dual (s/ cargador)",
+      "costo": 164,
       "proveedor": "va",
       "colores": [
         "Black",
-        "Gold",
-        "Ligth Blue"
+        "Green"
       ]
     },
     {
-      "nombre": "SAMSUNG A07 4GB 128GB Dual (s/ cargador)",
-      "costo": 153,
-      "proveedor": "va",
-      "colores": [
-        "Black",
-        "Green",
-        "Ligth Violet"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A07 4GB 128GB Dual con cargador",
+      "nombre": "SAMSUNG A07 128/4GB Dual con cargador",
       "costo": 165,
       "proveedor": "va",
       "colores": [
         "Black",
-        "Green",
-        "Ligth Violet"
+        "Green"
       ]
     },
     {
-      "nombre": "SAMSUNG A07 4GB 64GB Dual (s/ cargador)",
-      "costo": 135,
-      "proveedor": "va",
-      "colores": [
-        "Black",
-        "Green",
-        "Ligth Violet"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A16 4GB 128GB Dual",
-      "costo": 161,
+      "nombre": "SAMSUNG A07 64/4GB Dual",
+      "costo": 153,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "SAMSUNG A17 4GB 128GB Dual",
+      "nombre": "SAMSUNG A07S 64/4GB Dual",
+      "costo": 165,
+      "proveedor": "va",
+      "colores": [
+        "Black",
+        "Violet",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "SAMSUNG A16 128/4GB Dual",
+      "costo": 173,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "SAMSUNG A17 128/4GB Dual",
       "costo": 182,
       "proveedor": "va",
       "colores": [
@@ -334,31 +334,34 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A17 4GB 128GB Dual 5G",
-      "costo": 180,
-      "proveedor": "va",
-      "colores": [
-        "Grey"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A17 5g 8GB 256GB Dual",
-      "costo": 313,
+      "nombre": "SAMSUNG A17 128/4GB Dual 5g",
+      "costo": 198,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "SAMSUNG A17 6GB 128GB Dual",
+      "nombre": "SAMSUNG A17 5g 256/8GB Dual",
+      "costo": 306,
+      "proveedor": "va",
+      "colores": [
+        "Black",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "SAMSUNG A17 128/6GB Dual",
       "costo": 220,
       "proveedor": "va",
       "colores": [
-        "Black"
+        "Grey",
+        "Black",
+        "Ligth Blue"
       ]
     },
     {
-      "nombre": "SAMSUNG A17 8GB 256GB Dual",
+      "nombre": "SAMSUNG A17 256/8GB Dual",
       "costo": 260,
       "proveedor": "va",
       "colores": [
@@ -368,34 +371,17 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A27 6GB 128GB Dual",
-      "costo": 270,
+      "nombre": "SAMSUNG A27 256/8GB Dual 5g",
+      "costo": 349,
       "proveedor": "va",
       "colores": [
         "Black",
         "Blue",
-        "Light Pink"
+        "Pink"
       ]
     },
     {
-      "nombre": "SAMSUNG A27 8GB 256GB Dual",
-      "costo": 353,
-      "proveedor": "va",
-      "colores": [
-        "Black",
-        "Blue"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A36 5g 6GB 128GB Dual",
-      "costo": 290,
-      "proveedor": "va",
-      "colores": [
-        "Negro"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A36 5g 8GB 128GB Dual",
+      "nombre": "SAMSUNG A36 5g 128/8GB Dual",
       "costo": 308,
       "proveedor": "va",
       "colores": [
@@ -405,156 +391,101 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A36 5g 8GB 256GB Dual",
-      "costo": 324,
+      "nombre": "SAMSUNG A37 5g 128/6GB Dual",
+      "costo": 300,
       "proveedor": "va",
       "colores": [
-        "Awesomw Black",
-        "Awesome Lavender",
-        "Awesome White"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A37 5g 6GB 128GB Dual",
-      "costo": 304,
-      "proveedor": "va",
-      "colores": [
-        "Negro",
         "Violeta",
         "Blanco",
         "Verde"
       ]
     },
     {
-      "nombre": "SAMSUNG A37 5g 8GB 256GB Dual",
-      "costo": 364,
+      "nombre": "SAMSUNG A37 5g 256/8GB Dual",
+      "costo": 360,
       "proveedor": "va",
       "colores": [
         "Negro",
         "Violeta",
-        "Blanco",
         "Verde"
       ]
     },
     {
-      "nombre": "SAMSUNG A56 5g 12GB 256GB Dual",
-      "costo": 433,
-      "proveedor": "va",
-      "colores": [
-        "Awesome Olive"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A56 5g 8GB 128GB Dual",
-      "costo": 358,
-      "proveedor": "va",
-      "colores": [
-        "Awesomw Pink",
-        "Awesome Olive",
-        "Awesome Light Grey"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A56 5g 8GB 256GB Dual",
-      "costo": 390,
-      "proveedor": "va",
-      "colores": [
-        "Awesomw Graphite",
-        "Awesome Olive"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A57 5g 8GB 128GB Dual",
+      "nombre": "SAMSUNG A56 5g 128/8GB Dual",
       "costo": 350,
       "proveedor": "va",
       "colores": [
-        "Awesomw GraY"
+        "Awesomw Graphite"
       ]
     },
     {
-      "nombre": "SAMSUNG A57 5g 8GB 256GB Dual",
-      "costo": 405,
+      "nombre": "SAMSUNG A56 5g 256/8GB Dual",
+      "costo": 390,
       "proveedor": "va",
       "colores": [
-        "Awesomw Gray",
-        "Awesomw Navy"
+        "Awesome Olive"
       ]
     },
     {
-      "nombre": "SAMSUNG s25 fe 5g 8GB 256GB Dual",
-      "costo": 590,
+      "nombre": "SAMSUNG A57 5g 128/8GB Dual",
+      "costo": 365,
+      "proveedor": "va",
+      "colores": [
+        "Awesome Gray"
+      ]
+    },
+    {
+      "nombre": "SAMSUNG A57 5g 256/8GB Dual",
+      "costo": 410,
+      "proveedor": "va",
+      "colores": [
+        "Awesome Gray"
+      ]
+    },
+    {
+      "nombre": "SAMSUNG s25 5g 256/12GB Dual",
+      "costo": 650,
       "proveedor": "va",
       "colores": [
         "Navy"
       ]
     },
     {
-      "nombre": "SAMSUNG s25 fe 5g 8GB 512GB Dual",
-      "costo": 630,
+      "nombre": "SAMSUNG s25 fe 5g 256/8GB Dual",
+      "costo": 550,
       "proveedor": "va",
       "colores": [
-        "JetBlack",
-        "Navy",
-        "IcyBlue"
+        "icy Blue",
+        "Jet Black"
       ]
     },
     {
-      "nombre": "SAMSUNG S25 ULTRA 5g 12GB 256GB Dual",
-      "costo": 820,
+      "nombre": "SAMSUNG s26 5g 512/12GB Dual (Caja abierta)",
+      "costo": 830,
       "proveedor": "va",
       "colores": [
-        "Titanium grey",
-        "WhiteSilver",
-        "Silver Blue"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S25 ULTRA 5g 12GB 512GB Dual",
-      "costo": 925,
-      "proveedor": "va",
-      "colores": [
-        "Titanium Silver Blue"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S25 ULTRA 5g 12GB 1TB Dual",
-      "costo": 1020,
-      "proveedor": "va",
-      "colores": [
-        "Titanium grey",
-        "WhiteSilver",
-        "Silver Blue",
-        "Titanium Black"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S26 FE 5g 8GB 256GB Dual",
-      "costo": 660,
-      "proveedor": "va",
-      "colores": [
-        "Graphite"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S26 5g 12GB 512GB Dual",
-      "costo": 855,
-      "proveedor": "va",
-      "colores": [
-        "Cobalt Violet"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S26 PLUS 5g 12GB 256GB Dual",
-      "costo": 890,
-      "proveedor": "va",
-      "colores": [
-        "Violet",
-        "White",
         "Black"
       ]
     },
     {
-      "nombre": "SAMSUNG S26 PLUS 5g 12GB 512GB Dual",
+      "nombre": "SAMSUNG S26 fe 5g 256/8GB Dual",
+      "costo": 750,
+      "proveedor": "va",
+      "colores": [
+        "Violet",
+        "Black"
+      ]
+    },
+    {
+      "nombre": "SAMSUNG S26 PLUS 5g 256/12GB Dual",
+      "costo": 885,
+      "proveedor": "va",
+      "colores": [
+        "Violet"
+      ]
+    },
+    {
+      "nombre": "SAMSUNG S26 PLUS 5g 512/12GB Dual",
       "costo": 1110,
       "proveedor": "va",
       "colores": [
@@ -563,27 +494,27 @@
       ]
     },
     {
-      "nombre": "SAMSUNG S26 ULTRA 5g 12GB 256GB Dual",
-      "costo": 1000,
+      "nombre": "SAMSUNG Z Fold 8 5G 512/12GB",
+      "costo": 1610,
       "proveedor": "va",
       "colores": [
-        "Black",
-        "Cobalt Violet",
-        "Sky Blue white"
+        "Lavender"
       ]
     },
     {
-      "nombre": "SAMSUNG S26 ULTRA 5g 12GB 512GB Dual",
-      "costo": 1129,
+      "nombre": "SAMSUNG Z Fold 8 ULTRA 5G 512/12GB",
+      "costo": 1880,
       "proveedor": "va",
       "colores": [
-        "Cobalt Violet",
-        "Sky Blue"
+        "Cream",
+        "Graphite",
+        "Violet",
+        "Shadow"
       ]
     },
     {
-      "nombre": "Oppo Reno 14F DARK SIDE 5g 12GB 256GB",
-      "costo": 550,
+      "nombre": "Oppo Reno 14F DARK SIDE 5g 256/12gb",
+      "costo": 530,
       "proveedor": "va",
       "colores": [
         "Negro"
@@ -598,7 +529,7 @@
       ]
     },
     {
-      "nombre": "ZTE BLADE A76 5G 4GB 128GB 5G",
+      "nombre": "ZTE BLADE A76 5G 128GB/4GB 5G",
       "costo": 117,
       "proveedor": "va",
       "colores": [
@@ -606,8 +537,8 @@
       ]
     },
     {
-      "nombre": "INFINIX Hot 60 Pro PLus 8GB 256GB",
-      "costo": 225,
+      "nombre": "Infinix Hot 60 Pro PLus 256/8gb",
+      "costo": 220,
       "proveedor": "va",
       "colores": [
         "Yellow",
@@ -615,57 +546,11 @@
       ]
     },
     {
-      "nombre": "IPHONE 11 128GB CPO",
-      "costo": 380,
-      "proveedor": "va",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
-      "nombre": "IPHONE 11 PRO 64GB CPO (con cargador)",
-      "costo": 375,
-      "proveedor": "va",
-      "colores": [
-        "Silver"
-      ]
-    },
-    {
-      "nombre": "IPHONE 15 128GB",
-      "costo": 690,
-      "proveedor": "va",
-      "colores": [
-        "Black",
-        "Blue"
-      ]
-    },
-    {
-      "nombre": "IPHONE 16 128GB",
-      "costo": 780,
-      "proveedor": "va",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
       "nombre": "IPHONE 17 256GB",
-      "costo": 1000,
+      "costo": 990,
       "proveedor": "va",
       "colores": [
-        "Blak",
-        "Lavender",
-        "Mist Blue",
-        "Sage",
-        "White"
-      ]
-    },
-    {
-      "nombre": "IPHONE 17 PRO 256GB",
-      "costo": 1210,
-      "proveedor": "va",
-      "colores": [
-        "Orange",
-        "Blue"
+        "Sage"
       ]
     },
     {
@@ -678,11 +563,19 @@
     },
     {
       "nombre": "IPHONE 17 Pro Max 256GB",
-      "costo": 1290,
+      "costo": 1280,
       "proveedor": "va",
       "colores": [
-        "Blue",
-        "Orange"
+        "Orange",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "IPHONE 17 Pro Max 256GB",
+      "costo": 1315,
+      "proveedor": "va",
+      "colores": [
+        "Silver"
       ]
     },
     {
@@ -702,8 +595,24 @@
       ]
     },
     {
+      "nombre": "AIRPODS 4",
+      "costo": 147,
+      "proveedor": "va",
+      "colores": [
+        "White"
+      ]
+    },
+    {
+      "nombre": "AIRPODS 5",
+      "costo": 212,
+      "proveedor": "va",
+      "colores": [
+        "White"
+      ]
+    },
+    {
       "nombre": "AIRPODS PRO 2DA GENERACION",
-      "costo": 246,
+      "costo": 236,
       "proveedor": "va",
       "colores": [
         "White"
@@ -711,7 +620,7 @@
     },
     {
       "nombre": "APPLE AIRTAGS RASTREADOR 4 PACK",
-      "costo": 97,
+      "costo": 98,
       "proveedor": "va",
       "colores": [
         "White"
@@ -727,15 +636,6 @@
     },
     {
       "nombre": "APPLEWATCH S10 42MM GPS ALUMINIUM CASE",
-      "costo": 365,
-      "proveedor": "va",
-      "colores": [
-        "Jetblack",
-        "RoseGold"
-      ]
-    },
-    {
-      "nombre": "APPLEWATCH S10 46MM GPS ALUMINIUM CASE",
       "costo": 350,
       "proveedor": "va",
       "colores": [
@@ -753,8 +653,16 @@
       ]
     },
     {
-      "nombre": "APPLEWATCH S11 46MM GPS ALUMINIUM CASE",
-      "costo": 450,
+      "nombre": "APPLEWATCH S12 42MM GPS ALUMINIUM CASE",
+      "costo": 460,
+      "proveedor": "va",
+      "colores": [
+        "Jetblack"
+      ]
+    },
+    {
+      "nombre": "APPLEWATCH S12 46MM GPS ALUMINIUM CASE",
+      "costo": 539,
       "proveedor": "va",
       "colores": [
         "Jetblack"
@@ -762,7 +670,7 @@
     },
     {
       "nombre": "APPLEWATCH SE3 40MM GPS",
-      "costo": 325,
+      "costo": 297,
       "proveedor": "va",
       "colores": [
         "Midnight",
@@ -776,6 +684,15 @@
       "colores": [
         "Black",
         "Titanium"
+      ]
+    },
+    {
+      "nombre": "IPAD AIR M4 128GB",
+      "costo": 785,
+      "proveedor": "va",
+      "colores": [
+        "Space Gray",
+        "Starlight"
       ]
     },
     {
@@ -796,8 +713,8 @@
       ]
     },
     {
-      "nombre": "REALME C71 4GB 128GB (4GB + 8GB)",
-      "costo": 132,
+      "nombre": "REALME C71 128/4GB (4GB + 8GB)",
+      "costo": 127,
       "proveedor": "va",
       "colores": [
         "Forest owl",
@@ -805,8 +722,8 @@
       ]
     },
     {
-      "nombre": "REALME C71 8GB 256GB (8GB + 16GB)",
-      "costo": 160,
+      "nombre": "REALME C71 256/8GB (8GB + 16GB)",
+      "costo": 158,
       "proveedor": "va",
       "colores": [
         "Violet Parrot",
@@ -814,15 +731,15 @@
       ]
     },
     {
-      "nombre": "REALME C75X 8GB 256GB (8GB + 16GB)",
-      "costo": 145,
+      "nombre": "REALME C75X 256/8GB (8GB + 16GB)",
+      "costo": 149,
       "proveedor": "va",
       "colores": [
         "Oceanic Blue"
       ]
     },
     {
-      "nombre": "REALME C85 8GB 256GB",
+      "nombre": "REALME C85 256/8GB",
       "costo": 240,
       "proveedor": "va",
       "colores": [
@@ -831,15 +748,15 @@
       ]
     },
     {
-      "nombre": "REALME C85 PRO 8GB 256GB",
-      "costo": 264,
+      "nombre": "REALME C85 PRO 256/8GB",
+      "costo": 262,
       "proveedor": "va",
       "colores": [
         "Peacock green"
       ]
     },
     {
-      "nombre": "REALME NOTE 60X 4GB 128GB",
+      "nombre": "REALME NOTE 60X 128/4GB",
       "costo": 137,
       "proveedor": "va",
       "colores": [
@@ -847,16 +764,16 @@
       ]
     },
     {
-      "nombre": "REALME NOTE 70 4GB 128GB (4GB + 8GB)",
-      "costo": 127,
+      "nombre": "REALME NOTE 70 128/4GB (4GB + 8GB)",
+      "costo": 121,
       "proveedor": "va",
       "colores": [
         "Obsidian Black"
       ]
     },
     {
-      "nombre": "REALME NOTE 70 4GB 256GB (4GB + 8GB)",
-      "costo": 145,
+      "nombre": "REALME NOTE 70 256/4GB (4GB + 8GB)",
+      "costo": 143,
       "proveedor": "va",
       "colores": [
         "Obsidian Black",
@@ -864,7 +781,7 @@
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 14 5G 8GB 256GB",
+      "nombre": "XIAOMI NOTE 14 5G 256/8GB",
       "costo": 255,
       "proveedor": "va",
       "colores": [
@@ -872,57 +789,65 @@
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 14 8GB 256GB",
-      "costo": 233,
+      "nombre": "XIAOMI NOTE 14 256/8GB",
+      "costo": 231,
       "proveedor": "va",
       "colores": [
-        "Mist purple",
         "Ocean Blue"
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 14 PRO 5g 12GB 512GB",
-      "costo": 333,
+      "nombre": "XIAOMI NOTE 14 PRO 5g 512gb/12gb",
+      "costo": 335,
       "proveedor": "va",
       "colores": [
         "Coral Green"
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 14 PRO 5g 8GB 256GB",
-      "costo": 277,
+      "nombre": "XIAOMI NOTE 14 PRO 5g 256gb/8gb",
+      "costo": 282,
       "proveedor": "va",
       "colores": [
         "Coral Green"
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 14 PRO PLUS 5g 12GB 512GB",
+      "nombre": "XIAOMI NOTE 14 PRO PLUS 5g 512gb/12gb",
       "costo": 387,
       "proveedor": "va",
       "colores": [
-        "Black"
+        "Negro"
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 14 PRO PLUS 5g 8GB 256GB",
-      "costo": 293,
-      "proveedor": "va",
-      "colores": [
-        "Gold"
-      ]
-    },
-    {
-      "nombre": "XIAOMI NOTE 14S 12GB 512GB",
-      "costo": 275,
+      "nombre": "XIAOMI NOTE 14 PRO PLUS 5g 256gb/8gb",
+      "costo": 308,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "XIAOMI POCO C71 3GB 64GB",
-      "costo": 131,
+      "nombre": "XIAOMI NOTE 14S 512gb/12gb",
+      "costo": 278,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 14S 256gb/8gb",
+      "costo": 235,
+      "proveedor": "va",
+      "colores": [
+        "Black",
+        "Ocean Blue"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO C71 64gb/3gb",
+      "costo": 115,
       "proveedor": "va",
       "colores": [
         "Black",
@@ -930,32 +855,31 @@
       ]
     },
     {
-      "nombre": "XIAOMI POCO C71 4GB 128GB",
+      "nombre": "XIAOMI POCO C71 128gb/4gb",
       "costo": 140,
       "proveedor": "va",
       "colores": [
-        "Black",
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO C71 64gb/4gb",
+      "costo": 128,
+      "proveedor": "va",
+      "colores": [
         "Blue"
       ]
     },
     {
-      "nombre": "XIAOMI POCO C81 pro 4GB 128GB",
-      "costo": 148,
+      "nombre": "XIAOMI POCO C81 pro 256gb/4gb",
+      "costo": 167,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "XIAOMI POCO C81 pro 4GB 256GB",
-      "costo": 166,
-      "proveedor": "va",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
-      "nombre": "XIAOMI POCO C81 pro 4GB 64GB",
+      "nombre": "XIAOMI POCO C81 pro 64gb/4gb",
       "costo": 131,
       "proveedor": "va",
       "colores": [
@@ -963,41 +887,51 @@
       ]
     },
     {
-      "nombre": "XIAOMI POCO C85 8GB 256GB",
-      "costo": 192,
-      "proveedor": "va",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
-      "nombre": "XIAOMI POCO C85 6GB 128GB",
+      "nombre": "XIAOMI POCO C85 128gb/6gb",
       "costo": 154,
       "proveedor": "va",
       "colores": [
-        "Black",
         "Green",
         "Violet"
       ]
     },
     {
-      "nombre": "XIAOMI POCO F6 pro 5g 12GB 512GB",
-      "costo": 375,
+      "nombre": "XIAOMI POCO C85 256gb/8gb",
+      "costo": 195,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "XIAOMI POCO F7 5g 12GB 256GB",
-      "costo": 440,
+      "nombre": "XIAOMI POCO C95 PRO 128gb/6gb",
+      "costo": 218,
+      "proveedor": "va",
+      "colores": [
+        "Black",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO C95 PRO 256gb/8gb",
+      "costo": 250,
+      "proveedor": "va",
+      "colores": [
+        "Black",
+        "Blue",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO F6 PRO 5g 512gb/12gb",
+      "costo": 382,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "XIAOMI POCO F7 5g 12GB 512GB",
+      "nombre": "XIAOMI POCO F7 5g 512gb/12gb",
       "costo": 470,
       "proveedor": "va",
       "colores": [
@@ -1006,7 +940,7 @@
       ]
     },
     {
-      "nombre": "XIAOMI POCO F7 ULTRA 5g 12GB 256GB (s/ cargador)",
+      "nombre": "XIAOMI POCO F7 ULTRA 5g 256gb/12gb (s/ cargador)",
       "costo": 555,
       "proveedor": "va",
       "colores": [
@@ -1014,7 +948,7 @@
       ]
     },
     {
-      "nombre": "XIAOMI POCO F8 PRO 5g 12GB 256GB",
+      "nombre": "XIAOMI POCO F8 PRO 5g 256gb/12gb",
       "costo": 590,
       "proveedor": "va",
       "colores": [
@@ -1023,53 +957,66 @@
       ]
     },
     {
-      "nombre": "XIAOMI POCO F8 PRO 5g 12GB 512GB",
-      "costo": 681,
+      "nombre": "XIAOMI POCO F8 PRO 5g 512gb/12gb",
+      "costo": 674,
       "proveedor": "va",
       "colores": [
         "Black",
-        "Blue",
-        "Titanium Silver"
+        "Blue"
       ]
     },
     {
-      "nombre": "XIAOMI POCO F8 ULTRA 5g 16GB 512GB",
-      "costo": 885,
+      "nombre": "XIAOMI POCO F8 ULTRA 5g 512gb/16gb",
+      "costo": 870,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "XIAOMI POCO F8 ULTRA 5g 12GB 256GB",
-      "costo": 755,
+      "nombre": "XIAOMI POCO F8 ULTRA 5g 256gb/12gb",
+      "costo": 745,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "XIAOMI POCO F9 PRO 12GB 256GB 5G",
-      "costo": 805,
+      "nombre": "XIAOMI POCO F9 PRO 256/12GB 5G",
+      "costo": 789,
       "proveedor": "va",
       "colores": [
-        "Black",
         "White",
         "Green"
       ]
     },
     {
-      "nombre": "XIAOMI POCO F9 PRO 12GB 512GB 5G",
-      "costo": 875,
+      "nombre": "XIAOMI POCO F9 PRO 512/12GB 5G",
+      "costo": 866,
       "proveedor": "va",
       "colores": [
         "Black",
-        "White",
         "Green"
       ]
     },
     {
-      "nombre": "XIAOMI POCO M7 6GB 128GB",
+      "nombre": "XIAOMI POCO F9 ULTRA 256/12GB 5G",
+      "costo": 891,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO F9 ULTRA 1TB/16GB 5G",
+      "costo": 1286,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO M7 128gb/6gb",
       "costo": 189,
       "proveedor": "va",
       "colores": [
@@ -1077,7 +1024,7 @@
       ]
     },
     {
-      "nombre": "XIAOMI POCO M7 8GB 256GB",
+      "nombre": "XIAOMI POCO M7 256gb/8gb",
       "costo": 210,
       "proveedor": "va",
       "colores": [
@@ -1086,8 +1033,16 @@
       ]
     },
     {
-      "nombre": "XIAOMI POCO M8 5g 8GB 512GB",
-      "costo": 269,
+      "nombre": "XIAOMI POCO M8 256gb/8gb",
+      "costo": 260,
+      "proveedor": "va",
+      "colores": [
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO M8 5g 512gb/8gb",
+      "costo": 271,
       "proveedor": "va",
       "colores": [
         "Black",
@@ -1096,140 +1051,23 @@
       ]
     },
     {
-      "nombre": "XIAOMI POCO M8 PRO 5g 8GB 256GB",
-      "costo": 321,
+      "nombre": "XIAOMI POCO M8 PRO 5g 512gb/12gb",
+      "costo": 358,
       "proveedor": "va",
       "colores": [
         "Green"
       ]
     },
     {
-      "nombre": "XIAOMI POCO x7 PRO 12GB 512GB",
-      "costo": 385,
-      "proveedor": "va",
-      "colores": [
-        "Black",
-        "Yellow",
-        "Green"
-      ]
-    },
-    {
-      "nombre": "XIAOMI POCO x7 PRO 5g 8GB 256GB",
-      "costo": 315,
+      "nombre": "XIAOMI POCO M8 PRO 5g 256gb/8gb",
+      "costo": 323,
       "proveedor": "va",
       "colores": [
         "Green"
       ]
     },
     {
-      "nombre": "XIAOMI POCO x8 PRO 12GB 512GB 5G",
-      "costo": 428,
-      "proveedor": "va",
-      "colores": [
-        "Mint Green",
-        "White"
-      ]
-    },
-    {
-      "nombre": "XIAOMI POCO x8 PRO 8GB 256GB 5G",
-      "costo": 365,
-      "proveedor": "va",
-      "colores": [
-        "Yellow"
-      ]
-    },
-    {
-      "nombre": "XIAOMI POCO x8 PRO 8GB 512GB",
-      "costo": 410,
-      "proveedor": "va",
-      "colores": [
-        "Mint Green",
-        "Black"
-      ]
-    },
-    {
-      "nombre": "XIAOMI POCO X8 PRO MAX 12GB 256GB",
-      "costo": 537,
-      "proveedor": "va",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
-      "nombre": "XIAOMI POCO X8 PRO MAX 12GB 512GB",
-      "costo": 585,
-      "proveedor": "va",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
-      "nombre": "XIAOMI REDMI15 6GB 128GB",
-      "costo": 182,
-      "proveedor": "va",
-      "colores": [
-        "Titan Gray",
-        "Midnight Black"
-      ]
-    },
-    {
-      "nombre": "XIAOMI REDMI15 8GB 128GB",
-      "costo": 183,
-      "proveedor": "va",
-      "colores": [
-        "Midnight Black"
-      ]
-    },
-    {
-      "nombre": "XIAOMI REDMI15 8GB 256GB",
-      "costo": 210,
-      "proveedor": "va",
-      "colores": [
-        "Titan Gray",
-        "Purple Sand",
-        "Midnight Black"
-      ]
-    },
-    {
-      "nombre": "XIAOMI REDMI15c 4GB 128GB (4+4)",
-      "costo": 156,
-      "proveedor": "va",
-      "colores": [
-        "Midnight Black",
-        "Mint Green",
-        "Moonligth Blue"
-      ]
-    },
-    {
-      "nombre": "XIAOMI REDMI15c 4GB 256GB (4+4)",
-      "costo": 180,
-      "proveedor": "va",
-      "colores": [
-        "Midnight Black",
-        "Moonligth Blue"
-      ]
-    },
-    {
-      "nombre": "XIAOMI REDMI15c 8GB 256GB (8+8)",
-      "costo": 190,
-      "proveedor": "va",
-      "colores": [
-        "Midnight Black",
-        "Mint Green",
-        "Moonligth Blue"
-      ]
-    },
-    {
-      "nombre": "XIAOMI REDMI 17 4GB 128GB",
-      "costo": 202,
-      "proveedor": "va",
-      "colores": [
-        "Black",
-        "Lotus Purple"
-      ]
-    },
-    {
-      "nombre": "XIAOMI REDMI 17 4GB 256GB",
+      "nombre": "XIAOMI POCO M8S 128gb/6gb",
       "costo": 222,
       "proveedor": "va",
       "colores": [
@@ -1237,36 +1075,196 @@
       ]
     },
     {
-      "nombre": "XIAOMI REDMI A5 3GB 64GB (3+3)",
-      "costo": 115,
+      "nombre": "XIAOMI POCO x7 PRO 512gb/12gb",
+      "costo": 400,
       "proveedor": "va",
       "colores": [
-        "Midnight Black",
-        "Ocean Blue",
-        "Sandy Gold"
+        "Yellow",
+        "Green"
       ]
     },
     {
-      "nombre": "XIAOMI REDMI A5 4GB 128GB (4+4)",
+      "nombre": "XIAOMI POCO x7 PRO 5g 256gb/8gb",
+      "costo": 345,
+      "proveedor": "va",
+      "colores": [
+        "Green"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO x8 256gb/12gb 5G",
+      "costo": 353,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO x8 PRO 512gb/12gb 5G",
+      "costo": 445,
+      "proveedor": "va",
+      "colores": [
+        "Mint Green"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO x8 PRO 256gb/8gb 5G",
+      "costo": 410,
+      "proveedor": "va",
+      "colores": [
+        "Mint Green"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO x8 PRO 512gb/8gb",
+      "costo": 405,
+      "proveedor": "va",
+      "colores": [
+        "Mint Green"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO X8 PRO MAX 256gb/12gb",
+      "costo": 533,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI POCO X8 PRO MAX 512gb/12gb",
+      "costo": 576,
+      "proveedor": "va",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI15 128gb/6gb",
+      "costo": 186,
+      "proveedor": "va",
+      "colores": [
+        "Titan Gray",
+        "Midnight Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI15 256gb/8gb",
+      "costo": 218,
+      "proveedor": "va",
+      "colores": [
+        "Black",
+        "Purple",
+        "Gray"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI15c 128gb/4gb (4+4)",
       "costo": 157,
       "proveedor": "va",
       "colores": [
         "Midnight Black",
-        "Ocean Blue"
+        "Mint Green",
+        "Moonligth Blue"
       ]
     },
     {
-      "nombre": "XIAOMI REDMI A7 pro 4GB 128GB",
-      "costo": 150,
+      "nombre": "XIAOMI REDMI15c 256gb/4gb (4+4)",
+      "costo": 176,
+      "proveedor": "va",
+      "colores": [
+        "Midnight Black",
+        "Moonligth Blue"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI15c 256gb/8gb (8+8)",
+      "costo": 190,
+      "proveedor": "va",
+      "colores": [
+        "Midnight Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI15c 256gb/8gb (8+8) NFC",
+      "costo": 194,
+      "proveedor": "va",
+      "colores": [
+        "Midnight Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI 17 128/4gb (4+4)",
+      "costo": 187,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI 17 256/4gb (4+4)",
+      "costo": 217,
       "proveedor": "va",
       "colores": [
         "Black",
-        "Mist Blue",
-        "Palm Green"
+        "Blue"
       ]
     },
     {
-      "nombre": "XIAOMI REDMI A7 pro 4GB 64GB",
+      "nombre": "XIAOMI REDMI 17 128/4gb 5G (4+4)",
+      "costo": 217,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI 17 128/4gb 5G (4+4) NFC",
+      "costo": 222,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI 17 256/6gb (6+6)",
+      "costo": 241,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI A5 64gb/3gb",
+      "costo": 137,
+      "proveedor": "va",
+      "colores": [
+        "Green",
+        "Black",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI A5 128gb/4gb (4+4)",
+      "costo": 156,
+      "proveedor": "va",
+      "colores": [
+        "Midnight Black. Ocean Blue",
+        "green",
+        "gold"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI A7 pro 128gb/4gb",
+      "costo": 146,
+      "proveedor": "va",
+      "colores": [
+        "Black",
+        "Mist Blue"
+      ]
+    },
+    {
+      "nombre": "XIAOMI REDMI A7 pro 64gb/4gb",
       "costo": 120,
       "proveedor": "va",
       "colores": [
@@ -1274,7 +1272,7 @@
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 15 8GB 512GB 5g",
+      "nombre": "XIAOMI NOTE 15 512gb/8gb 5g",
       "costo": 285,
       "proveedor": "va",
       "colores": [
@@ -1282,7 +1280,7 @@
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 15 8GB 256GB 5g",
+      "nombre": "XIAOMI NOTE 15 256gb/8gb 5g",
       "costo": 275,
       "proveedor": "va",
       "colores": [
@@ -1291,33 +1289,32 @@
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 15 6GB 128GB",
-      "costo": 208,
+      "nombre": "XIAOMI NOTE 15 128gb/6gb",
+      "costo": 215,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 15 8GB 256GB",
-      "costo": 239,
-      "proveedor": "va",
-      "colores": [
-        "Black",
-        "Glacier Blue"
-      ]
-    },
-    {
-      "nombre": "XIAOMI NOTE 15 PRO 12GB 512GB 5g",
-      "costo": 390,
+      "nombre": "XIAOMI NOTE 15 128gb/6gb NFC",
+      "costo": 220,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 15 PRO 8GB 256GB 5g",
-      "costo": 338,
+      "nombre": "XIAOMI NOTE 15 256gb/8gb",
+      "costo": 248,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 15 PRO 512gb/12gb",
+      "costo": 341,
       "proveedor": "va",
       "colores": [
         "Black",
@@ -1325,89 +1322,53 @@
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 15 PRO 8GB 512GB 5g",
-      "costo": 353,
+      "nombre": "XIAOMI NOTE 15 PRO 512gb/12gb 5g",
+      "costo": 386,
       "proveedor": "va",
       "colores": [
-        "Titanium"
+        "Black",
+        "Glacier Blue",
+        "Mist Purple"
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 15 PRO 8GB 256GB",
-      "costo": 289,
+      "nombre": "XIAOMI NOTE 15 PRO 256gb/8gb 5g",
+      "costo": 336,
       "proveedor": "va",
       "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 15 PRO 512gb/8gb 5g",
+      "costo": 361,
+      "proveedor": "va",
+      "colores": [
+        "Titanium",
         "Black",
         "Glacier Blue"
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 15 PRO PLUS 12GB 512GB 5g",
+      "nombre": "XIAOMI NOTE 15 PRO 256gb/8gb",
+      "costo": 294,
+      "proveedor": "va",
+      "colores": [
+        "Titanium",
+        "Glacier Blue"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 15 PRO PLUS 512gb/12gb 5g",
       "costo": 440,
       "proveedor": "va",
       "colores": [
         "Black",
-        "Glacier Blue",
-        "Mocha Brown"
+        "Glacier Blue"
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 15 PRO PLUS 8GB 256GB 5g",
-      "costo": 383,
-      "proveedor": "va",
-      "colores": [
-        "Glacier Blue",
-        "Black"
-      ]
-    },
-    {
-      "nombre": "XIAOMI NOTE 17 4GB 128GB",
-      "costo": 235,
-      "proveedor": "va",
-      "colores": [
-        "Sky Teal"
-      ]
-    },
-    {
-      "nombre": "XIAOMI NOTE 17 5g 6GB 128GB NFC (6+6)",
-      "costo": 275,
-      "proveedor": "va",
-      "colores": [
-        "Sky Teal",
-        "Black",
-        "Purple"
-      ]
-    },
-    {
-      "nombre": "XIAOMI NOTE 17 6GB 128GB (6+6)",
-      "costo": 247,
-      "proveedor": "va",
-      "colores": [
-        "Black",
-        "Purple"
-      ]
-    },
-    {
-      "nombre": "XIAOMI NOTE 17 6GB 256GB (6+6)",
-      "costo": 261,
-      "proveedor": "va",
-      "colores": [
-        "Black",
-        "Sky Teal"
-      ]
-    },
-    {
-      "nombre": "XIAOMI NOTE 17 8GB 256GB",
-      "costo": 283,
-      "proveedor": "va",
-      "colores": [
-        "Sky Teal",
-        "Black",
-        "Purple"
-      ]
-    },
-    {
-      "nombre": "XIAOMI NOTE 17 PRO 5g 8GB 256GB NFC (8+8)",
+      "nombre": "XIAOMI NOTE 15 PRO PLUS 256gb/8gb 5g",
       "costo": 381,
       "proveedor": "va",
       "colores": [
@@ -1415,17 +1376,80 @@
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 17 PRO MAX 5g 8GB 256GB NFC (8+8)",
-      "costo": 465,
+      "nombre": "XIAOMI NOTE 17 128/4gb (4+4)",
+      "costo": 233,
       "proveedor": "va",
       "colores": [
-        "Cloud Blush",
-        "Green"
+        "Sky Teal"
       ]
     },
     {
-      "nombre": "XIAOMI NOTE 17 PRO MAX 5g 8GB 512GB NFC (8+8)",
-      "costo": 535,
+      "nombre": "XIAOMI NOTE 17 5g 128/6gb NFC (6+6)",
+      "costo": 269,
+      "proveedor": "va",
+      "colores": [
+        "Sky Teal",
+        "Black",
+        "Purple"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 17 5g 256/6gb NFC (6+6)",
+      "costo": 290,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 17 128/6gb (6+6)",
+      "costo": 243,
+      "proveedor": "va",
+      "colores": [
+        "Black",
+        "Purple"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 17 256/6gb (6+6)",
+      "costo": 254,
+      "proveedor": "va",
+      "colores": [
+        "Sky Teal",
+        "Black",
+        "Purple"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 17 256/8gb (8+8)",
+      "costo": 277,
+      "proveedor": "va",
+      "colores": [
+        "Black",
+        "Purple"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 17 PRO 5g 256/8gb NFC (8+8)",
+      "costo": 388,
+      "proveedor": "va",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 17 PRO MAX 5g 256/8gb NFC (8+8)",
+      "costo": 460,
+      "proveedor": "va",
+      "colores": [
+        "Cloud Blush",
+        "Green",
+        "Pink Cloud"
+      ]
+    },
+    {
+      "nombre": "XIAOMI NOTE 17 PRO MAX 5g 512/8gb NFC (8+8)",
+      "costo": 524,
       "proveedor": "va",
       "colores": [
         "Cloud Blush",
@@ -1435,15 +1459,15 @@
       ]
     },
     {
-      "nombre": "XIAOMI 15 5G 12GB 512GB",
-      "costo": 830,
+      "nombre": "XIAOMI 15 5G 512/12gb",
+      "costo": 822,
       "proveedor": "va",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "XIAOMI 15 5G 12GB 512GB (s/ cargador)",
+      "nombre": "XIAOMI 15 5G 512/12gb (s/ cargador)",
       "costo": 760,
       "proveedor": "va",
       "colores": [
@@ -1451,32 +1475,33 @@
       ]
     },
     {
-      "nombre": "XIAOMI 15T 5G 12GB 256GB",
-      "costo": 498,
+      "nombre": "XIAOMI 15t PRO 5G 512/12gb (s/ cargador)",
+      "costo": 760,
       "proveedor": "va",
       "colores": [
         "Gray"
       ]
     },
     {
-      "nombre": "XIAOMI 15t PRO 5G 12GB 256GB",
-      "costo": 678,
+      "nombre": "XIAOMI 15t PRO 5G 256/12gb",
+      "costo": 670,
       "proveedor": "va",
       "colores": [
-        "Black"
+        "Black",
+        "Gray"
       ]
     },
     {
-      "nombre": "XIAOMI 15t PRO 5G 12GB 512GB",
-      "costo": 755,
+      "nombre": "XIAOMI 15t PRO 5G 512/12gb",
+      "costo": 760,
       "proveedor": "va",
       "colores": [
         "Mocha Gold"
       ]
     },
     {
-      "nombre": "XIAOMI 17 12GB 512GB 5g (s/ cargador)",
-      "costo": 874,
+      "nombre": "XIAOMI 17 512gb/12gb 5g (s/ cargador)",
+      "costo": 846,
       "proveedor": "va",
       "colores": [
         "Black",
@@ -1484,11 +1509,11 @@
       ]
     },
     {
-      "nombre": "XIAOMI 17t 12GB 256GB 5g + Parlante 30w (s/ cargador)",
-      "costo": 610,
+      "nombre": "XIAOMI 17t 256gb/12gb 5g (s/ cargador)",
+      "costo": 560,
       "proveedor": "va",
       "colores": [
-        "Black"
+        "Blue"
       ]
     },
     {
@@ -1512,9 +1537,10 @@
       ]
     },
     {
-      "nombre": "PS5 DIGITAL 825GB (sin juegos)",
-      "costo": 740,
-      "proveedor": "va"
+      "nombre": "PS5 DIGITAL 825GB",
+      "costo": 720,
+      "proveedor": "va",
+      "colores": []
     },
     {
       "nombre": "NINTENDO SWITCH OLED 64GB",

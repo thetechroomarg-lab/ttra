@@ -481,7 +481,7 @@ function tarjetaProducto(p, indice = 0) {
   const precios = preciosDe(p);
   const monto = (valor) => valor == null ? "-" : Number(valor).toLocaleString("es-AR");
   const sinColores = !(Array.isArray(p.colores) && p.colores.length);
-  const opciones = sinColores ? ["Color único"] : p.colores;
+  const opciones = sinColores ? [] : p.colores;
   const elegirColor = !sinColores;
   const etiqueta = condicionProducto(p) === "usado" ? "variante" : "color";
   const colores = opciones.length > 0
@@ -490,7 +490,7 @@ function tarjetaProducto(p, indice = 0) {
          <option value="" disabled ${sinColores ? '' : 'selected'} hidden>Elegí una opción de color</option>
          ${opciones.map((color) => `<option value="${escapeHtml(color).replaceAll('"', '&quot;')}"${sinColores ? ' selected' : ''}>${escapeHtml(color)}</option>`).join('')}
        </select>`
-    : `<p class="colores">${escapeHtml(opciones[0] || 'Color único')}</p>`;
+    : "";
   return `
     <div class="card" data-product-index="${indice}">
       <h3>${escapeHtml(p.nombre)}</h3>
