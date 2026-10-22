@@ -1,0 +1,151 @@
+/* web/static/pizarra-catalogo.css — Catálogo, tarjeta de producto, marcas y
+   comparativa en el lenguaje de la pizarra (ver pizarra.css). La tarjeta de
+   producto también aparece en la home (link /?producto=), por eso index.html
+   carga este archivo. Solo presentación: mismos IDs, inputs y eventos. */
+
+/* ---- Cabecera del catálogo ---- */
+html[data-modo="classic"] .catalog-intro { background: var(--rc-bg); }
+html[data-modo="classic"] .catalog-intro h1 { font-size: clamp(44px, 7vw, 84px); line-height: .92; letter-spacing: 0; }
+html[data-modo="classic"] .catalog-intro h1 span { color: var(--pz-red); }
+html[data-modo="classic"] .catalog-intro > p:last-child { color: var(--pz-dim); font-size: 15px; }
+html[data-modo="classic"] #contador-productos { color: var(--pz-amber); font: 700 16px/1 var(--pz-font); font-variant-numeric: tabular-nums; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Pestañas de categoría: placas; la elegida queda esmaltada. */
+html[data-modo="classic"] :is(.catalog-page, #rc-body-landing) .tabs button {
+  border: 2px solid var(--pz-frame); border-radius: 3px; background: var(--pz-board); color: var(--pz-plate);
+  font: 700 16px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; box-shadow: none;
+}
+html[data-modo="classic"] :is(.catalog-page, #rc-body-landing) .tabs button.activa { border-color: var(--pz-plate); background: var(--pz-plate); color: var(--pz-ink); }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] :is(.catalog-page, #rc-body-landing) .tabs button:not(.activa):hover { border-color: var(--pz-plate); }
+}
+
+/* ---- Consola de filtros: un tablero ---- */
+html[data-modo="classic"] .catalog-brand-filter { --ed-accent: var(--pz-amber); }
+@media (min-width: 701px) {
+  html[data-modo="classic"] .catalog-brand-filter { border-bottom: 2px solid var(--pz-gap); }
+}
+html[data-modo="classic"] .catalog-brand-filter label,
+html[data-modo="classic"] .catalog-sort legend { color: var(--pz-dim); font: 700 14px/1.2 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] .catalog-brand-filter select { border: 2px solid var(--pz-frame); border-radius: 3px; background-color: var(--pz-board); color: var(--pz-plate); font: 700 17px/1.2 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
+html[data-modo="classic"] .catalog-sort-options { gap: 2px; border: 2px solid var(--pz-frame); border-radius: 3px; background: var(--pz-gap); }
+html[data-modo="classic"] .catalog-sort label + label { border-left: 0; }
+html[data-modo="classic"] .catalog-sort span { background: var(--pz-board); color: var(--pz-plate); font: 700 16px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] .catalog-sort input:checked + span { background: var(--pz-plate); color: var(--pz-ink); }
+html[data-modo="classic"] .catalog-sort label:hover span { background: var(--pz-cell); }
+html[data-modo="classic"] .catalog-sort label:hover input:checked + span { background: var(--pz-plate); color: var(--pz-ink); }
+html[data-modo="classic"] .catalog-cuotas-text strong { color: var(--pz-plate); font: 700 18px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] #cuotas-count { color: var(--pz-dim); font: 600 14px/1 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
+html[data-modo="classic"] .catalog-cuotas-track { border: 2px solid var(--pz-frame); background: var(--pz-cell); }
+html[data-modo="classic"] .catalog-cuotas input:checked ~ .catalog-cuotas-track { border-color: var(--pz-amber); background: var(--pz-amber); }
+html[data-modo="classic"] .catalog-cuotas input:checked ~ .catalog-cuotas-track .catalog-cuotas-thumb { background: var(--pz-ink); }
+html[data-modo="classic"] .catalog-cuotas input:checked ~ .catalog-cuotas-text strong { color: var(--pz-amber); }
+
+html[data-modo="classic"] .catalog-price { border: 0; border-radius: 4px; background: var(--pz-board); box-shadow: 0 0 0 6px var(--pz-frame), 0 16px 34px #00000080; }
+html[data-modo="classic"] .catalog-price.activo { box-shadow: 0 0 0 6px #45433e, 0 16px 34px #00000080; }
+html[data-modo="classic"] .catalog-price-head h2 { display: inline-block; padding: 5px 9px 4px; border-radius: 2px; background: var(--pz-plate); color: var(--pz-ink); font: 700 15px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] #price-readout { color: var(--pz-amber); font: 700 clamp(24px, 2.6vw, 34px)/1 var(--pz-font); letter-spacing: .02em; }
+html[data-modo="classic"] .catalog-price-tag { color: var(--pz-dim); font-family: var(--pz-font); text-transform: uppercase; letter-spacing: .05em; }
+html[data-modo="classic"] #price-readout-pesos { color: var(--pz-dim); font: 600 14px/1 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
+html[data-modo="classic"] .catalog-price-reset { color: var(--pz-amber); font: 700 14px var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] .catalog-price-hist span { background: #3a3935; }
+html[data-modo="classic"] .catalog-price.activo .catalog-price-hist span { background: var(--pz-amber); }
+html[data-modo="classic"] .catalog-price.activo .catalog-price-hist span.fuera { background: #242321; }
+html[data-modo="classic"] .catalog-price-track { background: #3a3935; }
+html[data-modo="classic"] .catalog-price-fill { background: var(--pz-amber); }
+html[data-modo="classic"] .catalog-price-slider input[type="range"]::-webkit-slider-thumb { border-radius: 3px; border-color: var(--pz-amber); background: var(--pz-board); box-shadow: 0 0 0 4px var(--pz-board); }
+html[data-modo="classic"] .catalog-price-slider input[type="range"]::-moz-range-thumb { border-radius: 3px; border-color: var(--pz-amber); background: var(--pz-board); box-shadow: 0 0 0 4px var(--pz-board); }
+html[data-modo="classic"] .catalog-price-slider input[type="range"]:active::-webkit-slider-thumb { background: var(--pz-amber); }
+html[data-modo="classic"] .catalog-price-slider input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--pz-board), 0 0 0 6px var(--pz-amber); }
+
+html[data-modo="classic"] #catalog-search { border: 2px solid var(--pz-frame); border-radius: 3px; background: var(--pz-board); color: var(--pz-plate); font: 600 20px/1.2 var(--pz-font); letter-spacing: .03em; }
+html[data-modo="classic"] #catalog-search:focus { border-color: var(--pz-amber); }
+html[data-modo="classic"] .catalog-search-wrap label { color: var(--pz-dim); font: 700 14px var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] .ai-notice { color: var(--pz-dim); font: 600 13px/1.4 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
+html[data-modo="classic"] .mensaje-vacio { color: var(--pz-plate); font: 700 22px/1.2 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
+
+/* ---- Tarjeta de producto: un tablero chico por producto ---- */
+html[data-modo="classic"] body .grilla .card.ai-card,
+html[data-modo="classic"] body .grilla .card.ai-card .ai-face { background: var(--pz-board) !important; }
+html[data-modo="classic"] body .grilla .card.ai-card { border: 0 !important; border-radius: 4px; }
+html[data-modo="classic"] body .card.ai-card .ai-title {
+  font: 700 5.2cqw/1 var(--pz-font) !important; letter-spacing: .02em; text-transform: uppercase; color: var(--pz-plate) !important;
+  scrollbar-width: none;
+}
+html[data-modo="classic"] body .card.ai-card .ai-title::-webkit-scrollbar { display: none; }
+html[data-modo="classic"] .ai-face .ai-color { color: var(--pz-dim); font: 600 2.9cqw/1.2 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] .ai-face .ai-logo span { color: var(--pz-red); }
+html[data-modo="classic"] .ai-face .ai-price { border-bottom: 2px solid var(--pz-gap); color: var(--pz-dim); font: 600 3.3cqw/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] .ai-face .ai-price:not(.ai-price-head) > :first-child:not(:only-child) { font: 600 3.3cqw/1 var(--pz-font); letter-spacing: .05em; }
+html[data-modo="classic"] .ai-face .ai-price strong { color: var(--pz-amber); font: 700 4.9cqw/1 var(--pz-font); letter-spacing: .03em; }
+/* The headline price is the enamel row: label on a plate, figure in amber. */
+html[data-modo="classic"] .ai-face .ai-price:first-child { color: var(--pz-plate); }
+html[data-modo="classic"] .ai-face .ai-price:first-child > span:first-child { padding: .5cqw 1.4cqw .4cqw; border-radius: .5cqw; background: var(--pz-plate); color: var(--pz-ink); font-weight: 700; }
+html[data-modo="classic"] .ai-face .ai-price:first-child strong { color: var(--pz-amber); }
+html[data-modo="classic"] .ai-prices-mayorista .ai-price:nth-child(2) { color: var(--pz-plate); }
+html[data-modo="classic"] .ai-prices-mayorista .ai-price > :nth-child(2) { color: var(--pz-amber); font-family: var(--pz-font); }
+html[data-modo="classic"] .ai-prices-mayorista .ai-price-head { color: var(--pz-dim) !important; }
+html[data-modo="classic"] body .ai-face .btn-foto { color: var(--pz-plate) !important; }
+html[data-modo="classic"] .ai-face .btn-foto:hover { color: var(--pz-amber) !important; }
+html[data-modo="classic"] body .card.ai-card > :is(.catalog-card-actions, .card-acciones, .selector-colores) { border-top: 2px solid var(--pz-gap); }
+html[data-modo="classic"] body .grilla .card.ai-card :is(.catalog-card-actions, .selector-colores) label { color: var(--pz-dim); font: 700 14px/1.2 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] body .grilla .card.ai-card :is(select, .dropdown-color-boton) { border: 2px solid var(--pz-frame); border-radius: 3px; background-color: var(--pz-board); color: var(--pz-plate); font: 700 16px/1.2 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
+html[data-modo="classic"] .catalog-card-status { color: var(--pz-dim); font: 600 13px/1.3 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
+
+/* "Producto del link": the card the link pointed at gets an amber frame. */
+html[data-modo="classic"] body .grilla .card.ai-card.card-del-link,
+html[data-modo="classic"] body .grilla .card.ai-card.card-del-link:is(:hover, :focus-within) { box-shadow: 0 0 0 4px var(--pz-amber), 0 16px 34px #00000080 !important; }
+html[data-modo="classic"] .card-del-link-etiqueta { top: -14px; padding: 5px 9px 4px; border-radius: 2px; background: var(--pz-amber); color: var(--pz-ink); font: 700 14px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+@keyframes card-del-link-latido {
+  0%   { outline-color: var(--pz-amber); outline-offset: 0; }
+  100% { outline-color: transparent; outline-offset: 16px; }
+}
+
+/* ---- Búsqueda por marca: celdas del tablero ---- */
+html[data-modo="classic"] .catalog-brand-grid { gap: 2px; padding: 0; border-radius: 4px; background: var(--pz-gap); box-shadow: 0 0 0 8px var(--pz-frame), 0 22px 48px #00000080; }
+html[data-modo="classic"] .catalog-brand-card { border: 0; border-radius: 0; background: var(--pz-board); box-shadow: none; color: var(--pz-plate); font: 700 18px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .catalog-brand-card:hover { transform: none; box-shadow: none; background: var(--pz-cell); color: #fff; }
+}
+html[data-modo="classic"] .catalog-brand-card:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: -4px; }
+
+/* ---- Selector de comparación ---- */
+html[data-modo="classic"] .compare-picker { border: 0; box-shadow: var(--ed-halo); }
+html[data-modo="classic"] .compare-picker-heading { font-family: var(--pz-font); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+html[data-modo="classic"] .compare-picker li[aria-selected="true"], html[data-modo="classic"] .compare-picker a:hover { background: var(--pz-cell); }
+
+/* ---- Compartir búsqueda ---- */
+html[data-modo="classic"] #catalog-share { border: 0; border-radius: 4px; background: var(--pz-board); box-shadow: var(--ed-halo); }
+html[data-modo="classic"] #catalog-share h2 { font-family: var(--pz-font); font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+html[data-modo="classic"] .catalog-share-actions :is(button, a) { border: 2px solid var(--pz-plate); border-radius: 3px; background: transparent; color: var(--pz-plate); font: 700 16px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+
+/* ---- Comparativa ---- */
+html[data-modo="classic"] .comparison-intro h1 { font-size: clamp(44px, 7vw, 84px); line-height: .92; }
+html[data-modo="classic"] .comparison-intro h1 span { color: var(--pz-red); }
+html[data-modo="classic"] .comparison-intro > p:last-child { color: var(--pz-dim); }
+html[data-modo="classic"] .comparison-back { color: var(--pz-dim); font: 700 15px var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] :is(.comparison-products, .comparison-fact-row, .comparison-sources, .comparison-cart) { border-color: var(--pz-gap); }
+html[data-modo="classic"] .comparison-product h2 { color: var(--pz-plate); font: 700 clamp(24px, 3vw, 36px)/1 var(--pz-font); letter-spacing: .02em; text-transform: uppercase; }
+html[data-modo="classic"] .comparison-product .comparison-number { color: var(--pz-amber); font-family: var(--pz-font); }
+html[data-modo="classic"] .comparison-price strong { color: var(--pz-amber); font: 700 28px/1 var(--pz-font); font-variant-numeric: tabular-nums; }
+html[data-modo="classic"] .comparison-fact h3 { display: inline-block; padding: 5px 9px 4px; border-radius: 2px; background: var(--pz-plate); color: var(--pz-ink); font: 700 15px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] .comparison-share { border: 2px solid var(--pz-plate); border-radius: 3px; background: transparent; color: var(--pz-plate); font: 700 16px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] .comparison-return { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 22px; border-color: var(--pz-red); background: var(--pz-red); color: #fff; }
+
+/* ---- Vista de productos de la home (link /?producto=, categorías) ---- */
+html[data-modo="classic"] :is(.btn-categoria, .btn-vista, .btn-volver) {
+  border: 2px solid var(--pz-frame); border-radius: 3px; background: var(--pz-board); color: var(--pz-plate); box-shadow: none;
+  font: 700 16px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase;
+}
+html[data-modo="classic"] :is(.btn-categoria.activo:not(.btn-marca-logo), .btn-vista.activo) { border-color: var(--pz-plate); background: var(--pz-plate); color: var(--pz-ink); }
+html[data-modo="classic"] .btn-categoria.btn-marca-logo.activo { border-color: var(--pz-amber); box-shadow: 0 0 0 2px var(--pz-amber); }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] :is(.btn-categoria, .btn-vista, .btn-volver):not(.activo):hover { border-color: var(--pz-plate); background: var(--pz-board); color: #fff; }
+  html[data-modo="classic"] .btn-categoria:hover::after { display: none; }
+}
+html[data-modo="classic"] .control-orden-etiqueta { color: var(--pz-dim); font: 700 14px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] .selector-colores > strong { color: var(--pz-dim); font: 700 14px/1.2 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] .dropdown-color-boton { border: 2px solid var(--pz-frame); border-radius: 3px; background: var(--pz-board); color: var(--pz-plate); box-shadow: none; font: 700 16px/1.2 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
+html[data-modo="classic"] .dropdown-color-boton:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 2px; }
+html[data-modo="classic"] body select.btn-select-orden { border: 2px solid var(--pz-frame); border-radius: 3px; background-color: var(--pz-board); color: var(--pz-plate); box-shadow: none; font: 700 16px/1.2 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] body select.btn-select-orden.activo { border-color: var(--pz-plate); }
