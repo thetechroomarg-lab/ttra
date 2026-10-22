@@ -1305,11 +1305,11 @@ document.addEventListener("click", (e) => {
 
 function tarjetaProducto(p) {
   const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
-  const listaColores = tieneColores ? p.colores : ["Color único"];
+  const listaColores = tieneColores ? p.colores : [];
   // Siempre arranca en "Elegir color" sin nada preseleccionado, tenga el
   // producto uno o varios colores: Agregar al carrito queda inactivo hasta
   // que el usuario elija explícitamente una opción de la lista.
-  const colores = `
+  const colores = tieneColores ? `
     <div class="selector-colores">
       <strong>${/\busad[oa]s?\b/i.test(p.nombre) || listaColores.some(c => /\d+\s*%/.test(c)) ? "Color y % de batería:" : "Colores disponibles:"}</strong>
       <div class="dropdown-color">
@@ -1321,7 +1321,7 @@ function tarjetaProducto(p) {
         </ul>
       </div>
     </div>
-  `;
+  ` : "";
   return `
     <div class="card${p.nombre === productoDelLink ? " card-del-link" : ""}" data-nombre="${escapeHtml(p.nombre)}">
       ${p.nombre === productoDelLink ? '<span class="card-del-link-etiqueta">Producto del link</span>' : ""}
@@ -1332,7 +1332,7 @@ function tarjetaProducto(p) {
       ${colores}
       <div class="card-acciones">
         <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}${typeof TTRAComparar !== "undefined" ? TTRAComparar.buttonHtml() : ""}</span>
-        <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="" type="button" disabled>Agregar al carrito</button>
+        <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="" type="button" ${tieneColores ? "disabled" : ""}>Agregar al carrito</button>
       </div>
     </div>
   `;

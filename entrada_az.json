@@ -17,31 +17,6 @@
       ]
     },
     {
-      "nombre": "IPHONE 15 128GB",
-      "costo": 680,
-      "proveedor": "az",
-      "colores": [
-        "Blue"
-      ]
-    },
-    {
-      "nombre": "IPHONE 15 128GB Activado",
-      "costo": 625,
-      "proveedor": "az",
-      "colores": [
-        "Black",
-        "Blue"
-      ]
-    },
-    {
-      "nombre": "IPHONE 16 128GB",
-      "costo": 790,
-      "proveedor": "az",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
       "nombre": "IPHONE 16 128GB activado",
       "costo": 720,
       "proveedor": "az",
@@ -52,22 +27,17 @@
     },
     {
       "nombre": "IPHONE 17 256GB",
-      "costo": 990,
+      "costo": 980,
       "proveedor": "az",
       "colores": [
-        "Black",
-        "Lavender",
-        "Mist Blue",
-        "Sage",
-        "White"
+        "Sage"
       ]
     },
     {
-      "nombre": "IPHONE 17 PRO 256GB",
-      "costo": 1200,
+      "nombre": "IPHONE 17 PRO 256GB Cpo sin caja (con detalles esteticos)",
+      "costo": 1000,
       "proveedor": "az",
       "colores": [
-        "Cosmic Orange",
         "Deep Blue"
       ]
     },
@@ -81,65 +51,66 @@
     },
     {
       "nombre": "IPHONE 17 PRO MAX 1TB nuevo sin activar, sin caja",
-      "costo": 1540,
+      "costo": 1588,
       "proveedor": "az",
       "colores": [
-        "Cosmic Orange",
+        "Cosmic Orange"
+      ]
+    },
+    {
+      "nombre": "IPHONE 17 PRO MAX 256GB",
+      "costo": 1270,
+      "proveedor": "az",
+      "colores": [
+        "Cosmic Orange"
+      ]
+    },
+    {
+      "nombre": "IPHONE 17 PRO MAX 256GB",
+      "costo": 1270,
+      "proveedor": "az",
+      "colores": [
         "Deep Blue"
       ]
     },
     {
       "nombre": "IPHONE 17 PRO MAX 256GB",
-      "costo": 1280,
+      "costo": 1290,
       "proveedor": "az",
       "colores": [
-        "Cosmic Orange",
-        "Deep Blue"
-      ]
-    },
-    {
-      "nombre": "IPHONE 17 PRO MAX 512GB",
-      "costo": 1510,
-      "proveedor": "az",
-      "colores": [
-        "Deep Blue",
         "Silver"
       ]
     },
     {
-      "nombre": "IPHONE 18 PRO 256GB",
-      "costo": 1580,
+      "nombre": "AIRPODS 4",
+      "costo": 135,
       "proveedor": "az",
       "colores": [
-        "Black",
-        "Glacier"
+        "White"
       ]
     },
     {
-      "nombre": "IPHONE 18 PRO MAX 256GB",
-      "costo": 1770,
+      "nombre": "AIRPODS 5",
+      "costo": 200,
       "proveedor": "az",
       "colores": [
-        "Black",
-        "Burgundy",
-        "Glacier",
-        "Silver"
+        "White"
       ]
     },
     {
       "nombre": "AIRPODS PRO 2DA GENERACIÓN",
-      "costo": 236,
+      "costo": 226,
       "proveedor": "az",
       "colores": [
         "White"
       ]
     },
     {
-      "nombre": "APPLE AIRTAGS RASTREADOR 4 PACK",
-      "costo": 92,
+      "nombre": "APPLE MACBOOK AIR M5 15¨ 16GB 512GB",
+      "costo": 1600,
       "proveedor": "az",
       "colores": [
-        "White"
+        "Midnight"
       ]
     },
     {
@@ -155,25 +126,15 @@
       "costo": 340,
       "proveedor": "az",
       "colores": [
-        "Rose Gold Al Lb Sport Band M/L",
         "Rose Gold Al Plum Sl"
       ]
     },
     {
-      "nombre": "APPLEWATCH S11 42MM GPS Aluminum Case",
-      "costo": 403,
+      "nombre": "APPLEWATCH S12 46MM GPS Aluminum Case",
+      "costo": 529,
       "proveedor": "az",
       "colores": [
-        "Jet Black Al Black Sport Band S/m"
-      ]
-    },
-    {
-      "nombre": "APPLEWATCH SE 3 40MM GPS",
-      "costo": 315,
-      "proveedor": "az",
-      "colores": [
-        "Midnight Al Midnight Sport Band S/m",
-        "Midnight Al Midnight Sport Band S/m Gps"
+        "Black"
       ]
     },
     {
@@ -195,16 +156,14 @@
       ]
     },
     {
-      "nombre": "Cargador Apple Usb 12w USB CERTIFICADO",
-      "costo": 11,
+      "nombre": "CARGADOR APPLE ORIGINAL 20W USB C",
+      "costo": 19,
       "proveedor": "az",
-      "colores": [
-        "White"
-      ]
+      "colores": []
     },
     {
-      "nombre": "Cargador Original Apple 35W Dual USB-C Port Power Adapter (Pin Argentino)",
-      "costo": 28,
+      "nombre": "Cargador Apple Usb 12w USB CERTIFICADO",
+      "costo": 11,
       "proveedor": "az",
       "colores": [
         "White"
@@ -228,7 +187,23 @@
       ]
     },
     {
-      "nombre": "REDMI NOTE 14 5G 8GB 256GB",
+      "nombre": "IPAD PRO M5 11¨ 256GB",
+      "costo": 1178,
+      "proveedor": "az",
+      "colores": [
+        "Space Black"
+      ]
+    },
+    {
+      "nombre": "MOTO G57 8GB 256GB (s/ cargador)",
+      "costo": 230,
+      "proveedor": "az",
+      "colores": [
+        "Corsair Green"
+      ]
+    },
+    {
+      "nombre": "NOTE 14 5G 8GB 256GB",
       "costo": 250,
       "proveedor": "az",
       "colores": [
@@ -236,32 +211,31 @@
       ]
     },
     {
-      "nombre": "REDMI NOTE 14 8GB 256GB",
-      "costo": 228,
+      "nombre": "NOTE 14 8GB 256GB",
+      "costo": 226,
       "proveedor": "az",
       "colores": [
-        "Mist Purple",
         "Ocean Blue"
       ]
     },
     {
-      "nombre": "REDMI NOTE 14 PRO 5G 12GB 512GB",
-      "costo": 328,
+      "nombre": "NOTE 14 PRO 5G 12GB 512GB",
+      "costo": 330,
       "proveedor": "az",
       "colores": [
         "Coral Green"
       ]
     },
     {
-      "nombre": "REDMI NOTE 14 PRO 5G 8GB 256GB",
-      "costo": 272,
+      "nombre": "NOTE 14 PRO 5G 8GB 256GB",
+      "costo": 277,
       "proveedor": "az",
       "colores": [
         "Coral Green"
       ]
     },
     {
-      "nombre": "REDMI NOTE 14 PRO PLUS 5G 12GB 512GB",
+      "nombre": "NOTE 14 PRO PLUS 5G 12GB 512GB",
       "costo": 384,
       "proveedor": "az",
       "colores": [
@@ -269,28 +243,29 @@
       ]
     },
     {
-      "nombre": "REDMI NOTE 14 PRO PLUS 5G 8GB 256GB",
-      "costo": 295,
+      "nombre": "NOTE 14 PRO PLUS 5G 8GB 256GB",
+      "costo": 303,
       "proveedor": "az",
       "colores": [
-        "Lavender Purple"
+        "Frost Blue",
+        "Midnight Black"
       ]
     },
     {
-      "nombre": "REDMI NOTE 14S 12GB 512GB",
-      "costo": 270,
+      "nombre": "NOTE 14S 12GB 512GB",
+      "costo": 273,
       "proveedor": "az",
       "colores": [
         "Midnight Black"
       ]
     },
     {
-      "nombre": "POCO C71 3GB 64GB",
-      "costo": 124,
+      "nombre": "NOTE 14S 8GB 256GB",
+      "costo": 230,
       "proveedor": "az",
       "colores": [
-        "Black",
-        "Blue"
+        "Midnight Black",
+        "Ocean Blue"
       ]
     },
     {
@@ -302,8 +277,16 @@
       ]
     },
     {
+      "nombre": "POCO C71 4GB 64GB",
+      "costo": 121,
+      "proveedor": "az",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
       "nombre": "POCO C81 PRO 4GB 128GB",
-      "costo": 138,
+      "costo": 144,
       "proveedor": "az",
       "colores": [
         "Black"
@@ -311,7 +294,7 @@
     },
     {
       "nombre": "POCO C81 PRO 4GB 256GB",
-      "costo": 159,
+      "costo": 160,
       "proveedor": "az",
       "colores": [
         "Black"
@@ -327,7 +310,23 @@
     },
     {
       "nombre": "POCO C85 6GB 128GB",
-      "costo": 159,
+      "costo": 164,
+      "proveedor": "az",
+      "colores": [
+        "Green"
+      ]
+    },
+    {
+      "nombre": "POCO C85 8GB 256GB",
+      "costo": 188,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "POCO C95 PRO 6GB 128GB",
+      "costo": 213,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -335,24 +334,26 @@
       ]
     },
     {
-      "nombre": "POCO C85 8GB 256GB",
-      "costo": 185,
+      "nombre": "POCO C95 PRO 8GB 256GB",
+      "costo": 245,
       "proveedor": "az",
       "colores": [
-        "Black"
+        "Black",
+        "Blue",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "POCO F6 5G 12GB 512GB",
+      "costo": 313,
+      "proveedor": "az",
+      "colores": [
+        "Titanium"
       ]
     },
     {
       "nombre": "POCO F6 PRO 5G 12GB 512GB",
-      "costo": 370,
-      "proveedor": "az",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
-      "nombre": "POCO F7 5G 12GB 256GB",
-      "costo": 435,
+      "costo": 377,
       "proveedor": "az",
       "colores": [
         "Black"
@@ -386,11 +387,19 @@
     },
     {
       "nombre": "POCO F8 PRO 5G 12GB 512GB",
-      "costo": 671,
+      "costo": 664,
       "proveedor": "az",
       "colores": [
         "Black",
         "Blue"
+      ]
+    },
+    {
+      "nombre": "POCO F8 ULTRA 5G 12GB 256GB",
+      "costo": 742,
+      "proveedor": "az",
+      "colores": [
+        "Denim Blue"
       ]
     },
     {
@@ -403,22 +412,36 @@
     },
     {
       "nombre": "POCO F9 PRO 5G 12GB 256GB",
-      "costo": 800,
+      "costo": 784,
       "proveedor": "az",
       "colores": [
         "Aurora Green",
-        "Black",
         "White"
       ]
     },
     {
       "nombre": "POCO F9 PRO 5G 12GB 512GB",
-      "costo": 870,
+      "costo": 861,
       "proveedor": "az",
       "colores": [
         "Aurora Green",
-        "Black",
-        "White"
+        "Black"
+      ]
+    },
+    {
+      "nombre": "POCO F9 ULTRA 5G 12GB 256GB",
+      "costo": 881,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "POCO F9 ULTRA 5G 16GB 1TB",
+      "costo": 1276,
+      "proveedor": "az",
+      "colores": [
+        "Black"
       ]
     },
     {
@@ -434,12 +457,22 @@
       "costo": 205,
       "proveedor": "az",
       "colores": [
-        "Blue"
+        "Black",
+        "Blue",
+        "Silver"
+      ]
+    },
+    {
+      "nombre": "POCO M8 5G 8GB 256GB",
+      "costo": 255,
+      "proveedor": "az",
+      "colores": [
+        "Silver"
       ]
     },
     {
       "nombre": "POCO M8 5G 8GB 512GB",
-      "costo": 274,
+      "costo": 272,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -447,20 +480,36 @@
       ]
     },
     {
-      "nombre": "POCO M8 PRO 5G 8GB 256GB",
-      "costo": 328,
+      "nombre": "POCO M8 PRO 5G 12GB 512GB",
+      "costo": 368,
       "proveedor": "az",
       "colores": [
-        "Silver"
+        "Black",
+        "Green"
+      ]
+    },
+    {
+      "nombre": "POCO M8 PRO 5G 8GB 256GB",
+      "costo": 332,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "POCO M8S 5G 6GB 128GB",
+      "costo": 217,
+      "proveedor": "az",
+      "colores": [
+        "Black"
       ]
     },
     {
       "nombre": "POCO X7 PRO 5G 12GB 512GB",
-      "costo": 380,
+      "costo": 395,
       "proveedor": "az",
       "colores": [
-        "Green",
-        "Yellow"
+        "Green"
       ]
     },
     {
@@ -472,17 +521,25 @@
       ]
     },
     {
-      "nombre": "POCO X8 PRO 5G 12GB 512GB",
-      "costo": 440,
+      "nombre": "POCO X8 5G 12GB 256GB",
+      "costo": 348,
       "proveedor": "az",
       "colores": [
-        "Mint Green",
-        "White"
+        "Black"
+      ]
+    },
+    {
+      "nombre": "POCO X8 PRO 5G 12GB 512GB",
+      "costo": 460,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Mint Green"
       ]
     },
     {
       "nombre": "POCO X8 PRO 5G 8GB 256GB",
-      "costo": 405,
+      "costo": 400,
       "proveedor": "az",
       "colores": [
         "Mint Green"
@@ -490,7 +547,7 @@
     },
     {
       "nombre": "POCO X8 PRO 5G 8GB 512GB",
-      "costo": 415,
+      "costo": 411,
       "proveedor": "az",
       "colores": [
         "Black"
@@ -498,7 +555,7 @@
     },
     {
       "nombre": "POCO X8 PRO MAX 5G 12GB 256GB",
-      "costo": 527,
+      "costo": 523,
       "proveedor": "az",
       "colores": [
         "Black"
@@ -506,23 +563,16 @@
     },
     {
       "nombre": "POCO X8 PRO MAX 5G 12GB 512GB",
-      "costo": 575,
+      "costo": 570,
       "proveedor": "az",
       "colores": [
-        "Black"
-      ]
-    },
-    {
-      "nombre": "REDMI 14C 4GB 128GB (4GB+4GB)",
-      "costo": 136,
-      "proveedor": "az",
-      "colores": [
-        "Midnight Black"
+        "Black",
+        "Blue"
       ]
     },
     {
       "nombre": "REDMI 15 6GB 128GB",
-      "costo": 175,
+      "costo": 179,
       "proveedor": "az",
       "colores": [
         "Midnight Black",
@@ -530,16 +580,26 @@
       ]
     },
     {
-      "nombre": "REDMI 15 8GB 128GB",
-      "costo": 176,
+      "nombre": "REDMI 15 6GB 128GB (6GB+6GB)",
+      "costo": 180,
       "proveedor": "az",
       "colores": [
-        "Midnight Black"
+        "Titan Gray"
       ]
     },
     {
       "nombre": "REDMI 15 8GB 256GB",
-      "costo": 210,
+      "costo": 213,
+      "proveedor": "az",
+      "colores": [
+        "Midnight Black",
+        "Purple Sand",
+        "Titan Gray"
+      ]
+    },
+    {
+      "nombre": "REDMI 15 8GB 256GB (8GB+8GB)",
+      "costo": 224,
       "proveedor": "az",
       "colores": [
         "Midnight Black",
@@ -548,7 +608,7 @@
     },
     {
       "nombre": "REDMI 15C 4GB 128GB (4GB+4GB)",
-      "costo": 149,
+      "costo": 153,
       "proveedor": "az",
       "colores": [
         "Midnight Black",
@@ -558,7 +618,7 @@
     },
     {
       "nombre": "REDMI 15C 4GB 256GB (4GB+4GB)",
-      "costo": 173,
+      "costo": 169,
       "proveedor": "az",
       "colores": [
         "Midnight Black",
@@ -571,19 +631,45 @@
       "proveedor": "az",
       "colores": [
         "Midnight Black",
-        "Moonlight Blue"
+        "Mint Green"
       ]
     },
     {
-      "nombre": "REDMI 17 4GB 128GB",
-      "costo": 195,
+      "nombre": "REDMI 15C 8GB 256GB (8GB+8GB) NFC",
+      "costo": 187,
       "proveedor": "az",
       "colores": [
+        "Midnight Black"
+      ]
+    },
+    {
+      "nombre": "REDMI 17 4GB 128GB (4GB+4GB)",
+      "costo": 180,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "REDMI 17 4GB 256GB (4GB+4GB)",
+      "costo": 212,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Deep Blue",
         "Lotus Purple"
       ]
     },
     {
-      "nombre": "REDMI 17 4GB 256GB",
+      "nombre": "REDMI 17 5G 4GB 128GB",
+      "costo": 215,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "REDMI 17 5G 4GB 128GB NFC (4GB+4GB)",
       "costo": 217,
       "proveedor": "az",
       "colores": [
@@ -591,25 +677,28 @@
       ]
     },
     {
-      "nombre": "REDMI A5 3GB 64GB",
-      "costo": 110,
+      "nombre": "REDMI 17 6GB 256GB (6GB+6GB)",
+      "costo": 236,
       "proveedor": "az",
       "colores": [
-        "Lake Green"
+        "Black",
+        "Deep Blue",
+        "Lotus Purple"
       ]
     },
     {
-      "nombre": "REDMI A5 3GB 64GB (3GB + 3GB)",
-      "costo": 108,
+      "nombre": "REDMI A5 3GB 64GB",
+      "costo": 135,
       "proveedor": "az",
       "colores": [
+        "Lake Green",
         "Midnight Black",
-        "Sandy Gold"
+        "Ocean Blue"
       ]
     },
     {
       "nombre": "REDMI A5 4GB 128GB",
-      "costo": 145,
+      "costo": 144,
       "proveedor": "az",
       "colores": [
         "Lake Green",
@@ -619,8 +708,8 @@
       ]
     },
     {
-      "nombre": "REDMI A5 4GB 128GB (4GB + 4GB)",
-      "costo": 143,
+      "nombre": "REDMI A5 4GB 128GB (4GB+4GB)",
+      "costo": 148,
       "proveedor": "az",
       "colores": [
         "Midnight Black"
@@ -628,25 +717,49 @@
     },
     {
       "nombre": "REDMI A7 PRO 4GB 128GB",
-      "costo": 143,
+      "costo": 149,
       "proveedor": "az",
       "colores": [
         "Black",
-        "Mist Blue",
-        "Palm Green"
+        "Mist Blue"
+      ]
+    },
+    {
+      "nombre": "REDMI A7 PRO 4GB 128GB (4GB+4GB)",
+      "costo": 150,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "REDMI NOTE 14 8GB 128GB",
+      "costo": 215,
+      "proveedor": "az",
+      "colores": [
+        "Black"
       ]
     },
     {
       "nombre": "REDMI NOTE 15 5G 8GB 256GB",
-      "costo": 295,
+      "costo": 285,
       "proveedor": "az",
       "colores": [
+        "Black",
         "Glacier Blue"
       ]
     },
     {
       "nombre": "REDMI NOTE 15 6GB 128GB",
-      "costo": 203,
+      "costo": 210,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "REDMI NOTE 15 6GB 128GB NFC",
+      "costo": 215,
       "proveedor": "az",
       "colores": [
         "Black"
@@ -654,7 +767,16 @@
     },
     {
       "nombre": "REDMI NOTE 15 8GB 256GB",
-      "costo": 234,
+      "costo": 245,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Glacier Blue"
+      ]
+    },
+    {
+      "nombre": "REDMI NOTE 15 PRO 12GB 512GB",
+      "costo": 336,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -663,16 +785,17 @@
     },
     {
       "nombre": "REDMI NOTE 15 PRO 5G 12GB 512GB",
-      "costo": 385,
+      "costo": 381,
       "proveedor": "az",
       "colores": [
         "Black",
-        "Glacier Blue"
+        "Glacier Blue",
+        "Mist Purple"
       ]
     },
     {
       "nombre": "REDMI NOTE 15 PRO 5G 8GB 256GB",
-      "costo": 333,
+      "costo": 331,
       "proveedor": "az",
       "colores": [
         "Black"
@@ -690,10 +813,9 @@
     },
     {
       "nombre": "REDMI NOTE 15 PRO 8GB 256GB",
-      "costo": 292,
+      "costo": 289,
       "proveedor": "az",
       "colores": [
-        "Black",
         "Glacier Blue",
         "Titanium"
       ]
@@ -709,24 +831,42 @@
     },
     {
       "nombre": "REDMI NOTE 15 PRO+ 5G 8GB 256GB",
-      "costo": 378,
+      "costo": 376,
       "proveedor": "az",
       "colores": [
         "Black",
-        "Glacier Blue"
+        "Glacier Blue",
+        "Mocha Brown"
       ]
     },
     {
-      "nombre": "REDMI NOTE 17 4GB 128GB",
-      "costo": 230,
+      "nombre": "REDMI NOTE 17 4GB 128GB (4GB+4GB)",
+      "costo": 228,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Sky Teal"
+      ]
+    },
+    {
+      "nombre": "REDMI NOTE 17 4GB 128GB NFC (4GB+4GB)",
+      "costo": 218,
       "proveedor": "az",
       "colores": [
         "Sky Teal"
       ]
     },
     {
+      "nombre": "REDMI NOTE 17 4GB 256GB (4GB+4GB)",
+      "costo": 240,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
       "nombre": "REDMI NOTE 17 5G 6GB 128GB NFC (6GB+6GB)",
-      "costo": 270,
+      "costo": 264,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -735,8 +875,24 @@
       ]
     },
     {
+      "nombre": "REDMI NOTE 17 5G 6GB 256GB (6GB+6GB)",
+      "costo": 273,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "REDMI NOTE 17 5G 8GB 256GB (8GB+8GB)",
+      "costo": 280,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
       "nombre": "REDMI NOTE 17 6GB 128GB (6GB+6GB)",
-      "costo": 242,
+      "costo": 238,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -744,17 +900,16 @@
       ]
     },
     {
-      "nombre": "REDMI NOTE 17 6GB 256GB (6GB+6GB)",
-      "costo": 256,
+      "nombre": "REDMI NOTE 17 6GB 128GB NFC (6GB+6GB)",
+      "costo": 235,
       "proveedor": "az",
       "colores": [
-        "Black",
-        "Sky Teal"
+        "Black"
       ]
     },
     {
-      "nombre": "REDMI NOTE 17 8GB 256GB",
-      "costo": 278,
+      "nombre": "REDMI NOTE 17 6GB 256GB (6GB+6GB)",
+      "costo": 249,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -763,25 +918,55 @@
       ]
     },
     {
-      "nombre": "REDMI NOTE 17 PRO 5G 8GB 256GB NFC (8GB+8GB)",
-      "costo": 376,
+      "nombre": "REDMI NOTE 17 6GB 256GB NFC (6GB+6GB)",
+      "costo": 255,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Celestial Purple",
+        "Sky Teal"
+      ]
+    },
+    {
+      "nombre": "REDMI NOTE 17 8GB 256GB (8GB+8GB)",
+      "costo": 272,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Celestial Purple"
+      ]
+    },
+    {
+      "nombre": "REDMI NOTE 17 8GB 256GB NFC (8GB+8GB)",
+      "costo": 278,
       "proveedor": "az",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "REDMI NOTE 17 PRO MAX 5G 8GB 256GB NFC (8GB+8GB)",
-      "costo": 460,
+      "nombre": "REDMI NOTE 17 PRO 5G 8GB 256GB NFC (8GB+8GB)",
+      "costo": 380,
       "proveedor": "az",
       "colores": [
-        "Cloud Blush",
-        "Green"
+        "Black",
+        "Satin Orange",
+        "Sky Teal"
+      ]
+    },
+    {
+      "nombre": "REDMI NOTE 17 PRO MAX 5G 8GB 256GB NFC (8GB+8GB)",
+      "costo": 455,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Green",
+        "Pink Cloud"
       ]
     },
     {
       "nombre": "REDMI NOTE 17 PRO MAX 5G 8GB 512GB NFC (8GB+8GB)",
-      "costo": 530,
+      "costo": 510,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -792,7 +977,7 @@
     },
     {
       "nombre": "XIAOMI 15 5G 12GB 512GB",
-      "costo": 820,
+      "costo": 812,
       "proveedor": "az",
       "colores": [
         "Black"
@@ -807,8 +992,16 @@
       ]
     },
     {
+      "nombre": "XIAOMI 15T PRO 12GB 512GB (s/ cargador)",
+      "costo": 750,
+      "proveedor": "az",
+      "colores": [
+        "Gray"
+      ]
+    },
+    {
       "nombre": "XIAOMI 15T PRO 5G 12GB 256GB",
-      "costo": 680,
+      "costo": 660,
       "proveedor": "az",
       "colores": [
         "Black"
@@ -823,8 +1016,17 @@
       ]
     },
     {
+      "nombre": "XIAOMI 15T PRO 5G 12GB 512GB (s/ cargador)",
+      "costo": 737,
+      "proveedor": "az",
+      "colores": [
+        "Gray",
+        "Mocha Gold"
+      ]
+    },
+    {
       "nombre": "XIAOMI 17 12GB 512GB (s/ cargador)",
-      "costo": 864,
+      "costo": 836,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -832,25 +1034,32 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A06 4GB 128GB",
-      "costo": 143,
+      "nombre": "XIAOMI 17T 5G 12GB 256GB (s/ cargador)",
+      "costo": 550,
+      "proveedor": "az",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "XIAOMI 17 ULTRA 5G 16GB 1TB NFC",
+      "costo": 1450,
+      "proveedor": "az",
+      "colores": [
+        "White"
+      ]
+    },
+    {
+      "nombre": "A06 4GB 128GB",
+      "costo": 149,
       "proveedor": "az",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "SAMSUNG A06 4GB 64GB",
-      "costo": 123,
-      "proveedor": "az",
-      "colores": [
-        "Gold",
-        "Light Blue"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A07 4GB 128GB",
-      "costo": 160,
+      "nombre": "A07 4GB 128GB",
+      "costo": 157,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -858,7 +1067,7 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A07 4GB 128GB con cargador",
+      "nombre": "A07 4GB 128GB con cargador",
       "costo": 158,
       "proveedor": "az",
       "colores": [
@@ -867,8 +1076,16 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A07 4GB 64GB",
-      "costo": 128,
+      "nombre": "A07 4GB 64GB",
+      "costo": 146,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ]
+    },
+    {
+      "nombre": "A07S 4GB 64GB",
+      "costo": 158,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -877,15 +1094,15 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A16 4GB 128GB",
-      "costo": 154,
+      "nombre": "A16 4GB 128GB",
+      "costo": 166,
       "proveedor": "az",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "SAMSUNG A17 4GB 128GB",
+      "nombre": "A17 4GB 128GB",
       "costo": 175,
       "proveedor": "az",
       "colores": [
@@ -895,24 +1112,25 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A17 5G 8GB 256GB",
-      "costo": 308,
+      "nombre": "A17 5G 4GB 128GB",
+      "costo": 198,
       "proveedor": "az",
       "colores": [
         "Black"
       ]
     },
     {
-      "nombre": "SAMSUNG A17 6GB 128GB",
+      "nombre": "A17 5G 8GB 256GB",
+      "costo": 301,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "A17 6GB 128GB",
       "costo": 215,
-      "proveedor": "az",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A17 8GB 256GB",
-      "costo": 255,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -921,24 +1139,17 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A26 5G 6GB 128GB",
-      "costo": 247,
+      "nombre": "A17 8GB 256GB",
+      "costo": 255,
       "proveedor": "az",
       "colores": [
-        "Peach Pink"
+        "Black",
+        "Gray"
       ]
     },
     {
-      "nombre": "SAMSUNG A26 5G 8GB 128GB",
-      "costo": 258,
-      "proveedor": "az",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A27 5G 6GB 128GB",
-      "costo": 265,
+      "nombre": "A27 5G 8GB 256GB",
+      "costo": 344,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -947,15 +1158,7 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A27 5G 8GB 256GB",
-      "costo": 348,
-      "proveedor": "az",
-      "colores": [
-        "Blue"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A36 5G 8GB 128GB",
+      "nombre": "A36 5G 8GB 128GB",
       "costo": 303,
       "proveedor": "az",
       "colores": [
@@ -965,18 +1168,7 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A36 5G 8GB 256GB",
-      "costo": 317,
-      "proveedor": "az",
-      "colores": [
-        "Awesome Black",
-        "Awesome Lavender",
-        "Awesome Lime",
-        "Awesome White"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A37 5G 6GB 128GB",
+      "nombre": "A37 5G 6GB 128GB",
       "costo": 370,
       "proveedor": "az",
       "colores": [
@@ -987,8 +1179,8 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A37 5G 8GB 256GB",
-      "costo": 389,
+      "nombre": "A37 5G 8GB 256GB",
+      "costo": 386,
       "proveedor": "az",
       "colores": [
         "Awesome Charcoal",
@@ -998,97 +1190,32 @@
       ]
     },
     {
-      "nombre": "SAMSUNG A56 5G 12GB 256GB",
-      "costo": 428,
-      "proveedor": "az",
-      "colores": [
-        "Awesome Olive"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A56 5G 8GB 128GB",
-      "costo": 353,
-      "proveedor": "az",
-      "colores": [
-        "Awesome Graphite",
-        "Awesome Olive",
-        "Awesome Pink"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG A56 5G 8GB 256GB",
+      "nombre": "A56 5G 8GB 256GB",
       "costo": 385,
       "proveedor": "az",
       "colores": [
-        "Awesome Graphite",
         "Awesome Olive"
       ]
     },
     {
-      "nombre": "SAMSUNG A57 5G 8GB 128GB",
-      "costo": 355,
+      "nombre": "S25 FE 5G 8GB 256GB",
+      "costo": 555,
       "proveedor": "az",
       "colores": [
-        "Awesome Gray"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S25 FE 5G 8GB 256GB",
-      "costo": 580,
-      "proveedor": "az",
-      "colores": [
+        "Jetblack",
         "Navy"
       ]
     },
     {
-      "nombre": "SAMSUNG S25 FE 5G 8GB 512GB",
-      "costo": 620,
+      "nombre": "S25 ULTRA 5G 12GB 1TB",
+      "costo": 1080,
       "proveedor": "az",
       "colores": [
-        "Icyblue",
-        "Jetblack"
+        "Titanium Gray"
       ]
     },
     {
-      "nombre": "SAMSUNG S25 ULTRA 5G 12GB 256GB",
-      "costo": 810,
-      "proveedor": "az",
-      "colores": [
-        "Titanium Gray",
-        "Titanium Silverblue",
-        "Titanium Whitesilver"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S25 ULTRA 5G 12GB 512GB",
-      "costo": 915,
-      "proveedor": "az",
-      "colores": [
-        "Titanium Black",
-        "Titanium Gray",
-        "Titanium Silverblue",
-        "Titanium Whitesilver"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S26 5G 12GB 512GB",
-      "costo": 845,
-      "proveedor": "az",
-      "colores": [
-        "Cobalt Violet"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S26 PLUS 5G 12GB 256GB",
-      "costo": 881,
-      "proveedor": "az",
-      "colores": [
-        "Black",
-        "Cobalt Violet"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S26 PLUS 5G 12GB 512GB",
+      "nombre": "S26 PLUS 5G 12GB 512GB",
       "costo": 1100,
       "proveedor": "az",
       "colores": [
@@ -1097,42 +1224,7 @@
       ]
     },
     {
-      "nombre": "SAMSUNG S26 ULTRA 5G 12GB 256GB",
-      "costo": 985,
-      "proveedor": "az",
-      "colores": [
-        "Colbat Violet"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG S26 ULTRA 5G 12GB 512GB",
-      "costo": 1119,
-      "proveedor": "az",
-      "colores": [
-        "Colbat Violet",
-        "Sky Blue"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG Z FLIP 8 5G 12GB 256GB",
-      "costo": 1000,
-      "proveedor": "az",
-      "colores": [
-        "Cream",
-        "Graphite"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG Z FLIP 8 5G 12GB 512GB",
-      "costo": 1155,
-      "proveedor": "az",
-      "colores": [
-        "Cream",
-        "Graphite"
-      ]
-    },
-    {
-      "nombre": "SAMSUNG Z FOLD 8 5G 12GB 512GB",
+      "nombre": "Z FOLD 8 5G 12GB 512GB",
       "costo": 1600,
       "proveedor": "az",
       "colores": [
@@ -1140,34 +1232,77 @@
       ]
     },
     {
-      "nombre": "SAMSUNG Z FOLD 8 ULTRA 5G 12GB 512GB",
+      "nombre": "Z FOLD 8 ULTRA 5G 12GB 512GB",
       "costo": 1870,
       "proveedor": "az",
       "colores": [
         "Cream",
-        "Graphite",
         "Violet Shadow"
       ]
     },
     {
+      "nombre": "EDGE 60 FUSION 5G 8GB 256GB",
+      "costo": 300,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Amazonite (Green)"
+      ]
+    },
+    {
       "nombre": "MOTO E15 2GB 64GB",
-      "costo": 122,
+      "costo": 128,
       "proveedor": "az",
       "colores": [
         "Quarry Blue"
       ]
     },
     {
-      "nombre": "MOTO EDGE 60 FUSION 5G 12GB 256GB",
-      "costo": 316,
+      "nombre": "MOTO EDGE 50 FUSION 5G 12GB 512GB",
+      "costo": 340,
       "proveedor": "az",
       "colores": [
-        "Pantone Amazonite (Blue)"
+        "Forest Blue"
+      ]
+    },
+    {
+      "nombre": "MOTO EDGE 50 FUSION 5G 8GB 256GB (s/ cargador)",
+      "costo": 264,
+      "proveedor": "az",
+      "colores": [
+        "Forest Green"
+      ]
+    },
+    {
+      "nombre": "MOTO EDGE 60 FUSION 5G 12GB 256GB",
+      "costo": 325,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Amazonite (Blue)",
+        "Pantone Mykonos Blue",
+        "Pantone Slipstream"
+      ]
+    },
+    {
+      "nombre": "MOTO EDGE 60 FUSION 5G 8GB 128GB",
+      "costo": 265,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Amazonite (Green)",
+        "Pantone Slipstream (Blue)",
+        "Pantone Zephyr (Pink)"
+      ]
+    },
+    {
+      "nombre": "MOTO EDGE 60 FUSION 5G 8GB 256GB",
+      "costo": 310,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Amazonite (Green)"
       ]
     },
     {
       "nombre": "MOTO EDGE 60 FUSION 5G 8GB 256GB (s/ cargador)",
-      "costo": 273,
+      "costo": 300,
       "proveedor": "az",
       "colores": [
         "Pantone Amazonite (Blue)"
@@ -1175,23 +1310,40 @@
     },
     {
       "nombre": "MOTO EDGE 70 5G 8GB 256GB",
-      "costo": 410,
+      "costo": 402,
       "proveedor": "az",
       "colores": [
-        "Pantone Bronze Green"
+        "Pantone Bronze Green",
+        "Pantone Lily Pad"
+      ]
+    },
+    {
+      "nombre": "MOTO EDGE 70 FUSION 12GB 256GB",
+      "costo": 382,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Blue Surf"
       ]
     },
     {
       "nombre": "MOTO EDGE 70 FUSION 5G 8GB 256GB",
-      "costo": 388,
+      "costo": 384,
       "proveedor": "az",
       "colores": [
-        "Pantone Silhouette"
+        "Pantone Country Air"
+      ]
+    },
+    {
+      "nombre": "MOTO EDGE 70 PRO 5G 12GB 512GB",
+      "costo": 792,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Titan (Blue)"
       ]
     },
     {
       "nombre": "MOTO G04S 4GB 256GB",
-      "costo": 140,
+      "costo": 141,
       "proveedor": "az",
       "colores": [
         "Aurora Green",
@@ -1200,36 +1352,39 @@
     },
     {
       "nombre": "MOTO G05 4GB 128GB",
-      "costo": 135,
+      "costo": 140,
       "proveedor": "az",
       "colores": [
+        "Deep Green",
         "Red"
       ]
     },
     {
       "nombre": "MOTO G06 4GB 128GB",
-      "costo": 146,
+      "costo": 144,
       "proveedor": "az",
       "colores": [
+        "Pantone Arabesque (Orange)",
         "Pantone Tapestry (Blue)",
         "Pantone Tendril (Green)"
       ]
     },
     {
       "nombre": "MOTO G06 4GB 256GB",
-      "costo": 163,
+      "costo": 160,
       "proveedor": "az",
       "colores": [
-        "Pantone Tapestry (Blue)"
+        "Pantone Arabesque (Orange)",
+        "Pantone Tapestry (Blue)",
+        "Pantone Tendril (Green)"
       ]
     },
     {
       "nombre": "MOTO G06 4GB 64GB",
-      "costo": 115,
+      "costo": 122,
       "proveedor": "az",
       "colores": [
-        "Pantone Tapestry (Blue)",
-        "Pantone Tendril (Green)"
+        "Pantone Tapestry (Blue)"
       ]
     },
     {
@@ -1242,16 +1397,8 @@
       ]
     },
     {
-      "nombre": "MOTO G15 4GB 128GB",
-      "costo": 150,
-      "proveedor": "az",
-      "colores": [
-        "Gray"
-      ]
-    },
-    {
       "nombre": "MOTO G15 4GB 256GB",
-      "costo": 164,
+      "costo": 165,
       "proveedor": "az",
       "colores": [
         "Gray",
@@ -1260,7 +1407,7 @@
     },
     {
       "nombre": "MOTO G15 4GB 512GB",
-      "costo": 174,
+      "costo": 166,
       "proveedor": "az",
       "colores": [
         "Blue",
@@ -1268,8 +1415,17 @@
       ]
     },
     {
+      "nombre": "MOTO G17 4GB 128GB",
+      "costo": 170,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Alaskan Blue (Light Blue)",
+        "Pantone Bordeaux (Pink)"
+      ]
+    },
+    {
       "nombre": "MOTO G17 4GB 256GB",
-      "costo": 203,
+      "costo": 194,
       "proveedor": "az",
       "colores": [
         "Pantone Alaskan Blue (Light Blue)",
@@ -1278,15 +1434,15 @@
     },
     {
       "nombre": "MOTO G17 POWER 8GB 256GB",
-      "costo": 240,
+      "costo": 235,
       "proveedor": "az",
       "colores": [
-        "Pantone Evening Blue (Blueberry)"
+        "Pantone Alaskan Blue (Light Blue)"
       ]
     },
     {
       "nombre": "MOTO G35 5G 4GB 256GB",
-      "costo": 185,
+      "costo": 181,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -1294,41 +1450,45 @@
       ]
     },
     {
-      "nombre": "MOTO G56 5G 12GB 256GB",
-      "costo": 260,
+      "nombre": "MOTO G47 5G 8GB 128GB (s/ cargador)",
+      "costo": 203,
       "proveedor": "az",
       "colores": [
+        "Pantone Impenetrable (Grey)"
+      ]
+    },
+    {
+      "nombre": "MOTO G56 5G 12GB 256GB",
+      "costo": 257,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Black Oyster (Black)",
+        "Pantone Dazzling Blue (Blue)",
         "Pantone Dill (Green)"
       ]
     },
     {
       "nombre": "MOTO G56 5G 8GB 256GB",
-      "costo": 250,
+      "costo": 249,
       "proveedor": "az",
       "colores": [
-        "Pantone Black Oyster (Black)"
-      ]
-    },
-    {
-      "nombre": "MOTO G67 4GB 256GB",
-      "costo": 275,
-      "proveedor": "az",
-      "colores": [
-        "Pantone Nile (Lime)"
+        "Pantone Black Oyster (Black)",
+        "Pantone Black Oyster (Navy Blue )",
+        "Pantone Dill (Green)",
+        "Pantone Gray Mist (Grey)"
       ]
     },
     {
       "nombre": "MOTO G77 8GB 256GB",
-      "costo": 270,
+      "costo": 275,
       "proveedor": "az",
       "colores": [
-        "Pantone Black Olive (Coffee)",
-        "Pantone Shaded Spruce (Green)"
+        "Pantone Shaded Spruce (Emerald)"
       ]
     },
     {
       "nombre": "MOTO G86 5G 8GB 256GB",
-      "costo": 290,
+      "costo": 307,
       "proveedor": "az",
       "colores": [
         "Pantone Chrysanthemum (Pink)",
@@ -1337,17 +1497,24 @@
     },
     {
       "nombre": "MOTO G86 5G 8GB 256GB (s/ cargador)",
-      "costo": 260,
+      "costo": 280,
       "proveedor": "az",
       "colores": [
         "Pantone Chrysanthemum (Pink)",
-        "Pantone Cosmic Sky (Lilac Blue)",
         "Pantone Spellbound (Dark Blue)"
       ]
     },
     {
+      "nombre": "MOTOROLA EDGE 60 PRO 5G 8GB 256GB",
+      "costo": 385,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Shadow"
+      ]
+    },
+    {
       "nombre": "REALME C71 4GB 128GB (4gb+8gb)",
-      "costo": 125,
+      "costo": 120,
       "proveedor": "az",
       "colores": [
         "Forest Owl",
@@ -1356,7 +1523,7 @@
     },
     {
       "nombre": "REALME C71 8GB 256GB (8gb+16gb)",
-      "costo": 153,
+      "costo": 151,
       "proveedor": "az",
       "colores": [
         "White Swan"
@@ -1364,7 +1531,7 @@
     },
     {
       "nombre": "REALME C75X 8GB 256GB",
-      "costo": 138,
+      "costo": 142,
       "proveedor": "az",
       "colores": [
         "Oceanic Blue"
@@ -1397,7 +1564,7 @@
     },
     {
       "nombre": "REALME NOTE 70 4GB 128GB (4gb+8gb)",
-      "costo": 118,
+      "costo": 114,
       "proveedor": "az",
       "colores": [
         "Obsidian Black"
@@ -1405,49 +1572,25 @@
     },
     {
       "nombre": "REALME NOTE 70 4GB 256GB (4gb+8gb)",
-      "costo": 138,
+      "costo": 136,
       "proveedor": "az",
       "colores": [
         "Beach Gold"
       ]
     },
     {
-      "nombre": "INFINIX HOT 60 PRO+ 8GB 256GB",
-      "costo": 238,
-      "proveedor": "az",
-      "colores": [
-        "Sleek Black",
-        "Titanium Silver"
-      ]
-    },
-    {
-      "nombre": "ADAPTADOR MULTIFUNCION 6 EN 1 TIPO-C HDTV",
-      "costo": 5,
-      "proveedor": "az",
-      "colores": [
-        "Gray"
-      ]
-    },
-    {
       "nombre": "ADAPTADOR MULTIFUNCION 7 EN 1 TIPO-C HDTV",
-      "costo": 8,
+      "costo": 6,
       "proveedor": "az",
       "colores": [
         "Gray"
-      ]
-    },
-    {
-      "nombre": "Auriculares Jbl Tune110",
-      "costo": 11,
-      "proveedor": "az",
-      "colores": [
-        "Blue"
       ]
     },
     {
       "nombre": "Cámara Instax Mini 12tm Instant Camera Bundle",
-      "costo": 136,
-      "proveedor": "az"
+      "costo": 132,
+      "proveedor": "az",
+      "colores": []
     },
     {
       "nombre": "Cargador Apple Usb-c De 140w CERTIFICADO",
@@ -1458,16 +1601,8 @@
       ]
     },
     {
-      "nombre": "CARGADOR SAMSUNG POWER ADAPTER 25W",
-      "costo": 19,
-      "proveedor": "az",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
       "nombre": "CARTUCHO DE TINTA HP 667 3YM78AL 2ML COLOR",
-      "costo": 14,
+      "costo": 15,
       "proveedor": "az",
       "colores": [
         "Tricolor"
@@ -1491,7 +1626,7 @@
     },
     {
       "nombre": "CELULAR NOKIA 110 4g",
-      "costo": 32,
+      "costo": 27,
       "proveedor": "az",
       "colores": [
         "Black",
@@ -1501,7 +1636,8 @@
     {
       "nombre": "GALAXY SMART TAG 2 (2023) 1 PACK LOCALIZADOR BLUETOOTH",
       "costo": 40,
-      "proveedor": "az"
+      "proveedor": "az",
+      "colores": []
     },
     {
       "nombre": "GAME CONSOLE R36S",
@@ -1515,12 +1651,13 @@
     },
     {
       "nombre": "INSTAX WIDE PELICULA INSTANTANEA",
-      "costo": 39,
-      "proveedor": "az"
+      "costo": 37,
+      "proveedor": "az",
+      "colores": []
     },
     {
       "nombre": "JOYSTICK PS5 INALÁMBRICO SONY PLAYSTATION 5 DUALSENSE",
-      "costo": 82,
+      "costo": 79,
       "proveedor": "az",
       "colores": [
         "White"
@@ -1544,6 +1681,15 @@
       ]
     },
     {
+      "nombre": "NINTENDO SWITCH 2 256GB",
+      "costo": 579,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Gray"
+      ]
+    },
+    {
       "nombre": "NINTENDO SWITCH OLED 64GB",
       "costo": 380,
       "proveedor": "az",
@@ -1554,29 +1700,49 @@
     {
       "nombre": "PALETA PADEL NOX AT10 GENIUS 12K 2025 AGUSTIN TAPIA",
       "costo": 280,
-      "proveedor": "az"
+      "proveedor": "az",
+      "colores": []
     },
     {
       "nombre": "PALETA PADEL NOX AT10 GENIUS 18K 2025 AGUSTIN TAPIA",
-      "costo": 272,
-      "proveedor": "az"
+      "costo": 268,
+      "proveedor": "az",
+      "colores": []
     },
     {
       "nombre": "PALETA PADEL NOX AT10 GENIUS ATTACK 18K 2025 AGUSTIN TAPIA",
       "costo": 280,
-      "proveedor": "az"
+      "proveedor": "az",
+      "colores": []
     },
     {
-      "nombre": "PARLANTE JBL FLIP 7",
-      "costo": 95,
+      "nombre": "PLAYSTATION 5 SLIM 1TB PS5 DIGITAL + DUALSENSE",
+      "costo": 720,
       "proveedor": "az",
       "colores": [
-        "Black"
+        "White"
+      ]
+    },
+    {
+      "nombre": "RAY-BAN META GEN 2 HEADLINER RW4013 (T150 S50)",
+      "costo": 475,
+      "proveedor": "az",
+      "colores": [
+        "F Shiny Black (L Transitions Graph. Green)"
+      ]
+    },
+    {
+      "nombre": "RAY-BAN META GEN 2 RW4012 (T 150 S50)",
+      "costo": 468,
+      "proveedor": "az",
+      "colores": [
+        "F Shiny Black (L G15 Green)",
+        "F Shiny Black (L Transitions Graph. Green)"
       ]
     },
     {
       "nombre": "Repetidor Extensor de rango Wi-Fi TP-Link TL-WA850RE V7",
-      "costo": 20,
+      "costo": 19,
       "proveedor": "az",
       "colores": [
         "White"
@@ -1600,7 +1766,7 @@
     },
     {
       "nombre": "VOLANTE LOGITECH G29 RACING PC PS3 PS4 PS5 220V",
-      "costo": 295,
+      "costo": 256,
       "proveedor": "az",
       "colores": [
         "Black"
@@ -1633,13 +1799,10 @@
     },
     {
       "nombre": "XIAOMI MI BAND 9 ACTIVE",
-      "costo": 30,
+      "costo": 31,
       "proveedor": "az",
       "colores": [
-        "Beige White",
-        "Green",
-        "Pink",
-        "Purple"
+        "Pink"
       ]
     },
     {
@@ -1661,295 +1824,473 @@
     },
     {
       "nombre": "IPHONE 15 PRO 128GB USADO SIN FACE ID",
-      "costo": 500,
+      "costo": 490,
       "proveedor": "az",
       "colores": [
         "Space Black Grado A+ 90%"
+      ]
+    },
+    {
+      "nombre": "IPHONE 15 PRO 512GB USADO Grado A",
+      "costo": 700,
+      "proveedor": "az",
+      "colores": [
+        "Blue Titanium 86%",
+        "Natural Titanium 80%",
+        "Natural Titanium 86%",
+        "White Titanium 85%",
+        "White Titanium 86%",
+        "White Titanium 87%",
+        "White Titanium 88%"
+      ]
+    },
+    {
+      "nombre": "IPHONE 16 PRO MAX 512GB USADO Grado A",
+      "costo": 950,
+      "proveedor": "az",
+      "colores": [
+        "Black Titanium 100%",
+        "Desert Titanium 100%",
+        "Desert Titanium 89%",
+        "Desert Titanium 90%",
+        "Desert Titanium 99%",
+        "Natural Titanium 91%",
+        "Natural Titanium 93%",
+        "Natural Titanium 97%",
+        "White Titanium B 100%"
+      ]
+    },
+    {
+      "nombre": "IPHONE XR 256GB USADO",
+      "costo": 180,
+      "proveedor": "az",
+      "colores": [
+        "White 100%"
       ]
     }
   ],
   "filtrados": [
     {
       "nombre": "IPHONE 17 PRO MAX 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 1260,
+      "proveedor": "az",
+      "colores": [
+        "Cosmic Orange"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "APPLE AIRTAGS RASTREADOR 4 PACK Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 90,
+      "proveedor": "az",
+      "colores": [
+        "White"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
-      "nombre": "APPLEWATCH S11 46MM GPS Aluminum Case Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "NOTE 14 5G 8GB 256GB slim Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "NOTE 14 PRO 5G 12GB 512GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "NOTE 14 PRO PLUS 5G 12GB 512GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "POCO C85 6GB 128GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "nombre": "NOTE 14 PRO 5G 8GB 256GB Caja Abollada",
+      "costo": 274,
+      "proveedor": "az",
+      "colores": [
+        "Coral Green"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "POCO C85 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "POCO F7 5G 12GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 185,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Purple"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "POCO F7 5G 12GB 512GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 462,
+      "proveedor": "az",
+      "colores": [
+        "Silver"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
-      "nombre": "POCO F7 ULTRA 5G 12GB 256GB Slim Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "nombre": "POCO F7 ULTRA 5G 12GB 256GB (s/ cargador) Caja Abollada",
+      "costo": 547,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "POCO F8 PRO 5G 12GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 582,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "POCO M8 5G 8GB 512GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "POCO M8 PRO 5G 12GB 512GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "POCO M8 PRO 5G 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "POCO X8 PRO 5G 12GB 512GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 269,
+      "proveedor": "az",
+      "colores": [
+        "Silver"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "POCO X8 PRO 5G 8GB 512GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 408,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "REDMI 15 6GB 128GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 176,
+      "proveedor": "az",
+      "colores": [
+        "Midnight Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
-      "nombre": "REDMI A5 3GB 64GB (3GB + 3GB) Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "nombre": "REDMI 15C 8GB 256GB (8GB+8GB) Caja Abollada",
+      "costo": 180,
+      "proveedor": "az",
+      "colores": [
+        "Midnight Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "REDMI 17 6GB 256GB (6GB+6GB) Caja Abollada",
+      "costo": 233,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "REDMI A5 4GB 128GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 141,
+      "proveedor": "az",
+      "colores": [
+        "Midnight Black",
+        "Ocean Blue"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "REDMI A7 PRO 4GB 128GB (4GB+4GB) Caja Abollada",
+      "costo": 147,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "REDMI A7 PRO 4GB 128GB Caja Abollada",
+      "costo": 146,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Mist Blue"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "REDMI NOTE 14 8GB 128GB Caja Abollada",
+      "costo": 212,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "REDMI NOTE 15 PRO 5G 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 328,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "REDMI NOTE 15 PRO 5G 8GB 512GB Caja Abollada",
+      "costo": 353,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "REDMI NOTE 15 PRO+ 5G 12GB 512GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 432,
+      "proveedor": "az",
+      "colores": [
+        "Glacier Blue"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
-      "nombre": "REDMI NOTE 17 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "XIAOMI 15 5G 12GB 512GB slim Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "nombre": "XIAOMI 15 5G 12GB 512GB (s/ cargador) Caja Abollada",
+      "costo": 747,
+      "proveedor": "az",
+      "colores": [
+        "White"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "XIAOMI 15T PRO 5G 12GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 657,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Gray"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "XIAOMI 15T PRO 5G 12GB 512GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 747,
+      "proveedor": "az",
+      "colores": [
+        "Mocha Gold"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
-      "nombre": "XIAOMI 17 12GB 512GB slim Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "nombre": "XIAOMI 17 12GB 512GB (s/ cargador) Caja Abollada",
+      "costo": 833,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
-      "nombre": "A17 4GB 128GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "nombre": "A07 4GB 64GB Caja Abollada",
+      "costo": 143,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "A07S 4GB 64GB Caja Abollada",
+      "costo": 155,
+      "proveedor": "az",
+      "colores": [
+        "Green"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "A17 6GB 128GB Caja Abollada",
+      "costo": 212,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "A17 8GB 256GB Caja Abollada",
+      "costo": 252,
+      "proveedor": "az",
+      "colores": [
+        "Gray"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "A56 5G 8GB 128GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 362,
+      "proveedor": "az",
+      "colores": [
+        "Awesome Graphite",
+        "Awesome Olive"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "A56 5G 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 382,
+      "proveedor": "az",
+      "colores": [
+        "Awesome Olive"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "S25 FE 5G 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "S25 ULTRA 5G 12GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "S25 ULTRA 5G 12GB 512GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 552,
+      "proveedor": "az",
+      "colores": [
+        "Jetblack"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "MOTO E15 2GB 64GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 125,
+      "proveedor": "az",
+      "colores": [
+        "Quarry Blue"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
-      "nombre": "MOTO EDGE 60 FUSION 5G 8GB 256GB slim Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "nombre": "MOTO EDGE 60 FUSION 5G 12GB 256GB Caja Abollada",
+      "costo": 322,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Mykonos Blue"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
-      "nombre": "MOTO EDGE 70 5G 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "nombre": "MOTO EDGE 60 FUSION 5G 8GB 128GB Caja Abollada",
+      "costo": 262,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Amazonite (Green)"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "MOTO EDGE 60 FUSION 5G 8GB 256GB (s/ cargador) Caja Abollada",
+      "costo": 297,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Amazonite (Blue)"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "MOTO EDGE 70 FUSION 5G 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 381,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Country Air"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "MOTO G05 4GB 128GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 137,
+      "proveedor": "az",
+      "colores": [
+        "Red"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "MOTO G15 4GB 128GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "MOTO G56 5G 12GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 150,
+      "proveedor": "az",
+      "colores": [
+        "Gray"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "MOTO G67 4GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "MOTO G77 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 272,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Nile (Lime)"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "MOTO G86 5G 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "MOTO G86 5G 8GB 256GB Slim Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 307,
+      "proveedor": "az",
+      "colores": [
+        "Pantone Chrysanthemum (Pink)"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "REALME C71 4GB 128GB (4gb+8gb) Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 117,
+      "proveedor": "az",
+      "colores": [
+        "White Swan"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "REALME C71 8GB 256GB (8gb+16gb) Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "REALME C75X 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 148,
+      "proveedor": "az",
+      "colores": [
+        "White Swan"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "REALME C85 8GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "REALME NOTE 70 4GB 256GB (4gb+8gb) Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "NOTE 50 PRO 8GB 256GB (8GB+8GB) Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 232,
+      "proveedor": "az",
+      "colores": [
+        "Kingfisher Blue",
+        "Swan Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "HONOR X6B 4GB 256GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 205,
+      "proveedor": "az",
+      "colores": [
+        "Forest Green"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "MUSIC HEADBAND DIADEMA Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
-    },
-    {
-      "nombre": "NINTENDO SWITCH OLED 64GB Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 5,
+      "proveedor": "az",
+      "colores": [
+        "Black",
+        "Gray"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "SELFIE RING LIGHT Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 1,
+      "proveedor": "az",
+      "colores": [
+        "White"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     },
     {
       "nombre": "VOLANTE LOGITECH G29 RACING PC PS3 PS4 PS5 220V Caja Abollada",
-      "motivo": "caja abollada",
-      "proveedor": "az"
+      "costo": 246,
+      "proveedor": "az",
+      "colores": [
+        "Black"
+      ],
+      "motivo": "Sin disponibilidad o caja dañada"
     }
   ],
-  "dudas_precio": [
-    {
-      "texto": "IPHONE XR 256GB USADO | Colores: White 100%",
-      "motivo": "sin costo numérico",
-      "proveedor": "az"
-    }
-  ]
+  "dudas_precio": []
 }

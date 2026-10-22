@@ -97,3 +97,23 @@ test('used variants always use the battery label, even with only one option', ()
   assert.match(html, /value="" disabled selected hidden>Elegí una opción de color/);
   assert.match(html, /value="Blue 93%">Blue 93%/);
 });
+
+test('unknown color does not create a selector or invent a variant', () => {
+  const html = context.tarjetaProducto({nombre:'Samsung S26 Ultra', usd:1100});
+  assert.doesNotMatch(html, /<select|Color único|Colores disponibles:/);
+  assert.doesNotMatch(html, /<button class="btn-agregar"[^>]*disabled/);
+});
+
+test('home requires color only when supplier provides variants', () => {
+  const source = readFileSync(join(staticPath, 'landing.js'), 'utf8');
+  const start = source.indexOf('function tarjetaProducto(p) {');
+  const end = source.indexOf('function etiquetaOrdenActual()', start);
+  const home = {productoDelLink:null, escapeHtml:String, marcaLogoHtml:()=>'', bloquePreciosHtml:()=>'', botonFotoHtml:()=>'', botonEspecificacionesHtml:()=>'', botonCompartirHtml:()=>''};
+  runInNewContext(source.slice(start,end),home);
+  const unknown=home.tarjetaProducto({nombre:'Referencia sin color'});
+  assert.doesNotMatch(unknown,/selector-colores|Color único/);
+  assert.doesNotMatch(unknown,/<button class="btn-agregar"[^>]*disabled/);
+  const known=home.tarjetaProducto({nombre:'Un color',colores:['Negro']});
+  assert.match(known,/selector-colores/);
+  assert.match(known,/<button class="btn-agregar"[^>]*disabled/);
+});
