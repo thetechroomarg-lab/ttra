@@ -189,3 +189,19 @@ html[data-modo="classic"] .ttra-page-footer p { font-family: var(--pz-font); let
 /* ---- Superficies del navegador ---- */
 html[data-modo="classic"] { scrollbar-color: #45433e var(--pz-board); }
 html[data-modo="classic"] a { text-underline-offset: .2em; }
+
+/* ---- Sin sesión, nada de easter eggs ----
+   Gatitos, puerta y pescador ni se cargan (sesion.js); acá se apaga lo que
+   quedaba a la vista: el punto rojo deja de ser un juguete y el logo no
+   responde a nada (el dock tiene "Inicio"). */
+html[data-modo="classic"]:not(.ttra-logueado) #ttra-hero-title .ttra-accent { cursor: inherit; }
+html[data-modo="classic"]:not(.ttra-logueado) body > header :is(.ttra-page-brand, .rc-titulo-grupo, .rc-logo) { pointer-events: none; cursor: default; }
+/* Same look as the cat door the logged-in header draws (header-cat-door.js:
+   #181410 panel, wordmark at about two thirds), but flat and inert. The
+   transform keeps the layout box, so the header does not move. */
+html[data-modo="classic"]:not(.ttra-logueado) body > header :is(.ttra-page-brand, #titulo-inicio) {
+  transform: scale(.65);
+  background: #181410;
+  box-shadow: 0 0 0 30px #181410;
+  border-radius: 1px;
+}

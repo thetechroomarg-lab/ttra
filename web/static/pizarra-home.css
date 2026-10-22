@@ -30,8 +30,18 @@ html[data-modo="classic"] .ttra-hero h2 {
   text-align: left;
   white-space: normal;
 }
-html[data-modo="classic"] .ttra-hero-copy h2 br { display: block; }
-html[data-modo="classic"] #ttra-hero-title .ttra-accent::after { background: var(--pz-red); }
+/* Each line fills the full width of its board (cqi of the container): the
+   widest glyph run measured 4.18em ("LO BUSCÁS?") and 3.53em ("LO TENÉS."). */
+html[data-modo="classic"] .ttra-hero { container-type: inline-size; }
+html[data-modo="classic"] .ttra-hero-copy h2 br { display: none; }
+html[data-modo="classic"] #ttra-hero-title .ttra-cat-word { display: block; white-space: nowrap; }
+html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:first-child { font-size: calc((100cqi - 32px) / 4.18 * .985); }
+html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:last-child { font-size: calc((100cqi - 32px) / 3.53 * .985); }
+/* The second line is the larger one: its É needs room under the first line. */
+html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:last-child { margin-top: .1em; }
+/* Barlow Condensed sits its baseline .2em above the box bottom: the dot rests
+   on it like a real full stop (the old .3em came from the previous face). */
+html[data-modo="classic"] #ttra-hero-title .ttra-accent::after { bottom: .2em; background: var(--pz-red); }
 /* The name tag is stuck on the board: same sticker, a touch narrower on phones. */
 html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) {
   width: min(calc(100% - 24px), 330px);
@@ -39,12 +49,6 @@ html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal
 }
 
 html[data-modo="classic"] .ttra-pizarra { grid-area: board; display: grid; gap: 0; padding: 10px 0 0; }
-html[data-modo="classic"] .ttra-pz-rate {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  margin: 0 16px; padding: 10px 0;
-  border-top: 2px solid var(--pz-gap);
-}
-html[data-modo="classic"] .ttra-pz-rate .ttra-flap { font-size: 26px; }
 /* The featured product is one link: name and the five prices, tap anywhere. */
 html[data-modo="classic"] .ttra-pz-destacado { display: grid; color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; transition: scale .16s var(--pz-ease); }
 html[data-modo="classic"] .ttra-pz-destacado:active { scale: .99; }
@@ -202,18 +206,12 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
 @media (max-width: 700px) {
   html[data-modo="classic"] .ttra-hero {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "title rate" "sticker sticker" "destacado destacado" "ticker ticker";
+    grid-template-areas: "title title" "sticker sticker" "destacado destacado" "ticker ticker";
   }
   html[data-modo="classic"] :is(.ttra-hero-copy, .ttra-pizarra) { display: contents; }
-  html[data-modo="classic"] .ttra-hero .ttra-hero-copy h2 { grid-area: title; padding: 16px 0 0 16px; font-size: clamp(40px, 12vw, 56px); }
-  html[data-modo="classic"] .ttra-pz-rate {
-    grid-area: rate; flex-direction: column; align-items: flex-end; justify-content: flex-start; gap: 6px;
-    margin: 0; padding: 18px 16px 0 8px; border: 0;
-  }
-  html[data-modo="classic"] .ttra-pz-rate .ttra-flap { font-size: 22px; }
-  html[data-modo="classic"] .ttra-pz-rate .ttra-pz-plate { font-size: 13px; }
+  html[data-modo="classic"] .ttra-hero .ttra-hero-copy h2 { grid-area: title; padding: 16px 16px 0; font-size: clamp(40px, 12vw, 56px); }
   html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) {
-    grid-area: sticker; justify-self: start; width: 300px; margin: 12px 0 14px 14px; zoom: .78;
+    grid-area: sticker; justify-self: start; width: 300px; margin: 10px 0 12px 14px; zoom: .7;
   }
   html[data-modo="classic"] .ttra-pz-destacado { grid-area: destacado; }
   html[data-modo="classic"] .ttra-pz-product { min-height: 58px; font-size: 24px; }
@@ -234,16 +232,18 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
   }
   html[data-modo="classic"] .ttra-hero-copy { display: flex; flex-direction: column; justify-content: space-between; gap: 28px; padding: 36px 40px 40px; max-width: none; margin: 0; align-items: flex-start; text-align: left; }
   html[data-modo="classic"] .ttra-hero .ttra-hero-copy h2 { font-size: clamp(64px, 7.4vw, 112px); text-align: left; white-space: normal; }
-  html[data-modo="classic"] .ttra-hero-copy h2 br { display: block; }
+  html[data-modo="classic"] .ttra-hero-copy { container-type: inline-size; }
+  html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:first-child { font-size: calc(100cqi / 4.18 * .985); }
+  html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:last-child { font-size: calc(100cqi / 3.53 * .985); }
   html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) { width: min(100%, 380px); margin: 0 0 0 6px; }
-  html[data-modo="classic"] .ttra-pizarra { align-content: start; padding: 22px 0 0; border-left: 2px solid var(--pz-gap); }
-  html[data-modo="classic"] .ttra-pz-rate { margin: 0 22px; padding: 0 0 16px; border-top: 0; }
+  html[data-modo="classic"] .ttra-pizarra { align-content: stretch; padding: 0; border-left: 2px solid var(--pz-gap); }
+  html[data-modo="classic"] .ttra-pz-destacado { grid-template-rows: auto 1fr; }
+  html[data-modo="classic"] .ttra-pz-rows { grid-auto-rows: 1fr; }
   html[data-modo="classic"] .ttra-pz-product { padding-inline: 22px; font-size: 32px; min-height: 80px; }
   html[data-modo="classic"] .ttra-pz-rows > div { min-height: 78px; padding-inline: 22px; }
   html[data-modo="classic"] .ttra-pz-plate { font-size: 17px; }
   html[data-modo="classic"] .ttra-pizarra .ttra-flap { font-size: 50px; }
   html[data-modo="classic"] .ttra-pz-rows .ttra-pz-plate { font-size: 19px; }
-  html[data-modo="classic"] .ttra-pz-rate .ttra-flap { font-size: 30px; }
 
   html[data-modo="classic"] .ttra-collection-grid,
   html[data-modo="classic"] .ttra-garantias-grid { grid-template-columns: 1fr 1fr; max-width: 1240px; margin-inline: auto; border-width: 12px; }

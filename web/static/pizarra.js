@@ -1,6 +1,6 @@
-/* Pizarra de la home: cotización del día y los cinco precios de productos
+/* Pizarra de la home: los cinco precios de productos
    reales del catálogo, en dígitos de paleta (split-flap). Solo presentación:
-   lee /api/cotizacion y /api/catalogo, y los precios salen de preciosDe()
+   usa el catálogo que ya descarga landing.js, y los precios salen de preciosDe()
    (precios.js), igual que en el catálogo. */
 (() => {
   'use strict';
@@ -103,11 +103,6 @@
   board.addEventListener('focusin', () => { paused = true; });
   board.addEventListener('focusout', () => { paused = false; });
   reducedMotion.addEventListener('change', schedule);
-
-  fetch('/api/cotizacion', { cache: 'no-store' })
-    .then(r => (r.ok ? r.json() : null))
-    .then(d => { if (d && d.valor) flapTo(slot('rate'), fmt(d.valor)); })
-    .catch(() => {});
 
   function load(datos) {
     const secciones = datos && datos.secciones;
