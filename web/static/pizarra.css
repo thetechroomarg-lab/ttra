@@ -120,7 +120,10 @@ html[data-modo="classic"] .ttra-dock-label { border-color: var(--pz-frame); back
 html[data-modo="classic"] :is(.ttra-dock-category-panel a, .ttra-site-menu :is(a, button), .rc-perfil-opcion) {
   font: 700 18px/1.15 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; color: var(--pz-plate);
 }
-html[data-modo="classic"] :is(.ttra-dock-category-panel a, .ttra-site-menu :is(a, button), .rc-perfil-opcion):is(:hover, :focus-visible) { background: var(--pz-cell); color: #fff; }
+html[data-modo="classic"] :is(.ttra-dock-category-panel a, .ttra-site-menu :is(a, button), .rc-perfil-opcion):focus-visible { background: var(--pz-cell); color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] :is(.ttra-dock-category-panel a, .ttra-site-menu :is(a, button), .rc-perfil-opcion):hover { background: var(--pz-cell); color: #fff; }
+}
 
 /* ---- Títulos de página: letras de tablero ---- */
 html[data-modo="classic"] :is(.catalog-intro h1, .comparison-intro h1, .ttra-auth-form-wrap .tarjeta h1, .ttra-account-section h2, .ttra-page-footer-title,
@@ -204,4 +207,22 @@ html[data-modo="classic"]:not(.ttra-logueado) body > header :is(.ttra-page-brand
   background: #181410;
   box-shadow: 0 0 0 30px #181410;
   border-radius: 1px;
+}
+
+/* ---- Detalles de interacción ----
+   Todo lo que se toca responde al presionar; los hover solo con mouse; los
+   menús cierran más rápido de lo que abren y llevan un solo borde (el marco). */
+html[data-modo="classic"] :is(.tabs button, .btn-categoria, .btn-vista, .btn-volver, .catalog-brand-card, .pedidos-tab, .item-controles :is(.btn-menos, .btn-mas),
+  #btn-cerrar-carrito, #btn-cerrar-panel-perfil, #btn-cerrar-panel-pedidos, .ttra-garantia-cerrar, .catalog-share-actions :is(button, a), #compartir-busqueda,
+  .catalog-back, .catalog-login, #btn-logout, .comparison-share, .comparison-add, .comparison-return, .dropdown-color-boton, .catalog-price-reset) {
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, scale .16s var(--pz-ease);
+}
+html[data-modo="classic"] :is(.tabs button, .btn-categoria, .btn-vista, .btn-volver, .catalog-brand-card, .pedidos-tab, .item-controles :is(.btn-menos, .btn-mas),
+  #btn-cerrar-carrito, #btn-cerrar-panel-perfil, #btn-cerrar-panel-pedidos, .ttra-garantia-cerrar, .catalog-share-actions :is(button, a), #compartir-busqueda,
+  .catalog-back, .catalog-login, #btn-logout, .comparison-share, .comparison-add, .comparison-return, .dropdown-color-boton, .catalog-price-reset):active { scale: .97; }
+html[data-modo="classic"] .catalog-brand-card:active { scale: .985; }
+
+html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, #sugerencias-direccion, #perfil-sugerencias-direccion, .ttra-dock-category-panel) { border: 0; }
+html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-color-lista, #sugerencias-direccion, #perfil-sugerencias-direccion, .ttra-dock-category-panel):is([hidden], .oculto) {
+  transition-duration: .12s, .16s, .16s, .16s;
 }

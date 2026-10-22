@@ -48,9 +48,22 @@
 
   // The whole featured block opens that product in the catalog, the same
   // "Ver en el catálogo" link the comparison page uses.
+  // The name changes under a short blur so the swap reads as one board
+  // update instead of two words replacing each other.
+  function swapName(nombre) {
+    const el = slot('name');
+    if (el.textContent === nombre) return;
+    if (reducedMotion.matches || !el.animate || !el.textContent.trim()) { el.textContent = nombre; return; }
+    const out = el.animate([{ opacity: 1, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(3px)' }], { duration: 120, easing: 'ease' });
+    out.onfinish = () => {
+      el.textContent = nombre;
+      el.animate([{ opacity: 0, filter: 'blur(3px)' }, { opacity: 1, filter: 'blur(0)' }], { duration: 200, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+    };
+  }
+
   function showProduct({ seccion, producto: p }) {
     const precios = window.preciosDe ? window.preciosDe(p) : { dolares: p.usd, pesos: p.pesos };
-    slot('name').textContent = p.nombre;
+    swapName(p.nombre);
     slot('link').href = '/catalogo?' + new URLSearchParams({ categoria: seccion, buscar: '1', q: p.nombre });
     slot('link').setAttribute('aria-label', `Ver ${p.nombre} en el catálogo`);
     for (const key of PRICE_KEYS) flapTo(slot(key), precios[key] == null ? '—' : fmt(precios[key]));
@@ -90,12 +103,17 @@
     clearTimeout(timer);
     if (products.length < 2 || reducedMotion.matches) return;
     timer = setTimeout(() => {
-      if (!paused && !document.hidden) {
+      if (!paused && visible && !document.hidden) {
         index = (index + 1) % products.length;
         showProduct(products[index]);
       }
       schedule();
     }, CYCLE_MS);
+  }
+  // Off screen the board holds too: no flipping nobody is looking at.
+  let visible = true;
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(board);
   }
   // Reading or focusing the board holds the current product.
   board.addEventListener('pointerenter', () => { paused = true; });

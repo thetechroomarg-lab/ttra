@@ -284,7 +284,7 @@ html[data-modo="classic"] .catalog-brand-card:hover { box-shadow: var(--ed-halo)
 .catalog-price-hist { display: flex; align-items: flex-end; gap: 2px; height: 56px; padding: 0 11px; }
 /* En reposo el histograma es neutro (informa sin competir con el rojo de las
    cards); al acotar el rango, lo elegido se enciende en coral. */
-.catalog-price-hist span { flex: 1; height: calc(var(--alto, 0) * 100%); background: color-mix(in srgb, var(--rc-green-dim) 42%, transparent); transition: height .45s var(--ed-ease), background-color .2s; }
+.catalog-price-hist span { flex: 1; height: 100%; transform: scaleY(var(--alto, 0)); transform-origin: 50% 100%; background: color-mix(in srgb, var(--rc-green-dim) 42%, transparent); transition: transform .28s var(--ed-ease), background-color .2s; }
 .catalog-price.activo .catalog-price-hist span { background: var(--ed-accent); }
 .catalog-price.activo .catalog-price-hist span.fuera { background: var(--ed-line); }
 

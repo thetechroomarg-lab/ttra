@@ -117,7 +117,8 @@ html[data-modo="classic"] .ttra-garantia-panel-cuerpo h3 { display: inline-block
 
 /* Lista de colores de la tarjeta (dropdown propio de la home). */
 html[data-modo="classic"] .dropdown-color-lista li { font: 700 17px/1.2 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; color: var(--pz-plate); }
-html[data-modo="classic"] .dropdown-color-lista li:is(:hover, [aria-selected="true"]) { background: var(--pz-cell); }
+html[data-modo="classic"] .dropdown-color-lista li[aria-selected="true"] { background: var(--pz-cell); }
+@media (hover: hover) and (pointer: fine) { html[data-modo="classic"] .dropdown-color-lista li:hover { background: var(--pz-cell); } }
 html[data-modo="classic"] body #registro-provincia { border: 2px solid var(--pz-frame); border-radius: 3px; background-color: var(--pz-board); color: var(--pz-plate); box-shadow: none; }
 html[data-modo="classic"] body #registro-provincia:focus { border-color: var(--pz-amber); }
 

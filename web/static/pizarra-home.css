@@ -72,6 +72,7 @@ html[data-modo="classic"] .ttra-pz-product svg { flex: 0 0 22px; width: 22px; he
 }
 html[data-modo="classic"] .ttra-pz-rows { display: grid; gap: 2px; margin: 0; background: var(--pz-gap); }
 html[data-modo="classic"] .ttra-pz-rows > div {
+  transition: background-color .15s ease;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   min-height: 50px; padding: 6px 16px;
   background: var(--pz-board);
@@ -113,6 +114,11 @@ html[data-modo="classic"] .ttra-collection-grid .ttra-category {
   background: var(--pz-board);
   box-shadow: none;
   color: var(--pz-plate);
+}
+html[data-modo="classic"] .ttra-collection-grid .ttra-category[data-reveal].ttra-reveal-ready {
+  transition: opacity .65s var(--ed-ease), transform .8s var(--ed-ease), filter .8s var(--ed-ease),
+    translate .35s var(--ed-ease), box-shadow .35s var(--ed-ease), scale .2s var(--pz-ease), background-color .15s ease;
+  transition-delay: var(--reveal-delay, 0s), var(--reveal-delay, 0s), var(--reveal-delay, 0s), 0s, 0s, 0s, 0s;
 }
 html[data-modo="classic"] .ttra-collection-grid .ttra-category-backdrop {
   position: static; inset: auto; grid-column: 1; grid-row: 1;

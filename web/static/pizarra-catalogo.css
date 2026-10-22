@@ -32,8 +32,10 @@ html[data-modo="classic"] .catalog-sort-options { gap: 2px; border: 2px solid va
 html[data-modo="classic"] .catalog-sort label + label { border-left: 0; }
 html[data-modo="classic"] .catalog-sort span { background: var(--pz-board); color: var(--pz-plate); font: 700 16px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
 html[data-modo="classic"] .catalog-sort input:checked + span { background: var(--pz-plate); color: var(--pz-ink); }
-html[data-modo="classic"] .catalog-sort label:hover span { background: var(--pz-cell); }
-html[data-modo="classic"] .catalog-sort label:hover input:checked + span { background: var(--pz-plate); color: var(--pz-ink); }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .catalog-sort label:hover span { background: var(--pz-cell); }
+  html[data-modo="classic"] .catalog-sort label:hover input:checked + span { background: var(--pz-plate); color: var(--pz-ink); }
+}
 html[data-modo="classic"] .catalog-cuotas-text strong { color: var(--pz-plate); font: 700 18px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
 html[data-modo="classic"] #cuotas-count { color: var(--pz-dim); font: 600 14px/1 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
 html[data-modo="classic"] .catalog-cuotas-track { border: 2px solid var(--pz-frame); background: var(--pz-cell); }
@@ -86,7 +88,11 @@ html[data-modo="classic"] .ai-prices-mayorista .ai-price:nth-child(2) { color: v
 html[data-modo="classic"] .ai-prices-mayorista .ai-price > :nth-child(2) { color: var(--pz-amber); font-family: var(--pz-font); }
 html[data-modo="classic"] .ai-prices-mayorista .ai-price-head { color: var(--pz-dim) !important; }
 html[data-modo="classic"] body .ai-face .btn-foto { color: var(--pz-plate) !important; }
-html[data-modo="classic"] .ai-face .btn-foto:hover { color: var(--pz-amber) !important; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .ai-face .btn-foto:hover { color: var(--pz-amber) !important; }
+}
+html[data-modo="classic"] body .ai-face .btn-foto { transition: color .15s ease, scale .16s var(--pz-ease); }
+html[data-modo="classic"] body .ai-face .btn-foto:active { scale: .92; }
 html[data-modo="classic"] body .card.ai-card > :is(.catalog-card-actions, .card-acciones, .selector-colores) { border-top: 2px solid var(--pz-gap); }
 html[data-modo="classic"] body .grilla .card.ai-card :is(.catalog-card-actions, .selector-colores) label { color: var(--pz-dim); font: 700 14px/1.2 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
 html[data-modo="classic"] body .grilla .card.ai-card :is(select, .dropdown-color-boton) { border: 2px solid var(--pz-frame); border-radius: 3px; background-color: var(--pz-board); color: var(--pz-plate); font: 700 16px/1.2 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; }
@@ -112,7 +118,8 @@ html[data-modo="classic"] .catalog-brand-card:focus-visible { outline: 2px solid
 /* ---- Selector de comparación ---- */
 html[data-modo="classic"] .compare-picker { border: 0; box-shadow: var(--ed-halo); }
 html[data-modo="classic"] .compare-picker-heading { font-family: var(--pz-font); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
-html[data-modo="classic"] .compare-picker li[aria-selected="true"], html[data-modo="classic"] .compare-picker a:hover { background: var(--pz-cell); }
+html[data-modo="classic"] .compare-picker li[aria-selected="true"] { background: var(--pz-cell); }
+@media (hover: hover) and (pointer: fine) { html[data-modo="classic"] .compare-picker a:hover { background: var(--pz-cell); } }
 
 /* ---- Compartir búsqueda ---- */
 html[data-modo="classic"] #catalog-share { border: 0; border-radius: 4px; background: var(--pz-board); box-shadow: var(--ed-halo); }
@@ -149,3 +156,9 @@ html[data-modo="classic"] .dropdown-color-boton { border: 2px solid var(--pz-fra
 html[data-modo="classic"] .dropdown-color-boton:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 2px; }
 html[data-modo="classic"] body select.btn-select-orden { border: 2px solid var(--pz-frame); border-radius: 3px; background-color: var(--pz-board); color: var(--pz-plate); box-shadow: none; font: 700 16px/1.2 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
 html[data-modo="classic"] body select.btn-select-orden.activo { border-color: var(--pz-plate); }
+
+/* Desktop: "Ordenar" joins the filter row, right-aligned, instead of floating
+   alone beside the price panel. */
+@media (min-width: 701px) {
+  html[data-modo="classic"] .catalog-brand-filter .catalog-sort { order: 0; align-self: flex-end; margin: 0 0 0 auto; }
+}
