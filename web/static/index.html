@@ -103,6 +103,7 @@
   <link rel="stylesheet" href="/comparar-productos.css">
   <link rel="stylesheet" href="/catalog-images.css?v=2">
   <link rel="stylesheet" href="/ttra-motion.css">
+  <link rel="stylesheet" href="/pizarra.css">
   <link rel="stylesheet" href="/classic-interaction.css">
   <script src="/ttra-motion.js"></script>
 </head>
@@ -269,6 +270,21 @@
     <div class="ttra-hero-copy">
       <h2 id="ttra-hero-title"><span class="ttra-cat-word">Lo Buscás?</span> <br><span class="ttra-cat-word">Lo tenés<span class="ttra-accent">.</span></span></h2>
       <p class="ttra-hero-description ttra-personal-intro"><span class="ttra-intro-hello">Hola</span> <span class="ttra-intro-name"><span class="ttra-intro-soy">soy</span> <strong>Vlad</strong></span> <span class="ttra-intro-detail">vendo tecnología desde el año <strong>2009.</strong></span></p>
+    </div>
+    <div class="ttra-pizarra" aria-label="Pizarra de precios">
+      <div class="ttra-pz-rate"><span class="ttra-pz-plate">Dólar hoy</span><span class="ttra-flap" data-pz="rate">—</span></div>
+      <a class="ttra-pz-product" href="/catalogo" data-pz="link"><span data-pz="name">Cargando precios</span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+      <dl class="ttra-pz-rows">
+        <div><dt class="ttra-pz-plate">Dólar</dt><dd class="ttra-flap" data-pz="dolares">—</dd></div>
+        <div><dt class="ttra-pz-plate">Transf. USA</dt><dd class="ttra-flap" data-pz="bancoUsa">—</dd></div>
+        <div><dt class="ttra-pz-plate">USDT</dt><dd class="ttra-flap" data-pz="usdt">—</dd></div>
+        <div><dt class="ttra-pz-plate">Pesos</dt><dd class="ttra-flap" data-pz="pesos">—</dd></div>
+        <div><dt class="ttra-pz-plate">Transf. pesos</dt><dd class="ttra-flap" data-pz="pesosTransf">—</dd></div>
+      </dl>
+      <div class="ttra-pz-actions">
+        <a class="ttra-pz-action" href="/catalogo?buscar=1#catalog-search"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>Buscar un producto</a>
+        <a class="ttra-pz-action ttra-pz-action-primary" href="https://wa.me/543512145217" target="_blank" rel="noopener">Escribime por WhatsApp</a>
+      </div>
     </div>
   </section>
   <section id="ttra-explorar" class="ttra-collection ttra-editorial ttra-home-only" aria-labelledby="ttra-collection-title">
@@ -662,6 +678,7 @@
   <script src="hero-fisherman.js"></script>
   <script src="garantias.js"></script>
   <script src="sticker-peel.js"></script>
+  <script src="pizarra.js"></script>
   <script src="ttra-grid-hover.js" defer></script>
   <script src="scroll-lock.js"></script>
 </body>

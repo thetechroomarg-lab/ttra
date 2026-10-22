@@ -1,0 +1,337 @@
+/* web/static/pizarra.css — La home como pizarra de cotizaciones: tablero
+   negro en un marco pesado, placas esmaltadas para cada etiqueta, dígitos de
+   paleta ámbar para cada cifra y un solo rojo para la acción. Solo la carga
+   index.html, todo bajo html[data-modo="classic"]; no cambia IDs ni hooks. */
+
+@font-face { font-family: 'Barlow Condensed'; src: url('/fonts/barlow-condensed-latin-600-normal.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Barlow Condensed'; src: url('/fonts/barlow-condensed-latin-700-normal.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+
+html[data-modo="classic"] {
+  --pz-board: #0d0d0c;
+  --pz-frame: #2a2926;
+  --pz-gap: #000;
+  --pz-cell: #1c1c1a;
+  --pz-plate: #ecebe4;
+  --pz-ink: #121211;
+  --pz-amber: #ffb21a;
+  --pz-red: #d52f27;
+  --pz-red-hover: #b3231c;
+  --pz-dim: #9d9b92;
+  --pz-font: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --pz-ease: cubic-bezier(.23, 1, .32, 1);
+}
+html[data-modo="classic"] ::selection { background: var(--pz-amber); color: var(--pz-ink); }
+
+/* ---- El tablero ---- */
+html[data-modo="classic"] .ttra-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "copy" "board" "ticker";
+  gap: 0;
+  min-height: 0;
+  margin: 12px 12px 0;
+  padding: 0;
+  border: 8px solid var(--pz-frame);
+  border-radius: 4px;
+  background: var(--pz-board);
+  box-shadow: inset 0 0 0 1px #000, 0 22px 48px #00000080;
+  /* Prices stay sharp: the old scroll hand-off scaled and blurred the hero. */
+  transform: none;
+  filter: none;
+}
+html[data-modo="classic"] .ttra-hero-copy { grid-area: copy; display: block; padding: 18px 16px 4px; text-align: left; }
+html[data-modo="classic"] .ttra-hero .ttra-hero-copy h2,
+html[data-modo="classic"] .ttra-hero h2 {
+  margin: 0;
+  color: var(--pz-plate);
+  font: 700 clamp(44px, 13vw, 64px)/.9 var(--pz-font);
+  letter-spacing: -.01em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: normal;
+}
+html[data-modo="classic"] .ttra-hero-copy h2 br { display: block; }
+html[data-modo="classic"] #ttra-hero-title .ttra-accent::after { background: var(--pz-red); }
+/* The name tag is stuck on the board: same sticker, a touch narrower on phones. */
+html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) {
+  width: min(calc(100% - 24px), 330px);
+  margin: 16px 0 6px 8px;
+}
+
+html[data-modo="classic"] .ttra-pizarra { grid-area: board; display: grid; gap: 0; padding: 10px 0 0; }
+html[data-modo="classic"] .ttra-pz-plate {
+  display: inline-block;
+  justify-self: start;
+  padding: 5px 9px 4px;
+  border-radius: 2px;
+  background: var(--pz-plate);
+  color: var(--pz-ink);
+  font: 700 15px/1 var(--pz-font);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+html[data-modo="classic"] .ttra-pz-rate {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0 16px; padding: 10px 0;
+  border-top: 2px solid var(--pz-gap);
+}
+html[data-modo="classic"] .ttra-pz-rate .ttra-flap { font-size: 26px; }
+html[data-modo="classic"] .ttra-pz-product {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 56px; padding: 10px 16px;
+  background: var(--pz-gap);
+  color: var(--pz-plate);
+  font: 600 22px/1.05 var(--pz-font);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+html[data-modo="classic"] .ttra-pz-product span { min-width: 0; text-wrap: balance; }
+html[data-modo="classic"] .ttra-pz-product svg { flex: 0 0 22px; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; transition: rotate .2s var(--pz-ease); }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .ttra-pz-product:hover { color: #fff; }
+  html[data-modo="classic"] .ttra-pz-product:hover svg { rotate: 45deg; }
+}
+html[data-modo="classic"] .ttra-pz-rows { display: grid; gap: 2px; margin: 0; background: var(--pz-gap); }
+html[data-modo="classic"] .ttra-pz-rows > div {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 50px; padding: 6px 16px;
+  background: var(--pz-board);
+}
+html[data-modo="classic"] .ttra-pz-rows dt { margin: 0; }
+html[data-modo="classic"] .ttra-pz-rows dd { margin: 0; }
+
+/* Dígitos de paleta: cada carácter es una celda con la raya del medio. */
+html[data-modo="classic"] .ttra-flap {
+  display: inline-flex; gap: 2px;
+  color: var(--pz-amber);
+  font: 700 30px/1 var(--pz-font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+html[data-modo="classic"] .ttra-flap-c {
+  position: relative;
+  display: inline-grid; place-items: center;
+  width: .62em; height: 1.22em;
+  border-radius: 2px;
+  background: linear-gradient(#232321 0 50%, var(--pz-cell) 50% 100%);
+  box-shadow: inset 0 1px 0 #ffffff10, 0 1px 0 #000;
+  overflow: hidden;
+}
+html[data-modo="classic"] .ttra-flap-c::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px;
+  background: #000; box-shadow: 0 1px 0 #ffffff0d;
+}
+html[data-modo="classic"] .ttra-flap-c.is-sep { width: .26em; background: none; box-shadow: none; }
+html[data-modo="classic"] .ttra-flap-c.is-sep::after { display: none; }
+html[data-modo="classic"] .ttra-flap-c.is-flipping { animation: ttra-pz-flip 110ms var(--pz-ease); }
+@keyframes ttra-pz-flip {
+  from { transform: perspective(160px) rotateX(-70deg); filter: brightness(1.6) blur(.4px); }
+  to { transform: none; filter: none; }
+}
+
+html[data-modo="classic"] .ttra-pz-actions { display: grid; gap: 8px; padding: 14px 16px 16px; border-top: 2px solid var(--pz-gap); }
+html[data-modo="classic"] .ttra-pz-action {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 52px; padding: 0 18px;
+  border: 2px solid var(--pz-plate); border-radius: 3px;
+  color: var(--pz-plate);
+  font: 700 19px/1 var(--pz-font);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease, scale .16s var(--pz-ease);
+}
+html[data-modo="classic"] .ttra-pz-action svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+html[data-modo="classic"] .ttra-pz-action-primary { border-color: var(--pz-red); background: var(--pz-red); color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .ttra-pz-action:hover { background: var(--pz-plate); color: var(--pz-ink); }
+  html[data-modo="classic"] .ttra-pz-action-primary:hover { border-color: var(--pz-red-hover); background: var(--pz-red-hover); color: #fff; }
+}
+html[data-modo="classic"] .ttra-pz-action:active { scale: .97; }
+html[data-modo="classic"] :is(.ttra-pz-action, .ttra-pz-product):focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 3px; }
+
+/* ---- Marquesina de marcas: cinta ámbar bajo el tablero ---- */
+html[data-modo="classic"] .ttra-hero .ttra-mo-marquee { grid-area: ticker; translate: none; margin: 0; padding: 12px 0; border-top: 2px solid var(--pz-gap); background: var(--pz-board); }
+html[data-modo="classic"] .ttra-mo-marquee li { color: var(--pz-amber); opacity: 1; font: 700 22px/1 var(--pz-font); letter-spacing: .08em; text-transform: uppercase; }
+
+/* ---- Encabezados de sección: letras de tablero ---- */
+html[data-modo="classic"] :is(#ttra-collection-title, #ttra-garantias-title, .ttra-footer-title) {
+  color: var(--pz-plate);
+  font: 700 clamp(34px, 9vw, 56px)/1 var(--pz-font);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+/* ---- Categorías: filas del tablero, foto chica, conteo en paleta ---- */
+/* The scroll hand-off between sections blurred and scaled them; boards stay crisp. */
+html[data-modo="classic"] :is(.ttra-collection, .ttra-garantias) { transform: none; filter: none; }
+html[data-modo="classic"] .ttra-collection { padding-inline: 12px; }
+html[data-modo="classic"] .ttra-collection-grid {
+  grid-template-columns: 1fr; gap: 2px;
+  border: 8px solid var(--pz-frame); border-radius: 4px;
+  background: var(--pz-gap);
+  box-shadow: 0 22px 48px #00000080;
+}
+html[data-modo="classic"] .ttra-collection-grid .ttra-category {
+  position: relative;
+  --pz-thumb: 76px;
+  --pz-row-pad: 12px;
+  display: grid; grid-template-columns: var(--pz-thumb) minmax(0, 1fr); align-items: center;
+  min-height: 0; height: auto; aspect-ratio: auto;
+  padding: var(--pz-row-pad);
+  overflow: hidden;
+  border: 0; border-radius: 0;
+  background: var(--pz-board);
+  box-shadow: none;
+  color: var(--pz-plate);
+}
+html[data-modo="classic"] .ttra-collection-grid .ttra-category-backdrop {
+  position: static; inset: auto; grid-column: 1; grid-row: 1;
+  width: var(--pz-thumb); height: var(--pz-thumb); object-fit: cover;
+  transform: none; animation: none; filter: saturate(.9);
+}
+html[data-modo="classic"] .ttra-collection-grid .ttra-category :is(.ttra-mini-phone, .ttra-tablet, .ttra-laptop, .ttra-controller, .ttra-headphones, .ttra-brand-lens) { display: none; }
+/* The spinning 3D product (product-cards.js) lives inside the thumbnail. */
+html[data-modo="classic"] .ttra-collection-grid .ttra-category .ttra-product-canvas {
+  top: var(--pz-row-pad); left: var(--pz-row-pad); width: var(--pz-thumb); height: var(--pz-thumb); z-index: 2;
+}
+html[data-modo="classic"] .ttra-collection-grid .ttra-circle-arrow { order: 2; }
+html[data-modo="classic"] .ttra-collection-grid .ttra-category::before,
+html[data-modo="classic"] .ttra-collection-grid .ttra-category::after { display: none; }
+html[data-modo="classic"] .ttra-collection-grid .ttra-category-bottom {
+  position: static; grid-column: 2; grid-row: 1;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 14px 0 16px;
+  text-shadow: none;
+}
+html[data-modo="classic"] .ttra-collection-grid .ttra-category-bottom > div { flex: 1 1 auto; min-width: 0; }
+html[data-modo="classic"] .ttra-collection-grid .ttra-category h3 {
+  margin: 0; color: var(--pz-plate);
+  font: 700 21px/1.05 var(--pz-font); letter-spacing: .03em; text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+html[data-modo="classic"] .ttra-pz-count { flex: none; font-size: 19px; }
+html[data-modo="classic"] .ttra-collection-grid .ttra-circle-arrow { flex: 0 0 26px; width: 26px; height: 26px; }
+html[data-modo="classic"] .ttra-collection-grid .ttra-category:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: -4px; translate: none; box-shadow: none; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .ttra-collection-grid .ttra-category:hover { translate: none; box-shadow: none; background: #151514; }
+}
+/* Rows arrive with a short rise instead of the old card zoom and blur. */
+html[data-modo="classic"] .ttra-collection-grid .ttra-category[data-reveal].ttra-reveal-ready { transform: translateY(12px); filter: none; }
+html[data-modo="classic"] .ttra-collection-grid .ttra-category[data-reveal].ttra-reveal-ready:is(.is-visible, :focus-within) { transform: none; }
+
+/* ---- Garantías: tablero de condiciones ---- */
+html[data-modo="classic"] .ttra-garantias { padding-inline: 12px; }
+html[data-modo="classic"] .ttra-garantias-grid {
+  grid-template-columns: 1fr; gap: 2px;
+  border: 8px solid var(--pz-frame); border-radius: 4px;
+  background: var(--pz-gap);
+  box-shadow: 0 22px 48px #00000080;
+}
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia {
+  display: grid; grid-template-columns: 4.6rem minmax(0, 1fr) 26px; grid-template-areas: "plazo nombre flecha" "plazo desde flecha" "plazo exc flecha";
+  align-items: center; column-gap: 14px; row-gap: 2px;
+  min-height: 72px; padding: 12px 14px 12px 16px;
+  border: 0; border-radius: 0;
+  background: var(--pz-board); color: var(--pz-plate);
+  box-shadow: none;
+}
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-plazo { grid-area: plazo; display: flex; align-items: baseline; gap: 6px; margin: 0; }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-plazo strong { color: var(--pz-amber); font: 700 44px/1 var(--pz-font); font-variant-numeric: tabular-nums; }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-plazo span { color: var(--pz-amber); font: 700 14px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-destacada .ttra-garantia-plazo { flex-direction: column; align-items: flex-start; gap: 2px; }
+/* A board shows every row at full strength: no scroll-linked fade here. */
+html[data-modo="classic"].ttra-motion-ready :is(.ttra-collection-grid, .ttra-garantias-grid) .ttra-mo-fade[data-reveal].ttra-reveal-ready.is-visible { opacity: 1; }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-bottom { display: contents; }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-nombre { grid-area: nombre; color: var(--pz-plate); font: 700 22px/1 var(--pz-font); letter-spacing: .03em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-desde { grid-area: desde; margin: 0; color: var(--pz-dim); font: 600 14px/1.2 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-excepciones { grid-area: exc; margin: 0; color: var(--pz-dim); font-size: 12px; }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-circle-arrow { grid-area: flecha; width: 26px; height: 26px; }
+/* Apple, the official warranty, is the one enamel row on the board. */
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-destacada { background: var(--pz-plate); color: var(--pz-ink); }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-destacada :is(.ttra-garantia-nombre, .ttra-garantia-plazo strong, .ttra-garantia-plazo span) { color: var(--pz-ink); }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-destacada :is(.ttra-garantia-desde, .ttra-garantia-excepciones) { color: #4a4943; }
+html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: -4px; translate: none; box-shadow: none; }
+@media (hover: hover) {
+  html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia:hover { translate: none; box-shadow: none; background: #151514; }
+  html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-destacada:hover { background: #f7f6f0; }
+}
+
+/* ---- Cerca tuyo: la placa de Vlad junto a la foto de Córdoba ---- */
+html[data-modo="classic"] .ttra-about .ttra-eyebrow { display: none; }
+html[data-modo="classic"] .ttra-about-copy h2 { color: var(--pz-plate); font: 700 clamp(36px, 9vw, 64px)/.95 var(--pz-font); letter-spacing: 0; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-about-copy h2 em { color: var(--pz-amber); font-style: normal; }
+html[data-modo="classic"] .ttra-about-photo > span { font-family: var(--pz-font); font-weight: 700; letter-spacing: .01em; }
+html[data-modo="classic"] .ttra-about .ttra-button {
+  border-radius: 3px; background: var(--pz-red); color: #fff;
+  font: 700 19px/1 var(--pz-font); letter-spacing: .05em; text-transform: uppercase;
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .ttra-about .ttra-button:hover { background: var(--pz-red-hover); color: #fff; }
+}
+html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); font-weight: 700; letter-spacing: 0; text-transform: uppercase; }
+
+/* ---- Celular: título y dólar en la misma línea, así las cinco cifras entran
+   en la primera pantalla. Los contenedores ceden su lugar a la grilla del
+   tablero (display: contents); sus hijos no cambian. ---- */
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "title rate" "sticker sticker" "product product" "rows rows" "actions actions" "ticker ticker";
+  }
+  html[data-modo="classic"] :is(.ttra-hero-copy, .ttra-pizarra) { display: contents; }
+  html[data-modo="classic"] .ttra-hero .ttra-hero-copy h2 { grid-area: title; padding: 16px 0 0 16px; font-size: clamp(40px, 12vw, 56px); }
+  html[data-modo="classic"] .ttra-pz-rate {
+    grid-area: rate; flex-direction: column; align-items: flex-end; justify-content: flex-start; gap: 6px;
+    margin: 0; padding: 18px 16px 0 8px; border: 0;
+  }
+  html[data-modo="classic"] .ttra-pz-rate .ttra-flap { font-size: 22px; }
+  html[data-modo="classic"] .ttra-pz-rate .ttra-pz-plate { font-size: 13px; }
+  html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) {
+    grid-area: sticker; justify-self: start; width: 300px; margin: 12px 0 14px 14px; zoom: .78;
+  }
+  html[data-modo="classic"] .ttra-pz-product { grid-area: product; min-height: 48px; font-size: 20px; }
+  html[data-modo="classic"] .ttra-pz-rows { grid-area: rows; }
+  html[data-modo="classic"] .ttra-pz-rows > div { min-height: 44px; padding-block: 4px; }
+  html[data-modo="classic"] .ttra-pz-rows .ttra-flap { font-size: 27px; }
+  html[data-modo="classic"] .ttra-pz-actions { grid-area: actions; }
+}
+
+/* ---- Desktop: el título y la placa de Vlad a la izquierda, las cifras a la derecha ---- */
+@media (min-width: 701px) {
+  html[data-modo="classic"] .ttra-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 580px);
+    grid-template-areas: "copy board" "ticker ticker";
+    align-items: stretch;
+    max-width: 1240px;
+    margin: 20px auto 0;
+    border-width: 12px;
+  }
+  html[data-modo="classic"] .ttra-hero-copy { display: flex; flex-direction: column; justify-content: space-between; gap: 28px; padding: 36px 40px 40px; max-width: none; margin: 0; align-items: flex-start; text-align: left; }
+  html[data-modo="classic"] .ttra-hero .ttra-hero-copy h2 { font-size: clamp(64px, 7.4vw, 112px); text-align: left; white-space: normal; }
+  html[data-modo="classic"] .ttra-hero-copy h2 br { display: block; }
+  html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) { width: min(100%, 380px); margin: 0 0 0 6px; }
+  html[data-modo="classic"] .ttra-pizarra { align-content: start; padding: 22px 0 0; border-left: 2px solid var(--pz-gap); }
+  html[data-modo="classic"] .ttra-pz-rate { margin: 0 22px; padding: 0 0 16px; border-top: 0; }
+  html[data-modo="classic"] .ttra-pz-product { padding-inline: 22px; font-size: 26px; min-height: 64px; }
+  html[data-modo="classic"] .ttra-pz-rows > div { min-height: 62px; padding-inline: 22px; }
+  html[data-modo="classic"] .ttra-pz-plate { font-size: 17px; }
+  html[data-modo="classic"] .ttra-pizarra .ttra-flap { font-size: 40px; }
+  html[data-modo="classic"] .ttra-pz-rate .ttra-flap { font-size: 30px; }
+  html[data-modo="classic"] .ttra-pz-actions { grid-template-columns: 1fr 1fr; padding: 18px 22px 22px; }
+  html[data-modo="classic"] .ttra-pz-action { padding: 0 12px; font-size: 17px; white-space: nowrap; }
+
+  html[data-modo="classic"] .ttra-collection-grid,
+  html[data-modo="classic"] .ttra-garantias-grid { grid-template-columns: 1fr 1fr; max-width: 1240px; margin-inline: auto; border-width: 12px; }
+  html[data-modo="classic"] .ttra-collection-grid .ttra-category { --pz-thumb: 104px; --pz-row-pad: 20px; }
+  html[data-modo="classic"] .ttra-collection-grid .ttra-category h3 { font-size: 30px; }
+  html[data-modo="classic"] .ttra-pz-count { font-size: 28px; }
+  html[data-modo="classic"] .ttra-garantias-grid .ttra-garantia-destacada { grid-column: 1 / -1; }
+  html[data-modo="classic"] :is(.ttra-collection, .ttra-garantias) > .ttra-section-heading { max-width: 1240px; margin-inline: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .ttra-flap-c.is-flipping { animation: none; }
+}

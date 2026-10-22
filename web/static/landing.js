@@ -1671,6 +1671,8 @@ async function cargarCatalogo() {
   refrescarPreciosCarrito();
   catalogoListo = true;
   renderCarrito();
+  // La pizarra de la home (pizarra.js) reusa este mismo catálogo.
+  window.dispatchEvent(new CustomEvent("ttra:catalogo", { detail: datos }));
   if (datos.mensaje) {
     ocultarNavegacionCatalogo();
     document.getElementById("productos").innerHTML = `<p class="mensaje-vacio">${datos.mensaje}</p>`;
