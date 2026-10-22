@@ -45,6 +45,10 @@ html[data-modo="classic"] .ttra-pz-rate {
   border-top: 2px solid var(--pz-gap);
 }
 html[data-modo="classic"] .ttra-pz-rate .ttra-flap { font-size: 26px; }
+/* The featured product is one link: name and the five prices, tap anywhere. */
+html[data-modo="classic"] .ttra-pz-destacado { display: grid; color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; transition: scale .16s var(--pz-ease); }
+html[data-modo="classic"] .ttra-pz-destacado:active { scale: .99; }
+html[data-modo="classic"] .ttra-pz-destacado:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: -4px; }
 html[data-modo="classic"] .ttra-pz-product {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   min-height: 56px; padding: 10px 16px;
@@ -58,8 +62,9 @@ html[data-modo="classic"] .ttra-pz-product {
 html[data-modo="classic"] .ttra-pz-product span { min-width: 0; text-wrap: balance; }
 html[data-modo="classic"] .ttra-pz-product svg { flex: 0 0 22px; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; transition: rotate .2s var(--pz-ease); }
 @media (hover: hover) and (pointer: fine) {
-  html[data-modo="classic"] .ttra-pz-product:hover { color: #fff; }
-  html[data-modo="classic"] .ttra-pz-product:hover svg { rotate: 45deg; }
+  html[data-modo="classic"] .ttra-pz-destacado:hover .ttra-pz-product { color: #fff; }
+  html[data-modo="classic"] .ttra-pz-destacado:hover .ttra-pz-product svg { rotate: 45deg; }
+  html[data-modo="classic"] .ttra-pz-destacado:hover .ttra-pz-rows > div { background: #121211; }
 }
 html[data-modo="classic"] .ttra-pz-rows { display: grid; gap: 2px; margin: 0; background: var(--pz-gap); }
 html[data-modo="classic"] .ttra-pz-rows > div {
@@ -70,7 +75,6 @@ html[data-modo="classic"] .ttra-pz-rows > div {
 html[data-modo="classic"] .ttra-pz-rows dt { margin: 0; }
 html[data-modo="classic"] .ttra-pz-rows dd { margin: 0; }
 
-html[data-modo="classic"] .ttra-pz-actions { display: grid; gap: 8px; padding: 14px 16px 16px; border-top: 2px solid var(--pz-gap); }
 /* ---- Marquesina de marcas: cinta ámbar bajo el tablero ---- */
 html[data-modo="classic"] .ttra-hero .ttra-mo-marquee { grid-area: ticker; translate: none; margin: 0; padding: 12px 0; border-top: 2px solid var(--pz-gap); background: var(--pz-board); }
 html[data-modo="classic"] .ttra-mo-marquee li { color: var(--pz-amber); opacity: 1; font: 700 22px/1 var(--pz-font); letter-spacing: .08em; text-transform: uppercase; }
@@ -198,7 +202,7 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
 @media (max-width: 700px) {
   html[data-modo="classic"] .ttra-hero {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "title rate" "sticker sticker" "product product" "rows rows" "actions actions" "ticker ticker";
+    grid-template-areas: "title rate" "sticker sticker" "destacado destacado" "ticker ticker";
   }
   html[data-modo="classic"] :is(.ttra-hero-copy, .ttra-pizarra) { display: contents; }
   html[data-modo="classic"] .ttra-hero .ttra-hero-copy h2 { grid-area: title; padding: 16px 0 0 16px; font-size: clamp(40px, 12vw, 56px); }
@@ -211,11 +215,11 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
   html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) {
     grid-area: sticker; justify-self: start; width: 300px; margin: 12px 0 14px 14px; zoom: .78;
   }
-  html[data-modo="classic"] .ttra-pz-product { grid-area: product; min-height: 48px; font-size: 20px; }
-  html[data-modo="classic"] .ttra-pz-rows { grid-area: rows; }
-  html[data-modo="classic"] .ttra-pz-rows > div { min-height: 44px; padding-block: 4px; }
-  html[data-modo="classic"] .ttra-pz-rows .ttra-flap { font-size: 27px; }
-  html[data-modo="classic"] .ttra-pz-actions { grid-area: actions; }
+  html[data-modo="classic"] .ttra-pz-destacado { grid-area: destacado; }
+  html[data-modo="classic"] .ttra-pz-product { min-height: 58px; font-size: 24px; }
+  html[data-modo="classic"] .ttra-pz-rows > div { min-height: 50px; padding-block: 5px; }
+  html[data-modo="classic"] .ttra-pz-rows .ttra-pz-plate { font-size: 16px; }
+  html[data-modo="classic"] .ttra-pz-rows .ttra-flap { font-size: 31px; }
 }
 
 /* ---- Desktop: el título y la placa de Vlad a la izquierda, las cifras a la derecha ---- */
@@ -234,13 +238,12 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
   html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) { width: min(100%, 380px); margin: 0 0 0 6px; }
   html[data-modo="classic"] .ttra-pizarra { align-content: start; padding: 22px 0 0; border-left: 2px solid var(--pz-gap); }
   html[data-modo="classic"] .ttra-pz-rate { margin: 0 22px; padding: 0 0 16px; border-top: 0; }
-  html[data-modo="classic"] .ttra-pz-product { padding-inline: 22px; font-size: 26px; min-height: 64px; }
-  html[data-modo="classic"] .ttra-pz-rows > div { min-height: 62px; padding-inline: 22px; }
+  html[data-modo="classic"] .ttra-pz-product { padding-inline: 22px; font-size: 32px; min-height: 80px; }
+  html[data-modo="classic"] .ttra-pz-rows > div { min-height: 78px; padding-inline: 22px; }
   html[data-modo="classic"] .ttra-pz-plate { font-size: 17px; }
-  html[data-modo="classic"] .ttra-pizarra .ttra-flap { font-size: 40px; }
+  html[data-modo="classic"] .ttra-pizarra .ttra-flap { font-size: 50px; }
+  html[data-modo="classic"] .ttra-pz-rows .ttra-pz-plate { font-size: 19px; }
   html[data-modo="classic"] .ttra-pz-rate .ttra-flap { font-size: 30px; }
-  html[data-modo="classic"] .ttra-pz-actions { grid-template-columns: 1fr 1fr; padding: 18px 22px 22px; }
-  html[data-modo="classic"] .ttra-pz-action { padding: 0 12px; font-size: 17px; white-space: nowrap; }
 
   html[data-modo="classic"] .ttra-collection-grid,
   html[data-modo="classic"] .ttra-garantias-grid { grid-template-columns: 1fr 1fr; max-width: 1240px; margin-inline: auto; border-width: 12px; }

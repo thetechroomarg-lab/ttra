@@ -69,25 +69,6 @@ html[data-modo="classic"] .ttra-flap-c.is-flipping { animation: ttra-pz-flip 110
 }
 
 
-html[data-modo="classic"] .ttra-pz-action {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  min-height: 52px; padding: 0 18px;
-  border: 2px solid var(--pz-plate); border-radius: 3px;
-  color: var(--pz-plate);
-  font: 700 19px/1 var(--pz-font);
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  text-decoration: none;
-  transition: background-color .15s ease, color .15s ease, border-color .15s ease, scale .16s var(--pz-ease);
-}
-html[data-modo="classic"] .ttra-pz-action svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
-html[data-modo="classic"] .ttra-pz-action-primary { border-color: var(--pz-red); background: var(--pz-red); color: #fff; }
-@media (hover: hover) and (pointer: fine) {
-  html[data-modo="classic"] .ttra-pz-action:hover { background: var(--pz-plate); color: var(--pz-ink); }
-  html[data-modo="classic"] .ttra-pz-action-primary:hover { border-color: var(--pz-red-hover); background: var(--pz-red-hover); color: #fff; }
-}
-html[data-modo="classic"] .ttra-pz-action:active { scale: .97; }
-html[data-modo="classic"] :is(.ttra-pz-action, .ttra-pz-product):focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 3px; }
 
 
 /* ---- Superficies: el marco reemplaza al halo ----

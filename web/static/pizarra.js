@@ -46,20 +46,22 @@
     });
   }
 
-  function showProduct(p) {
+  // The whole featured block opens that product in the catalog, the same
+  // "Ver en el catálogo" link the comparison page uses.
+  function showProduct({ seccion, producto: p }) {
     const precios = window.preciosDe ? window.preciosDe(p) : { dolares: p.usd, pesos: p.pesos };
     slot('name').textContent = p.nombre;
-    slot('link').href = `/?producto=${encodeURIComponent(p.nombre)}`;
-    slot('link').setAttribute('aria-label', `Ver ${p.nombre}`);
+    slot('link').href = '/catalogo?' + new URLSearchParams({ categoria: seccion, buscar: '1', q: p.nombre });
+    slot('link').setAttribute('aria-label', `Ver ${p.nombre} en el catálogo`);
     for (const key of PRICE_KEYS) flapTo(slot(key), precios[key] == null ? '—' : fmt(precios[key]));
   }
 
   // One product per section, in catalog order, so the board walks the store.
   function pickProducts(secciones) {
     const picks = [];
-    for (const lista of Object.values(secciones)) {
-      const p = (lista || []).find(x => x.usd != null && x.pesos != null && !EXCLUIR.test(x.nombre));
-      if (p) picks.push(p);
+    for (const [seccion, lista] of Object.entries(secciones)) {
+      const producto = (lista || []).find(x => x.usd != null && x.pesos != null && !EXCLUIR.test(x.nombre));
+      if (producto) picks.push({ seccion, producto });
     }
     return picks;
   }
