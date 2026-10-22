@@ -196,6 +196,8 @@ body.catalog-share-open { overflow: hidden; }
 
 .catalog-filter-field { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .catalog-filter-field[hidden] { display: none; }
+/* Filtros por especificación (RAM, procesador...): mismos campos, misma fila. */
+.catalog-spec-filters:not([hidden]) { display: contents; }
 @media (max-width: 700px) {
   .catalog-filter-field { width: 100%; flex-direction: column; align-items: stretch; gap: 10px; }
 }
@@ -354,7 +356,8 @@ html[data-modo="classic"] body.ttra-page .catalog-price-reset:focus-visible { bo
    Solo CSS: mismos IDs, inputs y eventos. Mobile (≤700px) no cambia. */
 @media (min-width: 701px) {
   .catalog-brand-filter { align-items: flex-end; column-gap: 24px; row-gap: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--ed-line); }
-  .catalog-brand-filter > .catalog-filter-field { align-self: auto; flex-direction: column; align-items: stretch; gap: 8px; }
+  .catalog-brand-filter > .catalog-filter-field,
+  .catalog-brand-filter > .catalog-spec-filters > .catalog-filter-field { align-self: auto; flex-direction: column; align-items: stretch; gap: 8px; }
   .catalog-brand-filter select { min-width: 160px; }
 
   .catalog-cuotas { order: 1; flex: 0 0 100%; justify-content: flex-start; gap: 12px; }
