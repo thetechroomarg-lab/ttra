@@ -211,7 +211,7 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
   html[data-modo="classic"] :is(.ttra-hero-copy, .ttra-pizarra) { display: contents; }
   html[data-modo="classic"] .ttra-hero .ttra-hero-copy h2 { grid-area: title; padding: 16px 16px 0; font-size: clamp(40px, 12vw, 56px); }
   html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) {
-    grid-area: sticker; justify-self: start; width: 300px; margin: 10px 0 12px 14px; zoom: .7;
+    grid-area: sticker; justify-self: center; width: 300px; margin: 10px 0 12px; zoom: .7;
   }
   html[data-modo="classic"] .ttra-pz-destacado { grid-area: destacado; }
   html[data-modo="classic"] .ttra-pz-product { min-height: 58px; font-size: 24px; }
