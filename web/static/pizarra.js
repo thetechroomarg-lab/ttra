@@ -9,7 +9,7 @@
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const slot = key => board.querySelector(`[data-pz="${key}"]`);
   const PRICE_KEYS = ['dolares', 'bancoUsa', 'usdt', 'pesos', 'pesosTransf'];
-  const CYCLE_MS = 6500;
+  const CYCLE_MS = 6000;
   // Usados y equipos sin caja no se muestran salvo que el cliente los pida.
   const EXCLUIR = /usad|cpo|swap|sin caja|caja abierta|abollad/i;
   const DIGITS = '0123456789';
@@ -101,7 +101,9 @@
   let paused = false;
   function schedule() {
     clearTimeout(timer);
-    if (products.length < 2 || reducedMotion.matches) return;
+    // With reduced motion the board still walks the store: flapTo and
+    // swapName already land on the new value without animating.
+    if (products.length < 2) return;
     timer = setTimeout(() => {
       if (!paused && visible && !document.hidden) {
         index = (index + 1) % products.length;
@@ -111,16 +113,20 @@
     }, CYCLE_MS);
   }
   // Off screen the board holds too: no flipping nobody is looking at.
+  // On phones the board is display: contents and has no box of its own, so
+  // observing it always reported "not intersecting" and the board never
+  // moved; the product name is always laid out.
   let visible = true;
   if ('IntersectionObserver' in window) {
-    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(board);
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(slot('name'));
   }
-  // Reading or focusing the board holds the current product.
-  board.addEventListener('pointerenter', () => { paused = true; });
-  board.addEventListener('pointerleave', () => { paused = false; });
-  board.addEventListener('focusin', () => { paused = true; });
+  // Reading or focusing the board holds the current product. Only a real
+  // mouse or keyboard focus counts: on a phone a tap leaves the link focused
+  // until the next tap elsewhere, and the board stayed on one product.
+  board.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') paused = true; });
+  board.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') paused = false; });
+  board.addEventListener('focusin', e => { if (e.target.matches(':focus-visible')) paused = true; });
   board.addEventListener('focusout', () => { paused = false; });
-  reducedMotion.addEventListener('change', schedule);
 
   function load(datos) {
     const secciones = datos && datos.secciones;
