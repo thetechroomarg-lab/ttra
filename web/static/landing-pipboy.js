@@ -496,8 +496,18 @@ function pintarCarrouselRecomendadosMobile(el) {
   if (viewport) {
     let touchInicioX = 0;
     let touchFinX = 0;
-    viewport.addEventListener("mouseenter", () => clearInterval(intervaloCiudad));
-    viewport.addEventListener("mouseleave", () => iniciarCicloRecomendadosMobile(el));
+    // En el celular un toque dispara mouseenter pero nunca mouseleave: si
+    // pausáramos con eventos de mouse, el carrusel quedaba congelado en la
+    // misma card. La pausa por hover es solo para un mouse real.
+    viewport.addEventListener("pointerenter", (e) => {
+      if (e.pointerType === "mouse") clearInterval(intervaloCiudad);
+    });
+    viewport.addEventListener("pointerleave", (e) => {
+      if (e.pointerType === "mouse") iniciarCicloRecomendadosMobile(el);
+    });
+    // Si el dedo arranca un scroll de la página, llega touchcancel en vez de
+    // touchend: también hay que retomar el ciclo.
+    viewport.addEventListener("touchcancel", () => iniciarCicloRecomendadosMobile(el), { passive: true });
     viewport.addEventListener("touchstart", (e) => {
       clearInterval(intervaloCiudad);
       touchInicioX = e.changedTouches[0]?.clientX || 0;
