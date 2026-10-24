@@ -91,3 +91,10 @@ def test_mail_de_cuenta_escapa_datos():
     html = mail_cuenta.html_cuenta_creada("<b>Ana</b>", "ana@x.com", "Abc<123>")
     assert "<b>Ana</b>" not in html and "&lt;b&gt;Ana" in html
     assert "Abc&lt;123&gt;" in html
+
+
+def test_direccion_del_alta_usa_autocomplete_de_google(monkeypatch):
+    c, _ = _admin(monkeypatch)
+    html = c.get("/admin/clientes/lista").text
+    assert 'id="alta-direccion-sugerencias"' in html
+    assert 'activarAutocompleteDireccion(document.getElementById("alta-direccion"), document.getElementById("alta-direccion-sugerencias"))' in html
