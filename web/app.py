@@ -5227,8 +5227,10 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
             "p_cliente_id": cliente_id,
             "p_codigo": fila_descuento["code"] if fila_descuento else None,
             "p_productos": productos_pedido,
-            "p_detalle": detalle,
-            "p_total_usd": pedidos.numero_monetario_db(total_usd),
+            # La RPC contaría el envío como un producto (descuento por
+            # cantidad, topes): va sin él y se suma abajo, con los extras.
+            "p_detalle": [item for item in detalle if item.get("proveedor") != "envío"],
+            "p_total_usd": pedidos.numero_monetario_db(total_usd - envio_usd),
             "p_descuento_usd": pedidos.numero_monetario_db(descuento_usd),
             "p_descuento_mailing_usd": pedidos.numero_monetario_db(
                 descuento_mailing_usd
@@ -5293,6 +5295,13 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
             extras.update({"piso_entrega": piso, "depto_entrega": depto})
         guardado = resultado["pedido"]
         pedido_id_rpc = guardado.get("id")
+        if envio_usd and pedido_id_rpc:
+            extras.update({
+                "detalle": list(guardado.get("detalle") or []) + [detalle[-1]],
+                "total_usd": pedidos.numero_monetario_db(
+                    pedidos.decimal_monetario(guardado.get("total_usd") or 0) + envio_usd
+                ),
+            })
         if extras and pedido_id_rpc:
             try:
                 client.table("pedidos").update(extras).eq("id", pedido_id_rpc).execute()

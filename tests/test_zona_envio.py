@@ -152,3 +152,19 @@ def test_checkout_avisa_el_costo_de_envio_antes_de_confirmar():
     assert "envio_usd" in js
     assert "actualizarDetalleEnvio" in js
     assert "Desgaste del vehículo y tiempo" in js
+
+
+def test_pedido_con_codigo_promo_suma_el_envio_sin_contarlo_como_producto(monkeypatch):
+    c, fake = _cliente(monkeypatch)
+    fake.table("codigos_promo").insert({
+        "id": "promo-R", "code": "REGALO", "producto_regalo": "Funda",
+        "usos_maximos": 5, "usos_actuales": 0, "activo": True,
+    }).execute()
+    envio = c.post("/api/envio/cotizar", json={"lat": CARLOS_PAZ[0], "lng": CARLOS_PAZ[1]}).json()["envio_usd"]
+    r = c.post("/api/pedidos", json=_pedido(CARLOS_PAZ, envio_usd=envio, codigo_promo="REGALO"))
+    assert r.status_code == 200, r.json()
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert pedido["total_usd"] == pytest.approx(500 + envio)
+    assert pedido["descuento_usd"] == 0
+    assert [i["nombre"] for i in pedido["detalle"]].count("Envío fuera de zona") == 1
+    assert pedido["detalle"][-1]["nombre"] == "Envío fuera de zona"
