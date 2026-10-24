@@ -290,6 +290,45 @@ def _arbol(client, cliente_id, ganancias):
     return [n for n in (nodo(h) for h in sorted(hijos.get(cliente_id, []), key=lambda h: _nombre_corto(clientes[h]))) if n]
 
 
+def red_completa(client, cliente_id, ganancias=()):
+    """Todos los que se registraron debajo del cliente, a cualquier
+    profundidad: sus invitados, los invitados de ellos, y así. Compren o no.
+    Solo nombre e inicial, más si su compra le generó una ganancia al cliente
+    y cuánto. Se arma de a un nivel por consulta."""
+    ganado = {}
+    for g in ganancias:
+        if g.get("origen_cliente_id"):
+            ganado[g["origen_cliente_id"]] = ganado.get(g["origen_cliente_id"], 0) + float(g.get("acreditado_usd") or 0)
+    hijos, nombres = {}, {}
+    visto = {cliente_id}
+    nivel = [cliente_id]
+    niveles = 0
+    while nivel:
+        filas = (
+            client.table("clientes").select("id,nombre,apellido,referido_por")
+            .in_("referido_por", nivel).execute().data or []
+        )
+        filas = [f for f in filas if f["id"] not in visto]
+        if not filas:
+            break
+        niveles += 1
+        for fila in filas:
+            visto.add(fila["id"])
+            nombres[fila["id"]] = _nombre_corto(fila)
+            hijos.setdefault(fila["referido_por"], []).append(fila["id"])
+        nivel = [f["id"] for f in filas]
+
+    def nodo(cid):
+        ramas = [nodo(h) for h in sorted(hijos.get(cid, []), key=lambda h: nombres[h])]
+        return {
+            "nombre": nombres[cid], "hijos": ramas, "debajo": sum(1 + r["debajo"] for r in ramas),
+            "compro": cid in ganado, "ganado_usd": round(ganado.get(cid, 0), 2),
+        }
+
+    arbol = [nodo(h) for h in sorted(hijos.get(cliente_id, []), key=lambda h: nombres[h])]
+    return {"arbol": arbol, "personas": len(nombres), "niveles": niveles}
+
+
 def resumen(client, cliente_id):
     cliente = _cliente(client, cliente_id) or {}
     saldo = 0.0
@@ -319,6 +358,8 @@ def resumen(client, cliente_id):
             for g in ganancias[:10] if float(g.get("acreditado_usd") or 0) > 0
         ],
         "arbol": _arbol(client, cliente_id, ganancias),
+        # Toda la red registrada (compren o no): lo que ve en "Ver mi red".
+        "red": red_completa(client, cliente_id, ganancias),
         "personas_en_red": len({g.get("origen_cliente_id") for g in ganancias if g.get("origen_cliente_id")}),
         "referidos_registrados": len(referidos),
         "referidos_con_compra": sum(1 for r in referidos if r.get("referido_premiado_en")),

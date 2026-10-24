@@ -142,6 +142,10 @@ class _FakeQuery:
         self._filtros.append((campo, valor))
         return self
 
+    def in_(self, campo, valores):
+        self._filtros.append((campo, ("__in__", tuple(valores))))
+        return self
+
     @property
     def not_(self):
         return _FakeNotFilter(self)
@@ -154,7 +158,9 @@ class _FakeQuery:
 
     def _filtrar(self, filas):
         for campo, valor in self._filtros:
-            if valor == "not_null":
+            if isinstance(valor, tuple) and valor[:1] == ("__in__",):
+                filas = [f for f in filas if f.get(campo) in valor[1]]
+            elif valor == "not_null":
                 filas = [f for f in filas if f.get(campo) is not None]
             else:
                 filas = [f for f in filas if f.get(campo) == valor]
