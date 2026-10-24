@@ -403,6 +403,7 @@
       <div id="selector-domicilio-entrega" class="oculto">
         <p class="rc-codigo-titulo">Dirección de entrega</p>
         <ul id="lista-domicilios-entrega" class="lista-domicilios-entrega" role="listbox" aria-label="Domicilio de entrega"></ul>
+        <button id="btn-cancelar-selector-domicilio" type="button" class="btn-usar-ubicacion">Cancelar</button>
       </div>
       <div id="direccion-entrega-wrap" class="oculto">
         <label for="direccion-entrega" class="rc-codigo-titulo">Especificá dirección de entrega</label>
@@ -420,7 +421,10 @@
       <button id="btn-vaciar-carrito" type="button">Vaciar carrito</button>
       <button id="btn-abrir-codigo" type="button">Aplicar código</button>
       <div id="modal-codigo" class="oculto">
-        <p class="rc-codigo-titulo">Aplicá tu código</p>
+        <div class="rc-codigo-cabecera">
+          <p class="rc-codigo-titulo">Aplicá tu código</p>
+          <button id="btn-cerrar-codigo" type="button" class="rc-codigo-cerrar" aria-label="Cerrar">✕</button>
+        </div>
         <input id="input-codigo-mailing" type="text" maxlength="40" placeholder="Ingresá o pegá tu código" autocomplete="off">
         <button id="btn-aplicar-codigo" type="button">APLICAR</button>
       </div>
@@ -537,23 +541,6 @@
   </div>
   <div id="overlay-carrito" class="oculto"></div>
   <div id="overlay-perfil" class="oculto"></div>
-
-  <div id="rc-logout-confirmar" class="rc-logout-overlay">
-    <div class="rc-logout-tarjeta">
-      <p class="rc-logout-texto">¿Seguro que querés cerrar sesión?</p>
-      <div class="rc-logout-acciones">
-        <button id="btn-logout-confirmar-no" type="button">Cancelar</button>
-        <button id="btn-logout-confirmar-si" type="button">Cerrar sesión</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="rc-logout-msg" class="rc-logout-overlay">
-    <div class="rc-logout-tarjeta">
-      <p class="rc-logout-texto">Sesión cerrada. ¡Te espero pronto!</p>
-      <button id="btn-logout-cerrar" type="button">Aceptar</button>
-    </div>
-  </div>
 
   <div id="rc-terminos-mayorista" class="rc-logout-overlay">
     <div class="rc-logout-tarjeta rc-terminos-tarjeta">
