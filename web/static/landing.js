@@ -2329,16 +2329,45 @@ async function cotizarEnvio(coords) {
   return r?.ok ? await r.json().catch(() => null) : null;
 }
 
-function textoDesgloseEnvio(envio) {
+const formatearUsdEnvio = (n) => `US$${Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Filas del desglose, con la misma estructura que #total-carrito: etiqueta a
+// la izquierda y la cifra en <strong>.
+function filasDesgloseEnvio(envio) {
   const d = envio.desglose;
-  const usd = (n) => `US$${Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  return [
-    `Tu dirección queda a ${formatearKmEnvio(envio.distancia_km)} km manejando desde la Circunvalación (los primeros ${d.km_gratis} km son gratis).`,
-    `• ${formatearKmEnvio(d.km_excedentes)} km excedentes de recorrido, ida y vuelta: ${formatearKmEnvio(d.km_recorridos)} km${d.estimado ? " (estimado)" : ""}`,
-    `• Nafta: ${formatearKmEnvio(d.litros)} L (${d.km_por_litro} km/L) a $${Number(d.nafta_ars_litro).toLocaleString("es-AR")} el litro = ${usd(d.combustible_usd)}`,
-    `• Desgaste del vehículo y tiempo (${d.recargo_pct}%): ${usd(d.desgaste_tiempo_usd)}`,
-    `Envío: ${usd(envio.envio_usd)}`,
+  const km = (n) => `${formatearKmEnvio(n)} km`;
+  const filas = [
+    ["Recorrido desde la Circunvalación", km(envio.distancia_km)],
+    [`Sin cargo, primeros ${d.km_gratis} km`, "Gratis"],
+    ["Excedente, ida y vuelta", km(d.km_recorridos)],
+    [`Nafta · ${formatearKmEnvio(d.litros)} L a $${Number(d.nafta_ars_litro).toLocaleString("es-AR")}`, formatearUsdEnvio(d.combustible_usd)],
+    ["Desgaste del vehículo y tiempo", formatearUsdEnvio(d.desgaste_tiempo_usd)],
   ];
+  return filas.map(([etiqueta, valor]) => {
+    const fila = document.createElement("span");
+    const cifra = document.createElement("strong");
+    fila.textContent = etiqueta;
+    cifra.textContent = valor;
+    fila.append(cifra);
+    return fila;
+  });
+}
+
+function totalEnvio(envio) {
+  const fila = document.createElement("span");
+  fila.className = "envio-total";
+  const cifra = document.createElement("strong");
+  fila.textContent = "Envío";
+  cifra.textContent = formatearUsdEnvio(envio.envio_usd);
+  fila.append(cifra);
+  return fila;
+}
+
+function notaEnvio(texto) {
+  const nota = document.createElement("p");
+  nota.className = "carrito-nota";
+  nota.textContent = texto;
+  return nota;
 }
 
 let consultaEnvioActual = 0;
@@ -2350,32 +2379,76 @@ async function actualizarDetalleEnvio() {
   if (!coords) { caja.hidden = true; return; }
   const envio = await cotizarEnvio(coords);
   if (consulta !== consultaEnvioActual) return;
-  caja.replaceChildren();
-  let lineas = [];
-  if (envio?.zona === "con_cargo") lineas = textoDesgloseEnvio(envio);
-  else if (envio?.zona === "consultar") lineas = [`Tu dirección queda a ${formatearKmEnvio(envio.distancia_km)} km de la Circunvalación: escribime por WhatsApp para coordinar el envío.`];
-  else if (envio?.zona === "gratis") lineas = ["Envío gratis a esta dirección."];
-  lineas.forEach((linea) => {
-    const p = document.createElement("p");
-    p.textContent = linea;
-    caja.append(p);
+  const titulo = document.createElement("strong");
+  titulo.textContent = "Envío";
+  if (envio?.zona === "con_cargo") {
+    caja.replaceChildren(titulo, ...filasDesgloseEnvio(envio), totalEnvio(envio),
+      notaEnvio(`Se suma al total al confirmar. Los descuentos no aplican al envío.${envio.desglose.estimado ? " Distancia estimada." : ""}`));
+  } else if (envio?.zona === "consultar") {
+    caja.replaceChildren(titulo, notaEnvio(`Tu dirección queda a ${formatearKmEnvio(envio.distancia_km)} km de la Circunvalación. Escribime por WhatsApp y te paso el costo del envío.`));
+  } else if (envio?.zona === "gratis") {
+    caja.replaceChildren(titulo, notaEnvio("Envío sin cargo a esta dirección."));
+  } else {
+    caja.hidden = true;
+    return;
+  }
+  caja.hidden = false;
+}
+
+// Mismo diálogo que la promo del cargador (carrito.js), en vez del confirm()
+// del navegador. Resuelve true si el cliente confirma.
+function pedirConfirmacionEnvio(envio) {
+  const consultar = envio.zona === "consultar";
+  const dialog = document.createElement("dialog");
+  dialog.className = "ttra-oferta-cargador ttra-envio-dialogo";
+  dialog.setAttribute("aria-labelledby", "ttra-envio-titulo");
+  dialog.setAttribute("aria-describedby", "ttra-envio-texto");
+  dialog.innerHTML = `
+    <p class="ttra-oferta-cargador-etiqueta"></p>
+    <h2 id="ttra-envio-titulo"></h2>
+    <p id="ttra-envio-texto"></p>
+    <div class="envio-filas"></div>
+    <p class="ttra-oferta-cargador-precio"><strong></strong><span></span></p>
+    <div class="ttra-oferta-cargador-acciones">
+      <button type="button" value="cancelar"></button>
+      <button type="button" value="aceptar" autofocus></button>
+    </div>`;
+  const km = formatearKmEnvio(envio.distancia_km);
+  dialog.querySelector(".ttra-oferta-cargador-etiqueta").textContent = consultar ? "Envío a coordinar" : "Envío fuera de zona";
+  dialog.querySelector("h2").textContent = consultar ? "¿Te paso el costo del envío?" : "¿Confirmás el envío?";
+  dialog.querySelector("#ttra-envio-texto").textContent = consultar
+    ? `Tu dirección queda a ${km} km de la Circunvalación. Escribime por WhatsApp y te paso el costo.`
+    : `Tu dirección queda a ${km} km de recorrido desde la Circunvalación. Los primeros ${envio.desglose.km_gratis} km van sin cargo.`;
+  if (consultar) {
+    dialog.querySelector(".envio-filas").remove();
+    dialog.querySelector(".ttra-oferta-cargador-precio").remove();
+  } else {
+    dialog.querySelector(".envio-filas").replaceChildren(...filasDesgloseEnvio(envio).slice(2));
+    dialog.querySelector(".ttra-oferta-cargador-precio strong").textContent = formatearUsdEnvio(envio.envio_usd).replace("US$", "US$ ");
+    dialog.querySelector(".ttra-oferta-cargador-precio span").textContent = "se suma al total";
+  }
+  const [cancelar, aceptar] = dialog.querySelectorAll("button");
+  cancelar.textContent = consultar ? "Volver" : "Cancelar";
+  aceptar.textContent = consultar ? "Escribime" : "Confirmar pedido";
+  return new Promise((resolver) => {
+    dialog.querySelectorAll("button").forEach((boton) => boton.addEventListener("click", () => dialog.close(boton.value)));
+    dialog.addEventListener("cancel", () => { dialog.returnValue = "cancelar"; });
+    dialog.addEventListener("close", () => {
+      const ok = dialog.returnValue === "aceptar";
+      dialog.remove();
+      if (ok && consultar) window.open("https://wa.me/543512145217", "_blank", "noopener");
+      resolver(ok && !consultar);
+    }, { once: true });
+    document.body.append(dialog);
+    dialog.showModal();
   });
-  caja.hidden = !lineas.length;
 }
 
 // Devuelve los US$ de envío aceptados, o null si el cliente no sigue.
 async function confirmarCostoEnvio(coords) {
   const envio = await cotizarEnvio(coords);
-  if (!envio) return 0;
-  if (envio.zona === "consultar") {
-    alert(`Tu dirección queda a ${formatearKmEnvio(envio.distancia_km)} km de la Circunvalación. Escribime por WhatsApp para coordinar el costo de envío.`);
-    return null;
-  }
-  if (envio.zona === "con_cargo") {
-    const ok = confirm(`${textoDesgloseEnvio(envio).join("\n")}\n\nEl envío se suma al total. ¿Confirmás el pedido?`);
-    return ok ? envio.envio_usd : null;
-  }
-  return 0;
+  if (!envio || !["con_cargo", "consultar"].includes(envio.zona)) return 0;
+  return (await pedirConfirmacionEnvio(envio)) ? envio.envio_usd : null;
 }
 
 function formatearKmEnvio(km) {
