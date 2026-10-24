@@ -297,14 +297,18 @@ aplicarModoVisual(modoVisual, { sinRepintar: true });
 // cliente (nombre/celular del gate inicial) y se muestra el mensaje final;
 // si cancela, no cambia nada. Al cerrar el mensaje final se recarga la
 // página, así vuelve a aparecer el gate para volver a identificarse. ---
-function mostrarConfirmacionLogout() {
-  const confirmar = document.getElementById("rc-logout-confirmar");
-  if (confirmar) confirmar.classList.add("visible");
-}
-
-function ocultarConfirmacionLogout() {
-  const confirmar = document.getElementById("rc-logout-confirmar");
-  if (confirmar) confirmar.classList.remove("visible");
+async function mostrarConfirmacionLogout() {
+  const acepta = await window.TTRAConfirmar({
+    titulo: "¿Seguro que querés cerrar sesión?",
+    aceptar: "Cerrar sesión",
+    cancelar: "Cancelar",
+  });
+  if (!acepta) return;
+  if (btnLogoutFallout) {
+    btnLogoutFallout.classList.add("apagado");
+    btnLogoutFallout.setAttribute("aria-pressed", "false");
+  }
+  cerrarSesionCliente();
 }
 
 // --- Popup obligatorio de condiciones mayoristas: se muestra una sola vez,
@@ -378,7 +382,7 @@ if (btnTerminosAceptar) {
       }
       ocultarModalTerminosMayorista();
     } catch {
-      alert("No pude guardar tu aceptación. Probá de nuevo.");
+      await avisar({ titulo: "No pude guardar tu aceptación", texto: "Probá de nuevo en un momento." });
       btnTerminosAceptar.disabled = false;
       btnTerminosAceptar.textContent = "Acepto";
     }
@@ -598,28 +602,6 @@ if (btnLogoutClassic) {
 
 if (btnLogoutFallout) {
   btnLogoutFallout.addEventListener("click", mostrarConfirmacionLogout);
-}
-
-const btnLogoutConfirmarSi = document.getElementById("btn-logout-confirmar-si");
-if (btnLogoutConfirmarSi) {
-  btnLogoutConfirmarSi.addEventListener("click", () => {
-    ocultarConfirmacionLogout();
-    if (btnLogoutFallout) {
-      btnLogoutFallout.classList.add("apagado");
-      btnLogoutFallout.setAttribute("aria-pressed", "false");
-    }
-    cerrarSesionCliente();
-  });
-}
-
-const btnLogoutConfirmarNo = document.getElementById("btn-logout-confirmar-no");
-if (btnLogoutConfirmarNo) {
-  btnLogoutConfirmarNo.addEventListener("click", ocultarConfirmacionLogout);
-}
-
-const btnLogoutCerrar = document.getElementById("btn-logout-cerrar");
-if (btnLogoutCerrar) {
-  btnLogoutCerrar.addEventListener("click", () => location.reload());
 }
 
 // Al pasar el mouse sobre "Modo Fallout" suena el tema de radio de Fallout;
@@ -1053,7 +1035,6 @@ function abrirPanelCompartir(url, nombre) {
     document.body.appendChild(panel);
     const cerrar = () => { panel.hidden = true; };
     panel.querySelector(".rc-panel-compartir-cerrar").addEventListener("click", cerrar);
-    panel.addEventListener("click", (e) => { if (e.target === panel) cerrar(); });
     panel.querySelector(".rc-panel-compartir-copiar").addEventListener("click", async () => {
       const campo = panel.querySelector(".rc-panel-compartir-url");
       campo.focus();
@@ -2432,7 +2413,7 @@ function pedirConfirmacionEnvio(envio) {
   aceptar.textContent = consultar ? "Escribime" : "Confirmar pedido";
   return new Promise((resolver) => {
     dialog.querySelectorAll("button").forEach((boton) => boton.addEventListener("click", () => dialog.close(boton.value)));
-    dialog.addEventListener("cancel", () => { dialog.returnValue = "cancelar"; });
+    dialog.addEventListener("cancel", (evento) => evento.preventDefault());
     dialog.addEventListener("close", () => {
       const ok = dialog.returnValue === "aceptar";
       dialog.remove();
@@ -2460,8 +2441,8 @@ async function confirmarPedidoCarrito(carrito) {
   if (confirmandoPedido || !carrito.length) return false;
   const fechaEntrega = document.getElementById("fecha-entrega").value;
   const direccionEntrega = document.getElementById("direccion-entrega").value.trim();
-  if (!direccionEntrega) { alert("Especificá dirección de entrega."); return false; }
-  if (!fechaEntrega) { alert("Elegí una fecha de entrega."); return false; }
+  if (!direccionEntrega) { await avisar({ etiqueta: "Falta un dato", titulo: "Especificá la dirección de entrega", texto: "Tocá «Dirección de entrega» en el carrito." }); return false; }
+  if (!fechaEntrega) { await avisar({ etiqueta: "Falta un dato", titulo: "Elegí una fecha de entrega" }); return false; }
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
   if (!mensaje) return false;
   const envioUsd = await confirmarCostoEnvio(coordsDireccionEntregaActual);
@@ -2475,7 +2456,7 @@ async function confirmarPedidoCarrito(carrito) {
       if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual, envioUsd))) return false;
     } catch (error) {
       console.error("No se pudo guardar el pedido", error);
-      alert("No pude guardar tu pedido. Tu carrito sigue disponible para reintentar.");
+      await avisar({ titulo: "No pude guardar tu pedido", texto: "Tu carrito sigue disponible para reintentar." });
       return false;
     }
     ultimoResumenPedido = `${mensaje}\nDirección de entrega: ${direccionEntrega}`;
@@ -2787,7 +2768,7 @@ if (btnUsarUbicacion) {
     btnUsarUbicacion.disabled = false;
     btnUsarUbicacion.textContent = textoOriginal;
     if (!resultado) {
-      alert("No pude obtener tu ubicación. Revisá el permiso de ubicación del navegador.");
+      await avisar({ titulo: "No pude obtener tu ubicación", texto: "Revisá el permiso de ubicación del navegador." });
       return;
     }
     inputDireccionEntrega.value = resultado.direccion;
@@ -2844,15 +2825,10 @@ document.getElementById("btn-abrir-codigo").addEventListener("click", () => {
   abrirPanelSecundario("modal-codigo");
 });
 document.getElementById("btn-cancelar-direccion").addEventListener("click", cerrarPanelSecundario);
-// El panel de dirección no se cierra al tocar afuera: en mobile el teclado tapa el
-// resto y un toque para scrollear lo descartaba. Se cierra con APLICAR o Cancelar.
-document.addEventListener("pointerdown", (evento) => {
-  const panelSecundarioAbierto = [panelSelectorDomicilio, panelCodigoPromocional]
-    .find((panel) => !panel.classList.contains("oculto"));
-  if (!panelSecundarioAbierto || panelSecundarioAbierto.contains(evento.target)) return;
-  if (evento.target.closest("#btn-abrir-direccion, #btn-abrir-codigo")) return;
-  cerrarPanelSecundario();
-});
+// Los paneles flotantes del carrito no se cierran tocando afuera: el de
+// dirección con APLICAR o Cancelar, el selector con Cancelar, el de código con su ✕.
+document.getElementById("btn-cancelar-selector-domicilio").addEventListener("click", cerrarPanelSecundario);
+document.getElementById("btn-cerrar-codigo").addEventListener("click", cerrarPanelSecundario);
 
 // Validar un código exige sesión (el descuento puede ser de una cuenta puntual),
 // así que el invitado lo deja pendiente y se aplica solo al crear la cuenta.
@@ -2897,20 +2873,20 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
   }
   const carrito = cargarCarrito();
   if (!carrito.length) {
-    alert("Agregá productos al carrito antes de aplicar un código.");
+    await avisar({ titulo: "Tu carrito está vacío", texto: "Agregá productos al carrito antes de aplicar un código." });
     return;
   }
   const input = document.getElementById("input-codigo-mailing");
   const codigo = (input?.value || "").trim().toUpperCase();
   if (!codigo) {
-    alert("Ingresá un código.");
+    await avisar({ titulo: "Ingresá un código" });
     return;
   }
   if (!(await obtenerEstadoSesionCliente())) {
     guardarCodigoPendiente(codigo);
     setEstadoCodigoMailing(`Código ${codigo} guardado: se aplica cuando crees tu cuenta.`, "ok");
     cerrarPanelSecundario();
-    alert(`Guardé tu código ${codigo}. Se aplica automáticamente cuando crees tu cuenta al confirmar el pedido.`);
+    await avisar({ etiqueta: "Código guardado", titulo: `Guardé tu código ${codigo}`, texto: "Se aplica automáticamente cuando crees tu cuenta al confirmar el pedido." });
     return;
   }
   const r = await fetch("/api/codigos-promo/validar", {
@@ -2920,12 +2896,12 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
   });
   const body = await r.json().catch(() => ({}));
   if (!r.ok) {
-    alert(body.error || "No se pudo validar el código.");
+    await avisar({ titulo: "No pude validar el código", texto: body.error || "Revisalo y probá de nuevo." });
     return;
   }
   guardarRegaloPromo(body);
   cerrarPanelSecundario();
-  alert(`¡Código aplicado! Sumamos ${body.producto_regalo} de regalo a tu pedido.`);
+  await avisar({ etiqueta: "Código aplicado", titulo: "¡Listo!", texto: `Sumé ${body.producto_regalo} de regalo a tu pedido.` });
 });
 
 // Al cerrar un pedido, suma los productos encargados al registro del
@@ -2970,12 +2946,13 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
     if (body.conflicto === "codigo_promo") borrarRegaloPromo();
     if (body.conflicto === "codigo_descuento") borrarDescuentoMailing();
     if (body.conflicto === "envio") {
-      alert(body.error || "El costo de envío cambió. Confirmá nuevamente.");
+      await avisar({ titulo: "El costo de envío cambió", texto: body.error || "Confirmá nuevamente." });
       return false;
     }
-    alert(body.error
-      ? `${body.error}\n\nRevisá el carrito y confirmá nuevamente.`
-      : "El catálogo cambió. Revisá el carrito y confirmá nuevamente.");
+    await avisar({
+      titulo: "El catálogo cambió",
+      texto: body.error ? `${body.error}\n\nRevisá el carrito y confirmá nuevamente.` : "Revisá el carrito y confirmá nuevamente.",
+    });
     const recargado = await cargarCatalogo();
     if (recargado) abrirCarrito();
     return false;

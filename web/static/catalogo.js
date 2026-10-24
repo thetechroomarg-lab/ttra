@@ -496,11 +496,8 @@ function abrirCompartirCatalogo(producto = null) {
       </div><p role="status"></p>`;
     document.body.append(panel);
     panel.querySelector('.catalog-share-close').addEventListener('click', () => panel.close());
-    panel.addEventListener('click', event => {
-      const bounds = panel.getBoundingClientRect();
-      if (event.target === panel && (event.clientX < bounds.left || event.clientX > bounds.right ||
-          event.clientY < bounds.top || event.clientY > bounds.bottom)) panel.close();
-    });
+    // Solo se cierra con "Cerrar": ni tocando afuera ni con Escape.
+    panel.addEventListener('cancel', event => event.preventDefault());
     panel.querySelector('.catalog-share-copy').addEventListener('click', async () => {
       const input = panel.querySelector('input');
       try {

@@ -105,8 +105,8 @@
     dialog.querySelector('.ttra-oferta-cargador-precio strong').textContent = `US$ ${oferta.usd}`;
     dialog.querySelector('.ttra-oferta-cargador-precio span').textContent = `$ ${pesos} en pesos`;
     dialog.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => dialog.close(button.value)));
-    // Esc counts as Cancelar; the backdrop does nothing, only the two buttons decide.
-    dialog.addEventListener('cancel', () => { dialog.returnValue = 'cancelar'; });
+    // Neither Esc nor the backdrop close it: only the two buttons decide.
+    dialog.addEventListener('cancel', (event) => event.preventDefault());
     dialog.addEventListener('close', () => {
       if (dialog.returnValue === 'aceptar') {
         try { sumarCargador(oferta); } catch { notificar('No pude sumar el cargador al carrito. Probá de nuevo.', true); }

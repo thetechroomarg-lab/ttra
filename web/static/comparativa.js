@@ -75,7 +75,7 @@
         catch (error) { if (error.name === 'AbortError') return; }
       }
       try { await navigator.clipboard.writeText(url); window.TTRACarrito?.notificar('Link copiado. Ya lo podés pegar donde quieras.'); }
-      catch { window.prompt('Copiá este link para compartir la comparativa:', url); }
+      catch { window.TTRAAviso({ titulo: 'Copiá este link', texto: 'Para compartir la comparativa.', valor: url, boton: 'Listo' }); }
     });
   }
   function renderCart() {

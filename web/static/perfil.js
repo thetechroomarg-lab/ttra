@@ -578,7 +578,12 @@ function itemDomicilioHtml(domicilio) {
   btnEliminar.type = "button";
   btnEliminar.textContent = "Eliminar";
   btnEliminar.addEventListener("click", async () => {
-    if (!confirm(`¿Eliminar el domicilio "${domicilio.alias}"?`)) return;
+    const acepta = await window.TTRAConfirmar({
+      titulo: "¿Eliminar este domicilio?",
+      texto: `${domicilio.alias} — ${domicilio.direccion}`,
+      aceptar: "Eliminar",
+    });
+    if (!acepta) return;
     await fetch(`/api/domicilios/${domicilio.id}`, { method: "DELETE" });
     if (domicilioEnEdicionId === domicilio.id) cancelarEdicionDomicilio();
     cargarDomicilios();
