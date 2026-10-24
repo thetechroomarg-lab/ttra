@@ -2657,13 +2657,23 @@ inputDireccionEntrega.addEventListener("input", () => {
   }, 250);
 });
 
+// Fondo blureado detrás de los paneles flotantes del carrito.
+const overlayPanelSecundario = document.createElement("div");
+overlayPanelSecundario.id = "overlay-panel-secundario";
+overlayPanelSecundario.className = "oculto";
+// Va dentro del carrito: el panel tiene z-index propio y los flotantes,
+// que son hijos suyos, no podrían quedar por encima de un overlay en el body.
+document.getElementById("panel-carrito").append(overlayPanelSecundario);
+
 function abrirPanelSecundario(idPanel) {
+  overlayPanelSecundario.classList.toggle("oculto", !idPanel);
   panelSelectorDomicilio.classList.toggle("oculto", idPanel !== "selector-domicilio-entrega");
   panelDireccionEntrega.classList.toggle("oculto", idPanel !== "direccion-entrega-wrap");
   panelCodigoPromocional.classList.toggle("oculto", idPanel !== "modal-codigo");
 }
 
 function cerrarPanelSecundario() {
+  overlayPanelSecundario.classList.add("oculto");
   panelSelectorDomicilio.classList.add("oculto");
   panelDireccionEntrega.classList.add("oculto");
   panelCodigoPromocional.classList.add("oculto");
@@ -2697,25 +2707,31 @@ function mostrarDireccionEntregaActual(alias = null) {
   boton.textContent = direccion ? "Modificar dirección de entrega" : "Dirección de entrega";
 }
 
-// Por defecto se entrega en el domicilio que cargó al crear la cuenta
-// ("Principal"); si no está, el primero guardado.
+// Carga un domicilio guardado como dirección de entrega del pedido.
+let domicilioEntregaId = null;
+function usarDomicilioEnCarrito(domicilio) {
+  domicilioEntregaId = domicilio.id;
+  inputDireccionEntrega.value = domicilio.direccion;
+  inputPisoEntrega.value = domicilio.piso || "";
+  inputDeptoEntrega.value = domicilio.depto || "";
+  coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
+    ? { lat: domicilio.lat, lng: domicilio.lng }
+    : null;
+  actualizarDetalleEnvio();
+  mostrarDireccionEntregaActual(domicilio.alias);
+}
+
+// Por defecto se entrega en el domicilio marcado como principal en el perfil.
 async function precargarDireccionEntrega() {
   if (inputDireccionEntrega.value.trim()) return;
   const cliente = await obtenerEstadoSesionCliente();
   if (!cliente) return;
   const r = await fetch("/api/domicilios").catch(() => null);
   domiciliosCliente = r?.ok ? await r.json() : [];
-  const domicilio = domiciliosCliente.find((d) => d.alias === "Principal") || domiciliosCliente[0];
+  const domicilio = domiciliosCliente.find((d) => d.predeterminado) || domiciliosCliente[0];
   if (inputDireccionEntrega.value.trim()) return;
   if (domicilio) {
-    inputDireccionEntrega.value = domicilio.direccion;
-    inputPisoEntrega.value = domicilio.piso || "";
-    inputDeptoEntrega.value = domicilio.depto || "";
-    coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
-      ? { lat: domicilio.lat, lng: domicilio.lng }
-      : null;
-    actualizarDetalleEnvio();
-    mostrarDireccionEntregaActual(domicilio.alias);
+    usarDomicilioEnCarrito(domicilio);
   } else if (cliente.direccion) {
     inputDireccionEntrega.value = cliente.direccion;
     mostrarDireccionEntregaActual();
@@ -2734,29 +2750,26 @@ async function abrirSelectorDireccion() {
     abrirFormularioNuevaDireccion();
     return;
   }
-  function itemDomicilioEntregaHtml(texto, alClickear) {
+  const elegidoId = domicilioEntregaId || domiciliosCliente.find((d) => d.predeterminado)?.id;
+  const items = domiciliosCliente.map((domicilio) => {
     const item = document.createElement("li");
-    const boton = document.createElement("button");
-    boton.type = "button";
-    boton.textContent = texto;
-    boton.addEventListener("click", alClickear);
-    item.append(boton);
-    return item;
-  }
-  listaDomiciliosEntrega.replaceChildren(
-    ...domiciliosCliente.map((domicilio) => itemDomicilioEntregaHtml(`${domicilio.alias} — ${domicilio.direccion}`, () => {
-      inputDireccionEntrega.value = domicilio.direccion;
-      inputPisoEntrega.value = domicilio.piso || "";
-      inputDeptoEntrega.value = domicilio.depto || "";
-      coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
-        ? { lat: domicilio.lat, lng: domicilio.lng }
-        : null;
-      actualizarDetalleEnvio();
-      mostrarDireccionEntregaActual(domicilio.alias);
+    const opcion = window.opcionDomicilioHtml(domicilio, domicilio.id === elegidoId);
+    opcion.addEventListener("click", () => {
+      usarDomicilioEnCarrito(domicilio);
       cerrarPanelSecundario();
-    })),
-    itemDomicilioEntregaHtml("+ Agregar nueva dirección", abrirFormularioNuevaDireccion),
-  );
+    });
+    item.append(opcion);
+    return item;
+  });
+  const itemNuevo = document.createElement("li");
+  const btnNuevo = document.createElement("button");
+  btnNuevo.type = "button";
+  btnNuevo.className = "domicilio-opcion-agregar";
+  btnNuevo.textContent = domiciliosCliente.length >= 5 ? "Llegaste al máximo de 5 domicilios" : "+ Agregar nueva dirección";
+  btnNuevo.disabled = domiciliosCliente.length >= 5;
+  btnNuevo.addEventListener("click", abrirFormularioNuevaDireccion);
+  itemNuevo.append(btnNuevo);
+  listaDomiciliosEntrega.replaceChildren(...items, itemNuevo);
   abrirPanelSecundario("selector-domicilio-entrega");
 }
 
@@ -2805,9 +2818,23 @@ document.getElementById("btn-guardar-direccion").addEventListener("click", async
     if (respuesta.ok) {
       const domicilio = await respuesta.json();
       domiciliosCliente.push(domicilio);
+      domicilioEntregaId = domicilio.id;
       aliasGuardado = domicilio.alias;
+      cerrarPanelSecundario();
+      mostrarDireccionEntregaActual(aliasGuardado);
+      if (!domicilio.predeterminado) {
+        const acepta = await window.TTRAConfirmar({
+          titulo: "¿Establecer como domicilio de entrega?",
+          texto: `${domicilio.alias} — ${domicilio.direccion}`,
+          aceptar: "Establecer",
+          cancelar: "Ahora no",
+        });
+        if (acepta) await fetch(`/api/domicilios/${domicilio.id}/predeterminado`, { method: "POST" }).catch(() => null);
+      }
+      return;
     }
   }
+  domicilioEntregaId = null;
   mostrarDireccionEntregaActual(aliasGuardado);
   cerrarPanelSecundario();
 });
