@@ -1021,3 +1021,11 @@ def test_sesion_vencida_en_un_panel_pide_login_en_el_modal():
     header = (appmod.BASE / "static" / "site-header.js").read_text(encoding="utf-8")
     assert "href=\"/perfil\"" not in header and "href=\"/pedidos\"" not in header
     assert "abrirPanelEnPagina(toggle, panel)" in header
+
+
+def test_panel_direccion_no_se_cierra_al_tocar_afuera():
+    script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
+    html = (appmod.BASE / "static" / "index.html").read_text(encoding="utf-8")
+    assert "[panelSelectorDomicilio, panelCodigoPromocional]" in script
+    assert 'getElementById("btn-cancelar-direccion").addEventListener("click", cerrarPanelSecundario)' in script
+    assert 'id="btn-cancelar-direccion"' in html

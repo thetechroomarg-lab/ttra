@@ -2816,8 +2816,11 @@ document.getElementById("btn-abrir-codigo").addEventListener("click", () => {
   if (modoPrecioActual === "mayorista") return;
   abrirPanelSecundario("modal-codigo");
 });
+document.getElementById("btn-cancelar-direccion").addEventListener("click", cerrarPanelSecundario);
+// El panel de dirección no se cierra al tocar afuera: en mobile el teclado tapa el
+// resto y un toque para scrollear lo descartaba. Se cierra con APLICAR o Cancelar.
 document.addEventListener("pointerdown", (evento) => {
-  const panelSecundarioAbierto = [panelSelectorDomicilio, panelDireccionEntrega, panelCodigoPromocional]
+  const panelSecundarioAbierto = [panelSelectorDomicilio, panelCodigoPromocional]
     .find((panel) => !panel.classList.contains("oculto"));
   if (!panelSecundarioAbierto || panelSecundarioAbierto.contains(evento.target)) return;
   if (evento.target.closest("#btn-abrir-direccion, #btn-abrir-codigo")) return;
