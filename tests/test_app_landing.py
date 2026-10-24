@@ -70,7 +70,7 @@ def test_checkout_409_muestra_mensaje_recarga_y_exige_confirmacion_nueva():
     checkout = script[inicio:fin]
 
     conflicto = checkout.index("if (respuesta.status === 409)")
-    mostrar = checkout.index("alert(body.error", conflicto)
+    mostrar = checkout.index('titulo: "El catálogo cambió"', conflicto)
     recargar = checkout.index("await cargarCatalogo()", mostrar)
     reabrir = checkout.index("abrirCarrito()", recargar)
     detener = checkout.index("return false", reabrir)
@@ -749,19 +749,19 @@ def test_modal_codigo_es_solo_titulo_input_y_aplicar():
     assert 'id="btn-aplicar-codigo"' in modal
     assert "rc-codigo-header" not in modal
     assert "descuento-mailing" not in modal
-    assert 'id="btn-cerrar-codigo"' not in modal
-    assert 'getElementById("btn-cerrar-codigo")' not in script
+    # Formulario flotante: se cierra con su ✕, nunca tocando afuera.
+    assert 'id="btn-cerrar-codigo"' in modal
+    assert 'getElementById("btn-cerrar-codigo").addEventListener("click", cerrarPanelSecundario)' in script
     assert "#modal-codigo input {" in (appmod.BASE / "static" / "landing.css").read_text()
 
 
-def test_carrito_muestra_un_solo_panel_secundario_y_cierra_al_tocar_afuera():
+def test_carrito_muestra_un_solo_panel_secundario_y_no_cierra_al_tocar_afuera():
     script = leer_landing_js()
 
     assert "function abrirPanelSecundario(idPanel)" in script
     assert 'panelDireccionEntrega.classList.toggle("oculto", idPanel !== "direccion-entrega-wrap")' in script
     assert 'panelCodigoPromocional.classList.toggle("oculto", idPanel !== "modal-codigo")' in script
-    assert 'document.addEventListener("pointerdown", (evento) =>' in script
-    assert "panelSecundarioAbierto.contains(evento.target)" in script
+    assert "panelSecundarioAbierto.contains(evento.target)" not in script
 
 
 def test_direccion_entrega_cierra_sin_boton_x():
@@ -1026,6 +1026,7 @@ def test_sesion_vencida_en_un_panel_pide_login_en_el_modal():
 def test_panel_direccion_no_se_cierra_al_tocar_afuera():
     script = (appmod.BASE / "static" / "landing.js").read_text(encoding="utf-8")
     html = (appmod.BASE / "static" / "index.html").read_text(encoding="utf-8")
-    assert "[panelSelectorDomicilio, panelCodigoPromocional]" in script
+    assert "[panelSelectorDomicilio, panelCodigoPromocional]" not in script
+    assert 'getElementById("btn-cancelar-selector-domicilio").addEventListener("click", cerrarPanelSecundario)' in script
     assert 'getElementById("btn-cancelar-direccion").addEventListener("click", cerrarPanelSecundario)' in script
     assert 'id="btn-cancelar-direccion"' in html

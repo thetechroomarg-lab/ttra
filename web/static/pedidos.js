@@ -120,7 +120,7 @@ function tarjetaPedidoEnCurso(pedido) {
   btnEliminar.type = "button";
   btnEliminar.textContent = "Eliminar pedido";
   btnEliminar.addEventListener("click", async () => {
-    if (!confirm("¿Eliminar este pedido en curso?")) return;
+    if (!(await window.TTRAConfirmar({ titulo: "¿Eliminar este pedido en curso?", aceptar: "Eliminar" }))) return;
     await fetch(`/api/pedidos/${pedido.id}`, { method: "DELETE" });
     cargarPedidos();
   });

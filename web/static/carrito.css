@@ -122,3 +122,21 @@ html[data-classic-theme="light"] .ttra-oferta-cargador::backdrop { background: r
 @keyframes ttra-oferta-entrada { from { opacity: 0; transform: translateY(12px) scale(.97); } }
 @keyframes ttra-oferta-fondo { from { opacity: 0; } }
 @media (max-width: 380px) { .ttra-oferta-cargador-acciones { grid-template-columns: 1fr; } }
+
+/* Diálogos genéricos del sitio (dialogo-confirmar.js): mismo formato que la
+   promo del cargador; con un solo botón, el botón ocupa todo el ancho. */
+.ttra-dialogo .ttra-dialogo-texto { margin: 0 0 22px; color: var(--rc-green, currentColor); font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-line; }
+.ttra-dialogo h2:last-of-type:not(:has(+ p)) { margin-bottom: 22px; }
+.ttra-dialogo .ttra-oferta-cargador-acciones.ttra-dialogo-un-boton { grid-template-columns: 1fr; }
+.ttra-dialogo .ttra-dialogo-valor {
+  box-sizing: border-box; width: 100%; min-height: 48px; margin: 0 0 22px; padding: 0 12px;
+  border: 1px solid var(--ed-line, var(--rc-green-faint, currentColor)); border-radius: 4px;
+  background: var(--rc-bg, transparent); color: var(--rc-green-bright, currentColor); font: 500 14px var(--rc-font, inherit);
+}
+html[data-modo="classic"] .ttra-dialogo h2 { font-family: var(--pz-font, inherit); text-transform: uppercase; letter-spacing: .02em; }
+/* Backlight: el halo de las tarjetas más un resplandor claro detrás, igual
+   en todos los diálogos y en los paneles flotantes del carrito. */
+html[data-modo="classic"] dialog.ttra-oferta-cargador,
+html[data-modo="classic"] :is(#direccion-entrega-wrap, #selector-domicilio-entrega, #modal-codigo):not(.oculto) {
+  box-shadow: var(--ed-halo, 0 24px 70px #00000030), 0 0 48px -8px color-mix(in srgb, var(--pz-plate, #ecebe4) 40%, transparent);
+}
