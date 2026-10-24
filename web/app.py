@@ -2159,7 +2159,7 @@ _ALTA_CLIENTE_HTML = """<dialog class="alta-cliente" id="alta-cliente" aria-labe
       <div class="alta-campo"><label for="alta-celular">Celular</label><input id="alta-celular" name="celular" type="tel" inputmode="tel" autocomplete="off" placeholder="351 123 4567" maxlength="30" required></div>
       <div class="alta-campo"><label for="alta-provincia">Provincia</label><select id="alta-provincia" name="provincia" required>OPCIONES</select></div>
       <p class="alta-cliente-separador">Domicilio <small>(opcional)</small></p>
-      <div class="alta-campo alta-campo-ancho"><label for="alta-direccion">Dirección</label><input id="alta-direccion" name="direccion" autocomplete="off" placeholder="Ej.: Av. Colón 123, Córdoba" maxlength="500"></div>
+      <div class="alta-campo alta-campo-ancho"><label for="alta-direccion">Dirección</label><div class="tarea-direccion-wrap"><input id="alta-direccion" name="direccion" autocomplete="off" placeholder="Ej.: Av. Colón 123, Córdoba" maxlength="500"><ul id="alta-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div></div>
       <div class="alta-campo"><label for="alta-piso">Piso <small>(opcional)</small></label><input id="alta-piso" name="piso" autocomplete="off" maxlength="20"></div>
       <div class="alta-campo"><label for="alta-depto">Depto <small>(opcional)</small></label><input id="alta-depto" name="depto" autocomplete="off" maxlength="20"></div>
     </div>
@@ -2929,6 +2929,7 @@ function activarAutocompleteDireccion(input, lista) {{
 }}
 activarAutocompleteDireccion(document.getElementById("tarea-direccion"), document.getElementById("tarea-direccion-sugerencias"));
 activarAutocompleteDireccion(document.getElementById("direccion-entrega-admin"), document.getElementById("direccion-entrega-admin-sugerencias"));
+activarAutocompleteDireccion(document.getElementById("alta-direccion"), document.getElementById("alta-direccion-sugerencias"));
 {_punto_encuentro_js("activarAutocompleteDireccion")}
 const CLIENTES_TAREA = {clientes_tarea_json};
 const busquedaClienteTarea = document.getElementById("tarea-cliente-busqueda");
