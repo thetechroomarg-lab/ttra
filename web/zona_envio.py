@@ -1,11 +1,19 @@
 """Costo de envío según la distancia a la Circunvalación de Córdoba Capital.
 
-Adentro del anillo y hasta FRANJA_GRATIS_KM afuera: gratis. De ahí hasta
-LIMITE_KM se cobra la nafta de ida y vuelta por los km excedentes (la línea
-recta se lleva a ruta con FACTOR_RUTA) más RECARGO_DESGASTE_TIEMPO por
-desgaste del vehículo y tiempo. Más lejos: el cliente tiene que consultar.
+Los km se miden por ruta (Google Routes) desde el punto de la Circunvalación
+más cercano hasta el domicilio. Adentro del anillo y hasta FRANJA_GRATIS_KM
+de ruta afuera: gratis. De ahí hasta LIMITE_KM se cobra la nafta de ida y
+vuelta por los km excedentes más RECARGO_DESGASTE_TIEMPO por desgaste del
+vehículo y tiempo. Más lejos: el cliente tiene que consultar. Si Google no
+responde, se estima con la línea recta por FACTOR_RUTA.
 """
+import json
+import logging
 import math
+import os
+import urllib.request
+
+logger = logging.getLogger(__name__)
 
 FRANJA_GRATIS_KM = 5
 LIMITE_KM = 60
@@ -56,16 +64,64 @@ def _distancia_segmento(px, py, ax, ay, bx, by):
     return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
 
 
+def _punto_mas_cercano(px, py, ax, ay, bx, by):
+    dx, dy = bx - ax, by - ay
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
+    return ax + t * dx, ay + t * dy
+
+
 def distancia_km(lat, lng):
     """Km en línea recta hasta la Circunvalación; 0 si el punto está adentro."""
+    return _borde_mas_cercano(lat, lng)[0]
+
+
+def _borde_mas_cercano(lat, lng):
+    """(km en línea recta, (lat, lng) del punto de la Circunvalación más cercano)."""
     poligono = [_a_km(la, ln) for la, ln in CIRCUNVALACION]
     x, y = _a_km(lat, lng)
     if _adentro(x, y, poligono):
-        return 0.0
-    return min(
-        _distancia_segmento(x, y, *poligono[i - 1], *poligono[i])
+        return 0.0, None
+    km, cx, cy = min(
+        (_distancia_segmento(x, y, *poligono[i - 1], *poligono[i]),
+         *_punto_mas_cercano(x, y, *poligono[i - 1], *poligono[i]))
         for i in range(len(poligono))
     )
+    return km, (cy / _KM_POR_GRADO_LAT, cx / _KM_POR_GRADO_LNG)
+
+
+# La cotización que ve el cliente y la que valida el pedido tienen que dar
+# igual: se cachea por coordenadas redondeadas (~10 m).
+_cache_ruta = {}
+
+
+def km_por_ruta(origen, destino):
+    """Km manejando de origen a destino según Google Routes, o None si falla."""
+    clave_cache = (round(origen[0], 4), round(origen[1], 4), round(destino[0], 4), round(destino[1], 4))
+    if clave_cache in _cache_ruta:
+        return _cache_ruta[clave_cache]
+    clave = (os.environ.get("GOOGLE_ROUTES_API_KEY") or os.environ.get("GOOGLE_MAPS_API_KEY") or "").strip()
+    if not clave:
+        return None
+    punto = lambda c: {"location": {"latLng": {"latitude": c[0], "longitude": c[1]}}}
+    pedido = urllib.request.Request(
+        "https://routes.googleapis.com/directions/v2:computeRoutes",
+        data=json.dumps({"origin": punto(origen), "destination": punto(destino), "travelMode": "DRIVE"}).encode(),
+        headers={
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": clave,
+            "X-Goog-FieldMask": "routes.distanceMeters",
+        },
+    )
+    try:
+        with urllib.request.urlopen(pedido, timeout=8) as r:
+            km = json.load(r)["routes"][0]["distanceMeters"] / 1000
+    except Exception:
+        logger.exception("Google Routes no respondió; se estima el envío en línea recta")
+        return None
+    if len(_cache_ruta) > 5000:
+        _cache_ruta.clear()
+    _cache_ruta[clave_cache] = km
+    return km
 
 
 def cotizar(lat, lng, cotizacion_dolar):
@@ -75,13 +131,20 @@ def cotizar(lat, lng, cotizacion_dolar):
     """
     if lat is None or lng is None:
         return {"zona": "sin_ubicacion", "envio_usd": 0, "distancia_km": None, "desglose": None}
-    km = round(distancia_km(lat, lng), 1)
+    km_recta, borde = _borde_mas_cercano(lat, lng)
+    if borde is None:
+        return {"zona": "gratis", "envio_usd": 0, "distancia_km": 0.0, "desglose": None}
+    km = km_por_ruta(borde, (lat, lng))
+    estimado = km is None
+    if estimado:
+        km = km_recta * FACTOR_RUTA
+    km = round(km, 1)
     if km <= FRANJA_GRATIS_KM:
         return {"zona": "gratis", "envio_usd": 0, "distancia_km": km, "desglose": None}
     if km > LIMITE_KM:
         return {"zona": "consultar", "envio_usd": 0, "distancia_km": km, "desglose": None}
     km_excedentes = round(km - FRANJA_GRATIS_KM, 1)
-    km_recorridos = round(km_excedentes * 2 * FACTOR_RUTA, 1)
+    km_recorridos = round(km_excedentes * 2, 1)
     litros = round(km_recorridos / KM_POR_LITRO, 2)
     combustible_usd = round(litros * NAFTA_ARS_LITRO / cotizacion_dolar, 2)
     desgaste_tiempo_usd = round(combustible_usd * RECARGO_DESGASTE_TIEMPO, 2)
@@ -93,7 +156,7 @@ def cotizar(lat, lng, cotizacion_dolar):
             "km_gratis": FRANJA_GRATIS_KM,
             "km_excedentes": km_excedentes,
             "km_recorridos": km_recorridos,
-            "factor_ruta": FACTOR_RUTA,
+            "estimado": estimado,
             "km_por_litro": KM_POR_LITRO,
             "litros": litros,
             "nafta_ars_litro": NAFTA_ARS_LITRO,

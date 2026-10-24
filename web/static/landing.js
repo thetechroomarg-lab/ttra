@@ -2333,8 +2333,8 @@ function textoDesgloseEnvio(envio) {
   const d = envio.desglose;
   const usd = (n) => `US$${Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return [
-    `Tu dirección queda a ${formatearKmEnvio(envio.distancia_km)} km de la Circunvalación (los primeros ${d.km_gratis} km son gratis).`,
-    `• ${formatearKmEnvio(d.km_excedentes)} km excedentes, ida y vuelta por ruta: ${formatearKmEnvio(d.km_recorridos)} km`,
+    `Tu dirección queda a ${formatearKmEnvio(envio.distancia_km)} km manejando desde la Circunvalación (los primeros ${d.km_gratis} km son gratis).`,
+    `• ${formatearKmEnvio(d.km_excedentes)} km excedentes de recorrido, ida y vuelta: ${formatearKmEnvio(d.km_recorridos)} km${d.estimado ? " (estimado)" : ""}`,
     `• Nafta: ${formatearKmEnvio(d.litros)} L (${d.km_por_litro} km/L) a $${Number(d.nafta_ars_litro).toLocaleString("es-AR")} el litro = ${usd(d.combustible_usd)}`,
     `• Desgaste del vehículo y tiempo (${d.recargo_pct}%): ${usd(d.desgaste_tiempo_usd)}`,
     `Envío: ${usd(envio.envio_usd)}`,

@@ -17,24 +17,50 @@ def test_adentro_de_la_circunvalacion_es_gratis():
     assert zona_envio.cotizar(*CENTRO, 1580) == {"zona": "gratis", "envio_usd": 0, "distancia_km": 0.0, "desglose": None}
 
 
-def test_franja_de_5_km_pasando_la_circunvalacion_es_gratis():
-    # ~3 km al oeste del borde oeste del anillo.
+@pytest.fixture(autouse=True)
+def _sin_google(monkeypatch):
+    monkeypatch.setattr(zona_envio, "km_por_ruta", lambda origen, destino: None)
+
+
+def test_franja_de_5_km_de_ruta_pasando_la_circunvalacion_es_gratis(monkeypatch):
+    monkeypatch.setattr(zona_envio, "km_por_ruta", lambda origen, destino: 4.0)
     envio = zona_envio.cotizar(-31.4300, -64.2900, 1580)
     assert envio["zona"] == "gratis"
-    assert 0 < envio["distancia_km"] <= 5
+    assert envio["distancia_km"] == 4.0
 
 
-def test_entre_5_y_60_km_cobra_nafta_ida_y_vuelta_mas_desgaste(monkeypatch):
-    monkeypatch.setattr(zona_envio, "distancia_km", lambda lat, lng: 25.0)
+def test_entre_5_y_60_km_de_ruta_cobra_nafta_ida_y_vuelta_mas_desgaste(monkeypatch):
+    monkeypatch.setattr(zona_envio, "km_por_ruta", lambda origen, destino: 25.0)
     envio = zona_envio.cotizar(*CARLOS_PAZ, 1000)
     d = envio["desglose"]
     assert envio["zona"] == "con_cargo"
+    assert d["estimado"] is False
     assert d["km_excedentes"] == 20.0
-    assert d["km_recorridos"] == 52.0  # 20 km x 2 (ida y vuelta) x 1,3 (ruta)
-    assert d["litros"] == 5.2
-    assert d["combustible_usd"] == round(5.2 * zona_envio.NAFTA_ARS_LITRO / 1000, 2)
+    assert d["km_recorridos"] == 40.0  # ida y vuelta
+    assert d["litros"] == 4.0
+    assert d["combustible_usd"] == round(4.0 * zona_envio.NAFTA_ARS_LITRO / 1000, 2)
     assert d["desgaste_tiempo_usd"] == d["combustible_usd"]
     assert envio["envio_usd"] == round(d["combustible_usd"] * 2, 2)
+
+
+def test_la_ruta_sale_del_punto_de_la_circunvalacion_mas_cercano(monkeypatch):
+    llamadas = []
+    monkeypatch.setattr(zona_envio, "km_por_ruta", lambda o, d: llamadas.append((o, d)) or 30.0)
+    zona_envio.cotizar(*CARLOS_PAZ, 1580)
+    (origen, destino), = llamadas
+    assert destino == CARLOS_PAZ
+    assert zona_envio.distancia_km(*origen) < 0.1
+
+
+def test_sin_google_se_estima_con_la_linea_recta():
+    envio = zona_envio.cotizar(*CARLOS_PAZ, 1580)
+    assert envio["desglose"]["estimado"] is True
+    assert envio["distancia_km"] == round(zona_envio.distancia_km(*CARLOS_PAZ) * zona_envio.FACTOR_RUTA, 1)
+
+
+def test_adentro_no_consulta_a_google(monkeypatch):
+    monkeypatch.setattr(zona_envio, "km_por_ruta", lambda o, d: pytest.fail("no debería consultar"))
+    assert zona_envio.cotizar(*CENTRO, 1580)["zona"] == "gratis"
 
 
 def test_mas_de_60_km_hay_que_consultar():
