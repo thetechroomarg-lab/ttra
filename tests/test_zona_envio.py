@@ -168,3 +168,17 @@ def test_pedido_con_codigo_promo_suma_el_envio_sin_contarlo_como_producto(monkey
     assert pedido["descuento_usd"] == 0
     assert [i["nombre"] for i in pedido["detalle"]].count("Envío fuera de zona") == 1
     assert pedido["detalle"][-1]["nombre"] == "Envío fuera de zona"
+
+
+def test_los_descuentos_nunca_tocan_el_envio(monkeypatch):
+    c, fake = _cliente(monkeypatch)
+    envio = c.post("/api/envio/cotizar", json={"lat": CARLOS_PAZ[0], "lng": CARLOS_PAZ[1]}).json()["envio_usd"]
+    pedido = _pedido(CARLOS_PAZ, envio_usd=envio)
+    pedido["detalle"] = [{"nombre": "iPhone 13", "cantidad": 2, "usd_unitario": 500, "usd_subtotal": 1000}]
+    pedido["total_usd"] = 990  # 2 unidades: US$5 de descuento por unidad, solo sobre el producto
+    r = c.post("/api/pedidos", json=pedido)
+    assert r.status_code == 200, r.json()
+    guardado = fake.table("pedidos").select("*").execute().data[0]
+    assert guardado["descuento_usd"] == 10
+    assert guardado["total_usd"] == pytest.approx(990 + envio)
+    assert guardado["detalle"][-1]["usd_subtotal"] == pytest.approx(envio)
