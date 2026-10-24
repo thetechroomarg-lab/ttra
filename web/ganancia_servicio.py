@@ -11,7 +11,7 @@ logger=logging.getLogger(__name__)
 def capturar_costos(client, pedido_id, costos, fuente):
     pedido=(client.table('pedidos').select('*').eq('id',pedido_id).execute().data or [None])[0]
     if not pedido: return None
-    evidencia={i['nombre']:(str(costos[i['nombre']]) if costos.get(i['nombre']) is not None else None) for i in pedido.get('detalle') or [] if i.get('nombre')}
+    evidencia={i['nombre']:('0' if i.get('proveedor')=='envío' else str(costos[i['nombre']]) if costos.get(i['nombre']) is not None else None) for i in pedido.get('detalle') or [] if i.get('nombre')}
     return client.rpc('capturar_ganancia_costos',{'p_id':pedido_id,'p_costos':evidencia,'p_fuente':fuente}).execute().data
 
 

@@ -2319,6 +2319,142 @@ async function compartirResumenPedido() {
 document.getElementById("btn-copiar-pedido").addEventListener("click", copiarResumenPedido);
 document.getElementById("btn-compartir-pedido").addEventListener("click", compartirResumenPedido);
 
+// Envío según la distancia a la Circunvalación (la calcula el server).
+async function cotizarEnvio(coords) {
+  const r = await fetch("/api/envio/cotizar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lat: coords?.lat ?? null, lng: coords?.lng ?? null }),
+  }).catch(() => null);
+  return r?.ok ? await r.json().catch(() => null) : null;
+}
+
+const formatearUsdEnvio = (n) => `US$${Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Filas del desglose, con la misma estructura que #total-carrito: etiqueta a
+// la izquierda y la cifra en <strong>.
+function filasDesgloseEnvio(envio) {
+  const d = envio.desglose;
+  const km = (n) => `${formatearKmEnvio(n)} km`;
+  const filas = [
+    ["Recorrido desde la Circunvalación", km(envio.distancia_km)],
+    [`Sin cargo, primeros ${d.km_gratis} km`, "Gratis"],
+    ["Excedente, ida y vuelta", km(d.km_recorridos)],
+    [`Nafta · ${formatearKmEnvio(d.litros)} L a $${Number(d.nafta_ars_litro).toLocaleString("es-AR")}`, formatearUsdEnvio(d.combustible_usd)],
+    ["Desgaste del vehículo y tiempo", formatearUsdEnvio(d.desgaste_tiempo_usd)],
+  ];
+  return filas.map(([etiqueta, valor]) => {
+    const fila = document.createElement("span");
+    const cifra = document.createElement("strong");
+    fila.textContent = etiqueta;
+    cifra.textContent = valor;
+    fila.append(cifra);
+    return fila;
+  });
+}
+
+function totalEnvio(envio) {
+  const fila = document.createElement("span");
+  fila.className = "envio-total";
+  const cifra = document.createElement("strong");
+  fila.textContent = "Envío";
+  cifra.textContent = formatearUsdEnvio(envio.envio_usd);
+  fila.append(cifra);
+  return fila;
+}
+
+function notaEnvio(texto) {
+  const nota = document.createElement("p");
+  nota.className = "carrito-nota";
+  nota.textContent = texto;
+  return nota;
+}
+
+let consultaEnvioActual = 0;
+async function actualizarDetalleEnvio() {
+  const caja = document.getElementById("detalle-envio");
+  if (!caja) return;
+  const consulta = ++consultaEnvioActual;
+  const coords = coordsDireccionEntregaActual;
+  if (!coords) { caja.hidden = true; return; }
+  const envio = await cotizarEnvio(coords);
+  if (consulta !== consultaEnvioActual) return;
+  const titulo = document.createElement("strong");
+  titulo.textContent = "Envío";
+  if (envio?.zona === "con_cargo") {
+    caja.replaceChildren(titulo, ...filasDesgloseEnvio(envio), totalEnvio(envio),
+      notaEnvio(`Se suma al total al confirmar. Los descuentos no aplican al envío.${envio.desglose.estimado ? " Distancia estimada." : ""}`));
+  } else if (envio?.zona === "consultar") {
+    caja.replaceChildren(titulo, notaEnvio(`Tu dirección queda a ${formatearKmEnvio(envio.distancia_km)} km de la Circunvalación. Escribime por WhatsApp y te paso el costo del envío.`));
+  } else if (envio?.zona === "gratis") {
+    caja.replaceChildren(titulo, notaEnvio("Envío sin cargo a esta dirección."));
+  } else {
+    caja.hidden = true;
+    return;
+  }
+  caja.hidden = false;
+}
+
+// Mismo diálogo que la promo del cargador (carrito.js), en vez del confirm()
+// del navegador. Resuelve true si el cliente confirma.
+function pedirConfirmacionEnvio(envio) {
+  const consultar = envio.zona === "consultar";
+  const dialog = document.createElement("dialog");
+  dialog.className = "ttra-oferta-cargador ttra-envio-dialogo";
+  dialog.setAttribute("aria-labelledby", "ttra-envio-titulo");
+  dialog.setAttribute("aria-describedby", "ttra-envio-texto");
+  dialog.innerHTML = `
+    <p class="ttra-oferta-cargador-etiqueta"></p>
+    <h2 id="ttra-envio-titulo"></h2>
+    <p id="ttra-envio-texto"></p>
+    <div class="envio-filas"></div>
+    <p class="ttra-oferta-cargador-precio"><strong></strong><span></span></p>
+    <div class="ttra-oferta-cargador-acciones">
+      <button type="button" value="cancelar"></button>
+      <button type="button" value="aceptar" autofocus></button>
+    </div>`;
+  const km = formatearKmEnvio(envio.distancia_km);
+  dialog.querySelector(".ttra-oferta-cargador-etiqueta").textContent = consultar ? "Envío a coordinar" : "Envío fuera de zona";
+  dialog.querySelector("h2").textContent = consultar ? "¿Te paso el costo del envío?" : "¿Confirmás el envío?";
+  dialog.querySelector("#ttra-envio-texto").textContent = consultar
+    ? `Tu dirección queda a ${km} km de la Circunvalación. Escribime por WhatsApp y te paso el costo.`
+    : `Tu dirección queda a ${km} km de recorrido desde la Circunvalación. Los primeros ${envio.desglose.km_gratis} km van sin cargo.`;
+  if (consultar) {
+    dialog.querySelector(".envio-filas").remove();
+    dialog.querySelector(".ttra-oferta-cargador-precio").remove();
+  } else {
+    dialog.querySelector(".envio-filas").replaceChildren(...filasDesgloseEnvio(envio).slice(2));
+    dialog.querySelector(".ttra-oferta-cargador-precio strong").textContent = formatearUsdEnvio(envio.envio_usd).replace("US$", "US$ ");
+    dialog.querySelector(".ttra-oferta-cargador-precio span").textContent = "se suma al total";
+  }
+  const [cancelar, aceptar] = dialog.querySelectorAll("button");
+  cancelar.textContent = consultar ? "Volver" : "Cancelar";
+  aceptar.textContent = consultar ? "Escribime" : "Confirmar pedido";
+  return new Promise((resolver) => {
+    dialog.querySelectorAll("button").forEach((boton) => boton.addEventListener("click", () => dialog.close(boton.value)));
+    dialog.addEventListener("cancel", () => { dialog.returnValue = "cancelar"; });
+    dialog.addEventListener("close", () => {
+      const ok = dialog.returnValue === "aceptar";
+      dialog.remove();
+      if (ok && consultar) window.open("https://wa.me/543512145217", "_blank", "noopener");
+      resolver(ok && !consultar);
+    }, { once: true });
+    document.body.append(dialog);
+    dialog.showModal();
+  });
+}
+
+// Devuelve los US$ de envío aceptados, o null si el cliente no sigue.
+async function confirmarCostoEnvio(coords) {
+  const envio = await cotizarEnvio(coords);
+  if (!envio || !["con_cargo", "consultar"].includes(envio.zona)) return 0;
+  return (await pedirConfirmacionEnvio(envio)) ? envio.envio_usd : null;
+}
+
+function formatearKmEnvio(km) {
+  return Number(km).toLocaleString("es-AR", { maximumFractionDigits: 1 });
+}
+
 async function confirmarPedidoCarrito(carrito) {
   if (!catalogoListo) return false;
   if (confirmandoPedido || !carrito.length) return false;
@@ -2328,13 +2464,15 @@ async function confirmarPedidoCarrito(carrito) {
   if (!fechaEntrega) { alert("Elegí una fecha de entrega."); return false; }
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
   if (!mensaje) return false;
+  const envioUsd = await confirmarCostoEnvio(coordsDireccionEntregaActual);
+  if (envioUsd === null) return false;
   const boton = document.getElementById("btn-whatsapp");
   confirmandoPedido = true;
   boton.disabled = true;
   boton.textContent = "Guardando pedido…";
   try {
     try {
-      if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;
+      if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual, envioUsd))) return false;
     } catch (error) {
       console.error("No se pudo guardar el pedido", error);
       alert("No pude guardar tu pedido. Tu carrito sigue disponible para reintentar.");
@@ -2493,6 +2631,7 @@ async function mostrarSugerenciasDireccion(texto) {
       coordsDireccionEntregaActual = place.location
         ? { lat: place.location.lat(), lng: place.location.lng() }
         : null;
+      actualizarDetalleEnvio();
       ocultarSugerenciasDireccion();
     });
     item.append(boton);
@@ -2507,6 +2646,7 @@ inputDireccionEntrega.addEventListener("input", () => {
   // (si había): se pierde la precisión hasta elegir otra sugerencia, usar
   // la ubicación o seleccionar un domicilio guardado.
   coordsDireccionEntregaActual = null;
+  actualizarDetalleEnvio();
   const texto = inputDireccionEntrega.value.trim();
   if (texto.length < 3) {
     ocultarSugerenciasDireccion();
@@ -2538,6 +2678,7 @@ function abrirFormularioNuevaDireccion() {
   inputPisoEntrega.value = "";
   inputDeptoEntrega.value = "";
   coordsDireccionEntregaActual = null;
+  actualizarDetalleEnvio();
   abrirPanelSecundario("direccion-entrega-wrap");
 }
 
@@ -2573,6 +2714,7 @@ async function precargarDireccionEntrega() {
     coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
       ? { lat: domicilio.lat, lng: domicilio.lng }
       : null;
+    actualizarDetalleEnvio();
     mostrarDireccionEntregaActual(domicilio.alias);
   } else if (cliente.direccion) {
     inputDireccionEntrega.value = cliente.direccion;
@@ -2609,6 +2751,7 @@ async function abrirSelectorDireccion() {
       coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
         ? { lat: domicilio.lat, lng: domicilio.lng }
         : null;
+      actualizarDetalleEnvio();
       mostrarDireccionEntregaActual(domicilio.alias);
       cerrarPanelSecundario();
     })),
@@ -2636,6 +2779,7 @@ if (btnUsarUbicacion) {
     }
     inputDireccionEntrega.value = resultado.direccion;
     coordsDireccionEntregaActual = { lat: resultado.lat, lng: resultado.lng };
+    actualizarDetalleEnvio();
     ocultarSugerenciasDireccion();
   });
 }
@@ -2758,7 +2902,7 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
 // cliente (mismo clientes.json/csv que ya alimentan el gate inicial y el
 // buscador por chat) — así el panel /admin/clientes también refleja los
 // pedidos hechos desde la web, no solo el alta inicial.
-async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega, coordsDireccion) {
+async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega, coordsDireccion, envio_usd = 0) {
   if (!catalogoListo) return false;
   const regaloPromo = cargarRegaloPromo();
   const productos = [...new Set(carrito.map((it) =>
@@ -2784,7 +2928,7 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       productos, fecha_entrega, direccion_entrega, detalle, total_usd,
-      codigo_descuento, codigo_promo,
+      codigo_descuento, codigo_promo, envio_usd,
       piso_entrega: inputPisoEntrega.value.trim() || null,
       depto_entrega: inputDeptoEntrega.value.trim() || null,
       lat: coordsDireccion?.lat ?? null,
@@ -2795,6 +2939,10 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
   if (respuesta.status === 409) {
     if (body.conflicto === "codigo_promo") borrarRegaloPromo();
     if (body.conflicto === "codigo_descuento") borrarDescuentoMailing();
+    if (body.conflicto === "envio") {
+      alert(body.error || "El costo de envío cambió. Confirmá nuevamente.");
+      return false;
+    }
     alert(body.error
       ? `${body.error}\n\nRevisá el carrito y confirmá nuevamente.`
       : "El catálogo cambió. Revisá el carrito y confirmá nuevamente.");
