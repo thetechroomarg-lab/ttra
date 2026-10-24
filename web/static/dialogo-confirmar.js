@@ -4,9 +4,9 @@
 // alert()/confirm()/prompt() del navegador en todo el sitio.
 // No se descartan con Escape ni tocando afuera: solo con sus botones.
 (function () {
-  function crearDialogo({ etiqueta, titulo, texto, botones, valor }) {
+  function crearDialogo({ etiqueta, titulo, texto, botones, valor, contenido, clase }) {
     const dialog = document.createElement("dialog");
-    dialog.className = "ttra-oferta-cargador ttra-dialogo";
+    dialog.className = `ttra-oferta-cargador ttra-dialogo${clase ? ` ${clase}` : ""}`;
     dialog.setAttribute("aria-labelledby", "ttra-dialogo-titulo");
     if (etiqueta) {
       const p = document.createElement("p");
@@ -36,6 +36,7 @@
       input.addEventListener("focus", () => input.select());
       dialog.append(input);
     }
+    if (contenido) dialog.append(contenido);
     const acciones = document.createElement("div");
     acciones.className = "ttra-oferta-cargador-acciones";
     if (botones.length === 1) acciones.classList.add("ttra-dialogo-un-boton");
@@ -79,9 +80,9 @@
 
   // Aviso con un solo botón. Acepta un texto suelto o las mismas opciones.
   window.TTRAAviso = function TTRAAviso(opciones) {
-    const { etiqueta, titulo, texto, boton = "Entendido", valor } =
+    const { etiqueta, titulo, texto, boton = "Entendido", valor, contenido, clase } =
       typeof opciones === "string" ? { titulo: opciones } : opciones;
-    return mostrar({ etiqueta, titulo, texto, valor, botones: [{ texto: boton, value: "aceptar" }] });
+    return mostrar({ etiqueta, titulo, texto, valor, contenido, clase, botones: [{ texto: boton, value: "aceptar" }] });
   };
   window.avisar = window.TTRAAviso;
 })();

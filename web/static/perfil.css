@@ -173,13 +173,41 @@ html #panel-perfil #btn-compartir-referido { min-height: 44px; padding-block: 0;
   background: color-mix(in srgb, var(--cl-coral, #f05b40) 18%, transparent); border: 1px solid var(--cl-coral, #f05b40); }
 .red-resumen { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; }
 .red-resumen div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+/* Árbol de la red ("Ver mi red"): ramas con líneas de conexión y una
+   placa por persona; el +N dice cuántos se sumaron a través de ella. */
 .red-arbol, .red-arbol ul { list-style: none; margin: 0; padding: 0; }
-.red-arbol ul { margin-left: 10px; padding-left: 14px; border-left: 1px solid rgba(175, 175, 165, .35); }
-.red-arbol li { position: relative; padding: 4px 0; }
-.red-arbol ul > li::before { content: ""; position: absolute; left: -14px; top: 15px; width: 10px; border-top: 1px solid rgba(175, 175, 165, .35); }
-.red-nodo { display: inline-block; padding: 4px 10px; border: 1px solid rgba(175, 175, 165, .35); border-radius: 999px; font-size: 13px; }
-.red-nodo-vos { border-color: var(--cl-coral, #f05b40); font-weight: 700; }
-.red-arbol-caja { max-height: 360px; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
-  margin: 0 0 12px; padding: 10px; border: 1px solid rgba(175, 175, 165, .25); border-radius: 10px; }
+.red-arbol ul { margin-left: 12px; padding-left: 16px; border-left: 2px solid var(--pz-frame, rgba(175, 175, 165, .35)); }
+.red-arbol li { position: relative; padding: 5px 0; }
+.red-arbol ul > li::before { content: ""; position: absolute; left: -16px; top: 22px; width: 12px; border-top: 2px solid var(--pz-frame, rgba(175, 175, 165, .35)); }
+.red-arbol ul > li:last-child::after { content: ""; position: absolute; left: -18px; top: 23px; bottom: 0; border-left: 2px solid var(--rc-bg-panel, #1c1c1a); }
+.red-nodo {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 12px; box-sizing: border-box; white-space: nowrap;
+  border: 2px solid var(--pz-frame, rgba(175, 175, 165, .35)); border-radius: 3px; background: var(--pz-cell, transparent);
+  color: var(--pz-plate, inherit); font: 700 16px/1 var(--pz-font, inherit); letter-spacing: .03em; text-transform: uppercase;
+}
+.red-nodo-vos { border-color: var(--pz-red, #d52f27); background: var(--pz-red, #d52f27); color: #fff; }
+.red-nodo-debajo {
+  padding: 3px 6px 2px; border-radius: 2px; background: var(--pz-amber, #ffb21a); color: var(--pz-ink, #121211);
+  font: 700 13px/1 var(--pz-font, inherit); letter-spacing: .04em; font-variant-numeric: tabular-nums;
+}
+.red-arbol-caja { max-height: min(48dvh, 420px); overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  margin: 0 0 22px; padding: 12px; border: 2px solid var(--pz-frame, rgba(175, 175, 165, .25)); border-radius: 3px; background: var(--pz-board, transparent); }
 .red-arbol-caja .red-arbol { width: max-content; min-width: 100%; }
-.red-nodo { white-space: nowrap; }
+.red-cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 14px; }
+.red-cifras p { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 12px; border-radius: 3px; background: var(--pz-cell, transparent); }
+.red-cifras strong { color: var(--pz-amber, inherit); font: 700 36px/1 var(--pz-font, inherit); font-variant-numeric: tabular-nums; }
+.red-cifras span { color: var(--pz-dim, inherit); font: 600 14px/1.15 var(--pz-font, inherit); letter-spacing: .04em; text-transform: uppercase; }
+.ttra-red-dialogo { width: min(520px, calc(100vw - 32px)); }
+/* "Compartir mi link" y, debajo, "Ver mi red": a lo ancho, como los demás CTA del perfil. */
+html #panel-perfil :is(#btn-compartir-referido, #btn-ver-mi-red) { display: block; width: 100%; }
+html #panel-perfil #btn-ver-mi-red { margin-top: 8px; }
+/* Persona de la red que compró: placa en verde y lo que te hizo ganar. */
+.red-nodo-nombre { display: flex; flex-direction: column; gap: 3px; padding: 6px 0; }
+.red-nodo.red-nodo-compro {
+  border-color: var(--cl-verde-ok, #34d399);
+  background: color-mix(in srgb, var(--cl-verde-ok, #34d399) 14%, var(--pz-cell, transparent));
+  box-shadow: 0 0 16px -6px var(--cl-verde-ok, #34d399);
+}
+.red-nodo-ganancia {
+  color: var(--cl-verde-ok, #34d399); font: 700 13px/1 var(--pz-font, inherit); letter-spacing: .04em; text-transform: none;
+}
