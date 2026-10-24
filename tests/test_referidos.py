@@ -237,3 +237,42 @@ def test_pasar_a_mayorista_borra_beneficios_y_al_volver_arranca_de_cero():
     referidos.reiniciar_beneficios(fake, "juan")
     resumen = referidos.resumen(fake, "juan")
     assert resumen["saldo_usd"] == 0 and resumen["arbol"] == [] and resumen["ganado_total_usd"] == 0
+
+
+def test_red_completa_muestra_a_todos_los_registrados_a_cualquier_profundidad():
+    fake = FakeSupabaseClient()
+    _alta(fake, "juan")
+    _alta(fake, "luis", referido_por="juan", apellido="Gómez")
+    _alta(fake, "mudo", referido_por="luis", apellido="Paz")   # no compró: igual aparece
+    _alta(fake, "pedro", referido_por="mudo", apellido="Ruiz")
+    _alta(fake, "zoe", referido_por="pedro", apellido="Alba")
+    _alta(fake, "ana", referido_por="juan", apellido="Sosa")
+    _alta(fake, "otro")                                         # fuera de la red
+
+    red = referidos.resumen(fake, "juan")["red"]
+    assert red["personas"] == 5 and red["niveles"] == 4
+    assert [n["nombre"] for n in red["arbol"]] == ["Ana S.", "Luis G."]
+    luis = red["arbol"][1]
+    assert luis["debajo"] == 3
+    assert luis["hijos"][0]["hijos"][0]["hijos"][0]["hijos"] == []
+    assert "otro" not in str(red)
+
+
+def test_red_completa_no_se_cuelga_con_un_ciclo():
+    fake = FakeSupabaseClient()
+    _alta(fake, "a", referido_por="b")
+    _alta(fake, "b", referido_por="a")
+    red = referidos.red_completa(fake, "a")
+    assert red["personas"] == 1 and red["niveles"] == 1
+
+
+def test_red_completa_marca_quien_compro_y_cuanto_le_genero():
+    fake = FakeSupabaseClient()
+    _alta(fake, "juan")
+    _alta(fake, "luis", referido_por="juan", apellido="Gómez")
+    _alta(fake, "nadie", referido_por="juan", apellido="Paz")
+    _compra(fake, "luis")
+    red = referidos.resumen(fake, "juan")["red"]
+    nodos = {n["nombre"]: n for n in red["arbol"]}
+    assert nodos["Luis G."]["compro"] is True and nodos["Luis G."]["ganado_usd"] > 0
+    assert nodos["Nadie P."]["compro"] is False and nodos["Nadie P."]["ganado_usd"] == 0

@@ -264,8 +264,28 @@ function nodoArbolRed(nodo) {
   const item = document.createElement("li");
   const nombre = document.createElement("span");
   nombre.className = "red-nodo";
-  nombre.textContent = nodo.nombre;
+  const texto = document.createElement("span");
+  texto.className = "red-nodo-nombre";
+  texto.textContent = nodo.nombre;
+  nombre.append(texto);
+  // Los que compraron (y le generaron una ganancia) van en verde con el monto;
+  // los que solo se crearon la cuenta quedan sin resaltar.
+  if (nodo.compro) {
+    nombre.classList.add("red-nodo-compro");
+    const ganancia = document.createElement("span");
+    ganancia.className = "red-nodo-ganancia";
+    ganancia.textContent = `¡Compró! Ganaste ${formatoUsd(nodo.ganado_usd)}`;
+    texto.append(ganancia);
+  }
   item.append(nombre);
+  // Cuántos se sumaron debajo de esta persona (sus invitados y los de ellos).
+  if (nodo.debajo > 0) {
+    const debajo = document.createElement("span");
+    debajo.className = "red-nodo-debajo";
+    debajo.textContent = `+${nodo.debajo}`;
+    debajo.title = `${nodo.debajo} ${nodo.debajo === 1 ? "persona se sumó" : "personas se sumaron"} a través de ${nodo.nombre}`;
+    nombre.append(debajo);
+  }
   if (nodo.hijos?.length) {
     const lista = document.createElement("ul");
     nodo.hijos.forEach((hijo) => lista.append(nodoArbolRed(hijo)));
@@ -293,6 +313,61 @@ function cartelSorpresaRed(r) {
   return cartel;
 }
 
+// "Ver mi red": todos los que se sumaron debajo del cliente, a cualquier
+// profundidad, compren o no. Se arma con lo último que trajo el perfil.
+let redCompletaActual = null;
+
+function arbolRedHtml(red) {
+  const lista = document.createElement("ul");
+  lista.className = "red-arbol";
+  const raiz = document.createElement("li");
+  const vos = document.createElement("span");
+  vos.className = "red-nodo red-nodo-vos";
+  vos.textContent = "Vos";
+  const hijos = document.createElement("ul");
+  red.arbol.forEach((nodo) => hijos.append(nodoArbolRed(nodo)));
+  raiz.append(vos, hijos);
+  lista.append(raiz);
+  // Si la red crece mucho, el árbol scrollea dentro de su caja (arriba/abajo
+  // y de costado) en lugar de estirar el panel.
+  const caja = document.createElement("div");
+  caja.className = "red-arbol-caja";
+  caja.append(lista);
+  return caja;
+}
+
+function abrirMiRed() {
+  const red = redCompletaActual || { arbol: [], personas: 0, niveles: 0 };
+  if (!red.personas) {
+    window.TTRAAviso({
+      etiqueta: "Tu semilla",
+      titulo: "Todavía no se sumó nadie",
+      texto: "Compartí tu link: cada persona que se cree la cuenta con él aparece acá, y también las que invite después.",
+      boton: "Cerrar",
+    });
+    return;
+  }
+  const contenido = document.createElement("div");
+  contenido.className = "red-panel";
+  const cifras = document.createElement("div");
+  cifras.className = "red-cifras";
+  [
+    [red.personas, red.personas === 1 ? "persona en tu red" : "personas en tu red"],
+    [red.niveles, red.niveles === 1 ? "nivel de profundidad" : "niveles de profundidad"],
+  ].forEach(([numero, etiqueta]) => {
+    const cifra = document.createElement("p");
+    const n = document.createElement("strong");
+    n.textContent = String(numero);
+    const e = document.createElement("span");
+    e.textContent = etiqueta;
+    cifra.append(n, e);
+    cifras.append(cifra);
+  });
+  contenido.append(cifras, arbolRedHtml(red));
+  window.TTRAAviso({ etiqueta: "Tu semilla", titulo: "Mi red", contenido, clase: "ttra-red-dialogo", boton: "Cerrar" });
+}
+document.getElementById("btn-ver-mi-red")?.addEventListener("click", abrirMiRed);
+
 function mostrarReferidos(datos) {
   const seccion = document.getElementById("seccion-referidos");
   const seccionAmigos = document.getElementById("seccion-amigos-referidos");
@@ -303,6 +378,7 @@ function mostrarReferidos(datos) {
   seccion.classList.toggle("oculto", esMayorista);
   estado.replaceChildren();
   const r = datos.referidos;
+  redCompletaActual = r?.red || null;
   const arbol = r?.arbol || [];
   // La sección aparece recién cuando alguien de la red compró.
   seccionAmigos.classList.toggle("oculto", esMayorista || !arbol.length);
@@ -314,7 +390,7 @@ function mostrarReferidos(datos) {
   const resumen = document.createElement("div");
   resumen.className = "red-resumen";
   const filas = [
-    ["Personas en tu red", String(r.personas_en_red)],
+    ["Compraron en tu red", String(r.personas_en_red)],
     ["Ganaste en total", formatoUsd(r.ganado_total_usd)],
     ["Bolsa de tu red", formatoUsd(r.red_saldo_usd)],
   ];
@@ -332,23 +408,6 @@ function mostrarReferidos(datos) {
   ayudaTope.className = "referidos-ayuda";
   ayudaTope.textContent = `De la bolsa de tu red se aplican hasta ${formatoUsd(r.red_tope_por_compra_usd)} por compra; el resto queda guardado para las siguientes.`;
   estado.append(ayudaTope);
-
-  const lista = document.createElement("ul");
-  lista.className = "red-arbol";
-  const raiz = document.createElement("li");
-  const vos = document.createElement("span");
-  vos.className = "red-nodo red-nodo-vos";
-  vos.textContent = "Vos";
-  const hijos = document.createElement("ul");
-  arbol.forEach((nodo) => hijos.append(nodoArbolRed(nodo)));
-  raiz.append(vos, hijos);
-  lista.append(raiz);
-  // Si la red crece mucho, el árbol scrollea dentro de su caja (arriba/abajo
-  // y de costado) en lugar de estirar todo el perfil.
-  const caja = document.createElement("div");
-  caja.className = "red-arbol-caja";
-  caja.append(lista);
-  estado.append(caja);
 
   if (datos.descuento_reservado_usd > 0) {
     const reservado = document.createElement("p");
