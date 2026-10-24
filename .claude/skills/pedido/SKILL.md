@@ -53,6 +53,13 @@ cd "/Users/toraba/TTRA Project"
 
 ## Gotchas
 
+- **Envío fuera de zona:** si la salida trae una línea `AVISO_ENVIO:`, pasásela
+  a Vladimir tal cual (distancia y US$ que corresponden). El script NO suma el
+  envío al pedido: Vladimir decide si se lo cobra al cliente o lo bonifica.
+  Gratis hasta 5 km pasando la Circunvalación; hasta 60 km se cobra nafta
+  ida y vuelta de los km excedentes + 100% por desgaste y tiempo
+  (`web/zona_envio.py`); más lejos se coordina aparte. Si conocés las coordenadas, pasalas con `--lat`/`--lng`.
+
 - El catálogo NO trackea color por separado para productos con varios
   colores en el mismo nombre (ej. Samsung: `"S26 Ultra ... (Black, Cobalt
   Violet, ...)"`) — el pedido no guarda qué color pidió el cliente. Si el

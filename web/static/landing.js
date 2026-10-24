@@ -2319,6 +2319,69 @@ async function compartirResumenPedido() {
 document.getElementById("btn-copiar-pedido").addEventListener("click", copiarResumenPedido);
 document.getElementById("btn-compartir-pedido").addEventListener("click", compartirResumenPedido);
 
+// Envío según la distancia a la Circunvalación (la calcula el server).
+async function cotizarEnvio(coords) {
+  const r = await fetch("/api/envio/cotizar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lat: coords?.lat ?? null, lng: coords?.lng ?? null }),
+  }).catch(() => null);
+  return r?.ok ? await r.json().catch(() => null) : null;
+}
+
+function textoDesgloseEnvio(envio) {
+  const d = envio.desglose;
+  const usd = (n) => `US$${Number(n).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return [
+    `Tu dirección queda a ${formatearKmEnvio(envio.distancia_km)} km de la Circunvalación (los primeros ${d.km_gratis} km son gratis).`,
+    `• ${formatearKmEnvio(d.km_excedentes)} km excedentes, ida y vuelta por ruta: ${formatearKmEnvio(d.km_recorridos)} km`,
+    `• Nafta: ${formatearKmEnvio(d.litros)} L (${d.km_por_litro} km/L) a $${Number(d.nafta_ars_litro).toLocaleString("es-AR")} el litro = ${usd(d.combustible_usd)}`,
+    `• Desgaste del vehículo y tiempo (${d.recargo_pct}%): ${usd(d.desgaste_tiempo_usd)}`,
+    `Envío: ${usd(envio.envio_usd)}`,
+  ];
+}
+
+let consultaEnvioActual = 0;
+async function actualizarDetalleEnvio() {
+  const caja = document.getElementById("detalle-envio");
+  if (!caja) return;
+  const consulta = ++consultaEnvioActual;
+  const coords = coordsDireccionEntregaActual;
+  if (!coords) { caja.hidden = true; return; }
+  const envio = await cotizarEnvio(coords);
+  if (consulta !== consultaEnvioActual) return;
+  caja.replaceChildren();
+  let lineas = [];
+  if (envio?.zona === "con_cargo") lineas = textoDesgloseEnvio(envio);
+  else if (envio?.zona === "consultar") lineas = [`Tu dirección queda a ${formatearKmEnvio(envio.distancia_km)} km de la Circunvalación: escribime por WhatsApp para coordinar el envío.`];
+  else if (envio?.zona === "gratis") lineas = ["Envío gratis a esta dirección."];
+  lineas.forEach((linea) => {
+    const p = document.createElement("p");
+    p.textContent = linea;
+    caja.append(p);
+  });
+  caja.hidden = !lineas.length;
+}
+
+// Devuelve los US$ de envío aceptados, o null si el cliente no sigue.
+async function confirmarCostoEnvio(coords) {
+  const envio = await cotizarEnvio(coords);
+  if (!envio) return 0;
+  if (envio.zona === "consultar") {
+    alert(`Tu dirección queda a ${formatearKmEnvio(envio.distancia_km)} km de la Circunvalación. Escribime por WhatsApp para coordinar el costo de envío.`);
+    return null;
+  }
+  if (envio.zona === "con_cargo") {
+    const ok = confirm(`${textoDesgloseEnvio(envio).join("\n")}\n\nEl envío se suma al total. ¿Confirmás el pedido?`);
+    return ok ? envio.envio_usd : null;
+  }
+  return 0;
+}
+
+function formatearKmEnvio(km) {
+  return Number(km).toLocaleString("es-AR", { maximumFractionDigits: 1 });
+}
+
 async function confirmarPedidoCarrito(carrito) {
   if (!catalogoListo) return false;
   if (confirmandoPedido || !carrito.length) return false;
@@ -2328,13 +2391,15 @@ async function confirmarPedidoCarrito(carrito) {
   if (!fechaEntrega) { alert("Elegí una fecha de entrega."); return false; }
   const mensaje = armarMensajeWhatsapp(carrito, fechaEntrega);
   if (!mensaje) return false;
+  const envioUsd = await confirmarCostoEnvio(coordsDireccionEntregaActual);
+  if (envioUsd === null) return false;
   const boton = document.getElementById("btn-whatsapp");
   confirmandoPedido = true;
   boton.disabled = true;
   boton.textContent = "Guardando pedido…";
   try {
     try {
-      if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual))) return false;
+      if (!(await registrarPedidoEnClientes(carrito, fechaEntrega, direccionEntrega, coordsDireccionEntregaActual, envioUsd))) return false;
     } catch (error) {
       console.error("No se pudo guardar el pedido", error);
       alert("No pude guardar tu pedido. Tu carrito sigue disponible para reintentar.");
@@ -2493,6 +2558,7 @@ async function mostrarSugerenciasDireccion(texto) {
       coordsDireccionEntregaActual = place.location
         ? { lat: place.location.lat(), lng: place.location.lng() }
         : null;
+      actualizarDetalleEnvio();
       ocultarSugerenciasDireccion();
     });
     item.append(boton);
@@ -2507,6 +2573,7 @@ inputDireccionEntrega.addEventListener("input", () => {
   // (si había): se pierde la precisión hasta elegir otra sugerencia, usar
   // la ubicación o seleccionar un domicilio guardado.
   coordsDireccionEntregaActual = null;
+  actualizarDetalleEnvio();
   const texto = inputDireccionEntrega.value.trim();
   if (texto.length < 3) {
     ocultarSugerenciasDireccion();
@@ -2538,6 +2605,7 @@ function abrirFormularioNuevaDireccion() {
   inputPisoEntrega.value = "";
   inputDeptoEntrega.value = "";
   coordsDireccionEntregaActual = null;
+  actualizarDetalleEnvio();
   abrirPanelSecundario("direccion-entrega-wrap");
 }
 
@@ -2573,6 +2641,7 @@ async function precargarDireccionEntrega() {
     coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
       ? { lat: domicilio.lat, lng: domicilio.lng }
       : null;
+    actualizarDetalleEnvio();
     mostrarDireccionEntregaActual(domicilio.alias);
   } else if (cliente.direccion) {
     inputDireccionEntrega.value = cliente.direccion;
@@ -2609,6 +2678,7 @@ async function abrirSelectorDireccion() {
       coordsDireccionEntregaActual = (domicilio.lat != null && domicilio.lng != null)
         ? { lat: domicilio.lat, lng: domicilio.lng }
         : null;
+      actualizarDetalleEnvio();
       mostrarDireccionEntregaActual(domicilio.alias);
       cerrarPanelSecundario();
     })),
@@ -2636,6 +2706,7 @@ if (btnUsarUbicacion) {
     }
     inputDireccionEntrega.value = resultado.direccion;
     coordsDireccionEntregaActual = { lat: resultado.lat, lng: resultado.lng };
+    actualizarDetalleEnvio();
     ocultarSugerenciasDireccion();
   });
 }
@@ -2758,7 +2829,7 @@ document.getElementById("btn-aplicar-codigo").addEventListener("click", async ()
 // cliente (mismo clientes.json/csv que ya alimentan el gate inicial y el
 // buscador por chat) — así el panel /admin/clientes también refleja los
 // pedidos hechos desde la web, no solo el alta inicial.
-async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega, coordsDireccion) {
+async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entrega, coordsDireccion, envio_usd = 0) {
   if (!catalogoListo) return false;
   const regaloPromo = cargarRegaloPromo();
   const productos = [...new Set(carrito.map((it) =>
@@ -2784,7 +2855,7 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       productos, fecha_entrega, direccion_entrega, detalle, total_usd,
-      codigo_descuento, codigo_promo,
+      codigo_descuento, codigo_promo, envio_usd,
       piso_entrega: inputPisoEntrega.value.trim() || null,
       depto_entrega: inputDeptoEntrega.value.trim() || null,
       lat: coordsDireccion?.lat ?? null,
@@ -2795,6 +2866,10 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
   if (respuesta.status === 409) {
     if (body.conflicto === "codigo_promo") borrarRegaloPromo();
     if (body.conflicto === "codigo_descuento") borrarDescuentoMailing();
+    if (body.conflicto === "envio") {
+      alert(body.error || "El costo de envío cambió. Confirmá nuevamente.");
+      return false;
+    }
     alert(body.error
       ? `${body.error}\n\nRevisá el carrito y confirmá nuevamente.`
       : "El catálogo cambió. Revisá el carrito y confirmá nuevamente.");

@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 load_dotenv(PROJECT_DIR / "web" / ".env")
 
 from web.supabase_client import get_client
-from web import cuentas, domicilios, mail_cuenta, mail_pedido, pedidos, email_util
+from web import cuentas, domicilios, mail_cuenta, mail_pedido, pedidos, email_util, zona_envio
 from web.productos import resolver_proveedor
 
 
@@ -65,6 +65,39 @@ def mandar_credenciales(args, email_norm, password):
         return f"FALLÓ: {e}"
 
 
+def geocodificar(direccion):
+    """Coordenadas de la dirección vía Google Geocoding, o (None, None)."""
+    import os
+    import urllib.parse
+    import urllib.request
+    clave = os.environ.get("GOOGLE_MAPS_API_KEY", "").strip()
+    if not clave:
+        return None, None
+    url = "https://maps.googleapis.com/maps/api/geocode/json?" + urllib.parse.urlencode(
+        {"address": direccion, "components": "country:AR", "key": clave}
+    )
+    try:
+        with urllib.request.urlopen(url, timeout=10) as r:
+            resultados = json.load(r).get("results") or []
+        ubicacion = resultados[0]["geometry"]["location"]
+        return ubicacion["lat"], ubicacion["lng"]
+    except Exception:
+        return None, None
+
+
+def avisar_zona_envio(lat, lng):
+    # Los pedidos manuales no cobran envío solos: se avisa a Vladimir para que
+    # decida si se lo cobra al cliente o lo bonifica.
+    from web.app import COTIZACION_DOLAR
+    envio = zona_envio.cotizar(lat, lng, COTIZACION_DOLAR)
+    if envio["zona"] == "sin_ubicacion":
+        print("AVISO_ENVIO: no pude ubicar la dirección; revisá a mano si queda fuera de la zona gratis.")
+    elif envio["zona"] == "con_cargo":
+        print(f"AVISO_ENVIO: queda a {envio['distancia_km']} km de la Circunvalación; corresponde envío de US${envio['envio_usd']} (nafta US${envio['desglose']['combustible_usd']} + desgaste y tiempo US${envio['desglose']['desgaste_tiempo_usd']}; no se cargó).")
+    elif envio["zona"] == "consultar":
+        print(f"AVISO_ENVIO: queda a {envio['distancia_km']} km de la Circunvalación (más de {zona_envio.LIMITE_KM} km); el costo de envío se coordina aparte.")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--nombre", required=True)
@@ -79,8 +112,12 @@ def main():
     ap.add_argument("--total-usd", type=float, default=None,
                     help="total final acordado en USD; la diferencia con la suma de precios se guarda como descuento")
     ap.add_argument("--cantidad", type=int, default=1)
+    ap.add_argument("--lat", type=float, default=None, help="latitud de la entrega (opcional; si falta se geocodifica la dirección)")
+    ap.add_argument("--lng", type=float, default=None, help="longitud de la entrega")
     ap.add_argument("--fecha", default="manana", help="YYYY-MM-DD, o 'hoy'/'manana'/'pasado manana' (default: manana)")
     args = ap.parse_args()
+    if args.lat is None or args.lng is None:
+        args.lat, args.lng = geocodificar(args.direccion)
     # Solo se pasan si vienen: así el script sigue andando con código web/
     # que todavía no conozca piso/depto.
     extra_domicilio = {k: v for k, v in {"piso": args.piso, "depto": args.depto}.items() if v}
@@ -198,6 +235,8 @@ def main():
         modo_precio="minorista",
         descuento_mayorista_usd=0,
         origen="manual",
+        lat=args.lat,
+        lng=args.lng,
         **extra_pedido,
     )
 
@@ -221,6 +260,7 @@ def main():
     if mail_ok is not None:
         print("mail_enviado:", mail_ok)
     print("mail_pedido_enviado:", mail_pedido_ok)
+    avisar_zona_envio(args.lat, args.lng)
 
 
 if __name__ == "__main__":
