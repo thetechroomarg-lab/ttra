@@ -187,11 +187,6 @@ def main():
 
     if not productos_pedido:
         mail_ok = mandar_credenciales(args, email_norm, password) if cliente_nuevo else None
-    # Mismo mail de pedido confirmado que le llega al cliente cuando compra en la web.
-    # Muestra lo cargado ahora, aunque se haya sumado a un pedido pendiente.
-    mail_pedido_ok = mail_pedido.notificar_pedido(client, cliente_id, {
-        **pedido, "detalle": detalle, "total_usd": total_usd, "descuento_usd": descuento_usd,
-    })
         print("OK (solo cliente, sin pedido)")
         print("cliente_id:", cliente_id)
         print("cliente_nuevo:", cliente_nuevo)
