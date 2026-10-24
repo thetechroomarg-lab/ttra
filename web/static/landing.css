@@ -1563,33 +1563,11 @@ html[data-modo="fallout"] .card:focus-within::before {
 }
 .btn-usar-ubicacion:disabled { opacity: .6; cursor: default; }
 .lista-domicilios-entrega {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-height: 220px;
-  overflow-y: auto;
-  border: 1px solid var(--rc-green-faint);
-  background: var(--rc-bg-panel);
+  list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;
+  max-height: min(360px, 55vh); overflow-y: auto; overscroll-behavior: contain;
 }
-.lista-domicilios-entrega button {
-  display: block;
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 0;
-  border-bottom: 1px solid var(--rc-green-faint);
-  background: transparent;
-  color: var(--rc-green-bright);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.lista-domicilios-entrega li:last-child button { border-bottom: 0; }
-.lista-domicilios-entrega button:hover,
-.lista-domicilios-entrega button:focus-visible {
-  background: rgba(50, 255, 130, .12);
-  outline: none;
-}
+.domicilio-opcion-agregar { width: 100%; min-height: 48px; cursor: pointer; }
+.domicilio-opcion-agregar:disabled { opacity: .5; cursor: not-allowed; }
 #modal-codigo input {
   box-sizing: border-box;
   min-height: 50px;
@@ -1629,30 +1607,22 @@ html[data-modo="fallout"] .card:focus-within::before {
   outline: none;
 }
 
-@media (max-width: 700px) {
-  #direccion-entrega-wrap:not(.oculto),
-  #selector-domicilio-entrega:not(.oculto),
-  #modal-codigo:not(.oculto) {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10021;
-    width: min(320px, calc(100vw - 32px));
-  }
-  #direccion-entrega-wrap:not(.oculto),
-  #modal-codigo:not(.oculto) {
-    background: #010601;
-    border: 3px solid var(--rc-green-dim);
-    box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
-    padding: 20px;
-  }
-  #selector-domicilio-entrega:not(.oculto) .lista-domicilios-entrega {
-    background: #010601;
-    border: 3px solid var(--rc-green-dim);
-    box-shadow: 0 0 10px -1px var(--rc-glow), inset 0 0 8px -2px var(--rc-glow);
-    max-height: min(320px, 60vh);
-  }
+/* Dirección, selector de domicilio y código: flotan sobre el carrito, con el
+   fondo blureado (#overlay-panel-secundario) y la tarjeta con backlight. */
+#overlay-panel-secundario {
+  position: fixed; inset: 0; z-index: 10020;
+  background: rgba(16, 20, 24, .35);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+#overlay-panel-secundario.oculto { display: none; }
+#direccion-entrega-wrap:not(.oculto),
+#selector-domicilio-entrega:not(.oculto),
+#modal-codigo:not(.oculto) {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10021;
+  width: min(380px, calc(100vw - 32px)); box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 10px; padding: 20px;
+  border: 1px solid var(--ed-line, var(--rc-green-faint)); border-radius: 6px; background: var(--rc-bg-panel);
+  box-shadow: var(--ed-halo, 0 24px 70px #00000030);
 }
 .carrito-disclaimer {
   margin: 0;
@@ -1841,3 +1811,81 @@ body.sin-stock-abierto > :not(#rc-panel-sin-stock) { visibility: hidden; pointer
 .tabla-mayorista > :nth-child(3n) { text-align: right; }
 .tabla-mayorista .tm-cab { font-size: 0.8em; opacity: 0.7; text-transform: uppercase; color: inherit; font-weight: 400; }
 .tabla-mayorista > :nth-child(3n+1):not(.tm-cab) { font-size: 1.15em; font-weight: 600; }
+
+/* Confirmación flotante (dialogo-confirmar.js): reusa el diálogo de logout;
+   acá solo va lo propio (más arriba que el carrito, título y botones apilados). */
+.dialogo-confirmar { z-index: 10040; padding: 16px; box-sizing: border-box; }
+body.dialogo-confirmar-abierto { overflow: hidden; }
+/* Backlight: el halo de las tarjetas más un resplandor claro detrás. */
+html[data-modo="classic"] .dialogo-confirmar-tarjeta,
+html[data-modo="classic"] :is(#direccion-entrega-wrap, #selector-domicilio-entrega, #modal-codigo):not(.oculto) {
+  box-shadow: var(--ed-halo, 0 24px 70px #00000030), 0 0 48px -8px color-mix(in srgb, var(--pz-plate, #ecebe4) 40%, transparent);
+}
+.dialogo-confirmar-tarjeta h2 { margin: 0; font-size: 22px; line-height: 1.15; text-wrap: balance; }
+.dialogo-confirmar-texto { margin: 10px 0 0; font-size: 15px; line-height: 1.4; color: var(--pz-dim, var(--rc-green-dim)); overflow-wrap: anywhere; }
+.rc-logout-acciones.dialogo-confirmar-acciones { flex-direction: column; gap: 8px; margin-top: 20px; }
+.dialogo-confirmar-acciones button { width: 100%; }
+html[data-modo="classic"] .dialogo-confirmar-tarjeta h2 { font-family: var(--pz-font); text-transform: uppercase; letter-spacing: .03em; }
+@media (prefers-reduced-motion: no-preference) {
+  .dialogo-confirmar { animation: dialogo-confirmar-fondo .2s ease-out both; }
+  .dialogo-confirmar-tarjeta { animation: dialogo-confirmar-entrar .26s cubic-bezier(.16, 1, .3, 1) both; }
+}
+@keyframes dialogo-confirmar-fondo { from { opacity: 0; } }
+@keyframes dialogo-confirmar-entrar { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+
+/* Domicilios como lista seleccionable (perfil y carrito): una fila por
+   domicilio con su nombre y dirección; el de entrega va resaltado en rojo. */
+.domicilio-opcion, html[data-modo="classic"] :is(#panel-perfil, #panel-carrito) :is(#lista-domicilios, #lista-domicilios-entrega) button.domicilio-opcion {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; box-sizing: border-box;
+  padding: 10px 14px; border: 2px solid var(--pz-frame, var(--rc-green-faint)); border-radius: 3px;
+  background: var(--pz-cell, transparent); color: var(--pz-plate, var(--rc-green-bright));
+  font: inherit; letter-spacing: normal; text-transform: none; text-align: left; cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease, scale .16s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] :is(#panel-perfil, #panel-carrito) :is(#lista-domicilios, #lista-domicilios-entrega) button.domicilio-opcion:hover:not(:disabled) {
+    border-color: var(--pz-plate); background: var(--pz-cell); color: var(--pz-plate);
+  }
+}
+.domicilio-opcion:focus-visible { outline: 2px solid var(--pz-plate, #ecebe4); outline-offset: 2px; }
+.domicilio-opcion-marca {
+  flex: none; width: 20px; height: 20px; box-sizing: border-box; border-radius: 50%;
+  border: 2px solid var(--pz-dim, var(--rc-green-dim));
+}
+.domicilio-opcion-texto { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.domicilio-opcion-nombre { font: 700 18px/1.05 var(--pz-font, inherit); letter-spacing: .03em; text-transform: uppercase; }
+.domicilio-opcion-direccion { text-transform: none; font-size: 14px; line-height: 1.3; color: var(--pz-dim, var(--rc-green-dim)); overflow-wrap: anywhere; }
+.domicilio-opcion-etiqueta {
+  flex: none; align-self: flex-start; padding: 5px 8px 4px; border-radius: 2px;
+  background: var(--pz-red, #d52f27); color: #fff; font: 700 13px/1 var(--pz-font, inherit); letter-spacing: .06em; text-transform: uppercase;
+}
+html[data-modo="classic"] :is(#panel-perfil, #panel-carrito) :is(#lista-domicilios, #lista-domicilios-entrega) button.domicilio-opcion[aria-checked="true"],
+.domicilio-opcion[aria-checked="true"] {
+  border-color: var(--pz-red, #d52f27);
+  background: color-mix(in srgb, var(--pz-red, #d52f27) 12%, var(--pz-cell, transparent));
+  box-shadow: 0 0 22px -6px var(--pz-red, #d52f27);
+}
+.domicilio-opcion[aria-checked="true"] .domicilio-opcion-marca { border-color: var(--pz-red, #d52f27); border-width: 6px; }
+
+/* En el perfil la fila va dentro de la tarjeta del domicilio (con Editar /
+   Eliminar abajo): la tarjeta lleva el borde y el resaltado, la fila no. */
+html[data-modo="classic"] #panel-perfil #lista-domicilios button.domicilio-opcion,
+html[data-modo="classic"] #panel-perfil #lista-domicilios button.domicilio-opcion[aria-checked="true"] {
+  border: 0; background: transparent; box-shadow: none; padding: 12px 14px 4px;
+}
+html[data-modo="classic"] #lista-domicilios .item-domicilio:has([aria-checked="true"]) {
+  background: color-mix(in srgb, var(--pz-red) 12%, var(--pz-cell));
+  box-shadow: inset 0 0 0 2px var(--pz-red), 0 0 22px -6px var(--pz-red);
+}
+#lista-domicilios .item-domicilio-acciones { padding: 0 10px 10px; }
+/* APLICAR (dirección y código) es el CTA principal del panel flotante: rojo
+   lleno como en el resto de la web. La regla genérica de botones del carrito
+   (pizarra-cuenta.css) le ganaba por especificidad y lo dejaba en contorno. */
+html[data-modo="classic"] #panel-carrito :is(#direccion-entrega-wrap #btn-guardar-direccion, #modal-codigo #btn-aplicar-codigo) {
+  border-color: var(--pz-red); background: var(--pz-red); color: #fff;
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] #panel-carrito :is(#direccion-entrega-wrap #btn-guardar-direccion, #modal-codigo #btn-aplicar-codigo):hover {
+    border-color: var(--pz-red-hover); background: var(--pz-red-hover); color: #fff;
+  }
+}

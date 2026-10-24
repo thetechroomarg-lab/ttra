@@ -492,36 +492,66 @@ function cancelarEdicionDomicilio() {
   btnGuardarDomicilio.textContent = "Guardar domicilio";
 }
 
+// Botón-fila de un domicilio (nombre arriba, dirección abajo). Lo comparte
+// el selector del carrito (landing.js) vía window.opcionDomicilioHtml.
+function opcionDomicilioHtml(domicilio, elegido) {
+  const opcion = document.createElement("button");
+  opcion.type = "button";
+  opcion.className = "domicilio-opcion";
+  opcion.setAttribute("role", "radio");
+  opcion.setAttribute("aria-checked", String(Boolean(elegido)));
+  const marca = document.createElement("span");
+  marca.className = "domicilio-opcion-marca";
+  marca.setAttribute("aria-hidden", "true");
+  const texto = document.createElement("span");
+  texto.className = "domicilio-opcion-texto";
+  const nombre = document.createElement("span");
+  nombre.className = "domicilio-opcion-nombre";
+  nombre.textContent = domicilio.alias;
+  const direccion = document.createElement("span");
+  direccion.className = "domicilio-opcion-direccion";
+  const pisoDepto = textoPisoDepto(domicilio);
+  direccion.textContent = `${domicilio.direccion}${pisoDepto ? ` · ${pisoDepto}` : ""}`;
+  texto.append(nombre, direccion);
+  opcion.append(marca, texto);
+  if (elegido) {
+    const etiqueta = document.createElement("span");
+    etiqueta.className = "domicilio-opcion-etiqueta";
+    etiqueta.textContent = "Entrega";
+    opcion.append(etiqueta);
+  }
+  return opcion;
+}
+window.opcionDomicilioHtml = opcionDomicilioHtml;
+
+async function marcarDomicilioPrincipal(domicilio) {
+  const r = await fetch(`/api/domicilios/${domicilio.id}/predeterminado`, { method: "POST" }).catch(() => null);
+  return Boolean(r?.ok);
+}
+
+// Elegir otro domicilio pide confirmación en el panel flotante; cancelar lo deja como estaba.
+async function proponerDomicilioPrincipal(domicilio) {
+  const acepta = await window.TTRAConfirmar({
+    titulo: "¿Establecer como domicilio de entrega?",
+    texto: `${domicilio.alias} — ${domicilio.direccion}`,
+    aceptar: "Establecer",
+    cancelar: "Cancelar",
+  });
+  if (acepta && await marcarDomicilioPrincipal(domicilio)) {
+    if (typeof usarDomicilioEnCarrito === "function") usarDomicilioEnCarrito(domicilio);
+  }
+  cargarDomicilios();
+}
+
 function itemDomicilioHtml(domicilio) {
   const item = document.createElement("div");
   item.className = "item-domicilio";
-  const info = document.createElement("p");
-  const pisoDepto = textoPisoDepto(domicilio);
-  info.textContent = `${domicilio.alias} — ${domicilio.direccion}${pisoDepto ? ` (${pisoDepto})` : ""}`;
-  if (domicilio.predeterminado) {
-    item.classList.add("domicilio-entrega");
-    const titulo = document.createElement("p");
-    titulo.className = "item-domicilio-titulo";
-    titulo.textContent = "Seleccionado como domicilio de entrega";
-    item.append(titulo);
-  }
-  item.append(info);
+  const opcion = opcionDomicilioHtml(domicilio, domicilio.predeterminado);
+  if (!domicilio.predeterminado) opcion.addEventListener("click", () => proponerDomicilioPrincipal(domicilio));
+  item.append(opcion);
 
   const acciones = document.createElement("div");
   acciones.className = "item-domicilio-acciones";
-
-  // Todos los domicilios llevan el botón; en el elegido queda marcado y gris.
-  const btnPredeterminado = document.createElement("button");
-  btnPredeterminado.type = "button";
-  btnPredeterminado.textContent = domicilio.predeterminado ? "✓ Elegido para entrega" : "Elegir para entrega";
-  btnPredeterminado.disabled = Boolean(domicilio.predeterminado);
-  if (!domicilio.predeterminado) {
-    btnPredeterminado.addEventListener("click", async () => {
-      await fetch(`/api/domicilios/${domicilio.id}/predeterminado`, { method: "POST" });
-      cargarDomicilios();
-    });
-  }
-  acciones.append(btnPredeterminado);
 
   const btnEditar = document.createElement("button");
   btnEditar.type = "button";
@@ -571,6 +601,8 @@ async function cargarDomicilios() {
     if (campoDomicilio && campoDomicilio.disabled) campoDomicilio.value = textoDomicilioPrincipal(true);
     btnAbrirFormDomicilio.disabled = domicilios.length >= 5;
     btnAbrirFormDomicilio.title = domicilios.length >= 5 ? "Llegaste al máximo de 5 domicilios" : "";
+    listaDomicilios.setAttribute("role", "radiogroup");
+    listaDomicilios.setAttribute("aria-label", "Domicilio de entrega");
     if (!domicilios.length) {
       const vacio = document.createElement("p");
       vacio.className = "carrito-nota";
@@ -720,9 +752,12 @@ formDomicilio.addEventListener("submit", async (e) => {
       errorEl.textContent = datos.error || datos.detail || "No pude guardar el domicilio";
       return;
     }
+    const eraNuevo = !domicilioEnEdicionId;
     okEl.textContent = "Domicilio guardado";
     cancelarEdicionDomicilio();
-    cargarDomicilios();
+    await cargarDomicilios();
+    // Recién agregado y no quedó solo de entrega (el primero ya lo es): se ofrece.
+    if (eraNuevo && !datos.predeterminado) await proponerDomicilioPrincipal(datos);
   } catch {
     errorEl.textContent = "No pude conectar, probá de nuevo en un momento";
   }
