@@ -38,6 +38,7 @@ from web.supabase_client import get_client
 from web import cotizacion as cotizacion_admin
 from web import precios_recibo
 from web import ganancia_servicio
+from web import zona_envio
 from web.ui_helpers import (
     _html_direccion_entrega,
     CADETE_SLUG,
@@ -4878,6 +4879,12 @@ class PedidoIn(BaseModel):
     codigo_promo: str | None = Field(default=None, max_length=100)
     lat: float | None = None
     lng: float | None = None
+    envio_usd: Decimal = Field(default=0, ge=0)
+
+
+class CotizarEnvioIn(BaseModel):
+    lat: float | None = None
+    lng: float | None = None
 
 
 class EditarFechaEntregaIn(BaseModel):
@@ -4975,6 +4982,11 @@ def _avisar_pedido_nuevo(cliente_id, productos, total_usd=None):
 def _mandar_mail_pedido(request, cliente_id, pedido):
     """Mail de pedido confirmado al cliente (ver web/mail_pedido.py)."""
     mail_pedido.notificar_pedido(get_client(), cliente_id, pedido, _public_app_base_url(request))
+
+
+@app.post("/api/envio/cotizar")
+def api_cotizar_envio(entrada: CotizarEnvioIn):
+    return zona_envio.cotizar(entrada.lat, entrada.lng, COTIZACION_DOLAR)
 
 
 @app.post("/api/pedidos")
@@ -5180,14 +5192,45 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
     total_usd = total_bruto_usd - descuento_usd
     if entrada.total_usd != total_usd:
         return error_precios
+    envio = zona_envio.cotizar(entrada.lat, entrada.lng, COTIZACION_DOLAR)
+    if envio["zona"] == "consultar":
+        return JSONResponse(
+            {
+                "error": "La dirección queda a más de "
+                f"{zona_envio.LIMITE_KM} km de la Circunvalación: escribime por WhatsApp para coordinar el costo de envío.",
+                "conflicto": "envio_consultar",
+            },
+            status_code=400,
+        )
+    envio_usd = pedidos.decimal_monetario(envio["envio_usd"])
+    if entrada.envio_usd != envio_usd:
+        return JSONResponse(
+            {
+                "error": "El costo de envío para esa dirección cambió.",
+                "conflicto": "envio",
+            },
+            status_code=409,
+        )
+    if envio_usd:
+        detalle.append({
+            "nombre": zona_envio.NOMBRE_ENVIO,
+            "color": None,
+            "cantidad": 1,
+            "usd_unitario": pedidos.numero_monetario_db(envio_usd),
+            "usd_subtotal": pedidos.numero_monetario_db(envio_usd),
+            "proveedor": "envío",
+        })
+        total_usd += envio_usd
     codigo_promo = (entrada.codigo_promo or "").strip().upper()
     if fila_descuento or codigo_promo:
         parametros = {
             "p_cliente_id": cliente_id,
             "p_codigo": fila_descuento["code"] if fila_descuento else None,
             "p_productos": productos_pedido,
-            "p_detalle": detalle,
-            "p_total_usd": pedidos.numero_monetario_db(total_usd),
+            # La RPC contaría el envío como un producto (descuento por
+            # cantidad, topes): va sin él y se suma abajo, con los extras.
+            "p_detalle": [item for item in detalle if item.get("proveedor") != "envío"],
+            "p_total_usd": pedidos.numero_monetario_db(total_usd - envio_usd),
             "p_descuento_usd": pedidos.numero_monetario_db(descuento_usd),
             "p_descuento_mailing_usd": pedidos.numero_monetario_db(
                 descuento_mailing_usd
@@ -5252,6 +5295,13 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
             extras.update({"piso_entrega": piso, "depto_entrega": depto})
         guardado = resultado["pedido"]
         pedido_id_rpc = guardado.get("id")
+        if envio_usd and pedido_id_rpc:
+            extras.update({
+                "detalle": list(guardado.get("detalle") or []) + [detalle[-1]],
+                "total_usd": pedidos.numero_monetario_db(
+                    pedidos.decimal_monetario(guardado.get("total_usd") or 0) + envio_usd
+                ),
+            })
         if extras and pedido_id_rpc:
             try:
                 client.table("pedidos").update(extras).eq("id", pedido_id_rpc).execute()

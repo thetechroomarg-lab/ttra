@@ -50,16 +50,23 @@ html[data-modo="classic"] :is(#panel-carrito, #panel-perfil, #panel-pedidos, .rc
 html[data-modo="classic"] #items-carrito { display: grid; gap: 2px; background: var(--pz-gap); }
 html[data-modo="classic"] .item-carrito { margin: 0; border: 0; border-radius: 0; background: var(--pz-board); padding: 14px 4px; }
 html[data-modo="classic"] .item-carrito .item-nombre { color: var(--pz-plate); font: 700 20px/1.1 var(--pz-font); letter-spacing: .02em; text-transform: uppercase; }
-html[data-modo="classic"] :is(#items-carrito .item-precios, .item-descuento-valor, #total-carrito) { display: grid; gap: 4px; }
-html[data-modo="classic"] :is(#items-carrito .item-precios, .item-descuento-valor, #total-carrito) > span {
+html[data-modo="classic"] :is(#items-carrito .item-precios, .item-descuento-valor, #total-carrito, #detalle-envio, .envio-filas) { display: grid; gap: 4px; }
+html[data-modo="classic"] :is(#items-carrito .item-precios, .item-descuento-valor, #total-carrito, #detalle-envio, .envio-filas) > span {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
   color: var(--pz-dim); font: 600 14px/1.2 var(--pz-font); letter-spacing: .05em; text-transform: uppercase;
 }
-html[data-modo="classic"] :is(#items-carrito .item-precios, .item-descuento-valor, #total-carrito) > span > strong {
+html[data-modo="classic"] :is(#items-carrito .item-precios, .item-descuento-valor, #total-carrito, #detalle-envio, .envio-filas) > span > strong {
   color: var(--pz-amber); font: 700 20px/1 var(--pz-font); font-variant-numeric: tabular-nums; letter-spacing: .03em;
 }
 html[data-modo="classic"] #total-carrito { margin: 4px 0 8px; padding: 14px 0 0; border-top: 2px solid var(--pz-gap); }
-html[data-modo="classic"] #total-carrito > strong { display: inline-block; justify-self: start; margin-bottom: 6px; padding: 5px 9px 4px; border-radius: 2px; background: var(--pz-plate); color: var(--pz-ink); font: 700 16px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] #detalle-envio { margin: 4px 0 0; padding: 14px 0 0; border-top: 2px solid var(--pz-gap); }
+html[data-modo="classic"] #detalle-envio[hidden] { display: none; }
+html[data-modo="classic"] :is(#detalle-envio, .envio-filas) > span > strong { font-size: 17px; white-space: nowrap; }
+html[data-modo="classic"] :is(#detalle-envio, .envio-filas) > .envio-total { margin-top: 4px; padding-top: 8px; border-top: 2px solid var(--pz-gap); color: var(--pz-plate); }
+html[data-modo="classic"] :is(#detalle-envio, .envio-filas) > .envio-total > strong { font-size: 22px; }
+html[data-modo="classic"] :is(#detalle-envio, .envio-filas) > .carrito-nota { margin: 6px 0 0; text-transform: none; letter-spacing: 0; }
+html[data-modo="classic"] .ttra-envio-dialogo .envio-filas { margin: 16px 0 4px; padding-top: 12px; border-top: 2px solid var(--pz-gap); }
+html[data-modo="classic"] :is(#total-carrito, #detalle-envio) > strong { display: inline-block; justify-self: start; margin-bottom: 6px; padding: 5px 9px 4px; border-radius: 2px; background: var(--pz-plate); color: var(--pz-ink); font: 700 16px/1 var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
 html[data-modo="classic"] #total-carrito > span > strong { font-size: 26px; }
 html[data-modo="classic"] .item-controles > span { min-width: 2ch; color: var(--pz-amber); font: 700 22px/1 var(--pz-font); text-align: center; font-variant-numeric: tabular-nums; }
 html[data-modo="classic"] .item-controles :is(.btn-menos, .btn-mas) {
