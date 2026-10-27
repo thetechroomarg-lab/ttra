@@ -2,1092 +2,1252 @@
   "items": [
     {
       "nombre": "iPhone 15 128GB (Usado)",
-      "costo": 420.0,
       "proveedor": "em",
       "colores": [
-        "Negro 87%"
+        "BLACK 87%"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 1
+      "pagina_fuente": 1,
+      "texto_fuente": "15 USADO BATERIA 87 % INMACULADO SIN DETALLES    128GB      BLACK         420         Disponible",
+      "costo": 420.0
+    },
+    {
+      "nombre": "iPhone 16 Pro Max 256GB (Usado)",
+      "proveedor": "em",
+      "colores": [
+        "WHITE 89%"
+      ],
+      "estado_proveedor": "Disponible",
+      "pagina_fuente": 1,
+      "texto_fuente": "16 Pro Max 89% INMLACULADO SIN DETALLES       256GB      WHITE         850         Disponible",
+      "costo": 850.0
+    },
+    {
+      "nombre": "iPhone 17 Pro 256GB (Usado)",
+      "proveedor": "em",
+      "colores": [
+        "BLUE 95%"
+      ],
+      "estado_proveedor": "Disponible",
+      "pagina_fuente": 1,
+      "texto_fuente": "17 Pro 95 % INMACULADO SIN DETALLES         256GB      BLUE         1050         Disponible",
+      "costo": 1050.0
     },
     {
       "nombre": "MacMini M1 8CPU 8GPU 512GB 8GB",
-      "costo": 650.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "MacMini M1 8CPU 8GPU         512GB 8GB       Silver     USD650,00       Disponible",
+      "costo": 650.0
     },
     {
       "nombre": "MacMini M6 12CPU12GPU 256GB 16GB",
-      "costo": 1260.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "MacMini M6 12CPU12GPU         256GB 16GB      Silver     USD1.260,00     Disponible",
+      "costo": 1260.0
     },
     {
       "nombre": "MacBook Neo A18 Pro 6 Core CPU 256GB 8GB",
-      "costo": 870.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "MacBook Neo A18 Pro 6 Core CPU   256GB 8GB       Silver     USD870,00       Disponible",
+      "costo": 870.0
     },
     {
       "nombre": "MacBook Neo A18 Pro 6 Core CPU 256GB 8GB",
-      "costo": 870.0,
       "proveedor": "em",
       "colores": [
         "Indigo"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "MacBook Neo A18 Pro 6 Core CPU   256GB 8GB      Indigo      USD870,00       Disponible",
+      "costo": 870.0
     },
     {
       "nombre": "MacBook Neo A18 Pro 6 Core CPU 256GB 8GB",
-      "costo": 870.0,
       "proveedor": "em",
       "colores": [
         "Blush"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "MacBook Neo A18 Pro 6 Core CPU   256GB 8GB       Blush      USD870,00       Disponible",
+      "costo": 870.0
     },
     {
       "nombre": "MacBook Neo A18 Pro 6 Core CPU 512GB 8GB",
-      "costo": 970.0,
       "proveedor": "em",
       "colores": [
         "Indigo"
       ],
       "estado_proveedor": "En Transito",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "MacBook Neo A18 Pro 6 Core CPU   512GB 8GB      Indigo      USD970,00       En Transito",
+      "costo": 970.0
     },
     {
       "nombre": "MacBook Neo A18 Pro 6 Core CPU 512GB 8GB",
-      "costo": 970.0,
       "proveedor": "em",
       "colores": [
         "Blush"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "MacBook Neo A18 Pro 6 Core CPU   512GB 8GB       Blush      USD970,00       Disponible",
+      "costo": 970.0
     },
     {
       "nombre": "MacBook Neo A18 Pro 6 Core CPU 512GB 8GB",
-      "costo": 970.0,
       "proveedor": "em",
       "colores": [
         "Citrus"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "MacBook Neo A18 Pro 6 Core CPU   512GB 8GB       Citrus     USD970,00       Disponible",
+      "costo": 970.0
     },
     {
       "nombre": "Macbook Air 13 M5 10CPU 8GPU 512GB 16GB",
-      "costo": 1440.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "Macbook Air 13 M5 10CPU 8GPU     512GB 16GB      Silver     USD1.420,00     Disponible",
+      "costo": 1420.0
     },
     {
       "nombre": "Macbook Air 13 M5 10CPU 8GPU 512GB 16GB",
-      "costo": 1440.0,
       "proveedor": "em",
       "colores": [
         "Midnight"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "Macbook Air 13 M5 10CPU 8GPU     512GB 16GB    Midnight     USD1.420,00     Disponible",
+      "costo": 1420.0
     },
     {
       "nombre": "Macbook Air 13 M5 10CPU 8GPU 512GB 16GB",
-      "costo": 1440.0,
       "proveedor": "em",
       "colores": [
         "Starlight"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "Macbook Air 13 M5 10CPU 8GPU     512GB 16GB    Starlight    USD1.420,00     Disponible",
+      "costo": 1420.0
     },
     {
       "nombre": "Macbook Air 13 M5 10CPU 8GPU 512GB 16GB",
-      "costo": 1440.0,
       "proveedor": "em",
       "colores": [
         "Sky Blue"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "Macbook Air 13 M5 10CPU 8GPU     512GB 16GB    Sky Blue     USD1.420,00     Disponible",
+      "costo": 1420.0
     },
     {
       "nombre": "Macbook Air 15 M5 10CPU 10GPU 512GB 16GB",
-      "costo": 1660.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
-      "estado_proveedor": "En Transito",
-      "pagina_fuente": 2
+      "estado_proveedor": "Disponible",
+      "pagina_fuente": 2,
+      "texto_fuente": "Macbook Air 15 M5 10CPU 10GPU    512GB 16GB      Silver     USD1.620,00     Disponible",
+      "costo": 1620.0
     },
     {
       "nombre": "Macbook Air 15 M5 10CPU 10GPU 512GB 16GB",
-      "costo": 1660.0,
       "proveedor": "em",
       "colores": [
         "Midnight"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "Macbook Air 15 M5 10CPU 10GPU    512GB 16GB    Midnight     USD1.620,00     Disponible",
+      "costo": 1620.0
     },
     {
       "nombre": "Macbook Air 15 M5 10CPU 10GPU 512GB 16GB",
-      "costo": 1660.0,
       "proveedor": "em",
       "colores": [
         "Sky Blue"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "Macbook Air 15 M5 10CPU 10GPU    512GB 16GB    Sky Blue     USD1.620,00     Disponible",
+      "costo": 1620.0
     },
     {
-      "nombre": "MacBook Pro 14 M5 10CPU 10GPU 1TB 16GB",
-      "costo": 2180.0,
-      "proveedor": "em",
-      "colores": [
-        "Space Black"
-      ],
-      "estado_proveedor": "En Transito",
-      "pagina_fuente": 2
-    },
-    {
-      "nombre": "MacBook Pro 14 M5 10CPU 10GPU 1TB 16GB",
-      "costo": 2180.0,
+      "nombre": "Macbook Air 15 M5 10CPU 10GPU 1TB 24GB",
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "En Transito",
-      "pagina_fuente": 2
+      "pagina_fuente": 2,
+      "texto_fuente": "Macbook Air 15 M5 10CPU 10GPU     1TB 24GB       Silver     USD2.250,00     En Transito",
+      "costo": 2250.0
+    },
+    {
+      "nombre": "Macbook Air 15 M5 10CPU 10GPU 1TB 24GB",
+      "proveedor": "em",
+      "colores": [
+        "Midnight"
+      ],
+      "estado_proveedor": "En Transito",
+      "pagina_fuente": 2,
+      "texto_fuente": "Macbook Air 15 M5 10CPU 10GPU     1TB 24GB     Midnight     USD2.250,00     En Transito",
+      "costo": 2250.0
+    },
+    {
+      "nombre": "MacBook Pro 14 M5 10CPU 10GPU 1TB 16GB",
+      "proveedor": "em",
+      "colores": [
+        "Silver"
+      ],
+      "estado_proveedor": "En Transito",
+      "pagina_fuente": 2,
+      "texto_fuente": "MacBook Pro 14 M5 10CPU 10GPU      1TB 16GB       Silver     USD2.180,00     En Transito",
+      "costo": 2180.0
     },
     {
       "nombre": "MacBook Pro 14 M5 10CPU 10GPU 1TB 24GB",
-      "costo": 2420.0,
       "proveedor": "em",
       "colores": [
         "Space Black"
       ],
       "estado_proveedor": "En Transito",
-      "pagina_fuente": 3
+      "pagina_fuente": 2,
+      "texto_fuente": "MacBook Pro 14 M5 10CPU 10GPU      1TB 24GB    Space Black   USD2.420,00     En Transito",
+      "costo": 2420.0
     },
     {
       "nombre": "MacBook Pro 14 M5 PRO 15CPU 16GPU 1TB 24GB",
-      "costo": 2720.0,
       "proveedor": "em",
       "colores": [
         "Space Black"
       ],
       "estado_proveedor": "En Transito",
-      "pagina_fuente": 3
+      "pagina_fuente": 3,
+      "texto_fuente": "MacBook Pro 14 M5 PRO 15CPU 16GPU   1TB 24GB   Space Black   USD2.720,00   En Transito",
+      "costo": 2720.0
     },
     {
       "nombre": "MacBook Pro 14 M5 PRO 15CPU 16GPU 1TB 24GB",
-      "costo": 2720.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 3
+      "pagina_fuente": 3,
+      "texto_fuente": "MacBook Pro 14 M5 PRO 15CPU 16GPU   1TB 24GB      Silver     USD2.720,00   Disponible",
+      "costo": 2720.0
+    },
+    {
+      "nombre": "MacBook Pro 16 M5 PRO 18CPU 20GPU 1TB 24GB",
+      "proveedor": "em",
+      "colores": [
+        "Space Black"
+      ],
+      "estado_proveedor": "En Transito",
+      "pagina_fuente": 3,
+      "texto_fuente": "MacBook Pro 16 M5 PRO 18CPU 20GPU   1TB 24GB   Space Black   USD3.150,00   En Transito",
+      "costo": 3150.0
     },
     {
       "nombre": "iPad Mini 7ma gen 128GB",
-      "costo": 500.0,
       "proveedor": "em",
       "colores": [
         "Space Gray"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Mini 7ma gen    128GB      Space Gray   USD500,00       Disponible",
+      "costo": 500.0
     },
     {
       "nombre": "iPad A16 11\" 2025 128GB",
-      "costo": 510.0,
       "proveedor": "em",
       "colores": [
         "Blue"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad A16 11\" 2025    128GB         Blue      USD510,00       Disponible",
+      "costo": 510.0
     },
     {
       "nombre": "iPad A16 11\" 2025 128GB",
-      "costo": 510.0,
       "proveedor": "em",
       "colores": [
         "Pink"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad A16 11\" 2025    128GB         Pink      USD510,00       Disponible",
+      "costo": 510.0
     },
     {
       "nombre": "iPad A16 11\" 2025 128GB",
-      "costo": 510.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad A16 11\" 2025    128GB        Silver     USD510,00       Disponible",
+      "costo": 510.0
     },
     {
       "nombre": "iPad A16 11\" 2025 128GB",
-      "costo": 510.0,
       "proveedor": "em",
       "colores": [
         "Yellow"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad A16 11\" 2025    128GB        Yellow     USD510,00       Disponible",
+      "costo": 510.0
     },
     {
       "nombre": "iPad A16 11\" 2025 256GB",
-      "costo": 610.0,
       "proveedor": "em",
       "colores": [
         "Blue"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad A16 11\" 2025    256GB         Blue      USD610,00       Disponible",
+      "costo": 610.0
     },
     {
       "nombre": "iPad A16 11\" 2025 256GB",
-      "costo": 610.0,
       "proveedor": "em",
       "colores": [
         "Pink"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad A16 11\" 2025    256GB         Pink      USD610,00       Disponible",
+      "costo": 610.0
     },
     {
       "nombre": "iPad A16 11\" 2025 256GB",
-      "costo": 610.0,
       "proveedor": "em",
       "colores": [
         "Yellow"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad A16 11\" 2025    256GB        Yellow     USD610,00       Disponible",
+      "costo": 610.0
     },
     {
       "nombre": "iPad Air M4 11\" 128GB",
-      "costo": 800.0,
       "proveedor": "em",
       "colores": [
         "Space Gray"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 11\"     128GB      Space Gray   USD800,00       Disponible",
+      "costo": 800.0
     },
     {
       "nombre": "iPad Air M4 11\" 128GB",
-      "costo": 800.0,
       "proveedor": "em",
       "colores": [
         "Purple"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 11\"     128GB        Purple     USD800,00       Disponible",
+      "costo": 800.0
     },
     {
       "nombre": "iPad Air M4 11\" 128GB",
-      "costo": 800.0,
       "proveedor": "em",
       "colores": [
         "Blue"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 11\"     128GB         Blue      USD800,00       Disponible",
+      "costo": 800.0
     },
     {
       "nombre": "iPad Air M4 11\" 128GB",
-      "costo": 800.0,
       "proveedor": "em",
       "colores": [
         "Starlight"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 11\"     128GB       Starlight   USD800,00       Disponible",
+      "costo": 800.0
     },
     {
       "nombre": "iPad Air M4 11\" 256GB",
-      "costo": 920.0,
       "proveedor": "em",
       "colores": [
         "Space Gray"
       ],
       "estado_proveedor": "En Transito",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 11\"     256GB      Space Gray   USD920,00       En Transito",
+      "costo": 920.0
     },
     {
       "nombre": "iPad Air M4 11\" 256GB",
-      "costo": 920.0,
       "proveedor": "em",
       "colores": [
         "Purple"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 11\"     256GB        Purple     USD920,00       Disponible",
+      "costo": 920.0
     },
     {
       "nombre": "iPad Air M4 11\" 256GB",
-      "costo": 920.0,
       "proveedor": "em",
       "colores": [
         "Blue"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 11\"     256GB         Blue      USD920,00       Disponible",
+      "costo": 920.0
     },
     {
       "nombre": "iPad Air M4 13\" 128GB",
-      "costo": 1020.0,
       "proveedor": "em",
       "colores": [
         "Space Gray"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 13\"     128GB      Space Gray   USD1.020,00     Disponible",
+      "costo": 1020.0
     },
     {
       "nombre": "iPad Air M4 13\" 128GB",
-      "costo": 1020.0,
       "proveedor": "em",
       "colores": [
         "Purple"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 4
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 13\"     128GB        Purple     USD1.020,00     Disponible",
+      "costo": 1020.0
     },
     {
       "nombre": "iPad Air M4 13\" 256GB",
-      "costo": 1150.0,
       "proveedor": "em",
       "colores": [
         "Space Gray"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 5
+      "pagina_fuente": 5,
+      "texto_fuente": "iPad Air M4 13\"   256GB   Space Gray    USD1.150,00    Disponible",
+      "costo": 1150.0
     },
     {
       "nombre": "iPad Air M4 13\" 256GB",
-      "costo": 1150.0,
       "proveedor": "em",
       "colores": [
         "Purple"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 5
+      "pagina_fuente": 5,
+      "texto_fuente": "iPad Air M4 13\"   256GB     Purple      USD1.150,00    Disponible",
+      "costo": 1150.0
     },
     {
       "nombre": "iPad Pro 11 M5 256GB",
-      "costo": 1240.0,
       "proveedor": "em",
       "colores": [
         "Black"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 5
+      "pagina_fuente": 5,
+      "texto_fuente": "iPad Pro 11 M5    256GB      Black      USD1.240,00    Disponible",
+      "costo": 1240.0
     },
     {
       "nombre": "iPad Pro 13\" M5 256GB",
-      "costo": 1430.0,
       "proveedor": "em",
       "colores": [
         "Space Black"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 5
+      "pagina_fuente": 5,
+      "texto_fuente": "iPad Pro 13\" M5   256GB   Space Black   USD1.430,00    Disponible",
+      "costo": 1430.0
     },
     {
       "nombre": "AirPods Max USB-C",
-      "costo": 570.0,
       "proveedor": "em",
       "colores": [
         "Midnight"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 6
+      "pagina_fuente": 6,
+      "texto_fuente": "AirPods Max USB-C              Midnight     USD570,00      Disponible",
+      "costo": 570.0
     },
     {
       "nombre": "AirPods Max USB-C",
-      "costo": 570.0,
       "proveedor": "em",
       "colores": [
         "Blue"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 6
+      "pagina_fuente": 6,
+      "texto_fuente": "AirPods Max USB-C                Blue       USD570,00      Disponible",
+      "costo": 570.0
     },
     {
       "nombre": "AirPods Max 2 USB-C",
-      "costo": 620.0,
       "proveedor": "em",
       "colores": [
         "Midnight"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 6
+      "pagina_fuente": 6,
+      "texto_fuente": "AirPods Max 2 USB-C             Midnight     USD620,00      Disponible",
+      "costo": 620.0
     },
     {
       "nombre": "AirPods Max 2 USB-C",
-      "costo": 620.0,
       "proveedor": "em",
       "colores": [
         "Blue"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 6
+      "pagina_fuente": 6,
+      "texto_fuente": "AirPods Max 2 USB-C               Blue       USD620,00      Disponible",
+      "costo": 620.0
     },
     {
       "nombre": "AirPods 4 NOISE Cancellation",
-      "costo": 175.0,
       "proveedor": "em",
       "colores": [
         "Blanco"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 6
+      "pagina_fuente": 6,
+      "texto_fuente": "AirPods 4 NOISE Cancellation       Blanco       USD175,00      Disponible",
+      "costo": 175.0
     },
     {
       "nombre": "AirPods Pro 3ra G",
-      "costo": 280.0,
       "proveedor": "em",
       "colores": [
         "Blanco"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 6
+      "pagina_fuente": 6,
+      "texto_fuente": "AirPods Pro 3ra G             Blanco       USD255,00      Disponible",
+      "costo": 255.0
     },
     {
       "nombre": "AirPods 5 NOISE Cancellation",
-      "costo": 195.0,
       "proveedor": "em",
       "colores": [
         "Blanco"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 6
+      "pagina_fuente": 6,
+      "texto_fuente": "AirPods 5 NOISE Cancellation       Blanco       USD195,00      Disponible",
+      "costo": 195.0
     },
     {
       "nombre": "AirPods 5 ANC Wireless Charging Case",
-      "costo": 215.0,
       "proveedor": "em",
       "colores": [
         "Blanco"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 6
+      "pagina_fuente": 6,
+      "texto_fuente": "AirPods 5 ANC Wireless Charging Case   Blanco       USD215,00      Disponible",
+      "costo": 215.0
     },
     {
       "nombre": "Beats Studio 3",
-      "costo": 200.0,
       "proveedor": "em",
       "colores": [
         "Rojo"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 6
+      "pagina_fuente": 6,
+      "texto_fuente": "Beats Studio 3                Rojo       USD200,00      Disponible",
+      "costo": 200.0
     },
     {
       "nombre": "Beats Studio 3",
-      "costo": 200.0,
       "proveedor": "em",
       "colores": [
         "Azul"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 6
+      "pagina_fuente": 6,
+      "texto_fuente": "Beats Studio 3                Azul       USD200,00      Disponible",
+      "costo": 200.0
     },
     {
       "nombre": "Watch Xiaomi Band 7",
-      "costo": 23.0,
       "proveedor": "em",
       "colores": [
         "Negro"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Watch Xiaomi Band 7                                  Negro                           USD23,00          Disponible",
+      "costo": 23.0
     },
     {
       "nombre": "Apple Watch Se 3ra Gen 40mm",
-      "costo": 320.0,
       "proveedor": "em",
       "colores": [
         "midnight Aluminium Case with midnight Sport Band"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Se 3ra Gen        40mm     midnight Aluminium Case with midnight Sport Band     USD320,00          Disponible",
+      "costo": 320.0
     },
     {
       "nombre": "Apple Watch Se 3ra Gen 44mm",
-      "costo": 330.0,
       "proveedor": "em",
       "colores": [
         "Starlight Aluminium Case with Starlight Sport Band"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Se 3ra Gen        44mm     Starlight Aluminium Case with Starlight Sport Band   USD330,00          Disponible",
+      "costo": 330.0
     },
     {
       "nombre": "Apple Watch Se 3ra Gen 44mm",
-      "costo": 330.0,
       "proveedor": "em",
       "colores": [
         "midnight Aluminium Case with midnight Sport Band"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Se 3ra Gen        44mm     midnight Aluminium Case with midnight Sport Band     USD330,00          Disponible",
+      "costo": 330.0
     },
     {
       "nombre": "Apple Watch Serie 10 + CELL 42mm",
-      "costo": 700.0,
       "proveedor": "em",
       "colores": [
         "Titanium Milanese Loop Gold"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Serie 10 + CELL     42mm               Titanium Milanese Loop Gold                USD700,00          Disponible",
+      "costo": 700.0
     },
     {
       "nombre": "Apple Watch Serie 10 + CELL 46mm",
-      "costo": 750.0,
       "proveedor": "em",
       "colores": [
         "Titanium Milanese Loop Natural"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Serie 10 + CELL     46mm              Titanium Milanese Loop Natural              USD750,00          Disponible",
+      "costo": 750.0
     },
     {
       "nombre": "Apple Watch Serie 11 46mm",
-      "costo": 430.0,
       "proveedor": "em",
       "colores": [
         "Silver Al purple fog Sport Band"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Serie 11         46mm               Silver Al purple fog Sport Band            USD430,00          Disponible",
+      "costo": 430.0
     },
     {
       "nombre": "Apple Watch Serie 12 42mm",
-      "costo": 480.0,
       "proveedor": "em",
       "colores": [
         "Black Aluminium Black Sport Band"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Serie 12         42mm             Black Aluminium Black Sport Band             USD480,00          Disponible",
+      "costo": 480.0
     },
     {
       "nombre": "Apple Watch Serie 12 42mm",
-      "costo": 480.0,
       "proveedor": "em",
       "colores": [
         "Light Gold Aluminium Sand Sport Band"
       ],
       "estado_proveedor": "En Transito",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Serie 12         42mm           Light Gold Aluminium Sand Sport Band           USD480,00         En Transito",
+      "costo": 480.0
     },
     {
       "nombre": "Apple Watch Serie 12 42mm",
-      "costo": 480.0,
       "proveedor": "em",
       "colores": [
         "Dark Bronze Aluminium Olive Sport Band"
       ],
       "estado_proveedor": "En Transito",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Serie 12         42mm          Dark Bronze Aluminium Olive Sport Band          USD480,00         En Transito",
+      "costo": 480.0
     },
     {
       "nombre": "Apple Watch Serie 12 46mm",
-      "costo": 540.0,
       "proveedor": "em",
       "colores": [
         "Black Aluminium Black Sport Band"
       ],
       "estado_proveedor": "En Transito",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Serie 12         46mm             Black Aluminium Black Sport Band             USD540,00         En Transito",
+      "costo": 540.0
     },
     {
       "nombre": "Apple Watch Ultra 3 GPS + CELL 49mm",
-      "costo": 790.0,
       "proveedor": "em",
       "colores": [
         "Titanium Black Ti Black Alpine Loop"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Ultra 3 GPS + CELL    49mm            Titanium Black Ti Black Alpine Loop           USD790,00          Disponible",
+      "costo": 790.0
     },
     {
       "nombre": "Apple Watch Ultra 3 GPS + CELL 49mm",
-      "costo": 790.0,
       "proveedor": "em",
       "colores": [
         "Titanium Natural Case with Anchor Blue Ocean Band"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Ultra 3 GPS + CELL    49mm     Titanium Natural Case with Anchor Blue Ocean Band    USD790,00          Disponible",
+      "costo": 790.0
     },
     {
       "nombre": "Apple Watch Ultra 4 GPS + CELL 49mm",
-      "costo": 900.0,
       "proveedor": "em",
       "colores": [
         "Titanium Black Ocean Band Black"
       ],
       "estado_proveedor": "En Transito",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Ultra 4 GPS + CELL    49mm             Titanium Black Ocean Band Black              USD900,00         En Transito",
+      "costo": 900.0
     },
     {
       "nombre": "Apple Watch Ultra 4 GPS + CELL 49mm",
-      "costo": 920.0,
       "proveedor": "em",
       "colores": [
         "Titanium Natural Ocean Band Gray"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 7
+      "pagina_fuente": 7,
+      "texto_fuente": "Ultra 4 GPS + CELL    49mm            Titanium Natural Ocean Band Gray              USD920,00          Disponible",
+      "costo": 920.0
     },
     {
       "nombre": "Magic Mouse 2",
-      "costo": 140.0,
       "proveedor": "em",
       "colores": [
         "Black"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Magic Mouse 2                                              Black     USD140,00      Disponible",
+      "costo": 140.0
     },
     {
       "nombre": "Airtag x 4",
-      "costo": 130.0,
       "proveedor": "em",
       "colores": [],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Airtag x 4                                                       USD130,00      Disponible",
+      "costo": 130.0
     },
     {
       "nombre": "Apple Magic Keyboard iPad A16",
-      "costo": 350.0,
       "proveedor": "em",
       "colores": [
         "white"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Apple Magic Keyboard iPad A16                                     white     USD350,00      Disponible",
+      "costo": 350.0
     },
     {
       "nombre": "MAGIC KEYBOARD 11\" iPad Pro M1 - M2 / iPad Air M4 Español",
-      "costo": 425.0,
       "proveedor": "em",
       "colores": [
         "white"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "MAGIC KEYBOARD 11\" iPad Pro M1 - M2 / iPad Air M4 Español                       white     USD425,00      Disponible",
+      "costo": 425.0
     },
     {
       "nombre": "MAGIC KEYBOARD 11\" iPad Pro M1 - M2 / iPad Air M4",
-      "costo": 425.0,
       "proveedor": "em",
       "colores": [
         "Black"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "MAGIC KEYBOARD 11\" iPad Pro M1 - M2 / iPad Air M4                            Black     USD425,00      Disponible",
+      "costo": 425.0
     },
     {
       "nombre": "MAGIC KEYBOARD 12.9” Pro M4 / Pro M5",
-      "costo": 450.0,
       "proveedor": "em",
       "colores": [
         "Black"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "MAGIC KEYBOARD 12.9” Pro M4 / Pro M5                                   Black     USD450,00      Disponible",
+      "costo": 450.0
     },
     {
       "nombre": "Cargador Original en caja MacBook 67W USB C Enchufe Argentino",
-      "costo": 60.0,
       "proveedor": "em",
       "colores": [],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Cargador Original en caja MacBook 67W USB C          Enchufe Argentino             USD60,00       Disponible",
+      "costo": 60.0
     },
     {
       "nombre": "Cargador 20W ORIGINAL Carga Rapida Patas Rectas",
-      "costo": 23.0,
       "proveedor": "em",
       "colores": [],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Cargador 20W ORIGINAL Carga Rapida                  Patas Rectas                USD20,00       Disponible",
+      "costo": 20.0
     },
     {
       "nombre": "Cable USB-C a USB-C Original Thunderbolt 3",
-      "costo": 25.0,
       "proveedor": "em",
       "colores": [],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Cable USB-C a USB-C Original                   Thunderbolt 3                USD25,00       Disponible",
+      "costo": 25.0
     },
     {
       "nombre": "Belkin Magsafe 3-in-1 Arbolito",
-      "costo": 200.0,
       "proveedor": "em",
       "colores": [
         "Black"
       ],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Belkin Magsafe 3-in-1 Arbolito                                   Black     USD200,00      Disponible",
+      "costo": 200.0
     },
     {
       "nombre": "Pencil PRO ( sin iPad )",
-      "costo": 160.0,
       "proveedor": "em",
       "colores": [],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Pencil PRO ( sin iPad )                                                 USD160,00      Disponible",
+      "costo": 160.0
     },
     {
       "nombre": "Pencil USB C ( sin iPad )",
-      "costo": 150.0,
       "proveedor": "em",
       "colores": [],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Pencil USB C ( sin iPad )                                                USD150,00      Disponible",
+      "costo": 150.0
     },
     {
       "nombre": "JBL PARTY BOX 2 ENCORE+ 2 MICROFONOS",
-      "costo": 430.0,
       "proveedor": "em",
       "colores": [],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 9
+      "pagina_fuente": 9,
+      "texto_fuente": "JBL PARTY BOX 2 ENCORE+ 2 MICROFONOS                        USD430,00     Disponible",
+      "costo": 430.0
     }
   ],
   "filtrados": [
     {
-      "texto": "17 PRO MAX                      256GB       Silver                  No Disponible",
-      "motivo": "No disponible, sin costo",
-      "pagina_fuente": 1
+      "nombre": "iPhone 17 PRO MAX 256GB",
+      "proveedor": "em",
+      "colores": [
+        "Silver"
+      ],
+      "estado_proveedor": "No Disponible",
+      "pagina_fuente": 1,
+      "texto_fuente": "17 PRO MAX                      256GB       Silver                  No Disponible",
+      "motivo": "No disponible segun proveedor"
     },
     {
-      "texto": "17 PRO MAX                      256GB       Blue                    No Disponible",
-      "motivo": "No disponible, sin costo",
-      "pagina_fuente": 1
+      "nombre": "iPhone 17 PRO MAX 256GB",
+      "proveedor": "em",
+      "colores": [
+        "Blue"
+      ],
+      "estado_proveedor": "No Disponible",
+      "pagina_fuente": 1,
+      "texto_fuente": "17 PRO MAX                      256GB       Blue                    No Disponible",
+      "motivo": "No disponible segun proveedor"
     },
     {
-      "texto": "17 PRO MAX                      256GB      Naranja                  No Disponible",
-      "motivo": "No disponible, sin costo",
-      "pagina_fuente": 1
+      "nombre": "iPhone 17 PRO MAX 256GB",
+      "proveedor": "em",
+      "colores": [
+        "Naranja"
+      ],
+      "estado_proveedor": "No Disponible",
+      "pagina_fuente": 1,
+      "texto_fuente": "17 PRO MAX                      256GB      Naranja                  No Disponible",
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "MacBook Neo A18 Pro 6 Core CPU 256GB 8GB",
-      "costo": 850.0,
       "proveedor": "em",
       "colores": [
         "Citrus"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 2,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "MacBook Neo A18 Pro 6 Core CPU   256GB 8GB       Citrus     USD850,00      No Disponible",
+      "costo": 850.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "MacBook Neo A18 Pro 6 Core CPU 512GB 8GB",
-      "costo": 970.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 2,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "MacBook Neo A18 Pro 6 Core CPU   512GB 8GB       Silver     USD970,00      No Disponible",
+      "costo": 970.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "Macbook Air 15 M5 10CPU 10GPU 512GB 16GB",
-      "costo": 1660.0,
       "proveedor": "em",
       "colores": [
         "Starlight"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 2,
-      "motivo": "Sin disponibilidad o caja dañada"
-    },
-    {
-      "nombre": "Macbook Air 15 M5 10CPU 10GPU 1TB 16GB",
-      "costo": 1960.0,
-      "proveedor": "em",
-      "colores": [
-        "Midnight"
-      ],
-      "estado_proveedor": "No Disponible",
-      "pagina_fuente": 2,
-      "motivo": "Sin disponibilidad o caja dañada"
-    },
-    {
-      "nombre": "Macbook Air 15 M5 10CPU 10GPU 1TB 24GB",
-      "costo": 2300.0,
-      "proveedor": "em",
-      "colores": [
-        "Silver"
-      ],
-      "estado_proveedor": "No Disponible",
-      "pagina_fuente": 2,
-      "motivo": "Sin disponibilidad o caja dañada"
-    },
-    {
-      "nombre": "Macbook Air 15 M5 10CPU 10GPU 1TB 24GB",
-      "costo": 2300.0,
-      "proveedor": "em",
-      "colores": [
-        "Midnight"
-      ],
-      "estado_proveedor": "No Disponible",
-      "pagina_fuente": 2,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "Macbook Air 15 M5 10CPU 10GPU    512GB 16GB    Starlight    USD1.620,00    No Disponible",
+      "costo": 1620.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "MacBook Pro 14 M5 10CPU 10GPU 512GB 16GB",
-      "costo": 2000.0,
       "proveedor": "em",
       "colores": [
         "Space Black"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 2,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "MacBook Pro 14 M5 10CPU 10GPU     512GB 16GB   Space Black   USD2.000,00    No Disponible",
+      "costo": 2000.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "MacBook Pro 14 M5 10CPU 10GPU 512GB 16GB",
-      "costo": 2000.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 2,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "MacBook Pro 14 M5 10CPU 10GPU     512GB 16GB      Silver     USD2.000,00    No Disponible",
+      "costo": 2000.0,
+      "motivo": "No disponible segun proveedor"
+    },
+    {
+      "nombre": "MacBook Pro 14 M5 10CPU 10GPU 1TB 16GB",
+      "proveedor": "em",
+      "colores": [
+        "Space Black"
+      ],
+      "estado_proveedor": "No Disponible",
+      "pagina_fuente": 2,
+      "texto_fuente": "MacBook Pro 14 M5 10CPU 10GPU      1TB 16GB    Space Black   USD2.180,00    No Disponible",
+      "costo": 2180.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "MacBook Pro 14 M5 10CPU 10GPU 1TB 24GB",
-      "costo": 2420.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "No Disponible",
-      "pagina_fuente": 3,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "pagina_fuente": 2,
+      "texto_fuente": "MacBook Pro 14 M5 10CPU 10GPU      1TB 24GB       Silver     USD2.420,00    No Disponible",
+      "costo": 2420.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
-      "nombre": "MacBook Pro 16 M5 PRO 18CPU 20GPU 1TB 24GB",
-      "costo": 2950.0,
+      "nombre": "iPad Mini 7ma gen 128GB",
       "proveedor": "em",
       "colores": [
-        "Space Black"
+        "Blue"
       ],
       "estado_proveedor": "No Disponible",
-      "pagina_fuente": 3,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Mini 7ma gen    128GB         Blue                     No Disponible",
+      "motivo": "No disponible segun proveedor"
     },
     {
-      "texto": "iPad Mini 7ma gen    128GB         Blue                     No Disponible",
-      "motivo": "No disponible, sin costo",
-      "pagina_fuente": 4
-    },
-    {
-      "texto": "iPad Mini 7ma gen    128GB        Purple                    No Disponible",
-      "motivo": "No disponible, sin costo",
-      "pagina_fuente": 4
+      "nombre": "iPad Mini 7ma gen 128GB",
+      "proveedor": "em",
+      "colores": [
+        "Purple"
+      ],
+      "estado_proveedor": "No Disponible",
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Mini 7ma gen    128GB        Purple                    No Disponible",
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "iPad A16 11\" 2025 256GB",
-      "costo": 610.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 4,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "iPad A16 11\" 2025    256GB        Silver     USD610,00      No Disponible",
+      "costo": 610.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "iPad Air M4 11\" 256GB",
-      "costo": 920.0,
       "proveedor": "em",
       "colores": [
         "Starlight"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 4,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "iPad Air M4 11\"     256GB       Starlight   USD920,00      No Disponible",
+      "costo": 920.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
-      "texto": "iPad Air M4 13\"     128GB         Blue                     No Disponible",
-      "motivo": "No disponible, sin costo",
-      "pagina_fuente": 4
+      "nombre": "iPad Air M4 13\" 128GB",
+      "proveedor": "em",
+      "colores": [
+        "Blue"
+      ],
+      "estado_proveedor": "No Disponible",
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 13\"     128GB         Blue                     No Disponible",
+      "motivo": "No disponible segun proveedor"
     },
     {
-      "texto": "iPad Air M4 13\"     128GB       Starligth                  No Disponible",
-      "motivo": "No disponible, sin costo",
-      "pagina_fuente": 4
+      "nombre": "iPad Air M4 13\" 128GB",
+      "proveedor": "em",
+      "colores": [
+        "Starligth"
+      ],
+      "estado_proveedor": "No Disponible",
+      "pagina_fuente": 4,
+      "texto_fuente": "iPad Air M4 13\"     128GB       Starligth                  No Disponible",
+      "motivo": "No disponible segun proveedor"
     },
     {
-      "texto": "iPad Air M4 13\"   256GB      Blue                     No Disponible",
-      "motivo": "No disponible, sin costo",
-      "pagina_fuente": 5
+      "nombre": "iPad Air M4 13\" 256GB",
+      "proveedor": "em",
+      "colores": [
+        "Blue"
+      ],
+      "estado_proveedor": "No Disponible",
+      "pagina_fuente": 5,
+      "texto_fuente": "iPad Air M4 13\"   256GB      Blue                     No Disponible",
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "iPad Pro 13\" M5 256GB",
-      "costo": 1430.0,
       "proveedor": "em",
       "colores": [
         "Silver"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 5,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "iPad Pro 13\" M5   256GB      Silver     USD1.430,00   No Disponible",
+      "costo": 1430.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "AirPods Max 2 USB-C",
-      "costo": 620.0,
       "proveedor": "em",
       "colores": [
         "Starlight"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 6,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "AirPods Max 2 USB-C             Starlight    USD620,00     No Disponible",
+      "costo": 620.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "AirPods Max 2 USB-C",
-      "costo": 620.0,
       "proveedor": "em",
       "colores": [
         "Purple"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 6,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "AirPods Max 2 USB-C             Purple       USD620,00     No Disponible",
+      "costo": 620.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "Apple Watch Se 3ra Gen 40mm",
-      "costo": 320.0,
       "proveedor": "em",
       "colores": [
         "Starlight Aluminium Case with Starlight Sport Band"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 7,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "Se 3ra Gen        40mm     Starlight Aluminium Case with Starlight Sport Band   USD320,00        No Disponible",
+      "costo": 320.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "Apple Watch Ultra 4 GPS + CELL 49mm",
-      "costo": 900.0,
       "proveedor": "em",
       "colores": [
         "Titanium Black Ti Burgundy Trail Loop"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 7,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "Ultra 4 GPS + CELL    49mm           Titanium Black Ti Burgundy Trail Loop          USD900,00        No Disponible",
+      "costo": 900.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "Apple Watch Ultra 4 GPS + CELL 49mm",
-      "costo": 900.0,
       "proveedor": "em",
       "colores": [
         "Titanium Black Ti Burgundy Alpine Loop"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 7,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "Ultra 4 GPS + CELL    49mm          Titanium Black Ti Burgundy Alpine Loop          USD900,00      No Disponible",
+      "costo": 900.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "Magic Keyboard White (Mac/IPADs/IMAC)",
-      "costo": 90.0,
       "proveedor": "em",
       "colores": [
         "White"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 8,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "Magic Keyboard White (Mac/IPADs/IMAC)                                  White     USD90,00      No Disponible",
+      "costo": 90.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "Magic Mouse 2",
-      "costo": 120.0,
       "proveedor": "em",
       "colores": [
         "silver"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 8,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "Magic Mouse 2                                              silver    USD120,00     No Disponible",
+      "costo": 120.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "MAGIC KEYBOARD 11” Pro M4 / Pro M5",
-      "costo": 400.0,
       "proveedor": "em",
       "colores": [
         "Black"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 8,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "MAGIC KEYBOARD 11” Pro M4 / Pro M5                                    Black     USD400,00     No Disponible",
+      "costo": 400.0,
+      "motivo": "No disponible segun proveedor"
     },
     {
       "nombre": "MAGIC KEYBOARD 12.9” Pro M4 / Pro M5",
-      "costo": 450.0,
       "proveedor": "em",
       "colores": [
         "White"
       ],
       "estado_proveedor": "No Disponible",
       "pagina_fuente": 8,
-      "motivo": "Sin disponibilidad o caja dañada"
+      "texto_fuente": "MAGIC KEYBOARD 12.9” Pro M4 / Pro M5                                   White     USD450,00     No Disponible",
+      "costo": 450.0,
+      "motivo": "No disponible segun proveedor"
     }
   ],
   "dudas_precio": [],
   "promociones_condicionadas": [
     {
       "nombre": "Pencil PRO ( con iPad )",
-      "costo": 150.0,
       "proveedor": "em",
       "colores": [],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Pencil PRO ( con iPad )                                                 USD150,00      Disponible",
+      "costo": 150.0
     },
     {
       "nombre": "Pencil USB C ( con iPad )",
-      "costo": 140.0,
       "proveedor": "em",
       "colores": [],
       "estado_proveedor": "Disponible",
-      "pagina_fuente": 8
+      "pagina_fuente": 8,
+      "texto_fuente": "Pencil USB C ( con iPad )                                                USD140,00      Disponible",
+      "costo": 140.0
     }
   ]
 }
