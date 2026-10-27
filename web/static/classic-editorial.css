@@ -259,7 +259,7 @@ html[data-modo="classic"] .ttra-about-photo { min-height: 490px; position: relat
 html[data-modo="classic"] .ttra-about-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 25%, #111d18b3); }
 html[data-modo="classic"] .ttra-about-photo img { position: absolute; width: 100%; height: 120%; top: -10%; object-fit: cover; filter: saturate(.55); }
 html[data-modo="classic"] .ttra-about-photo > span { position: absolute; z-index: 1; bottom: 32px; left: 32px; color: #fffdf4; font: 600 clamp(30px, 4vw, 55px)/.95 var(--rc-font); letter-spacing: -.05em; }
-html[data-modo="classic"] .ttra-glitch-word { position: relative; display: inline-block; min-width: 1.35em; isolation: isolate; }
+html[data-modo="classic"] .ttra-glitch-word { position: relative; display: inline-block; min-width: .97em; isolation: isolate; }
 html[data-modo="classic"] .ttra-glitch-word::before, html[data-modo="classic"] .ttra-glitch-word::after { content: attr(data-word); position: absolute; inset: 0; opacity: 0; pointer-events: none; }
 html[data-modo="classic"] .ttra-glitch-word.is-glitching { animation: ttra-glitch-shift .42s steps(2, end) both; }
 html[data-modo="classic"] .ttra-glitch-word.is-glitching::before { color: #8be7ee; opacity: .9; clip-path: inset(0 0 53% 0); animation: ttra-glitch-top .42s steps(2, end) both; }

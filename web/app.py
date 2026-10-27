@@ -6149,6 +6149,12 @@ def habilitar_album_bitu(request: Request):
     return JSONResponse({"access": access}, headers={"Cache-Control": "no-store"})
 
 
+@app.get("/blackhole")
+@app.get("/blackhole/")
+def pagina_blackhole():
+    return FileResponse(str(BASE / "static" / "blackhole.html"))
+
+
 @app.get("/bitu")
 @app.get("/bitu/")
 @app.get("/bitu.html")
