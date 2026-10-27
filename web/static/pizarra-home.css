@@ -42,6 +42,15 @@ html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:last-child { margin-to
 /* Barlow Condensed sits its baseline .2em above the box bottom: the dot rests
    on it like a real full stop (the old .3em came from the previous face). */
 html[data-modo="classic"] #ttra-hero-title .ttra-accent::after { bottom: .2em; background: var(--pz-red); }
+/* Título de puntos (tipografía de matriz de partículas): el texto se recorta contra una grilla de puntos
+   que escala con la fuente. El punto final rojo es el ::after del acento, que tapa los puntos del "." */
+html[data-modo="classic"] #ttra-hero-title :is(.ttra-cat-word, .ttra-lit-glyph) {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background: radial-gradient(circle, var(--pz-plate) 0 41%, transparent 50%) 0 0 / .05em .05em;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
 /* The name tag is stuck on the board: same sticker, a touch narrower on phones. */
 html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) {
   width: min(calc(100% - 24px), 330px);
