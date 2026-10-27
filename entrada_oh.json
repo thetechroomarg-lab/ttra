@@ -74,8 +74,8 @@
     },
     {
       "nombre": "NOAX Cafetera Espresso Portatil Noax Express 20 Bar",
-      "costo": 35.30744336569579,
-      "costo_ars": 54550,
+      "costo": 35.372168284789645,
+      "costo_ars": 54650,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -86,8 +86,8 @@
     },
     {
       "nombre": "Noax Compresor Portatil Noax AirGo",
-      "costo": 23.65695792880259,
-      "costo_ars": 36550,
+      "costo": 23.689320388349515,
+      "costo_ars": 36600,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -134,8 +134,8 @@
     },
     {
       "nombre": "Noax Car Play Box",
-      "costo": 16.310679611650485,
-      "costo_ars": 25200,
+      "costo": 16.34304207119741,
+      "costo_ars": 25250,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -146,8 +146,8 @@
     },
     {
       "nombre": "NOAX Transmisor Hdmi Inalámbrico Noax Cnv01 FullHD",
-      "costo": 49.09385113268608,
-      "costo_ars": 75850,
+      "costo": 49.15857605177994,
+      "costo_ars": 75950,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -158,8 +158,8 @@
     },
     {
       "nombre": "Noax Cover Noax Aura",
-      "costo": 8.608414239482201,
-      "costo_ars": 13300,
+      "costo": 8.640776699029127,
+      "costo_ars": 13350,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -170,8 +170,8 @@
     },
     {
       "nombre": "Xiaomi Compresor de Aire Mijia Compact Portable",
-      "costo": 37.47572815533981,
-      "costo_ars": 57900,
+      "costo": 37.54045307443366,
+      "costo_ars": 58000,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -230,8 +230,8 @@
     },
     {
       "nombre": "Xiaomi Mi Portable Air Pump 2",
-      "costo": 43.00970873786408,
-      "costo_ars": 66450,
+      "costo": 43.042071197411005,
+      "costo_ars": 66500,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -242,24 +242,12 @@
     },
     {
       "nombre": "Xiaomi Mi Portable Photo Printer 1S",
-      "costo": 83.23624595469256,
-      "costo_ars": 128600,
+      "costo": 83.36569579288026,
+      "costo_ars": 128800,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
         "Silver"
-      ],
-      "categoria_fuente": "ACCESORIOS",
-      "disponibilidad_fuente": "SI"
-    },
-    {
-      "nombre": "Xiaomi Mi Portable Photo Printer Paper",
-      "costo": 13.171521035598705,
-      "costo_ars": 20350,
-      "tipo_cambio_origen": 1545,
-      "proveedor": "oh",
-      "colores": [
-        "White"
       ],
       "categoria_fuente": "ACCESORIOS",
       "disponibilidad_fuente": "SI"
@@ -321,45 +309,9 @@
       "disponibilidad_fuente": "SI"
     },
     {
-      "nombre": "Xiaomi Wireless Mouse 3",
-      "costo": 16.21359223300971,
-      "costo_ars": 25050,
-      "tipo_cambio_origen": 1545,
-      "proveedor": "oh",
-      "colores": [
-        "Blanco"
-      ],
-      "categoria_fuente": "ACCESORIOS",
-      "disponibilidad_fuente": "SI"
-    },
-    {
-      "nombre": "Xiaomi Aspiradora Robot Xiaomi Robot Vacuum S40C",
-      "costo": 165.3398058252427,
-      "costo_ars": 255450,
-      "tipo_cambio_origen": 1545,
-      "proveedor": "oh",
-      "colores": [
-        "Blanco"
-      ],
-      "categoria_fuente": "ASPIRADORAS",
-      "disponibilidad_fuente": "SI"
-    },
-    {
       "nombre": "Xiaomi Robot Aspirador Xiaomi Robot Vacuum 5 OV31GL",
       "costo": 731.3268608414239,
       "costo_ars": 1129900,
-      "tipo_cambio_origen": 1545,
-      "proveedor": "oh",
-      "colores": [
-        "Blanco"
-      ],
-      "categoria_fuente": "ASPIRADORAS",
-      "disponibilidad_fuente": "SI"
-    },
-    {
-      "nombre": "Xiaomi Robot Vacuum S40",
-      "costo": 197.41100323624596,
-      "costo_ars": 305000,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -381,21 +333,9 @@
       "disponibilidad_fuente": "SI"
     },
     {
-      "nombre": "Haylou HQ5 ANC ENC",
-      "costo": 15.372168284789645,
-      "costo_ars": 23750,
-      "tipo_cambio_origen": 1545,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ],
-      "categoria_fuente": "AURICULARES",
-      "disponibilidad_fuente": "SI"
-    },
-    {
       "nombre": "Haylou Mori Plus",
-      "costo": 25.792880258899675,
-      "costo_ars": 39850,
+      "costo": 25.857605177993527,
+      "costo_ars": 39950,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -406,8 +346,8 @@
     },
     {
       "nombre": "Haylou S40",
-      "costo": 64.27184466019418,
-      "costo_ars": 99300,
+      "costo": 64.36893203883496,
+      "costo_ars": 99450,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -418,8 +358,8 @@
     },
     {
       "nombre": "Haylou S30 Pro",
-      "costo": 45.50161812297735,
-      "costo_ars": 70300,
+      "costo": 45.566343042071196,
+      "costo_ars": 70400,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -442,8 +382,8 @@
     },
     {
       "nombre": "JBL Tune 530BT Wireless",
-      "costo": 46.82847896440129,
-      "costo_ars": 72350,
+      "costo": 46.89320388349515,
+      "costo_ars": 72450,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -466,8 +406,8 @@
     },
     {
       "nombre": "Lenovo Auricular Bt Lenovo Xt62",
-      "costo": 17.831715210355988,
-      "costo_ars": 27550,
+      "costo": 17.864077669902912,
+      "costo_ars": 27600,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -478,8 +418,8 @@
     },
     {
       "nombre": "Noax Auriculares Bluetooth Noax Vox",
-      "costo": 21.003236245954692,
-      "costo_ars": 32450,
+      "costo": 21.035598705501616,
+      "costo_ars": 32500,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -502,8 +442,8 @@
     },
     {
       "nombre": "QCY H3 Lite",
-      "costo": 43.236245954692556,
-      "costo_ars": 66800,
+      "costo": 43.300970873786405,
+      "costo_ars": 66900,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -514,8 +454,8 @@
     },
     {
       "nombre": "Noax Auriculares Inalámbricos Noax View",
-      "costo": 18.673139158576053,
-      "costo_ars": 28850,
+      "costo": 18.705501618122977,
+      "costo_ars": 28900,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -526,8 +466,8 @@
     },
     {
       "nombre": "QCY T13 ANC2",
-      "costo": 26.375404530744337,
-      "costo_ars": 40750,
+      "costo": 26.40776699029126,
+      "costo_ars": 40800,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -538,8 +478,8 @@
     },
     {
       "nombre": "Xiaomi Basic Earphones",
-      "costo": 6.084142394822006,
-      "costo_ars": 9400,
+      "costo": 6.116504854368932,
+      "costo_ars": 9450,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -562,8 +502,8 @@
     },
     {
       "nombre": "Xiaomi Neo Wireless",
-      "costo": 47.73462783171521,
-      "costo_ars": 73750,
+      "costo": 47.799352750809064,
+      "costo_ars": 73850,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -610,8 +550,8 @@
     },
     {
       "nombre": "Noax Camara De Seguridad Interior PTZ A7",
-      "costo": 13.624595469255663,
-      "costo_ars": 21050,
+      "costo": 13.656957928802589,
+      "costo_ars": 21100,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -689,18 +629,6 @@
       "disponibilidad_fuente": "SI"
     },
     {
-      "nombre": "Xiaomi Cargador Xiaomi 90W Hyper Charge Combo USB A",
-      "costo": 24.563106796116504,
-      "costo_ars": 37950,
-      "tipo_cambio_origen": 1545,
-      "proveedor": "oh",
-      "colores": [
-        "Blanco"
-      ],
-      "categoria_fuente": "CARGADORES CABLES ADAPTADORES",
-      "disponibilidad_fuente": "SI"
-    },
-    {
       "nombre": "Xiaomi Cargador Xiaomi Mi 45W Turbo Power USB A MDY-17EF",
       "costo": 17.702265372168284,
       "costo_ars": 27350,
@@ -750,8 +678,8 @@
     },
     {
       "nombre": "Genérico Funda Silicona Joystick PS4",
-      "costo": 2.1359223300970873,
-      "costo_ars": 3300,
+      "costo": 2.168284789644013,
+      "costo_ars": 3350,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -786,8 +714,8 @@
     },
     {
       "nombre": "Kingston Pendrive 128Gb Usb C 3.2 Kingston Data Traveler 70",
-      "costo": 14.919093851132686,
-      "costo_ars": 23050,
+      "costo": 14.951456310679612,
+      "costo_ars": 23100,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [],
@@ -796,8 +724,8 @@
     },
     {
       "nombre": "Generico Mochila Antirrobo 35L",
-      "costo": 14.88673139158576,
-      "costo_ars": 23000,
+      "costo": 14.919093851132686,
+      "costo_ars": 23050,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -847,8 +775,8 @@
     },
     {
       "nombre": "Xtrem Mochila Notebook Xtrem Nebraska 16''",
-      "costo": 29.385113268608414,
-      "costo_ars": 45400,
+      "costo": 29.41747572815534,
+      "costo_ars": 45450,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -920,8 +848,8 @@
     },
     {
       "nombre": "JBL Go 5",
-      "costo": 49.70873786407767,
-      "costo_ars": 76800,
+      "costo": 49.773462783171524,
+      "costo_ars": 76900,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1006,8 +934,8 @@
     },
     {
       "nombre": "SKMEI Reloj Deportivo Skmei 0990",
-      "costo": 24.59546925566343,
-      "costo_ars": 38000,
+      "costo": 24.627831715210355,
+      "costo_ars": 38050,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1030,8 +958,8 @@
     },
     {
       "nombre": "SKMEI Reloj Skmei 1270",
-      "costo": 18.381877022653722,
-      "costo_ars": 28400,
+      "costo": 18.414239482200646,
+      "costo_ars": 28450,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1042,8 +970,8 @@
     },
     {
       "nombre": "SKMEI Reloj Skmei 1548",
-      "costo": 12.524271844660195,
-      "costo_ars": 19350,
+      "costo": 12.556634304207119,
+      "costo_ars": 19400,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1066,8 +994,8 @@
     },
     {
       "nombre": "Xiaomi Mi Band 10",
-      "costo": 45.30744336569579,
-      "costo_ars": 70000,
+      "costo": 45.372168284789645,
+      "costo_ars": 70100,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1102,8 +1030,8 @@
     },
     {
       "nombre": "Haylou LS02 PRO",
-      "costo": 21.132686084142396,
-      "costo_ars": 32650,
+      "costo": 21.16504854368932,
+      "costo_ars": 32700,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1126,8 +1054,8 @@
     },
     {
       "nombre": "Haylou Solar 2 Lite",
-      "costo": 22.33009708737864,
-      "costo_ars": 34500,
+      "costo": 22.362459546925567,
+      "costo_ars": 34550,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1138,8 +1066,8 @@
     },
     {
       "nombre": "Haylou Solar 5",
-      "costo": 42.81553398058252,
-      "costo_ars": 66150,
+      "costo": 42.88025889967638,
+      "costo_ars": 66250,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1150,20 +1078,8 @@
     },
     {
       "nombre": "Haylou Solar Neo 2",
-      "costo": 28.673139158576053,
-      "costo_ars": 44300,
-      "tipo_cambio_origen": 1545,
-      "proveedor": "oh",
-      "colores": [
-        "Negro"
-      ],
-      "categoria_fuente": "SMARTWATCH",
-      "disponibilidad_fuente": "SI"
-    },
-    {
-      "nombre": "Haylou Solar Neo HF008 LS21",
-      "costo": 22.168284789644012,
-      "costo_ars": 34250,
+      "costo": 28.737864077669904,
+      "costo_ars": 44400,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1174,8 +1090,8 @@
     },
     {
       "nombre": "Haylou Vibe LS30",
-      "costo": 31.844660194174757,
-      "costo_ars": 49200,
+      "costo": 31.90938511326861,
+      "costo_ars": 49300,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1186,8 +1102,8 @@
     },
     {
       "nombre": "Haylou Watch Solar Ultra",
-      "costo": 55.98705501618123,
-      "costo_ars": 86500,
+      "costo": 56.05177993527508,
+      "costo_ars": 86600,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1234,8 +1150,8 @@
     },
     {
       "nombre": "Xiaomi Redmi Watch 6 Active",
-      "costo": 43.300970873786405,
-      "costo_ars": 66900,
+      "costo": 42.07119741100323,
+      "costo_ars": 65000,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1246,8 +1162,8 @@
     },
     {
       "nombre": "Xiaomi Watch S5 46mm BHR08IVGL",
-      "costo": 164.95145631067962,
-      "costo_ars": 254850,
+      "costo": 165.17799352750808,
+      "costo_ars": 255200,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1270,8 +1186,8 @@
     },
     {
       "nombre": "Watch ONN Conversor Watch ONN Con Google Tv Full HD",
-      "costo": 53.36569579288026,
-      "costo_ars": 82450,
+      "costo": 53.43042071197411,
+      "costo_ars": 82550,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1282,8 +1198,8 @@
     },
     {
       "nombre": "Watch ONN Watch Onn Stick 4k HDR10+",
-      "costo": 63.49514563106796,
-      "costo_ars": 98100,
+      "costo": 63.592233009708735,
+      "costo_ars": 98250,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1306,8 +1222,8 @@
     },
     {
       "nombre": "Noax EReader Noax Aura",
-      "costo": 111.84466019417475,
-      "costo_ars": 172800,
+      "costo": 112.00647249190939,
+      "costo_ars": 173050,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [
@@ -1328,8 +1244,8 @@
     },
     {
       "nombre": "Genérico TERMO ACERO 1 LITRO / COLOR",
-      "costo": 9.741100323624595,
-      "costo_ars": 15050,
+      "costo": 9.77346278317152,
+      "costo_ars": 15100,
       "tipo_cambio_origen": 1545,
       "proveedor": "oh",
       "colores": [

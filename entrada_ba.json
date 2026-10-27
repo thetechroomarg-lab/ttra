@@ -21,7 +21,7 @@
     {
       "nombre": "NOTEBOOK HP G9 250RT INTEL N150 8GB RAM 256GB SSD 15.6\" HD FREEDOS - ESPAÑOL BZ3K5AT",
       "costo": 370,
-      "stock": 5,
+      "stock": 3,
       "proveedor": "ba",
       "colores": [],
       "estado_proveedor": "disponible",
@@ -83,15 +83,6 @@
       "codigo_proveedor": "B2RWFKG-295US"
     },
     {
-      "nombre": "NOTEBOOK MSI CROSSHAIR 16 GAMING INTEL CORE i9-14900HX 16GB RAM 512GB SSD NVIDIA RTX 5070 8GB 16\" WQXGA 240Hz",
-      "costo": 2025,
-      "stock": 1,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "disponible",
-      "codigo_proveedor": "16HXE14WGK-038US"
-    },
-    {
       "nombre": "MSI RAIDER 18 HX AI A2XWIG-420 GAMING INTEL CORE ULTRA 9 285HX 32GB RAM 1TB SSD NVIDIA RTX 5080 16GB 18\" QHD+ 240Hz",
       "costo": 3410,
       "stock": 1,
@@ -110,15 +101,6 @@
       ],
       "estado_proveedor": "disponible",
       "codigo_proveedor": "CYBORG15B2071"
-    },
-    {
-      "nombre": "NOTEBOOK DELL INSPIRON 15 RYZEN 5-7520U 8GB RAM 512GB SSD 15.6\" FHD",
-      "costo": 630,
-      "stock": 1,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "disponible",
-      "codigo_proveedor": "LDC15255-A391BLK-PUS"
     },
     {
       "nombre": "NOTEBOOK DELL LATITUDE 5430 INTEL CORE I5-1145G7 16GB RAM 256GB SSD 14\" FHD (Reacondicionado)",
@@ -183,6 +165,15 @@
       "codigo_proveedor": "595725"
     },
     {
+      "nombre": "NOTEBOOK LENOVO IDEAPAD SLIM 3 INTEL N150 8GB RAM 128GB SSD 15.6 FHD",
+      "costo": 390,
+      "stock": 2,
+      "proveedor": "ba",
+      "colores": [],
+      "estado_proveedor": "disponible",
+      "codigo_proveedor": "83L7002FUS"
+    },
+    {
       "nombre": "ACER ASPIRE AI COPILOT+ INTEL CORE ULTRA l9 288V 32GB RAM 1TB SSD 14\" WUXGA",
       "costo": 1240,
       "stock": 1,
@@ -203,22 +194,13 @@
     {
       "nombre": "Acer Aspire Go 15 AG15-42P-R917 Ryzen 7 7730U 512GB SSD 16GB 15.6\" (1920x1080) WIN11",
       "costo": 770,
-      "stock": 3,
+      "stock": 2,
       "proveedor": "ba",
       "colores": [
         "PURE SILVER"
       ],
       "estado_proveedor": "disponible",
       "codigo_proveedor": "AG15-42P-R917"
-    },
-    {
-      "nombre": "NOTEBOOK GIGABYTE A16 INTEL CORE i7-13620H 32GB RAM 1TB SSD NVIDIA RTX 5060 8GB 16\" WUXGA 165Hz",
-      "costo": 1770,
-      "stock": 1,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "ENTRANTE",
-      "codigo_proveedor": "CVHI3US864SH"
     },
     {
       "nombre": "NOTEBOOK GIGABYTE A16 PRO INTEL CORE 7 240H 32GB RAM 1TB SSD NVIDIA RTX 5070 Ti 12GB 16\" WQXGA 165Hz",
@@ -263,14 +245,6 @@
       "colores": [],
       "estado_proveedor": "disponible",
       "codigo_proveedor": "558867"
-    },
-    {
-      "nombre": "MINI PC ACEMAGIC KRON K1 AMD RYZEN 7 7730U 16GB RAM 1TB SSD WINDOWS 11",
-      "costo": 670,
-      "stock": 1,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "disponible"
     },
     {
       "nombre": "MONITOR PÓRTATIL AOC 15.6\" FHD 60Hz USB-C IPS ULTRA SLIM 16T20",
@@ -393,6 +367,16 @@
   ],
   "filtrados": [
     {
+      "nombre": "NOTEBOOK MSI CROSSHAIR 16 GAMING INTEL CORE i9-14900HX 16GB RAM 512GB SSD NVIDIA RTX 5070 8GB 16\" WQXGA 240Hz",
+      "costo": 2025,
+      "stock": 0,
+      "proveedor": "ba",
+      "colores": [],
+      "estado_proveedor": "disponible",
+      "codigo_proveedor": "16HXE14WGK-038US",
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
       "nombre": "NOTEBOOK DELL LATITUDE 7330 INTEL CORE I7-1265U 16GB RAM 256GB SSD 13.3\" FHD TACTIL (Reacondicionado)",
       "costo": 525,
       "stock": 0,
@@ -400,27 +384,36 @@
       "colores": [],
       "estado_proveedor": "REFURBISHED",
       "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "NOTEBOOK GIGABYTE A16 INTEL CORE i7-13620H 32GB RAM 1TB SSD NVIDIA RTX 5060 8GB 16\" WUXGA 165Hz",
+      "costo": 1770,
+      "stock": 0,
+      "proveedor": "ba",
+      "colores": [],
+      "estado_proveedor": "disponible",
+      "codigo_proveedor": "CVHI3US864SH",
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "MINI PC ACEMAGIC KRON K1 AMD RYZEN 7 7730U 16GB RAM 1TB SSD WINDOWS 11",
+      "costo": 670,
+      "stock": 0,
+      "proveedor": "ba",
+      "colores": [],
+      "estado_proveedor": "disponible",
+      "motivo": "Sin disponibilidad o caja dañada"
     }
   ],
   "dudas_precio": [
     {
       "nombre": "NOTEBOOK GIGABYTE A16 AMD RYZEN 7 260 16GB 1TB SSD NVIDIA RTX 5060 8GB 16\" WUXGA 165Hz",
       "costo": 1450,
-      "stock": 2,
+      "stock": 0,
       "proveedor": "ba",
       "colores": [],
       "estado_proveedor": "disponible",
       "codigo_proveedor": "3VHK3US894SH",
-      "motivo": "Mismo SKU con costos 1450 y 1560: excluir hasta aclaracion"
-    },
-    {
-      "nombre": "Gigabyte GAMING A16 AMD Ryzen 7 260 1TB SSD 16GB 16\" (1920x1200) 165Hz WIN11 NVIDIA RTX 5060 8192MB BLACK STEEL Backlit Keyboard",
-      "costo": 1560,
-      "stock": 2,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "disponible",
-      "codigo_proveedor": "A16 3VHK3US894SH",
       "motivo": "Mismo SKU con costos 1450 y 1560: excluir hasta aclaracion"
     }
   ],
