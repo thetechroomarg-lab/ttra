@@ -2,6 +2,15 @@
 // latido sub-grave, viento de ruido y una melodía chiptune cuantizada a 32 niveles ("32 bits"),
 // con eco y reverb. Loop infinito sobre cuatro acordes: Dm - Bb - Gm - Am.
 (() => {
+  // La pantalla es un viaje: el sonido nace casi inaudible, sube mientras la cámara cae hacia el
+  // horizonte de sucesos y se apaga del todo en el punto de no retorno (blackhole.js lo lee).
+  const DURACION = 45;
+  const viaje = window.blackholeViaje = {
+    activo: true,
+    movil: matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 900,
+    duracion: DURACION,
+    t0: performance.now(),
+  };
   const Contexto = window.AudioContext || window.webkitAudioContext;
   if (!Contexto) return;
   const ctx = new Contexto();
@@ -178,7 +187,23 @@
     agendar();
     timer = setInterval(agendar, 1000);
     master.gain.setValueAtTime(0, ctx.currentTime);
+    if (viaje.activo) { volumenDelViaje(); return; }
     master.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 6);
+  }
+  // Volumen del viaje: 0.05 al inicio, 0.8 a los 4/5 del recorrido y 0.6 al cruzar el horizonte; adentro
+  // se queda ahí y la música sigue en loop hasta que el usuario toca la pantalla. Si el sonido
+  // arrancó tarde (iOS espera un toque) se retoma desde donde va la imagen.
+  function volumenDelViaje() {
+    const puntos = [[0, 0.05], [DURACION * 0.8, 0.8], [DURACION, 0.6]];
+    const s = (performance.now() - viaje.t0) / 1000;
+    const ahora = ctx.currentTime;
+    master.gain.cancelScheduledValues(ahora);
+    const i = puntos.findIndex((p) => p[0] > s);
+    if (i < 0) { master.gain.setValueAtTime(0.6, ahora); return; }
+    const [t1, v1] = i ? puntos[i - 1] : puntos[0];
+    const [t2, v2] = puntos[i];
+    master.gain.setValueAtTime(i ? v1 + (v2 - v1) * ((s - t1) / (t2 - t1)) : v1, ahora);
+    for (let k = i; k < puntos.length; k++) master.gain.linearRampToValueAtTime(puntos[k][1], ahora + puntos[k][0] - s);
   }
   // Si el navegador no deja sonar sin un gesto, queda esperando: el primer toque lo habilita.
   function intentar() {

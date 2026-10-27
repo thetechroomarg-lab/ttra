@@ -1,0 +1,6 @@
+/* Solo tema + utilidades: sin preflight, para no pisar los estilos de la página. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+/* La página es siempre clara: el dock no sigue el modo oscuro del sistema. */
+@custom-variant dark (&:where([data-ttra-dark] *));

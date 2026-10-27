@@ -12,11 +12,31 @@
     /* Toda la pantalla es el botón de volver: sin controles visibles. */
     #agujero { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     /* Si WebGL no está disponible queda un agujero negro con halo estático. */
+    /* Adentro del horizonte: spiral slider de personas con la pregunta en el medio. */
+    #humanidad { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 6s ease-in-out; cursor: pointer; }
+    #humanidad.visible { opacity: 1; pointer-events: auto; }
+    /* Celular en vertical: toda la escena (agujero, fondo, spiral y frase) va de costado, igual que el shader;
+       para verla derecha hay que poner el teléfono en horizontal. */
+    @media (pointer: coarse) and (orientation: portrait) and (max-width: 900px) {
+      #humanidad { inset: auto; top: 0; left: 100%; width: 100dvh; height: 100dvw; transform-origin: top left; transform: rotate(90deg); }
+    }
+    #fondo { position: absolute; inset: 0; }
+    #spiral { position: absolute; inset: 0; }
+    /* La pregunta va en el medio del carrusel y aparece 5 segundos despues que el spiral y el fondo (que aparecen juntos, en un fade lento de 6 s). */
+    #humanidad p { position: absolute; inset: 0; z-index: 2; margin: 0; display: flex; align-items: center; justify-content: center; padding: 0 20px; box-sizing: border-box; text-align: center; pointer-events: none; color: #fff; text-shadow: 0 0 22px #000, 0 0 48px #000; font: 600 clamp(26px, 6vw, 56px)/1.1 system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif; letter-spacing: .02em; opacity: 0; transition: opacity 2s ease; }
+    #humanidad.visible p { opacity: 1; transition: opacity 2.5s ease 5s; }
     body.sin-webgl { background: radial-gradient(circle at 50% 50%, #000 0 11%, #ffd27a 12%, #d97a12 16%, #2a1202 32%, #000 52%); }
   </style>
 </head>
 <body>
   <canvas id="agujero" role="link" aria-label="Agujero negro. Tocá la pantalla para volver al inicio"></canvas>
+  <div id="humanidad">
+    <div id="fondo"></div>
+    <div id="spiral"></div>
+    <p>¿Cuál es tu realidad?</p>
+  </div>
+  <link rel="stylesheet" href="/blackhole-slider/slider.css">
+  <script src="/blackhole-slider/slider.js" defer></script>
   <script src="/blackhole-audio.js"></script>
   <script src="/blackhole.js"></script>
 </body>
