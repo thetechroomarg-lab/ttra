@@ -242,6 +242,12 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
   html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:first-child { font-size: calc(100cqi / 4.18 * .985); }
   html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:last-child { font-size: calc(100cqi / 3.53 * .985); }
   html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) { width: min(100%, 380px); margin: 0 0 0 6px; }
+  /* El dock fijo (112px) tapaba el carrusel de marcas en la primera pantalla: título y sticker se achican según el alto de pantalla para que el hero termine sobre el dock. */
+  html[data-modo="classic"] .ttra-hero { --hero-copy-max: clamp(330px, calc(96.8dvh - 430px), 100cqi); }
+  html[data-modo="classic"] .ttra-hero-copy { padding-block: 24px 24px; gap: 20px; }
+  html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:first-child { font-size: calc(min(100cqi, var(--hero-copy-max)) / 4.18 * .985); }
+  html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:last-child { font-size: calc(min(100cqi, var(--hero-copy-max)) / 3.53 * .985); }
+  html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) { width: min(100%, 380px, calc(var(--hero-copy-max) * .69)); }
   html[data-modo="classic"] .ttra-pizarra { align-content: stretch; padding: 0; border-left: 2px solid var(--pz-gap); }
   html[data-modo="classic"] .ttra-pz-destacado { grid-template-rows: auto 1fr; }
   html[data-modo="classic"] .ttra-pz-rows { grid-auto-rows: 1fr; }

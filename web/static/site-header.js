@@ -263,18 +263,40 @@
       const text = document.createElement('span');
       text.className = 'ttra-dock-label'; text.textContent = label; control.append(text);
     }
-    // Pointer proximity reproduces the dock magnification without a framework.
+    // Magnetic dock: cada control crece según la cercanía del mouse, con física de resorte
+    // (mismos valores que el componente magnetic-dock: 150px de alcance, escala máx. 1.33, para que quepa dentro de la barra).
     const controls = [...dock.querySelectorAll('.ttra-dock-control')];
-    const reset = () => controls.forEach(control => control.style.removeProperty('--dock-lift'));
+    const MAX_SCALE = 1.33, REACH = 150, STIFFNESS = 300, DAMPING = 20, MASS = 0.5;
+    const springs = controls.map(() => ({s: 1, v: 0, target: 1}));
+    let mouseX = Infinity, frame = 0, last = 0;
+    const aim = () => controls.forEach((control, i) => {
+      const rect = control.getBoundingClientRect();
+      const d = Math.min(Math.abs(mouseX - (rect.left + rect.width / 2)), REACH);
+      springs[i].target = 1 + (MAX_SCALE - 1) * (1 - d / REACH);
+    });
+    const step = (now) => {
+      const dt = Math.min((now - (last || now)) / 1000, 1 / 30);
+      last = now;
+      let moving = false;
+      controls.forEach((control, i) => {
+        const spring = springs[i];
+        spring.v += ((STIFFNESS * (spring.target - spring.s) - DAMPING * spring.v) / MASS) * dt;
+        spring.s += spring.v * dt;
+        if (Math.abs(spring.target - spring.s) < 0.001 && Math.abs(spring.v) < 0.01) { spring.s = spring.target; spring.v = 0; }
+        else moving = true;
+        control.style.setProperty('--dock-scale', spring.s.toFixed(3));
+      });
+      frame = moving ? requestAnimationFrame(step) : 0;
+      if (!moving) last = 0;
+    };
+    const kick = () => { if (!frame) frame = requestAnimationFrame(step); };
     dock.addEventListener('pointermove', event => {
       if (event.pointerType !== 'mouse' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      for (const control of controls) {
-        const rect = control.getBoundingClientRect();
-        const distance = Math.abs(event.clientX - rect.left - rect.width / 2);
-        control.style.setProperty('--dock-lift', Math.max(0, 1 - distance / 100).toFixed(3));
-      }
+      mouseX = event.clientX;
+      aim();
+      kick();
     });
-    dock.addEventListener('pointerleave', reset);
+    dock.addEventListener('pointerleave', () => { mouseX = Infinity; aim(); kick(); });
   }
   const rate = document.createElement('span');
   rate.className = 'ttra-site-rate';
