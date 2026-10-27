@@ -959,3 +959,26 @@ def test_descuento_reservado_se_consume_recien_al_enviar_el_recibo(monkeypatch):
     # Se cerró el premio (vuelve a 0) y esta misma compra suma su sello.
     assert actualizado["fidelidad_ultimo_codigo"] is None
     assert actualizado["sellos_fidelidad"] == 1
+
+
+def test_admin_muestra_cada_item_y_el_descuento_como_renglones(monkeypatch):
+    c = _cliente_logueado(monkeypatch)
+    fake = appmod.get_client()
+    cliente = fake.table("clientes").select("*").eq("email", "juan@x.com").execute().data[0]
+    fake.table("pedidos").insert({
+        "id": "con-cupon", "cliente_id": cliente["id"], "productos": ["iPhone 15"],
+        "fecha_entrega": "2026-08-20", "recibo_id": "TTRA-CUPON001",
+        "recibo_enviado_en": "2026-08-20T15:00:00+00:00",
+        "detalle": [{"nombre": "iPhone 15", "color": "Negro", "cantidad": 1,
+                     "usd_unitario": 500, "usd_subtotal": 500, "proveedor": "az"}],
+        "descuento_usd": 20, "total_usd": 480,
+    }).execute()
+
+    r = c.get("/admin/clientes?fecha_pedidos=2026-08-20")
+
+    assert "iPhone 15 · Negro × 1" in r.text
+    assert "U$D 500" in r.text
+    assert "Descuento por cupón (sellos, referidos o mailing)" in r.text
+    assert "−U$D 20" in r.text
+    assert "Total con descuentos" in r.text
+    assert "U$D 480" in r.text
