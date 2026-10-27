@@ -83,6 +83,35 @@ def _formatear_entero_ar(valor):
     return f"{int(valor):,}".replace(",", ".")
 
 
+def descuentos_pedido(pedido):
+    """Descuentos del pedido como renglones (rótulo, monto positivo).
+
+    El pedido guarda un solo descuento_usd (cantidad + cupón); el de cantidad
+    se recalcula con la misma regla de la web (2 a 5 unidades US$5 c/u, 6 o más
+    US$7,5 c/u) y lo que sobra es el cupón. Sin detalle guardado no hay renglones.
+    """
+    detalle = pedido.get("detalle") or []
+    descuento = float(pedido.get("descuento_usd") or 0)
+    if not detalle or descuento <= 0:
+        return []
+    unidades = sum(
+        int(i.get("cantidad") or 0) for i in detalle
+        if i.get("proveedor") != "envío" and i.get("tipo") != "regalo_promocional"
+        and float(i.get("usd_unitario") or 0) > 0
+    )
+    por_cantidad = 0.0
+    if pedido.get("modo_precio", "minorista") == "minorista":
+        por_cantidad = 7.5 * unidades if unidades >= 6 else 5.0 * unidades if unidades >= 2 else 0.0
+    por_cantidad = min(por_cantidad, descuento)
+    cupon = round(descuento - por_cantidad, 2)
+    filas = []
+    if por_cantidad:
+        filas.append((f"Descuento por cantidad ({unidades} unidades)", por_cantidad))
+    if cupon > 0:
+        filas.append(("Descuento por cupón (sellos, referidos o mailing)", cupon))
+    return filas
+
+
 def _query_maps(direccion, lat, lng):
     # Con coordenadas exactas (geolocalización del cliente al pedir, o el
     # punto elegido en el autocomplete) el link va directo a la casa puntual

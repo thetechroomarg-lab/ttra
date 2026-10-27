@@ -52,6 +52,7 @@ from web.ui_helpers import (
     _ICONO_TACHO,
     _cadete_activo,
     _clientes_admin_activo,
+    descuentos_pedido,
     _formatear_entero_ar,
     _formatear_fecha_ar,
     _json_para_script,
@@ -2481,6 +2482,14 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                          f'<span>{pagos_entrega.formatear(item.get("usd_subtotal") or 0)}</span><small>Proveedor: {proveedor}</small></li>')
         if not filas:
             filas = [f'<li><span>{html.escape(nombre)}</span></li>' for nombre in pedido.get("productos") or []]
+        # Cada descuento va como renglón propio, y el total ya descontado al final.
+        descuentos = descuentos_pedido(pedido)
+        for rotulo, monto in descuentos:
+            filas.append(f'<li class="entrega-descuento"><span>{html.escape(rotulo)}</span>'
+                         f'<span>−{pagos_entrega.formatear(monto)}</span></li>')
+        if descuentos and pedido.get("total_usd") is not None:
+            filas.append(f'<li class="entrega-total"><strong>Total con descuentos</strong>'
+                         f'<strong>{pagos_entrega.formatear(pedido["total_usd"])}</strong></li>')
         return '<ul class="entrega-productos">' + ''.join(filas) + '</ul>'
 
     def _tarjeta_pedido(pedido):
@@ -2533,8 +2542,8 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
                 if observaciones else ""
             )
             return (
-                f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{html.escape(nombre_cliente)}</strong> · '
-                f'{html.escape(descripcion)} · U$D {_formatear_entero_ar(pedido.get("total_usd"))}<br><span class="estado-recibo">'
+                f'<div class="pedido-historico" data-busqueda-historial="{busqueda}"><strong>{html.escape(nombre_cliente)}</strong>'
+                f'{_productos_entrega(pedido) if pedido.get("detalle") else " · " + html.escape(descripcion) + " · U$D " + _formatear_entero_ar(pedido.get("total_usd")) + "<br>"}<span class="estado-recibo">'
                 f'{estado}</span>{detalle_obs}{_leyenda_visto(pedido)}{acciones}'
                 f'{pagos_entrega.resumen_html(pedido.get("total_usd"), cotizacion_entregas) if not pedido.get("recibo_enviado_en") else ""}'
                 f'{"".join("<p>" + html.escape(linea) + "</p>" for linea in pagos_entrega.lineas_recibo(pedido))}</div>'
