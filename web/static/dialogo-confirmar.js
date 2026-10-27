@@ -70,9 +70,9 @@
   }
 
   // Pregunta con Aceptar / Cancelar. Resuelve true si acepta.
-  window.TTRAConfirmar = async function TTRAConfirmar({ etiqueta, titulo, texto, aceptar = "Aceptar", cancelar = "Cancelar" }) {
+  window.TTRAConfirmar = async function TTRAConfirmar({ etiqueta, titulo, texto, contenido, clase, aceptar = "Aceptar", cancelar = "Cancelar" }) {
     const valor = await mostrar({
-      etiqueta, titulo, texto,
+      etiqueta, titulo, texto, contenido, clase,
       botones: [{ texto: cancelar, value: "cancelar" }, { texto: aceptar, value: "aceptar" }],
     });
     return valor === "aceptar";

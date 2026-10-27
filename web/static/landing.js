@@ -2436,6 +2436,29 @@ function formatearKmEnvio(km) {
   return Number(km).toLocaleString("es-AR", { maximumFractionDigits: 1 });
 }
 
+// Último paso antes de guardar: una vez confirmado el pedido no se modifica.
+function confirmarEquipoElegido() {
+  const cuerpo = document.createElement("div");
+  cuerpo.className = "ttra-dialogo-cuerpo";
+  [
+    ["¿Estás 100% segurx del equipo que elegiste (modelo, color y almacenamiento)?"],
+    ["Una vez confirmado, ", ["strong", "no se puede modificar ni cancelar el pedido"], "."],
+    ["Si necesitás más tiempo para pensarlo o consultar algo, no hay problema, tomate el tiempo que necesites."],
+    [["strong", "¿Avanzamos?"]],
+  ].forEach((partes) => {
+    const p = document.createElement("p");
+    p.className = "ttra-dialogo-texto";
+    partes.forEach((parte) => {
+      if (typeof parte === "string") return p.append(parte);
+      const negrita = document.createElement(parte[0]);
+      negrita.textContent = parte[1];
+      p.append(negrita);
+    });
+    cuerpo.append(p);
+  });
+  return TTRAConfirmar({ titulo: "Antes de avanzar", contenido: cuerpo, aceptar: "Sí", cancelar: "No todavía" });
+}
+
 async function confirmarPedidoCarrito(carrito) {
   if (!catalogoListo) return false;
   if (confirmandoPedido || !carrito.length) return false;
@@ -2447,6 +2470,13 @@ async function confirmarPedidoCarrito(carrito) {
   if (!mensaje) return false;
   const envioUsd = await confirmarCostoEnvio(coordsDireccionEntregaActual);
   if (envioUsd === null) return false;
+  if (!(await confirmarEquipoElegido())) {
+    vaciarCarrito();
+    borrarCheckoutPendiente();
+    borrarDescuentoMailing();
+    borrarRegaloPromo();
+    return false;
+  }
   const boton = document.getElementById("btn-whatsapp");
   confirmandoPedido = true;
   boton.disabled = true;
