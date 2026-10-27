@@ -5,11 +5,13 @@
   const volver = () => location.assign('/');
   // Si el navegador bloqueó el sonido (iOS/Safari), el primer toque lo habilita y el segundo vuelve.
   let tocado = false;
-  canvas.addEventListener('click', () => {
+  const alTocar = () => {
     const sonido = window.blackholeAudio;
     if (sonido && !tocado && sonido.necesitaGesto()) { tocado = true; sonido.habilitar(); return; }
     if (sonido) sonido.salir(volver); else volver();
-  });
+  };
+  canvas.addEventListener('click', alTocar);
+  document.getElementById('humanidad').addEventListener('click', alTocar);
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') volver(); });
 
   const vertex = `attribute vec2 a_position;
@@ -21,6 +23,9 @@ void main() { gl_Position = vec4(a_position, 0., 1.); }`;
   const fragment = `precision highp float;
 uniform vec2 u_resolution;
 uniform float u_time;
+uniform float u_zoom;
+uniform float u_fundido;
+uniform float u_movil;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
 
@@ -119,10 +124,14 @@ vec4 ribbon(vec2 p, float time, vec2 radius, float roll, float phase, float thic
 
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution;
-  float aspect = u_resolution.x / max(u_resolution.y, 1.0);
+  vec2 res = u_resolution;
+  // En celular vertical la escena se dibuja de costado: para verla derecha hay que girar el teléfono.
+  if (u_movil > 0.5 && res.x < res.y) { uv = vec2(1.0 - uv.y, uv.x); res = res.yx; }
+  float aspect = res.x / max(res.y, 1.0);
   vec2 p = (uv - 0.5) * vec2(aspect, 1.0);
   // En vertical se aleja la cámara para que la órbita entre en pantalla.
   p *= max(1.0, 0.95 / aspect);
+  p /= u_zoom;
   float time = u_time;
 
   // Domain warp suave: líquido, no mecánico.
@@ -149,6 +158,7 @@ void main() {
   float mask = clamp(dot(col, vec3(0.33)) * 3.0, 0.0, 1.0);
   col += (hash(gl_FragCoord.xy + time * 40.0) - 0.5) * 0.06 * 0.45 * mask;
 
+  col *= 1.0 - u_fundido;
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
 
@@ -179,6 +189,56 @@ void main() {
   gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
   const uResolution = gl.getUniformLocation(program, 'u_resolution');
   const uTime = gl.getUniformLocation(program, 'u_time');
+  const uZoom = gl.getUniformLocation(program, 'u_zoom');
+  const uFundido = gl.getUniformLocation(program, 'u_fundido');
+  const uMovil = gl.getUniformLocation(program, 'u_movil');
+  // Viaje: la cámara cae lento hacia el horizonte de sucesos (45 s) y la pantalla queda negra en el
+  // punto de no retorno. Adentro aparece el spiral slider con la pregunta y a los 10 s vuelve al inicio.
+  const viaje = window.blackholeViaje && window.blackholeViaje.activo ? window.blackholeViaje : null;
+  gl.uniform1f(uMovil, viaje && viaje.movil ? 1 : 0);
+  let recorrido = 0;
+  let terminado = false;
+
+  // Adentro del horizonte: personas de todo el mundo (Wikimedia Commons, licencias libres; créditos en
+  // /humanidad/creditos.json) en el spiral slider, con la pregunta debajo. Adentro no termina nunca: el spiral gira y la música sigue en loop hasta que el usuario toca la pantalla.
+  let parado = false;
+  let humanidad = null;
+  let listo = false;
+  let fotosListas = null;
+  let montado = false;
+  function prepararHumanidad() {
+    humanidad = document.getElementById('humanidad');
+    // Las fotos se precargan antes de montar: así el fondo y el spiral aparecen juntos, sin que uno llegue antes.
+    fetch('/humanidad/creditos.json').then((r) => r.json()).then((fotos) => {
+      const items = fotos.map((f) => ({ src: '/humanidad/' + f.archivo, alt: f.titulo }));
+      return Promise.all(items.map((item) => new Promise((resolver) => {
+        const img = new Image();
+        img.onload = img.onerror = resolver;
+        img.src = item.src;
+      }))).then(() => { fotosListas = items; });
+    }).catch(() => { listo = true; });
+  }
+  // Se monta tarde (el shader del agujero sigue dibujando) y con el contenedor ya con su tamaño final:
+  // por eso #humanidad no usa "hidden", queda transparente hasta que se le agrega .visible.
+  function montarHumanidad() {
+    montado = true;
+    const slider = window.TTRABlackholeSlider;
+    if (!slider) { listo = true; return; }
+    slider.montar(document.getElementById('spiral'), fotosListas, document.getElementById('fondo'));
+    // Dos cuadros para que el canvas ya haya dibujado antes del fundido.
+    requestAnimationFrame(() => requestAnimationFrame(() => { listo = true; }));
+  }
+  function mostrarHumanidad(esperado = 0) {
+    if (!humanidad) prepararHumanidad();
+    if (!montado && fotosListas) montarHumanidad();
+    // Si las fotos todavía bajan, se espera (hasta 10 s) en negro.
+    if (!listo && esperado < 10000) { setTimeout(() => mostrarHumanidad(esperado + 250), 250); return; }
+    requestAnimationFrame(() => humanidad.classList.add('visible'));
+    // El shader ya no se ve: se deja de dibujar para que el slider tenga toda la GPU del celular.
+    parado = true;
+    const perdida = gl.getExtension('WEBGL_lose_context');
+    if (perdida) perdida.loseContext();
+  }
 
   // Tope de 1.5x de densidad de píxeles: el shader es pesado y a pantalla completa en un celular alcanza.
   function resize() {
@@ -197,12 +257,24 @@ void main() {
   // El tiempo avanza con delta acotado: al volver de otra pestaña no pega un salto.
   function frame(now) {
     cuadro = 0;
+    if (parado) return;
     if (previo) transcurrido += Math.min((now - previo) / 1000, 0.05) * (reducido.matches ? 0.25 : 1);
+    if (viaje && previo && !terminado) recorrido += Math.min((now - previo) / 1000, 0.25);
     previo = now;
     resize();
+    const avance = viaje ? Math.min(recorrido / viaje.duracion, 1) : 0;
+    const fundido = Math.min(Math.max((avance - 0.9) / 0.08, 0), 1);
+    gl.uniform1f(uZoom, Math.exp(Math.log(10) * Math.pow(avance, 1.4)));
+    gl.uniform1f(uFundido, fundido * fundido * (3 - 2 * fundido));
     gl.uniform2f(uResolution, canvas.width, canvas.height);
     gl.uniform1f(uTime, transcurrido);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+    if (avance >= 0.4 && !humanidad) prepararHumanidad();
+    if (avance >= 0.8 && fotosListas && !montado) montarHumanidad();
+    if (avance >= 1 && !terminado) {
+      terminado = true;
+      setTimeout(() => mostrarHumanidad(), 900);
+    }
     if (!document.hidden) cuadro = requestAnimationFrame(frame);
   }
   function arrancar() {
