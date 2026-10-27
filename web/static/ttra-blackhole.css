@@ -1,0 +1,9 @@
+/* Última sección de la home: entrada a la pantalla /blackhole. Solo el texto, sin marco. */
+html[data-modo="classic"] .ttra-blackhole { margin: 0 var(--ed-gutter); padding: 0; } /* mismo borde izquierdo que el módulo "Estrés?" */
+html[data-modo="classic"] .ttra-blackhole-link {
+  display: block; padding: clamp(56px, 10vw, 120px) 0;
+  color: var(--pz-plate, #ecebe4); text-decoration: none; text-align: left;
+  font: 700 clamp(44px, 8vw, 96px)/.9 var(--pz-font, inherit); text-transform: uppercase; letter-spacing: -.01em;
+}
+html[data-modo="classic"] .ttra-blackhole-link:is(:hover, :focus-visible) { color: #ffc23a; }
+html[data-modo="classic"] .ttra-blackhole-link:focus-visible { outline: 2px solid var(--ed-accent, #d52f27); outline-offset: 6px; }
