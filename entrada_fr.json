@@ -2,10 +2,11 @@
   "items": [
     {
       "nombre": "iPhone 15 128GB",
-      "costo": 740,
+      "costo": 730,
       "proveedor": "fr",
       "colores": [
-        "Blue"
+        "Blue",
+        "Black"
       ]
     },
     {
@@ -37,14 +38,13 @@
       "costo": 980,
       "proveedor": "fr",
       "colores": [
-        "Black",
         "Lavander",
         "Sage"
       ]
     },
     {
-      "nombre": "iPhone 17 Pro 256GB",
-      "costo": 1250,
+      "nombre": "iPhone 17 Pro 512GB",
+      "costo": 1450,
       "proveedor": "fr",
       "colores": [
         "Silver"
@@ -60,26 +60,26 @@
     },
     {
       "nombre": "iPhone 18 Pro 256GB",
-      "costo": 1370,
+      "costo": 1340,
       "proveedor": "fr",
       "colores": [
         "Black",
         "Blue Glaciar",
+        "Silver",
         "Burgundy"
       ]
     },
     {
       "nombre": "iPhone 18 Pro Max 256GB",
-      "costo": 1620,
+      "costo": 1580,
       "proveedor": "fr",
       "colores": [
-        "Black",
-        "Burgundy"
+        "Black"
       ]
     },
     {
       "nombre": "iPhone 18 Pro Max 256GB",
-      "costo": 1570,
+      "costo": 1550,
       "proveedor": "fr",
       "colores": [
         "Silver"
@@ -87,7 +87,7 @@
     },
     {
       "nombre": "iPhone 18 Pro Max 256GB",
-      "costo": 1640,
+      "costo": 1600,
       "proveedor": "fr",
       "colores": [
         "Blue Glaciar"
@@ -95,32 +95,15 @@
     },
     {
       "nombre": "iPhone 18 Pro Max 512GB",
-      "costo": 1850,
+      "costo": 1830,
       "proveedor": "fr",
       "colores": [
-        "Silver",
-        "Black"
-      ]
-    },
-    {
-      "nombre": "iPhone 18 Pro Max 512GB",
-      "costo": 1910,
-      "proveedor": "fr",
-      "colores": [
-        "Burgundy"
+        "Consultar Colores"
       ]
     },
     {
       "nombre": "iPhone 11 Pro 64GB CPO",
       "costo": 350,
-      "proveedor": "fr",
-      "colores": [
-        "Black"
-      ]
-    },
-    {
-      "nombre": "iPhone 13 128GB CPO",
-      "costo": 500,
       "proveedor": "fr",
       "colores": [
         "Black"
@@ -214,6 +197,22 @@
       ]
     },
     {
+      "nombre": "Apple Watch Series 11 42 mm GPS – Aluminum Case",
+      "costo": 400,
+      "proveedor": "fr",
+      "colores": [
+        "Rose Gold"
+      ]
+    },
+    {
+      "nombre": "Apple Watch Series 11 46 mm GPS – Aluminum Case",
+      "costo": 430,
+      "proveedor": "fr",
+      "colores": [
+        "Rose Gold"
+      ]
+    },
+    {
       "nombre": "Apple Watch Ultra 3 CEL + GPS 49 mm",
       "costo": 800,
       "proveedor": "fr",
@@ -222,11 +221,11 @@
       ]
     },
     {
-      "nombre": "Apple Watch Ultra 4 CEL + GPS 49 mm",
-      "costo": 900,
+      "nombre": "iPad Air 11″ M4 Wi-Fi 256GB 2026",
+      "costo": 940,
       "proveedor": "fr",
       "colores": [
-        "Black - Black"
+        "Blue"
       ]
     },
     {
@@ -241,15 +240,23 @@
     },
     {
       "nombre": "iPad 11ª Generación A16 – 256GB Wi-Fi",
-      "costo": 620,
+      "costo": 610,
       "proveedor": "fr",
       "colores": [
         "Blue"
       ]
     },
     {
+      "nombre": "MacBook Air M5 15 pulgadas – 16GB RAM / 512GB SSD",
+      "costo": 1600,
+      "proveedor": "fr",
+      "colores": [
+        "Midnight"
+      ]
+    },
+    {
       "nombre": "MacBook Air M5 13 pulgadas – 16GB RAM / 512GB SSD",
-      "costo": 1440,
+      "costo": 1420,
       "proveedor": "fr",
       "colores": [
         "Midnight",
@@ -314,25 +321,63 @@
       "colores": []
     },
     {
-      "nombre": "Samsung S26 Ultra 5G 12GB 256GB",
-      "costo": 1020,
+      "nombre": "Samsung S26 Ultra 5G 12GB 512GB",
+      "costo": 1150,
       "proveedor": "fr",
-      "colores": []
+      "colores": [
+        "Sky Blue"
+      ]
+    },
+    {
+      "nombre": "Samsung S26 Ultra 5G 12GB 256GB",
+      "costo": 1010,
+      "proveedor": "fr",
+      "colores": [
+        "Sky Blue",
+        "Violet",
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung S26 5G 12GB 256GB",
+      "costo": 750,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
+    },
+    {
+      "nombre": "Samsung S26 5G 12GB 512GB",
+      "costo": 890,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ]
     },
     {
       "nombre": "Samsung S26 FE 5G 8GB 512GB",
       "costo": 965,
       "proveedor": "fr",
       "colores": [
-        "Black"
+        "Graphite"
       ]
     },
     {
       "nombre": "Samsung S25 Ultra 5G 12GB 512GB",
-      "costo": 930,
+      "costo": 920,
       "proveedor": "fr",
       "colores": [
-        "white"
+        "Gray",
+        "Black"
+      ]
+    },
+    {
+      "nombre": "Samsung S25 Ultra 5G 12GB 256GB",
+      "costo": 840,
+      "proveedor": "fr",
+      "colores": [
+        "Silverblue",
+        "Whitesilver"
       ]
     },
     {
@@ -358,12 +403,12 @@
       "costo": 630,
       "proveedor": "fr",
       "colores": [
-        "White"
+        "Navy"
       ]
     },
     {
       "nombre": "Samsung S25 FE 5G 8GB 256GB",
-      "costo": 590,
+      "costo": 580,
       "proveedor": "fr",
       "colores": [
         "Navy",
@@ -373,10 +418,11 @@
     },
     {
       "nombre": "Samsung A57 5G 8GB 256GB",
-      "costo": 430,
+      "costo": 425,
       "proveedor": "fr",
       "colores": [
-        "Navy"
+        "Navy",
+        "Gray"
       ]
     },
     {
@@ -386,6 +432,14 @@
       "colores": [
         "Black",
         "Oliva"
+      ]
+    },
+    {
+      "nombre": "Samsung A56 5G 8GB 128GB",
+      "costo": 365,
+      "proveedor": "fr",
+      "colores": [
+        "Graphite"
       ]
     },
     {
@@ -402,14 +456,6 @@
       "proveedor": "fr",
       "colores": [
         "Awesone Charcoal"
-      ]
-    },
-    {
-      "nombre": "Samsung A36 5G 8GB 128GB",
-      "costo": 305,
-      "proveedor": "fr",
-      "colores": [
-        "Black"
       ]
     },
     {
@@ -442,17 +488,17 @@
       "costo": 215,
       "proveedor": "fr",
       "colores": [
-        "Black"
+        "Black",
+        "gris"
       ]
     },
     {
       "nombre": "Samsung A17 4GB 128GB",
-      "costo": 175,
+      "costo": 178,
       "proveedor": "fr",
       "colores": [
-        "Black",
-        "Blue",
-        "Gray"
+        "Grey",
+        "Black"
       ]
     },
     {
@@ -567,7 +613,7 @@
       ]
     },
     {
-      "nombre": "Moto Edge 70 Fusión 5G 8GB 256GB",
+      "nombre": "Moto Edge 70 Fusion 5G 8GB 256GB",
       "costo": 384,
       "proveedor": "fr",
       "colores": [
@@ -618,7 +664,7 @@
       ]
     },
     {
-      "nombre": "Moto G17 256GB 4GB",
+      "nombre": "Moto G17 4GB 256GB",
       "costo": 194,
       "proveedor": "fr",
       "colores": [
@@ -670,8 +716,8 @@
       ]
     },
     {
-      "nombre": "Moto G35 5G 256GB 4GB",
-      "costo": 181,
+      "nombre": "Moto G35 5G 4GB 256GB",
+      "costo": 180,
       "proveedor": "fr",
       "colores": [
         "Black"
@@ -683,6 +729,14 @@
       "proveedor": "fr",
       "colores": [
         "Blue"
+      ]
+    },
+    {
+      "nombre": "Moto G15 4GB 256GB",
+      "costo": 162,
+      "proveedor": "fr",
+      "colores": [
+        "Grey"
       ]
     },
     {
@@ -713,7 +767,7 @@
       ]
     },
     {
-      "nombre": "Moto G04S 256GB 4GB",
+      "nombre": "Moto G04s 4GB 256GB",
       "costo": 140,
       "proveedor": "fr",
       "colores": [
@@ -722,7 +776,7 @@
       ]
     },
     {
-      "nombre": "Moto E15 2GB 64GB con Cargador",
+      "nombre": "Moto E15 2GB 64GB – Con cargador",
       "costo": 128,
       "proveedor": "fr",
       "colores": [
@@ -746,12 +800,21 @@
       ]
     },
     {
+      "nombre": "Tablet Xiaomi Redmi Pad 2 8GB 256GB Wifi 4G CON CHIP",
+      "costo": 325,
+      "proveedor": "fr",
+      "colores": [
+        "Gray"
+      ]
+    },
+    {
       "nombre": "Xiaomi Mi 17 Ultra 5G 16GB 512GB",
       "costo": 1300,
       "proveedor": "fr",
       "colores": [
         "Black",
-        "Purple"
+        "Purple",
+        "Verde Estelar"
       ]
     },
     {
@@ -800,7 +863,7 @@
       "costo": 745,
       "proveedor": "fr",
       "colores": [
-        "Grey"
+        "Gray"
       ]
     },
     {
@@ -808,7 +871,7 @@
       "costo": 660,
       "proveedor": "fr",
       "colores": [
-        "Grey"
+        "Gray"
       ]
     },
     {
@@ -1004,7 +1067,7 @@
     },
     {
       "nombre": "Redmi Note 17 Pro Max 5G 8GB 512GB",
-      "costo": 520,
+      "costo": 515,
       "proveedor": "fr",
       "colores": [
         "Black",
@@ -1013,10 +1076,10 @@
     },
     {
       "nombre": "Redmi Note 17 Pro Max 5G 8GB 256GB",
-      "costo": 455,
+      "costo": 445,
       "proveedor": "fr",
       "colores": [
-        "Green"
+        "Black"
       ]
     },
     {
@@ -1029,7 +1092,7 @@
     },
     {
       "nombre": "Redmi Note 17 8GB 256GB",
-      "costo": 272,
+      "costo": 266,
       "proveedor": "fr",
       "colores": [
         "Black",
@@ -1301,7 +1364,7 @@
       ]
     },
     {
-      "nombre": "RAY-BAN META | SKYLER GEN 2 W4014 T150 S52",
+      "nombre": "RAY-BAN META | SKYLER GEN 2 🕶️ W4014 T150 S52",
       "costo": 620,
       "proveedor": "fr",
       "colores": []
@@ -1424,14 +1487,8 @@
       "colores": []
     },
     {
-      "nombre": "PlayStation 5 Pro 2TB Digital",
-      "costo": 1380,
-      "proveedor": "fr",
-      "colores": []
-    },
-    {
       "nombre": "PlayStation 5 Slim 825GB Digital",
-      "costo": 730,
+      "costo": 720,
       "proveedor": "fr",
       "colores": []
     },
@@ -1555,273 +1612,173 @@
       "nombre": "iPhone 8 Plus 256GB (Usado)",
       "costo": 110,
       "proveedor": "fr",
-      "colores": [
-        "Black 100%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 13 128GB (Usado)",
       "costo": 320,
       "proveedor": "fr",
-      "colores": [
-        "Midnight 100%",
-        "Green 100%",
-        "Blue 100%",
-        "White 89% a 93%",
-        "Pink 89% a 94%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 14 128GB (Usado)",
       "costo": 350,
       "proveedor": "fr",
-      "colores": [
-        "Black 100%",
-        "Purple 95% a 99%",
-        "Purple 90% a 94%",
-        "Red 89%",
-        "White 93% a 98%",
-        "Blue 90% a 98%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 13 Pro 128GB (Usado)",
       "costo": 420,
       "proveedor": "fr",
-      "colores": [
-        "Blue 100%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 13 Pro 256GB (Usado)",
       "costo": 470,
       "proveedor": "fr",
-      "colores": [
-        "Blue 100%",
-        "Green 100%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 13 Pro Max 128GB (Usado)",
       "costo": 485,
       "proveedor": "fr",
-      "colores": [
-        "Green 95%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 13 Pro Max 256GB (Usado)",
       "costo": 550,
       "proveedor": "fr",
-      "colores": [
-        "Grafito 100%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 14 Pro 256GB (Usado)",
       "costo": 540,
       "proveedor": "fr",
-      "colores": [
-        "Gold 92%",
-        "Black 92%",
-        "Silver 91%",
-        "Purple 91% a 96%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 14 Pro Max 128GB (Usado)",
       "costo": 560,
       "proveedor": "fr",
-      "colores": [
-        "Gold 89% a 91%",
-        "Gold 92% a 97%",
-        "Silver 91% a 100%",
-        "Black 92% a 97%",
-        "Purple 90% a 100%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 15 128GB (Usado)",
       "costo": 470,
       "proveedor": "fr",
-      "colores": [
-        "Pink 88% - 89%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 15 256GB (Usado)",
       "costo": 510,
       "proveedor": "fr",
-      "colores": [
-        "Blue 89%",
-        "Pink 89% a 91%",
-        "Pink 95% a 100%"
-      ]
+      "colores": []
     },
     {
-      "nombre": "iPhone 15 Pro 256GB (Usado)",
-      "costo": 650,
+      "nombre": "iPhone 15 Pro 128GB (Usado)",
+      "costo": 590,
       "proveedor": "fr",
-      "colores": [
-        "Black 100% en caja original"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 15 Pro Max 256GB (Usado)",
       "costo": 710,
       "proveedor": "fr",
-      "colores": [
-        "White 100%",
-        "Black 100%",
-        "Natural 100%",
-        "Blue 100% en caja original"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 16 128GB (Usado)",
       "costo": 600,
       "proveedor": "fr",
-      "colores": [
-        "Ultramarino 89%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 16 Pro 128GB (Usado)",
       "costo": 700,
       "proveedor": "fr",
-      "colores": [
-        "Desert 89% en caja original",
-        "Desert 91%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 16 Pro Max 256GB (Usado)",
       "costo": 850,
       "proveedor": "fr",
-      "colores": [
-        "Desert 90%",
-        "Desert 92%",
-        "White 90%"
-      ]
+      "colores": []
     },
     {
       "nombre": "iPhone 17 Pro Max 256GB (Usado)",
       "costo": 1100,
       "proveedor": "fr",
-      "colores": [
-        "Silver 91% con caja original",
-        "Orange 94%"
-      ]
-    },
-    {
-      "nombre": "MacBook Air M2 A2681 8GB RAM / 256GB SSD (Usadas) S/ Cargador.",
-      "costo": 755,
-      "proveedor": "fr",
       "colores": []
-    },
-    {
-      "nombre": "MacBook Air M2 A2681 8GB RAM / 256GB SSD (Usadas) C/ Cargador Orig.",
-      "costo": 795,
-      "proveedor": "fr",
-      "colores": [
-        "Midnight 93%"
-      ]
     }
   ],
   "filtrados": [
-    {
-      "nombre": "Samsung S26 Ultra 5G 12GB 512GB (sin stock) ingresando mañana",
-      "costo": 1130,
-      "proveedor": "fr",
-      "colores": [],
-      "motivo": "Sin disponibilidad o caja dañada"
-    },
-    {
-      "nombre": "Samsung A27 5G 8GB 256GB (sin stock)",
-      "costo": 344,
-      "proveedor": "fr",
-      "colores": [],
-      "motivo": "Sin disponibilidad o caja dañada"
-    },
     {
       "nombre": "Moto G47 5G 8GB 128GB (Sin stock)",
       "costo": 205,
       "proveedor": "fr",
       "colores": [],
-      "motivo": "Sin disponibilidad o caja dañada"
-    },
-    {
-      "nombre": "Moto G15 4GB 256GB (sin stock)",
-      "costo": 162,
-      "proveedor": "fr",
-      "colores": [],
-      "motivo": "Sin disponibilidad o caja dañada"
+      "motivo": "Caja dañada o sin stock"
     },
     {
       "nombre": "Parlante JBL Flip 7 (sin stock)",
       "costo": 95,
       "proveedor": "fr",
       "colores": [],
-      "motivo": "Sin disponibilidad o caja dañada"
+      "motivo": "Caja dañada o sin stock"
     },
     {
-      "nombre": "Caja vacía iPhone (13 Pro / 14 Pro / 14 Pro Max / 15 Pro / 15 Pro Max)",
-      "costo": 7,
+      "nombre": "PlayStation 5 Pro 2TB Digital (Sin stock)",
+      "costo": 1380,
       "proveedor": "fr",
       "colores": [],
-      "modelos_compatibles": [
+      "motivo": "Caja dañada o sin stock"
+    },
+    {
+      "nombre": "Caja Vacia",
+      "costo": 7,
+      "proveedor": "fr",
+      "colores": [
         "13 pro",
         "14 Pro",
         "14 Pro max",
         "15 Pro",
         "15 Pro max"
       ],
-      "motivo": "Caja vacia: fuera del catalogo"
+      "motivo": "Caja vacia: fuera del catalogo de equipos y accesorios"
     }
   ],
   "dudas_precio": [
     {
-      "nombre": "iPhone 15 Pro 128GB (Usado)",
-      "costo": 590,
-      "proveedor": "fr",
-      "colores": [
-        "Blue 100% SIN FACE ID"
-      ],
-      "detalle_fuente": "Blue 100% SIN FACE ID 500 DOLARES",
-      "motivo": "Encabezado 590 y detalle 500 SIN FACE ID"
+      "texto": "▪️ Redmi Note 17 4GB 256GB (Black)    Caja indica 4GB+4GB\t\t\t-\t$0",
+      "motivo": "sin costo numérico",
+      "proveedor": "fr"
     },
     {
-      "nombre": "iPhone 17 Pro Max 256GB (Usado, punto en módulo)",
-      "proveedor": "fr",
-      "colores": [
-        "Silver 92% con punto en modulo"
-      ],
-      "costo_detalle": 1000,
-      "costo_encabezado": 1100,
-      "detalle_fuente": "Silver 92% con punto en modulo 1000 DOLARES",
-      "motivo": "Variante con defecto y costo propio; separada del equipo normal para revision"
+      "texto": "▪️ Redmi Note 17 4GB 128GB (Black)    Caja indica 4GB+4GB\t\t\t-\t$0",
+      "motivo": "sin costo numérico",
+      "proveedor": "fr"
     }
   ],
   "promociones_por_cantidad": [
     {
       "producto": "Cargador 20W – iPhone",
-      "texto": "💰 Promoción por 10 unidades: USD 19 cada uno. Stock entrega inmediada"
+      "texto": "▪️ 10 unidades → USD 19 c/u"
     },
     {
       "producto": "Cargador 20W – iPhone",
-      "texto": "💰 Promoción por 50 unidades: USD 17 cada uno. Stock entrega inmediada"
+      "texto": "▪️ 50 unidades → USD 17 c/u"
     },
     {
       "producto": "Cargador 20W – iPhone",
-      "texto": "💰 Promoción por 100 unidades: USD 16 cada uno. Stock entrega inmediada"
+      "texto": "▪️ 100 unidades → USD 16 c/u"
     },
     {
       "producto": "Cargador 20W – iPhone",
-      "texto": "💰 Promoción por 200 unidades: USD 15,50 cada uno. Stock entrega inmediada"
+      "texto": "▪️ 200 unidades → USD 15,50 c/u"
     },
     {
       "producto": "Cargador 20W – iPhone",
-      "texto": "💰 Promoción por 300 unidades: USD 15 cada uno. Stock entrega inmediada"
+      "texto": "▪️ 300 unidades → USD 15 c/u"
     },
     {
       "nombre": "Cargador Original Samsung 25W USB-C (Por 20 Unidades)",
