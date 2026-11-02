@@ -5128,6 +5128,66 @@
       "colores": []
     },
     {
+      "nombre": "Notebook HP Chromebook 14A-NA0031WM Intel Pentium Silver N5000 4GB RAM 64GB 14\" Chrome OS",
+      "costo": 150,
+      "stock": 20,
+      "proveedor": "fr",
+      "colores": [
+        "Plata"
+      ],
+      "codigo_proveedor": "HP 14A-NA0031WM",
+      "texto_fuente": "HP Chromebook 14A-NA0031WM 14\" 4GB 64GB Intel Pentium Plata N5000 X4 1.1GHz Cromo OS, Plata"
+    },
+    {
+      "nombre": "Notebook ASUS Vivobook 16 F1605VA-WS96 Intel Core i9-13900H 16GB RAM 1TB SSD 16\" FHD Win11",
+      "costo": 1095,
+      "stock": 11,
+      "proveedor": "fr",
+      "colores": [
+        "Silver"
+      ],
+      "codigo_proveedor": "F1605VA-WS96",
+      "texto_fuente": "NB ASUS F1605VA-WS96 INTEL CORE I9 -13900H 16GB 1TB SSD 16 PULGADAS FHD WIN11 SILVER"
+    },
+    {
+      "nombre": "Notebook Lenovo IdeaPad 82XQ012HUS AMD Ryzen 5 8GB RAM 512GB SSD 15.6\" FHD Win11",
+      "costo": 615,
+      "stock": 15,
+      "proveedor": "fr",
+      "colores": [
+        "Blue"
+      ],
+      "codigo_proveedor": "82XQ012HUS",
+      "texto_fuente": "Lenovo 82XQ012HUS R5-40 8GB 512GB SSD 15.6 FULLHD WIN11 BLUE"
+    },
+    {
+      "nombre": "Notebook Lenovo 14e Chromebook AMD A4-9120 8GB RAM 64GB eMMC 14\" táctil Chrome OS",
+      "costo": 180,
+      "stock": 20,
+      "proveedor": "fr",
+      "colores": [],
+      "codigo_proveedor": "81MH000CUS",
+      "texto_fuente": "Lenovo 14e CHROMEBOOK 14 pulgadas A4-9120 8gb 64gb eMMC CHROME OS TOUCHSCREEN"
+    },
+    {
+      "nombre": "Notebook Samsung Chromebook 4 XE310XBA-K01US Intel Celeron N4000 4GB RAM 11.6\" Chrome OS",
+      "costo": 180,
+      "stock": 20,
+      "proveedor": "fr",
+      "colores": [],
+      "codigo_proveedor": "XE310XBA-K01US",
+      "texto_fuente": "Chromebook SAMSUNG XE310XBA-K01US 4 11.6\" Intel Celeron N4000 4GB"
+    },
+    {
+      "nombre": "Notebook Samsung Chromebook 4+ XE350XBA-K02US Intel Celeron N4000 4GB RAM 64GB eMMC 15.6\" FHD Chrome OS",
+      "costo": 180,
+      "stock": 20,
+      "proveedor": "fr",
+      "colores": [],
+      "codigo_proveedor": "XE350XBA-K02US",
+      "texto_fuente": "SAMSUNG CHROMEBOOK 4+ XE350XBA-K02US Celeron® N4000 4GB RAM 64GB eMMC Gigabit Wi-Fi Chrome OS 15.6″ Full HD"
+    },
+    {
       "nombre": "NOTEBOOK HP OMEN HYPERX AMD RYZEN 7 8745HX 16GB RAM 1TB SSD NVIDIA RTX 5060 8GB 15.3\" WUXGA 165Hz",
       "costo": 1690,
       "stock": 2,
