@@ -3,19 +3,19 @@
     {
       "nombre": "NOTEBOOK HP 15-FD0259 INTEL CORE I5-1334U 8GB 512GB SSD 15.6\" HD",
       "costo": 590,
-      "stock": 3,
+      "stock": 2,
       "proveedor": "ba",
       "colores": [],
-      "estado_proveedor": "ENTRANTE",
+      "estado_proveedor": "disponible",
       "codigo_proveedor": "BZ0J9UA#ABA"
     },
     {
       "nombre": "NOTEBOOK HP OMEN HYPERX AMD RYZEN 7 8745HX 16GB RAM 1TB SSD NVIDIA RTX 5060 8GB 15.3\" WUXGA 165Hz",
-      "costo": 1680,
+      "costo": 1690,
       "stock": 2,
       "proveedor": "ba",
       "colores": [],
-      "estado_proveedor": "ENTRANTE",
+      "estado_proveedor": "disponible",
       "codigo_proveedor": "DK3S2UA#ABA 15-GB0070"
     },
     {
@@ -30,18 +30,18 @@
     {
       "nombre": "NOTEBOOK HP ELITEBOOK 855 G7 AMD RYZENPRO 7-4750U 16GB 256GB SSD 15.6\" FHD TACTIL (Reacondicionado)",
       "costo": 465,
-      "stock": 1,
+      "stock": 2,
       "proveedor": "ba",
       "colores": [],
       "estado_proveedor": "REFURBISHED"
     },
     {
       "nombre": "NOTEBOOK MSI CYBORG 15 INTEL CORE i5-13420H 512GB SSD NVIDIA RTX 5050 8GB 15.6\" 144Hz",
-      "costo": 1285,
+      "costo": 1280,
       "stock": 2,
       "proveedor": "ba",
       "colores": [],
-      "estado_proveedor": "ENTRANTE",
+      "estado_proveedor": "disponible",
       "codigo_proveedor": "C13WE-093US"
     },
     {
@@ -50,7 +50,7 @@
       "stock": 2,
       "proveedor": "ba",
       "colores": [],
-      "estado_proveedor": "ENTRANTE",
+      "estado_proveedor": "disponible",
       "codigo_proveedor": "B2HWGKG-254US"
     },
     {
@@ -165,15 +165,6 @@
       "codigo_proveedor": "595725"
     },
     {
-      "nombre": "NOTEBOOK LENOVO IDEAPAD SLIM 3 INTEL N150 8GB RAM 128GB SSD 15.6 FHD",
-      "costo": 390,
-      "stock": 2,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "disponible",
-      "codigo_proveedor": "83L7002FUS"
-    },
-    {
       "nombre": "ACER ASPIRE AI COPILOT+ INTEL CORE ULTRA l9 288V 32GB RAM 1TB SSD 14\" WUXGA",
       "costo": 1240,
       "stock": 1,
@@ -192,37 +183,26 @@
       "codigo_proveedor": "NH.QHMAA.001"
     },
     {
-      "nombre": "Acer Aspire Go 15 AG15-42P-R917 Ryzen 7 7730U 512GB SSD 16GB 15.6\" (1920x1080) WIN11",
-      "costo": 770,
-      "stock": 2,
-      "proveedor": "ba",
-      "colores": [
-        "PURE SILVER"
-      ],
-      "estado_proveedor": "disponible",
-      "codigo_proveedor": "AG15-42P-R917"
-    },
-    {
       "nombre": "NOTEBOOK GIGABYTE A16 PRO INTEL CORE 7 240H 32GB RAM 1TB SSD NVIDIA RTX 5070 Ti 12GB 16\" WQXGA 165Hz",
-      "costo": 2120,
+      "costo": 2140,
       "stock": 2,
       "proveedor": "ba",
       "colores": [],
-      "estado_proveedor": "ENTRANTE",
+      "estado_proveedor": "disponible",
       "codigo_proveedor": "DXHG4USCC4SH"
     },
     {
       "nombre": "NOTEBOOK GIGABYTE A16 PRO INTEL CORE 7 240H 32GB RAM 1TB SSD NVIDIA RTX 5080 16GB 16\" WQXGA 165Hz",
-      "costo": 2530,
-      "stock": 2,
+      "costo": 2560,
+      "stock": 1,
       "proveedor": "ba",
       "colores": [],
-      "estado_proveedor": "ENTRANTE",
+      "estado_proveedor": "disponible",
       "codigo_proveedor": "DYHG5USCC4SH"
     },
     {
       "nombre": "NOTEBOOK GIGABYTE AERO X16 AMD RYZEN AI 7 350 32GB RAM 1TB SSD NVIDIA RTX 5060 8GB 16\" WQXGA 165Hz 1VH93USC64AH",
-      "costo": 1740,
+      "costo": 1745,
       "stock": 1,
       "proveedor": "ba",
       "colores": [],
@@ -230,12 +210,13 @@
       "codigo_proveedor": "1VH93USC64AH"
     },
     {
-      "nombre": "MINI PC ORIMAGIC C4 PLUS MINI AMD RYZEN 5 3501U 8GB RAM 256GB SSD WIN11 PRO",
-      "costo": 255,
-      "stock": 4,
+      "nombre": "NOTEBOOK GIGABYTE GAMING A16 INTEL CORE I7-13620H 16GB RAM 1TB SSD NVIDIA RTX 5050 8GB 16\" WUXGA 165Hz",
+      "costo": 1450,
+      "stock": 1,
       "proveedor": "ba",
       "colores": [],
-      "estado_proveedor": "ENTRANTE"
+      "estado_proveedor": "disponible",
+      "codigo_proveedor": "CTHI3US894SH"
     },
     {
       "nombre": "GMKtec Mini PC M8 AMD Ryzen 5 PRO 6650H (6C/12T 4.50Ghz) Dual NIC LAN 2.5GbE, 16GB LPDDR5 RAM + 512GB Disco Duro PCIe SSD, Oculink, USB4, HDMI, USB-C",
@@ -248,7 +229,7 @@
     },
     {
       "nombre": "MONITOR PÓRTATIL AOC 15.6\" FHD 60Hz USB-C IPS ULTRA SLIM 16T20",
-      "costo": 125,
+      "costo": 95,
       "stock": 10,
       "proveedor": "ba",
       "colores": [],
@@ -270,6 +251,60 @@
       "proveedor": "ba",
       "colores": [
         "Negro"
+      ],
+      "estado_proveedor": "disponible"
+    },
+    {
+      "nombre": "TABLET XIAOMI POCO PAD C1 6GB RAM 128GB SSD 9.7\" 2K 120 Hz",
+      "costo": 230,
+      "stock": 2,
+      "proveedor": "ba",
+      "colores": [
+        "AZUL"
+      ],
+      "estado_proveedor": "disponible"
+    },
+    {
+      "nombre": "TABLET XIAOMI POCO PAD C1 6GB RAM 128GB SSD 9.7\" 2K 120 Hz",
+      "costo": 230,
+      "stock": 2,
+      "proveedor": "ba",
+      "colores": [
+        "GRIS"
+      ],
+      "estado_proveedor": "disponible"
+    },
+    {
+      "nombre": "TABLET SAMSUNG GALAXY A11 4GB RAM 64GB SSD 8.7\" PLATA SM-X133",
+      "costo": 175,
+      "stock": 2,
+      "proveedor": "ba",
+      "colores": [],
+      "estado_proveedor": "disponible"
+    },
+    {
+      "nombre": "TABLET XIAOMI REDMI PAD 2 6GB RAM 128GB SSD 11\" 2.5K WQXGA",
+      "costo": 250,
+      "stock": 2,
+      "proveedor": "ba",
+      "colores": [],
+      "estado_proveedor": "disponible"
+    },
+    {
+      "nombre": "TABLET LENOVO TAB K10 8GB RAM 128GB SSD 11\" WUXGA TB-330FU",
+      "costo": 230,
+      "stock": 2,
+      "proveedor": "ba",
+      "colores": [],
+      "estado_proveedor": "disponible"
+    },
+    {
+      "nombre": "TABLET DOOGEE U13 PRO 6GB RAM 256GB SSD 13.4\"\"",
+      "costo": 230,
+      "stock": 3,
+      "proveedor": "ba",
+      "colores": [
+        "GRIS"
       ],
       "estado_proveedor": "disponible"
     },
@@ -301,24 +336,6 @@
       "estado_proveedor": "disponible"
     },
     {
-      "nombre": "XIAOMI MONOPATIN ELECTRICO 4 PRO 2GEN",
-      "costo": 550,
-      "stock": 1,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "disponible"
-    },
-    {
-      "nombre": "TABLET DOOGEE U13 PRO 6GB RAM 256GB SSD 13.4\"",
-      "costo": 230,
-      "stock": 3,
-      "proveedor": "ba",
-      "colores": [
-        "GRIS"
-      ],
-      "estado_proveedor": "disponible"
-    },
-    {
       "nombre": "PARLANTE JBL CHARGE 6 BT 5.4",
       "costo": 135,
       "stock": 2,
@@ -339,7 +356,7 @@
     {
       "nombre": "PARLANTE JBL BOOMBOX 4 BT 5.4",
       "costo": 420,
-      "stock": 1,
+      "stock": 2,
       "proveedor": "ba",
       "colores": [],
       "estado_proveedor": "disponible",
@@ -367,37 +384,8 @@
   ],
   "filtrados": [
     {
-      "nombre": "NOTEBOOK MSI CROSSHAIR 16 GAMING INTEL CORE i9-14900HX 16GB RAM 512GB SSD NVIDIA RTX 5070 8GB 16\" WQXGA 240Hz",
-      "costo": 2025,
-      "stock": 0,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "disponible",
-      "codigo_proveedor": "16HXE14WGK-038US",
-      "motivo": "Sin disponibilidad o caja dañada"
-    },
-    {
-      "nombre": "NOTEBOOK DELL LATITUDE 7330 INTEL CORE I7-1265U 16GB RAM 256GB SSD 13.3\" FHD TACTIL (Reacondicionado)",
-      "costo": 525,
-      "stock": 0,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "REFURBISHED",
-      "motivo": "Sin disponibilidad o caja dañada"
-    },
-    {
-      "nombre": "NOTEBOOK GIGABYTE A16 INTEL CORE i7-13620H 32GB RAM 1TB SSD NVIDIA RTX 5060 8GB 16\" WUXGA 165Hz",
-      "costo": 1770,
-      "stock": 0,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "disponible",
-      "codigo_proveedor": "CVHI3US864SH",
-      "motivo": "Sin disponibilidad o caja dañada"
-    },
-    {
-      "nombre": "MINI PC ACEMAGIC KRON K1 AMD RYZEN 7 7730U 16GB RAM 1TB SSD WINDOWS 11",
-      "costo": 670,
+      "nombre": "MINI PC ORIMAGIC C4 PLUS MINI AMD RYZEN 5 3501U 8GB RAM 256GB SSD WIN11 PRO",
+      "costo": 260,
       "stock": 0,
       "proveedor": "ba",
       "colores": [],
@@ -405,17 +393,6 @@
       "motivo": "Sin disponibilidad o caja dañada"
     }
   ],
-  "dudas_precio": [
-    {
-      "nombre": "NOTEBOOK GIGABYTE A16 AMD RYZEN 7 260 16GB 1TB SSD NVIDIA RTX 5060 8GB 16\" WUXGA 165Hz",
-      "costo": 1450,
-      "stock": 0,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "disponible",
-      "codigo_proveedor": "3VHK3US894SH",
-      "motivo": "Mismo SKU con costos 1450 y 1560: excluir hasta aclaracion"
-    }
-  ],
+  "dudas_precio": [],
   "revisiones": []
 }
