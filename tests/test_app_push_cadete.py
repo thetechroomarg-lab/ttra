@@ -38,7 +38,7 @@ def test_vapid_public_key_devuelve_503_sin_configurar(monkeypatch):
 def test_suscribir_push_requiere_sesion_de_cadete():
     c = TestClient(appmod.app, base_url="https://testserver")
     r = c.post("/admin/cadete/push/suscribir", json={
-        "endpoint": "https://ejemplo.com/x", "keys": {"p256dh": "a", "auth": "b"},
+        "endpoint": "https://fcm.googleapis.com/fcm/send/x", "keys": {"p256dh": "a", "auth": "b"},
     })
     assert r.status_code == 401
 
@@ -47,18 +47,18 @@ def test_suscribir_push_guarda_la_suscripcion(monkeypatch):
     fake = FakeSupabaseClient()
     cadete = _cadete_logueado(fake, monkeypatch)
     r = cadete.post("/admin/cadete/push/suscribir", json={
-        "endpoint": "https://ejemplo.com/x", "keys": {"p256dh": "a", "auth": "b"},
+        "endpoint": "https://fcm.googleapis.com/fcm/send/x", "keys": {"p256dh": "a", "auth": "b"},
     })
     assert r.status_code == 200
     filas = fake.table("cadete_push_suscripciones").select("*").execute().data
     assert len(filas) == 1
-    assert filas[0]["endpoint"] == "https://ejemplo.com/x"
+    assert filas[0]["endpoint"] == "https://fcm.googleapis.com/fcm/send/x"
 
 
 def test_suscribir_push_actualiza_en_vez_de_duplicar(monkeypatch):
     fake = FakeSupabaseClient()
     cadete = _cadete_logueado(fake, monkeypatch)
-    body = {"endpoint": "https://ejemplo.com/x", "keys": {"p256dh": "a", "auth": "b"}}
+    body = {"endpoint": "https://fcm.googleapis.com/fcm/send/x", "keys": {"p256dh": "a", "auth": "b"}}
     cadete.post("/admin/cadete/push/suscribir", json=body)
     body["keys"]["auth"] = "otra-clave"
     cadete.post("/admin/cadete/push/suscribir", json=body)
@@ -142,7 +142,7 @@ def test_suscribir_push_admin_requiere_sesion_de_admin(monkeypatch):
     fake = FakeSupabaseClient()
     cadete = _cadete_logueado(fake, monkeypatch)
     r = cadete.post("/admin/clientes/push/suscribir", json={
-        "endpoint": "https://ejemplo.com/a", "keys": {"p256dh": "a", "auth": "b"},
+        "endpoint": "https://fcm.googleapis.com/fcm/send/a", "keys": {"p256dh": "a", "auth": "b"},
     })
     assert r.status_code == 401
 
@@ -150,10 +150,10 @@ def test_suscribir_push_admin_requiere_sesion_de_admin(monkeypatch):
 def test_suscribir_push_admin_guarda_en_su_propia_tabla(monkeypatch):
     admin, fake = _admin_logueado(monkeypatch)
     r = admin.post("/admin/clientes/push/suscribir", json={
-        "endpoint": "https://ejemplo.com/a", "keys": {"p256dh": "a", "auth": "b"},
+        "endpoint": "https://fcm.googleapis.com/fcm/send/a", "keys": {"p256dh": "a", "auth": "b"},
     })
     assert r.status_code == 200
-    assert [f["endpoint"] for f in fake.table("admin_push_suscripciones").select("*").execute().data] == ["https://ejemplo.com/a"]
+    assert [f["endpoint"] for f in fake.table("admin_push_suscripciones").select("*").execute().data] == ["https://fcm.googleapis.com/fcm/send/a"]
     assert fake.table("cadete_push_suscripciones").select("*").execute().data == []
 
 
@@ -234,3 +234,13 @@ def test_alejo_fija_punto_de_encuentro_no_se_autonotifica(monkeypatch):
     r = cadete.put("/admin/punto-encuentro", json={"fecha": "2026-10-06", "direccion": "Plaza España"})
     assert r.status_code == 200
     assert llamadas == []
+
+
+def test_endpoint_push_solo_de_servicios_de_push():
+    from web.push_cadete import endpoint_push_permitido
+    assert endpoint_push_permitido("https://fcm.googleapis.com/fcm/send/x")
+    assert endpoint_push_permitido("https://web.push.apple.com/abc")
+    assert not endpoint_push_permitido("http://fcm.googleapis.com/x")
+    assert not endpoint_push_permitido("https://169.254.169.254/latest")
+    assert not endpoint_push_permitido("https://fcm.googleapis.com.evil.com/x")
+    assert not endpoint_push_permitido("https://evilpush.apple.com/x")

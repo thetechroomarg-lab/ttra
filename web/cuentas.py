@@ -65,7 +65,7 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, provin
     except Exception as e:
         # Solo es EmailDuplicadoError si el mensaje indica email duplicado
         if "already registered" in str(e).lower() or "already exists" in str(e).lower():
-            raise EmailDuplicadoError(f"Ya existe una cuenta con el email {email}") from e
+            raise EmailDuplicadoError("No pude crear la cuenta con esos datos. Si ya sos cliente, ingresá o escribime para verificar tu acceso.") from e
         # Si es otro tipo de error, relanzarlo sin enmascarar
         raise
     auth_id = auth_resp.user.id
@@ -111,7 +111,7 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, provin
             pass
         error_msg = str(error_final).lower()
         if "clientes_email_key" in error_msg:
-            raise EmailDuplicadoError(f"Ya existe una cuenta con el email {email}") from error_final
+            raise EmailDuplicadoError("No pude crear la cuenta con esos datos. Si ya sos cliente, ingresá o escribime para verificar tu acceso.") from error_final
         if "clientes_auth_id_fkey" in error_msg:
             # Se agotaron los reintentos y la ventana de propagación del
             # auth_id nunca cerró: no es un duplicado de ningún campo, así
@@ -120,7 +120,7 @@ def registrar_cliente(client, nombre, apellido, celular, email, password, provin
             raise error_final
         # Cualquier otra falla no identificada (incluida clientes_celular_key)
         # se trata como duplicado de celular, que es el caso más común.
-        raise CelularDuplicadoError(f"Ya existe una cuenta con el celular {celular_norm}") from error_final
+        raise CelularDuplicadoError("No pude crear la cuenta con esos datos. Si ya sos cliente, ingresá o escribime para verificar tu acceso.") from error_final
 
     requiere_confirmacion_email = (
         getattr(auth_resp, "session", None) is None

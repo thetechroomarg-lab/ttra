@@ -30,10 +30,14 @@ def test_tope_por_sesion_corta_al_superar_limite(monkeypatch):
     assert "WhatsApp" in r2.json()["respuesta"]            # el 2º ya está cortado
 
 
-def test_tope_es_por_sesion_no_global(monkeypatch):
+def test_cambiar_sesion_no_saltea_el_tope_del_cliente(monkeypatch):
+    # `sesion` la manda el navegador: inventar una nueva no resetea el gasto.
     c = _preparar(monkeypatch, 0.30)
-    c.post("/chat", json={"mensaje": "hola", "sesion": "s1"})   # s1 supera el tope
-    c.post("/chat", json={"mensaje": "otra", "sesion": "s1"})   # s1 cortada
-    # una sesión distinta sigue funcionando
+    c.post("/chat", json={"mensaje": "hola", "sesion": "s1"})   # supera el tope
     r = c.post("/chat", json={"mensaje": "hola", "sesion": "s2"})
-    assert r.json()["respuesta"] == "respuesta bot"
+    assert "WhatsApp" in r.json()["respuesta"]
+
+
+def test_chat_rechaza_mensajes_gigantes(monkeypatch):
+    c = _preparar(monkeypatch, 0.01)
+    assert c.post("/chat", json={"mensaje": "x" * 1001}).status_code == 422

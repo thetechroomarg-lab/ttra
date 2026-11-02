@@ -30,7 +30,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from web.historial_importado import tarjeta_importada
 from web import pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
 from web.login_rate_limit import LoginAttemptStore
-from web.ui_helpers import cadete_session_version
+from web.ui_helpers import _clientes_admin_activo, admin_session_version, cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
 from web.mailing import assets as mailing_assets, campanias, destinatarios, envio as mailing_envio, servicio as mailing_servicio, template as mailing_template
 from web.productos import resolver_proveedor
@@ -188,6 +188,37 @@ def _public_producto_mailing_url(request: Request, nombre_producto: str, codigo:
     return f"{_public_app_base_url(request)}/?{query}"
 
 
+_CSP_REPORT_ONLY = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://maps.googleapis.com; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    "font-src 'self' https://fonts.gstatic.com; "
+    "img-src 'self' data: blob: https:; "
+    "connect-src 'self' https://*.google-analytics.com https://*.googletagmanager.com https://maps.googleapis.com; "
+    "frame-src https://open.spotify.com https://www.google.com; "
+    "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
+)
+
+
+@app.middleware("http")
+async def mismo_origen(request: Request, call_next):
+    """Defensa CSRF además de SameSite=Lax: un POST/PUT/PATCH/DELETE que trae
+    Origin (todos los navegadores lo mandan) tiene que venir de este mismo
+    sitio. Los pedidos server-to-server no mandan Origin y no se tocan."""
+    origen = request.headers.get("origin")
+    if request.method not in {"GET", "HEAD", "OPTIONS"} and origen is not None:
+        # Un navegador no deja que otro sitio fije Host ni X-Forwarded-Host,
+        # así que aceptar cualquiera de los dos no abre nada.
+        propios = {
+            (request.headers.get("host") or "").lower(),
+            (request.headers.get("x-forwarded-host") or "").split(",")[0].strip().lower(),
+            urlparse(os.environ.get("PUBLIC_APP_URL") or "").netloc.lower(),
+        } - {""}
+        if urlparse(origen).netloc.lower() not in propios:
+            return JSONResponse({"error": "Origen no permitido"}, status_code=403)
+    return await call_next(request)
+
+
 @app.middleware("http")
 async def sin_cache_estaticos(request: Request, call_next):
     """Evita que el navegador se quede con una versión vieja de JS/CSS
@@ -202,6 +233,11 @@ async def sin_cache_estaticos(request: Request, call_next):
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Content-Security-Policy"] = "frame-ancestors 'self'; base-uri 'self'; object-src 'none'"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), payment=(), geolocation=(self)"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    # CSP completa en modo "solo reportar": las páginas tienen <script> inline,
+    # así que primero se miran las violaciones en la consola antes de exigirla.
+    response.headers["Content-Security-Policy-Report-Only"] = _CSP_REPORT_ONLY
     if request.url.scheme == "https" or _session_https_only:
         response.headers["Strict-Transport-Security"] = "max-age=31536000"
     path = _normalizar_ruta(request.url.path)
@@ -370,15 +406,32 @@ def _cargar_snapshot_mayorista():
         return [], {}
 
 
+_FOTO_MAX_PIXELES = 40_000_000
+
+
+def _foto_valida(contenido):
+    """Las fotos de series van al PDF del recibo: se chequea que sean una
+    imagen de verdad y de un tamaño razonable antes de descomprimirlas (un
+    JPEG chico de 2 MB puede ocupar cientos de MB en memoria)."""
+    from io import BytesIO
+    from PIL import Image as PILImage
+    try:
+        with PILImage.open(BytesIO(contenido)) as imagen:
+            return (imagen.format in {"JPEG", "PNG", "WEBP"}
+                    and imagen.width * imagen.height <= _FOTO_MAX_PIXELES)
+    except Exception:
+        return False
+
+
 def _cliente():
     import anthropic
     return anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 
 class ChatIn(BaseModel):
-    mensaje: str
-    historial: list[dict] = []
-    sesion: str = "anon"
+    mensaje: str = Field(min_length=1, max_length=1000)
+    historial: list[dict] = Field(default_factory=list, max_length=20)
+    sesion: str = Field(default="anon", max_length=100)
 
 
 @app.post("/chat")
@@ -399,16 +452,21 @@ def chat(entrada: ChatIn, request: Request):
         return {"respuesta": texto, "genero": genero}
 
     # Tope de gasto por sesión: si ya lo superó, no llamamos a la IA (costo 0).
-    if _gasto.get(entrada.sesion, 0.0) >= LIMITE_USD:
-        logger.info("Sesión %s alcanzó el tope de USD %.2f", entrada.sesion, LIMITE_USD)
+    # El tope va por cliente logueado: `sesion` la manda el navegador y
+    # cambiándola en cada request se salteaba el límite.
+    clave_gasto = request.session.get("cliente_id") or entrada.sesion
+    if _gasto.get(clave_gasto, 0.0) >= LIMITE_USD:
+        logger.info("Sesión %s alcanzó el tope de USD %.2f", clave_gasto, LIMITE_USD)
         return {"respuesta": "¡Gracias por tu interés! 😊 Para seguir con tu consulta y "
                              f"cerrar la compra, escribime directo por WhatsApp 👉 {WHATSAPP}"}
     try:
-        texto, costo, datos = responder(entrada.mensaje, entrada.historial,
+        historial = [{"role": m.get("role"), "content": str(m.get("content", ""))[:2000]}
+                     for m in entrada.historial if m.get("role") in {"user", "assistant"}]
+        texto, costo, datos = responder(entrada.mensaje, historial,
                                         productos, _cliente())
-        _gasto[entrada.sesion] = _gasto.get(entrada.sesion, 0.0) + costo
+        _gasto[clave_gasto] = _gasto.get(clave_gasto, 0.0) + costo
         logger.info("Sesión %s: acumulado USD %.4f / %.2f",
-                    entrada.sesion, _gasto[entrada.sesion], LIMITE_USD)
+                    clave_gasto, _gasto[clave_gasto], LIMITE_USD)
         genero = (datos or {}).get("genero", "")
     except Exception:
         logger.exception("Error al responder")
@@ -522,8 +580,6 @@ class CodigoPromoIn(BaseModel):
 _DESCUENTO_MAILING_USD = 5
 
 
-def _clientes_admin_activo(request: Request):
-    return bool(request.session.get("clientes_admin_ok"))
 
 
 def _cadete_activo(request: Request):
@@ -1010,12 +1066,15 @@ def admin_clientes_login(entrada: ClientesLoginIn, request: Request):
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
     _limpiar_login_fallido(request, "clientes")
     request.session["clientes_admin_ok"] = True
+    request.session["clientes_admin_version"] = admin_session_version(ADMIN_CLIENTES_PASSWORD)
+    request.session["clientes_admin_desde"] = time.time()
     return {"ok": True}
 
 
 @app.post("/admin/clientes/logout")
 def admin_clientes_logout(request: Request):
-    request.session.pop("clientes_admin_ok", None)
+    for clave in ("clientes_admin_ok", "clientes_admin_version", "clientes_admin_desde"):
+        request.session.pop(clave, None)
     return {"ok": True}
 
 
@@ -1391,6 +1450,8 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             contenido = await foto.read()
             if not contenido or len(contenido) > 2_500_000:
                 return JSONResponse({"error": "Cada foto comprimida debe pesar menos de 2,5 MB"}, status_code=400)
+            if not _foto_valida(contenido):
+                return JSONResponse({"error": "La foto tiene que ser JPG, PNG o WebP"}, status_code=400)
             nombre = f"serie-{uuid.uuid4().hex}.jpg"
             ruta = f"pedidos/{pedido_id}/{nombre}"
             client.storage.from_("recibos-series").upload(ruta, contenido, {"content-type": "image/jpeg"})
@@ -4577,6 +4638,11 @@ def registro(entrada: RegistroIn, request: Request):
 
 @app.post("/login")
 def login(entrada: LoginIn, request: Request):
+    # Límite por email y no por IP: detrás del edge de Railway todos los
+    # clientes llegan con la misma IP, así que un límite por IP sería global.
+    clave_email = ("email", (entrada.email or "").strip().lower(), "cliente")
+    if not _intentos_login_fallidos.reserve(clave_email, _LOGIN_MAX_INTENTOS, _LOGIN_VENTANA_SEG):
+        return JSONResponse({"error": "Demasiados intentos. Probá de nuevo en unos minutos."}, status_code=429)
     try:
         client_datos = get_client()
         cliente = cuentas.login_cliente(get_client(), client_datos, entrada.email, entrada.password)
@@ -4587,6 +4653,7 @@ def login(entrada: LoginIn, request: Request):
         return JSONResponse({"error": "No pude conectar, probá de nuevo en un momento"}, status_code=503)
     if cliente is None:
         return JSONResponse({"error": "Usuario o contraseña incorrectos"}, status_code=401)
+    _intentos_login_fallidos.pop(clave_email, None)
     request.session["cliente_id"] = cliente["id"]
     request.session["cliente_nombre"] = cliente["nombre"]
     request.session["debe_cambiar_password"] = cliente["debe_cambiar_password"]
@@ -4821,6 +4888,9 @@ class CambiarPasswordPropioIn(BaseModel):
 def api_me_password(entrada: CambiarPasswordPropioIn, request: Request):
     if not _sesion_activa(request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
+    clave = ("cliente", request.session["cliente_id"], "password")
+    if not _intentos_login_fallidos.reserve(clave, _LOGIN_MAX_INTENTOS, _LOGIN_VENTANA_SEG):
+        return JSONResponse({"error": "Demasiados intentos. Probá de nuevo en unos minutos."}, status_code=429)
     try:
         cuentas.cambiar_password_propio(
             get_client(), get_client(), request.session["cliente_id"],
@@ -5766,6 +5836,10 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
         "asignado_a": asignado_a,
     }
     if entrada.monto_cadete is not None:
+        # Lo que se le paga a Alejo lo define solo el admin: si no, el cadete
+        # podría crearse una tarea con el monto que quiera y completarla.
+        if not es_admin or entrada.desde_panel_cadete:
+            raise HTTPException(status_code=403, detail="Solo el admin define el monto de una tarea")
         tarea["monto_cadete"] = entrada.monto_cadete
     client.table("tareas_entrega").insert(tarea).execute()
     if es_admin and asignado_a == CADETE_SLUG:
@@ -6018,6 +6092,8 @@ async def admin_tarea_recibo_manual(tarea_id: str, request: Request):
         contenido = await foto.read()
         if not contenido or len(contenido) > 2_500_000:
             return JSONResponse({"error": "Cada foto comprimida debe pesar menos de 2,5 MB"}, status_code=400)
+        if not _foto_valida(contenido):
+            return JSONResponse({"error": "La foto tiene que ser JPG, PNG o WebP"}, status_code=400)
         nombre_archivo = f"serie-{uuid.uuid4().hex}.jpg"
         ruta = f"recibos-manuales/{tarea_id}/{nombre_archivo}"
         client.storage.from_("recibos-series").upload(ruta, contenido, {"content-type": "image/jpeg"})
@@ -6243,12 +6319,23 @@ def mailing_baja(cliente_id: str):
         f"<title>Confirmar baja — The Tech Room Arg</title>{_MAILING_PUBLICO_ESTILO}</head>"
         f"<body><div class='tarjeta'><h1>¿Querés dejar de recibir novedades por mail?</h1>"
         f"<p class='colores'>Si confirmás, no vas a recibir más mails de novedades.</p>"
-        f"<a class='btn-wa' href='/mailing/baja/{cliente_id}/confirmar'>Sí, dejar de recibir novedades</a>"
+        # Confirmar es un POST: los antivirus de los mails abren los links
+        # (GET) solos, y no pueden dar de baja a nadie sin que lo pida.
+        f"<form method='post' action='/mailing/baja/{html.escape(cliente_id, quote=True)}/confirmar'>"
+        f"<button class='btn-wa' type='submit' style='border:0;width:100%;cursor:pointer;font:inherit'>"
+        f"Sí, dejar de recibir novedades</button></form>"
         f"<a class='link-catalogo' href='{WHATSAPP}'>Cancelar</a></div></body></html>"
     )
 
 
-@app.get("/mailing/baja/{cliente_id}/confirmar", response_class=HTMLResponse)
+@app.get("/mailing/baja/{cliente_id}/confirmar")
+def mailing_baja_confirmar_link_viejo(cliente_id: str):
+    # Links de confirmación que hayan quedado en mails viejos: muestran la
+    # pantalla de confirmar en vez de dar de baja directo.
+    return RedirectResponse(f"/mailing/baja/{quote(cliente_id, safe='')}", status_code=303)
+
+
+@app.post("/mailing/baja/{cliente_id}/confirmar", response_class=HTMLResponse)
 def mailing_baja_confirmar(cliente_id: str):
     client = get_client()
     filas = client.table("clientes").select("*").eq("id", cliente_id).execute().data
