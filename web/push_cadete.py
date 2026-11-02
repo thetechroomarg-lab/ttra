@@ -21,6 +21,7 @@ resto de la app) — se loguea un warning una sola vez.
 
 import logging
 import os
+from urllib.parse import urlparse
 
 from web.email_util import EnvioEmailError, enviar_email
 
@@ -41,6 +42,25 @@ TABLA_CADETE = "cadete_push_suscripciones"
 TABLA_ADMIN = "admin_push_suscripciones"
 
 
+# Los navegadores siempre suscriben contra su servicio de push. Cualquier otro
+# endpoint haría que el server le pegue a una URL arbitraria (incluidas
+# direcciones internas de Railway) en cada envío.
+_HOSTS_PUSH = (
+    "fcm.googleapis.com",
+    "updates.push.services.mozilla.com",
+    ".push.apple.com",
+    ".notify.windows.com",
+)
+
+
+def endpoint_push_permitido(endpoint):
+    url = urlparse(str(endpoint))
+    host = (url.hostname or "").lower()
+    if url.scheme != "https" or not host:
+        return False
+    return any(host == h.lstrip(".") or (h.startswith(".") and host.endswith(h)) for h in _HOSTS_PUSH)
+
+
 def guardar_suscripcion(client, suscripcion, tabla=TABLA_CADETE):
     """Guarda (o actualiza) una suscripción push del cadete (o del admin).
 
@@ -53,6 +73,8 @@ def guardar_suscripcion(client, suscripcion, tabla=TABLA_CADETE):
     auth = keys.get("auth")
     if not (endpoint and p256dh and auth):
         raise ValueError("Suscripción push incompleta")
+    if not endpoint_push_permitido(endpoint):
+        raise ValueError("Endpoint de push no permitido")
     fila = {"endpoint": endpoint, "p256dh": p256dh, "auth": auth}
     existente = client.table(tabla).select("id").eq("endpoint", endpoint).execute().data
     if existente:

@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import os
 import secrets
+import time
 import json
 import re
 from datetime import datetime, timedelta
@@ -42,13 +43,38 @@ def _leer_ui(nombre):
     return (_UI_DIR / nombre).read_text(encoding="utf-8")
 
 
+ADMIN_SESION_MAX_SEG = 12 * 3600
+
+
 def _clientes_admin_activo(request: Request):
-    return bool(request.session.get("clientes_admin_ok"))
+    # La versión ata la sesión a la contraseña vigente (rotarla echa a todos)
+    # y "desde" le pone vencimiento: la cookie se renueva sola en cada
+    # respuesta, así que sin esto una sesión de admin robada no vencería nunca.
+    try:
+        desde = float(request.session.get("clientes_admin_desde", 0))
+    except (TypeError, ValueError):
+        return False
+    return bool(request.session.get("clientes_admin_ok")) and secrets.compare_digest(
+        str(request.session.get("clientes_admin_version", "")),
+        admin_session_version(_password_admin()),
+    ) and 0 <= time.time() - desde < ADMIN_SESION_MAX_SEG
+
+
+def _password_admin():
+    # Se lee de web.app (y no del entorno) para que valga la misma contraseña
+    # que usa el login, incluida la que parchean los tests.
+    from web import app as appmod
+    return appmod.ADMIN_CLIENTES_PASSWORD or ""
 
 
 def cadete_session_version(password):
     return hmac.new(os.environ.get("SESSION_SECRET", "").encode(),
                     ("cadete:" + password).encode(), hashlib.sha256).hexdigest()
+
+
+def admin_session_version(password):
+    return hmac.new(os.environ.get("SESSION_SECRET", "").encode(),
+                    ("admin:" + password).encode(), hashlib.sha256).hexdigest()
 
 
 def _cadete_activo(request: Request):
