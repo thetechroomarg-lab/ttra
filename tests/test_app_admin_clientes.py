@@ -4,6 +4,17 @@ import web.app as appmod
 from tests.fakes_supabase import FakeSupabaseClient
 
 
+
+def _jpeg_chico():
+    from io import BytesIO
+    from PIL import Image
+    salida = BytesIO()
+    Image.new("RGB", (4, 4)).save(salida, "JPEG")
+    return salida.getvalue()
+
+
+_JPEG_CHICO = _jpeg_chico()
+
 def _cliente_logueado(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
@@ -352,11 +363,16 @@ def test_admin_incluye_fotos_de_serie_en_el_pdf_del_recibo(monkeypatch):
 
     r = c.post(
         "/admin/pedidos/pedido-con-foto/recibo",
-        files=[("fotos", ("serie.jpg", b"foto-comprimida", "image/jpeg"))],
+        files=[("fotos", ("serie.jpg", _JPEG_CHICO, "image/jpeg"))],
     )
 
     assert r.status_code == 200
-    assert fotos_en_pdf == [[b"foto-comprimida"]]
+    assert fotos_en_pdf == [[_JPEG_CHICO]]
+
+
+def test_recibo_rechaza_fotos_que_no_son_imagen(monkeypatch):
+    assert not appmod._foto_valida(b"foto-comprimida")
+    assert appmod._foto_valida(_JPEG_CHICO)
 
 
 def test_admin_reenvia_recibo_y_conserva_la_fecha_original(monkeypatch):

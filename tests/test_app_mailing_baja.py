@@ -23,7 +23,7 @@ def test_baja_confirmar_marca_no_mailing_en_true(monkeypatch):
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
     cliente = TestClient(appmod.app, base_url="https://testserver")
 
-    respuesta = cliente.get("/mailing/baja/cliente-1/confirmar")
+    respuesta = cliente.post("/mailing/baja/cliente-1/confirmar")
 
     assert respuesta.status_code == 200
     fila = fake.table("clientes").select("*").eq("id", "cliente-1").execute().data[0]
@@ -45,6 +45,21 @@ def test_baja_confirmar_con_cliente_inexistente_devuelve_404(monkeypatch):
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
     cliente = TestClient(appmod.app, base_url="https://testserver")
 
-    respuesta = cliente.get("/mailing/baja/no-existe/confirmar")
+    respuesta = cliente.post("/mailing/baja/no-existe/confirmar")
 
     assert respuesta.status_code == 404
+
+
+def test_baja_confirmar_por_get_no_da_de_baja(monkeypatch):
+    # Los antivirus de los mails siguen los links solos: un GET nunca muta.
+    fake = FakeSupabaseClient()
+    fake.table("clientes").insert({"id": "cliente-1", "email": "a@x.com", "no_mailing": False}).execute()
+    monkeypatch.setattr(appmod, "get_client", lambda: fake)
+    cliente = TestClient(appmod.app, base_url="https://testserver")
+
+    respuesta = cliente.get("/mailing/baja/cliente-1/confirmar", follow_redirects=False)
+
+    assert respuesta.status_code == 303
+    assert respuesta.headers["location"] == "/mailing/baja/cliente-1"
+    fila = fake.table("clientes").select("*").eq("id", "cliente-1").execute().data[0]
+    assert fila["no_mailing"] is False
