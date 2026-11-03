@@ -9,7 +9,8 @@
   const scrollStage = document.querySelector('.ttra-scroll-stage');
   const sectionTransitions = [
     [document.querySelector('.ttra-hero'), document.querySelector('.ttra-collection')],
-    [document.querySelector('.ttra-collection'), document.querySelector('.ttra-garantias')],
+    [document.querySelector('.ttra-collection'), document.querySelector('.ttra-canje-home')],
+    [document.querySelector('.ttra-canje-home'), document.querySelector('.ttra-garantias')],
     [document.querySelector('.ttra-garantias'), document.querySelector('.ttra-about')],
   ].filter(([outgoing, incoming]) => outgoing && incoming);
   const themeButton = document.getElementById('ttra-theme');

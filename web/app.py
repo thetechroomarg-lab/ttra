@@ -6225,6 +6225,12 @@ def habilitar_album_bitu(request: Request):
     return JSONResponse({"access": access}, headers={"Cache-Control": "no-store"})
 
 
+@app.get("/plan-canje")
+@app.get("/plan-canje/")
+def pagina_plan_canje():
+    return FileResponse(str(BASE / "static" / "plan-canje.html"))
+
+
 @app.get("/blackhole")
 @app.get("/blackhole/")
 def pagina_blackhole():
