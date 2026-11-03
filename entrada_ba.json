@@ -1,15 +1,6 @@
 {
   "items": [
     {
-      "nombre": "NOTEBOOK HP 15-FD0259 INTEL CORE I5-1334U 8GB 512GB SSD 15.6\" HD",
-      "costo": 590,
-      "stock": 2,
-      "proveedor": "ba",
-      "colores": [],
-      "estado_proveedor": "disponible",
-      "codigo_proveedor": "BZ0J9UA#ABA"
-    },
-    {
       "nombre": "NOTEBOOK HP OMEN HYPERX AMD RYZEN 7 8745HX 16GB RAM 1TB SSD NVIDIA RTX 5060 8GB 15.3\" WUXGA 165Hz",
       "costo": 1690,
       "stock": 2,
@@ -127,17 +118,6 @@
       "estado_proveedor": "REFURBISHED"
     },
     {
-      "nombre": "Asus Vivobook 14 X1404VA-I512256 Core i5-1334U 256GB SSD 12GB 14\" (1920x1080) WIN11",
-      "costo": 610,
-      "stock": 1,
-      "proveedor": "ba",
-      "colores": [
-        "QUIET BLUE"
-      ],
-      "estado_proveedor": "disponible",
-      "codigo_proveedor": "X1404VA-I512256"
-    },
-    {
       "nombre": "NOTEBOOK ASUS TUF GAMING AMD RYZEN 7 260 16GB RAM 1TB SSD NVIDIA RTX 5050 8GB 18\" WUXGA 144Hz",
       "costo": 1630,
       "stock": 1,
@@ -158,7 +138,7 @@
     {
       "nombre": "NOTEBOOK LENOVO 13W YOGA GEN 2 AMD RYZEN 5 7530U 16GB RAM 256GB SSD 13.3\" TACTIL 2-EN-1 (Reacondicionado)",
       "costo": 575,
-      "stock": 2,
+      "stock": 1,
       "proveedor": "ba",
       "colores": [],
       "estado_proveedor": "REFURBISHED",
@@ -383,6 +363,28 @@
     }
   ],
   "filtrados": [
+    {
+      "nombre": "NOTEBOOK HP 15-FD0259 INTEL CORE I5-1334U 8GB 512GB SSD 15.6\" HD",
+      "costo": 590,
+      "stock": 0,
+      "proveedor": "ba",
+      "colores": [],
+      "estado_proveedor": "disponible",
+      "codigo_proveedor": "BZ0J9UA#ABA",
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
+    {
+      "nombre": "Asus Vivobook 14 X1404VA-I512256 Core i5-1334U 256GB SSD 12GB 14\" (1920x1080) WIN11",
+      "costo": 610,
+      "stock": 0,
+      "proveedor": "ba",
+      "colores": [
+        "QUIET BLUE"
+      ],
+      "estado_proveedor": "disponible",
+      "codigo_proveedor": "X1404VA-I512256",
+      "motivo": "Sin disponibilidad o caja dañada"
+    },
     {
       "nombre": "MINI PC ORIMAGIC C4 PLUS MINI AMD RYZEN 5 3501U 8GB RAM 256GB SSD WIN11 PRO",
       "costo": 260,
