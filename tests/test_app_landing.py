@@ -24,7 +24,7 @@ def leer_landing_js():
 
 
 def test_todas_las_paginas_html_incluyen_una_unica_etiqueta_google_al_inicio_del_head():
-    for nombre in ("index.html", "login.html", "catalogo.html"):
+    for nombre in ("index.html", "login.html", "catalogo.html", "plan-canje.html"):
         html = (appmod.BASE / "static" / nombre).read_text()
         etiqueta = 'https://www.googletagmanager.com/gtag/js?id=G-ZPQR91G145'
 
@@ -1030,3 +1030,13 @@ def test_panel_direccion_no_se_cierra_al_tocar_afuera():
     assert 'getElementById("btn-cancelar-selector-domicilio").addEventListener("click", cerrarPanelSecundario)' in script
     assert 'getElementById("btn-cancelar-direccion").addEventListener("click", cerrarPanelSecundario)' in script
     assert 'id="btn-cancelar-direccion"' in html
+
+
+def test_plan_canje_tiene_pagina_propia_y_la_home_solo_enlaza():
+    with TestClient(appmod.app) as c:
+        r = c.get("/plan-canje")
+    assert r.status_code == 200
+    assert "Plan Canje" in r.text and "no se negocian" in r.text
+    home = (appmod.BASE / "static" / "index.html").read_text(encoding="utf-8")
+    assert 'href="/plan-canje"' in home
+    assert "no se negocian" not in home

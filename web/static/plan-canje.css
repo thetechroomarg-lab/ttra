@@ -1,0 +1,66 @@
+/* Entrada a Plan Canje en la home (Classic), entre Categorías y Garantías.
+   Mismo tablero que Garantías (pizarra-home.css): marco, filas separadas por
+   2px, una placa clara y una fila oscura con la cifra en ámbar, a la misma
+   medida de columna. El detalle vive en /plan-canje. */
+html[data-modo="classic"] .ttra-canje-home {
+  position: relative; z-index: 2;
+  padding: 70px 12px 65px;
+  scroll-margin-top: 25px;
+  background: var(--rc-bg);
+  box-shadow: 0 -24px 55px #00000022;
+  transform: none; filter: none;
+}
+html[data-modo="classic"] #ttra-canje-title {
+  color: var(--pz-plate);
+  font: 700 clamp(34px, 9vw, 56px)/1 var(--pz-font);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+html[data-modo="classic"] .ttra-canje-home-grid {
+  display: grid; grid-template-columns: 1fr; gap: 2px;
+  border: 8px solid var(--pz-frame); border-radius: 4px;
+  background: var(--pz-gap);
+  box-shadow: 0 22px 48px #00000080;
+}
+html[data-modo="classic"] .ttra-canje-card {
+  position: relative;
+  display: grid; grid-template-columns: minmax(0, 1fr) 26px;
+  grid-template-areas: "principal flecha" "desde flecha" "accion flecha";
+  grid-template-rows: 1fr auto auto;
+  align-items: end; column-gap: 14px; row-gap: 6px;
+  min-height: 150px; padding: 18px 16px 16px;
+  background: var(--pz-board); color: var(--pz-plate);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .2s;
+}
+html[data-modo="classic"] .ttra-canje-card-destacada { background: var(--pz-plate); color: var(--pz-ink); }
+html[data-modo="classic"] .ttra-canje-card-titulo {
+  grid-area: principal; align-self: start; max-width: 14ch;
+  font: 700 clamp(34px, 9vw, 54px)/.92 var(--pz-font); letter-spacing: .01em; text-transform: uppercase; text-wrap: balance;
+}
+html[data-modo="classic"] .ttra-canje-card-cifra { grid-area: principal; align-self: start; display: flex; flex-direction: column; gap: 4px; }
+html[data-modo="classic"] .ttra-canje-card-cifra span { color: var(--pz-dim); font: 700 14px/1 var(--pz-font); letter-spacing: .08em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-canje-card-cifra strong { color: var(--pz-amber); font: 700 clamp(64px, 14vw, 96px)/.9 var(--pz-font); font-variant-numeric: tabular-nums; }
+html[data-modo="classic"] .ttra-canje-card-desde { grid-area: desde; margin: 0; color: var(--pz-dim); font: 600 14px/1.25 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-canje-card-destacada .ttra-canje-card-desde { color: #4a4943; }
+html[data-modo="classic"] .ttra-canje-card-bottom { display: contents; }
+html[data-modo="classic"] .ttra-canje-card-nombre { grid-area: accion; margin-top: 8px; font: 700 22px/1 var(--pz-font); letter-spacing: .03em; text-transform: uppercase; }
+html[data-modo="classic"] .ttra-canje-card .ttra-circle-arrow {
+  grid-area: flecha; align-self: end; width: 26px; height: 26px;
+  fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+}
+html[data-modo="classic"] .ttra-canje-card:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: -4px; }
+@media (hover: hover) {
+  html[data-modo="classic"] .ttra-canje-card:hover { background: #151514; }
+  html[data-modo="classic"] .ttra-canje-card-destacada:hover { background: #f7f6f0; }
+}
+@media (min-width: 701px) {
+  html[data-modo="classic"] .ttra-canje-home-grid { grid-template-columns: 1fr 1fr; max-width: 1240px; margin-inline: auto; border-width: 12px; }
+  html[data-modo="classic"] .ttra-canje-card { min-height: 230px; padding: 22px 22px 20px; }
+  html[data-modo="classic"] .ttra-canje-card-nombre { font-size: 26px; }
+  html[data-modo="classic"] .ttra-canje-home > .ttra-section-heading { max-width: 1240px; margin-inline: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .ttra-canje-card { transition: none; }
+}
