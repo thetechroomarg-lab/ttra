@@ -1,0 +1,96 @@
+[
+  {
+    "id": "iphone-15-128gb",
+    "modelo": "iPhone 15",
+    "capacidad": "128 GB",
+    "valor_usd": 320
+  },
+  {
+    "id": "iphone-15-256gb",
+    "modelo": "iPhone 15",
+    "capacidad": "256 GB",
+    "valor_usd": 360
+  },
+  {
+    "id": "iphone-15-pro-128gb",
+    "modelo": "iPhone 15 Pro",
+    "capacidad": "128 GB",
+    "valor_usd": 440
+  },
+  {
+    "id": "iphone-15-pro-512gb",
+    "modelo": "iPhone 15 Pro",
+    "capacidad": "512 GB",
+    "valor_usd": 550
+  },
+  {
+    "id": "iphone-15-pro-1tb",
+    "modelo": "iPhone 15 Pro",
+    "capacidad": "1 TB",
+    "valor_usd": 550,
+    "toma_como": "512 GB"
+  },
+  {
+    "id": "iphone-15-pro-max-256gb",
+    "modelo": "iPhone 15 Pro Max",
+    "capacidad": "256 GB",
+    "valor_usd": 560
+  },
+  {
+    "id": "iphone-16-128gb",
+    "modelo": "iPhone 16",
+    "capacidad": "128 GB",
+    "valor_usd": 450
+  },
+  {
+    "id": "iphone-16-pro-128gb",
+    "modelo": "iPhone 16 Pro",
+    "capacidad": "128 GB",
+    "valor_usd": 550
+  },
+  {
+    "id": "iphone-16-pro-max-256gb",
+    "modelo": "iPhone 16 Pro Max",
+    "capacidad": "256 GB",
+    "valor_usd": 700
+  },
+  {
+    "id": "iphone-16-pro-max-512gb",
+    "modelo": "iPhone 16 Pro Max",
+    "capacidad": "512 GB",
+    "valor_usd": 800
+  },
+  {
+    "id": "iphone-16-pro-max-1tb",
+    "modelo": "iPhone 16 Pro Max",
+    "capacidad": "1 TB",
+    "valor_usd": 800,
+    "toma_como": "512 GB"
+  },
+  {
+    "id": "iphone-17-pro-max-256gb",
+    "modelo": "iPhone 17 Pro Max",
+    "capacidad": "256 GB",
+    "valor_usd": 950
+  },
+  {
+    "id": "iphone-17-pro-max-512gb",
+    "modelo": "iPhone 17 Pro Max",
+    "capacidad": "512 GB",
+    "valor_usd": 1150
+  },
+  {
+    "id": "iphone-17-pro-max-1tb",
+    "modelo": "iPhone 17 Pro Max",
+    "capacidad": "1 TB",
+    "valor_usd": 1150,
+    "toma_como": "512 GB"
+  },
+  {
+    "id": "iphone-17-pro-max-2tb",
+    "modelo": "iPhone 17 Pro Max",
+    "capacidad": "2 TB",
+    "valor_usd": 1150,
+    "toma_como": "512 GB"
+  }
+]

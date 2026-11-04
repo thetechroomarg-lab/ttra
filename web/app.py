@@ -9,6 +9,7 @@ import re
 import secrets
 import string
 import time
+import unicodedata
 import uuid
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
@@ -28,7 +29,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
+from web import canjes, paginas_canjes, pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import _clientes_admin_activo, admin_session_version, cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -2713,7 +2714,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<strong>$ {_formatear_entero_ar(abs(resumen_saldo["saldo_pendiente"]))}</strong></span></a>'
         )
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Administración — The Tech Room Arg.</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}{_leer_ui("entregas_pago.css.html")}{_leer_ui("admin_secciones.css.html")}</head><body class="admin-entregas">
+<title>Administración — The Tech Room Arg.</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}{_leer_ui("entregas_pago.css.html")}{_leer_ui("admin_secciones.css.html")}{_leer_ui("admin_canjes.css.html")}</head><body class="admin-entregas">
 <div class="panel">
   <div class="panel-header">
     <h1>Administración</h1>
@@ -2730,6 +2731,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 <section id="admin-seccion-clientes" hidden>{_admin_clientes_pagina(request, True)}</section>
 </div>
 {_leer_ui("admin_secciones.js.html")}
+{_leer_ui("admin_canjes.js.html")}
 {_CONFIRMAR_COMPLETADO_HTML}
 {_leer_ui("entregas_pago.html")}
 {_leer_ui("entregas_pago.js.html")}
@@ -4743,6 +4745,7 @@ def api_me(request: Request):
     try:
         client_me = get_client()
         for codigo in dict.fromkeys(filter(None, [
+            *canjes.codigos_aprobados_de(client_me, cliente["id"]),
             (resumen_referidos or {}).get("codigo_premio"), cliente.get("fidelidad_ultimo_codigo"),
         ])):
             fila = cupones.fila_por_codigo(client_me, codigo)
@@ -6229,6 +6232,147 @@ def habilitar_album_bitu(request: Request):
 @app.get("/plan-canje/")
 def pagina_plan_canje():
     return FileResponse(str(BASE / "static" / "plan-canje.html"))
+
+
+# ---- Plan Canje: solicitudes de iPhone usado como parte de pago ----
+
+# Fotos que pide la página (frente, reverso, costado y batería) y tope de
+# solicitudes abiertas por cliente, para que nadie llene el panel.
+_CANJE_FOTOS = len(canjes.ROTULOS_FOTOS)
+_CANJE_PENDIENTES_MAX = 3
+_CANJE_AVISO_EMAIL = os.environ.get("CANJE_AVISO_EMAIL", "thetechroomarg@gmail.com")
+
+
+@app.get("/api/canje/tabla")
+def api_canje_tabla():
+    return canjes.cargar_tabla()
+
+
+@app.post("/api/canje/solicitudes", status_code=201)
+async def api_canje_solicitar(request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    formulario = await request.form()
+    equipo = canjes.buscar_equipo(str(formulario.get("equipo") or ""))
+    if equipo is None:
+        return JSONResponse({"error": "Elegí el modelo y la capacidad de tu iPhone"}, status_code=400)
+    fotos = [f for f in formulario.getlist("fotos") if getattr(f, "filename", None)]
+    if len(fotos) != _CANJE_FOTOS:
+        return JSONResponse({"error": f"Necesito las {_CANJE_FOTOS} fotos: frente, reverso, lados, bordes y la captura de batería"},
+                            status_code=400)
+    contenidos = []
+    for foto in fotos:
+        contenido = await foto.read()
+        if not contenido or len(contenido) > 2_500_000:
+            return JSONResponse({"error": "Cada foto comprimida debe pesar menos de 2,5 MB"}, status_code=400)
+        if not _foto_valida(contenido):
+            return JSONResponse({"error": "Las fotos tienen que ser JPG, PNG o WebP"}, status_code=400)
+        contenidos.append(contenido)
+
+    client = get_client()
+    cliente_id = request.session["cliente_id"]
+    cliente = cuentas.obtener_cliente(client, cliente_id)
+    if cliente is None:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    abiertas = [c for c in client.table("canjes").select("*").eq("cliente_id", cliente_id).eq("estado", "pendiente").execute().data or []]
+    if len(abiertas) >= _CANJE_PENDIENTES_MAX:
+        return JSONResponse({"error": "Ya tenés solicitudes esperando mi respuesta. Esperá a que las revise."}, status_code=429)
+
+    canje_id = str(uuid.uuid4())
+    rutas, adjuntos = [], []
+    for indice, contenido in enumerate(contenidos, start=1):
+        rotulo = unicodedata.normalize("NFKD", canjes.ROTULOS_FOTOS[indice - 1]).encode("ascii", "ignore").decode()
+        nombre = f"{indice}-{rotulo.lower().replace(' ', '-')}.jpg"
+        ruta = f"canjes/{canje_id}/{nombre}"
+        client.storage.from_(canjes.BUCKET).upload(ruta, contenido, {"content-type": "image/jpeg"})
+        rutas.append(ruta)
+        adjuntos.append({"filename": nombre, "content": contenido})
+    canje = canjes.crear_solicitud(client, cliente_id, equipo, rutas, canje_id=canje_id)
+    try:
+        enviar_email(
+            _CANJE_AVISO_EMAIL, canjes.asunto_aviso(canje, cliente),
+            canjes.html_aviso_vlad(canje, cliente, _public_app_base_url(request)),
+            adjuntos, reply_to=cliente.get("email") or None,
+        )
+    except Exception:
+        # La solicitud ya está guardada y se ve en /admin/canjes.
+        logger.exception("No se pudo enviar el aviso del canje %s", canje_id)
+    mensaje = (f"Hola Vlad, soy {cliente.get('nombre') or ''} {cliente.get('apellido') or ''}. "
+               f"Te mandé las fotos de mi {equipo['modelo']} {equipo['capacidad']} para el Plan Canje "
+               f"(US$ {equipo['valor_usd']}). ¿Lo podés revisar?").replace("  ", " ")
+    return {"ok": True, "id": canje_id, "whatsapp_url": f"{WHATSAPP}?text={quote(mensaje)}"}
+
+
+def _canje_admin_o_401(request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+
+
+@app.get("/admin/canjes", response_class=HTMLResponse)
+def admin_canjes(request: Request):
+    _canje_admin_o_401(request)
+    if request.query_params.get("fragmento") != "1":
+        return RedirectResponse("/admin/clientes#canjes", status_code=303)
+    client = get_client()
+    clientes = {c["id"]: c for c in client.table("clientes").select("*").execute().data if c.get("id")}
+    return paginas_canjes.html_fragmento(canjes.listar(client), clientes)
+
+
+@app.get("/admin/canjes/{canje_id}/foto/{indice}")
+def admin_canje_foto(canje_id: str, indice: int, request: Request):
+    _canje_admin_o_401(request)
+    canje = canjes.obtener(get_client(), canje_id)
+    fotos = (canje or {}).get("fotos") or []
+    if not 0 <= indice < len(fotos):
+        raise HTTPException(status_code=404, detail="Foto no encontrada")
+    try:
+        contenido = get_client().storage.from_(canjes.BUCKET).download(fotos[indice])
+    except Exception:
+        logger.exception("No se pudo leer la foto %s del canje %s", indice, canje_id)
+        raise HTTPException(status_code=502, detail="No pude leer la foto")
+    return Response(contenido, media_type="image/jpeg", headers={"Cache-Control": "private, no-store"})
+
+
+class CanjeRechazoIn(BaseModel):
+    motivo: str = ""
+
+
+def _avisar_resultado_canje(client, canje, request):
+    cliente = cuentas.obtener_cliente(client, canje["cliente_id"]) or {}
+    if not cliente.get("email"):
+        return False
+    try:
+        enviar_email(cliente["email"], canjes.asunto_resultado(canje),
+                     canjes.html_resultado_cliente(canje, cliente, _public_app_base_url(request)))
+        return True
+    except Exception:
+        logger.exception("No se pudo avisar al cliente el resultado del canje %s", canje["id"])
+        return False
+
+
+@app.post("/admin/canjes/{canje_id}/aprobar")
+def admin_canje_aprobar(canje_id: str, request: Request):
+    _canje_admin_o_401(request)
+    client = get_client()
+    try:
+        canje, codigo = canjes.aprobar(client, canje_id)
+    except canjes.CanjeError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=409)
+    avisado = _avisar_resultado_canje(client, canje, request)
+    return {"ok": True, "codigo": codigo, "valor_usd": canje["valor_usd"], "avisado": avisado}
+
+
+@app.post("/admin/canjes/{canje_id}/rechazar")
+def admin_canje_rechazar(canje_id: str, entrada: CanjeRechazoIn, request: Request):
+    _canje_admin_o_401(request)
+    client = get_client()
+    try:
+        canje = canjes.rechazar(client, canje_id, entrada.motivo)
+    except canjes.CanjeError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=409)
+    canje["motivo_rechazo"] = (entrada.motivo or "").strip()[:500]
+    avisado = _avisar_resultado_canje(client, canje, request)
+    return {"ok": True, "avisado": avisado}
 
 
 @app.get("/blackhole")
