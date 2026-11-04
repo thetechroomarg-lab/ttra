@@ -16,8 +16,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .mail_pedido import (
-    URL_SITIO, _BLANCO, _BORDE, _CORAL, _MONO, _SANS, _TENUE, _TEXTO,
-    _bloque, _boton, _documento, _etiqueta, _logo, _pie, _sticker, _tabla,
+    URL_SITIO, _BLANCO, _BORDE, _CORAL, _CREMA, _MONO, _ROJO_CREMA, _SANS, _TENUE, _TEXTO,
+    _TINTA, _TINTA_TENUE, _bloque, _boton, _documento, _etiqueta, _logo, _pie, _sticker, _tabla,
 )
 
 TABLA_PATH = Path(__file__).parent / "canje_tabla.json"
@@ -207,40 +207,70 @@ def html_aviso_vlad(canje, cliente, url_sitio=URL_SITIO):
 
 
 def asunto_resultado(canje):
-    return ("Aprobé tu iPhone para el Plan Canje" if canje["estado"] == "aprobado"
-            else "Sobre tu iPhone del Plan Canje")
+    if canje["estado"] == "aprobado":
+        return "Aprobé tu iPhone del Plan Canje: ya tenés tu descuento"
+    return "Sobre tu iPhone del Plan Canje"
+
+
+def _usd(valor):
+    return f"US$ {int(valor):,}".replace(",", ".")
+
+
+def _tarjeta_codigo(canje):
+    """La card crema destacada con el código, como las credenciales del mail de cuenta."""
+    equipo = f"{canje['modelo']} {canje['capacidad']}"
+    etiqueta = lambda texto: (f'<p style="margin:0;font:600 11px/1.4 {_MONO};letter-spacing:2px;'
+                              f'text-transform:uppercase;color:{_TINTA_TENUE}">{texto}</p>')
+    return _bloque(_tabla(
+        f'<tr><td style="background:{_CREMA};padding:26px 24px">'
+        f'{etiqueta("Tu código de descuento")}'
+        f'<p style="margin:8px 0 0;font:700 26px/1.2 {_MONO};letter-spacing:1px;color:{_TINTA};word-break:break-all">'
+        f'{html.escape(canje["codigo"])}</p>'
+        f'<div style="height:1px;background:#d9d9d9;margin:18px 0"></div>'
+        f'{etiqueta("Descuento")}'
+        f'<p style="margin:6px 0 0;font:800 30px/1.1 {_SANS};letter-spacing:-1px;color:{_TINTA}">{_usd(canje["valor_usd"])}</p>'
+        f'<p style="margin:6px 0 0;font:400 14px/1.5 {_SANS};color:{_TINTA_TENUE}">por tu {html.escape(equipo)} en parte de pago</p>'
+        f'<p style="margin:18px 0 0;font:600 14px/1.5 {_SANS};color:{_ROJO_CREMA}">'
+        f'Sirve una sola vez y se aplica solo al abrir el carrito con tu sesión iniciada.</p>'
+        f'</td></tr>'
+    ), padding_top=36)
+
+
+def _bloque_motivo(motivo):
+    return _bloque(
+        f'<p style="margin:0 0 8px;font:600 11px/1.4 {_MONO};letter-spacing:2px;text-transform:uppercase;color:{_TENUE}">Motivo</p>'
+        f'<p style="margin:0;font:400 17px/1.5 {_SANS};color:{_BLANCO}">{html.escape(motivo)}</p>',
+        padding_top=32,
+    )
 
 
 def html_resultado_cliente(canje, cliente, url_sitio=URL_SITIO):
     url_sitio = (url_sitio or URL_SITIO).rstrip("/")
     nombre = (cliente.get("nombre") or "").strip()
     saludo = f"Hola, {html.escape(nombre)}." if nombre else "Hola."
+    equipo = html.escape(f"{canje['modelo']} {canje['capacidad']}")
     if canje["estado"] == "aprobado":
-        valor = f"US$ {int(canje['valor_usd']):,}".replace(",", ".")
         cuerpo = "".join((
             _encabezado("Plan Canje", "Aprobado"),
             _titulo("Aprobado", "Tomo tu iPhone"),
-            _bloque(
-                f'<p style="margin:0;font:400 16px/1.6 {_SANS};color:{_TENUE}">{saludo} Aprobé tu '
-                f'{html.escape(canje["modelo"])} {html.escape(canje["capacidad"])}. Tenés un código de '
-                f'<strong style="color:{_BLANCO}">{valor}</strong> de descuento para tu próxima compra. '
-                f'Sirve una sola vez y se aplica solo cuando abrís el carrito.</p>'
-                f'<p style="margin:22px 0 0;font:700 24px/1.2 {_MONO};letter-spacing:1px;color:{_BLANCO}">'
-                f'{html.escape(canje["codigo"])}</p>', padding_top=28),
+            _bloque(f'<p style="margin:0;font:400 16px/1.6 {_SANS};color:{_TENUE}">{saludo} Revisé las fotos de tu '
+                    f'<strong style="color:{_BLANCO}">{equipo}</strong> y lo acepto como parte de pago. '
+                    f'Ya podés usar tu descuento en la próxima compra.</p>', padding_top=28),
+            _tarjeta_codigo(canje),
             _boton(f"{url_sitio}/catalogo", "Elegir mi equipo"),
             _sticker("Cualquier duda, escribime y lo vemos."),
             _pie(url_sitio, "aprobé tu equipo del Plan Canje", ""),
         ))
-        return _documento("Plan Canje aprobado", f"Tenés {valor} de descuento", cuerpo)
+        return _documento("Plan Canje aprobado", f"Tenés {_usd(canje['valor_usd'])} de descuento con tu código", cuerpo)
     motivo = (canje.get("motivo_rechazo") or "").strip()
-    texto = (f'{saludo} Revisé las fotos de tu {html.escape(canje["modelo"])} {html.escape(canje["capacidad"])} '
-             f'y esta vez no lo puedo tomar.')
-    if motivo:
-        texto += f' Motivo: {html.escape(motivo)}.'
     cuerpo = "".join((
         _encabezado("Plan Canje", "Resuelto"),
         _titulo("Plan Canje", "No lo puedo tomar"),
-        _bloque(f'<p style="margin:0;font:400 16px/1.6 {_SANS};color:{_TENUE}">{texto}</p>', padding_top=28),
+        _bloque(f'<p style="margin:0;font:400 16px/1.6 {_SANS};color:{_TENUE}">{saludo} Revisé las fotos de tu '
+                f'<strong style="color:{_BLANCO}">{equipo}</strong> y esta vez no lo puedo tomar como parte de pago.</p>',
+                padding_top=28),
+        _bloque_motivo(motivo) if motivo else "",
+        _boton(f"{url_sitio}/plan-canje", "Ver las condiciones"),
         _sticker("Si querés, escribime y lo charlamos."),
         _pie(url_sitio, "revisé tu equipo del Plan Canje", ""),
     ))
