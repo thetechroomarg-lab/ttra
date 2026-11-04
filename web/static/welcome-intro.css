@@ -8,7 +8,7 @@ html.ttra-welcome-pending #rc-body-landing > header { display: none !important; 
 .ttra-intro-shade { background: radial-gradient(ellipse at center, transparent 25%, #0008 100%); }
 .ttra-intro-title { position: absolute; margin: 0; left: 50%; top: 50%; width: 100%; text-align: center; transform: translate(-50%, -50%) scale(var(--title-scale, .75)); opacity: var(--title-opacity, 0); filter: blur(var(--title-blur, 12px)); pointer-events: none; }
 /* El mensaje es la primera pizarra: una placa esmaltada, TTRA en celdas de
-   tablero que se dan vuelta hasta quedar fijas y el punto rojo de la marca.
+   tablero que se dan vuelta hasta quedar fijas.
    La escena 3D y el fundido (opacity/scale/blur, ver welcome-intro.js) no
    cambian; esto solo anima lo que hay adentro del título. */
 .ttra-intro-title { display: grid; justify-items: center; gap: clamp(14px, 2vw, 26px); font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; }
@@ -35,17 +35,15 @@ html.ttra-welcome-pending #rc-body-landing > header { display: none !important; 
 }
 /* The hinge line across every cell. */
 .ttra-intro-title i::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: .012em; min-height: 2px; background: #000; box-shadow: 0 1px 0 #ffffff12; }
-.ttra-intro-title b { width: .2em; height: .2em; margin: 0 0 -.46em .06em; border-radius: 50%; background: #f45240; box-shadow: 0 0 0 .025em #000; }
 .ttra-intro-title small { color: #b3b1a8; font: 600 clamp(13px, 1.5vw, 19px)/1 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: .34em; text-indent: .34em; text-transform: uppercase; }
 
 /* The board settles once the welcome phase starts: plate wipes in, each
-   cell flips over a few times and lands left to right, the dot drops last. */
+   cell flips over a few times and lands left to right. */
 @media (prefers-reduced-motion: no-preference) {
   .ttra-intro:is([data-phase="loading"], [data-phase="spin"], [data-phase="explode"], [data-phase="freeze"]) .ttra-intro-placa { clip-path: inset(0 100% 0 0); }
-  .ttra-intro:is([data-phase="loading"], [data-phase="spin"], [data-phase="explode"], [data-phase="freeze"]) :is(.ttra-intro-title i, .ttra-intro-title b, .ttra-intro-title small) { opacity: 0; }
+  .ttra-intro:is([data-phase="loading"], [data-phase="spin"], [data-phase="explode"], [data-phase="freeze"]) :is(.ttra-intro-title i, .ttra-intro-title small) { opacity: 0; }
   .ttra-intro:is([data-phase="welcome"], [data-phase="fade"]) .ttra-intro-placa { animation: ttra-intro-placa .5s cubic-bezier(.23, 1, .32, 1) both; }
   .ttra-intro:is([data-phase="welcome"], [data-phase="fade"]) .ttra-intro-title i { animation: ttra-intro-flap .62s cubic-bezier(.23, 1, .32, 1) calc(.12s + var(--i) * .11s) both; }
-  .ttra-intro:is([data-phase="welcome"], [data-phase="fade"]) .ttra-intro-title b { animation: ttra-intro-punto .4s cubic-bezier(.34, 1.56, .64, 1) .68s both; }
   .ttra-intro:is([data-phase="welcome"], [data-phase="fade"]) .ttra-intro-title small { animation: ttra-intro-sub .6s ease .8s both; }
 }
 @keyframes ttra-intro-placa { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
@@ -57,7 +55,6 @@ html.ttra-welcome-pending #rc-body-landing > header { display: none !important; 
   82% { transform: rotateX(-8deg); color: #ecebe4; }
   100% { opacity: 1; transform: none; color: #ecebe4; }
 }
-@keyframes ttra-intro-punto { from { opacity: 0; transform: translateY(-.5em) scale(.6); } to { opacity: 1; transform: none; } }
 @keyframes ttra-intro-sub { from { opacity: 0; letter-spacing: .6em; } to { opacity: 1; letter-spacing: .34em; } }
 .ttra-intro[data-fallback="true"] .ttra-intro-title { top: 40%; --title-opacity: 1; --title-scale: 1; --title-blur: 0px; }
 /* Tras quedar en negro (scene/title ya en opacity 0), un fade-in automático
