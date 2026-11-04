@@ -40,7 +40,7 @@
         <p class="ttra-canje-aviso"><strong>Los precios no se negocian</strong> y el equipo tiene que cumplir todas las condiciones. Si falta una, no lo tomo.</p>
         <div class="ttra-canje-fotos">
         <h3 class="ttra-canje-fotos-titulo">Mandame estas fotos</h3>
-        <p class="ttra-canje-fotos-texto">Claras y con buena luz, por WhatsApp, junto con el modelo y la capacidad.</p>
+        <p class="ttra-canje-fotos-texto">Claras y con buena luz. Las subís acá, con tu cuenta, y me llegan a mí junto con el modelo y la capacidad.</p>
         <ul class="ttra-canje-fotos-lista">
           <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="6" width="52" height="108" rx="9"/><rect class="cf-linea" x="26.5" y="10.5" width="43" height="99" rx="5.5"/><rect class="cf-acento" x="38" y="14" width="20" height="5" rx="2.5"/><path class="cf-guia" d="M14 24V12h12M82 24V12H70M14 104v12h12M82 104v12H70"/></svg><strong>Frente</strong><span>Pantalla entera, de punta a punta.</span></li>
           <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="6" width="52" height="108" rx="9"/><rect class="cf-acento" x="27" y="11" width="22" height="22" rx="6"/><circle class="cf-linea" cx="34" cy="18" r="3.2"/><circle class="cf-linea" cx="42" cy="18" r="3.2"/><circle class="cf-linea" cx="38" cy="26" r="3.2"/><circle class="cf-linea" cx="48" cy="66" r="6"/><path class="cf-guia" d="M14 24V12h12M82 24V12H70M14 104v12h12M82 104v12H70"/></svg><strong>Reverso</strong><span>Con las cámaras bien a la vista.</span></li>
@@ -48,7 +48,8 @@
           <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="6" width="52" height="108" rx="9"/><rect class="cf-linea" x="26.5" y="10.5" width="43" height="99" rx="5.5"/><path class="cf-linea" d="M32 28h20M32 36h32"/><rect class="cf-linea" x="32" y="52" width="32" height="12" rx="3"/><rect class="cf-acento-lleno" x="34" y="54" width="24" height="8" rx="1.5"/><text x="48" y="84" text-anchor="middle" class="cf-texto">85%+</text></svg><strong>Batería</strong><span>Captura de Ajustes, Batería, Estado de la batería.</span></li>
         </ul>
         </div>
-        <a class="ttra-button" href="https://wa.me/543512145217?text=Hola%20Vlad%2C%20quiero%20consultar%20por%20el%20Plan%20Canje" target="_blank" rel="noopener">Consultar por mi iPhone</a>
+        <button type="button" class="ttra-button" id="canje-abrir">Subir mis fotos</button>
+        <input type="file" id="canje-archivos" accept="image/*" multiple hidden>
       </div>
       <ol class="ttra-canje-reglas" aria-label="Condiciones del Plan Canje">
         <li><svg class="ttra-canje-icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><div><strong>Sin partes cambiadas</strong><span>Ninguna, sin excepción.</span></div></li>
@@ -87,5 +88,35 @@
 
     </section>
   </main>
+
+  <dialog class="canje-dialog" id="canje-dialog" aria-labelledby="canje-dialog-titulo">
+    <div class="canje-dialog-cuerpo" id="canje-formulario">
+      <h2 id="canje-dialog-titulo">Tu iPhone para el Plan Canje</h2>
+      <label class="canje-campo" for="canje-equipo">Modelo y capacidad</label>
+      <select id="canje-equipo"><option value="">Elegí tu iPhone</option></select>
+      <p class="canje-valor" id="canje-valor" aria-live="polite"></p>
+      <ul class="canje-slots" aria-label="Fotos del iPhone">
+        <li><button type="button" class="canje-slot" data-slot="0"><span class="canje-slot-vacio">+</span><strong>Frente</strong></button></li>
+        <li><button type="button" class="canje-slot" data-slot="1"><span class="canje-slot-vacio">+</span><strong>Reverso</strong></button></li>
+        <li><button type="button" class="canje-slot" data-slot="2"><span class="canje-slot-vacio">+</span><strong>Costado</strong></button></li>
+        <li><button type="button" class="canje-slot" data-slot="3"><span class="canje-slot-vacio">+</span><strong>Batería</strong></button></li>
+      </ul>
+      <input type="file" id="canje-archivo-uno" accept="image/*" hidden>
+      <p class="canje-error" id="canje-error" role="alert"></p>
+      <div class="canje-acciones">
+        <button type="button" class="canje-cancelar" id="canje-cancelar">Cancelar</button>
+        <button type="button" class="canje-enviar" id="canje-enviar">Enviar</button>
+      </div>
+    </div>
+    <div class="canje-dialog-cuerpo" id="canje-listo" hidden>
+      <h2>Ya tengo tu solicitud</h2>
+      <p class="canje-listo-texto">Miro las fotos y te respondo. Si querés apurarme, avisame por WhatsApp.</p>
+      <div class="canje-acciones">
+        <button type="button" class="canje-cancelar" id="canje-cerrar">Cerrar</button>
+        <a class="canje-enviar" id="canje-whatsapp" href="https://wa.me/543512145217" target="_blank" rel="noopener">Avisar por WhatsApp</a>
+      </div>
+    </div>
+  </dialog>
+  <script type="module" src="/plan-canje.js"></script>
 </body>
 </html>

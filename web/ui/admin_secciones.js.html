@@ -1,6 +1,6 @@
 <script>
 (() => {
- const secciones=['pedidos','clientes','borrados','cotizacion','ganancia'];
+ const secciones=['pedidos','clientes','canjes','borrados','cotizacion','ganancia'];
  const porId=id=>document.getElementById(id);
  const usd=v=>'USD '+Number(v).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
  const elemento=(tag,texto,clase)=>{const e=document.createElement(tag);e.textContent=texto;if(clase)e.className=clase;return e;};

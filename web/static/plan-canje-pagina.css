@@ -153,3 +153,42 @@ html[data-modo="classic"] .canje-page .ttra-canje-icono { stroke: var(--pz-amber
   html[data-modo="classic"] .canje-page .ttra-canje-tabla tbody th { font-size: 19px; }
   html[data-modo="classic"] .canje-page .ttra-canje-tabla tbody td:last-child { font-size: 28px; }
 }
+
+/* Panel de solicitud: el mismo diálogo flotante con blur del login y el carrito. */
+.canje-dialog { width: min(520px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 1px solid var(--ed-line); border-radius: 2px; background: var(--rc-bg-panel, #262626); color: var(--rc-green); overflow: auto; }
+.canje-dialog::backdrop { background: #10141859; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.canje-dialog-cuerpo { padding: 28px 24px 24px; }
+.canje-dialog-cuerpo[hidden] { display: none; }
+.canje-dialog h2 { margin: 0 0 20px; font: 600 24px/1.15 var(--rc-font); letter-spacing: -.03em; color: var(--rc-green-bright); }
+.canje-campo { display: block; margin: 0 0 8px; font-size: 13px; color: var(--rc-green-dim); }
+.canje-dialog select { box-sizing: border-box; width: 100%; min-height: 48px; padding: 0 12px; border: 1px solid var(--ed-line); border-radius: 2px; background: var(--rc-bg); color: var(--rc-green); font: 500 15px var(--rc-font); }
+.canje-valor { min-height: 1.4em; margin: 10px 0 18px; font: 600 15px/1.4 var(--rc-font); color: var(--rc-green-bright); }
+.canje-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 16px; padding: 0; list-style: none; }
+.canje-slot { position: relative; display: grid; width: 100%; aspect-ratio: 4 / 3; place-items: center; align-content: center; gap: 6px; padding: 0; overflow: hidden; border: 1px dashed var(--ed-line); border-radius: 2px; background: var(--rc-bg); color: var(--rc-green-dim); font: 500 13px var(--rc-font); cursor: pointer; }
+.canje-slot-vacio { font: 300 30px/1 var(--rc-font); color: var(--rc-green-bright); }
+.canje-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.canje-slot strong { position: relative; font-weight: 600; }
+.canje-slot.con-foto { border-style: solid; }
+.canje-slot.con-foto strong { position: absolute; left: 0; bottom: 0; padding: 4px 8px; background: #000000b3; color: var(--rc-green-bright); }
+.canje-error { min-height: 1.4em; margin: 0 0 12px; font-size: 14px; line-height: 1.4; color: var(--cl-rojo, #ff6b5e); }
+.canje-listo-texto { margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: var(--rc-green-dim); }
+.canje-acciones { display: flex; gap: 10px; }
+.canje-acciones :is(button, a) { display: inline-flex; flex: 1; align-items: center; justify-content: center; min-height: 50px; padding: 0 18px; border: 0; border-radius: 2px; font: 700 13px var(--rc-font); text-decoration: none; cursor: pointer; }
+.canje-cancelar { border: 1px solid var(--ed-line) !important; background: transparent; color: var(--rc-green); }
+.canje-enviar { background: var(--ed-button); color: #191b16; }
+.canje-enviar[disabled] { opacity: .45; cursor: not-allowed; }
+.canje-dialog :is(button, a, select):focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 3px; }
+
+/* Mismo tablero que el resto de la página: condensada en mayúsculas, ámbar para lo que importa. */
+html[data-modo="classic"] .canje-dialog { background: var(--pz-cell); border-color: var(--pz-frame); }
+html[data-modo="classic"] .canje-dialog h2 { font: 700 30px/1 var(--pz-font); letter-spacing: .01em; text-transform: uppercase; color: var(--pz-plate); }
+html[data-modo="classic"] .canje-campo { font: 700 14px/1 var(--pz-font); letter-spacing: .08em; text-transform: uppercase; color: var(--pz-dim); }
+html[data-modo="classic"] .canje-dialog select { background: var(--pz-board); border-color: var(--pz-frame); color: var(--pz-plate); }
+html[data-modo="classic"] .canje-valor { font: 700 26px/1 var(--pz-font); letter-spacing: .01em; color: var(--pz-amber); }
+html[data-modo="classic"] .canje-slot { background: var(--pz-board); border-color: var(--pz-frame); color: var(--pz-dim); font: 700 15px var(--pz-font); letter-spacing: .06em; text-transform: uppercase; }
+html[data-modo="classic"] .canje-slot-vacio { color: var(--pz-amber); }
+html[data-modo="classic"] .canje-slot.con-foto strong { color: var(--pz-plate); }
+html[data-modo="classic"] .canje-acciones :is(button, a) { font: 700 17px/1 var(--pz-font); letter-spacing: .08em; text-transform: uppercase; }
+html[data-modo="classic"] .canje-cancelar { border-color: var(--pz-frame) !important; color: var(--pz-plate); }
+html[data-modo="classic"] .canje-enviar { background: var(--pz-amber); color: var(--pz-ink); }
+html[data-modo="classic"] .canje-listo-texto { color: var(--pz-dim); }
