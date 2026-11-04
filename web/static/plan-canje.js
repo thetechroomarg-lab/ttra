@@ -94,20 +94,8 @@ async function abrirPanel() {
   if (!dialogo.open) dialogo.showModal();
 }
 
-// El botón de la página abre la cámara o la galería, de a una foto: va al primer hueco libre.
-$('canje-abrir').addEventListener('click', () => {
-  if (!fotos.some((f) => !f)) { abrirPanel(); return; }
-  $('canje-archivos').click();
-});
-$('canje-archivos').addEventListener('change', async (evento) => {
-  const archivo = evento.target.files[0];
-  evento.target.value = '';
-  if (!archivo) return;
-  await abrirPanel();
-  const libre = fotos.findIndex((f) => !f);
-  if (libre !== -1) await cargarFoto(libre, archivo);
-  pintar();
-});
+// El botón de la página abre el panel; las fotos se suben desde ahí, una por hueco.
+$('canje-abrir').addEventListener('click', abrirPanel);
 
 let slotActivo = 0;
 document.querySelectorAll('.canje-slot').forEach((boton) => boton.addEventListener('click', () => {
