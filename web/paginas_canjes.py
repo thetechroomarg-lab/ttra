@@ -17,11 +17,15 @@ def _tarjeta(canje, cliente):
     estado = canje.get("estado") or "pendiente"
     valor = f"{int(canje['valor_usd']):,}".replace(",", ".")
     ident = html.escape(canje["id"])
+    rotulos = canjes.ROTULOS_FOTOS
+    # Una miniatura por foto guardada (una solicitud vieja puede tener menos que las actuales).
     fotos = "".join(
         f'<button type="button" class="canje-foto" data-src="/admin/canjes/{ident}/foto/{i}" '
-        f'data-rotulo="{html.escape(rotulo)}"><img loading="lazy" src="/admin/canjes/{ident}/foto/{i}" '
-        f'alt="{html.escape(rotulo)}"><span>{html.escape(rotulo)}</span></button>'
-        for i, rotulo in enumerate(canjes.ROTULOS_FOTOS)
+        f'data-rotulo="{html.escape(rotulos[i] if i < len(rotulos) else f"Foto {i + 1}")}">'
+        f'<img loading="lazy" src="/admin/canjes/{ident}/foto/{i}" '
+        f'alt="{html.escape(rotulos[i] if i < len(rotulos) else f"Foto {i + 1}")}">'
+        f'<span>{html.escape(rotulos[i] if i < len(rotulos) else f"Foto {i + 1}")}</span></button>'
+        for i in range(len(canje.get("fotos") or []))
     )
     if estado == "pendiente":
         pie = ('<div class="canje-acciones"><button type="button" class="canje-rechazar">Rechazar</button>'
