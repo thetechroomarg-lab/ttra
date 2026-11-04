@@ -1837,7 +1837,7 @@ function descuentoMailingAplicado(carrito) {
     pesos = Math.round(pesos * proporcion);
     transferencia = Math.round(transferencia * proporcion);
   }
-  return { codigo: descuento.codigo, cantidad, usd, pesos, transferencia, productos: descuento.productos };
+  return { codigo: descuento.codigo, cantidad, usd, pesos, transferencia, productos: descuento.productos, equipo: descuento.canje_equipo || null };
 }
 
 function mismoItemCarrito(it, nombre, color) {
@@ -2016,11 +2016,24 @@ function itemDescuentoHtml(descuento) {
   `;
 }
 
+// Un código de canje explica de dónde sale: el iPhone que el cliente deja en parte de pago.
+function textoCodigoAplicadoHtml(descuento) {
+  if (descuento.equipo) return `✉️ Código ${escapeHtml(descuento.codigo)} · ${escapeHtml(descuento.equipo)} en parte de pago`;
+  return `✉️ Código ${escapeHtml(descuento.codigo)} aplicado a ${descuento.cantidad} ítem(s)`;
+}
+
+// El crédito de un canje es un monto en dólares contado: se muestra solo así. El total
+// lo resta del dólar contado y deriva los demás medios de pago como siempre.
+function valorDescuentoMailingHtml(descuento) {
+  if (!descuento.equipo) return preciosCarritoHtml(preciosDe(descuento), "-");
+  return `<span>Dólares: <strong>-$${formatearPesos(descuento.usd)}</strong></span>`;
+}
+
 function itemDescuentoMailingHtml(descuento) {
   return `
     <div class="item-carrito item-descuento">
-      <p class="item-nombre">✉️ Código ${escapeHtml(descuento.codigo)} aplicado a ${descuento.cantidad} ítem(s)</p>
-      <p class="item-descuento-valor">${preciosCarritoHtml(preciosDe(descuento), "-")}</p>
+      <p class="item-nombre">${textoCodigoAplicadoHtml(descuento)}</p>
+      <p class="item-descuento-valor">${valorDescuentoMailingHtml(descuento)}</p>
     </div>
   `;
 }
@@ -2076,7 +2089,9 @@ function renderCarrito() {
     inputCodigo.value = descuentoGuardado?.codigo || "";
   }
   if (descuentoGuardado && descuentoMailing) {
-    setEstadoCodigoMailing(`Código ${descuentoMailing.codigo} aplicado sobre ${descuentoMailing.cantidad} ítem(s).`, "ok");
+    setEstadoCodigoMailing(descuentoMailing.equipo
+      ? `Código ${descuentoMailing.codigo}: ${descuentoMailing.equipo} en parte de pago.`
+      : `Código ${descuentoMailing.codigo} aplicado sobre ${descuentoMailing.cantidad} ítem(s).`, "ok");
   } else if (descuentoGuardado) {
     setEstadoCodigoMailing("El código está cargado, pero hoy no aplica a los productos actuales del carrito.", "error");
   } else if (leerCodigoPendiente()) {
@@ -2118,7 +2133,13 @@ async function actualizarCarritoInvitado() {
 // Premio de referidos o fidelidad (si tiene los dos, son el mismo cupón con
 // la suma): si el cliente no cargó otro código, se aplica solo al abrir el carrito.
 async function aplicarPremioReferidosSiCorresponde() {
-  if (modoPrecioActual === "mayorista" || cargarDescuentoMailing() || !cargarCarrito().length) return;
+  if (modoPrecioActual === "mayorista" || !cargarCarrito().length) return;
+  const guardado = cargarDescuentoMailing();
+  // Un código de canje guardado sin el nombre del equipo se revalida para traerlo.
+  if (guardado) {
+    if (String(guardado.codigo || "").startsWith("CANJE-") && !guardado.canje_equipo) aplicarCodigoMailingPorValor(guardado.codigo);
+    return;
+  }
   try {
     const r = await fetch("/api/me");
     if (!r.ok) return;
@@ -2173,7 +2194,7 @@ function armarMensajeWhatsapp(carrito, fechaEntrega) {
     lineas.push(`- 🎉 Descuento por ${descuento.cantidadTotal} unidades\n  ${preciosWhatsapp(preciosDe(descuento), "-")}`);
   }
   if (descuentoMailing) {
-    lineas.push(`- ✉️ Código ${descuentoMailing.codigo}\n  ${preciosWhatsapp(preciosDe(descuentoMailing), "-")}`);
+    lineas.push(`- ✉️ Código ${descuentoMailing.codigo}${descuentoMailing.equipo ? ` (${descuentoMailing.equipo} en parte de pago)` : ""}\n  ${descuentoMailing.equipo ? `Dólares: -$${formatearPesos(descuentoMailing.usd)}` : preciosWhatsapp(preciosDe(descuentoMailing), "-")}`);
   }
   if (regaloPromo) {
     lineas.push(`- 🎁 ${regaloPromo.producto_regalo} — Regalo (código ${regaloPromo.codigo})\n  Gratis`);
