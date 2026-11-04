@@ -216,3 +216,19 @@ html[data-modo="classic"] .canje-slot svg.canje-slot-vacio { width: auto; height
 html[data-modo="classic"] .canje-slot { aspect-ratio: 5 / 4; }
 .canje-slots li:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .canje-slots li:last-child:nth-child(odd) .canje-slot { aspect-ratio: 10 / 4; }
+
+/* Volver al inicio: un botón de verdad, no un enlace subrayado. Mismo tablero que el resto de la página. */
+html[data-modo="classic"] .canje-volver {
+  gap: 12px; min-height: 52px; padding: 0 24px 0 18px;
+  border: 2px solid var(--pz-plate); background: transparent; color: var(--pz-plate);
+  font: 700 20px/1 var(--pz-font); letter-spacing: .08em; text-transform: uppercase; text-decoration: none;
+  transition: background-color .2s, border-color .2s, color .2s;
+}
+html[data-modo="classic"] .canje-volver svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .3s cubic-bezier(.23, 1, .32, 1); }
+html[data-modo="classic"] .canje-volver:hover { background: var(--pz-amber); border-color: var(--pz-amber); color: var(--pz-ink); }
+html[data-modo="classic"] .canje-volver:hover svg { transform: translateX(-4px); }
+html[data-modo="classic"] .canje-volver:active { transform: translateY(1px); }
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .canje-volver svg, html[data-modo="classic"] .canje-volver:active { transition: none; transform: none; }
+}
+html[data-modo="classic"] .canje-volver + .canje-titulo { margin-top: 28px; }
