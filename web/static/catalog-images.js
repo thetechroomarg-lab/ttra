@@ -15,6 +15,76 @@
   });
   const labels = ['Dólar contado', 'Dólar transf. USA', 'USDT', 'Pesos contado', 'Pesos transf.'];
   const text = (tag, cls, value) => { const e=document.createElement(tag); e.className=cls; e.textContent=value; return e; };
+  // --- Fotos reales de equipos usados: carrusel en la card + visor ampliado. ---
+  const SVG_FLECHA = dir => `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="${dir < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'}" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const boton = (cls, etiqueta, html) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.setAttribute('aria-label', etiqueta); b.innerHTML = html; return b; };
+  const esUsado = p => /usado/i.test(String(p?.categoria || ''));
+  const mod = (i, n) => (i % n + n) % n;
+  const UMBRAL_SWIPE = 40;
+  // Swipe horizontal (táctil o arrastrando con el mouse). Devuelve true si el gesto fue un arrastre.
+  function swipe(el, alCambiar) {
+    let x0 = null, y0 = 0;
+    el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button) return; x0 = e.clientX; y0 = e.clientY; });
+    el.addEventListener('pointercancel', () => { x0 = null; });
+    el.addEventListener('pointerup', e => {
+      if (x0 == null) return;
+      const dx = e.clientX - x0, dy = e.clientY - y0; x0 = null;
+      if (Math.abs(dx) >= UMBRAL_SWIPE && Math.abs(dx) > Math.abs(dy) * 1.2) { el.dataset.swipe = '1'; setTimeout(() => delete el.dataset.swipe, 350); alCambiar(dx < 0 ? 1 : -1); }
+    });
+  }
+  let visorAbierto = null;
+  function abrirVisor(fotos, inicio, alt, origen) {
+    if (visorAbierto) return;
+    let i = mod(inicio, fotos.length);
+    const dlg = document.createElement('dialog');
+    dlg.className = 'ai-visor'; dlg.setAttribute('aria-label', 'Fotos de ' + alt);
+    const escena = document.createElement('div'); escena.className = 'ai-visor-escena';
+    const img = document.createElement('img'); img.className = 'ai-visor-img'; img.draggable = false; img.decoding = 'async';
+    const prev = boton('ai-visor-flecha ai-visor-prev', 'Foto anterior', SVG_FLECHA(-1));
+    const next = boton('ai-visor-flecha ai-visor-next', 'Foto siguiente', SVG_FLECHA(1));
+    const cont = document.createElement('p'); cont.className = 'ai-visor-contador'; cont.setAttribute('aria-live', 'polite');
+    const cerrar = document.createElement('button'); cerrar.type = 'button'; cerrar.className = 'ai-visor-cerrar'; cerrar.textContent = 'Cerrar';
+    escena.append(img, prev, next); dlg.append(escena, cont, cerrar);
+    const solo = fotos.length < 2; if (solo) { prev.hidden = next.hidden = true; }
+    function ir(d) {
+      if (solo && d) return;
+      i = mod(i + d, fotos.length);
+      img.classList.add('ai-visor-cambio');
+      requestAnimationFrame(() => { img.src = fotos[i]; img.alt = `${alt} · foto ${i + 1} de ${fotos.length}`; img.classList.remove('ai-visor-cambio'); });
+      cont.textContent = `${i + 1} / ${fotos.length}`;
+      [1, -1].forEach(k => { const pre = new Image(); pre.src = fotos[mod(i + k, fotos.length)]; });
+    }
+    function salir() { dlg.close(); }
+    prev.addEventListener('click', () => ir(-1)); next.addEventListener('click', () => ir(1));
+    cerrar.addEventListener('click', salir);
+    swipe(escena, ir);
+    // No se cierra tocando afuera: solo con "Cerrar". Escape sí cierra; las flechas del teclado navegan.
+    dlg.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); ir(-1); } else if (e.key === 'ArrowRight') { e.preventDefault(); ir(1); }
+    });
+    dlg.addEventListener('close', () => { visorAbierto = null; dlg.remove(); document.documentElement.classList.remove('ai-visor-abierto'); origen?.focus?.({ preventScroll: true }); });
+    document.body.append(dlg); document.documentElement.classList.add('ai-visor-abierto');
+    visorAbierto = dlg; dlg.showModal(); ir(0); cerrar.focus({ preventScroll: true });
+  }
+  function carrusel(fotos, alt) {
+    let i = 0; const n = fotos.length;
+    const caja = document.createElement('div'); caja.className = 'ai-carrusel';
+    const ver = boton('ai-carrusel-foto', 'Ampliar foto', ''); const img = document.createElement('img'); img.draggable = false; img.loading = 'lazy'; img.decoding = 'async'; ver.append(img);
+    const prev = boton('ai-carrusel-flecha ai-carrusel-prev', 'Foto anterior', SVG_FLECHA(-1));
+    const next = boton('ai-carrusel-flecha ai-carrusel-next', 'Foto siguiente', SVG_FLECHA(1));
+    const puntos = document.createElement('div'); puntos.className = 'ai-carrusel-puntos'; puntos.setAttribute('aria-hidden', 'true');
+    fotos.forEach(() => puntos.append(document.createElement('i')));
+    function ir(d) {
+      i = mod(i + d, n); img.src = fotos[i]; img.alt = `${alt} · foto ${i + 1} de ${n}`;
+      [...puntos.children].forEach((p, k) => p.classList.toggle('on', k === i));
+    }
+    prev.addEventListener('click', e => { e.stopPropagation(); ir(-1); });
+    next.addEventListener('click', e => { e.stopPropagation(); ir(1); });
+    ver.addEventListener('click', () => { if (caja.dataset.swipe) return; abrirVisor(fotos, i, alt, ver); });
+    swipe(caja, d => { caja.dataset.swipe = '1'; setTimeout(() => delete caja.dataset.swipe, 350); ir(d); });
+    caja.append(ver, prev, next, puntos); ir(0);
+    return caja;
+  }
   const renders=new WeakMap();
   async function enhance(container, products) {
     const render={}; renders.set(container,render);
@@ -76,6 +146,12 @@
         const v=variants.find(v=>colorKey(v.color)===colorKey(c==='Color único'?null:c)) || (initial?variants[0]:null);
         if(!v){fallback();return;}
         const token=++serial;
+        // Usados con fotos reales: carrusel que se amplía al tocarlo (solo equipos "Usado").
+        if(esUsado(p)&&v.fotos?.length>1){
+          picture.classList.add('ai-picture-fotos');
+          picture.replaceChildren(carrusel(v.fotos,p.nombre+' · '+(v.color||'')));
+          color.textContent=v.color||'Imagen de referencia';return;
+        }
         if(initial){img.src=v.src;img.alt=p.nombre+' · '+(v.color||'Imagen de referencia');img.onerror=()=>v.src===placeholder?fallback():showPlaceholder(v.color);color.textContent=v.color||'Imagen de referencia';return;}
         const next=new Image(); next.src=v.src;
         next.decode().then(()=>{
