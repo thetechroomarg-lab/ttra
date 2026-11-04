@@ -16,6 +16,7 @@ def _tarjeta(canje, cliente):
     equipo = f"{canje['modelo']} {canje['capacidad']}"
     estado = canje.get("estado") or "pendiente"
     valor = f"{int(canje['valor_usd']):,}".replace(",", ".")
+    toma = canjes.toma_como(canje)
     ident = html.escape(canje["id"])
     rotulos = canjes.ROTULOS_FOTOS
     # Una miniatura por foto guardada (una solicitud vieja puede tener menos que las actuales).
@@ -42,7 +43,8 @@ def _tarjeta(canje, cliente):
         f'data-equipo="{html.escape(equipo)}"{"" if estado == "pendiente" else " hidden"}>'
         f'<div class="canje-cabecera"><div><h3>{html.escape(equipo)}</h3>'
         f'<p class="canje-datos">{html.escape(nombre)} · {html.escape(cliente.get("celular") or "sin celular")} · '
-        f'{html.escape(cliente.get("email") or "sin email")}<br>{fecha} {hora}</p>'
+        f'{html.escape(cliente.get("email") or "sin email")}<br>{fecha} {hora}'
+        f'{f"<br>Se toma al precio de {html.escape(toma)}" if toma else ""}</p>'
         f'<span class="canje-estado {html.escape(estado)}">{etiqueta}</span></div>'
         f'<span class="canje-valor">US$ {valor}</span></div>'
         f'<div class="canje-fotos">{fotos}</div>{pie}</article>'

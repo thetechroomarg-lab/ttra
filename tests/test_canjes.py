@@ -74,7 +74,8 @@ def test_tabla_json_coincide_con_la_tabla_de_la_pagina():
     html = Path("web/static/plan-canje.html").read_text(encoding="utf-8")
     filas = re.findall(r'<th scope="row">([^<]+)</th><td>([^<]+)</td><td>US\$ ([\d.]+)</td>', html)
     en_pagina = [(m, c, int(v.replace(".", ""))) for m, c, v in filas]
-    en_datos = [(f["modelo"], f["capacidad"], f["valor_usd"]) for f in canjes.cargar_tabla()]
+    # Las opciones de 1 TB y 2 TB no tienen fila propia: se toman como 512 GB.
+    en_datos = [(f["modelo"], f["capacidad"], f["valor_usd"]) for f in canjes.cargar_tabla() if not f.get("toma_como")]
     assert en_pagina == en_datos
 
 
@@ -194,3 +195,25 @@ def test_el_panel_de_admin_tiene_la_pestana_canjes(monkeypatch):
     pagina = _admin().get("/admin/clientes").text
     assert 'href="#canjes"' in pagina and 'id="admin-seccion-canjes"' in pagina
     assert "/admin/canjes?fragmento=1" in pagina
+
+
+def test_1tb_y_2tb_se_toman_al_precio_de_512gb_del_mismo_modelo():
+    tabla = canjes.cargar_tabla()
+    precio_512 = {f["modelo"]: f["valor_usd"] for f in tabla if f["capacidad"] == "512 GB"}
+    grandes = [f for f in tabla if f["capacidad"] in {"1 TB", "2 TB"}]
+    assert {(f["modelo"], f["capacidad"]) for f in grandes} == {
+        ("iPhone 15 Pro", "1 TB"), ("iPhone 16 Pro Max", "1 TB"),
+        ("iPhone 17 Pro Max", "1 TB"), ("iPhone 17 Pro Max", "2 TB")}
+    for f in grandes:
+        assert f["toma_como"] == "512 GB" and f["valor_usd"] == precio_512[f["modelo"]]
+
+
+def test_solicitud_de_2tb_aprueba_con_el_valor_de_512gb(monkeypatch):
+    fake, correos = _entorno(monkeypatch)
+    c, _ = _cliente_logueado(fake)
+    assert _enviar(c, "iphone-17-pro-max-2tb").status_code == 201
+    assert "precio de 512 GB" in correos[0]["html"]
+    canje = fake.table("canjes").select("*").execute().data[0]
+    assert canje["capacidad"] == "2 TB" and canje["valor_usd"] == 1150
+    assert "precio de 512 GB" in _admin().get("/admin/canjes?fragmento=1").text
+    assert _admin().post(f"/admin/canjes/{canje['id']}/aprobar").json()["valor_usd"] == 1150

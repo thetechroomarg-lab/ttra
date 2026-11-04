@@ -60,7 +60,8 @@ function pintar() {
     boton.setAttribute('aria-label', foto ? `Cambiar la foto: ${ROTULOS[i]}` : `Agregar la foto: ${ROTULOS[i]}`);
   });
   const equipo = tabla.find((fila) => fila.id === selector.value);
-  $('canje-valor').textContent = equipo ? `Te lo tomo a US$ ${equipo.valor_usd.toLocaleString('es-AR')}` : '';
+  $('canje-valor').textContent = !equipo ? ''
+    : `Te lo tomo a US$ ${equipo.valor_usd.toLocaleString('es-AR')}${equipo.toma_como ? `, el precio de ${equipo.toma_como}` : ''}`;
   botonEnviar.disabled = enviando || !equipo || fotos.some((f) => !f);
 }
 

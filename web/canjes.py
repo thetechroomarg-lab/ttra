@@ -41,6 +41,12 @@ def buscar_equipo(equipo_id):
     return next((fila for fila in cargar_tabla() if fila["id"] == equipo_id), None)
 
 
+def toma_como(canje):
+    """Capacidad de la tabla cuyo precio se paga (1 TB y 2 TB se toman como 512 GB), o ''."""
+    equipo = buscar_equipo(canje.get("equipo_id")) or {}
+    return equipo.get("toma_como") or ""
+
+
 def _ahora():
     return datetime.now(timezone.utc).isoformat()
 
@@ -184,7 +190,8 @@ def html_aviso_vlad(canje, cliente, url_sitio=URL_SITIO):
             ("Cliente", _nombre(cliente)),
             ("Celular", cliente.get("celular") or "—"),
             ("Email", cliente.get("email") or "—"),
-            ("Valor de tabla", f"US$ {int(canje['valor_usd']):,}".replace(",", ".")),
+            ("Valor de tabla", f"US$ {int(canje['valor_usd']):,}".replace(",", ".")
+             + (f" (precio de {toma_como(canje)})" if toma_como(canje) else "")),
             ("Fotos adjuntas", " · ".join(ROTULOS_FOTOS)),
         ]),
         _boton(f"{url_sitio}/admin/canjes", "Aprobar o rechazar"),
