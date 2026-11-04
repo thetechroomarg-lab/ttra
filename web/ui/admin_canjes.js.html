@@ -1,0 +1,59 @@
+<script>
+(() => {
+ const porId = (id) => document.getElementById(id);
+ const listado = porId('canjes-listado');
+ const modalAprobar = porId('canje-modal-aprobar');
+ const modalRechazar = porId('canje-modal-rechazar');
+ const modalFoto = porId('canje-modal-foto');
+ let activo = null;
+ async function cargar() {
+  porId('canjes-estado').textContent = 'Cargando…';
+  try {
+   const r = await fetch('/admin/canjes?fragmento=1', { cache: 'no-store' });
+   if (!r.ok) throw new Error('No se pudo cargar Canjes. Volvé a intentarlo.');
+   listado.innerHTML = await r.text();
+   porId('canjes-estado').textContent = '';
+  } catch (e) { porId('canjes-estado').textContent = e.message; }
+ }
+ const sincronizar = () => { if (location.hash === '#canjes') cargar(); };
+ window.addEventListener('hashchange', sincronizar);
+ sincronizar();
+ porId('canjes-recargar').addEventListener('click', cargar);
+ listado.addEventListener('click', (e) => {
+  const filtro = e.target.closest('.canjes-filtros button');
+  if (filtro) {
+   listado.querySelectorAll('.canjes-filtros button').forEach((b) => b.setAttribute('aria-pressed', String(b === filtro)));
+   let visibles = 0;
+   listado.querySelectorAll('.canje').forEach((c) => { const ok = c.dataset.estado === filtro.dataset.estado; c.hidden = !ok; if (ok) visibles += 1; });
+   porId('canjes-vacio').hidden = visibles > 0;
+   return;
+  }
+  const foto = e.target.closest('.canje-foto');
+  if (foto) { const img = porId('canje-foto-grande'); img.src = foto.dataset.src; img.alt = foto.dataset.rotulo; modalFoto.hidden = false; return; }
+  const aprobar = e.target.closest('.canje-aprobar');
+  if (aprobar) {
+   activo = aprobar.closest('.canje');
+   porId('canje-aprobar-texto').textContent = `Le genero a ${activo.dataset.cliente} un código de un solo uso de US$ ${activo.dataset.valor} por su ${activo.dataset.equipo}, y le aviso por mail.`;
+   porId('canje-aprobar-error').textContent = '';
+   modalAprobar.hidden = false;
+   return;
+  }
+  const rechazar = e.target.closest('.canje-rechazar');
+  if (rechazar) { activo = rechazar.closest('.canje'); porId('canje-motivo').value = ''; porId('canje-rechazar-error').textContent = ''; modalRechazar.hidden = false; }
+ });
+ porId('canje-foto-cerrar').addEventListener('click', () => { modalFoto.hidden = true; });
+ document.querySelectorAll('.canje-modal-cancelar').forEach((b) => b.addEventListener('click', () => { modalAprobar.hidden = true; modalRechazar.hidden = true; }));
+ async function resolver(accion, cuerpo, errorId, boton) {
+  boton.disabled = true;
+  try {
+   const r = await fetch(`/admin/canjes/${activo.dataset.id}/${accion}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+   if (r.ok) { modalAprobar.hidden = true; modalRechazar.hidden = true; await cargar(); return; }
+   const datos = await r.json().catch(() => ({}));
+   porId(errorId).textContent = datos.error || datos.detail || 'No pude resolver la solicitud';
+  } catch { porId(errorId).textContent = 'No pude conectar, probá de nuevo.'; }
+  finally { boton.disabled = false; }
+ }
+ porId('canje-aprobar-ok').addEventListener('click', (e) => resolver('aprobar', {}, 'canje-aprobar-error', e.currentTarget));
+ porId('canje-rechazar-ok').addEventListener('click', (e) => resolver('rechazar', { motivo: porId('canje-motivo').value }, 'canje-rechazar-error', e.currentTarget));
+})();
+</script>
