@@ -136,6 +136,13 @@ def rechazar(client, canje_id, motivo=""):
     return {**canje, "estado": "rechazado"}
 
 
+def equipo_por_codigo(client, codigo):
+    """Nombre del iPhone que el cliente deja en parte de pago con este código
+    de canje (por ejemplo "iPhone 15 Pro 128 GB"), o None si no es de un canje."""
+    filas = client.table("canjes").select("*").eq("codigo", codigo).execute().data
+    return f"{filas[0]['modelo']} {filas[0]['capacidad']}" if filas else None
+
+
 def codigos_aprobados_de(client, cliente_id):
     """Códigos de canje del cliente (aprobados); cupones.disponible decide si
     todavía se pueden usar."""

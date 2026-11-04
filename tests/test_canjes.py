@@ -164,6 +164,26 @@ def test_el_codigo_de_canje_descuenta_el_valor_de_la_tabla_en_el_carrito(monkeyp
     assert c.get("/api/me").json()["codigo_descuento_disponible"] == codigo
     r = c.post("/api/descuentos/validar", json={"codigo": codigo, "items": [{"nombre": "iPhone 17", "cantidad": 1}]})
     assert r.status_code == 200 and r.json()["descuento"]["usd"] == 320
+    # El carrito explica de dónde sale el descuento: el iPhone en parte de pago.
+    assert r.json()["canje_equipo"] == "iPhone 15 128 GB"
+
+
+def test_un_codigo_que_no_es_de_canje_no_trae_equipo(monkeypatch):
+    fake, _ = _entorno(monkeypatch)
+    c, cliente_id = _cliente_logueado(fake)
+    monkeypatch.setattr(appmod, "_cargar_productos", lambda: [
+        {"nombre": "iPhone 17", "categoria": "Apple - iPhone", "usd": 1000, "pesos": 1560000, "transferencia": 1608248}])
+    fake.table("codigos_descuento").insert({
+        "cliente_id": cliente_id, "code": "TTRA-MAIL1234", "productos": ["iPhone 17"],
+        "descuento_usd": 5, "activo": True}).execute()
+    r = c.post("/api/descuentos/validar", json={"codigo": "TTRA-MAIL1234", "items": [{"nombre": "iPhone 17", "cantidad": 1}]})
+    assert r.status_code == 200 and r.json()["canje_equipo"] is None
+
+
+def test_el_carrito_muestra_el_equipo_en_parte_de_pago():
+    js = Path("web/static/landing.js").read_text(encoding="utf-8")
+    assert "equipo: descuento.canje_equipo || null" in js
+    assert "en parte de pago" in js and "textoCodigoAplicadoHtml(descuento)" in js
 
 
 def test_el_codigo_de_canje_no_toca_los_saldos_de_referidos(monkeypatch):

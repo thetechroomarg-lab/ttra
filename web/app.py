@@ -932,7 +932,11 @@ def _validar_descuento_codigo(cliente_id, entrada: DescuentoCodigoIn):
     fila = _descuento_codigo_row(get_client(), cliente_id, entrada.codigo)
     if not fila:
         return None
-    return _resolver_descuento_codigo(_cargar_productos(), fila, entrada.items)
+    resultado = _resolver_descuento_codigo(_cargar_productos(), fila, entrada.items)
+    if resultado is not None:
+        # Un código de canje dice qué equipo deja el cliente en parte de pago.
+        resultado["canje_equipo"] = canjes.equipo_por_codigo(get_client(), fila["code"])
+    return resultado
 
 
 def _codigo_promo_row(client, codigo):
