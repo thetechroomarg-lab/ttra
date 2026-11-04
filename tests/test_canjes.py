@@ -65,7 +65,7 @@ def _admin():
     return a
 
 
-def _enviar(c, equipo="iphone-15-128gb", cantidad=4):
+def _enviar(c, equipo="iphone-15-128gb", cantidad=len(canjes.ROTULOS_FOTOS)):
     return c.post("/api/canje/solicitudes", data={"equipo": equipo},
                   files=[("fotos", (f"{i}.jpg", _jpeg(), "image/jpeg")) for i in range(cantidad)])
 
@@ -84,10 +84,10 @@ def test_solicitud_requiere_sesion(monkeypatch):
     assert _enviar(anonimo).status_code == 401
 
 
-def test_solicitud_pide_las_cuatro_fotos_y_un_equipo_de_la_tabla(monkeypatch):
+def test_solicitud_pide_las_siete_fotos_y_un_equipo_de_la_tabla(monkeypatch):
     fake, correos = _entorno(monkeypatch)
     c, _ = _cliente_logueado(fake)
-    assert _enviar(c, cantidad=3).status_code == 400
+    assert _enviar(c, cantidad=4).status_code == 400
     assert _enviar(c, equipo="iphone-14-128gb").status_code == 400
     assert correos == [] and fake.table("canjes").select("*").execute().data == []
 
@@ -100,9 +100,9 @@ def test_solicitud_guarda_fotos_manda_mail_con_adjuntos_y_arma_whatsapp(monkeypa
     assert r.json()["whatsapp_url"].startswith("https://wa.me/543512145217?text=")
     canje = fake.table("canjes").select("*").execute().data[0]
     assert canje["cliente_id"] == cliente_id and canje["estado"] == "pendiente"
-    assert canje["valor_usd"] == 440 and len(canje["fotos"]) == 4
+    assert canje["valor_usd"] == 440 and len(canje["fotos"]) == 7
     assert set(canje["fotos"]) == set(fake.storage.guardados)
-    assert len(correos) == 1 and len(correos[0]["adjuntos"]) == 4
+    assert len(correos) == 1 and len(correos[0]["adjuntos"]) == 7
     assert "iPhone 15 Pro 128 GB" in correos[0]["asunto"]
 
 

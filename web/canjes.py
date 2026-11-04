@@ -22,8 +22,11 @@ from .mail_pedido import (
 
 TABLA_PATH = Path(__file__).parent / "canje_tabla.json"
 BUCKET = "recibos-series"
-# Las cuatro fotos que pide la página, en el orden en que se muestran.
-ROTULOS_FOTOS = ("Frente", "Reverso", "Costado", "Captura de batería")
+# Las siete fotos que pide la página, en el orden en que se muestran.
+ROTULOS_FOTOS = (
+    "Frente", "Reverso", "Lado izquierdo", "Lado derecho",
+    "Borde superior", "Borde inferior", "Captura de batería",
+)
 
 
 class CanjeError(Exception):

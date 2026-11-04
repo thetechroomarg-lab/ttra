@@ -1,8 +1,8 @@
 // Plan Canje: el cliente elige su iPhone, sube las 4 fotos y me llega la
 // solicitud (mail con las fotos + WhatsApp armado). Hace falta cuenta: sin
 // sesión se abre el login en esta misma página y las fotos se conservan.
-const ROTULOS = ['Frente', 'Reverso', 'Costado', 'Batería'];
-const fotos = [null, null, null, null];
+const ROTULOS = ['Frente', 'Reverso', 'Lado izquierdo', 'Lado derecho', 'Borde superior', 'Borde inferior', 'Batería'];
+const fotos = ROTULOS.map(() => null);
 let enviando = false;
 
 const $ = (id) => document.getElementById(id);
@@ -11,6 +11,23 @@ const selector = $('canje-equipo');
 const error = $('canje-error');
 const botonEnviar = $('canje-enviar');
 let tabla = [];
+
+// Cada hueco muestra el dibujo modelo de la lista de la página hasta que se sube la foto.
+const modelos = [...document.querySelectorAll('.ttra-canje-fotos-lista svg')];
+$('canje-slots').append(...ROTULOS.map((rotulo, i) => {
+  const item = document.createElement('li');
+  const boton = document.createElement('button');
+  boton.type = 'button';
+  boton.className = 'canje-slot';
+  boton.dataset.slot = String(i);
+  const guia = modelos[i]?.cloneNode(true) ?? document.createElement('span');
+  guia.classList.add('canje-slot-vacio');
+  const nombre = document.createElement('strong');
+  nombre.textContent = rotulo;
+  boton.append(guia, nombre);
+  item.append(boton);
+  return item;
+}));
 
 function mostrarError(texto) { error.textContent = texto || ''; }
 
@@ -33,7 +50,7 @@ function pintar() {
     const foto = fotos[i];
     boton.classList.toggle('con-foto', Boolean(foto));
     boton.querySelector('img')?.remove();
-    boton.querySelector('.canje-slot-vacio').hidden = Boolean(foto);
+    boton.querySelector('.canje-slot-vacio').toggleAttribute('hidden', Boolean(foto));
     if (foto) {
       const img = document.createElement('img');
       img.alt = `${ROTULOS[i]} de tu iPhone`;
@@ -76,19 +93,18 @@ async function abrirPanel() {
   if (!dialogo.open) dialogo.showModal();
 }
 
-// El botón de la página abre la cámara o la galería; las fotos elegidas se
-// reparten en orden entre los huecos libres (frente, reverso, costado, batería).
-$('canje-abrir').addEventListener('click', () => $('canje-archivos').click());
+// El botón de la página abre la cámara o la galería, de a una foto: va al primer hueco libre.
+$('canje-abrir').addEventListener('click', () => {
+  if (!fotos.some((f) => !f)) { abrirPanel(); return; }
+  $('canje-archivos').click();
+});
 $('canje-archivos').addEventListener('change', async (evento) => {
-  const elegidos = [...evento.target.files];
+  const archivo = evento.target.files[0];
   evento.target.value = '';
-  if (!elegidos.length) return;
+  if (!archivo) return;
   await abrirPanel();
-  for (const archivo of elegidos) {
-    const libre = fotos.findIndex((f) => !f);
-    if (libre === -1) break;
-    await cargarFoto(libre, archivo);
-  }
+  const libre = fotos.findIndex((f) => !f);
+  if (libre !== -1) await cargarFoto(libre, archivo);
   pintar();
 });
 

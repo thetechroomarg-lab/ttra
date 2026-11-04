@@ -9,6 +9,7 @@ import re
 import secrets
 import string
 import time
+import unicodedata
 import uuid
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
@@ -6257,7 +6258,7 @@ async def api_canje_solicitar(request: Request):
         return JSONResponse({"error": "Elegí el modelo y la capacidad de tu iPhone"}, status_code=400)
     fotos = [f for f in formulario.getlist("fotos") if getattr(f, "filename", None)]
     if len(fotos) != _CANJE_FOTOS:
-        return JSONResponse({"error": f"Necesito las {_CANJE_FOTOS} fotos: frente, reverso, costado y la captura de batería"},
+        return JSONResponse({"error": f"Necesito las {_CANJE_FOTOS} fotos: frente, reverso, lados, bordes y la captura de batería"},
                             status_code=400)
     contenidos = []
     for foto in fotos:
@@ -6280,7 +6281,8 @@ async def api_canje_solicitar(request: Request):
     canje_id = str(uuid.uuid4())
     rutas, adjuntos = [], []
     for indice, contenido in enumerate(contenidos, start=1):
-        nombre = f"{indice}-{canjes.ROTULOS_FOTOS[indice - 1].lower().replace(' ', '-').replace('í', 'i')}.jpg"
+        rotulo = unicodedata.normalize("NFKD", canjes.ROTULOS_FOTOS[indice - 1]).encode("ascii", "ignore").decode()
+        nombre = f"{indice}-{rotulo.lower().replace(' ', '-')}.jpg"
         ruta = f"canjes/{canje_id}/{nombre}"
         client.storage.from_(canjes.BUCKET).upload(ruta, contenido, {"content-type": "image/jpeg"})
         rutas.append(ruta)

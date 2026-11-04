@@ -44,12 +44,15 @@
         <ul class="ttra-canje-fotos-lista">
           <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="6" width="52" height="108" rx="9"/><rect class="cf-linea" x="26.5" y="10.5" width="43" height="99" rx="5.5"/><rect class="cf-acento" x="38" y="14" width="20" height="5" rx="2.5"/><path class="cf-guia" d="M14 24V12h12M82 24V12H70M14 104v12h12M82 104v12H70"/></svg><strong>Frente</strong><span>Pantalla entera, de punta a punta.</span></li>
           <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="6" width="52" height="108" rx="9"/><rect class="cf-acento" x="27" y="11" width="22" height="22" rx="6"/><circle class="cf-linea" cx="34" cy="18" r="3.2"/><circle class="cf-linea" cx="42" cy="18" r="3.2"/><circle class="cf-linea" cx="38" cy="26" r="3.2"/><circle class="cf-linea" cx="48" cy="66" r="6"/><path class="cf-guia" d="M14 24V12h12M82 24V12H70M14 104v12h12M82 104v12H70"/></svg><strong>Reverso</strong><span>Con las cámaras bien a la vista.</span></li>
-          <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="39" y="6" width="18" height="108" rx="5"/><path class="cf-acento" d="M34 30v10M34 46v10M34 60v10M62 38v22"/><path class="cf-guia" d="M26 24V12h10M70 24V12H60M26 104v12h10M70 104v12H60"/></svg><strong>Costado</strong><span>Bordes y botones, sin reflejos.</span></li>
+          <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="39" y="6" width="18" height="108" rx="5"/><path class="cf-acento" d="M34 30v10M34 46v10M34 60v10"/><path class="cf-guia" d="M26 24V12h10M70 24V12H60M26 104v12h10M70 104v12H60"/></svg><strong>Lado izquierdo</strong><span>Botones de volumen, sin reflejos.</span></li>
+          <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="39" y="6" width="18" height="108" rx="5"/><path class="cf-acento" d="M62 38v22"/><path class="cf-guia" d="M26 24V12h10M70 24V12H60M26 104v12h10M70 104v12H60"/></svg><strong>Lado derecho</strong><span>Botón de encendido, sin reflejos.</span></li>
+          <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="54" width="52" height="20" rx="8"/><circle class="cf-linea" cx="36" cy="64" r="2.6"/><path class="cf-acento" d="M56 64h10"/><path class="cf-guia" d="M14 48V38h12M82 48V38H70M14 80v10h12M82 80v10H70"/></svg><strong>Borde superior</strong><span>El marco de arriba, entero.</span></li>
+          <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="54" width="52" height="20" rx="8"/><rect class="cf-acento" x="42" y="59" width="12" height="10" rx="5"/><circle class="cf-linea" cx="31" cy="64" r="1.8"/><circle class="cf-linea" cx="36" cy="64" r="1.8"/><circle class="cf-linea" cx="60" cy="64" r="1.8"/><circle class="cf-linea" cx="65" cy="64" r="1.8"/><path class="cf-guia" d="M14 48V38h12M82 48V38H70M14 80v10h12M82 80v10H70"/></svg><strong>Borde inferior</strong><span>Puerto de carga y parlantes.</span></li>
           <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="6" width="52" height="108" rx="9"/><rect class="cf-linea" x="26.5" y="10.5" width="43" height="99" rx="5.5"/><path class="cf-linea" d="M32 28h20M32 36h32"/><rect class="cf-linea" x="32" y="52" width="32" height="12" rx="3"/><rect class="cf-acento-lleno" x="34" y="54" width="24" height="8" rx="1.5"/><text x="48" y="84" text-anchor="middle" class="cf-texto">85%+</text></svg><strong>Batería</strong><span>Captura de Ajustes, Batería, Estado de la batería.</span></li>
         </ul>
         </div>
         <button type="button" class="ttra-button" id="canje-abrir">Subir mis fotos</button>
-        <input type="file" id="canje-archivos" accept="image/*" multiple hidden>
+        <input type="file" id="canje-archivos" accept="image/*" hidden>
       </div>
       <ol class="ttra-canje-reglas" aria-label="Condiciones del Plan Canje">
         <li><svg class="ttra-canje-icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><div><strong>Sin partes cambiadas</strong><span>Ninguna, sin excepción.</span></div></li>
@@ -95,12 +98,7 @@
       <label class="canje-campo" for="canje-equipo">Modelo y capacidad</label>
       <select id="canje-equipo"><option value="">Elegí tu iPhone</option></select>
       <p class="canje-valor" id="canje-valor" aria-live="polite"></p>
-      <ul class="canje-slots" aria-label="Fotos del iPhone">
-        <li><button type="button" class="canje-slot" data-slot="0"><span class="canje-slot-vacio">+</span><strong>Frente</strong></button></li>
-        <li><button type="button" class="canje-slot" data-slot="1"><span class="canje-slot-vacio">+</span><strong>Reverso</strong></button></li>
-        <li><button type="button" class="canje-slot" data-slot="2"><span class="canje-slot-vacio">+</span><strong>Costado</strong></button></li>
-        <li><button type="button" class="canje-slot" data-slot="3"><span class="canje-slot-vacio">+</span><strong>Batería</strong></button></li>
-      </ul>
+      <ul class="canje-slots" id="canje-slots" aria-label="Fotos del iPhone"></ul>
       <input type="file" id="canje-archivo-uno" accept="image/*" hidden>
       <p class="canje-error" id="canje-error" role="alert"></p>
       <div class="canje-acciones">
