@@ -11,7 +11,27 @@
     if (sonido) sonido.salir(volver); else volver();
   };
   canvas.addEventListener('click', alTocar);
-  document.getElementById('humanidad').addEventListener('click', alTocar);
+  // Adentro, el spiral slider captura el puntero y cancela el click que sigue a un toque, así que en el
+  // celular "click" nunca llegaba. Se detecta el toque a mano (pointerdown/pointerup en captura, sin
+  // movimiento ni demora), y los arrastres que giran el carrusel no cuentan como toque.
+  const interior = document.getElementById('humanidad');
+  let inicio = null;
+  let ultimoToque = 0;
+  const tocarInterior = () => {
+    const ahora = Date.now();
+    if (ahora - ultimoToque < 400) return;
+    ultimoToque = ahora;
+    alTocar();
+  };
+  interior.addEventListener('pointerdown', (e) => { inicio = { x: e.clientX, y: e.clientY, t: Date.now(), id: e.pointerId }; }, true);
+  interior.addEventListener('pointerup', (e) => {
+    if (!inicio || inicio.id !== e.pointerId) return;
+    const corto = Math.hypot(e.clientX - inicio.x, e.clientY - inicio.y) < 12 && Date.now() - inicio.t < 600;
+    inicio = null;
+    if (corto) tocarInterior();
+  }, true);
+  interior.addEventListener('pointercancel', () => { inicio = null; }, true);
+  interior.addEventListener('click', tocarInterior);
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') volver(); });
 
   const vertex = `attribute vec2 a_position;
