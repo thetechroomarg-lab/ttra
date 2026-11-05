@@ -51,8 +51,9 @@ html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-co
   html[data-modo="classic"] select:not([multiple]):not([size])::picker(select) {
     position-area: block-end span-inline-end;
     position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
-    inline-size: anchor-size(self-inline);
-    min-inline-size: 0;
+    /* Nunca más angosto que el campo ni que su opción más larga: una palabra no se parte a la mitad. */
+    inline-size: max-content;
+    min-inline-size: anchor-size(self-inline);
     max-inline-size: calc(100vw - 24px);
     max-block-size: min(360px, 50dvh);
     margin-block: 6px;
@@ -80,7 +81,9 @@ html[data-modo="classic"] :is(#rc-perfil-dropdown, .ttra-site-menu, .dropdown-co
     color: var(--rc-green);
     font: 400 16px/1.4 var(--rc-font);
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: none;
   }
   html[data-modo="classic"] select option:is(:hover, :focus, :checked) { background: var(--rc-bg-panel-2); }
   html[data-modo="classic"] select option:disabled { color: var(--rc-green-dim); }
