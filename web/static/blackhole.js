@@ -122,6 +122,33 @@ vec4 ribbon(vec2 p, float time, vec2 radius, float roll, float phase, float thic
   return vec4(col * mask, front);
 }
 
+// Banda gruesa y recta (apenas inclinada) que cruza por detrás del horizonte; se afina hacia las puntas.
+vec3 band(vec2 p, float time, float halfLen, float roll, float thickness, float strength) {
+  float c = cos(roll);
+  float sn = sin(roll);
+  vec2 q = vec2(p.x * c + p.y * sn, -p.x * sn + p.y * c);
+  q.y -= 0.012 * sin(q.x * 5.0 + time * 0.6) + 0.007 * cos(q.x * 9.0 - time * 0.4);
+  float u = clamp(q.x / halfLen, -1.0, 1.0);
+  float ends = smoothstep(halfLen * 1.12, halfLen * 0.86, abs(q.x));
+  float thick = thickness * (1.0 - 0.4 * u * u);
+  float d = abs(q.y);
+  float core = exp(-pow(d / (thick * 0.7), 2.0));
+  float body = exp(-pow(d / (thick * 1.8), 2.0));
+  float bloom = exp(-pow(d / (thick * 4.2), 2.0));
+  float haze = exp(-pow(d / (thick * 7.5), 2.0));
+  float across = clamp(q.y / (thick * 2.8), -1.2, 1.2);
+  vec3 tint = warm(across, u);
+  tint = mix(vec3(1.0, 0.93, 0.75), tint, smoothstep(0.0, 0.55, abs(across)));
+  // Doppler: el lado izquierdo (que se acerca) brilla más.
+  float doppler = 0.55 + 0.75 * (0.5 - 0.5 * u);
+  vec3 col = tint * (body * 0.55 + bloom * 0.85 + haze * 0.4);
+  col += tint * core * 0.35;
+  col += vec3(1.0, 0.96, 0.84) * pow(core, 0.85) * 0.55;
+  col *= doppler * strength;
+  float mask = clamp(body * 0.7 + bloom + haze * 0.55, 0.0, 1.6);
+  return col * mask * ends;
+}
+
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution;
   vec2 res = u_resolution;
@@ -129,8 +156,9 @@ void main() {
   if (u_movil > 0.5 && res.x < res.y) { uv = vec2(1.0 - uv.y, uv.x); res = res.yx; }
   float aspect = res.x / max(res.y, 1.0);
   vec2 p = (uv - 0.5) * vec2(aspect, 1.0);
-  // En vertical se aleja la cámara para que la órbita entre en pantalla.
-  p *= max(1.0, 0.95 / aspect);
+  // La banda (con su brillo) mide ~1.6 de ancho en estas unidades: si la pantalla es más angosta, se aleja
+  // la cámara para que entre completa al inicio (después el zoom del viaje la acerca).
+  p *= max(1.0, 1.6 / aspect);
   p /= u_zoom;
   float time = u_time;
 
@@ -142,15 +170,15 @@ void main() {
   float r = length(p);
 
   // Disco de acreción (órbita inclinada) y su imagen lensada sobre el horizonte.
-  vec4 disk = ribbon(p, time, vec2(0.62, 0.17), 0.12, 0.0, 0.024, 0.55);
-  vec4 lensed = ribbon(p, time, vec2(R * 1.14), 0.0, 2.0, 0.009, 0.5);
+  // Una sola banda gruesa que cruza por detrás del horizonte, y el anillo fino pegado a su borde.
+  vec3 disk = band(p, time, 0.66, 0.1, 0.036, 0.5);
+  vec4 lensed = ribbon(p, time, vec2(R * 1.14), 0.0, 2.0, 0.014, 0.5);
 
-  vec3 col = disk.rgb + lensed.rgb;
+  vec3 col = disk + lensed.rgb;
 
-  // El horizonte es negro: solo lo cruza la parte del disco que pasa por delante.
+  // El horizonte es negro y opaco: el disco pasa por detrás de la esfera, arriba y abajo.
   float inside = 1.0 - smoothstep(R * 0.97, R * 1.01, r);
-  vec3 frontOnly = disk.rgb * disk.w;
-  col = mix(col, frontOnly, inside);
+  col = mix(col, vec3(0.0), inside);
 
   float vignette = smoothstep(1.3, 0.3, length((uv - 0.5) * vec2(aspect, 1.0)));
   col *= mix(0.6, 1.0, vignette);
@@ -224,7 +252,9 @@ void main() {
     montado = true;
     const slider = window.TTRABlackholeSlider;
     if (!slider) { listo = true; return; }
-    slider.montar(document.getElementById('spiral'), fotosListas, document.getElementById('fondo'));
+    // El fondo (túnel del agujero de gusano) es propio; al slider no se le pasa fondo para que no dibuje el suyo.
+    if (window.TTRAAgujeroDeGusano) window.TTRAAgujeroDeGusano.montar(document.getElementById('fondo'));
+    slider.montar(document.getElementById('spiral'), fotosListas, null);
     // Dos cuadros para que el canvas ya haya dibujado antes del fundido.
     requestAnimationFrame(() => requestAnimationFrame(() => { listo = true; }));
   }
