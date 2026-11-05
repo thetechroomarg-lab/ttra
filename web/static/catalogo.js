@@ -276,17 +276,39 @@ function cumpleEspec(producto, seccion, excepto = null) {
     clave === excepto || (espec[clave] != null && String(espec[clave]) === valor));
 }
 
-// Un menú por especificación de la sección. Cada uno ofrece solo los valores
-// que tienen los productos que quedan con los demás filtros; un menú con una
-// sola opción no filtra nada y no se muestra.
+// Los filtros de especificación van en cascada: cada menú aparece recién cuando
+// se eligió el anterior. Orden y alcance por sección:
+//  - Celulares y Tablets: marca > memoria > RAM. En Celulares con Apple no hay
+//    memoria ni RAM (solo el filtro de estado).
+//  - Notebooks y Macbooks: tipo primero. Macbook: procesador > RAM > almacenamiento.
+//    Notebook: marca > procesador > RAM > almacenamiento > pantalla > gráfica.
+const CASCADA_MOVIL = ["almacenamiento", "ram"];
+const CASCADA_MAC = ["procesador", "ram", "disco"];
+const CASCADA_NOTEBOOK = ["procesador", "ram", "disco", "pantalla", "grafica"];
+const ETIQUETA_CASCADA = { disco: "Almacenamiento" };
+const OPCION_CASCADA = { grafica: { dedicada: "Con gráfica", integrada: "Sin gráfica" } };
+
+function cascadaDe(seccion) {
+  if (seccion === "Celulares") return marcaActiva && !permiteFiltroCondicion(seccion, marcaActiva) ? CASCADA_MOVIL : [];
+  if (seccion === "Tablets") return marcaActiva ? CASCADA_MOVIL : [];
+  if (seccion === SECCION_NOTEBOOKS) {
+    if (tipoActivo === "Mac") return CASCADA_MAC;
+    return tipoActivo === "Notebook" && marcaActiva ? CASCADA_NOTEBOOK : [];
+  }
+  return [];
+}
+
+// Cada menú ofrece solo los valores que tienen los productos que quedan con los
+// demás filtros; un menú con una sola opción no filtra nada y se salta.
 function filtrarPorEspec(productos, seccion) {
-  const claves = (ESPEC && ESPEC.FILTROS_POR_SECCION[seccion]) || [];
+  const claves = cascadaDe(seccion);
   const cont = document.getElementById("spec-filters");
   if (seccion !== seccionEspec) { filtrosEspec = {}; seccionEspec = seccion; }
-  for (const clave of Object.keys(filtrosEspec)) if (!claves.includes(clave)) delete filtrosEspec[clave];
   const enfocado = document.activeElement?.dataset?.spec || null;
   const campos = [];
+  let cortada = false;
   for (const clave of claves) {
+    if (cortada) { delete filtrosEspec[clave]; continue; }
     const opciones = ESPEC.opcionesDe(productos.filter((p) => cumpleEspec(p, seccion, clave)), seccion, clave);
     if (filtrosEspec[clave] && !opciones.some((o) => String(o.valor) === filtrosEspec[clave])) delete filtrosEspec[clave];
     if (opciones.length < 2 && !filtrosEspec[clave]) continue;
@@ -294,16 +316,19 @@ function filtrarPorEspec(productos, seccion) {
     campo.className = "catalog-filter-field";
     const label = document.createElement("label");
     label.htmlFor = `spec-${clave}`;
-    label.textContent = ESPEC.FILTROS[clave].etiqueta;
+    label.textContent = ETIQUETA_CASCADA[clave] || ESPEC.FILTROS[clave].etiqueta;
     const select = document.createElement("select");
     select.id = `spec-${clave}`;
     select.dataset.spec = clave;
     select.append(new Option("Todas", ""), ...opciones.map((o) =>
-      new Option(`${o.etiqueta} (${o.cantidad})`, String(o.valor))));
+      new Option(`${OPCION_CASCADA[clave]?.[o.valor] || o.etiqueta} (${o.cantidad})`, String(o.valor))));
     select.value = filtrosEspec[clave] || "";
     campo.append(label, select);
     campos.push(campo);
+    // Hasta que no elija este, no se muestra el siguiente.
+    if (!filtrosEspec[clave]) cortada = true;
   }
+  for (const clave of Object.keys(filtrosEspec)) if (!claves.includes(clave)) delete filtrosEspec[clave];
   cont.replaceChildren(...campos);
   cont.hidden = campos.length === 0;
   if (enfocado) document.getElementById(`spec-${enfocado}`)?.focus();
@@ -646,11 +671,13 @@ function pintarLandingMarcas() {
 
 document.getElementById("tipo-filter").addEventListener("change", (event) => {
   tipoActivo = event.target.value;
+  filtrosEspec = {};
   pintarSeccion(categoriaActiva);
 });
 
 document.getElementById("marca-filter").addEventListener("change", (event) => {
   marcaActiva = event.target.value;
+  filtrosEspec = {};
   pintarSeccion(categoriaActiva);
 });
 
