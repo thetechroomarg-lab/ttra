@@ -240,11 +240,13 @@ html[data-modo="classic"] .canje-volver + .canje-titulo { margin-top: 28px; }
 .canje-info:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 3px; }
 .canje-ayuda .canje-dialog-cuerpo { display: grid; gap: 0; }
 .canje-pasos { display: grid; gap: 0; margin: 0 0 16px; padding: 0; list-style: none; counter-reset: paso; }
-.canje-pasos li { display: flex; align-items: center; min-height: 48px; padding: 0 14px; border: 1px solid var(--ed-line); border-radius: 2px; background: var(--rc-bg); font: 600 15px/1.3 var(--rc-font); color: var(--rc-green-bright); }
+.canje-pasos li { display: block; min-height: 48px; padding: 12px 14px; border: 1px solid var(--ed-line); border-radius: 2px; background: var(--rc-bg); font: 500 15px/1.4 var(--rc-font); color: var(--rc-green); }
+.canje-pasos li strong { font-weight: 700; color: var(--rc-green-bright); }
 .canje-pasos li + li { margin-top: 28px; position: relative; }
 .canje-pasos li + li::before { content: ""; position: absolute; left: 50%; top: -24px; width: 18px; height: 20px; margin-left: -9px; background: var(--ed-accent); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 20' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 2v15M3 11l6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 20' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 2v15M3 11l6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; }
 .canje-ayuda-nota { margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: var(--rc-green-dim); }
-html[data-modo="classic"] .canje-pasos li { background: var(--pz-board); border-color: var(--pz-frame); font: 700 17px/1.2 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; color: var(--pz-plate); }
+html[data-modo="classic"] .canje-pasos li { background: var(--pz-board); border-color: var(--pz-frame); font: 500 15px/1.4 var(--rc-font); letter-spacing: 0; text-transform: none; color: var(--pz-plate); }
+html[data-modo="classic"] .canje-pasos li strong { font-weight: 700; color: var(--pz-amber); }
 html[data-modo="classic"] .canje-pasos li + li::before { background: var(--pz-amber); }
 html[data-modo="classic"] .canje-ayuda-nota { color: var(--pz-dim); }
 html[data-modo="classic"] .canje-info { color: var(--pz-amber); }
