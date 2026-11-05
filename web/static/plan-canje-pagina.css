@@ -250,3 +250,5 @@ html[data-modo="classic"] .canje-pasos li strong { font-weight: 700; color: var(
 html[data-modo="classic"] .canje-pasos li + li::before { background: var(--pz-amber); }
 html[data-modo="classic"] .canje-ayuda-nota { color: var(--pz-dim); }
 html[data-modo="classic"] .canje-info { color: var(--pz-amber); }
+.canje-ayuda-nota strong { font-weight: 700; color: var(--rc-green); }
+html[data-modo="classic"] .canje-ayuda-nota strong { color: var(--pz-plate); }
