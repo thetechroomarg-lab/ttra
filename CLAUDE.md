@@ -47,7 +47,7 @@ Datos que lee la app: `web/productos.json`, `web/costos.json`, `web/proveedores.
 
 ### Pipeline de precios (raíz)
 
-`generar_lista.py` orquesta; `normalize.py` parsea listas de proveedores; `consolidate.py` unifica; `bands.py` aplica el margen por bandas; `xlsx_writer.py` escribe el Excel; `imagelink.py` resuelve imágenes. Entradas: `entrada_*.json` (una por proveedor: az, ba, em, fr, oh, va, master).
+`generar_lista.py` orquesta; `normalize.py` parsea listas de proveedores; `consolidate.py` unifica; `bands.py` aplica el margen por bandas; `xlsx_writer.py` escribe el Excel; `imagelink.py` resuelve imágenes. Entradas: `entrada_*.json` (una por proveedor: az, ba, em, fr, mike, oh, va, master). `mike` corresponde al chat “Lista mayorista” y es independiente de `master`.
 
 ## Tests
 
