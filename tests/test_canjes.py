@@ -234,6 +234,6 @@ def test_solicitud_de_2tb_aprueba_con_el_valor_de_512gb(monkeypatch):
     assert _enviar(c, "iphone-17-pro-max-2tb").status_code == 201
     assert "precio de 512 GB" in correos[0]["html"]
     canje = fake.table("canjes").select("*").execute().data[0]
-    assert canje["capacidad"] == "2 TB" and canje["valor_usd"] == 1150
+    assert canje["capacidad"] == "2 TB" and canje["valor_usd"] == 1100
     assert "precio de 512 GB" in _admin().get("/admin/canjes?fragmento=1").text
-    assert _admin().post(f"/admin/canjes/{canje['id']}/aprobar").json()["valor_usd"] == 1150
+    assert _admin().post(f"/admin/canjes/{canje['id']}/aprobar").json()["valor_usd"] == 1100
