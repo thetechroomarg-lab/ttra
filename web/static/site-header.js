@@ -168,7 +168,6 @@
     panel.hidden = true;
     panel.setAttribute('aria-label', 'Categorías del catálogo');
     const links = [
-      ['Todo el catálogo', '/catalogo'],
       ['Celulares', '/catalogo?categoria=Celulares'],
       ['Tablets', '/catalogo?categoria=Tablets'],
       ['Notebooks y Macbooks', '/catalogo?categoria=Notebooks%20y%20Macbooks'],
