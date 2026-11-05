@@ -235,11 +235,11 @@ def mostrar_producto(row, cotizacion, es_mayorista=False):
     print(f"{row.get('Emoji', '📦')} {nombre}")
     if colores:
         print(f"Colores disponibles: {colores}")
-    print(f"🇺🇸 U$D {precios['usd']}")
-    print(f"🏦 U$D {precios['transferencia_usd']} (transferencia exterior)")
-    print(f"🪙 USDT {precios['usdt']}")
+    print(f"🇺🇸 U$D {precios['usd']} (dólar billete)")
+    print(f"🏦 U$D {precios['transferencia_usd']} (transferencia desde el exterior)")
+    print(f"🪙 USDT {precios['usdt']} (cripto USDT)")
     print(f"🇦🇷 ${formatear_pesos(precios['pesos'])} (pesos contado)")
-    print(f"🏦 ${formatear_pesos(precios['transferencia_pesos'])} (transferencia pesos)")
+    print(f"🏦 ${formatear_pesos(precios['transferencia_pesos'])} (transferencia en pesos)")
 
     link = link_producto(nombre)
     if link:
@@ -313,11 +313,11 @@ def main():
                 print()
                 continue
             precios = calcular_precios(usd_mayorista, cotizacion)
-            print(f"🇺🇸 U$D {precios['usd']} (mayorista, calculado en vivo desde costos.json)")
-            print(f"🏦 U$D {precios['transferencia_usd']} (transferencia exterior)")
-            print(f"🪙 USDT {precios['usdt']}")
+            print(f"🇺🇸 U$D {precios['usd']} (dólar billete, mayorista)")
+            print(f"🏦 U$D {precios['transferencia_usd']} (transferencia desde el exterior)")
+            print(f"🪙 USDT {precios['usdt']} (cripto USDT)")
             print(f"🇦🇷 ${formatear_pesos(precios['pesos'])} (pesos contado)")
-            print(f"🏦 ${formatear_pesos(precios['transferencia_pesos'])} (transferencia pesos)")
+            print(f"🏦 ${formatear_pesos(precios['transferencia_pesos'])} (transferencia en pesos)")
             print()
         return
 
