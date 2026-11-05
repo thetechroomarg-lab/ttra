@@ -96,9 +96,10 @@ claras acá, pero respetarlas siempre):
    ([[feedback-hablar-en-singular]]).
 5. Si el equipo es **usado** (el script lo marca con ⚠️), agregar el bloque de
    condiciones completo de [[disclaimer-iphones-usados]].
-6. **Sin glosario** explicando los 5 precios — se probó y Vladimir lo revirtió
-   ([[feedback-glosario-precios]]). El mensaje al cliente termina en los 5
-   precios, sin explicación adicional.
+6. **Cada precio lleva su aclaración entre paréntesis en la misma línea**
+   (dólar billete / transferencia desde el exterior / cripto USDT / pesos
+   contado / transferencia en pesos) — el script ya las imprime así. Nada de
+   glosario aparte al final ([[feedback-glosario-precios]]).
 7. **Nota de proveedor SIEMPRE aparte**, nunca mezclada con el texto del
    cliente ([[formato-mensaje-luego-proveedor]]) — es la que imprime el script
    al final, marcada "NO mostrar al cliente".
