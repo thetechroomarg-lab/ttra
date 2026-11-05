@@ -22,9 +22,25 @@
     }
     #fondo { position: absolute; inset: 0; }
     #spiral { position: absolute; inset: 0; }
-    /* La pregunta va en el medio del carrusel y aparece 5 segundos despues que el spiral y el fondo (que aparecen juntos, en un fade lento de 6 s). */
-    #humanidad p { position: absolute; inset: 0; z-index: 2; margin: 0; display: flex; align-items: center; justify-content: center; padding: 0 20px; box-sizing: border-box; text-align: center; pointer-events: none; color: #fff; text-shadow: 0 0 22px #000, 0 0 48px #000; font: 600 clamp(26px, 6vw, 56px)/1.1 system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif; letter-spacing: .02em; opacity: 0; transition: opacity 2s ease; }
-    #humanidad.visible p { opacity: 1; transition: opacity 2.5s ease 5s; }
+    /* La pregunta va en el medio del carrusel y aparece 5 segundos despues que el spiral y el fondo (que aparecen juntos, en un fade lento de 6 s).
+       Es una realidad que no es la tuya: la palabra "realidad" se desdobla en tres capas (cian, violeta y blanca) que se corren y de vez en cuando se rasgan. */
+    @font-face { font-family: 'Instrument Serif'; src: url('/fonts/instrument-serif-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+    @font-face { font-family: 'Geist'; src: url('/fonts/geist-latin-wght.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+    #humanidad p { position: absolute; inset: 0; z-index: 2; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(6px, 1.2vw, 16px); padding: 0 20px; box-sizing: border-box; text-align: center; pointer-events: none; color: #f2faff; }
+    .bh-q1 { font: 500 clamp(11px, 1.5vw, 17px)/1 'Geist', system-ui, sans-serif; letter-spacing: 1.3em; margin-right: -1.3em; text-transform: uppercase; color: #d4ecff; opacity: 0; filter: blur(8px); transition: opacity 2.4s ease 5s, letter-spacing 3.6s cubic-bezier(.16, 1, .3, 1) 5s, margin-right 3.6s cubic-bezier(.16, 1, .3, 1) 5s, filter 2.4s ease 5s; font-weight: 600; text-shadow: 0 0 6px #000, 0 0 16px rgba(0, 0, 0, .95), 0 0 34px rgba(0, 0, 0, .9); }
+    .bh-q2 { position: relative; display: block; font: italic 400 clamp(64px, 14vw, 210px)/.92 'Instrument Serif', Georgia, serif; letter-spacing: .04em; padding: 0 .08em .06em; color: #fff; text-shadow: 0 0 .5em rgba(110, 190, 255, .55), 0 0 1.4em rgba(120, 90, 255, .35);
+      opacity: 0; filter: blur(26px); transform: scale(1.14); transition: opacity 3s ease 5s, filter 3.4s cubic-bezier(.16, 1, .3, 1) 5s, transform 4s cubic-bezier(.16, 1, .3, 1) 5s, letter-spacing 4s cubic-bezier(.16, 1, .3, 1) 5s; }
+    .bh-q2::before, .bh-q2::after { content: attr(data-t); position: absolute; inset: 0; padding: inherit; pointer-events: none; mix-blend-mode: screen; text-shadow: none; }
+    .bh-q2::before { color: #2fd4ff; opacity: .85; transform: translate(-.018em, 0); animation: bh-deriva-a 9s ease-in-out infinite, bh-rasga-a 11s steps(1, end) infinite; }
+    .bh-q2::after { color: #b457ff; opacity: .8; transform: translate(.018em, 0); animation: bh-deriva-b 11s ease-in-out infinite, bh-rasga-b 11s steps(1, end) infinite; }
+    #humanidad.visible .bh-q1 { opacity: 1; filter: none; letter-spacing: .55em; margin-right: -.55em; }
+    #humanidad.visible .bh-q2 { opacity: 1; filter: none; transform: none; letter-spacing: 0; }
+    @keyframes bh-deriva-a { 0%, 100% { transform: translate(-.016em, .004em); } 50% { transform: translate(-.03em, -.006em); } }
+    @keyframes bh-deriva-b { 0%, 100% { transform: translate(.016em, -.004em); } 50% { transform: translate(.03em, .006em); } }
+    /* Cada ~11 s la palabra se rasga un instante: tajos horizontales corridos, como un cuadro de otra realidad. */
+    @keyframes bh-rasga-a { 0%, 87%, 91%, 100% { clip-path: none; } 88% { clip-path: inset(18% 0 58% 0); } 89% { clip-path: inset(52% 0 20% 0); } 90% { clip-path: inset(8% 0 76% 0); } }
+    @keyframes bh-rasga-b { 0%, 87.5%, 92%, 100% { clip-path: none; } 88.5% { clip-path: inset(60% 0 12% 0); } 90% { clip-path: inset(30% 0 44% 0); } 91% { clip-path: inset(70% 0 6% 0); } }
+    @media (prefers-reduced-motion: reduce) { .bh-q2::before, .bh-q2::after { animation: none; } }
     body.sin-webgl { background: radial-gradient(circle at 50% 50%, #000 0 11%, #ffd27a 12%, #d97a12 16%, #2a1202 32%, #000 52%); }
   </style>
 </head>
@@ -33,10 +49,11 @@
   <div id="humanidad">
     <div id="fondo"></div>
     <div id="spiral"></div>
-    <p>¿Cuál es tu realidad?</p>
+    <p aria-label="¿Cuál es tu realidad?"><span class="bh-q1" aria-hidden="true">¿Cuál es tu</span><span class="bh-q2" aria-hidden="true" data-t="realidad?">realidad?</span></p>
   </div>
   <link rel="stylesheet" href="/blackhole-slider/slider.css">
   <script src="/blackhole-slider/slider.js" defer></script>
+  <script src="/blackhole-tunel.js"></script>
   <script src="/blackhole-audio.js"></script>
   <script src="/blackhole.js"></script>
 </body>
