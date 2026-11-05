@@ -48,8 +48,8 @@
           <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="39" y="6" width="18" height="108" rx="5"/><path class="cf-acento" d="M62 38v22"/><path class="cf-guia" d="M26 24V12h10M70 24V12H60M26 104v12h10M70 104v12H60"/></svg><strong>Lado derecho</strong><span>Botón de encendido, sin reflejos.</span></li>
           <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="54" width="52" height="20" rx="8"/><circle class="cf-linea" cx="36" cy="64" r="2.6"/><path class="cf-acento" d="M56 64h10"/><path class="cf-guia" d="M14 48V38h12M82 48V38H70M14 80v10h12M82 80v10H70"/></svg><strong>Borde superior</strong><span>El marco de arriba, entero.</span></li>
           <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="54" width="52" height="20" rx="8"/><rect class="cf-acento" x="42" y="59" width="12" height="10" rx="5"/><circle class="cf-linea" cx="31" cy="64" r="1.8"/><circle class="cf-linea" cx="36" cy="64" r="1.8"/><circle class="cf-linea" cx="60" cy="64" r="1.8"/><circle class="cf-linea" cx="65" cy="64" r="1.8"/><path class="cf-guia" d="M14 48V38h12M82 48V38H70M14 80v10h12M82 80v10H70"/></svg><strong>Borde inferior</strong><span>Puerto de carga y parlantes.</span></li>
-          <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="6" width="52" height="108" rx="9"/><rect class="cf-linea" x="26.5" y="10.5" width="43" height="99" rx="5.5"/><path class="cf-linea" d="M32 28h20M32 36h32"/><rect class="cf-linea" x="32" y="52" width="32" height="12" rx="3"/><rect class="cf-acento-lleno" x="34" y="54" width="24" height="8" rx="1.5"/><text x="48" y="84" text-anchor="middle" class="cf-texto">85%+</text></svg><strong>Batería</strong><span>Captura de Ajustes, Batería, Estado de la batería.</span></li>
-          <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="6" width="52" height="108" rx="9"/><rect class="cf-linea" x="26.5" y="10.5" width="43" height="99" rx="5.5"/><path class="cf-linea" d="M32 26h20"/><rect class="cf-linea" x="31" y="38" width="34" height="9" rx="2"/><rect class="cf-linea" x="31" y="51" width="34" height="9" rx="2"/><rect class="cf-acento" x="31" y="64" width="34" height="9" rx="2"/><text x="48" y="92" text-anchor="middle" class="cf-texto">Piezas</text></svg><strong>Piezas y servicio</strong><span>Captura de Ajustes, General, Información, Piezas y historial de servicio. Si no aparece, la del final de Información.</span></li>
+          <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="6" width="52" height="108" rx="9"/><rect class="cf-linea" x="26.5" y="10.5" width="43" height="99" rx="5.5"/><path class="cf-linea" d="M32 28h20M32 36h32"/><rect class="cf-linea" x="32" y="52" width="32" height="12" rx="3"/><rect class="cf-acento-lleno" x="34" y="54" width="24" height="8" rx="1.5"/><text x="48" y="84" text-anchor="middle" class="cf-texto">85%+</text></svg><strong>Batería</strong><span>Captura del estado de la batería.<button type="button" class="canje-info" data-ayuda="bateria">Ver pasos</button></span></li>
+          <li><svg class="ttra-canje-foto-grafico" viewBox="0 0 96 128" aria-hidden="true" focusable="false"><rect class="cf-cuerpo" x="22" y="6" width="52" height="108" rx="9"/><rect class="cf-linea" x="26.5" y="10.5" width="43" height="99" rx="5.5"/><path class="cf-linea" d="M32 26h20"/><rect class="cf-linea" x="31" y="38" width="34" height="9" rx="2"/><rect class="cf-linea" x="31" y="51" width="34" height="9" rx="2"/><rect class="cf-acento" x="31" y="64" width="34" height="9" rx="2"/><text x="48" y="92" text-anchor="middle" class="cf-texto">Piezas</text></svg><strong>Piezas y servicio</strong><span>Captura del historial de piezas.<button type="button" class="canje-info" data-ayuda="piezas">Ver pasos</button></span></li>
         </ul>
         </div>
         <button type="button" class="ttra-button" id="canje-abrir">Subir mis fotos</button>
@@ -113,6 +113,22 @@
       <div class="canje-acciones">
         <button type="button" class="canje-cancelar" id="canje-cerrar">Cerrar</button>
         <a class="canje-enviar" id="canje-whatsapp" href="https://wa.me/543512145217" target="_blank" rel="noopener">Avisar por WhatsApp</a>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="canje-dialog canje-ayuda" id="canje-ayuda" aria-labelledby="canje-ayuda-titulo">
+    <div class="canje-dialog-cuerpo">
+      <h2 id="canje-ayuda-titulo"></h2>
+      <div class="canje-ayuda-contenido" data-ayuda="bateria" data-titulo="Captura de la batería" hidden>
+        <ol class="canje-pasos"><li>Ajustes</li><li>Batería</li><li>Estado de la batería y carga</li></ol>
+        <p class="canje-ayuda-nota">Tiene que verse el porcentaje de capacidad máxima. Sacá la captura de esa pantalla.</p>
+      </div>
+      <div class="canje-ayuda-contenido" data-ayuda="piezas" data-titulo="Captura de piezas y servicio" hidden>
+        <ol class="canje-pasos"><li>Ajustes</li><li>General</li><li>Información</li><li>Piezas y historial de servicio</li></ol>
+        <p class="canje-ayuda-nota">Si no aparece esa opción, bajá hasta el final de Información y sacá la captura de ahí.</p>
+      </div>
+      <div class="canje-acciones">
+        <button type="button" class="canje-enviar" id="canje-ayuda-cerrar">Entendido</button>
       </div>
     </div>
   </dialog>

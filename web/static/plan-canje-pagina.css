@@ -232,3 +232,19 @@ html[data-modo="classic"] .canje-volver:active { transform: translateY(1px); }
   html[data-modo="classic"] .canje-volver svg, html[data-modo="classic"] .canje-volver:active { transition: none; transform: none; }
 }
 html[data-modo="classic"] .canje-volver + .canje-titulo { margin-top: 28px; }
+
+/* "Cómo obtenerla": botón chico bajo la descripción y ventana con los pasos encadenados con flechas. */
+.canje-info { display: flex; width: fit-content; white-space: nowrap; align-items: center; gap: 6px; margin: 8px 0 0; padding: 0; min-height: 32px; border: 0; background: none; font: 600 12px/1.2 var(--rc-font); letter-spacing: -.01em; color: var(--ed-accent); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.canje-info::before { content: ""; width: 14px; height: 14px; flex: none; border-radius: 50%; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath fill-rule='evenodd' d='M7 0a7 7 0 1 0 0 14A7 7 0 0 0 7 0Zm-.9 3.2a.9.9 0 1 1 1.8 0 .9.9 0 0 1-1.8 0ZM6.2 6h1.6v5H6.2V6Z'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath fill-rule='evenodd' d='M7 0a7 7 0 1 0 0 14A7 7 0 0 0 7 0Zm-.9 3.2a.9.9 0 1 1 1.8 0 .9.9 0 0 1-1.8 0ZM6.2 6h1.6v5H6.2V6Z'/%3E%3C/svg%3E") center / contain no-repeat; }
+.canje-info:hover { text-decoration-thickness: 2px; }
+.canje-info:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 3px; }
+.canje-ayuda .canje-dialog-cuerpo { display: grid; gap: 0; }
+.canje-pasos { display: grid; gap: 0; margin: 0 0 16px; padding: 0; list-style: none; counter-reset: paso; }
+.canje-pasos li { display: flex; align-items: center; min-height: 48px; padding: 0 14px; border: 1px solid var(--ed-line); border-radius: 2px; background: var(--rc-bg); font: 600 15px/1.3 var(--rc-font); color: var(--rc-green-bright); }
+.canje-pasos li + li { margin-top: 28px; position: relative; }
+.canje-pasos li + li::before { content: ""; position: absolute; left: 50%; top: -24px; width: 18px; height: 20px; margin-left: -9px; background: var(--ed-accent); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 20' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 2v15M3 11l6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 20' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 2v15M3 11l6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; }
+.canje-ayuda-nota { margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: var(--rc-green-dim); }
+html[data-modo="classic"] .canje-pasos li { background: var(--pz-board); border-color: var(--pz-frame); font: 700 17px/1.2 var(--pz-font); letter-spacing: .04em; text-transform: uppercase; color: var(--pz-plate); }
+html[data-modo="classic"] .canje-pasos li + li::before { background: var(--pz-amber); }
+html[data-modo="classic"] .canje-ayuda-nota { color: var(--pz-dim); }
+html[data-modo="classic"] .canje-info { color: var(--pz-amber); }

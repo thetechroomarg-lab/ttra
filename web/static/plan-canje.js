@@ -159,3 +159,15 @@ async function enviar() {
   }
 }
 botonEnviar.addEventListener('click', enviar);
+
+// "Cómo obtenerla": ventana con los pasos de la captura. Solo se cierra con el botón (o Esc), no tocando afuera.
+const ayuda = $('canje-ayuda');
+document.querySelectorAll('.canje-info').forEach((boton) => boton.addEventListener('click', () => {
+  ayuda.querySelectorAll('.canje-ayuda-contenido').forEach((bloque) => {
+    const activo = bloque.dataset.ayuda === boton.dataset.ayuda;
+    bloque.hidden = !activo;
+    if (activo) $('canje-ayuda-titulo').textContent = bloque.dataset.titulo;
+  });
+  ayuda.showModal();
+}));
+$('canje-ayuda-cerrar').addEventListener('click', () => ayuda.close());
