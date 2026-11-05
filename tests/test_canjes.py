@@ -85,7 +85,7 @@ def test_solicitud_requiere_sesion(monkeypatch):
     assert _enviar(anonimo).status_code == 401
 
 
-def test_solicitud_pide_las_siete_fotos_y_un_equipo_de_la_tabla(monkeypatch):
+def test_solicitud_pide_las_ocho_fotos_y_un_equipo_de_la_tabla(monkeypatch):
     fake, correos = _entorno(monkeypatch)
     c, _ = _cliente_logueado(fake)
     assert _enviar(c, cantidad=4).status_code == 400
@@ -101,9 +101,9 @@ def test_solicitud_guarda_fotos_manda_mail_con_adjuntos_y_arma_whatsapp(monkeypa
     assert r.json()["whatsapp_url"].startswith("https://wa.me/543512145217?text=")
     canje = fake.table("canjes").select("*").execute().data[0]
     assert canje["cliente_id"] == cliente_id and canje["estado"] == "pendiente"
-    assert canje["valor_usd"] == 440 and len(canje["fotos"]) == 7
+    assert canje["valor_usd"] == 440 and len(canje["fotos"]) == len(canjes.ROTULOS_FOTOS)
     assert set(canje["fotos"]) == set(fake.storage.guardados)
-    assert len(correos) == 1 and len(correos[0]["adjuntos"]) == 7
+    assert len(correos) == 1 and len(correos[0]["adjuntos"]) == len(canjes.ROTULOS_FOTOS)
     assert "iPhone 15 Pro 128 GB" in correos[0]["asunto"]
 
 
