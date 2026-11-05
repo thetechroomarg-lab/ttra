@@ -1,7 +1,7 @@
-// Plan Canje: el cliente elige su iPhone, sube las 4 fotos y me llega la
+// Plan Canje: el cliente elige su iPhone, sube las 8 fotos y me llega la
 // solicitud (mail con las fotos + WhatsApp armado). Hace falta cuenta: sin
 // sesión se abre el login en esta misma página y las fotos se conservan.
-const ROTULOS = ['Frente', 'Reverso', 'Lado izquierdo', 'Lado derecho', 'Borde superior', 'Borde inferior', 'Batería'];
+const ROTULOS = ['Frente', 'Reverso', 'Lado izquierdo', 'Lado derecho', 'Borde superior', 'Borde inferior', 'Batería', 'Piezas y servicio'];
 const fotos = ROTULOS.map(() => null);
 let enviando = false;
 

@@ -22,10 +22,10 @@ from .mail_pedido import (
 
 TABLA_PATH = Path(__file__).parent / "canje_tabla.json"
 BUCKET = "recibos-series"
-# Las siete fotos que pide la página, en el orden en que se muestran.
+# Las ocho fotos que pide la página, en el orden en que se muestran.
 ROTULOS_FOTOS = (
     "Frente", "Reverso", "Lado izquierdo", "Lado derecho",
-    "Borde superior", "Borde inferior", "Captura de batería",
+    "Borde superior", "Borde inferior", "Captura de batería", "Captura de piezas y servicio",
 )
 
 
