@@ -6262,7 +6262,7 @@ async def api_canje_solicitar(request: Request):
         return JSONResponse({"error": "Elegí el modelo y la capacidad de tu iPhone"}, status_code=400)
     fotos = [f for f in formulario.getlist("fotos") if getattr(f, "filename", None)]
     if len(fotos) != _CANJE_FOTOS:
-        return JSONResponse({"error": f"Necesito las {_CANJE_FOTOS} fotos: frente, reverso, lados, bordes y la captura de batería"},
+        return JSONResponse({"error": f"Necesito las {_CANJE_FOTOS} fotos: frente, reverso, lados, bordes y las capturas de batería y de piezas y servicio"},
                             status_code=400)
     contenidos = []
     for foto in fotos:
