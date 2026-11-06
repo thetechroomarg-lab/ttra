@@ -131,8 +131,13 @@ _OTRAS_MARCAS_CEL = re.compile(
 _MARCAS_ANDROID_CATEGORIA = {"Samsung", "Motorola", "Xiaomi", "Realme"}
 
 
+# "con cargador" / "s/cargador" describen qué trae la caja del celular: no lo vuelven
+# accesorio (sin esto, "A07 con cargador" caía en la banda general en vez de la Android).
+_CARGADOR_EN_CAJA = re.compile(r"(?i)\b(con|sin|c/|s/)\s*cargador\b")
+
+
 def _celular_y_android(nombre, categoria):
-    l = nombre.lower()
+    l = _CARGADOR_EN_CAJA.sub(" ", nombre).lower()
     if any(k in l for k in _NO_CELULAR_KW):
         return False, False
     if categoria in _MARCAS_ANDROID_CATEGORIA:

@@ -119,3 +119,15 @@ def test_unifica_ipad_a16_con_nombres_distintos():
         {"nombre": "iPad A16 11\" 2025 256GB", "costo": 610, "proveedor": "em"},
     ])["lista"]
     assert len(lista) == 1 and lista[0]["proveedor"] == "em"
+
+
+def test_caja_grande_con_cargador_es_el_mismo_producto():
+    items = [
+        {"nombre": "SAMSUNG A07 4GB 128GB con cargador", "costo": 158, "proveedor": "az", "colores": ["Black"]},
+        {"nombre": "Samsung A07 4GB 128GB Caja Grande. Con Cargador", "costo": 160, "proveedor": "fr", "colores": ["Green"]},
+        {"nombre": "A07 4GB 128GB", "costo": 157, "proveedor": "fr", "colores": ["Black"]},
+    ]
+    lista = consolidar(items)["lista"]
+    assert len(lista) == 2
+    con = next(x for x in lista if "cargador" in x["nombre"].lower())
+    assert con["proveedor"] == "az" and con["costo"] == 158
