@@ -204,3 +204,19 @@ def test_escribir_productos_json_no_trunca_un_archivo_si_falla_la_escritura(
 
     assert ruta.read_text(encoding="utf-8") == anterior
     assert json.loads(ruta.read_text(encoding="utf-8"))[0]["nombre"] == "Catalogo anterior"
+
+
+def test_celular_con_cargador_lleva_la_escala_android():
+    from web.productos import generar_productos
+    items = [
+        {"nombre": "SAMSUNG A07 4GB 128GB con cargador", "costo": 158, "proveedor": "az", "colores": []},
+        {"nombre": "Moto E15 2GB 64GB con Cargador", "costo": 128, "proveedor": "fr", "colores": []},
+    ]
+    precios = {p["nombre"]: p["usd"] for p in generar_productos(items, 1565)}
+    assert precios["SAMSUNG A07 4GB 128GB con cargador"] == 205  # 158 + 45 de la escala Android
+    assert precios["Moto E15 2GB 64GB con Cargador"] == 170  # 128 + 40
+
+
+def test_cargador_suelto_sigue_siendo_accesorio():
+    from web.productos import _celular_y_android
+    assert _celular_y_android("Cargador Samsung 45W Turbo Charge Original", "Samsung") == (False, False)
