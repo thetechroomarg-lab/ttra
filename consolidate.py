@@ -36,6 +36,7 @@ _ALIAS = [
     (re.compile(r"\bwi fi\b"), ""),
     (re.compile(r"\b\d+ core (cpu|gpu)\b"), ""),
     (re.compile(r"\baspirador[a]?\b(?=.*\bvacuum\b)"), ""),
+    (re.compile(r"\bcaja grande\b"), ""),
 ]
 
 # Palabras que muchos proveedores omiten ("5G", "NFC", "Mi", "RAM"...): no distinguen
