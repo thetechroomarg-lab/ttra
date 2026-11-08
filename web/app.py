@@ -830,17 +830,13 @@ def _descuento_codigo_row(client, cliente_id, codigo):
     codigo = (codigo or "").strip().upper()
     if not codigo:
         return None
-    filas = (
-        client.table("codigos_descuento")
-        .select("*")
-        .eq("cliente_id", cliente_id)
-        .eq("code", codigo)
-        .execute()
-        .data
-    )
+    filas = client.table("codigos_descuento").select("*").eq("code", codigo).execute().data
     if not filas:
         return None
     fila = filas[0]
+    # Sin cliente = código público: lo puede usar cualquiera, una sola vez.
+    if fila.get("cliente_id") not in (None, cliente_id):
+        return None
     # Usado o reservado para otro pedido en curso: no se puede aplicar.
     if not cupones.disponible(client, fila):
         return None

@@ -324,6 +324,9 @@ alter table codigos_descuento add column if not exists reservado_en timestamptz;
 -- Cuánto se aplicó realmente en el pedido que reservó el cupón: al enviarse
 -- el recibo se descuenta solo eso de los saldos y el resto queda guardado.
 alter table codigos_descuento add column if not exists aplicado_usd numeric;
+-- Código público (sin cliente): lo puede aplicar cualquier cliente y es de un
+-- solo uso, porque el primer pedido que lo reserva lo deja tomado.
+alter table codigos_descuento alter column cliente_id drop not null;
 
 -- Cada ganancia que una compra le generó a alguien de la cadena de padrinos.
 -- Alimenta el árbol "Mi red" del perfil y evita pagar dos veces un pedido.
@@ -417,7 +420,7 @@ begin
   if p_codigo is not null then
     select * into v_codigo
     from codigos_descuento
-    where cliente_id = p_cliente_id
+    where (cliente_id = p_cliente_id or cliente_id is null)
       and code = p_codigo
       and activo = true
       and usado_en is null

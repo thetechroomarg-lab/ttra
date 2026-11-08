@@ -1246,3 +1246,25 @@ def test_pedido_de_la_web_avisa_al_admin_por_push(monkeypatch):
     assert len(avisos) == 1
     assert avisos[0][0].startswith("🛒 Nuevo pedido · ")
     assert avisos[0][1] == "Elegible x1 · U$D 180"
+
+
+def test_pedido_con_codigo_publico_lo_reserva_para_ese_pedido(monkeypatch):
+    c, fake = _cliente_con_catalogo(monkeypatch, precio_publico=180)
+    fake.table("codigos_descuento").insert({
+        "cliente_id": None, "code": "GRACIASBOBIS", "productos": [],
+        "descuento_usd": 10, "tope_total_usd": 10, "activo": True,
+    }).execute()
+
+    r = c.post("/api/pedidos", json={
+        "productos": ["Elegible"], "fecha_entrega": "2026-08-24",
+        "direccion_entrega": "Av. Colón 123",
+        "detalle": [{"nombre": "Elegible", "cantidad": 1, "usd_unitario": 180, "usd_subtotal": 180}],
+        "total_usd": 170,
+        "codigo_descuento": "GRACIASBOBIS",
+    })
+
+    assert r.status_code == 200
+    pedido = fake.table("pedidos").select("*").execute().data[0]
+    assert pedido["descuento_usd"] == 10
+    codigo = fake.table("codigos_descuento").select("*").eq("code", "GRACIASBOBIS").execute().data[0]
+    assert codigo["reservado_pedido_id"] == pedido["id"]
