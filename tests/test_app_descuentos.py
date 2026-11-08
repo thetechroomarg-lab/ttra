@@ -117,3 +117,49 @@ def test_endpoint_legado_no_consume_descuento_mail(monkeypatch):
         "items": [{"nombre": "Galaxy A56", "cantidad": 1}],
     })
     assert r2.status_code == 200
+
+
+def _codigo_publico(fake):
+    fake.table("codigos_descuento").insert({
+        "cliente_id": None, "code": "GRACIASBOBIS", "productos": [],
+        "descuento_usd": 10, "tope_total_usd": 10, "activo": True,
+    }).execute()
+
+
+def test_codigo_publico_lo_puede_validar_cualquier_cliente(monkeypatch):
+    c, fake, _cliente_id = _cliente_con_codigo(monkeypatch)
+    _codigo_publico(fake)
+
+    r = c.post("/api/descuentos/validar", json={
+        "codigo": "graciasbobis", "items": [{"nombre": "Galaxy A56", "cantidad": 1}],
+    })
+
+    assert r.status_code == 200
+    assert r.json()["descuento"]["usd"] == 10
+
+
+def test_codigo_de_otro_cliente_sigue_siendo_privado(monkeypatch):
+    c, fake, _cliente_id = _cliente_con_codigo(monkeypatch)
+    fake.table("codigos_descuento").insert({
+        "cliente_id": "otro-cliente", "code": "TTRA-AJENO", "productos": [],
+        "descuento_usd": 10, "tope_total_usd": 10, "activo": True,
+    }).execute()
+
+    r = c.post("/api/descuentos/validar", json={
+        "codigo": "TTRA-AJENO", "items": [{"nombre": "Galaxy A56", "cantidad": 1}],
+    })
+
+    assert r.status_code == 400
+
+
+def test_codigo_publico_reservado_por_un_pedido_ya_no_lo_usa_nadie(monkeypatch):
+    c, fake, _cliente_id = _cliente_con_codigo(monkeypatch)
+    _codigo_publico(fake)
+    pedido = fake.table("pedidos").insert({"id": "pedido-ganador", "cliente_id": "otro-cliente", "productos": []}).execute().data[0]
+    fake.table("codigos_descuento").update({"reservado_pedido_id": pedido["id"]}).eq("code", "GRACIASBOBIS").execute()
+
+    r = c.post("/api/descuentos/validar", json={
+        "codigo": "GRACIASBOBIS", "items": [{"nombre": "Galaxy A56", "cantidad": 1}],
+    })
+
+    assert r.status_code == 400

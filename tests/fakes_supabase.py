@@ -325,7 +325,7 @@ class FakeSupabaseClient:
                     (
                         fila
                         for fila in self.table("codigos_descuento")._filas
-                        if fila.get("cliente_id") == parametros.get("p_cliente_id")
+                        if fila.get("cliente_id") in (None, parametros.get("p_cliente_id"))
                         and fila.get("code") == codigo_texto
                         and fila.get("activo")
                         and not fila.get("usado_en")
