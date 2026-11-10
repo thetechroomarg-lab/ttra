@@ -63,4 +63,4 @@ Los `test_app_landing.py` afirman sobre el **texto** de `landing.js`, no lo ejec
 - Usar `_json_para_script()` y no `json.dumps()` para meter datos de cliente dentro de un `<script>`.
 - `ADMIN_CLIENTES_PASSWORD` y `CADETE_PASSWORD` no tienen default: sin ellas el server no arranca, a propósito.
 - Las cards con imagen salen de `web/static/catalog-images/index.json` (por nombre y color). Antes de publicar un catálogo nuevo correr `python scripts/check_catalog_images.py <productos nuevo> <productos anterior>`: lista los productos que pierden la card con imagen.
-- Al cambiar el dólar hay que tocar `web/productos.json`, los outputs en pesos, **y** `COTIZACION_DOLAR` en `web/app.py`.
+- La cotización es una sola para todo el sistema: sale de `/data/cotizacion-admin.json` (o del manifest) vía `_cargar_cotizacion_catalogo()` en `web/app.py`; catálogo, envíos, mails y recibos la usan. Al cambiar el dólar hay que actualizar `web/productos.json` y sus archivos hermanos, los outputs en pesos, y dejar `COTIZACION_DOLAR` (solo fallback) igual a la cotización vigente.

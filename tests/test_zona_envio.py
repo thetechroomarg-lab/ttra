@@ -104,7 +104,7 @@ def test_api_cotizar_envio(monkeypatch):
     c, _ = _cliente(monkeypatch)
     r = c.post("/api/envio/cotizar", json={"lat": CARLOS_PAZ[0], "lng": CARLOS_PAZ[1]})
     assert r.status_code == 200
-    assert r.json()["envio_usd"] == zona_envio.cotizar(*CARLOS_PAZ, appmod.COTIZACION_DOLAR)["envio_usd"] > 0
+    assert r.json()["envio_usd"] == zona_envio.cotizar(*CARLOS_PAZ, appmod._cargar_cotizacion_catalogo())["envio_usd"] > 0
     assert r.json()["desglose"]["km_por_litro"] == 10
 
 

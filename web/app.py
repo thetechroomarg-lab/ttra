@@ -5073,7 +5073,7 @@ def _mandar_mail_pedido(request, cliente_id, pedido):
 
 @app.post("/api/envio/cotizar")
 def api_cotizar_envio(entrada: CotizarEnvioIn):
-    return zona_envio.cotizar(entrada.lat, entrada.lng, COTIZACION_DOLAR)
+    return zona_envio.cotizar(entrada.lat, entrada.lng, _cargar_cotizacion_catalogo())
 
 
 @app.post("/api/pedidos")
@@ -5279,7 +5279,7 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
     total_usd = total_bruto_usd - descuento_usd
     if entrada.total_usd != total_usd:
         return error_precios
-    envio = zona_envio.cotizar(entrada.lat, entrada.lng, COTIZACION_DOLAR)
+    envio = zona_envio.cotizar(entrada.lat, entrada.lng, _cargar_cotizacion_catalogo())
     if envio["zona"] == "consultar":
         return JSONResponse(
             {
@@ -6563,7 +6563,7 @@ def api_recomendados(request: Request, limit: int = 16):
 
 # Fallback para instalaciones antiguas o una actualización incompleta. La fuente
 # normal es la cotización publicada atómicamente con el catálogo.
-COTIZACION_DOLAR = 1582
+COTIZACION_DOLAR = 1560
 
 
 def _cargar_cotizacion_catalogo():
