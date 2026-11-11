@@ -132,3 +132,13 @@ def test_admin_tiene_acceso_desde_ambos_paneles(contexto, monkeypatch):
         respuesta = c.get(ruta)
         assert respuesta.status_code == 200
         assert 'href="#cotizacion"' in respuesta.text
+
+
+def test_panel_admin_maneja_sesion_vencida_al_guardar(contexto):
+    # Con la sesión vencida el POST da 401 y no se guarda nada: el panel tiene
+    # que avisarlo y volver al login, no dejar un texto chico que pase inadvertido.
+    c, _ = contexto
+    ingresar(c)
+    html = c.get("/admin/clientes").text
+    assert "r.status===401" in html
+    assert "location.reload()" in html.split("r.status===401", 1)[1][:400]
