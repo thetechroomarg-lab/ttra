@@ -1,15 +1,16 @@
 import math
 
+# Piso global: margen 40 (ganancia limpia >= $25 con $15 de entrega).
 # (limite_superior_inclusive, monto). La última banda es abierta (float('inf')).
 _BANDAS = [
-    (300, 30),
+    (300, 40),
     (600, 40),
-    (900, 50),
-    (1300, 70),
-    (1600, 85),
-    (2000, 130),
-    (2400, 160),
-    (float("inf"), 200),
+    (900, 40),
+    (1300, 60),
+    (1600, 75),
+    (2000, 120),
+    (2400, 150),
+    (float("inf"), 190),
 ]
 
 
@@ -26,17 +27,17 @@ def calcular_precio(costo):
 
 
 # Escala de margen para celulares Android (Apple sigue con las bandas normales de
-# arriba). Ganancia limpia = margen - $15 (costo de entrega): nunca menos de $25
-# limpios, nunca más de $60 limpios en los Android más caros.
+# arriba). Ganancia limpia = margen - $15 (costo de entrega): piso de $25 limpios
+# (margen 40), nunca más de $50 limpios en los Android más caros.
 _BANDAS_ANDROID = [
     (150, 40),
-    (300, 45),
-    (450, 50),
-    (600, 55),
-    (800, 60),
-    (1000, 65),
-    (1300, 70),
-    (float("inf"), 75),
+    (300, 40),
+    (450, 40),
+    (600, 45),
+    (800, 50),
+    (1000, 55),
+    (1300, 60),
+    (float("inf"), 65),
 ]
 
 
@@ -48,15 +49,15 @@ def _monto_por_banda_android(costo):
 
 
 # Escala de margen para iPhone (nuevo y usado). Ganancia limpia = margen - $20 (costo
-# de entrega): nunca menos de $30 limpios, nunca más de $60 limpios en los tope de gama.
+# de entrega): piso de $25 limpios (margen 45), nunca más de $50 limpios en los tope de gama.
 _BANDAS_IPHONE = [
-    (300, 50),
-    (600, 55),
-    (900, 60),
-    (1200, 65),
-    (1500, 70),
-    (1800, 75),
-    (float("inf"), 80),
+    (300, 45),
+    (600, 45),
+    (900, 50),
+    (1200, 55),
+    (1500, 60),
+    (1800, 65),
+    (float("inf"), 70),
 ]
 
 

@@ -62,8 +62,43 @@ def _emoji(categoria):
     return "📦"
 
 
+MANIFEST_JSON = PROJECT_DIR / "web" / "catalogo-manifest.json"
+_ARCHIVOS_CATALOGO = ("productos.json", "costos.json", "proveedores.json", "catalogo-manifest.json")
+_SCRIPT_PROD = (
+    "import json,os\nfrom pathlib import Path\n"
+    "p=Path(os.environ.get('PRODUCTOS_PATH','/data/productos.json'))\n"
+    "print(json.dumps({n:json.loads(p.with_name(n).read_text()) for n in %r}))\n" % (_ARCHIVOS_CATALOGO,)
+)
+
+
+def sincronizar_desde_prod():
+    """Trae la última versión del catálogo de producción (Railway) a web/ antes de
+    cada consulta. Si prod no responde, avisa y sigue con la copia local."""
+    import base64
+    import subprocess
+    cmd = "import base64;exec(base64.b64decode(%r))" % base64.b64encode(_SCRIPT_PROD.encode()).decode()
+    try:
+        r = subprocess.run(
+            ["railway", "ssh", "--service", "ttra", "--environment", "production", "--", "python", "-c", cmd],
+            capture_output=True, text=True, timeout=90, cwd=PROJECT_DIR,
+        )
+        datos = json.loads(r.stdout[r.stdout.index("{"):])
+    except Exception as exc:  # sin red, timeout o salida inválida
+        print(f"⚠️ No pude leer el catálogo de prod ({exc}); uso la copia local de web/.", file=sys.stderr)
+        return False
+    for nombre in _ARCHIVOS_CATALOGO:
+        (PROJECT_DIR / "web" / nombre).write_text(json.dumps(datos[nombre], ensure_ascii=False, indent=2) + "\n")
+    m = datos["catalogo-manifest.json"]
+    print(f"✓ Catálogo de prod: generación {m.get('generacion')} · dólar {m.get('cotizacion')}", file=sys.stderr)
+    return True
+
+
 def cotizacion_actual():
-    """Lee COTIZACION_DOLAR de web/app.py. Si no lo encuentra, obliga a pasar --cotizacion."""
+    """Cotización del catálogo publicado (catalogo-manifest.json). Respaldo: web/app.py."""
+    if MANIFEST_JSON.exists():
+        valor = json.loads(MANIFEST_JSON.read_text()).get("cotizacion")
+        if valor:
+            return int(valor)
     if APP_PY.exists():
         m = re.search(r"COTIZACION_DOLAR\s*=\s*(\d+)", APP_PY.read_text())
         if m:
@@ -119,7 +154,7 @@ def calcular_mayorista_en_vivo(nombre, usd_publico):
     costo = costos.get(nombre)
     if costo is None:
         return None, f"'{nombre}' no está en costos.json"
-    descuento = descuento_por_margen(usd_publico, costo)
+    descuento = descuento_por_margen(usd_publico, costo, 20 if "iphone" in nombre.lower() else 15)
     if descuento is None:
         return None, f"margen insuficiente (costo {costo}, público {usd_publico}) — no elegible para mayorista"
     return usd_publico - descuento, None
@@ -273,8 +308,11 @@ def main():
     ap.add_argument("--cotizacion", type=float, help="cotización del dólar a usar (si no, se lee de web/app.py)")
     ap.add_argument("--mayorista", action="store_true", help="calcular precio mayorista en vivo (costos.json + web/mayoristas.py)")
     ap.add_argument("--listar", choices=["Celulares", "Accesorios", "Notebooks_Macbooks"], help="listar todos los productos de una categoría")
+    ap.add_argument("--sin-prod", action="store_true", help="no sincronizar con prod (usar la copia local de web/)")
     args = ap.parse_args()
 
+    if not args.sin_prod:
+        sincronizar_desde_prod()
     cotizacion = args.cotizacion or cotizacion_actual()
     if cotizacion is None:
         print("No se pudo determinar la cotización del dólar. Pasá --cotizacion <valor>.", file=sys.stderr)

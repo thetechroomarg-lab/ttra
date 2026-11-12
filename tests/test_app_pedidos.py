@@ -270,16 +270,16 @@ def test_pedido_mayorista_recalcula_y_guarda_auditoria(monkeypatch):
         "direccion_entrega": "Av. Colón 123",
         "detalle": [{
             "nombre": "Elegible", "cantidad": 2,
-            "usd_unitario": 130, "usd_subtotal": 260,
+            "usd_unitario": 145, "usd_subtotal": 290,
         }],
-        "total_usd": 260, "descuento_usd": 0,
+        "total_usd": 290, "descuento_usd": 0,
     })
 
     assert r.status_code == 200
     pedido = fake.table("pedidos").select("*").execute().data[0]
     assert pedido["modo_precio"] == "mayorista"
-    assert pedido["descuento_mayorista_usd"] == 100
-    assert pedido["total_usd"] == 260
+    assert pedido["descuento_mayorista_usd"] == 70
+    assert pedido["total_usd"] == 290
 
 
 def test_pedido_rechaza_precio_manipulado(monkeypatch):
@@ -763,9 +763,9 @@ def test_pedido_mayorista_ignora_descuentos_monetarios_enviados(monkeypatch):
         "direccion_entrega": "Av. Colón 123",
         "detalle": [{
             "nombre": "Elegible", "cantidad": 1,
-            "usd_unitario": 130, "usd_subtotal": 130,
+            "usd_unitario": 145, "usd_subtotal": 145,
         }],
-        "total_usd": 0, "descuento_usd": 130,
+        "total_usd": 0, "descuento_usd": 145,
     })
 
     assert r.status_code == 409
@@ -845,18 +845,18 @@ def test_pedido_mayorista_conserva_regalo_filtrado_del_catalogo(monkeypatch):
         "direccion_entrega": "Av. Colón 123",
         "detalle": [{
             "nombre": "Elegible", "cantidad": 1,
-            "usd_unitario": 130, "usd_subtotal": 130,
+            "usd_unitario": 145, "usd_subtotal": 145,
         }],
-        "total_usd": 130,
+        "total_usd": 145,
         "codigo_promo": "REGALO-TEST",
     })
 
     assert respuesta.status_code == 200
     pedido = fake.table("pedidos").select("*").execute().data[0]
     assert pedido["modo_precio"] == "mayorista"
-    assert pedido["total_usd"] == 130
+    assert pedido["total_usd"] == 145
     assert pedido["descuento_usd"] == 0
-    assert pedido["descuento_mayorista_usd"] == 50
+    assert pedido["descuento_mayorista_usd"] == 35
     assert pedido["detalle"][-1]["nombre"] == "Regalo sin costo mayorista"
     assert pedido["detalle"][-1]["usd_unitario"] == 0
 
