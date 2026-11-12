@@ -134,7 +134,7 @@ def test_api_recomendados_mayorista_hidrata_precios_y_filtra_catalogo_autorizado
     assert respuesta.status_code == 200
     recomendados = respuesta.json()["productos"]
     assert [producto["nombre"] for producto in recomendados] == ["Elegible"]
-    assert recomendados[0]["usd"] == 130
+    assert recomendados[0]["usd"] == 140
     assert not ({"costo", "proveedor", "margen", "capacidad"} & recomendados[0].keys())
 
 

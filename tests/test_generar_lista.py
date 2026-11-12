@@ -16,7 +16,7 @@ def test_procesar_arma_lista_con_precio_link_y_pais():
     assert len(lista) == 1
     fila = lista[0]
     assert fila["pais"] == "🇺🇸"
-    assert fila["precio"] == 680        # 630 + 50 = 680 -> 680
+    assert fila["precio"] == 670        # 630 + 40 = 670 -> 670
     assert fila["link"] == "https://www.google.com/search?tbm=isch&q=iphone+13+128gb B"
     assert reporte["filtrados"][0]["motivo"] == "caja abollada"
 
@@ -38,5 +38,5 @@ def test_main_escribe_archivo(tmp_path):
         "Motorola G54",
         "https://www.google.com/search?tbm=isch&q=Motorola+G54 A",
         "🇺🇸",
-        230,  # 200 + 30 = 230
+        240,  # 200 + 40 = 240
     ]

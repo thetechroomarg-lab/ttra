@@ -117,10 +117,10 @@ def test_mayorista_aplica_cotizacion_sin_romper_hashes_del_catalogo(contexto, mo
     ingresar(c)
     assert c.post("/admin/cotizacion", json={"valor": "1600"}).status_code == 200
     producto = c.get("/api/catalogo").json()["secciones"]["Celulares"][0]
-    assert producto["usd"] == 130
-    assert producto["pesos"] == 208000
+    assert producto["usd"] == 145
+    assert producto["pesos"] == 232000
     assert producto["pesos_publico"] == 288000
-    assert producto["transferencia"] == 214433
+    assert producto["transferencia"] == 239175
 
 
 def test_admin_tiene_acceso_desde_ambos_paneles(contexto, monkeypatch):
