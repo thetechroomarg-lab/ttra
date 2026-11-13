@@ -21,3 +21,12 @@ def test_carrusel_solo_para_usados_y_visor_sin_cierre_por_fondo():
     assert "Cerrar" in js
     # tocar afuera no cierra: no hay listener de click sobre el <dialog> que llame a close()
     assert "dlg.addEventListener('click'" not in js
+
+
+def test_iphone_14_usado_con_fotos_reales_existentes():
+    indice = json.loads((ESTATICO / "catalog-images" / "index.json").read_text(encoding="utf-8"))
+    variante = next(v for v in indice["iPhone 14 128GB (Usado)"] if v["color"] == "Black 86%")
+    assert len(variante["fotos"]) == 5
+    assert variante["src"] == variante["fotos"][0]
+    for src in variante["fotos"]:
+        assert (ESTATICO / src.removeprefix("/")).is_file(), src
