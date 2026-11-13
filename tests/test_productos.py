@@ -220,3 +220,10 @@ def test_celular_con_cargador_lleva_la_escala_android():
 def test_cargador_suelto_sigue_siendo_accesorio():
     from web.productos import _celular_y_android
     assert _celular_y_android("Cargador Samsung 45W Turbo Charge Original", "Samsung") == (False, False)
+
+
+def test_excluido_no_saca_drones_por_bateria_o_pantalla():
+    from web.productos import _excluido
+    assert not _excluido("DRONE HETZER A14 PRO MAX PANTALLA/GPS/2 BATERIAS BLACK")
+    assert _excluido("ACS DJI BATERIA FLIP INTELLIGENT FLIGHT")
+    assert _excluido("Pantalla iPhone 13")
