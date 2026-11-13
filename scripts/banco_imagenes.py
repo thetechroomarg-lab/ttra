@@ -17,7 +17,8 @@ import unicodedata
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
-INDEX = RAIZ / "web/static/catalog-images/index.json"
+WEB_IMAGENES = RAIZ / "web/static/catalog-images"
+INDEX = WEB_IMAGENES / "index.json"
 BANCO = RAIZ / "catalogo-imagenes-originales/banco.json"
 ORIGINALES = RAIZ / "catalogo-imagenes-originales"
 PRODUCTOS = RAIZ / "web/productos.json"
@@ -146,6 +147,8 @@ def construir():
             orig = ORIGINALES / archivo
             if orig.exists():
                 meta["original"] = f"catalogo-imagenes-originales/{archivo}"
+            if (WEB_IMAGENES / "zoom" / archivo).exists():
+                meta["zoom"] = f"web/static/catalog-images/zoom/{archivo}"
     guardar_banco(banco)
     print(f"banco: {len(banco['imagenes'])} imágenes, {len(banco['mapeo'])} alias (+{nuevos} nuevos)")
 
