@@ -97,9 +97,15 @@ _EXCLUIR_KW = ("modulo", "módulo", "bateria", "batería", "pantalla", "perfume"
                "caja abierta", "caja abollada", "caja manchada")
 
 
+# En un drone, "batería"/"pantalla" describen lo que trae (2 baterías, control con pantalla),
+# no un repuesto: no deben sacarlo del catálogo.
+_KW_REPUESTO = ("bateria", "batería", "pantalla")
+
+
 def _excluido(nombre):
     l = nombre.lower()
-    return any(k in l for k in _EXCLUIR_KW)
+    es_drone = bool(re.search(r"\bdrone\b", l))
+    return any(k in l for k in _EXCLUIR_KW if not (es_drone and k in _KW_REPUESTO))
 
 
 # Todo lo que NO es un celular en sí (accesorios, wearables, tablets, notebooks, etc.),

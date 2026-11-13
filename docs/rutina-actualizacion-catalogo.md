@@ -63,6 +63,16 @@ Mike usa el identificador interno **`mike`**, confirmado por el usuario el 04/11
 - Los precios están en pesos: convertir el costo a USD con dólar OH = cotización AZ − $30 y registrar ambas cotizaciones y la fecha de lectura.
 - No modificar la planilla ni leer las pestañas ocultas de importación.
 
+### MV — agregado el 13/11/2026
+
+- Siglas: **MV** (identificador interno `mv`). Planilla "VM IMPORTACIONES TODO". Proveedor independiente: se guarda como `entrada_mv.json` y entra en la consolidación diaria junto a los demás (gana el más barato).
+- URL: https://docs.google.com/spreadsheets/d/1sMML1S7RatGgmStVksnnRVyRUmNxnz6jVwrG-BOUmYM/edit?gid=412595211#gid=412595211
+- Solo lectura. Se copia cada pestaña con Cmd+A, Cmd+A (dos veces: la primera solo marca el bloque), Cmd+C en Chrome y `pbpaste` a `outputs/catalogo_AAAAMMDD/crudo_mv/<pestaña>.tsv`. Parser: `tmp/catalogo_mv_20261113/preparar_mv.py` (copiar y parametrizar la fecha).
+- Pestañas que entran: `IPHONE` (solo nuevos sellados, más AirPods/Watch nuevos listados ahí), `MACBOOK`, `IPADS`, `iWatch`, `AirPods`, `Accesorios Varios y Cargadores`, `META OCULUS`, `NOTEBOOKS GAMERS` (las filas de Apple se toman de `MACBOOK`). Precios en USD, estado `Disponible` únicamente.
+- Se filtran: iPhone usados/CPO y MacBook usadas (regla de stock propio), `No Disponible`/`En Transito`, Garmin (la hoja dice "CONSULTE STOCK") y precios implausibles (ej. $2.887.010 en una Asus V16: duda para revisar).
+- Desde el 13/11/2026 (autorizado por Vladimir) también entran `DRONE`, `Hogar y Deco` (Cecotec, Aiper, Pinnacle, Cookut; la columna "PRECIO VENTA USD" se toma como costo) y `Cafeteras`. Los repuestos (baterías, cargadores de batería) siguen excluidos; la regla de baterías/pantalla no aplica a nombres que contienen "drone" (`web/productos.py::_excluido`).
+- Pestañas que no entran: `Accesorios Premium` (es una copia de la lista de OH en pesos) y `RELOGES G SHOCK` (notas sueltas).
+
 ### FR — notebooks solamente
 
 - URL: https://docs.google.com/spreadsheets/d/1-D4tjaHht4rfXzboRekz5tq_CK4731e5kAVauuglof4/edit?gid=0#gid=0
@@ -106,3 +116,7 @@ Mike usa el identificador interno **`mike`**, confirmado por el usuario el 04/11
 - Correspondencia interna confirmada el 04/11/2026: `Lista mayorista` = Mike = `mike`, separado de `master`.
 - Fuentes del 04/11/2026: AZ, EM, BA, OH y FR-notebooks pasan a planillas directas; FR-celulares/resto y VA usan snapshots entregados solo para esa fecha y luego quedan como última lista completa registrada hasta recibir reemplazos.
 - Flujo diario confirmado el 04/11/2026: preparar las fuentes directas, detenerse antes de consolidar/publicar, avisar en el chat y reanudar únicamente cuando el usuario entregue las listas completas del día de VA y FR.
+
+## Plan Canje — agregado el 12/11/2026
+
+En cada corrida, recalcular la tabla de toma (`web/canje_tabla.json` y `web/static/plan-canje.html`) con el costo de los iPhone usados del día: toma = costo del usado más barato de ese modelo y capacidad − US$150 (− US$200 en iPhone 16 Pro, 16 Pro Max, 17 Pro y 17 Pro Max). Solo hasta 512 GB. Si una fila no tiene usado nuevo, conservar su valor. Informar las filas que cambiaron.
