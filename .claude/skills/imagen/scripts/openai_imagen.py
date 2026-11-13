@@ -19,7 +19,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-MODELO_DEFAULT = "gpt-image-1"
+MODELO_DEFAULT = "gpt-image-1.5"
 SALIDA_DEFAULT = Path("/Users/toraba/Precios Claude/Imagenes")
 API = "https://api.openai.com/v1/images"
 
@@ -59,8 +59,10 @@ def _multipart(campos, archivos):
     return cuerpo, f"multipart/form-data; boundary={limite}"
 
 
-def generar(prompt, refs, tamanio, calidad, modelo, key):
+def generar(prompt, refs, tamanio, calidad, modelo, key, transparente=False):
     campos = {"model": modelo, "prompt": prompt, "size": tamanio, "quality": calidad}
+    if transparente:
+        campos.update({"background": "transparent", "output_format": "png"})
     if refs:
         datos, tipo = _multipart(campos, [("image[]", r) for r in refs])
         url = f"{API}/edits"
@@ -83,6 +85,7 @@ def main():
     p.add_argument("--calidad", default="high", choices=["low", "medium", "high"])
     p.add_argument("--out", type=Path, default=SALIDA_DEFAULT)
     p.add_argument("--nombre", default="imagen")
+    p.add_argument("--transparente", action="store_true", help="PNG con fondo transparente (recortado al contorno)")
     p.add_argument("--modelo", default=os.environ.get("OPENAI_IMAGE_MODEL", MODELO_DEFAULT))
     a = p.parse_args()
 
@@ -93,7 +96,7 @@ def main():
         if not Path(r).is_file():
             sys.exit(f"No existe la referencia: {r}")
 
-    resp = generar(a.prompt, a.ref, TAMANIOS[a.aspect], a.calidad, a.modelo, key)
+    resp = generar(a.prompt, a.ref, TAMANIOS[a.aspect], a.calidad, a.modelo, key, a.transparente)
     a.out.mkdir(parents=True, exist_ok=True)
     sello = datetime.now().strftime("%Y%m%d-%H%M%S")
     guardadas = 0
