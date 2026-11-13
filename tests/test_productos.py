@@ -30,8 +30,8 @@ def test_genera_productos_sin_proveedor_y_con_3_precios():
     assert len(prods) == 1                      # se consolida al más barato
     p = prods[0]
     assert "proveedor" not in p                 # NUNCA el proveedor
-    assert p["usd"] == 670                      # 610 + margen iPhone 60 (601-900), redondeo a 5
-    assert p["pesos"] == 670 * 1540
+    assert p["usd"] == 660                      # 610 + margen iPhone 50 (601-900), redondeo a 5
+    assert p["pesos"] == 660 * 1540
     assert p["transferencia"] == round(p["pesos"] / 0.97)
     assert p["link_imagen"].startswith("https://www.google.com/search?tbm=isch")
     assert p["categoria"]                       # tiene alguna categoría no vacía
@@ -213,7 +213,7 @@ def test_celular_con_cargador_lleva_la_escala_android():
         {"nombre": "Moto E15 2GB 64GB con Cargador", "costo": 128, "proveedor": "fr", "colores": []},
     ]
     precios = {p["nombre"]: p["usd"] for p in generar_productos(items, 1565)}
-    assert precios["SAMSUNG A07 4GB 128GB con cargador"] == 205  # 158 + 45 de la escala Android
+    assert precios["SAMSUNG A07 4GB 128GB con cargador"] == 200  # 158 + 40 de la escala Android
     assert precios["Moto E15 2GB 64GB con Cargador"] == 170  # 128 + 40
 
 
