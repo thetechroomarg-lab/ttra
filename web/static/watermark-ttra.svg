@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60" aria-hidden="true">
+  <!-- Mosaico de marca de agua para el visor ampliado: logo THE TECH ROOM ARG. chico, a 45 grados, en diagonal. -->
+  <g font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="9" letter-spacing="-.3" fill="#ffffff" fill-opacity=".1">
+    <g transform="translate(15 15) rotate(-45) translate(-13 -12)">
+      <text y="8">THE</text><text y="16">TECH</text><text y="24">ROOM</text><text y="32">ARG<tspan fill="#ff503c" fill-opacity=".22">.</tspan></text>
+    </g>
+    <g transform="translate(45 45) rotate(-45) translate(-13 -12)">
+      <text y="8">THE</text><text y="16">TECH</text><text y="24">ROOM</text><text y="32">ARG<tspan fill="#ff503c" fill-opacity=".22">.</tspan></text>
+    </g>
+  </g>
+</svg>

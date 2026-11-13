@@ -30,3 +30,29 @@ def test_iphone_14_usado_con_fotos_reales_existentes():
     assert variante["src"] == variante["fotos"][0]
     for src in variante["fotos"]:
         assert (ESTATICO / src.removeprefix("/")).is_file(), src
+
+
+def test_toda_imagen_del_catalogo_tiene_version_grande_para_el_visor():
+    """Tocar una card abre el visor con /catalog-images/zoom/<mismo archivo>; tiene que existir."""
+    indice = json.loads((ESTATICO / "catalog-images" / "index.json").read_text(encoding="utf-8"))
+    falta = sorted({
+        v["src"] for variantes in indice.values() for v in variantes
+        if v["src"].startswith("/catalog-images/") and "/usados/" not in v["src"] and "placeholder" not in v["src"]
+        and not (ESTATICO / "catalog-images" / "zoom" / v["src"].removeprefix("/catalog-images/")).is_file()
+    })
+    assert not falta, falta[:5]
+
+
+def test_ampliar_imagen_de_la_card_usa_el_mismo_visor_sin_cierre_por_fondo():
+    js = (ESTATICO / "catalog-images.js").read_text(encoding="utf-8")
+    assert "zoomDe(actual.src)" in js and "/catalog-images/zoom/" in js
+    assert "abrirVisor([zoomDe(actual.src)]" in js          # un solo visor para usados y para el resto
+    assert "dlg.addEventListener('click'" not in js
+    css = (ESTATICO / "catalog-images.css").read_text(encoding="utf-8")
+    assert ".ai-picture-zoom{cursor:zoom-in}" in css
+
+
+def test_visor_tiene_marca_de_agua_de_fondo():
+    css = (ESTATICO / "catalog-images.css").read_text(encoding="utf-8")
+    assert css.count("url(watermark-ttra.svg)") == 2          # visor de usados y visor de imagen recortada
+    assert (ESTATICO / "watermark-ttra.svg").is_file()

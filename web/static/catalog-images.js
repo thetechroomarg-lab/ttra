@@ -20,6 +20,8 @@
   const boton = (cls, etiqueta, html) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.setAttribute('aria-label', etiqueta); b.innerHTML = html; return b; };
   const esUsado = p => /usado/i.test(String(p?.categoria || ''));
   const mod = (i, n) => (i % n + n) % n;
+  // Versión grande de una imagen del catálogo: /catalog-images/X.webp -> /catalog-images/zoom/X.webp (las fotos reales de usados ya son grandes).
+  const zoomDe = src => /^\/catalog-images\/(?!zoom\/|usados\/)/.test(src || '') && !/placeholder/.test(src) ? src.replace('/catalog-images/', '/catalog-images/zoom/') : src;
   const UMBRAL_SWIPE = 40;
   // Swipe horizontal (táctil o arrastrando con el mouse). Devuelve true si el gesto fue un arrastre.
   function swipe(el, alCambiar) {
@@ -33,11 +35,11 @@
     });
   }
   let visorAbierto = null;
-  function abrirVisor(fotos, inicio, alt, origen) {
+  function abrirVisor(fotos, inicio, alt, origen, respaldo, recorte) {
     if (visorAbierto) return;
     let i = mod(inicio, fotos.length);
     const dlg = document.createElement('dialog');
-    dlg.className = 'ai-visor'; dlg.setAttribute('aria-label', 'Fotos de ' + alt);
+    dlg.className = 'ai-visor' + (recorte ? ' ai-visor-recorte' : ''); dlg.setAttribute('aria-label', (recorte ? 'Imagen de ' : 'Fotos de ') + alt);
     const escena = document.createElement('div'); escena.className = 'ai-visor-escena';
     const img = document.createElement('img'); img.className = 'ai-visor-img'; img.draggable = false; img.decoding = 'async';
     const prev = boton('ai-visor-flecha ai-visor-prev', 'Foto anterior', SVG_FLECHA(-1));
@@ -45,12 +47,14 @@
     const cont = document.createElement('p'); cont.className = 'ai-visor-contador'; cont.setAttribute('aria-live', 'polite');
     const cerrar = document.createElement('button'); cerrar.type = 'button'; cerrar.className = 'ai-visor-cerrar'; cerrar.textContent = 'Cerrar';
     escena.append(img, prev, next); dlg.append(escena, cont, cerrar);
-    const solo = fotos.length < 2; if (solo) { prev.hidden = next.hidden = true; }
+    const solo = fotos.length < 2; if (solo) { prev.hidden = next.hidden = cont.hidden = true; }
+    // Si la versión grande no existe, se muestra la chica de la card (una sola vez por foto).
+    img.addEventListener('error', () => { if (respaldo && img.dataset.respaldo !== String(i)) { img.dataset.respaldo = String(i); img.src = respaldo[i]; } });
     function ir(d) {
       if (solo && d) return;
       i = mod(i + d, fotos.length);
       img.classList.add('ai-visor-cambio');
-      requestAnimationFrame(() => { img.src = fotos[i]; img.alt = `${alt} · foto ${i + 1} de ${fotos.length}`; img.classList.remove('ai-visor-cambio'); });
+      requestAnimationFrame(() => { img.src = fotos[i]; img.alt = solo ? alt : `${alt} · foto ${i + 1} de ${fotos.length}`; img.classList.remove('ai-visor-cambio'); });
       cont.textContent = `${i + 1} / ${fotos.length}`;
       [1, -1].forEach(k => { const pre = new Image(); pre.src = fotos[mod(i + k, fotos.length)]; });
     }
@@ -143,19 +147,36 @@
       }
       function showPlaceholder(c){
         if(!alive)return;
+        actual=null; habilitarZoom(false);
         const replacement=new Image(); replacement.alt='Imagen no disponible'; replacement.src=placeholder; replacement.onerror=fallback;
         picture.replaceChildren(replacement); color.textContent=c||'Imagen de referencia';
       }
+      // Tocar la imagen la amplía en el visor (fondo difuminado y un solo botón Cerrar), igual que los usados.
+      let actual=null;
+      function habilitarZoom(on){
+        picture.classList.toggle('ai-picture-zoom',on);
+        if(on){picture.setAttribute('role','button');picture.tabIndex=0;picture.setAttribute('aria-label','Ampliar imagen de '+p.nombre);}
+        else{picture.removeAttribute('role');picture.removeAttribute('tabindex');picture.removeAttribute('aria-label');}
+      }
+      function ampliar(e){
+        if(!actual||actual.src===placeholder||picture.classList.contains('ai-picture-fotos'))return;
+        e.stopPropagation();
+        abrirVisor([zoomDe(actual.src)],0,p.nombre+' · '+(actual.color||'Imagen de referencia'),picture,[actual.src],true);
+      }
+      picture.addEventListener('click',ampliar);
+      picture.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ampliar(e);}});
+      habilitarZoom(true);
       function selectColor(c, initial=false){
         const v=variants.find(v=>colorKey(v.color)===colorKey(c==='Color único'?null:c)) || (initial?variants[0]:null);
         if(!v){fallback();return;}
-        const token=++serial;
+        const token=++serial; actual=v;
         // Usados con fotos reales: carrusel que se amplía al tocarlo (solo equipos "Usado").
         if(esUsado(p)&&v.fotos?.length>1){
-          picture.classList.add('ai-picture-fotos');
+          picture.classList.add('ai-picture-fotos'); habilitarZoom(false);
           picture.replaceChildren(carrusel(v.fotos,p.nombre+' · '+(v.color||'')));
           color.textContent=v.color||'Imagen de referencia';return;
         }
+        picture.classList.remove('ai-picture-fotos'); habilitarZoom(true);
         if(initial){img.src=v.src;img.alt=p.nombre+' · '+(v.color||'Imagen de referencia');img.onerror=()=>v.src===placeholder?fallback():showPlaceholder(v.color);color.textContent=v.color||'Imagen de referencia';return;}
         const next=new Image(); next.src=v.src;
         next.decode().then(()=>{
