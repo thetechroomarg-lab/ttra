@@ -50,3 +50,9 @@ def test_ampliar_imagen_de_la_card_usa_el_mismo_visor_sin_cierre_por_fondo():
     assert "dlg.addEventListener('click'" not in js
     css = (ESTATICO / "catalog-images.css").read_text(encoding="utf-8")
     assert ".ai-picture-zoom{cursor:zoom-in}" in css
+
+
+def test_visor_tiene_marca_de_agua_de_fondo():
+    css = (ESTATICO / "catalog-images.css").read_text(encoding="utf-8")
+    assert css.count("url(watermark-ttra.svg)") == 2          # visor de usados y visor de imagen recortada
+    assert (ESTATICO / "watermark-ttra.svg").is_file()
