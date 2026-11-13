@@ -13,6 +13,9 @@ from web.catalogo import seccion_de
     ("Aspiradora Xiaomi Robot Vacuum 5", "Xiaomi", "Electro"),
     ("Xiaomi Cafetera Semi automatic Espresso Machine", "Xiaomi", "Electro"),
     ("Freidora de aire Philips 4L", "Otros", "Electro"),
+    ("Cookut La Fabulosa Negro (meteoro) - FAB28NO", "Otros", "Electro"),
+    ("Robot Limpiapiscinas Aiper Scuba S3 AR", "Otros", "Electro"),
+    ("Cecotec Cecofry Fantastik 6500", "Otros", "Electro"),
     ("Amazon Fire TV Stick 4K Select 8GB", "Otros", "Accesorios Celulares"),
     ("Patinete Elétrico Xiaomi Mi Scooter Electric 6 Max", "Xiaomi", "Accesorios Celulares"),
     ("CARG ORIGINAL SAMSUNG 25W USB C", "Samsung", "Accesorios Celulares"),
@@ -40,6 +43,18 @@ def test_seccion_por_producto(nombre, categoria, esperada):
     ("Xiaomi Mi Smart Scale S200", "Xiaomi", "Balanzas"),
     ("Licuadora Oster 600W", "Otros", "Licuadoras y batidoras"),
     ("Producto nuevo sin regla", "Electro", "Otros electro"),
+    ("Robot Limpiapiscinas Aiper Scuba S3 AR", "Otros", "Limpiapiscinas"),
+    ("Aspirador Limpiapiscinas Inalámbrico Aiper - Pilot X1 AR", "Otros", "Limpiapiscinas"),
+    ("Carrito Aiper Caddy - AIPJ02210010001", "Otros", "Limpiapiscinas"),
+    ("Robot Cortacésped Anthbot Genie 1000 EU", "Otros", "Robots"),
+    ("Robot de cocina Mambo Cooking Victory (Europa) -4700 EU", "Otros", "Cocina"),
+    ("Robot aspirador Conga X70 EU", "Otros", "Aspiradoras"),
+    ("Fregona eléctrica FreeGo Wash Twice Spray", "Otros", "Aspiradoras"),
+    ("Cecotec Cecofry Fantastik 6500", "Otros", "Freidoras de aire"),
+    ("Tostador Cecotec - Toast&Taste Double W AR", "Otros", "Cocina"),
+    ("Cepillo modelador de aire Cecotec CeramicCare 10in1 Styler", "Otros", "Cuidado personal"),
+    ("Cookut La Fabulosa Negro (meteoro) - FAB28NO", "Otros", "Ollas y sartenes"),
+    ("Heladera Termica Pinnacle Prudence 30 Ltr. Rojo", "Otros", "Heladeras"),
 ])
 def test_tipo_electro(nombre, categoria, tipo):
     from web.catalogo import tipo_electro_de
