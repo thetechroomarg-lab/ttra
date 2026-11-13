@@ -102,6 +102,10 @@ _ACCESORIO_DE_EQUIPO = re.compile(r"(?i)\bmochila\b|\bpencil\b|magic\s+keyboard|
 
 def _seccion_de(producto):
     nombre = producto.get("nombre", "")
+    # Categoría "Electro" explícita (pestañas Hogar y Deco / Cafeteras del proveedor):
+    # va a Electro sin mirar el nombre.
+    if producto.get("categoria") == "Electro":
+        return "Electro"
     if _ACCESORIO_DE_EQUIPO.search(nombre):
         return "Accesorios Celulares"
     categoria_marca = producto.get("categoria", "")
