@@ -131,7 +131,7 @@ html[data-modo="classic"][data-classic-theme="light"] .ai-visor{--ai-visor-glow:
 /* Imagen única de la card ampliable: mismo visor que los usados, sobre un fondo claro-oscuro que deja ver productos negros. */
 .ai-picture-zoom{cursor:zoom-in}
 .ai-picture-zoom:focus-visible{outline:2px solid var(--ed-accent,#ff503c);outline-offset:2px;border-radius:6px}
-.ai-visor-escena{background-image:url(watermark-ttra.svg);background-size:120px 120px}
-.ai-visor-recorte .ai-visor-escena{background-image:url(watermark-ttra.svg),radial-gradient(ellipse at 50% 42%,#4a4d46 0%,#2a2c27 55%,#1b1d19 100%);background-size:120px 120px,auto}
+.ai-visor-escena{background-image:url(watermark-ttra.svg);background-size:60px 60px}
+.ai-visor-recorte .ai-visor-escena{background-image:url(watermark-ttra.svg),radial-gradient(ellipse at 50% 42%,#4a4d46 0%,#2a2c27 55%,#1b1d19 100%);background-size:60px 60px,auto}
 .ai-visor-recorte .ai-visor-img{max-width:min(100%,540px)}
 .ai-visor-flecha[hidden],.ai-visor-contador[hidden]{display:none}
