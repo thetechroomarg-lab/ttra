@@ -155,13 +155,24 @@ def _celular_y_android(nombre, categoria):
     return False, False
 
 
+# Todo lo que viene de estas pestañas de la lista de MV es electro, sin excepción,
+# aunque el nombre no diga qué es (ver web/catalogo.py, sección Electro).
+PESTANAS_ELECTRO = {"Hogar y Deco", "Cafeteras"}
+
+
+def _categoria_de_fila(fila):
+    if PESTANAS_ELECTRO & set(fila.get("pestanas_fuente", ())):
+        return "Electro"
+    return _categoria(fila["nombre"])
+
+
 def generar_productos(items, cotizacion):
     consolidados = consolidar(items)["lista"]
     productos = []
     for fila in consolidados:
         if _excluido(fila["nombre"]):
             continue
-        categoria = _categoria(fila["nombre"])
+        categoria = _categoria_de_fila(fila)
         es_celular, es_android = _celular_y_android(fila["nombre"], categoria)
         if es_celular:
             es_iphone = categoria in ("Apple - iPhone", "Apple - iPhone Usado")
