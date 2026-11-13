@@ -578,16 +578,16 @@ function tarjetaProducto(p, indice = 0) {
   const precios = preciosDe(p);
   const monto = (valor) => valor == null ? "-" : Number(valor).toLocaleString("es-AR");
   const sinColores = !(Array.isArray(p.colores) && p.colores.length);
-  const opciones = sinColores ? [] : p.colores;
-  const elegirColor = !sinColores;
+  // Sin color informado el selector se ofrece igual, con una única opción
+  // "Color único": todas las cards se agregan al carrito de la misma manera.
+  const opciones = sinColores ? ["Color único"] : p.colores;
+  const elegirColor = true;
   const etiqueta = condicionProducto(p) === "usado" ? "variante" : "color";
-  const colores = opciones.length > 0
-    ? `<label for="catalog-color-${indice}">${etiqueta === "variante" ? "Color y % de batería:" : "Colores disponibles:"}</label>
+  const colores = `<label for="catalog-color-${indice}">${etiqueta === "variante" ? "Color y % de batería:" : "Colores disponibles:"}</label>
        <select id="catalog-color-${indice}" required>
-         <option value="" disabled ${sinColores ? '' : 'selected'} hidden>Elegí una opción de color</option>
-         ${opciones.map((color) => `<option value="${escapeHtml(color).replaceAll('"', '&quot;')}"${sinColores ? ' selected' : ''}>${escapeHtml(color)}</option>`).join('')}
-       </select>`
-    : "";
+         <option value="" disabled selected hidden>Elegí una opción de color</option>
+         ${opciones.map((color) => `<option value="${escapeHtml(color).replaceAll('"', '&quot;')}">${escapeHtml(color)}</option>`).join('')}
+       </select>`;
   return `
     <div class="card" data-product-index="${indice}">
       <h3>${escapeHtml(p.nombre)}</h3>

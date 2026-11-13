@@ -1286,8 +1286,9 @@ document.addEventListener("click", (e) => {
 });
 
 function tarjetaProducto(p) {
-  const tieneColores = Array.isArray(p.colores) && p.colores.length > 0;
-  const listaColores = tieneColores ? p.colores : [];
+  const tieneColores = true;
+  // Sin color informado se ofrece igual el selector, con la opción "Color único".
+  const listaColores = Array.isArray(p.colores) && p.colores.length > 0 ? p.colores : ["Color único"];
   // Siempre arranca en "Elegir color" sin nada preseleccionado, tenga el
   // producto uno o varios colores: Agregar al carrito queda inactivo hasta
   // que el usuario elija explícitamente una opción de la lista.
