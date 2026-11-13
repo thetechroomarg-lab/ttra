@@ -90,6 +90,10 @@
     const render={}; renders.set(container,render);
     const index = await manifest, keyed = await byKey;
     if (!container.isConnected || renders.get(container)!==render) return;
+    // Todas las caras miden lo mismo: se dimensionan para la card con más líneas de
+    // precio de la grilla (5 + una por cuota), tenga o no cuotas la de al lado.
+    const filasDe=p=>(filasMayoristaDe(p)?6:5)+cuotasDe(preciosDe(p)).length;
+    const maxFilas=products.reduce((m,p)=>p?Math.max(m,filasDe(p)):m,0);
     container.querySelectorAll('.card').forEach((card, i) => {
       const p = products[i], entry = p && (index[p.nombre] || keyed[nameKey(p.nombre)]);
       if (!p || card.classList.contains('ai-card')) return;
@@ -120,9 +124,9 @@
         else row.append(text('span','',label),value);
         prices.append(row);
       });
-      // La cara está pensada para 5 precios (6 filas en mayorista). Con las
-      // líneas de cuotas se estira hacia abajo, una fila por precio extra.
-      const base=filasMay?6:5, filas=prices.children.length;
+      // La cara está pensada para 5 precios (6 filas en mayorista). Si alguna card de la grilla
+      // tiene líneas de cuotas, TODAS se estiran igual (una fila por precio extra).
+      const base=filasMay?6:5, filas=Math.max(prices.children.length,maxFilas);
       if(filas>base){
         const fila=32/base;
         face.classList.add('ai-face-extra');

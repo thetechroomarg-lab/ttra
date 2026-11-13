@@ -8,6 +8,7 @@ SECCIONES = [
     "Tablets",
     "Notebooks y Macbooks",
     "Gaming",
+    "Electro",
 ]
 
 _CELULARES_CATEGORIAS = {
@@ -59,6 +60,42 @@ _NO_ES_CELULAR = re.compile(
 )
 
 
+# Electrodomésticos: cada tipo con las palabras que lo reconocen en el nombre.
+# El orden importa (gana el primero que coincide): "Aspiradora Robot" es una
+# aspiradora, no un robot. Para sumar un tipo nuevo basta una línea acá; el
+# filtro "Tipo" de la sección sale solo de los tipos que tengan productos.
+ELECTRO_TIPOS = (
+    ("Limpiapiscinas", re.compile(r"(?i)piscina|\baiper\b")),
+    ("Aspiradoras", re.compile(r"(?i)aspirad|aspiraci[oó]n|vacuum|\bmop\b|fregona")),
+    ("Robots", re.compile(r"(?i)\brobot(?!\s+de\s+cocina)")),
+    ("Cafeteras", re.compile(r"(?i)cafetera|espresso|\bcoffee\b")),
+    ("Freidoras de aire", re.compile(r"(?i)air\s*fryer|freidora|cecofry")),
+    ("Humidificadores", re.compile(r"(?i)humidif")),
+    ("Purificadores de aire", re.compile(r"(?i)purificador|air\s*purifier")),
+    ("Balanzas", re.compile(r"(?i)balanza|\bscale\b")),
+    ("Ventiladores y climatización", re.compile(r"(?i)ventilador|calefactor|estufa|aire\s+acondicionado|climatiz")),
+    ("Licuadoras y batidoras", re.compile(r"(?i)licuadora|batidora|procesadora|\bblender\b")),
+    ("Ollas y sartenes", re.compile(r"(?i)\bcookut\b|sart[eé]n|sartenes|\bolla\b|\bollas\b")),
+    ("Cocina", re.compile(r"(?i)microondas|\bpava\b|hervidor|\bkettle\b|tostador|\bhorno\b|sandwichera|robot\s+de\s+cocina|\bmambo\b")),
+    ("Cuidado personal", re.compile(r"(?i)secador|planchita|afeitadora|depiladora|cortadora\s+de\s+pelo|cepillo\s+modelador")),
+    ("Cuidado de ropa", re.compile(r"(?i)\bplancha\b|\bsteamer\b|lint\s+remover")),
+    ("Heladeras", re.compile(r"(?i)heladera|\bfreezer\b|refrigerador")),
+    ("Televisores", re.compile(r"(?i)televisor|\bsmart\s*tv\b")),
+)
+ELECTRO_OTROS = "Otros electro"
+
+
+def tipo_electro_de(producto):
+    """Tipo de electrodoméstico del producto, o None si no es un electro."""
+    nombre = producto.get("nombre", "")
+    for tipo, patron in ELECTRO_TIPOS:
+        if patron.search(nombre):
+            return tipo
+    # El pipeline puede traer la categoría "Electro" explícita para algo que
+    # todavía no tiene regla de tipo.
+    return ELECTRO_OTROS if producto.get("categoria") == "Electro" else None
+
+
 # Accesorios que llegan bajo la categoría de un equipo (mochilas de notebook, teclados y lápices de iPad).
 _ACCESORIO_DE_EQUIPO = re.compile(r"(?i)\bmochila\b|\bpencil\b|magic\s+keyboard|\bfunda\b|\bcase\b")
 
@@ -69,6 +106,8 @@ def _seccion_de(producto):
         return "Accesorios Celulares"
     categoria_marca = producto.get("categoria", "")
     if categoria_marca not in _CATEGORIAS_FIJAS_APPLE:
+        if tipo_electro_de(producto):
+            return "Electro"
         if _CHROMEBOOK.search(nombre):
             return "Notebooks y Macbooks"
         if _MONITOR_GAMER.search(nombre):
@@ -166,5 +205,8 @@ def secciones_catalogo(productos):
     resultado = {seccion: [] for seccion in SECCIONES}
     for producto in productos:
         enriquecido = {**producto, "marca": marca_de(producto), "slug": slug(producto["nombre"])}
-        resultado[_seccion_de(producto)].append(enriquecido)
+        seccion = _seccion_de(producto)
+        if seccion == "Electro":
+            enriquecido["tipo_electro"] = tipo_electro_de(producto)
+        resultado[seccion].append(enriquecido)
     return resultado

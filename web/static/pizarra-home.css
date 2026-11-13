@@ -151,6 +151,23 @@ html[data-modo="classic"] .ttra-collection-grid .ttra-category:focus-visible { o
 @media (hover: hover) and (pointer: fine) {
   html[data-modo="classic"] .ttra-collection-grid .ttra-category:hover { translate: none; box-shadow: none; background: #151514; }
 }
+/* La búsqueda por marca es la puerta a todo el catálogo, no una categoría más:
+   cierra el tablero como la fila esmalte, igual que la garantía de Apple. */
+html[data-modo="classic"] .ttra-collection-grid .ttra-category-brands { background: var(--pz-plate); color: var(--pz-ink); }
+html[data-modo="classic"] .ttra-collection-grid .ttra-category-brands h3 { color: var(--pz-ink); }
+html[data-modo="classic"] .ttra-collection-grid .ttra-brands-lista {
+  margin: 4px 0 0; color: #4a4943;
+  font: 600 14px/1.2 var(--pz-font); letter-spacing: .05em; text-transform: uppercase;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+html[data-modo="classic"] .ttra-collection-grid .ttra-category-brands:focus-visible { outline-color: var(--pz-ink); }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .ttra-collection-grid .ttra-category-brands:hover { background: #f7f6f0; }
+}
+@media (min-width: 701px) {
+  html[data-modo="classic"] .ttra-collection-grid .ttra-category-brands { grid-column: 1 / -1; }
+  html[data-modo="classic"] .ttra-collection-grid .ttra-brands-lista { font-size: 17px; }
+}
 /* Rows arrive with a short rise instead of the old card zoom and blur. */
 html[data-modo="classic"] .ttra-collection-grid .ttra-category[data-reveal].ttra-reveal-ready { transform: translateY(12px); filter: none; }
 html[data-modo="classic"] .ttra-collection-grid .ttra-category[data-reveal].ttra-reveal-ready:is(.is-visible, :focus-within) { transform: none; }
