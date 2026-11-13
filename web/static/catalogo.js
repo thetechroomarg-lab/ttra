@@ -4,7 +4,7 @@ const MARCAS = [
 ];
 
 const SECCIONES = [
-  "Celulares", "Accesorios Celulares", "Tablets", "Notebooks y Macbooks", "Gaming",
+  "Celulares", "Accesorios Celulares", "Tablets", "Notebooks y Macbooks", "Gaming", "Electro",
 ];
 
 function pintarCarrousel() {
@@ -44,6 +44,8 @@ let condicionActiva = "";
 let tipoActivo = "";
 
 const SECCION_NOTEBOOKS = "Notebooks y Macbooks";
+const SECCION_ELECTRO = "Electro";
+const TIPOS_NOTEBOOKS = [["Notebook", "Notebooks"], ["Mac", "Macbooks"]];
 
 // Filtros por especificación (RAM, memoria, procesador...), leídos del nombre
 // del producto en especificaciones.js. Clave -> valor elegido, como texto.
@@ -210,9 +212,34 @@ function productosDeCategoria(nombre) {
   const base = nombre === "Todos"
     ? Object.values(SECCIONES_DATA).flat()
     : (SECCIONES_DATA[nombre] || []);
-  return nombre === SECCION_NOTEBOOKS && tipoActivo
-    ? base.filter((producto) => producto.categoria === tipoActivo)
-    : base;
+  if (!tipoActivo) return base;
+  if (nombre === SECCION_NOTEBOOKS) return base.filter((producto) => producto.categoria === tipoActivo);
+  if (nombre === SECCION_ELECTRO) return base.filter((producto) => producto.tipo_electro === tipoActivo);
+  return base;
+}
+
+// Tipos de electrodoméstico presentes, alfabéticos y con "Otros electro" al final.
+function tiposElectro() {
+  const cuenta = new Map();
+  (SECCIONES_DATA[SECCION_ELECTRO] || []).forEach((p) => {
+    if (p.tipo_electro) cuenta.set(p.tipo_electro, (cuenta.get(p.tipo_electro) || 0) + 1);
+  });
+  const otros = "Otros electro";
+  return [...cuenta.keys()]
+    .sort((a, b) => (a === otros) - (b === otros) || a.localeCompare(b, "es"))
+    .map((tipo) => [tipo, `${tipo} (${cuenta.get(tipo)})`]);
+}
+
+// El select "Tipo" es de Notebooks y de Electro: cada sección carga sus opciones.
+function pintarTipos(nombre) {
+  const selector = document.getElementById("tipo-filter");
+  const opciones = nombre === SECCION_NOTEBOOKS ? TIPOS_NOTEBOOKS : nombre === SECCION_ELECTRO ? tiposElectro() : [];
+  if (!opciones.some(([valor]) => valor === tipoActivo)) tipoActivo = "";
+  selector.replaceChildren(new Option("Todos", ""), ...opciones.map(([valor, texto]) => new Option(texto, valor)));
+  selector.value = tipoActivo;
+  document.querySelector('label[for="tipo-filter"]').textContent =
+    nombre === SECCION_ELECTRO ? "Tipo de electrodoméstico" : "Tipo";
+  document.getElementById("tipo-filter-field").hidden = opciones.length === 0;
 }
 
 function permiteFiltroCondicion(categoria, marca) {
@@ -240,9 +267,7 @@ function pintarMarcas(productos) {
 // En Notebooks y Macbooks primero se elige el tipo; la marca aparece solo para Notebooks.
 function pintarFiltrosDeSeccion(nombre) {
   const esNotebooks = nombre === SECCION_NOTEBOOKS;
-  if (!esNotebooks) tipoActivo = "";
-  document.getElementById("tipo-filter-field").hidden = !esNotebooks;
-  document.getElementById("tipo-filter").value = tipoActivo;
+  pintarTipos(nombre);
   const mostrarMarca = !esNotebooks || tipoActivo === "Notebook";
   document.getElementById("marca-filter-field").hidden = !mostrarMarca;
   if (!mostrarMarca) marcaActiva = "";
@@ -615,7 +640,7 @@ async function cargarCatalogo() {
     }
     marcaActiva = (regreso ? regreso.marca : parametros.get("marca")) || "";
     const tipoSolicitado = regreso ? regreso.tipo : parametros.get('tipo');
-    tipoActivo = ['Notebook', 'Mac'].includes(tipoSolicitado) ? tipoSolicitado : '';
+    tipoActivo = tipoSolicitado || '';
     document.getElementById("catalog-search").value = regreso ? regreso.query : parametros.get("q") || "";
     const estado = regreso || {
       condicion: parametros.get('condicion'), orden: parametros.get('orden'),

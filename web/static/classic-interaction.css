@@ -58,7 +58,7 @@ html[data-modo="classic"] :is(.ttra-category, .ttra-garantia):active { scale: va
   html[data-modo="classic"] :is(.card:not(.expandida), .tarjeta-recomendado, .catalog-brand-card,
     .catalog-page .card):hover:not(:focus-visible) { transform: none; }
   html[data-modo="classic"] :is(.ttra-button):hover:not(:focus-visible) { transform: none; }
-  html[data-modo="classic"] .ttra-category:hover :is(.ttra-mini-phone, .ttra-laptop, .ttra-headphones, .ttra-tablet) { transform: none; }
+  html[data-modo="classic"] .ttra-category:hover :is(.ttra-mini-phone, .ttra-laptop, .ttra-headphones, .ttra-tablet, .ttra-blender) { transform: none; }
   html[data-modo="classic"] .ttra-category:hover :is(.ttra-controller, .ttra-brand-lens) { transform: translateX(-50%); }
   html[data-modo="classic"] .ttra-mo-marquee:hover .ttra-mo-marquee-track { animation-play-state: running; }
 }

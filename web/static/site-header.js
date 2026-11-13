@@ -172,6 +172,7 @@
       ['Tablets', '/catalogo?categoria=Tablets'],
       ['Notebooks y Macbooks', '/catalogo?categoria=Notebooks%20y%20Macbooks'],
       ['Gaming', '/catalogo?categoria=Gaming'],
+      ['Electro', '/catalogo?categoria=Electro'],
       ['Accesorios', '/catalogo?categoria=Accesorios%20Celulares'],
       ['Búsqueda por marca', '/catalogo?filtro=marca'],
     ];
