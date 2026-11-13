@@ -103,6 +103,11 @@ def consolidar(items):
             fila["colores"] = barato["colores"]
         if barato.get("variantes"):
             fila["variantes"] = barato["variantes"]
+        # Pestañas de la lista del proveedor donde aparece el producto (en cualquiera
+        # de sus ofertas, no solo la más barata): permiten clasificar por origen.
+        pestanas = sorted({it["pestana_fuente"] for it in grupo if it.get("pestana_fuente")})
+        if pestanas:
+            fila["pestanas_fuente"] = pestanas
         lista.append(fila)
 
     return {"lista": lista, "duplicados_posibles": []}

@@ -227,3 +227,29 @@ def test_excluido_no_saca_drones_por_bateria_o_pantalla():
     assert not _excluido("DRONE HETZER A14 PRO MAX PANTALLA/GPS/2 BATERIAS BLACK")
     assert _excluido("ACS DJI BATERIA FLIP INTELLIGENT FLIGHT")
     assert _excluido("Pantalla iPhone 13")
+
+
+def test_items_de_hogar_y_deco_y_cafeteras_son_electro_aunque_el_nombre_no_lo_diga():
+    items = [
+        {"nombre": "Objeto misterioso XZ-9", "costo": 50, "proveedor": "mv", "pestana_fuente": "Hogar y Deco"},
+        {"nombre": "Maquina de cafe Dolce", "costo": 60, "proveedor": "mv", "pestana_fuente": "Cafeteras"},
+        {"nombre": "Objeto misterioso XZ-9 sin pestaña", "costo": 50, "proveedor": "mv", "pestana_fuente": "DRONE"},
+    ]
+    por_nombre = {p["nombre"]: p["categoria"] for p in productos_mod.generar_productos(items, 1500)}
+    assert por_nombre["Objeto misterioso XZ-9"] == "Electro"
+    assert por_nombre["Maquina de cafe Dolce"] == "Electro"
+    assert por_nombre["Objeto misterioso XZ-9 sin pestaña"] != "Electro"
+
+
+def test_la_categoria_electro_explicita_manda_en_la_seccion_del_catalogo():
+    from web.catalogo import seccion_de
+    assert seccion_de({"nombre": "Objeto misterioso XZ-9", "categoria": "Electro"}) == "Electro"
+    assert seccion_de({"nombre": "Funda de algo", "categoria": "Electro"}) == "Electro"
+
+
+def test_electro_por_origen_no_cambia_el_precio():
+    base = {"nombre": "Aspiradora Cecotec Conga X", "costo": 200, "proveedor": "mv"}
+    con_pestana = {**base, "pestana_fuente": "Hogar y Deco"}
+    a = productos_mod.generar_productos([base], 1500)[0]
+    b = productos_mod.generar_productos([con_pestana], 1500)[0]
+    assert (a["usd"], a["pesos"], a["transferencia"]) == (b["usd"], b["pesos"], b["transferencia"])
