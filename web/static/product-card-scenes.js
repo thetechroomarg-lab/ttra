@@ -228,7 +228,39 @@ export function createProductCardScenes(entries) {
         if(backdrop.naturalWidth)uniforms.uMapSize.value.set(backdrop.naturalWidth,backdrop.naturalHeight);
       }};
   }
-  const makers={phone,tablet,laptop,controller,headphones,magnifier};
+  // Licuadora: vaso de vidrio con batido, base oscura con perilla y aspas que giran.
+  function blender(){
+    const p=new T.Group();
+    const lathe=(pts,mat,seg=48)=>mesh(p,own(new T.LatheGeometry(pts.map(([x,y])=>new T.Vector2(x,y)),seg)),mat);
+    const plastic=material(0x1c1f24,.35,.32), cap=material(0x2a2e35,.4,.3);
+    const jarGlass=own(new T.MeshStandardMaterial({color:0xcfe6ee,metalness:0,roughness:.06,transparent:true,opacity:.26,side:T.DoubleSide,depthWrite:false}));
+    const smoothie=material(0xe0405f,.05,.45);
+    // Base: cuerpo troncocónico, anillo plateado arriba y perilla al frente.
+    lathe([[0,-1.45],[.80,-1.45],[.86,-1.38],[.80,-.98],[.70,-.86],[0,-.86]],plastic);
+    lathe([[.62,-.87],[.66,-.87],[.66,-.80],[.62,-.80]],silver);
+    mesh(p,own(new T.CylinderGeometry(.12,.12,.05,24)),silver,0,-1.14,.84).rotation.x=Math.PI/2;
+    mesh(p,own(new T.CylinderGeometry(.085,.085,.07,24)),edge,0,-1.14,.86).rotation.x=Math.PI/2;
+    for(const x of [-.34,.34])mesh(p,own(new T.CylinderGeometry(.05,.05,.04,16)),green,x,-1.14,.84).rotation.x=Math.PI/2;
+    const logo=texture(c=>{c.fillStyle='#e8e6dc';c.font='800 150px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText('TTR',230,260);c.fillStyle='#d52f27';c.fillText('.',398,260);},512,512);
+    decal(p,.5,.5,0,-1.36,.866,logo);
+    // Vaso: se ensancha hacia arriba; el batido llega a la mitad.
+    lathe([[.40,-.80],[.52,-.80],[.66,.20],[.76,1.20],[.73,1.22],[.50,-.74],[.40,-.74]],jarGlass);
+    lathe([[0,-.74],[.50,-.74],[.60,-.10],[.66,.30],[0,.30]],smoothie);
+    // Tapa y tapón.
+    lathe([[0,1.20],[.79,1.20],[.79,1.28],[.55,1.34],[0,1.34]],cap);
+    mesh(p,own(new T.CylinderGeometry(.22,.26,.14,24)),plastic,0,1.40,0);
+    // Asa curva del lado derecho.
+    const asa=new T.CatmullRomCurve3([[.74,1.00,0],[1.12,.86,0],[1.20,.30,0],[1.02,-.34,0],[.60,-.52,0]].map(v=>new T.Vector3(...v)));
+    mesh(p,own(new T.TubeGeometry(asa,40,.07,10,false)),plastic);
+    // Conjunto de aspas: gira rápido dentro del vaso.
+    const blades=new T.Group();blades.position.set(0,-.62,0);p.add(blades);
+    mesh(blades,own(new T.CylinderGeometry(.06,.07,.2,16)),silver,0,.02,0);
+    for(let i=0;i<4;i++){const b=box(blades,.46,.015,.1,silver,0,.1,0);b.rotation.y=i*Math.PI/2;b.position.set(Math.cos(i*Math.PI/2)*.2,.1+(i%2?.05:-.01),Math.sin(i*Math.PI/2)*-.2);b.rotation.z=i%2?.35:-.35;}
+    p.position.y=.06;p.scale.setScalar(.8); // 20% más chica que el encuadre base
+    return {model:p,radius:1.35,halfHeight:1.45,yaw:-.55,tilt:.06,
+      animate(time){p.rotation.set(this.tilt,this.yaw+time*.34,0);blades.rotation.y=time*9;}};
+  }
+  const makers={phone,tablet,laptop,controller,blender,headphones,magnifier};
   // Neutral studio reflections keep dark finishes legible through the full turn.
   const studio=new T.Scene();studio.background=new T.Color(0x646970);
   const studioMaterial=new T.MeshBasicMaterial({color:0xffffff});const studioGeometry=new T.PlaneGeometry(4,7);

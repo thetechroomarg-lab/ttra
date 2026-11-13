@@ -92,7 +92,39 @@
       }
       flapTo(count, String(total));
       count.setAttribute('aria-label', `${total} productos`);
+        }
+    countBrands(secciones);
+  }
+
+  // "Búsqueda por Marca": cuántas marcas hay y cuáles pesan más, salido del catálogo.
+  function countBrands(secciones) {
+    const card = document.querySelector('.ttra-category[href*="filtro=marca"]');
+    if (!card) return;
+    const porMarca = new Map();
+    for (const lista of Object.values(secciones)) {
+      for (const p of lista || []) {
+        if (p.marca && p.marca !== 'Otras marcas') porMarca.set(p.marca, (porMarca.get(p.marca) || 0) + 1);
+      }
     }
+    if (!porMarca.size) return;
+    const ranking = [...porMarca].sort((x, y) => y[1] - x[1]).map(([marca]) => marca);
+    const bottom = card.querySelector('.ttra-category-bottom');
+    let lista = bottom.querySelector('.ttra-brands-lista');
+    if (!lista) {
+      lista = document.createElement('p');
+      lista.className = 'ttra-brands-lista';
+      bottom.querySelector('div').append(lista);
+    }
+    const visibles = ranking.slice(0, 5);
+    lista.textContent = visibles.join(' · ') + (ranking.length > visibles.length ? ' y más' : '');
+    let count = bottom.querySelector('.ttra-pz-count');
+    if (!count) {
+      count = document.createElement('span');
+      count.className = 'ttra-flap ttra-pz-count';
+      bottom.append(count);
+    }
+    flapTo(count, String(ranking.length));
+    count.setAttribute('aria-label', `${ranking.length} marcas`);
   }
 
   let products = [];

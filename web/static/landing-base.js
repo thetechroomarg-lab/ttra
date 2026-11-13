@@ -102,6 +102,7 @@ const CATEGORIAS_BOTONES = [
   { clave: "Tablets", etiqueta: "Tablets" },
   { clave: "Notebooks y Macbooks", etiqueta: "Notebooks y Macbooks" },
   { clave: "Gaming", etiqueta: "Gaming" },
+  { clave: "Electro", etiqueta: "Electro" },
   { clave: "Accesorios Celulares", etiqueta: "Accesorios" },
   { clave: BUSQUEDA_MARCA_CLAVE, etiqueta: "Búsqueda por Marca" },
 ];

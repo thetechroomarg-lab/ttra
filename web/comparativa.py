@@ -11,6 +11,7 @@ FIELDS = {
     'Tablets': [('pantalla', 'Pantalla'), ('procesador', 'Procesador'), ('ram', 'Memoria RAM'), ('almacenamiento', 'Almacenamiento'), ('camaras', 'Cámaras'), ('bateria', 'Batería nominal'), ('carga', 'Carga'), ('conectividad', 'Conectividad'), ('sistema', 'Sistema operativo')],
     'Notebooks y Macbooks': [('pantalla', 'Pantalla'), ('procesador', 'Procesador'), ('graficos', 'Gráficos'), ('ram', 'Memoria RAM'), ('almacenamiento', 'Almacenamiento'), ('conectividad', 'Conexiones'), ('sistema', 'Sistema operativo')],
     'Gaming': [('tipo', 'Tipo de equipo'), ('compatibilidad', 'Compatibilidad'), ('procesador', 'Procesador'), ('graficos', 'Gráficos'), ('almacenamiento', 'Almacenamiento'), ('conectividad', 'Conexiones'), ('caracteristicas', 'Características')],
+    'Electro': [('tipo', 'Tipo de electrodoméstico'), ('potencia', 'Potencia'), ('capacidad', 'Capacidad'), ('conectividad', 'Conexiones'), ('caracteristicas', 'Características')],
     'Accesorios Celulares': [('tipo', 'Tipo de accesorio'), ('compatibilidad', 'Compatibilidad'), ('conectividad', 'Conexiones'), ('bateria', 'Autonomía'), ('caracteristicas', 'Características')],
 }
 
