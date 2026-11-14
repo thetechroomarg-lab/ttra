@@ -39,6 +39,7 @@ from web.supabase_client import get_client
 from web import cotizacion as cotizacion_admin
 from web import precios_recibo
 from web import ganancia_servicio
+from web import remeras
 from web import zona_envio
 from web.ui_helpers import (
     _html_direccion_entrega,
@@ -1487,6 +1488,11 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     client.table("pedidos").update(actualizacion_pedido).eq("id", pedido_id).execute()
     ganancia_servicio.intentar(ganancia_servicio.conciliar_venta, client, pedido_id)
     if primer_envio:
+        try:
+            # La remera de regalo sale del stock recién con el recibo enviado.
+            remeras.descontar(remeras.talles_del_detalle(pedido.get("detalle")))
+        except Exception:
+            logger.exception("No se pudo descontar la remera del pedido %s", pedido_id)
         # Regla de oro: el descuento usado en esta venta se le resta al
         # cliente recién ahora, con el recibo enviado.
         try:
@@ -5437,7 +5443,54 @@ def api_pedidos(entrada: PedidoIn, request: Request, background_tasks: Backgroun
         "piso_entrega": domicilios.opcional(entrada.piso_entrega),
         "depto_entrega": domicilios.opcional(entrada.depto_entrega),
     })
-    return {"ok": True}
+    respuesta = {"ok": True}
+    try:
+        if (
+            modo_precio == "minorista"
+            and guardado
+            and guardado.get("id")
+            and remeras.merece_remera(
+                list(guardado.get("detalle") or detalle), _cargar_costos(), descuento_usd
+            )
+        ):
+            oferta_remera = remeras.oferta(client)
+            if oferta_remera:
+                respuesta["remera"] = {"pedido_id": guardado["id"], **oferta_remera}
+    except Exception:
+        logger.exception("No se pudo evaluar la remera de regalo")
+    return respuesta
+
+
+class RemeraIn(BaseModel):
+    talle: str
+
+
+@app.post("/api/pedidos/{pedido_id}/remera")
+def api_pedido_elegir_remera(pedido_id: str, entrada: RemeraIn, request: Request):
+    cliente_id = request.session.get("cliente_id")
+    if not cliente_id:
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    if entrada.talle not in remeras.TALLES:
+        return JSONResponse({"error": "Elegí un talle válido."}, status_code=400)
+    client = get_client()
+    filas = client.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not filas or not _activo(filas[0]) or filas[0].get("cliente_id") != cliente_id:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    pedido = filas[0]
+    detalle = list(pedido.get("detalle") or [])
+    if pedido.get("recibo_enviado_en") or pedido.get("modo_precio") not in (None, "minorista"):
+        return JSONResponse({"error": "Este pedido no admite la remera."}, status_code=409)
+    if not remeras.merece_remera(detalle, _cargar_costos(), pedido.get("descuento_usd") or 0):
+        return JSONResponse({"error": "Este pedido no tiene remera de regalo."}, status_code=409)
+    if not remeras.disponibles(client).get(entrada.talle):
+        return JSONResponse(
+            {"error": f"Ya no quedan remeras talle {entrada.talle}. Elegí otro talle."},
+            status_code=409,
+        )
+    client.table("pedidos").update(
+        {"detalle": detalle + [remeras.item_regalo(entrada.talle)]}
+    ).eq("id", pedido_id).execute()
+    return {"ok": True, "talle": entrada.talle}
 
 
 def _detalle_cliente(pedido):

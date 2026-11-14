@@ -2275,6 +2275,8 @@ async function aplicarCodigoMailingPorValor(codigo) {
   return true;
 }
 
+// Oferta de remera gratis que devolvió el último pedido guardado (la decide el servidor).
+let ofertaRemeraPendiente = null;
 let confirmandoPedido = false;
 let ultimoResumenPedido = "";
 
@@ -2530,6 +2532,10 @@ async function confirmarPedidoCarrito(carrito) {
     registrarInteraccion("complete_checkout", {
       metadata: { cantidad: carrito.reduce((n, it) => n + it.cantidad, 0) },
     });
+    const ofertaRemera = ofertaRemeraPendiente;
+    ofertaRemeraPendiente = null;
+    // Al tocar OK el cliente vuelve al carrito, que ya muestra el pedido registrado.
+    if (ofertaRemera && window.TTRARemeraGratis) await window.TTRARemeraGratis(ofertaRemera);
     return true;
   } finally {
     confirmandoPedido = false;
@@ -3012,6 +3018,7 @@ async function registrarPedidoEnClientes(carrito, fecha_entrega, direccion_entre
   if (!respuesta.ok) {
     throw new Error(body.error || "No se pudo guardar el pedido");
   }
+  ofertaRemeraPendiente = body.remera || null;
   return true;
 }
 
