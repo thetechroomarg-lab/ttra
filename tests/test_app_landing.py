@@ -1040,3 +1040,11 @@ def test_plan_canje_tiene_pagina_propia_y_la_home_solo_enlaza():
     home = (appmod.BASE / "static" / "index.html").read_text(encoding="utf-8")
     assert 'href="/plan-canje"' in home
     assert "no se negocian" not in home
+
+
+def test_el_carrito_solo_se_vacia_por_decision_del_cliente():
+    js = leer_landing_js()
+    refresco = js[js.index("function refrescarPreciosCarrito()"):js.index("// --- Carrito ---")]
+    assert ".filter((it) => catalogoPlano[it.nombre]" not in refresco
+    confirmar = js[js.index("async function confirmarPedidoCarrito"):js.index("const boton = document.getElementById(\"btn-whatsapp\")")]
+    assert "vaciarCarrito" not in confirmar
