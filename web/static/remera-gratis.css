@@ -1,0 +1,51 @@
+/* Pop-up de la remera gratis. Hereda el panel flotante (.ttra-oferta-cargador:
+   fondo blureado, halo, entrada). Acá: el dibujo, los talles y el confeti. */
+.ttra-remera { position: relative; overflow: hidden; text-align: center; }
+.ttra-remera > :not(.ttra-confeti) { position: relative; }
+.ttra-remera h2 { text-wrap: balance; }
+.ttra-remera .ttra-dialogo-texto { margin-bottom: 20px; }
+
+.ttra-remera-dibujo { display: block; width: 132px; height: auto; margin: 0 auto 14px; overflow: visible; }
+.ttra-remera-tela { fill: var(--pz-plate, #ecebe4); }
+.ttra-remera-cuello { fill: none; stroke: var(--pz-frame, #3c3e38); stroke-width: 3; stroke-linecap: round; }
+.ttra-remera-logo { fill: var(--pz-ink, #121211); font: 800 13px/1 Arial, Helvetica, sans-serif; letter-spacing: .02em; }
+
+.ttra-remera-talles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 12px; }
+.ttra-remera-talle {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 60px; padding: 8px 4px; border: 2px solid var(--pz-plate, currentColor); border-radius: 3px;
+  color: var(--pz-plate, currentColor); cursor: pointer;
+  transition: background-color .18s, color .18s, border-color .18s;
+}
+.ttra-remera-talle input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: inherit; }
+.ttra-remera-talle strong { font: 700 28px/1 var(--pz-font, inherit); letter-spacing: .02em; }
+.ttra-remera-talle small { margin-top: 3px; font: 700 11px/1 var(--pz-font, inherit); letter-spacing: .06em; text-transform: uppercase; }
+.ttra-remera-talle:has(input:checked) { border-color: var(--pz-amber, #ffb21a); background: var(--pz-amber, #ffb21a); color: var(--pz-ink, #121211); }
+.ttra-remera-talle:has(input:focus-visible) { outline: 2px solid var(--pz-amber, currentColor); outline-offset: 3px; }
+.ttra-remera-talle:has(input:disabled) { border-color: var(--pz-frame, #3c3e38); color: var(--pz-dim, #8a8a80); opacity: .55; cursor: not-allowed; }
+.ttra-remera-talle:has(input:disabled) strong { text-decoration: line-through; text-decoration-thickness: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .ttra-remera-talle:not(:has(input:disabled)):not(:has(input:checked)):hover { border-color: var(--pz-amber, currentColor); }
+}
+.ttra-remera-estado { min-height: 1.4em; margin: 0 0 18px !important; color: var(--pz-dim, currentColor); font-size: 14px; line-height: 1.4; }
+.ttra-remera .ttra-oferta-cargador-acciones button:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Confeti: una sola ráfaga al abrir, de las fichas del tablero. */
+.ttra-confeti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.ttra-confeti i {
+  position: absolute; top: -14px; left: var(--x); width: 8px; height: 14px; border-radius: 1px; opacity: 0;
+  animation: ttra-confeti var(--t) cubic-bezier(.25, .6, .3, 1) var(--d) 1 both;
+}
+@keyframes ttra-confeti {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+  100% { opacity: 0; transform: translate(var(--s), 560px) rotate(var(--g)); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ttra-remera-dibujo { animation: ttra-remera-salto .9s cubic-bezier(.16, 1, .3, 1) .12s both; transform-origin: 50% 80%; }
+  .ttra-remera h2 { animation: ttra-remera-texto .5s cubic-bezier(.2, .8, .2, 1) .3s both; }
+}
+@keyframes ttra-remera-salto {
+  from { opacity: 0; transform: translateY(28px) scale(.55) rotate(-10deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ttra-remera-texto { from { opacity: 0; transform: translateY(8px); } }
