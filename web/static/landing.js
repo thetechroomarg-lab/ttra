@@ -1675,8 +1675,10 @@ function refrescarPreciosCarrito() {
   });
 
   const carrito = cargarCarrito();
+  // El carrito solo se vacía por decisión del cliente (borrar todo, cerrar
+  // sesión o confirmar el pedido): un producto que hoy no aparece en el
+  // catálogo se queda con su último precio y el servidor avisa al confirmar.
   const carritoActualizado = carrito
-    .filter((it) => catalogoPlano[it.nombre] || it.promo)
     .map((it) => {
       const p = catalogoPlano[it.nombre];
       if (!p) return it;
@@ -2494,13 +2496,8 @@ async function confirmarPedidoCarrito(carrito) {
   if (!mensaje) return false;
   const envioUsd = await confirmarCostoEnvio(coordsDireccionEntregaActual);
   if (envioUsd === null) return false;
-  if (!(await confirmarEquipoElegido())) {
-    vaciarCarrito();
-    borrarCheckoutPendiente();
-    borrarDescuentoMailing();
-    borrarRegaloPromo();
-    return false;
-  }
+  // "No todavía": el cliente se toma su tiempo y el carrito queda como estaba.
+  if (!(await confirmarEquipoElegido())) return false;
   const boton = document.getElementById("btn-whatsapp");
   confirmandoPedido = true;
   boton.disabled = true;
