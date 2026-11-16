@@ -20,26 +20,24 @@
     clearTimeout(watchdog);
     dispose();
     intro.style.setProperty('--scene-opacity', '0');
-    intro.style.setProperty('--title-opacity', '0');
     if (fallback) intro.dataset.fallback = 'true';
     intro.dataset.phase = 'ready';
-    // Sin CTA: tras quedar en negro, un instante después arranca solo el
-    // fade-in hacia la home (ver fadeInHome).
-    setTimeout(fadeInHome, fallback ? 0 : 550);
+    // Sin CTA: la escena ya quedó en negro y se liberó; un instante después
+    // arranca solo el fade-in hacia la home (ver fadeInHome).
+    setTimeout(fadeInHome, fallback ? 0 : 250);
   };
   function tick(now) {
     if (closed || finished) return;
     if (!document.hidden && last) elapsed += (now - last) / 1000;
     last = now;
     try { scene.render(elapsed); } catch { ready(true); return; }
-    const reveal = smooth((elapsed - 5.37) / 1.2);
-    const fade = smooth((elapsed - 7.77) / 1.4);
-    intro.style.setProperty('--scene-opacity', String(1 - fade));
-    intro.style.setProperty('--title-opacity', String(reveal * (1 - fade)));
-    intro.style.setProperty('--title-scale', String(.72 + .28 * reveal));
-    intro.style.setProperty('--title-blur', `${12 * (1 - reveal)}px`);
-    intro.dataset.phase = elapsed < 2.52 ? 'spin' : elapsed < 3.07 ? 'explode' : elapsed < 5.37 ? 'freeze' : elapsed < 7.77 ? 'welcome' : 'fade';
-    if (elapsed >= 9.77) ready();
+    // La escena entera funde como una sola composición: entra desde negro y
+    // vuelve a negro; los tiempos los define la línea de tiempo de la escena.
+    const {fadeStart, fadeDuration, end, phase} = scene.timeline;
+    const fade = smooth((elapsed - fadeStart) / fadeDuration);
+    intro.style.setProperty('--scene-opacity', String(smooth(elapsed / .6) * (1 - fade)));
+    intro.dataset.phase = phase(elapsed);
+    if (elapsed >= end) ready();
     else frame = requestAnimationFrame(tick);
   }
   function smooth(t) { t = Math.max(0, Math.min(1, t)); return t*t*(3-2*t); }
@@ -75,8 +73,8 @@
     document.body.classList.remove('rc-portada-activa');
     siblings.forEach((el, i) => { el.inert = inertBefore[i]; });
   }
-  // Salida con fade: la animación ya terminó en negro (--scene-opacity y
-  // --title-opacity en 0). Se saca el "pending" ya (la home reaparece
+  // Salida con fade: la animación ya terminó en negro (--scene-opacity
+  // en 0). Se saca el "pending" ya (la home reaparece
   // detrás, oculta por el overlay negro todavía opaco) y recién ahí se
   // dispara la transición CSS de opacity que revela la home.
   function fadeInHome() {
@@ -112,11 +110,15 @@
     // Internal navigation skips repeats; an ordinary reload checks the session again.
     // A newly opened tab starts fresh; signed-in customers are checked above first.
     try { sessionStorage.setItem('ttra_portada_vista', '1'); } catch {}
-    watchdog = setTimeout(() => ready(true), 25000);
+    watchdog = setTimeout(() => ready(true), 12000);
     if (motion.matches) { ready(true); return; }
-    import('/welcome-scene.js').then(({createScene}) => {
+    import('/welcome-scene.js').then(async ({createScene}) => {
       if (closed || finished) return;
-      scene = createScene(intro.querySelector('.ttra-intro-scene'));
+      intro.style.setProperty('--scene-opacity', '0');
+      // No arranca hasta tener geometría, texturas y esqueleto listos.
+      const loaded = await createScene(intro.querySelector('.ttra-intro-scene'));
+      if (closed || finished) { loaded.dispose(); return; }
+      scene = loaded;
       clearTimeout(watchdog);
       frame = requestAnimationFrame(tick);
     }).catch(() => ready(true));
