@@ -1,303 +1,373 @@
+// Bienvenida 3D: oficina, logo extruido desde sus contornos reales y cámara cinematográfica.
+// Todo es geometría en tiempo real; no hay video, sprites ni audio.
 import * as T from './vendor/three/three.module.min.js';
+import LOGO from './welcome-logo.js';
+import {loadCharacter} from './welcome-character.js';
 
-const ease = (v) => { v = T.MathUtils.clamp(v, 0, 1); return v*v*(3-2*v); };
+const clamp01 = v => Math.min(1, Math.max(0, v));
+const smooth = v => { v = clamp01(v); return v * v * (3 - 2 * v); };
+const outCubic = v => 1 - Math.pow(1 - clamp01(v), 3);
+const lerp = (a, b, t) => a + (b - a) * t;
 
-export function createScene(host) {
-  const renderer = new T.WebGLRenderer({antialias: true, alpha: false, powerPreference: 'low-power'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
+const LOGO_HEIGHT = 1.2, LOGO_DEPTH = .26, LOGO_X = 1.3, LOGO_YAW = -.12;
+
+// Con personaje corre la secuencia completa; si el avatar no carga, la versión corta sin él.
+const makeTimeline = character => character
+  ? {logoStart: 2.5, stagger: .22, rise: 1.2, dot: 4.3, arrive: 4.75, lean: 4.7, look: 5.5, wave: 5.9, waveEnd: 7.2, fadeStart: 7.9, fadeDuration: 1.2, end: 9.1,
+     phase: t => t < 1 ? 'office' : t < 2.5 ? 'enter' : t < 4.7 ? 'logo' : t < 5.9 ? 'lean' : t < 7.3 ? 'wave' : t < 7.9 ? 'hold' : 'fade'}
+  : {logoStart: 1.1, stagger: .28, rise: 1.25, dot: 3.1, fadeStart: 4.7, fadeDuration: 1.2, end: 5.9,
+     phase: t => t < 1.1 ? 'office' : t < 3.5 ? 'logo' : t < 4.7 ? 'hold' : 'fade'};
+
+function qualityTier() {
+  const small = Math.min(innerWidth, innerHeight) < 600;
+  const weak = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 8) <= 4;
+  return small || weak ? {dpr: 1.5, shadow: 1024} : {dpr: 2, shadow: 2048};
+}
+
+// ---------- Texturas procedurales ----------
+function canvasTexture(w, h, draw, repeat) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 8;
+  if (repeat) { t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(...repeat); }
+  return t;
+}
+function rng(seed) { return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
+
+function concreteTexture() {
+  const r = rng(7);
+  return canvasTexture(1024, 1024, (g, w, h) => {
+    g.fillStyle = '#56585b'; g.fillRect(0, 0, w, h); // piso gris oscuro: contraste con el logo blanco
+    for (let i = 0; i < 260; i++) { // manchas suaves del alisado
+      const x = r() * w, y = r() * h, rad = 30 + r() * 150, c = r() < .5 ? 255 : 120;
+      const grad = g.createRadialGradient(x, y, 0, x, y, rad);
+      grad.addColorStop(0, `rgba(${c},${c},${c},${.01 + r() * .014})`); grad.addColorStop(1, `rgba(${c},${c},${c},0)`);
+      g.fillStyle = grad; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+    }
+    for (let i = 0; i < 5000; i++) { g.fillStyle = `rgba(${r() < .5 ? 90 : 240},${r() < .5 ? 90 : 240},${r() < .5 ? 90 : 240},.05)`; g.fillRect(r() * w, r() * h, 1.5, 1.5); }
+    g.fillStyle = 'rgba(30,31,33,.6)'; g.fillRect(0, 0, w, 2); g.fillRect(0, 0, 2, h); // juntas de dilatación
+  }, [1, 1]);
+}
+
+function screenTexture(kind) {
+  return canvasTexture(640, 360, (g, w, h) => {
+    const r = rng(kind * 31 + 5);
+    g.fillStyle = '#12161c'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#0c0f14'; g.fillRect(0, 0, w, 22);
+    ['#e0605a', '#e0b44e', '#5cba6a'].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(14 + i * 15, 11, 4, 0, 7); g.fill(); });
+    const bar = (x, y, bw, c, bh = 5) => { g.fillStyle = c; g.beginPath(); g.roundRect(x, y, bw, bh, 2.5); g.fill(); };
+    if (kind % 2 === 0) { // editor: árbol de archivos + líneas de código abstractas
+      g.fillStyle = '#171c24'; g.fillRect(0, 22, 120, h);
+      for (let i = 0; i < 16; i++) bar(12 + (i % 4 ? 12 : 0), 38 + i * 18, 44 + r() * 46, i === 5 ? '#6ea8ff' : '#3a4452');
+      const pal = ['#7fb4ff', '#c7a5f5', '#8fd3a4', '#e7c57c', '#5b6675', '#d98a8a'];
+      let indent = 0;
+      for (let i = 0; i < 17; i++) {
+        const y = 38 + i * 18; bar(132, y, 10, '#2c3440');
+        if (r() < .12) continue;
+        indent = Math.max(0, Math.min(3, indent + (r() < .3 ? 1 : r() < .45 ? -1 : 0)));
+        let x = 156 + indent * 20;
+        for (let k = 0, n = 1 + Math.floor(r() * 4); k < n && x < w - 90; k++) { const bw = 18 + r() * 70; bar(x, y, bw, pal[Math.floor(r() * pal.length)]); x += bw + 8; }
+      }
+    } else { // panel: gráfico de líneas + métricas
+      for (let i = 0; i < 3; i++) { g.fillStyle = '#19202a'; g.beginPath(); g.roundRect(18 + i * 204, 38, 192, 70, 6); g.fill(); bar(32 + i * 204, 54, 60, '#4a5666'); bar(32 + i * 204, 74, 100, ['#7fb4ff', '#8fd3a4', '#e7c57c'][i], 12); }
+      g.fillStyle = '#19202a'; g.beginPath(); g.roundRect(18, 122, 604, 220, 6); g.fill();
+      for (let i = 1; i < 5; i++) { g.fillStyle = '#232c38'; g.fillRect(34, 122 + i * 42, 572, 1); }
+      ['#7fb4ff', '#8fd3a4'].forEach((c, s) => {
+        g.strokeStyle = c; g.lineWidth = 2.5; g.beginPath();
+        let y = 250 - s * 40;
+        for (let i = 0; i <= 24; i++) { y = Math.max(150, Math.min(320, y + (r() - .55) * 26)); i ? g.lineTo(34 + i * 23.8, y) : g.moveTo(34, y); }
+        g.stroke();
+      });
+    }
+  });
+}
+
+export async function createScene(host) {
+  const tier = qualityTier();
+  const renderer = new T.WebGLRenderer({antialias: true, alpha: false, powerPreference: 'high-performance'});
+  let dpr = Math.min(devicePixelRatio || 1, tier.dpr);
+  renderer.setPixelRatio(dpr);
   renderer.setClearColor(0x000000);
   renderer.toneMapping = T.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.35;
+  renderer.toneMappingExposure = .86;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
   host.appendChild(renderer.domElement);
+
   const scene = new T.Scene();
-  const camera = new T.PerspectiveCamera(35, 1, .1, 100);
-  const phone = new T.Group(); phone.scale.x = .96; scene.add(phone);
-  const resources = new Set();
-  const own = value => { resources.add(value); return value; };
-  const mat = (color, metalness = 0, roughness = .4, extra = {}) => own(new T.MeshStandardMaterial({color, metalness, roughness, ...extra}));
-  const titanium = mat(0xbcc1c8, .92, .24);
-  const burgundy = mat(0x350b14, .72, .34);
-  const darkMetal = mat(0x292c32, .8, .28);
-  const glass = mat(0x050810, .55, .16);
-  const gold = mat(0xd6ad69, .8, .25);
-  const black = mat(0x111217, .4, .38);
-  const pcb = mat(0x13332e, .45, .4);
-  const lens = mat(0x141c46, .85, .09, {emissive: 0x14205a, emissiveIntensity: .25});
-  const white = mat(0xe4e6e9, .55, .27);
-  function rounded(w, h, d, radius = .13) {
-    const x = -w/2, y = -h/2, r = Math.min(radius, w/2, h/2);
-    const s = new T.Shape();
-    s.moveTo(x+r, y); s.lineTo(x+w-r,y); s.quadraticCurveTo(x+w,y,x+w,y+r);
-    s.lineTo(x+w,y+h-r); s.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-    s.lineTo(x+r,y+h); s.quadraticCurveTo(x,y+h,x,y+h-r);
-    s.lineTo(x,y+r); s.quadraticCurveTo(x,y,x+r,y);
-    const g = own(new T.ExtrudeGeometry(s,{depth:d, bevelEnabled:true, bevelSegments:3, steps:1, bevelSize:.015, bevelThickness:.015, curveSegments:12}));
-    g.translate(0,0,-d/2); return g;
+  scene.background = new T.Color(0x0b0a09);
+  const camera = new T.PerspectiveCamera(32, 1, .1, 60);
+  const unitBox = new T.BoxGeometry(1, 1, 1), unitCyl = new T.CylinderGeometry(1, 1, 1, 28), unitPlane = new T.PlaneGeometry(1, 1);
+  const std = (color, roughness = .7, metalness = 0, extra = {}) => new T.MeshStandardMaterial({color, roughness, metalness, ...extra});
+  const lit = (color, strength) => new T.MeshBasicMaterial({color: new T.Color(color).multiplyScalar(strength), toneMapped: true});
+  function box(parent, m, w, h, d, x, y, z, shadow = true) {
+    const o = new T.Mesh(unitBox, m); o.scale.set(w, h, d); o.position.set(x, y, z);
+    o.castShadow = shadow; o.receiveShadow = true; parent.add(o); return o;
   }
-  function slab(parent,w,h,d,material,x=0,y=0,z=0,r=.13) {
-    const mesh = new T.Mesh(rounded(w,h,d,r), material); mesh.position.set(x,y,z); parent.add(mesh); return mesh;
+  function cyl(parent, m, r, h, x, y, z, shadow = true) {
+    const o = new T.Mesh(unitCyl, m); o.scale.set(r, h, r); o.position.set(x, y, z);
+    o.castShadow = shadow; o.receiveShadow = true; parent.add(o); return o;
   }
-  function cylinder(parent,r,d,material,x,y,z) {
-    const mesh = new T.Mesh(own(new T.CylinderGeometry(r,r,d,40)),material);
-    mesh.rotation.x = Math.PI/2; mesh.position.set(x,y,z); parent.add(mesh); return mesh;
+
+  // ---------- Entorno de reflejos (HDR procedural: ventana cálida + techo) ----------
+  const pmrem = new T.PMREMGenerator(renderer);
+  const envScene = new T.Scene();
+  envScene.add(new T.Mesh(new T.BoxGeometry(14, 6, 14), new T.MeshBasicMaterial({color: 0x3c3d40, side: T.BackSide})));
+  const envPanel = (c, s, w, h, x, y, z, ry, rx = 0) => { const p = new T.Mesh(unitPlane, lit(c, s)); p.scale.set(w, h, 1); p.position.set(x, y, z); p.rotation.set(rx, ry, 0); envScene.add(p); };
+  envPanel(0xfff1dc, 9, 6, 3, -6.9, .6, 0, Math.PI / 2);
+  envPanel(0xfff6ea, 4, 8, 3, 0, 2.9, 0, 0, Math.PI / 2);
+  envPanel(0xdfe8f5, 1.6, 6, 3, 0, .4, 6.9, Math.PI);
+  const envTarget = pmrem.fromScene(envScene, .03);
+  scene.environment = envTarget.texture; scene.environmentIntensity = .38;
+  envScene.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); });
+  pmrem.dispose();
+
+  // ---------- Materiales ----------
+  const oakMap = concreteTexture();
+  const floorMat = std(0xffffff, .34, 0, {map: oakMap, envMapIntensity: 1.1});
+  const plaster = std(0x45474a, .9); // paredes gris oscuro
+  const accent = std(0x3f4144, .9); // pared de acento detrás del logo: fondo calmo y oscuro para la tipografía blanca
+  const ceilingMat = std(0x5a5c5f, .95);
+  const oak = std(0xcfa877, .55);
+  const oakDark = std(0x8a6744, .6);
+  const blackMetal = std(0x17181a, .42, .85);
+  const aluminium = std(0xb9bcc0, .32, .9);
+  const plastic = std(0x1c1d20, .55, .1);
+  const fabric = std(0x2b2e33, .95);
+  const glass = new T.MeshPhysicalMaterial({color: 0xdfeaf0, roughness: .04, metalness: 0, transparent: true, opacity: .16, envMapIntensity: 1.6, side: T.DoubleSide, depthWrite: false});
+  const ceramic = std(0xe9e6df, .35);
+  const leaf = std(0x3d5a37, .62, 0, {side: T.DoubleSide});
+
+  // ---------- Arquitectura ----------
+  const room = new T.Group(); scene.add(room);
+  const BACK = -4.4, LEFT = -6.2, RIGHT = 6.6, TOP = 3.05;
+  const floor = new T.Mesh(unitPlane, floorMat); floor.scale.set(RIGHT - LEFT, 18, 1); floor.rotation.x = -Math.PI / 2; floor.position.set((LEFT + RIGHT) / 2, 0, BACK + 9); floor.receiveShadow = true; room.add(floor);
+  oakMap.repeat.set((RIGHT - LEFT) / 2.4, 18 / 2.4);
+  box(room, plaster, RIGHT - LEFT, TOP, .12, (LEFT + RIGHT) / 2, TOP / 2, BACK - .06, false);
+  box(room, ceilingMat, RIGHT - LEFT, .1, 18, (LEFT + RIGHT) / 2, TOP + .05, BACK + 9, false);
+  box(room, plaster, .12, TOP, 18, RIGHT + .06, TOP / 2, BACK + 9, false);
+  box(room, std(0x2c2d30, .7), RIGHT - LEFT, .09, .02, (LEFT + RIGHT) / 2, .045, BACK + .01, false); // zócalo
+  // Pared izquierda con ventanal: antepecho, dintel y vidrio muy iluminado detrás de la carpintería.
+  box(room, plaster, .12, .55, 18, LEFT - .06, .275, BACK + 9, false);
+  box(room, plaster, .12, .35, 18, LEFT - .06, TOP - .175, BACK + 9, false);
+  const sky = new T.Mesh(unitPlane, lit(0xfff3e2, 3.2)); sky.scale.set(18, 2.3, 1); sky.rotation.y = Math.PI / 2; sky.position.set(LEFT - .1, 1.62, BACK + 9); room.add(sky);
+  for (let z = BACK; z <= 6; z += 1.5) box(room, blackMetal, .07, 2.2, .05, LEFT - .02, 1.62, z, false);
+  box(room, blackMetal, .07, .04, 18, LEFT - .02, 1.75, BACK + 9, false);
+
+  box(room, accent, RIGHT - .1, TOP, .02, (RIGHT + .1) / 2, TOP / 2, BACK + .012, false);
+  // Estante flotante con libros, cajas y una planta chica.
+  box(room, oakDark, 1.9, .035, .26, 4.9, 1.72, BACK + .14);
+  box(room, oakDark, 1.9, .035, .26, 4.9, 2.12, BACK + .14);
+  const bookTones = [0x2c3a4a, 0x8c5a3c, 0xd9d2c4, 0x4d5b4a, 0x1e1e20, 0xb08a4f, 0x6b7785];
+  const br = rng(11);
+  for (let x = 4.05, i = 0; x < 5; i++) { const w = .028 + br() * .03, h = .19 + br() * .09; box(room, std(bookTones[i % bookTones.length], .8), w, h, .17, x + w / 2, 1.7375 + h / 2, BACK + .14); x += w + .003; }
+  box(room, std(0xe7e2d8, .7), .3, .16, .2, 5.45, 1.8175, BACK + .14);
+  box(room, std(0x2a2c30, .5), .22, .1, .18, 5.45, 1.9475, BACK + .14);
+  for (let x = 4.1, i = 3; x < 4.6; i++) { const w = .03 + br() * .03, h = .2 + br() * .08; box(room, std(bookTones[i % bookTones.length], .8), w, h, .17, x + w / 2, 2.1375 + h / 2, BACK + .14); x += w + .003; }
+  cyl(room, ceramic, .075, .13, 5.25, 2.2025, BACK + .14);
+
+  // Sala técnica vidriada al fondo a la izquierda: rack con equipos y LEDs discretos.
+  const techX = -5.25;
+  box(room, blackMetal, .05, TOP, .05, -4.75, TOP / 2, BACK + 1.5, false);
+  box(room, blackMetal, 1.45, .05, .05, (LEFT - 4.75) / 2, 2.2, BACK + 1.5, false);
+  const pane = new T.Mesh(unitPlane, glass); pane.scale.set(1.45, TOP, 1); pane.position.set((LEFT - 4.75) / 2, TOP / 2, BACK + 1.5); room.add(pane);
+  box(room, plastic, .62, 1.95, .7, techX, .975, BACK + .55);
+  for (let i = 0; i < 9; i++) {
+    box(room, std(0x2a2c31, .4, .7), .56, .085, .02, techX, .3 + i * .19, BACK + .91, false);
+    for (let k = 0; k < 4; k++) box(room, lit(k === 3 && i % 3 === 0 ? 0xffb84d : 0x6fe09a, 1.6), .012, .012, .004, techX - .22 + k * .035, .3 + i * .19, BACK + .922, false);
   }
-  function texture(kind) {
-    const canvas = document.createElement('canvas'); canvas.width=768; canvas.height=kind === 'back' ? 1075 : 1536;
-    const c = canvas.getContext('2d');
-    c.fillStyle = kind === 'screen' ? '#09090c' : kind === 'battery' ? '#202126' : '#350b14'; c.fillRect(0,0,768,1536);
-    if (kind === 'screen') {
-      const glow=c.createRadialGradient(500,870,10,430,850,680);
-      glow.addColorStop(0,'#ff8061');glow.addColorStop(.3,'#d52d24');glow.addColorStop(.65,'#441319');glow.addColorStop(1,'#09090c');
-      c.fillStyle=glow;c.fillRect(0,0,768,1536);
-      for(let i=0;i<5;i++){c.beginPath();c.ellipse(440,880,180+i*58,380+i*64,-.45,0,Math.PI*2);c.strokeStyle=`rgba(255,180,150,${.35-i*.055})`;c.lineWidth=2;c.stroke();}
-      c.fillStyle='#fff';c.font='bold 27px Arial';c.fillText('09:41',55,80);
-      c.fillRect(639,57,55,22);c.fillRect(698,64,5,9);
-      c.font='bold 105px Arial';c.fillText('THE',65,430);c.fillText('TECH',65,545);c.fillText('ROOM',65,660);c.fillText('ARG.',65,775);
-      c.font='21px Arial';c.fillStyle='#ffffffbb';c.fillText('HECHO PARA TU MUNDO.',65,1370);
-      c.fillStyle='#fff';c.fillRect(255,1485,258,8);
-    } else if(kind === 'battery') {
-      c.fillStyle='#92969d';
-      c.font='29px Arial';['BATERÍA DE IONES DE LITIO', '', '3,87 V · 19,35 Wh', '5000 mAh'].forEach((line,i)=>c.fillText(line,72,290+i*68));
-      c.font='110px Arial';c.fillText('+',65,1370);c.fillText('−',580,1370);
-      c.fillStyle='#71747a';for(let i=0;i<70;i++){if(i%3)c.fillRect(72+i*8,1050,3,120);}
-    } else {
-      // Same vector mark as /logos/apple.svg, drawn without a network dependency.
-      c.clearRect(0,0,canvas.width,canvas.height);
-      c.save(); c.translate(canvas.width/2-110,canvas.height/2-110); c.scale(220/24,220/24);
-      c.fillStyle='#17070c';
-      c.fill(new Path2D("M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"));
-      c.restore();
+
+  // ---------- Luminarias ----------
+  const tube = lit(0xfff2df, 5);
+  for (const z of [-2.4, .6, 3.6]) for (const x of [-3.2, 1.2]) { box(room, blackMetal, 2.5, .05, .09, x, TOP - .2, z, false); box(room, tube, 2.42, .012, .06, x, TOP - .229, z, false); }
+  const pendantMat = std(0x18181a, .5, .6);
+  const pendants = [-2.15, -.95].map(x => {
+    cyl(room, blackMetal, .004, .95, x, TOP - .475, -2.55, false);
+    const shade = new T.Mesh(new T.CylinderGeometry(.05, .17, .16, 32, 1, true), pendantMat); shade.material.side = T.DoubleSide; shade.position.set(x, 2.02, -2.55); room.add(shade);
+    const bulb = new T.Mesh(new T.SphereGeometry(.045, 16, 12), lit(0xffd9a6, 7)); bulb.position.set(x, 1.99, -2.55); room.add(bulb);
+    return shade;
+  });
+
+  // ---------- Puestos de trabajo ----------
+  const screens = [screenTexture(0), screenTexture(1), screenTexture(2), screenTexture(3)];
+  const screenMats = screens.map(map => new T.MeshBasicMaterial({map, color: new T.Color(1.25, 1.25, 1.25)}));
+  function monitor(parent, x, z, ry, mat, w = .62) {
+    const g = new T.Group(); g.position.set(x, .755, z); g.rotation.y = ry; parent.add(g);
+    const h = w * 9 / 16;
+    box(g, aluminium, .24, .012, .19, 0, .006, 0);
+    box(g, aluminium, .045, .32, .02, 0, .16, -.04);
+    box(g, plastic, w + .016, h + .016, .022, 0, .2 + h / 2, 0);
+    const s = new T.Mesh(unitPlane, mat); s.scale.set(w, h, 1); s.position.set(0, .2 + h / 2, .0115); g.add(s);
+  }
+  function chair(parent, x, z, ry) {
+    const g = new T.Group(); g.position.set(x, 0, z); g.rotation.y = ry; parent.add(g);
+    for (let i = 0; i < 5; i++) { const a = new T.Group(); a.rotation.y = i * Math.PI * .4; g.add(a); box(a, aluminium, .03, .025, .3, 0, .07, .15); cyl(a, plastic, .028, .03, 0, .028, .29).rotation.z = Math.PI / 2; }
+    cyl(g, blackMetal, .025, .34, 0, .25, 0);
+    box(g, fabric, .48, .07, .46, 0, .47, 0);
+    box(g, plastic, .05, .34, .04, 0, .66, -.24);
+    const back = box(g, fabric, .46, .52, .05, 0, .86, -.26); back.rotation.x = -.1;
+    for (const s of [-1, 1]) { box(g, plastic, .03, .2, .03, s * .26, .58, -.02); box(g, plastic, .055, .025, .26, s * .26, .685, 0); }
+  }
+  // Único puesto: escritorio amplio con tres monitores en arco y una MacBook abierta.
+  const desk = new T.Group(); desk.position.set(-1.55, 0, -2.5); room.add(desk);
+  box(desk, oak, 2.4, .032, .82, 0, .739, 0);
+  for (const s of [-1, 1]) { box(desk, blackMetal, .045, .72, .045, s * 1.12, .36, -.34); box(desk, blackMetal, .045, .72, .045, s * 1.12, .36, .34); box(desk, blackMetal, .045, .045, .72, s * 1.12, .7, 0); box(desk, blackMetal, .06, .02, .74, s * 1.12, .01, 0); }
+  box(desk, blackMetal, 2.1, .08, .12, 0, .64, -.32); // bandeja pasacables
+  monitor(desk, -.66, -.12, .34, screenMats[1]);
+  monitor(desk, 0, -.22, 0, screenMats[0]);
+  monitor(desk, .66, -.12, -.34, screenMats[3]);
+  box(desk, aluminium, .43, .014, .125, 0, .762, .16);
+  box(desk, plastic, .41, .004, .105, 0, .771, .16, false);
+  box(desk, plastic, .06, .028, .1, .34, .769, .18);
+  box(desk, std(0x25272b, .9), .3, .003, .24, .36, .7565, .17, false); // mouse pad
+  cyl(desk, ceramic, .04, .09, -.5, .8, .24);
+  const macbook = new T.Group(); macbook.position.set(.92, .755, .2); macbook.rotation.y = -.5; desk.add(macbook);
+  box(macbook, aluminium, .31, .012, .215, 0, .006, 0);
+  box(macbook, plastic, .27, .002, .1, 0, .0125, -.04, false); // teclado
+  box(macbook, std(0x9a9da2, .3, .9), .1, .001, .06, 0, .0125, .065, false); // trackpad
+  const lid = new T.Group(); lid.position.set(0, .012, -.105); lid.rotation.x = -.32; macbook.add(lid);
+  box(lid, aluminium, .31, .2, .007, 0, .1, 0);
+  const macScreen = new T.Mesh(unitPlane, screenMats[2]); macScreen.scale.set(.292, .182, 1); macScreen.position.set(0, .1, .004); lid.add(macScreen);
+  chair(desk, -.1, .95, Math.PI + .5);
+
+  // Planta de piso (ficus) junto al ventanal y aparador bajo a la derecha.
+  const plant = new T.Group(); plant.position.set(-5.2, 0, -.9); room.add(plant);
+  cyl(plant, ceramic, .2, .42, 0, .21, 0); cyl(plant, std(0x3a2c20, 1), .185, .02, 0, .425, 0, false);
+  cyl(plant, std(0x5a4632, .9), .016, 1.1, 0, .97, 0);
+  const leafShape = new T.Shape(); leafShape.moveTo(0, 0); leafShape.bezierCurveTo(.1, .06, .11, .22, 0, .34); leafShape.bezierCurveTo(-.11, .22, -.1, .06, 0, 0);
+  const leafGeo = new T.ShapeGeometry(leafShape, 8);
+  const pr = rng(23);
+  for (let i = 0; i < 22; i++) {
+    const l = new T.Mesh(leafGeo, leaf), a = i * 2.4, y = .75 + pr() * .85;
+    l.position.set(Math.cos(a) * .03, y, Math.sin(a) * .03); l.rotation.set(0, -a + Math.PI / 2, 0); l.rotateX(.9 + pr() * .5); l.scale.setScalar(.8 + pr() * .5);
+    l.castShadow = true; plant.add(l);
+  }
+  const credenza = new T.Group(); credenza.position.set(3.4, 0, BACK + .32); room.add(credenza);
+  box(credenza, oak, 2.2, .62, .48, 0, .43, 0);
+  for (const s of [-1, 1]) box(credenza, blackMetal, .04, .12, .4, s * 1, .06, 0);
+  for (let i = 1; i < 4; i++) box(credenza, std(0xb99468, .6), .006, .58, .006, -1.1 + i * .55, .43, .241, false);
+  box(credenza, plastic, .5, .04, .32, -.5, .76, 0); box(credenza, aluminium, .34, .012, .24, .45, .746, 0);
+  cyl(credenza, ceramic, .06, .2, .95, .84, 0);
+
+  // ---------- Logo: escultura tipográfica extruida desde los contornos oficiales ----------
+  const baselinePx = Math.max(...LOGO.rows.flat().flatMap(s => s.o.map(p => p[1])));
+  const topPx = Math.min(...LOGO.rows.flat().flatMap(s => s.o.map(p => p[1])));
+  const xs = LOGO.rows.flat().flatMap(s => s.o.map(p => p[0]));
+  const centerPx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const K = LOGO_HEIGHT / (baselinePx - topPx);
+  const toV = p => new T.Vector2((p[0] - centerPx) * K, (baselinePx - p[1]) * K);
+  const logoMat = new T.MeshPhysicalMaterial({color: 0xf3f1ec, roughness: .5, metalness: 0, clearcoat: .25, clearcoatRoughness: .3, envMapIntensity: .9});
+  const sideMat = std(0x3a3c3f, .6); // cantos gris oscuro
+  const dotMat = new T.MeshPhysicalMaterial({color: 0xe2001a, roughness: .28, clearcoat: .6, clearcoatRoughness: .2});
+  const logo = new T.Group(); logo.position.set(LOGO_X, 0, 0); logo.rotation.y = LOGO_YAW; scene.add(logo);
+  const twists = [.55, -.42, .3, -.18];
+  const rows = LOGO.rows.map((shapes, i) => {
+    const geo = new T.ExtrudeGeometry(shapes.map(s => {
+      const shape = new T.Shape(s.o.map(toV));
+      shape.holes = s.h.map(h => new T.Path(h.map(toV)));
+      return shape;
+    }), {depth: LOGO_DEPTH, bevelEnabled: false, curveSegments: 1});
+    geo.translate(0, 0, -LOGO_DEPTH / 2);
+    geo.computeBoundingBox();
+    const mesh = new T.Mesh(geo, [logoMat, sideMat]); mesh.castShadow = true; logo.add(mesh); // sin auto-sombra: evita vetas en los cantos curvos
+    return {mesh, top: geo.boundingBox.max.y, twist: twists[i]};
+  });
+  const dotR = LOGO.dot[2] * K, dotY = (baselinePx - LOGO.dot[1]) * K;
+  const dot = new T.Mesh(new T.CylinderGeometry(dotR, dotR, LOGO_DEPTH, 48), dotMat);
+  dot.rotation.x = Math.PI / 2; dot.position.set((LOGO.dot[0] - centerPx) * K, dotY, 0); dot.castShadow = dot.receiveShadow = true; logo.add(dot);
+
+  // ---------- Iluminación ----------
+  scene.add(new T.HemisphereLight(0xf4f5f7, 0x8d8e90, .5));
+  const sun = new T.DirectionalLight(0xffe7c8, 2.3);
+  sun.position.set(-6.5, 5, 6.5); sun.target.position.set(.4, 0, -.6); scene.add(sun, sun.target);
+  sun.castShadow = true; sun.shadow.mapSize.setScalar(tier.shadow);
+  Object.assign(sun.shadow.camera, {left: -7, right: 7, top: 6, bottom: -5, near: 1, far: 22});
+  sun.shadow.bias = -.0008; sun.shadow.normalBias = .05; sun.shadow.radius = 5;
+  const key = new T.SpotLight(0xfff1de, 30, 9, .42, .85, 1.6); key.position.set(LOGO_X + 1.1, 2.9, 3); key.target.position.set(LOGO_X, .6, 0); scene.add(key, key.target);
+  for (const x of [-2.15, -.95]) { const p = new T.PointLight(0xffcf99, 5, 4.5, 1.8); p.position.set(x, 1.9, -2.5); scene.add(p); }
+
+  // ---------- Personaje (opcional: si no carga, la bienvenida sigue sin él) ----------
+  const logoHalfW = (Math.max(...xs) - Math.min(...xs)) * K / 2;
+  let character = null;
+  try {
+    character = await Promise.race([loadCharacter(), new Promise((_, no) => setTimeout(() => no(new Error('avatar: tiempo agotado')), 7000))]);
+    scene.add(character.object);
+    character.object.traverse(o => { if (o.material) o.material.envMapIntensity = .6; });
+  } catch (error) { console.warn('[bienvenida] sin personaje:', error.message); }
+  const timeline = makeTimeline(character);
+  logo.updateMatrixWorld(true);
+  const corner = logo.localToWorld(new T.Vector3(-logoHalfW, LOGO_HEIGHT, 0));
+  character?.setStage({corner, wrist: logo.localToWorld(new T.Vector3(-logoHalfW + .01, LOGO_HEIGHT + .04, LOGO_DEPTH / 2 + .07)), arriveAt: timeline.arrive});
+  const HAS_CHARACTER = !!character;
+
+  // ---------- Cámara: encuadre calculado según el aspecto, no un canvas achicado ----------
+  const tanHalf = Math.tan(T.MathUtils.degToRad(camera.fov / 2));
+  const logoHalf = (Math.max(...xs) - Math.min(...xs)) * K / 2;
+  function frame(t) {
+    const aspect = camera.aspect, portrait = aspect < 1;
+    // Cuadro final: logo (y personaje a su izquierda) completo con aire alrededor.
+    const left = HAS_CHARACTER ? corner.x - 1.05 : LOGO_X - logoHalf, right = LOGO_X + logoHalf;
+    const end = portrait
+      ? {cx: (left + right) / 2, cy: .5, w: (right - left) + .46, h: 1.9, eye: .95}
+      : {cx: (left + right) / 2 - (HAS_CHARACTER ? .55 : .85), cy: .74, w: (right - left) + 2.3, h: 1.95, eye: 1};
+    const start = portrait
+      ? {cx: end.cx - 2.5, cy: 1, w: end.w + .9, h: 2.6, eye: 1.45}
+      : {cx: end.cx - (HAS_CHARACTER ? .6 : 1.6), cy: 1.1, w: end.w + (HAS_CHARACTER ? 1.1 : 2.4), h: 2.7, eye: 1.45};
+    // El encuadre llega antes de que el logo termine de emerger, así nunca queda cortado.
+    const settle = timeline.logoStart + (portrait ? .5 : 1.5);
+    const e = smooth(t / settle), drift = Math.max(0, t - settle) * .01;
+    const cx = lerp(start.cx, end.cx, e), cy = lerp(start.cy, end.cy, e), w = lerp(start.w, end.w, e), h = lerp(start.h, end.h, e);
+    const dist = Math.max(h / (2 * tanHalf), w / (2 * tanHalf * aspect)) * (1 - drift);
+    camera.position.set(cx + lerp(-.14, -.05, e) * dist, lerp(start.eye, end.eye, e), dist);
+    camera.lookAt(cx, cy, 0);
+  }
+
+  function animateLogo(t) {
+    rows.forEach((row, i) => {
+      const e = outCubic((t - timeline.logoStart - i * timeline.stagger) / timeline.rise);
+      // Cada fila emerge del piso (la primera es THE, la más alta) y gira hasta alinearse.
+      row.mesh.position.y = -(row.top + .04) * (1 - e);
+      row.mesh.rotation.y = row.twist * (1 - smooth((t - timeline.logoStart - i * timeline.stagger) / (timeline.rise * 1.05)));
+    });
+    const d = outCubic((t - timeline.dot) / .45);
+    dot.position.y = lerp(-dotR - .02, dotY, d);
+  }
+
+  function resize() {
+    const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  const observer = new ResizeObserver(resize); observer.observe(host);
+  addEventListener('orientationchange', resize);
+  resize(); frame(0); animateLogo(0);
+  renderer.compile(scene, camera);
+
+  // DPR adaptativo: si el equipo no sostiene el ritmo, baja resolución antes que perder fluidez.
+  let lastNow = 0, slow = 0, frames = 0;
+  function adapt() {
+    const now = performance.now();
+    if (lastNow) { frames++; if (now - lastNow > 26) slow++; }
+    lastNow = now;
+    if (frames >= 40) {
+      if (slow > 16 && dpr > 1) { dpr = Math.max(1, dpr - .25); renderer.setPixelRatio(dpr); resize(); }
+      else if (slow > 16 && sun.castShadow) sun.castShadow = false; // último recurso: sin sombras dinámicas
+      frames = slow = 0;
     }
-    const t=own(new T.CanvasTexture(canvas));t.colorSpace=T.SRGBColorSpace;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t;
   }
-  function face(parent,w,h,z,map,flip=false) {
-    const material=own(new T.MeshStandardMaterial({map,roughness:.3,metalness:.15,side:T.DoubleSide}));
-    const mesh=new T.Mesh(own(new T.PlaneGeometry(w,h)),material);mesh.position.z=z;
-    if(flip)mesh.rotation.y=Math.PI;
-    parent.add(mesh);return mesh;
-  }
-  const parts=[];
-  function part(z, target) {
-    const group=new T.Group();group.position.z=z;phone.add(group);parts.push({group,start:new T.Vector3(0,0,z),target:new T.Vector3(...target)});return group;
-  }
-  const back=part(-.16,[-.7,.3,-1.85]);
-  slab(back,1.72,3.48,.09,burgundy);
-  // iPhone 17 Pro Max: full-width plateau, left-side lenses, right-side sensors.
-  // Positive local X is the viewer's left when looking at the rear (-Z).
-  slab(back,1.60,1.01,.09,burgundy,0,1.16,-.10,.18);
-  const rearCameras = [[.48,1.39],[.055,1.16],[.48,.93]];
-  for(const [x,y] of rearCameras) {
-    cylinder(back,.218,.055,burgundy,x,y,-.176);
-    cylinder(back,.188,.06,black,x,y,-.197);
-    cylinder(back,.154,.065,glass,x,y,-.21);
-    cylinder(back,.070,.07,lens,x,y,-.225);
-    cylinder(back,.025,.072,glass,x,y,-.23);
-  }
-  cylinder(back,.081,.035,titanium,-.56,1.40,-.16);
-  cylinder(back,.068,.04,white,-.56,1.40,-.18);
-  cylinder(back,.075,.04,black,-.56,.93,-.18);
-  cylinder(back,.012,.04,darkMetal,-.56,1.16,-.18);
-  // Separate lower glass inset, with the centered Apple mark.
-  const rearGlass = mat(0x300b12,.65,.42);
-  slab(back,1.50,2.10,.015,rearGlass,0,-.52,-.058,.15);
-  const rearLogo = face(back,1.40,1.96,-.084,texture('back'),true);
-  rearLogo.position.y = -.52;
-  rearLogo.material.transparent = true;
-  rearLogo.material.metalness = .65;
-  rearLogo.material.roughness = .6;
-  const frame=part(0,[0,0,0]);
-  // Hollow chassis: narrow rails leave the internal components visible.
-  slab(frame,.055,3.20,.19,burgundy,-.85,0,0,.025);slab(frame,.055,3.20,.19,burgundy,.85,0,0,.025);
-  slab(frame,1.61,.07,.19,burgundy,0,1.70,0,.03);slab(frame,1.61,.07,.19,burgundy,0,-1.70,0,.03);
-  slab(frame,.07,.34,.065,burgundy,.895,.48,0,.025);
-  slab(frame,.07,.23,.065,burgundy,-.895,.62,0,.025);slab(frame,.07,.23,.065,burgundy,-.895,.24,0,.025);
-  slab(frame,.31,.03,.095,black,0,-1.742,0,.01);
-  for(let i=0;i<6;i++)slab(frame,.028,.03,.035,black,.35+i*.065,-1.743,0,.01);
-  const battery=part(.035,[-.8,-.65,.85]);
-  slab(battery,1.32,2.12,.095,black,0,-.30,0,.07);
-  const batteryFace=face(battery,1.26,2.04,.064,texture('battery'));batteryFace.position.y=-.30;
-  slab(battery,.17,.3,.015,gold,.3,.85,.02,.02);
-  const board=part(.055,[.75,1.0,-.8]);
-  slab(board,1.4,.70,.055,pcb,0,1.15,0,.045);
-  for(let i=0;i<4;i++) {
-    slab(board,.24,.24,.035,i%2?darkMetal:titanium,-.48+i*.32,1.17,.055,.015);
-    for(let j=0;j<5;j++)slab(board,.017,.048,.015,gold,-.56+i*.32+j*.035,.999,.04,.001);
-  }
-  for(let i=0;i<12;i++)slab(board,.04,.025,.016,gold,-.59+i*.108,1.43,.04,.003);
-  const panel=part(.12,[.65,.15,1.65]);
-  slab(panel,1.67,3.43,.045,darkMetal);slab(panel,1.48,3.22,.015,black,0,0,.04);
-  const screen=part(.20,[1.4,.40,2.65]);
-  slab(screen,1.68,3.44,.05,glass);
-  const poweredDisplay = face(screen,1.54,3.26,.043,texture('screen'));
-  const shutdownFlash = new T.Mesh(own(new T.PlaneGeometry(1.54,.012)),
-    own(new T.MeshBasicMaterial({color:0xd5e7ff,transparent:true,opacity:0,depthWrite:false})));
-  shutdownFlash.position.z = .05;
-  screen.add(shutdownFlash);
-  slab(screen,.46,.10,.011,black,0,1.50,.055,.05);
-  cylinder(screen,.028,.012,lens,.13,1.5,.071);
-  // Tiny connector sparks: one short pulse as the display and board detach.
-  const sparkCanvas = document.createElement('canvas');
-  sparkCanvas.width = sparkCanvas.height = 64;
-  const sparkContext = sparkCanvas.getContext('2d');
-  const sparkGlow = sparkContext.createRadialGradient(32,32,0,32,32,30);
-  sparkGlow.addColorStop(0,'rgba(255,255,245,1)');
-  sparkGlow.addColorStop(.15,'rgba(255,228,173,.8)');
-  sparkGlow.addColorStop(.5,'rgba(255,180,105,.15)');
-  sparkGlow.addColorStop(1,'rgba(255,180,105,0)');
-  sparkContext.fillStyle = sparkGlow; sparkContext.fillRect(0,0,64,64);
-  sparkContext.strokeStyle = 'rgba(255,246,216,.85)'; sparkContext.lineWidth = 1.5;
-  sparkContext.beginPath(); sparkContext.moveTo(22,32); sparkContext.lineTo(42,32);
-  sparkContext.moveTo(32,22); sparkContext.lineTo(32,42); sparkContext.stroke();
-  const sparkTexture = own(new T.CanvasTexture(sparkCanvas));
-  const sparks = [[battery,.3,.85,.09],[board,-.35,1.0,.09],[panel,.55,.15,.07]].map(([parent,x,y,z],index) => {
-    const material = own(new T.SpriteMaterial({map:sparkTexture,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending}));
-    const sprite = new T.Sprite(material); sprite.position.set(x,y,z); sprite.scale.setScalar(.11); sprite.visible = false; parent.add(sprite);
-    return {sprite,delay:index*.025};
-  });
-  // Camera assembly detaches independently, visible from both orbit directions.
-  const cameras=part(-.24,[-1.45,1.4,-2.5]);
-  for(const [x,y] of rearCameras){
-    cylinder(cameras,.148,.12,darkMetal,x,y,0);cylinder(cameras,.105,.13,lens,x,y,.02);cylinder(cameras,.065,.14,glass,x,y,.03);
-  }
-  const speaker=part(.06,[.35,-1.4,-1]);
-  slab(speaker,1.28,.20,.08,darkMetal,0,-1.41,0,.04);
-  for(let i=0;i<10;i++)slab(speaker,.045,.12,.015,black,-.47+i*.103,-1.41,.055,.015);
-  // Independent internals remain inside the assembled body until the burst.
-  const coil = part(-.07, [-1.1, -.25, -1.05]);
-  for (let i = 0; i < 10; i++) {
-    const ring = new T.Mesh(own(new T.TorusGeometry(.34+i*.023, .009, 5, 56)), gold);
-    ring.position.y = -.25; coil.add(ring);
-  }
-  slab(coil,.10,.44,.015,gold,.18,-.96,0,.01);
-  const thermal = part(-.10, [.50,-.28,-1.45]);
-  slab(thermal,1.35,2.8,.018,mat(0x9b6540,.8,.3),0,0,0,.12);
-  for(let i=0;i<6;i++) slab(thermal,.035,2.3,.008,gold,-.5+i*.2,0,.02,.01);
-  const haptic = part(.025, [-1.2,-.8,.4]);
-  slab(haptic,.70,.22,.09,titanium,-.24,-1.35,0,.03);
-  for(let i=0;i<5;i++) slab(haptic,.025,.14,.012,darkMetal,-.47+i*.11,-1.35,.06,.005);
-  const port = part(.035, [.8,-1.1,.7]);
-  slab(port,.50,.25,.04,pcb,0,-1.40,0,.015);
-  slab(port,.29,.11,.10,titanium,0,-1.51,.025,.03);
-  slab(port,.22,.065,.015,black,0,-1.53,.09,.02);
-  for(let i=0;i<3;i++) {
-    const chip = part(.08, [i*.65-.65,1.55+i*.18,.6+i*.38]);
-    slab(chip,.27,.24,.04,darkMetal,-.45+i*.43,1.12,0,.018);
-    slab(chip,.18,.15,.006,titanium,-.45+i*.43,1.12,.033,.006);
-    const flex = part(.07,[i*.65-.65,-.4,1.0+i*.35]);
-    slab(flex,.09,.95,.008,gold,-.5+i*.48,-.15,0,.012);
-    slab(flex,.25,.08,.016,black,-.5+i*.48,.34,0,.008);
-  }
-  for(let i=0;i<8;i++) {
-    const x = i%2 ? .76 : -.76, y = 1.45-Math.floor(i/2)*.96;
-    const screw = part(.045,[x*1.7,(y>0?.65:-.65),i%2?.9:-.85]);
-    cylinder(screw,.033,.08,titanium,x,y,0);
-    slab(screw,.04,.009,.005,black,x,y,.047,.001);
-  }
-  // Additional independent internals follow their assembled locations outward.
-  // Small modules use low-detail geometry to keep the mobile render lightweight.
-  const tinyBox = own(new T.BoxGeometry(1,1,1));
-  function detail(parent,w,h,d,material,x=0,y=0,z=0) {
-    const mesh = new T.Mesh(tinyBox,material);
-    mesh.scale.set(w,h,d); mesh.position.set(x,y,z); parent.add(mesh); return mesh;
-  }
-  // Shield cans lift away from the logic board, exposing the chips below them.
-  for (let i=0;i<4;i++) {
-    const x=-.48+i*.32;
-    const shield=part(.10,[x*1.8,.9+(i%2)*.3,1.0+i*.18]);
-    detail(shield,.26,.26,.018,titanium,x,1.17,.035);
-    detail(shield,.20,.018,.012,darkMetal,x,1.17,.05);
-  }
-  // Memory, power-management and radio modules remain small and staggered.
-  for (let i=0;i<8;i++) {
-    const x=-.56+(i%4)*.36, y=.90+Math.floor(i/4)*.49;
-    const module=part(.075,[x*2.1, i<4?.5:1.35, (i%2?1:-1)*(.65+i*.065)]);
-    detail(module,.14,.11,.024,black,x,y,.04);
-    for(let pin=0;pin<3;pin++) {
-      detail(module,.018,.025,.012,gold,x-.045+pin*.045,y-.065,.04);
-      detail(module,.018,.025,.012,gold,x-.045+pin*.045,y+.065,.04);
-    }
-  }
-  // Flex connectors and antenna strips peel off along the chassis edges.
-  for(let i=0;i<6;i++) {
-    const side=i%2?1:-1, y=.72-Math.floor(i/2)*.65;
-    const connector=part(.085,[side*(1.1+i*.045),y*.65,.45+(i%3)*.34]);
-    detail(connector,.13,.24,.025,black,side*.66,y,0);
-    detail(connector,.07,.14,.012,gold,side*.66,y,.02);
-  }
-  for(let i=0;i<4;i++) {
-    const side=i%2?1:-1, y=i<2?.68:-.70;
-    const antenna=part(-.025,[side*1.5,y*.6,-.7-(i%2)*.25]);
-    detail(antenna,.04,.52,.018,darkMetal,side*.79,y,0);
-    detail(antenna,.016,.30,.006,gold,side*.79,y,.014);
-  }
-  // Optical rings and sensor filters separate from each rear camera module.
-  const opticalRing = own(new T.TorusGeometry(.17,.015,6,24));
-  rearCameras.forEach(([x,y],i) => {
-    const gasket=part(-.27,[-1.25+i*.4,.8+i*.3,-1.6-i*.23]);
-    const ring=new T.Mesh(opticalRing,black);ring.position.set(x,y,0);gasket.add(ring);
-    const filter=part(-.28,[.7+i*.25,.65+i*.25,-1.35-i*.25]);
-    detail(filter,.14,.14,.012,lens,x,y,0);
-  });
-  for(let i=0;i<4;i++) {
-    const side=i%2?1:-1, y=i<2?1.55:-1.55;
-    const bracket=part(.03,[side*1.35,y*.35,i%2?.55:-.55]);
-    detail(bracket,.18,.055,.018,titanium,side*.58,y,0);
-    detail(bracket,.025,.11,.018,titanium,side*.66,y-.03,0);
-  }
-  // Compress both the local geometry and assembled layer spacing by 60%.
-  // Explosion offsets stay independent of physical thickness.
-  parts.forEach(({group,start,target}) => {
-    group.scale.z = .4;
-    start.z *= .4;
-    target.multiplyScalar(.72);
-    group.position.copy(start);
-  });
-  const ambient=new T.HemisphereLight(0xbfd5ff,0x51443d,2);scene.add(ambient);
-  function light(color,intensity,x,y,z){const l=new T.DirectionalLight(color,intensity);l.position.set(x,y,z);scene.add(l);}
-  light(0xffffff,5,-3,5,5);light(0x91b5ff,3,4,1,-4);light(0xffc6b5,.8,-4,-2,-2);light(0xffffff,2,1,-3,6);
-  // Large luminous studio panels provide real metal reflections.
-  const studio=new T.Scene();studio.background=new T.Color(0x292c33);
-  for(const [x,y,z,w,h] of [[-4,2,0,3,8],[4,3,1,2,7],[0,5,0,8,3],[0,0,5,5,8]]){
-    const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({color:0xffffff,side:T.DoubleSide}));m.position.set(x,y,z);m.lookAt(0,0,0);studio.add(m);
-  }
-  const pmrem=new T.PMREMGenerator(renderer);const env=pmrem.fromScene(studio,.05);scene.environment=env.texture;
-  studio.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});pmrem.dispose();
-  function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
-  const observer=new ResizeObserver(resize);observer.observe(host);resize();
+
   return {
-    render(t){
-      // One turn at the original speed profile; every later beat starts 2.433s earlier.
-      const spinT=t;t+=2.433;
-      const explosion=ease((t-4.95)/.55);const orbit=ease((t-5.5)/4.7);
-      parts.forEach(({group,start,target})=>group.position.lerpVectors(start,target,explosion));
-      for (const {sprite,delay} of sparks) {
-        const pulse = (t - 5.08 - delay) / .24;
-        sprite.visible = pulse > 0 && pulse < 1;
-        sprite.material.opacity = sprite.visible ? .8 * Math.sin(Math.PI*pulse) * (1-pulse) : 0;
-        sprite.scale.setScalar(.08 + .05 * T.MathUtils.clamp(pulse,0,1));
-      }
-      // Losing contact: a brief flicker, vertical collapse, then the last line dies.
-      // The glass remains in place and completely dark for the entire orbit.
-      const shutdown = T.MathUtils.clamp((t-5.12)/.65,0,1);
-      const collapse = ease((shutdown-.20)/.55);
-      poweredDisplay.scale.y = Math.max(.003,1-collapse);
-      const flicker = shutdown > 0 && shutdown < .22 ? .35+.65*Math.abs(Math.cos(shutdown*48)) : 1;
-      poweredDisplay.material.color.setScalar(flicker*(1-ease((shutdown-.65)/.23)));
-      poweredDisplay.visible = shutdown < .88;
-      shutdownFlash.visible = shutdown > .45 && shutdown < 1;
-      shutdownFlash.material.opacity = ease((shutdown-.45)/.2)*(1-ease((shutdown-.78)/.22));
-      shutdownFlash.scale.x = 1-ease((shutdown-.78)/.22);
-      // Hero hold, acceleration to centrifuge speed, then an abrupt time freeze.
-      const spinTime = T.MathUtils.clamp(spinT-1.3,0,1.767);
-      const turns = spinTime < 1.1 ? spinTime*spinTime/2.2 : spinTime-.55;
-      phone.rotation.set(.10+.06*explosion, -.45+turns*(Math.PI*2/1.217), -.12);
-      // At 3.07s all components and phone rotation freeze; only the camera moves.
-      const angle=orbit*1.7;
-      const distance=T.MathUtils.lerp(Math.max(8.2,5/camera.aspect),Math.max(10.8,11.8/camera.aspect),explosion);
-      camera.position.set(Math.sin(angle)*distance, .25+orbit*1.6, Math.cos(angle)*distance);
-      camera.lookAt(0,0,0);
-      renderer.render(scene,camera);
+    timeline,
+    render(t) { adapt(); frame(t); animateLogo(t); character?.update(t, timeline, camera); renderer.render(scene, camera); },
+    dispose() {
+      observer.disconnect(); removeEventListener('orientationchange', resize);
+      const seen = new Set();
+      scene.traverse(o => {
+        if (o.geometry && !seen.has(o.geometry)) { seen.add(o.geometry); o.geometry.dispose(); }
+        for (const m of [].concat(o.material || [])) if (!seen.has(m)) { seen.add(m); m.map?.dispose(); m.normalMap?.dispose(); m.roughnessMap?.dispose(); m.dispose(); }
+        o.shadow?.map?.dispose(); o.skeleton?.dispose();
+      });
+      screens.forEach(s => s.dispose()); oakMap.dispose(); envTarget.dispose(); pendants.length = 0;
+      renderer.renderLists.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
     },
-    dispose(){observer.disconnect();resources.forEach(r=>r.dispose());env.dispose();renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();}
   };
 }
