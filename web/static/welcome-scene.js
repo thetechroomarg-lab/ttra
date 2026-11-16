@@ -3,6 +3,7 @@
 import * as T from './vendor/three/three.module.min.js';
 import LOGO from './welcome-logo.js';
 import {loadCharacter} from './welcome-character.js';
+import {drawEditor, drawStore, drawMovie, POSTERS} from './welcome-decor.js';
 
 const clamp01 = v => Math.min(1, Math.max(0, v));
 const smooth = v => { v = clamp01(v); return v * v * (3 - 2 * v); };
@@ -13,8 +14,8 @@ const LOGO_HEIGHT = 1.2, LOGO_DEPTH = .26, LOGO_X = 1.3, LOGO_YAW = -.12;
 
 // Con personaje corre la secuencia completa; si el avatar no carga, la versión corta sin él.
 const makeTimeline = character => character
-  ? {logoStart: 2.5, stagger: .22, rise: 1.2, dot: 4.3, arrive: 4.75, lean: 4.7, look: 5.5, wave: 5.9, waveEnd: 7.2, fadeStart: 7.9, fadeDuration: 1.2, end: 9.1,
-     phase: t => t < 1 ? 'office' : t < 2.5 ? 'enter' : t < 4.7 ? 'logo' : t < 5.9 ? 'lean' : t < 7.3 ? 'wave' : t < 7.9 ? 'hold' : 'fade'}
+  ? {logoStart: 2.5, stagger: .22, rise: 1.2, dot: 4.3, arrive: 4.75, lean: 4.7, look: 5.5, wave: 5.8, waveEnd: 7.75, fadeStart: 8.3, fadeDuration: 1.2, end: 9.5,
+     phase: t => t < 1 ? 'office' : t < 2.5 ? 'enter' : t < 4.7 ? 'logo' : t < 5.8 ? 'lean' : t < 7.85 ? 'wave' : t < 8.3 ? 'hold' : 'fade'}
   : {logoStart: 1.1, stagger: .28, rise: 1.25, dot: 3.1, fadeStart: 4.7, fadeDuration: 1.2, end: 5.9,
      phase: t => t < 1.1 ? 'office' : t < 3.5 ? 'logo' : t < 4.7 ? 'hold' : 'fade'};
 
@@ -189,7 +190,8 @@ export async function createScene(host) {
   });
 
   // ---------- Puestos de trabajo ----------
-  const screens = [screenTexture(0), screenTexture(1), screenTexture(2), screenTexture(3)];
+  // Monitores: Visual Studio Code a la izquierda, panel al centro y la tienda a la derecha; la MacBook lleva otro editor.
+  const screens = [canvasTexture(640, 360, drawEditor), screenTexture(1), screenTexture(2), canvasTexture(640, 360, (g, w, h) => drawStore(g, w, h, LOGO))];
   const screenMats = screens.map(map => new T.MeshBasicMaterial({map, color: new T.Color(1.25, 1.25, 1.25)}));
   function monitor(parent, x, z, ry, mat, w = .62) {
     const g = new T.Group(); g.position.set(x, .755, z); g.rotation.y = ry; parent.add(g);
@@ -213,8 +215,8 @@ export async function createScene(host) {
   box(desk, oak, 2.4, .032, .82, 0, .739, 0);
   for (const s of [-1, 1]) { box(desk, blackMetal, .045, .72, .045, s * 1.12, .36, -.34); box(desk, blackMetal, .045, .72, .045, s * 1.12, .36, .34); box(desk, blackMetal, .045, .045, .72, s * 1.12, .7, 0); box(desk, blackMetal, .06, .02, .74, s * 1.12, .01, 0); }
   box(desk, blackMetal, 2.1, .08, .12, 0, .64, -.32); // bandeja pasacables
-  monitor(desk, -.66, -.12, .34, screenMats[1]);
-  monitor(desk, 0, -.22, 0, screenMats[0]);
+  monitor(desk, -.66, -.12, .34, screenMats[0]);
+  monitor(desk, 0, -.22, 0, screenMats[1]);
   monitor(desk, .66, -.12, -.34, screenMats[3]);
   box(desk, aluminium, .43, .014, .125, 0, .762, .16);
   box(desk, plastic, .41, .004, .105, 0, .771, .16, false);
@@ -242,12 +244,42 @@ export async function createScene(host) {
     l.position.set(Math.cos(a) * .03, y, Math.sin(a) * .03); l.rotation.set(0, -a + Math.PI / 2, 0); l.rotateX(.9 + pr() * .5); l.scale.setScalar(.8 + pr() * .5);
     l.castShadow = true; plant.add(l);
   }
-  const credenza = new T.Group(); credenza.position.set(3.4, 0, BACK + .32); room.add(credenza);
+  const credenza = new T.Group(); credenza.position.set(3.95, 0, BACK + .32); room.add(credenza);
   box(credenza, oak, 2.2, .62, .48, 0, .43, 0);
   for (const s of [-1, 1]) box(credenza, blackMetal, .04, .12, .4, s * 1, .06, 0);
   for (let i = 1; i < 4; i++) box(credenza, std(0xb99468, .6), .006, .58, .006, -1.1 + i * .55, .43, .241, false);
-  box(credenza, plastic, .5, .04, .32, -.5, .76, 0); box(credenza, aluminium, .34, .012, .24, .45, .746, 0);
-  cyl(credenza, ceramic, .06, .2, .95, .84, 0);
+  // Televisor con una película de acción (canvas animado) y una consola blanca al lado.
+  const TV_W = 1.2, TV_H = TV_W * 9 / 16, tvX = -.12;
+  box(credenza, blackMetal, .5, .012, .22, tvX, .746, 0); box(credenza, blackMetal, .06, .07, .04, tvX, .785, -.02);
+  box(credenza, plastic, TV_W + .02, TV_H + .02, .03, tvX, .82 + TV_H / 2, 0);
+  const movieCanvas = document.createElement('canvas'); movieCanvas.width = 384; movieCanvas.height = 216;
+  const movieCtx = movieCanvas.getContext('2d');
+  const movie = new T.CanvasTexture(movieCanvas); movie.colorSpace = T.SRGBColorSpace;
+  const tvScreen = new T.Mesh(unitPlane, new T.MeshBasicMaterial({map: movie, color: new T.Color(1.5, 1.5, 1.5)}));
+  tvScreen.scale.set(TV_W, TV_H, 1); tvScreen.position.set(tvX, .82 + TV_H / 2, .016); credenza.add(tvScreen);
+  const tvGlow = new T.PointLight(0xffa25c, 0, 3, 1.6); tvGlow.position.set(tvX, 1.1, .5); credenza.add(tvGlow);
+  let movieAt = -1;
+  function playMovie(t) {
+    if (Math.abs(t - movieAt) < 1 / 30) return;
+    movieAt = t; drawMovie(movieCtx, 384, 216, t); movie.needsUpdate = true;
+    const boom = Math.floor(t / 1.7) % 3 === 1; // la explosión tiñe la pared
+    tvGlow.intensity = boom ? 2.4 : .7; tvGlow.color.set(boom ? 0xff8a3c : 0x7fa8ff);
+  }
+  const consoleWhite = std(0xf2f2f0, .45);
+  for (const s of [-1, 1]) box(credenza, consoleWhite, .022, .39, .26, .8 + s * .042, .935, .02).rotation.z = s * -.03;
+  box(credenza, plastic, .062, .36, .24, .8, .92, .02);
+  box(credenza, lit(0x4da3ff, 2.2), .004, .2, .004, .767, .95, .151, false);
+  box(credenza, consoleWhite, .15, .03, .1, .5, .757, .15).rotation.y = .4; // mando
+
+  // Cuadros en la pared del fondo: se alternan ilustraciones de anime y afiches de rock.
+  const posterMaps = POSTERS.map(p => canvasTexture(256, p.square ? 256 : 356, p.draw));
+  const posterX = [-3.6, -2.75, -1.9, -1.05, .55, 1.4, 2.25, 3.1];
+  POSTERS.forEach((p, i) => {
+    const w = p.square ? .62 : .56, h = p.square ? .62 : .78, y = 2.2 + (i % 2 ? .07 : -.05), z = BACK + (posterX[i] > .1 ? .022 : 0);
+    box(room, blackMetal, w + .05, h + .05, .03, posterX[i], y, z + .016);
+    const art = new T.Mesh(unitPlane, new T.MeshStandardMaterial({map: posterMaps[i], roughness: .55, emissive: 0xffffff, emissiveMap: posterMaps[i], emissiveIntensity: .22}));
+    art.scale.set(w, h, 1); art.position.set(posterX[i], y, z + .032); room.add(art);
+  });
 
   // ---------- Logo: escultura tipográfica extruida desde los contornos oficiales ----------
   const baselinePx = Math.max(...LOGO.rows.flat().flatMap(s => s.o.map(p => p[1])));
@@ -339,7 +371,7 @@ export async function createScene(host) {
   }
   const observer = new ResizeObserver(resize); observer.observe(host);
   addEventListener('orientationchange', resize);
-  resize(); frame(0); animateLogo(0);
+  resize(); frame(0); animateLogo(0); playMovie(0);
   renderer.compile(scene, camera);
 
   // DPR adaptativo: si el equipo no sostiene el ritmo, baja resolución antes que perder fluidez.
@@ -357,7 +389,7 @@ export async function createScene(host) {
 
   return {
     timeline,
-    render(t) { adapt(); frame(t); animateLogo(t); character?.update(t, timeline, camera); renderer.render(scene, camera); },
+    render(t) { adapt(); frame(t); animateLogo(t); playMovie(t); character?.update(t, timeline, camera); renderer.render(scene, camera); },
     dispose() {
       observer.disconnect(); removeEventListener('orientationchange', resize);
       const seen = new Set();
@@ -366,7 +398,7 @@ export async function createScene(host) {
         for (const m of [].concat(o.material || [])) if (!seen.has(m)) { seen.add(m); m.map?.dispose(); m.normalMap?.dispose(); m.roughnessMap?.dispose(); m.dispose(); }
         o.shadow?.map?.dispose(); o.skeleton?.dispose();
       });
-      screens.forEach(s => s.dispose()); oakMap.dispose(); envTarget.dispose(); pendants.length = 0;
+      screens.forEach(s => s.dispose()); posterMaps.forEach(s => s.dispose()); movie.dispose(); oakMap.dispose(); envTarget.dispose(); pendants.length = 0;
       renderer.renderLists.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
     },
   };

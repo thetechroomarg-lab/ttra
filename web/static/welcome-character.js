@@ -8,7 +8,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const V = (x = 0, y = 0, z = 0) => new T.Vector3(x, y, z);
 const UP = V(0, 1, 0), X = V(1, 0, 0), Z = V(0, 0, 1);
 
-const STEP = .5, STEP_TIME = .5, HIP_Y = .95, ANKLE_Y = .09;
+const STEP = .56, STEP_TIME = .52, HIP_Y = .95, ANKLE_Y = .09;
 
 export async function loadCharacter(base = '/welcome/') {
   const loader = new T.TextureLoader();
@@ -61,12 +61,16 @@ export async function loadCharacter(base = '/welcome/') {
 
   // ---------- IK de dos huesos con vector polo (codo / rodilla) ----------
   const tmp = {a: V(), to: V(), dir: V(), perp: V(), d1: V(), d2: V(), q: new T.Quaternion(), qi: new T.Quaternion()};
-  function solve(upper, lower, end, parentQ, target, pole) {
+  function solve(upper, lower, end, parentQ, target, pole, soft = 0) {
     const {a, to, dir, perp, d1, d2, q, qi} = tmp;
     a.setFromMatrixPosition(upper.matrixWorld);
     const l1 = lower.position.length(), l2 = end.position.length();
     to.subVectors(target, a);
-    const dist = T.MathUtils.clamp(to.length(), Math.abs(l1 - l2) + .01, (l1 + l2) * .999);
+    let reach = to.length();
+    // Extensión suave: cerca del largo total la pierna frena de a poco en vez de trabarse recta de golpe.
+    const full = (l1 + l2) * .999, knee = full * (1 - soft);
+    if (soft && reach > knee) reach = knee + (full - knee) * (1 - Math.exp(-(reach - knee) / (full - knee)));
+    const dist = T.MathUtils.clamp(reach, Math.abs(l1 - l2) + .01, full);
     dir.copy(to).normalize();
     const angle = Math.acos(T.MathUtils.clamp((l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist), -1, 1));
     perp.copy(pole).addScaledVector(dir, -pole.dot(dir)).normalize();
@@ -140,19 +144,20 @@ export async function loadCharacter(base = '/welcome/') {
     for (let k = 0; k < list.length; k++) {
       const s = list[k], prev = list[k - 1];
       if (t < s.t0) { // apoyado: aplana tras el taloneo y despega el talón antes de volar
-        const strike = prev ? (1 - smooth((t - prev.t1) / (.24 * prev.P))) * reachOf(prev) : 0;
-        const heelOff = .5 * reachOf(s) * smooth((t - (s.t0 - .36 * s.P)) / (.36 * s.P));
-        return withPitch(s.from.pos, s.from.yaw, heelOff, heelOff - .2 * strike, 0);
+        const strike = prev ? (1 - smooth((t - prev.t1) / (.26 * prev.P))) * reachOf(prev) : 0;
+        const heelOff = .7 * reachOf(s) * smooth((t - (s.t0 - .42 * s.P)) / (.42 * s.P));
+        return withPitch(s.from.pos, s.from.yaw, heelOff, heelOff - .22 * strike, 0);
       }
       if (t < s.t1) {
         const w = (t - s.t0) / (s.t1 - s.t0), reach = reachOf(s);
-        const heelOff = .5 * reach * (1 - smooth(w / .45));
-        const pos = s.from.pos.clone().lerp(s.to.pos, lerp(w, smooth(w), .55));
-        return withPitch(pos, lerp(s.from.yaw, s.to.yaw, smooth(w)), heelOff, heelOff - .2 * reach * smooth((w - .55) / .45), lerp(.025, .06, reach) * Math.sin(Math.PI * w) ** 1.3);
+        // El pie sale con el talón arriba (rodilla flexionada), acelera y frena de forma pareja y llega de talón.
+        const heelOff = reach * (.7 + .12 * smooth(w / .15)) * (1 - smooth((w - .12) / .5));
+        const pos = s.from.pos.clone().lerp(s.to.pos, .5 - .5 * Math.cos(Math.PI * w));
+        return withPitch(pos, lerp(s.from.yaw, s.to.yaw, smooth(w)), heelOff, heelOff - .22 * reach * smooth((w - .55) / .45), lerp(.03, .065, reach) * Math.sin(Math.PI * w ** .85) ** 1.2);
       }
     }
     const end = list[list.length - 1];
-    return withPitch(end.to.pos, end.to.yaw, 0, -.2 * (1 - smooth((t - end.t1) / (.24 * end.P))) * reachOf(end), 0);
+    return withPitch(end.to.pos, end.to.yaw, 0, -.22 * (1 - smooth((t - end.t1) / (.26 * end.P))) * reachOf(end), 0);
   }
   // Fase continua de la marcha: +1 con el pie derecho adelante, -1 con el izquierdo.
   function gaitAt(t) {
@@ -173,7 +178,7 @@ export async function loadCharacter(base = '/welcome/') {
     const fL = footAt(1, t), fR = footAt(-1, t);
     const walking = 1 - smooth((t - arriveAt + .35) / .55);
     const gait = gaitAt(t);
-    const swing = gait.swing * walking, armSwing = gaitAt(t - .06).swing * walking; // los brazos llegan un instante después
+    const swing = gait.swing * walking, armSwing = gaitAt(t - .09).swing * walking; // los brazos llegan un instante después
     const stride = Math.sin(Math.PI * gait.frac) * walking;
     const lean = smooth((t - times.lean) / 1.1);
     const yaw = lerp(yawWalk, yawEnd, smooth((t - plan.turnFrom) / (arriveAt - plan.turnFrom)));
@@ -181,18 +186,23 @@ export async function loadCharacter(base = '/welcome/') {
 
     // Cadera: trayectoria continua, sube en el apoyo simple y baja en el doble; se recuesta hacia el logo al final.
     hipsAt(t, bone.Hips.position).addScaledVector(forward, .02 * walking).addScaledVector(leftOf(yawEnd), .055 * lean);
-    bone.Hips.position.y = HIP_Y - lerp(.014, .052, walking) + .024 * (.5 - .5 * Math.cos(2 * Math.PI * gait.frac)) * walking - .008 * lean;
+    bone.Hips.position.y = HIP_Y - lerp(.014, .062, walking) + .026 * (.5 - .5 * Math.cos(2 * Math.PI * gait.frac)) * walking - .008 * lean;
     // La pelvis acompaña a la pierna que avanza y cae un poco del lado del pie en el aire; el torso compensa.
-    setEuler(bone.Hips, .035 * walking, yaw + swing * .09, -gait.side * .035 * stride - .04 * lean);
-    setEuler(bone.Spine, .02 * walking, -swing * .08, gait.side * .025 * stride - .09 * lean);
-    setEuler(bone.Chest, .01 * walking, -armSwing * .1, gait.side * .012 * stride - .07 * lean);
+    // Saludo: el antebrazo va y viene de lado a lado desde el codo; la mano llega un instante después.
+    const wave = smooth((t - times.wave) / .6) * (1 - smooth((t - times.waveEnd) / .65));
+    const waveEnv = smooth((t - times.wave - .3) / .4) * (1 - smooth((t - times.waveEnd + .3) / .4));
+    const wavePhase = (t - times.wave - .3) * Math.PI * 2 * 1.55;
+    const sway = Math.sin(wavePhase) * waveEnv, swayLate = Math.sin(wavePhase - .6) * waveEnv;
+    setEuler(bone.Hips, .035 * walking, yaw + swing * .1, -gait.side * .04 * stride - .04 * lean);
+    setEuler(bone.Spine, .025 * walking, -swing * .09, gait.side * .028 * stride - .09 * lean + .012 * sway * wave);
+    setEuler(bone.Chest, .015 * walking + .012 * Math.cos(4 * Math.PI * gait.frac) * walking, -armSwing * .11, gait.side * .014 * stride - .07 * lean + .016 * sway * wave - .02 * wave);
     const steady = (swing * .01 + armSwing * .1) * .8; // la cabeza no gira con los hombros
     // La cabeza mira al frente al caminar y gira hacia la cámara al saludar.
     const look = smooth((t - times.look) / .6);
     setSmile(smooth((t - times.look - .25) / .8)); // sonríe al mirar a cámara y la mantiene hasta el fundido
     const toCamera = Math.atan2(camera.position.x - bone.Hips.position.x, camera.position.z - bone.Hips.position.z);
     const headYaw = T.MathUtils.clamp(toCamera - yaw, -.9, .9) * look;
-    const nod = Math.sin((t - times.wave) * 5) * .02 * smooth((t - times.wave) / .3) * (1 - smooth((t - times.waveEnd) / .4));
+    const nod = Math.sin((t - times.wave) * 4) * .018 * wave;
     setEuler(bone.Neck, .02 * look + nod - .02 * walking, headYaw * .4 + steady * .5, .07 * lean);
     setEuler(bone.Head, -.03 * look + nod - .02 * walking, headYaw * .6 + steady * .5, .07 * lean);
     object.updateMatrixWorld(true);
@@ -203,7 +213,7 @@ export async function loadCharacter(base = '/welcome/') {
     // Piernas: tobillo al punto plantado (por eso el pie no patina) y rodilla hacia adelante.
     for (const [side, f, up, low, foot] of [[1, fL, bone.LUpLeg, bone.LLeg, bone.LFoot], [-1, fR, bone.RUpLeg, bone.RLeg, bone.RFoot]]) {
       const target = f.pos.clone(); target.y = ANKLE_Y + f.lift;
-      const shin = solve(up, low, foot, q.hips, target, V(Math.sin(f.yaw), 0, Math.cos(f.yaw)));
+      const shin = solve(up, low, foot, q.hips, target, V(Math.sin(f.yaw), 0, Math.cos(f.yaw)), .05);
       q.a.setFromAxisAngle(UP, f.yaw).multiply(q.b.setFromAxisAngle(X, f.pitch));
       foot.quaternion.copy(shin.invert()).multiply(q.a);
     }
@@ -214,21 +224,21 @@ export async function loadCharacter(base = '/welcome/') {
     const hang = (side, angle, out) => target.set(side * out, -Math.cos(angle), Math.sin(angle)).normalize().multiplyScalar(.437 - walking * (.014 + .05 * Math.max(0, angle))).applyQuaternion(q.yaw).add(shoulder);
     // Izquierdo
     shoulder.setFromMatrixPosition(bone.LArm.matrixWorld);
-    hang(1, armSwing * .3 + .05, .07);
+    hang(1, armSwing * .33 + .06, .07);
     target.lerp(wrist, lean).y += .13 * Math.sin(Math.PI * lean);
     pole.set(lerp(.25, 1, lean), lerp(0, .25, lean), lerp(-1, -.2, lean)).applyQuaternion(q.yaw); // apoyado: el codo sale hacia el logo
     solve(bone.LArm, bone.LFore, bone.LHand, q.chest, target, pole);
     setEuler(bone.LHand, .25 * lean, 0, 0);
     // Derecho
     shoulder.setFromMatrixPosition(bone.RArm.matrixWorld);
-    hang(-1, -armSwing * .3 + .05, .07);
-    const wave = smooth((t - times.wave) / .5) * (1 - smooth((t - times.waveEnd) / .55));
-    const sway = Math.sin((t - times.wave - .35) * Math.PI * 2 * 1.9) * smooth((t - times.wave - .3) / .3);
-    const waveTarget = V(-.23 + .075 * sway, .07, .2).applyQuaternion(q.yaw).add(shoulder);
-    target.lerp(waveTarget, wave);
-    pole.set(lerp(-.25, -.55, wave), lerp(0, -1, wave), lerp(-1, .05, wave)).applyQuaternion(q.yaw);
+    hang(-1, -armSwing * .33 + .06, .07);
+    // Codo quieto a la altura del pecho y abierto hacia afuera; la muñeca describe un arco alrededor de él.
+    const tilt = .1 + .52 * sway;
+    const waveTarget = V(-.17 - .2 * Math.sin(tilt), -.13 + .2 * Math.cos(tilt), .14).applyQuaternion(q.yaw).add(shoulder);
+    target.lerp(waveTarget, wave).y += .05 * Math.sin(Math.PI * wave);
+    pole.set(lerp(-.25, -.6, wave), lerp(0, -1, wave), lerp(-1, .1, wave)).applyQuaternion(q.yaw);
     solve(bone.RArm, bone.RFore, bone.RHand, q.chest, target, pole);
-    setEuler(bone.RHand, 0, 0, -.2 * sway * wave);
+    setEuler(bone.RHand, 0, 0, -.42 * swayLate * wave);
   }
 
   return {object, bone, setStage, setSmile, update};
