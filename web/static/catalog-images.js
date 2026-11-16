@@ -13,6 +13,15 @@
     for (const k in index) { const kk = nameKey(k); if (!(kk in m)) m[kk] = index[k]; }
     return m;
   });
+  // Imagen de un producto (la del primer color) para quien no arma una card completa, como la pizarra de la home.
+  window.ttraImagenProducto = async p => {
+    const [index, keyed] = await Promise.all([manifest, byKey]);
+    const entry = index[p?.nombre] || keyed[nameKey(p?.nombre)];
+    if (!entry?.length) return null;
+    const c = p.colores?.[0];
+    const v = (c && entry.find(x => colorKey(x.color) === colorKey(c))) || entry[0];
+    return v?.src ? v : null;
+  };
   const labels = ['Dólar contado', 'Dólar transf. USA', 'USDT', 'Pesos contado', 'Pesos transf.'];
   const text = (tag, cls, value) => { const e=document.createElement(tag); e.className=cls; e.textContent=value; return e; };
   // --- Fotos reales de equipos usados: carrusel en la card + visor ampliado. ---
