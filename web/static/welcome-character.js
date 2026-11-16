@@ -10,12 +10,8 @@ const UP = V(0, 1, 0), X = V(1, 0, 0), Z = V(0, 0, 1);
 
 const STEP = .56, STEP_TIME = .52, HIP_Y = .95, ANKLE_Y = .09;
 
-export async function loadCharacter(base = '/welcome/') {
-  const loader = new T.TextureLoader();
-  const [buf, map, normalMap, roughnessMap] = await Promise.all([
-    fetch(base + 'avatar.bin').then(r => { if (!r.ok) throw new Error('avatar.bin ' + r.status); return r.arrayBuffer(); }),
-    loader.loadAsync(base + 'avatar-color.webp'), loader.loadAsync(base + 'avatar-normal.webp'), loader.loadAsync(base + 'avatar-roughness.webp'),
-  ]);
+// Malla con esqueleto en el formato de scripts/exportar_avatar.py: cabecera JSON + buffers.
+export function readRig(buf) {
   const headLength = new DataView(buf).getUint32(0, true);
   const head = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, headLength)));
   const view = (name, Type) => new Type(buf, 4 + headLength + head.layout[name][0], head.layout[name][1]);
@@ -26,6 +22,53 @@ export async function loadCharacter(base = '/welcome/') {
   geometry.setAttribute('skinIndex', new T.BufferAttribute(new Uint16Array(view('skinIndex', Uint8Array)), 4));
   geometry.setAttribute('skinWeight', new T.BufferAttribute(view('skinWeight', Uint8Array), 4, true));
   geometry.setIndex(new T.BufferAttribute(view('index', Uint16Array), 1));
+  return {geometry, joints: head.joints};
+}
+export function buildRig(geometry, joints, material) {
+  const bone = {}, rest = {};
+  const bones = joints.map(j => {
+    const b = new T.Bone(); b.name = j.name; bone[j.name] = b; rest[j.name] = V(...j.pos);
+    if (j.parent < 0) b.position.copy(rest[j.name]);
+    else { const parent = joints[j.parent]; b.position.copy(rest[j.name]).sub(rest[parent.name]); bone[parent.name].add(b); }
+    return b;
+  });
+  const object = new T.Group(); object.add(bones[0]); object.updateMatrixWorld(true);
+  const mesh = new T.SkinnedMesh(geometry, material);
+  mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
+  object.add(mesh); mesh.bind(new T.Skeleton(bones));
+  return {object, mesh, bone, rest};
+}
+
+// ---------- IK de dos huesos con vector polo (codo / rodilla) ----------
+const tmp = {a: V(), to: V(), dir: V(), perp: V(), d1: V(), d2: V(), q: new T.Quaternion(), qi: new T.Quaternion()};
+export function solve(upper, lower, end, parentQ, target, pole, soft = 0) {
+  const {a, to, dir, perp, d1, d2, q, qi} = tmp;
+  a.setFromMatrixPosition(upper.matrixWorld);
+  const l1 = lower.position.length(), l2 = end.position.length();
+  to.subVectors(target, a);
+  let reach = to.length();
+  // Extensión suave: cerca del largo total la pierna frena de a poco en vez de trabarse recta de golpe.
+  const full = (l1 + l2) * .999, knee = full * (1 - soft);
+  if (soft && reach > knee) reach = knee + (full - knee) * (1 - Math.exp(-(reach - knee) / (full - knee)));
+  const dist = T.MathUtils.clamp(reach, Math.abs(l1 - l2) + .01, full);
+  dir.copy(to).normalize();
+  const angle = Math.acos(T.MathUtils.clamp((l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist), -1, 1));
+  perp.copy(pole).addScaledVector(dir, -pole.dot(dir)).normalize();
+  d1.copy(dir).multiplyScalar(Math.cos(angle)).addScaledVector(perp, Math.sin(angle));
+  d2.copy(dir).multiplyScalar(dist).addScaledVector(d1, -l1).normalize();
+  upper.quaternion.setFromUnitVectors(lower.position.clone().normalize(), d1.clone().applyQuaternion(qi.copy(parentQ).invert()));
+  q.copy(parentQ).multiply(upper.quaternion);
+  lower.quaternion.setFromUnitVectors(end.position.clone().normalize(), d2.applyQuaternion(qi.copy(q).invert()));
+  return q.multiply(lower.quaternion).clone(); // orientación global del hueso inferior
+}
+
+export async function loadCharacter(base = '/welcome/') {
+  const loader = new T.TextureLoader();
+  const [buf, map, normalMap, roughnessMap] = await Promise.all([
+    fetch(base + 'avatar.bin').then(r => { if (!r.ok) throw new Error('avatar.bin ' + r.status); return r.arrayBuffer(); }),
+    loader.loadAsync(base + 'avatar-color.webp'), loader.loadAsync(base + 'avatar-normal.webp'), loader.loadAsync(base + 'avatar-roughness.webp'),
+  ]);
+  const {geometry, joints} = readRig(buf);
   map.colorSpace = T.SRGBColorSpace; map.anisotropy = 8;
   const material = new T.MeshStandardMaterial({map, normalMap, roughnessMap, roughness: 1, metalness: 0, envMapIntensity: .7});
 
@@ -45,42 +88,9 @@ export async function loadCharacter(base = '/welcome/') {
   geometry.morphAttributes.position = [new T.BufferAttribute(smileDelta, 3)];
   geometry.morphTargetsRelative = true;
 
-  const bone = {}, rest = {};
-  const bones = head.joints.map(j => {
-    const b = new T.Bone(); b.name = j.name; bone[j.name] = b; rest[j.name] = V(...j.pos);
-    if (j.parent < 0) b.position.copy(rest[j.name]);
-    else { const parent = head.joints[j.parent]; b.position.copy(rest[j.name]).sub(rest[parent.name]); bone[parent.name].add(b); }
-    return b;
-  });
-  const object = new T.Group(); object.add(bone.Hips); object.updateMatrixWorld(true);
-  const mesh = new T.SkinnedMesh(geometry, material);
-  mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
-  object.add(mesh); mesh.bind(new T.Skeleton(bones));
+  const {object, mesh, bone} = buildRig(geometry, joints, material);
   mesh.updateMorphTargets();
   const setSmile = v => { mesh.morphTargetInfluences[0] = v; };
-
-  // ---------- IK de dos huesos con vector polo (codo / rodilla) ----------
-  const tmp = {a: V(), to: V(), dir: V(), perp: V(), d1: V(), d2: V(), q: new T.Quaternion(), qi: new T.Quaternion()};
-  function solve(upper, lower, end, parentQ, target, pole, soft = 0) {
-    const {a, to, dir, perp, d1, d2, q, qi} = tmp;
-    a.setFromMatrixPosition(upper.matrixWorld);
-    const l1 = lower.position.length(), l2 = end.position.length();
-    to.subVectors(target, a);
-    let reach = to.length();
-    // Extensión suave: cerca del largo total la pierna frena de a poco en vez de trabarse recta de golpe.
-    const full = (l1 + l2) * .999, knee = full * (1 - soft);
-    if (soft && reach > knee) reach = knee + (full - knee) * (1 - Math.exp(-(reach - knee) / (full - knee)));
-    const dist = T.MathUtils.clamp(reach, Math.abs(l1 - l2) + .01, full);
-    dir.copy(to).normalize();
-    const angle = Math.acos(T.MathUtils.clamp((l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist), -1, 1));
-    perp.copy(pole).addScaledVector(dir, -pole.dot(dir)).normalize();
-    d1.copy(dir).multiplyScalar(Math.cos(angle)).addScaledVector(perp, Math.sin(angle));
-    d2.copy(dir).multiplyScalar(dist).addScaledVector(d1, -l1).normalize();
-    upper.quaternion.setFromUnitVectors(lower.position.clone().normalize(), d1.clone().applyQuaternion(qi.copy(parentQ).invert()));
-    q.copy(parentQ).multiply(upper.quaternion);
-    lower.quaternion.setFromUnitVectors(end.position.clone().normalize(), d2.applyQuaternion(qi.copy(q).invert()));
-    return q.multiply(lower.quaternion).clone(); // orientación global del hueso inferior
-  }
 
   // ---------- Coreografía: se arma una vez que la escena dice dónde está el logo ----------
   // Cada paso ocupa un período; el pie vuela del 10% al 90% y el resto es apoyo doble.
