@@ -61,9 +61,38 @@
     };
   }
 
+  // La foto del producto cambia con el mismo ritmo que el nombre: la nueva se
+  // descarga antes de entrar, así el cuadro nunca queda vacío ni salta de tamaño.
+  // Sin foto mapeada el cuadro se esconde y las cifras ocupan todo el ancho.
+  let fotoSerie = 0;
+  async function swapFoto(p) {
+    const foto = slot('foto');
+    const serie = ++fotoSerie;
+    const v = window.ttraImagenProducto ? await window.ttraImagenProducto(p).catch(() => null) : null;
+    if (serie !== fotoSerie) return;
+    const caja = foto.parentElement;
+    if (!v) { caja.hidden = true; board.classList.add('sin-foto'); return; }
+    if (foto.getAttribute('src') === v.src) { caja.hidden = false; board.classList.remove('sin-foto'); return; }
+    const nueva = new Image();
+    nueva.src = v.src;
+    try { await nueva.decode(); } catch { if (serie !== fotoSerie) return; caja.hidden = true; board.classList.add('sin-foto'); return; }
+    if (serie !== fotoSerie) return;
+    caja.hidden = false;
+    board.classList.remove('sin-foto');
+    const poner = () => { foto.src = v.src; };
+    if (reducedMotion.matches || !foto.animate || !foto.getAttribute('src')) { poner(); return; }
+    const sale = foto.animate([{ opacity: 1, scale: 1 }, { opacity: 0, scale: .96 }], { duration: 120, easing: 'ease' });
+    sale.onfinish = () => {
+      if (serie !== fotoSerie) return;
+      poner();
+      foto.animate([{ opacity: 0, scale: .96 }, { opacity: 1, scale: 1 }], { duration: 240, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+    };
+  }
+
   function showProduct({ seccion, producto: p }) {
     const precios = window.preciosDe ? window.preciosDe(p) : { dolares: p.usd, pesos: p.pesos };
     swapName(p.nombre);
+    swapFoto(p);
     slot('link').href = '/catalogo?' + new URLSearchParams({ categoria: seccion, buscar: '1', q: p.nombre });
     slot('link').setAttribute('aria-label', `Ver ${p.nombre} en el catálogo`);
     for (const key of PRICE_KEYS) flapTo(slot(key), precios[key] == null ? '—' : fmt(precios[key]));

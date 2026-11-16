@@ -267,7 +267,7 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
   html[data-modo="classic"] #ttra-hero-title .ttra-cat-word:last-child { font-size: calc(min(100cqi, var(--hero-copy-max)) / 3.53 * .985); }
   html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) { width: calc(min(100cqi, var(--hero-copy-max)) * .985); }
   html[data-modo="classic"] .ttra-pizarra { align-content: stretch; padding: 0; border-left: 2px solid var(--pz-gap); }
-  html[data-modo="classic"] .ttra-pz-destacado { grid-template-rows: auto 1fr; }
+  html[data-modo="classic"] .ttra-pz-destacado { grid-template-rows: 1fr; }
   html[data-modo="classic"] .ttra-pz-rows { grid-auto-rows: 1fr; }
   html[data-modo="classic"] .ttra-pz-product { padding-inline: 22px; font-size: 32px; min-height: 80px; }
   html[data-modo="classic"] .ttra-pz-rows > div { min-height: 78px; padding-inline: 22px; }
@@ -294,3 +294,48 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
 html[data-modo="classic"] .ttra-hero-copy > * { animation-name: ttra-pz-fade; }
 @keyframes ttra-pz-fade { from { opacity: 0; } to { opacity: 1; } }
 html.ttra-motion-ready:not(.ttra-motion-played) .ttra-hero-copy { transform: none; }
+
+/* ---- Foto del producto destacado ----
+   El tablero se reorganiza según SU ancho (no el de la pantalla): con lugar,
+   la foto es un cuadro a la izquierda y las cinco cifras quedan apiladas a la
+   derecha, cada placa sobre su número; angosto (celular), la foto es una
+   miniatura en el encabezado y las filas siguen igual que siempre. Siempre se
+   ven los cinco precios completos. */
+html[data-modo="classic"] .ttra-pz-destacado { container: pz / inline-size; }
+html[data-modo="classic"] .ttra-pz-tablero {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "foto prod" "rows rows";
+  background: var(--pz-gap);
+  gap: 0 2px;
+}
+html[data-modo="classic"] .ttra-pz-product { grid-area: prod; }
+html[data-modo="classic"] .ttra-pz-rows { grid-area: rows; margin-top: 2px; }
+html[data-modo="classic"] .ttra-pz-foto {
+  grid-area: foto; position: relative; overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, #34332f 0, #232321 55%, #1a1a18 100%);
+}
+html[data-modo="classic"] .ttra-pz-foto[hidden] { display: none; }
+html[data-modo="classic"] .ttra-pz-foto img {
+  position: absolute; inset: 7%; width: 86%; height: 86%;
+  object-fit: contain; user-select: none;
+  filter: drop-shadow(0 8px 10px #00000080);
+}
+html[data-modo="classic"] .ttra-pizarra.sin-foto .ttra-pz-tablero { grid-template-columns: minmax(0, 1fr); grid-template-areas: "prod" "rows"; }
+@media (max-width: 700px) {
+  html[data-modo="classic"] .ttra-pz-product { min-height: 84px; }
+}
+@container pz (min-width: 520px) {
+  html[data-modo="classic"] .ttra-pz-tablero { grid-template-columns: 50% minmax(0, 1fr); grid-template-areas: "prod prod" "foto rows"; }
+  html[data-modo="classic"] .ttra-pz-rows { margin-top: 2px; }
+  html[data-modo="classic"] .ttra-pz-foto img { inset: 6%; width: 88%; height: 88%; }
+  html[data-modo="classic"] .ttra-pz-rows > div { flex-direction: column; align-items: stretch; justify-content: center; gap: 5px; padding-inline: 18px; }
+  html[data-modo="classic"] .ttra-pz-rows .ttra-pz-plate { align-self: flex-start; font-size: 15px; }
+  html[data-modo="classic"] .ttra-pizarra .ttra-pz-rows .ttra-flap { align-self: flex-end; font-size: 40px; }
+  html[data-modo="classic"] .ttra-pizarra.sin-foto .ttra-pz-tablero { grid-template-columns: minmax(0, 1fr); grid-template-areas: "prod" "rows"; }
+  html[data-modo="classic"] .ttra-pizarra.sin-foto .ttra-pz-rows > div { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+@container pz (max-width: 300px) {
+  html[data-modo="classic"] .ttra-pz-product { font-size: 19px; gap: 8px; padding-inline: 12px; }
+}
