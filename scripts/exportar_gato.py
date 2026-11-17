@@ -1,11 +1,13 @@
-"""Convierte el gato (FBX estático de varios millones de triángulos, sin esqueleto) en una malla liviana
+"""Convierte un gato de Meshy (FBX estático de millones de triángulos, sin esqueleto) en una malla liviana
 con esqueleto y pesos para la bienvenida 3D.
 
-    python3 scripts/exportar_gato.py <carpeta con el .fbx y sus .png> web/static/welcome
+    python3 scripts/exportar_gato.py gato  <carpeta con el .fbx y sus .png> web/static/welcome
+    python3 scripts/exportar_gato.py fendi <carpeta con el .fbx y sus .png> web/static/welcome
 
 Pasos: suelda vértices, reduce la malla (scripts/simplificar_malla.mjs), arma UV nuevas y hornea ahí el
-color original, alinea al gato (mira a +Z, parado en y=0, alto = rodilla del avatar) y calcula esqueleto
-y pesos. Escribe gato.bin (mismo formato que avatar.bin) y gato-color.webp.
+color original, alinea al gato (mira a +Z, parado en y=0) y calcula esqueleto y pesos.
+Escribe <nombre>.bin (mismo formato que avatar.bin) y <nombre>-color.webp; si el gato tiene ojos
+marcados, también <nombre>-dormida.webp, la misma textura con los ojos cerrados.
 
 Necesita numpy, scipy, xatlas y Pillow, y node con el paquete meshoptimizer (npm i meshoptimizer).
 """
@@ -16,10 +18,52 @@ from scipy.spatial import cKDTree
 from scipy import ndimage
 Image.MAX_IMAGE_PIXELS = None
 
-src, out = sys.argv[1], sys.argv[2]
+# Cada gato: cómo alinearlo y su esqueleto, medidos sobre su malla.
+# Izquierda del gato = +X, mira a +Z. Las patas van de hombro/cadera a codo/rodilla, muñeca/garrón y dedos.
+GATOS = {
+    'gato': {  # blanco y naranja; alto = rodilla del avatar
+        'yaw': -1.194, 'escala': .30, 'dx': .04, 'alto': .48,
+        'joints': [
+            ('Hips', -1, (0, .255, -.13)), ('Spine', 0, (0, .265, -.01)), ('Chest', 1, (0, .255, .10)),
+            ('Neck', 2, (.008, .31, .15)), ('Head', 3, (.035, .36, .18)),
+            ('Tail1', 0, (-.008, .26, -.19)), ('Tail2', 5, (-.012, .31, -.255)), ('Tail3', 6, (-.016, .37, -.29)), ('Tail4', 7, (-.024, .425, -.285)),
+            ('FLUp', 2, (.045, .215, .10)), ('FLLow', 9, (.043, .125, .096)), ('FLPaw', 10, (.04, .04, .078)),
+            ('FRUp', 2, (-.035, .215, .135)), ('FRLow', 12, (-.036, .125, .126)), ('FRPaw', 13, (-.037, .04, .115)),
+            ('HLUp', 0, (.065, .24, -.165)), ('HLLow', 15, (.065, .15, -.155)), ('HLPaw', 16, (.063, .06, -.185)),
+            ('HRUp', 0, (-.055, .24, -.115)), ('HRLow', 18, (-.064, .15, -.065)), ('HRPaw', 19, (-.057, .06, -.115)),
+        ],
+        'cuerpo': [((0, .245, -.18), (0, .26, -.07)), ((0, .26, -.07), (0, .255, .04)), ((0, .25, .04), (0, .255, .13)), .09],
+        'cuello': ((.008, .30, .145), (.03, .345, .175), .06),
+        'cabeza': [((.035, .365, .185), (.085, .36, .225), .07), ((.0, .40, .16), (-.02, .46, .15), .045), ((.07, .40, .14), (.09, .46, .13), .045)],
+        'cola': ((-.03, .455, -.245), .045),
+        'dedos': {'FL': (.045, .012, .10), 'FR': (-.037, .012, .15), 'HL': (.065, .012, -.16), 'HR': (-.065, .012, -.085)},
+        'patas_r': (.042, .034),
+    },
+    'fendi': {  # carey de pelo largo; la cabeza viene girada 66° a su derecha y la cola colgando
+        'yaw': .9983, 'alto': .46, 'dx': -.035,
+        'joints': [
+            ('Hips', -1, (0, .24, -.12)), ('Spine', 0, (0, .25, -.01)), ('Chest', 1, (0, .245, .10)),
+            ('Neck', 2, (-.01, .29, .155)), ('Head', 3, (-.035, .35, .21)),
+            ('Tail1', 0, (-.02, .30, -.205)), ('Tail2', 5, (-.03, .22, -.235)), ('Tail3', 6, (-.04, .14, -.24)), ('Tail4', 7, (-.05, .07, -.25)),
+            ('FLUp', 2, (.045, .21, .13)), ('FLLow', 9, (.03, .12, .14)), ('FLPaw', 10, (.035, .04, .165)),
+            ('FRUp', 2, (-.045, .21, .11)), ('FRLow', 12, (-.03, .12, .12)), ('FRPaw', 13, (-.04, .04, .13)),
+            ('HLUp', 0, (.06, .23, -.16)), ('HLLow', 15, (.07, .13, -.105)), ('HLPaw', 16, (.06, .055, -.14)),
+            ('HRUp', 0, (-.055, .23, -.14)), ('HRLow', 18, (-.06, .13, -.095)), ('HRPaw', 19, (-.055, .055, -.125)),
+        ],
+        'cuerpo': [((0, .24, -.21), (0, .25, -.07)), ((0, .25, -.07), (0, .25, .04)), ((0, .245, .04), (0, .25, .14)), .11],
+        'cuello': ((-.01, .29, .155), (-.035, .35, .21), .065),
+        'cabeza': [((-.04, .36, .215), (-.11, .335, .245), .065), ((-.05, .41, .262), (-.045, .46, .27), .035), ((-.08, .41, .195), (-.085, .46, .19), .035)],
+        'cola': ((-.06, .0, -.26), .06),
+        'dedos': {'FL': (.041, .01, .195), 'FR': (-.046, .01, .16), 'HL': (.058, .01, -.11), 'HR': (-.055, .01, -.09)},
+        'patas_r': (.045, .036),
+        # Ojos (izquierdo, derecho) y hacia dónde mira la cabeza en reposo: para pintar los ojos cerrados.
+        'ojos': ((-.0809, .3684, .266), (-.1029, .3649, .2169)),
+    },
+}
+
+nombre, src, out = sys.argv[1], sys.argv[2], sys.argv[3]
+G = GATOS[nombre]
 TRIANGULOS = 12000
-ALTO = .48                         # altura total: la rodilla del avatar
-YAW, ESCALA, DX = -1.194, .30, .04  # el modelo viene en diagonal y corrido del eje
 
 # ---- 1. Malla original ----
 d = open(glob.glob(src + '/*.fbx')[0], 'rb').read()
@@ -78,41 +122,65 @@ dist, near = cKDTree(hi_pos).query(where[mask], k=4, workers=-1)
 w = 1 / (dist + 1e-5)
 color = np.zeros((H, W, 3), np.float32); color[mask] = (hi_col[near] * w[..., None]).sum(1) / w.sum(1, keepdims=True)
 _, (iy, ix) = ndimage.distance_transform_edt(~mask, return_indices=True)   # rellena alrededor de cada isla
-Image.fromarray(np.clip(color[iy, ix], 0, 255).astype(np.uint8)).resize((1024, 1024), Image.LANCZOS).save(out + '/gato-color.webp', quality=86, method=6)
+color = color[iy, ix]
+save = (lambda img, file: Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).resize((1024, 1024), Image.LANCZOS).save(f'{out}/{file}', quality=86, method=6))
+save(color, f'{nombre}-color.webp')
 
 # ---- 4. Alineación: mira a +Z, izquierda del gato = +X, parado en y=0 ----
-cs, sn = np.cos(-YAW), np.sin(-YAW)
-A = np.stack([pos[:, 0] * cs + pos[:, 2] * sn, pos[:, 1] - pos[:, 1].min(), -pos[:, 0] * sn + pos[:, 2] * cs], 1) * ESCALA
-A[:, 0] += DX
-assert abs(A[:, 1].max() - ALTO) < .01, A[:, 1].max()
+y_min, y_rango = pos[:, 1].min(), np.ptp(pos[:, 1])
+escala = G.get('escala') or G['alto'] / y_rango
+cs, sn = np.cos(-G['yaw']), np.sin(-G['yaw'])
+def alinear(Q):
+    Q = Q.reshape(-1, 3).astype(np.float64)
+    R = np.stack([Q[:, 0] * cs + Q[:, 2] * sn, Q[:, 1] - y_min, -Q[:, 0] * sn + Q[:, 2] * cs], 1) * escala
+    R[:, 0] += G['dx']
+    return R
+A = alinear(pos)
+assert abs(A[:, 1].max() - G['alto']) < .01, A[:, 1].max()
+
+# ---- 5. Ojos cerrados: se pinta párpado (pelo de alrededor) y la línea del ojo cerrado ----
+if 'ojos' in G:
+    L, R = (np.array(o) for o in G['ojos'])
+    u = (L - R) / np.linalg.norm(L - R)                    # a lo ancho de la cara
+    f = np.cross(u, (0, 1, 0)); f /= np.linalg.norm(f)     # hacia adonde mira
+    v = np.cross(f, u)                                     # hacia arriba de la cara
+    P3 = alinear(where).reshape(H, W, 3)
+    dormida = color.copy()
+    for c in (L, R):
+        rel = P3 - c
+        a, b, h = rel @ u, rel @ v, rel @ f
+        RX, RY = .0125, .0095
+        r = np.sqrt((a / RX) ** 2 + (b / RY) ** 2) + 9 * (np.abs(h) > .014)
+        ring = (r > 1.25) & (r < 1.8)
+        fur = np.median(color[ring], axis=0)
+        cover = np.clip((1.15 - r) / .25, 0, 1)[..., None]            # párpado con borde suave
+        lid = fur * (.88 + .12 * np.clip(b / RY, -1, 1))[..., None]   # un poco más oscuro abajo, como sombra
+        dormida = dormida * (1 - cover) + lid * cover
+        line = np.exp(-((b - (-.0016 + .0042 * (a / RX) ** 2)) / .0009) ** 2) * (np.abs(a) < RX * .95) * cover[..., 0]
+        dormida = dormida * (1 - .85 * line[..., None]) + np.array([22, 16, 13]) * .85 * line[..., None]
+    save(dormida, f'{nombre}-dormida.webp')
+
 tri = tri.astype(np.int64)
 fn = np.cross(A[tri[:, 1]] - A[tri[:, 0]], A[tri[:, 2]] - A[tri[:, 0]])   # normales suaves por posición soldada
 Nw = np.zeros((vmap.max() + 1, 3))
 for c in range(3): np.add.at(Nw, vmap[tri[:, c]], fn)
 N = Nw[vmap]; N /= np.linalg.norm(N, axis=1, keepdims=True) + 1e-12
 
-# ---- 5. Esqueleto (medido sobre la malla; la pose de reposo es el gato parado con la cabeza girada) ----
-J = [  # nombre, padre, posición
-    ('Hips', -1, (0, .255, -.13)), ('Spine', 0, (0, .265, -.01)), ('Chest', 1, (0, .255, .10)),
-    ('Neck', 2, (.008, .31, .15)), ('Head', 3, (.035, .36, .18)),
-    ('Tail1', 0, (-.008, .26, -.19)), ('Tail2', 5, (-.012, .31, -.255)), ('Tail3', 6, (-.016, .37, -.29)), ('Tail4', 7, (-.024, .425, -.285)),
-    ('FLUp', 2, (.045, .215, .10)), ('FLLow', 9, (.043, .125, .096)), ('FLPaw', 10, (.04, .04, .078)),
-    ('FRUp', 2, (-.035, .215, .135)), ('FRLow', 12, (-.036, .125, .126)), ('FRPaw', 13, (-.037, .04, .115)),
-    ('HLUp', 0, (.065, .24, -.165)), ('HLLow', 15, (.065, .15, -.155)), ('HLPaw', 16, (.063, .06, -.185)),
-    ('HRUp', 0, (-.055, .24, -.115)), ('HRLow', 18, (-.064, .15, -.065)), ('HRPaw', 19, (-.057, .06, -.115)),
-]
+# ---- 6. Esqueleto y pesos: cada hueso influye según la distancia a sus segmentos, en radios del hueso ----
+J = G['joints']
 B = {n: i for i, (n, _, _) in enumerate(J)}
 jp = lambda n: np.array(J[B[n]][2], float)
-# Cada hueso influye según la distancia a sus segmentos, medida en radios del hueso (cuerpo grueso, patas finas).
+*tramos, r_cuerpo = G['cuerpo']
+cola_fin, r_cola = G['cola']
 SEG = {
-    'Hips': [((0, .245, -.18), (0, .26, -.07), .09)], 'Spine': [((0, .26, -.07), (0, .255, .04), .09)], 'Chest': [((0, .25, .04), (0, .255, .13), .09)],
-    'Neck': [((.008, .30, .145), (.03, .345, .175), .06)],
-    'Head': [((.035, .365, .185), (.085, .36, .225), .07), ((.0, .40, .16), (-.02, .46, .15), .045), ((.07, .40, .14), (.09, .46, .13), .045)],  # cráneo y orejas
-    'Tail1': [(jp('Tail1'), jp('Tail2'), .045)], 'Tail2': [(jp('Tail2'), jp('Tail3'), .045)], 'Tail3': [(jp('Tail3'), jp('Tail4'), .045)], 'Tail4': [(jp('Tail4'), (-.03, .455, -.245), .045)],
+    'Hips': [(*tramos[0], r_cuerpo)], 'Spine': [(*tramos[1], r_cuerpo)], 'Chest': [(*tramos[2], r_cuerpo)],
+    'Neck': [G['cuello']], 'Head': G['cabeza'],
+    'Tail1': [(jp('Tail1'), jp('Tail2'), r_cola)], 'Tail2': [(jp('Tail2'), jp('Tail3'), r_cola)], 'Tail3': [(jp('Tail3'), jp('Tail4'), r_cola)], 'Tail4': [(jp('Tail4'), cola_fin, r_cola)],
 }
-for leg, toe in (('FL', (.045, .012, .10)), ('FR', (-.037, .012, .15)), ('HL', (.065, .012, -.16)), ('HR', (-.065, .012, -.085))):
+r_muslo, r_pata = G['patas_r']
+for leg, toe in G['dedos'].items():
     up, lo, paw = jp(leg + 'Up'), jp(leg + 'Low'), jp(leg + 'Paw')
-    SEG[leg + 'Up'] = [(up + (lo - up) * .3, lo, .042)]; SEG[leg + 'Low'] = [(lo, paw, .034)]; SEG[leg + 'Paw'] = [(paw, toe, .034)]
+    SEG[leg + 'Up'] = [(up + (lo - up) * .3, lo, r_muslo)]; SEG[leg + 'Low'] = [(lo, paw, r_pata)]; SEG[leg + 'Paw'] = [(paw, toe, r_pata)]
 def seg_dist(Q, a, b):
     a, b = np.array(a, float), np.array(b, float); ab = b - a
     t = np.clip(((Q - a) @ ab) / (ab @ ab), 0, 1)
@@ -133,5 +201,5 @@ for name, arr in (('position', A.astype('<f4')), ('normal', np.round(N * 127).as
     layout[name] = [off, arr.size]; buffers.append(raw); off += len(raw)
 head = json.dumps({'vertices': len(A), 'layout': layout, 'joints': [{'name': n, 'parent': p, 'pos': list(q)} for n, p, q in J]}).encode()
 head += b' ' * (-len(head) % 4)
-open(out + '/gato.bin', 'wb').write(struct.pack('<I', len(head)) + head + b''.join(buffers))
-print('vértices', len(A), 'triángulos', len(tri), 'islas de UV', atlas.chart_count)
+open(f'{out}/{nombre}.bin', 'wb').write(struct.pack('<I', len(head)) + head + b''.join(buffers))
+print(nombre, 'vértices', len(A), 'triángulos', len(tri), 'islas de UV', atlas.chart_count)
