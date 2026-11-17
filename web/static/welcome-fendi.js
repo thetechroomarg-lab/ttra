@@ -18,7 +18,8 @@ const pulse = (t, a, b, fadeIn = .15, fadeOut = .15) => smooth((t - a) / fadeIn)
 const FEET = ['FL', 'FR', 'HL', 'HR'];
 const HEAD_REST_YAW = -1.15; // la malla trae la cabeza girada a su derecha
 // Momentos (segundos de la escena). Paso frente a su punta del escritorio a los 1,45 y me apoyo en el logo a los 4,7.
-const WAKE = .75, RISE = 1.35, DESK_WALK = 1.8, JUMP = 2.2, TROT = 2.5, RUB = 4.95, STOP = 7.7;
+// BEHIND: llega detrás de mi pierna izquierda; STOP: termina de pasar por detrás; REAR: ya parada en dos patas.
+const WAKE = .75, RISE = 1.35, DESK_WALK = 1.8, JUMP = 2.2, TROT = 2.5, BEHIND = 5.0, STOP = 6.55, REAR = 7.05;
 
 // Recorrido suave por puntos (Catmull-Rom en planta) con la velocidad dada por claves [t, v]:
 // se reescala para llegar justo al final del recorrido en el último instante.
@@ -78,7 +79,7 @@ export async function loadFendi(base = '/welcome/') {
 
   // ---------- Coreografía ----------
   let plan = null;
-  function setStage({bed, deskWalk, landing, leg, watch}) {
+  function setStage({bed, deskWalk, landing, leg, legR, watch}) {
     const edge = deskWalk[deskWalk.length - 1];
     const plants = {FL: [], FR: [], HL: [], HR: []};
     // Una marca nueva cierra la anterior si quedó abierta: la pata despega `swing` antes de volver a pisar.
@@ -133,29 +134,42 @@ export async function loadFendi(base = '/welcome/') {
     plant('FL', LAND_F, Infinity, landing, jumpYaw, LANDED.FL, K, LAND_F - LIFT_F); plant('FR', LAND_F + .03, Infinity, landing, jumpYaw, LANDED.FR, K, LAND_F + .03 - LIFT_F - .02);
     plant('HL', LAND_H, Infinity, landing, jumpYaw, LANDED.HL, K, LAND_H - LIFT_H); plant('HR', LAND_H + .03, Infinity, landing, jumpYaw, LANDED.HR, K, LAND_H + .03 - LIFT_H - .02);
 
-    // 5. Me sigue al trote rodeándome por mi derecha y pasa caminando por delante de mis pies,
-    //    pegada a las zapatillas, hasta quedar frente a mi pie izquierdo frotando la cabeza hacia mi pierna.
-    //    Entre mi pierna y el logo no entra (es del ancho de ella), por eso pasa por adelante: no atraviesa nada.
-    const at = (dx, dz) => V(leg.x + dx, 0, leg.z + dz);
-    // Dos tramos con horario propio: el trote termina delante de mi pie derecho justo en RUB, ya con mis pies quietos.
-    const front = at(-.78, .36);
-    const trotPath = route([landing, landing.clone().addScaledVector(fwdOf(jumpYaw), .35).setY(0), V(-1.05, 0, -.85), V(-.75, 0, -.2), V(-.62, 0, .2), front],
-      [[TROT, 0], [TROT + .25, 1.4], [RUB - .4, 1.3], [RUB, .35]]);
-    const rubPath = route([front, at(-.55, .4), at(-.3, .39), at(-.05, .35)],
-      [[RUB, .35], [RUB + .6, .3], [STOP - .5, .28], [STOP, 0]]);
+    // 5. Me sigue al trote por atrás, pasa caminando por detrás de mis piernas (de la izquierda a la derecha),
+    //    sale por el costado de mi pierna derecha y se para en dos patas apoyando las manos en ella.
+    const R = legR.ankle, at = (dx, dz) => V(leg.x + dx, 0, leg.z + dz), atR = (dx, dz) => V(R.x + dx, 0, R.z + dz);
+    // Punto de mi pierna derecha a una altura dada (entre tobillo y rodilla, o rodilla y cadera).
+    const legAt = y => { const [a, b] = y < legR.knee.y ? [legR.ankle, legR.knee] : [legR.knee, legR.hip]; return a.clone().lerp(b, (y - a.y) / (b.y - a.y)); };
+    // Dos tramos con horario propio: el trote termina detrás de mi pierna izquierda justo en BEHIND.
+    const behindL = at(.18, -.36), walkEnd = atR(-.5, 0);
+    const trotPath = route([landing, landing.clone().addScaledVector(fwdOf(jumpYaw), .35).setY(0), V(-1.05, 0, -.95), V(-.3, 0, -1.05), V(.35, 0, -.85), at(.25, -.58), behindL],
+      [[TROT, 0], [TROT + .25, 1.4], [BEHIND - .4, 1.3], [BEHIND, .5]]);
+    const walkPath = route([behindL, at(-.02, -.32), atR(.0, -.32), atR(-.25, -.31), atR(-.5, -.24), atR(-.66, -.08), atR(-.6, .01), walkEnd],
+      [[BEHIND, .5], [BEHIND + .4, .7], [STOP - .45, .6], [STOP, 0]]);
     const floorPath = {
-      length: trotPath.length + rubPath.length,
-      s: t => t < RUB ? trotPath.s(t) : trotPath.length + rubPath.s(t),
-      atS: (d, out) => d < trotPath.length ? trotPath.atS(d, out) : rubPath.atS(d - trotPath.length, out),
+      length: trotPath.length + walkPath.length,
+      s: t => t < BEHIND ? trotPath.s(t) : trotPath.length + walkPath.s(t),
+      atS: (d, out) => d < trotPath.length ? trotPath.atS(d, out) : walkPath.atS(d - trotPath.length, out),
       at(t, out) { return this.atS(this.s(t), out); },
-      speed: t => t < RUB ? trotPath.speed(t) : rubPath.speed(t),
+      speed: t => t < BEHIND ? trotPath.speed(t) : walkPath.speed(t),
     };
     floorPath.y = 0;
-    gaitSteps(floorPath, TROT, RUB - .15, {offset: {HL: .02, FR: .04, HR: .52, FL: .54}, duty: .45, stride: v => .2 + .3 * v});
-    const end = gaitSteps(floorPath, RUB - .15, STOP, {offset: {HR: .02, FR: .27, HL: .52, FL: .77}, duty: .62, stride: v => .2 + .25 * v}, false);
+    gaitSteps(floorPath, TROT, BEHIND - .15, {offset: {HL: .02, FR: .04, HR: .52, FL: .54}, duty: .45, stride: v => .2 + .3 * v});
+    const end = gaitSteps(floorPath, BEHIND - .15, STOP, {offset: {HR: .02, FR: .27, HL: .52, FL: .77}, duty: .62, stride: v => .2 + .25 * v}, false);
     settle(end, 0, STOP);
-    // Mientras se frota en el lugar, amasa un poco con las manos.
-    [8.1, 8.6, 9.1].forEach((t, i) => plant(i % 2 ? 'FR' : 'FL', t, Infinity, end.o, end.yaw, GAIT[i % 2 ? 'FR' : 'FL'], {lift: .03}, .14));
+    // 6. Se para: da un paso adelante con las patas, se sienta sobre ellas y apoya las manos en mi pierna.
+    const pawY = [.33, .39], contact = legAt(.36);
+    const yawUp = Math.atan2(contact.x - end.o.x, contact.z - end.o.z), toward = fwdOf(yawUp);
+    // Pelvis a 33 cm del eje de la pierna; el pecho sube por encima y queda a 27 cm.
+    const pelvisAt = contact.clone().setY(0).addScaledVector(toward, -.33), standO = pelvisAt.clone().addScaledVector(toward, -PELVIS_Z);
+    const chestO = contact.clone().setY(0).addScaledVector(toward, -.27 - CHEST_Z);
+    plant('HR', STOP + .2, Infinity, standO, yawUp, V(-.05, 0, -.13), {key: true, lift: .05}, .2);
+    plant('HL', STOP + .32, Infinity, standO, yawUp, V(.05, 0, -.13), {key: true, lift: .05}, .2);
+    // Las manos: despegan al levantar el pecho y se apoyan en la canilla, una un poco más arriba que la otra.
+    [['FR', .5, pawY[0], -.035], ['FL', .62, pawY[1], .035]].forEach(([f, d, y, side]) => {
+      plant(f, STOP + d, Infinity, chestO, yawUp, V(0, 0, 0), {key: true, lift: .08, pitch: -1.1}, .3);
+      const s = plants[f][plants[f].length - 1];
+      s.pos = legAt(y).addScaledVector(toward, -.1).addScaledVector(leftOf(yawUp), side).setY(y - PAW_Y[f]);
+    });
 
     // Cintura escapular y pelvis: cada una pasa por encima de sus apoyos.
     const girdle = feet => {
@@ -177,7 +191,7 @@ export async function loadFendi(base = '/welcome/') {
         pelvisKeys.push({t, x: o.x, z: o.z, yaw: b.yaw});
       }
     };
-    along(deskPath, DESK_WALK + .04, JUMP - .12); along(floorPath, TROT + .04, STOP + .3);
+    along(deskPath, DESK_WALK + .04, JUMP - .12); along(floorPath, TROT + .04, STOP);
     const unwrap = keys => { keys.sort((a, b) => a.t - b.t); keys.reduce((p, k) => { k.yaw = p.yaw + wrap(k.yaw - p.yaw); return k; }); return keys; };
 
     const D = bed.y, k = list => curve(list);
@@ -186,23 +200,24 @@ export async function loadFendi(base = '/welcome/') {
       chest: track(unwrap(chestKeys)), pelvis: track(unwrap(pelvisKeys)),
       // Alturas: echada, se sienta en dos tiempos, camina, se agazapa, salta y amortigua, trota.
       chestY: k([[0, D + .125], [RISE, D + .125], [RISE + .2, D + .215], [RISE + .45, D + .235], [JUMP - .15, D + .23], [JUMP, D + .17], [LIFT_F, D + .22],
-        [JUMP + .2, D + .2], [JUMP + .3, D + .02], [LAND_F, .19], [LAND_F + .12, .2], [TROT + .3, .225], [RUB, .23], [STOP, .232]]),
+        [JUMP + .2, D + .2], [JUMP + .3, D + .02], [LAND_F, .19], [LAND_F + .12, .2], [TROT + .3, .225], [BEHIND, .23], [STOP + .25, .232],
+        [STOP + .45, .3], [REAR - .1, .4], [REAR, .41]]),
       pelvisY: k([[0, D + .115], [RISE + .2, D + .118], [RISE + .5, D + .232], [JUMP - .15, D + .23], [JUMP, D + .15], [LIFT_H, D + .27], [JUMP + .24, D + .23],
-        [JUMP + .33, D + .08], [JUMP + .41, .48], [LAND_H, .2], [LAND_H + .12, .2], [TROT + .3, .222], [RUB, .232], [STOP, .236]]),
+        [JUMP + .33, D + .08], [JUMP + .41, .48], [LAND_H, .2], [LAND_H + .12, .2], [TROT + .3, .222], [BEHIND, .232], [STOP + .2, .23],
+        [STOP + .45, .21], [REAR, .195]]),
       breathe: t => (1 - smooth((t - RISE) / .3)) * .005 * Math.sin(t * TAU * .32),
-      trot: t => smooth((t - TROT - .1) / .2) * (1 - smooth((t - RUB + .3) / .3)),
-      // Inclinación hacia mi pierna mientras se frota (positivo: hacia su derecha).
-      roll: t => -.07 * smooth((t - RUB) / .4), // se recuesta hacia mis pies (a su izquierda)
+      trot: t => smooth((t - TROT - .1) / .2) * (1 - smooth((t - BEHIND + .3) / .3)),
+      roll: t => 0,
       awake: t => smooth((t - WAKE) / .45),
       // Pestañeos: abre a los 1,35, parpadea dormida, y al final me mira con un pestañeo lento.
-      eyesClosed: t => t < WAKE || (t > WAKE + .28 && t < WAKE + .38) || (t > 8.2 && t < 8.55),
+      eyesClosed: t => t < WAKE || (t > WAKE + .28 && t < WAKE + .38) || (t > REAR + .82 && t < REAR + .95),
       // Cabeza: dormida apoyada; despierta me mira, mira el piso antes de saltar, mira adelante al trotar.
-      lookMan: t => smooth((t - WAKE) / .4) * (1 - smooth((t - DESK_WALK - .1) / .3)) + .5 * pulse(t, TROT + .6, RUB - .3, .3, .3) + pulse(t, 8.0, 9.6, .3, .1),
-      lookLeg: t => pulse(t, RUB, 8.1, .3, .3),
+      lookMan: t => smooth((t - WAKE) / .4) * (1 - smooth((t - DESK_WALK - .1) / .3)) + .5 * pulse(t, TROT + .6, BEHIND - .3, .3, .3) + pulse(t, STOP + .35, 12, .4, .1),
+      lookLeg: t => 0,
       lookDown: t => pulse(t, JUMP - .3, JUMP + .15, .2, .15),
       tail: t => ({ // ángulos de la cola: levantada al andar, de contrapeso en el salto, enroscada dormida
         sleep: 1 - smooth((t - RISE - .1) / .5), jump: pulse(t, JUMP - .05, LAND_H + .15, .15, .25),
-        quiver: pulse(t, RUB + .4, 9.6, .4, .1),
+        quiver: pulse(t, REAR, 12, .4, .1),
       }),
     };
   }
@@ -213,7 +228,7 @@ export async function loadFendi(base = '/welcome/') {
     const foot = FEET[index], list = plan.plants[foot], out = footOut[index];
     let i = 0; while (i < list.length - 1 && t >= list[i + 1].t0) i++;
     const a = list[i], b = list[i + 1];
-    if (!b || t <= a.t1) { out.pos.copy(a.pos); out.yaw = a.yaw; out.pitch = 0; return out; }
+    if (!b || t <= a.t1) { out.pos.copy(a.pos); out.yaw = a.yaw; out.pitch = a.pitch ?? 0; return out; }
     const w = (t - a.t1) / (b.t0 - a.t1), drop = a.pos.y - b.pos.y > .3;
     // Al bajar del escritorio la pata sale hacia adelante y recién después cae.
     const wh = drop ? smooth(w / .55) : .5 - .5 * Math.cos(Math.PI * w), wv = drop ? smooth((w - .2) / .8) : wh;
@@ -221,7 +236,7 @@ export async function loadFendi(base = '/welcome/') {
     out.pos.copy(a.pos).lerp(b.pos, wh);
     out.pos.y = lerp(a.pos.y, b.pos.y, wv) + (b.lift ?? .02 + .1 * Math.min(reach, .4)) * arch;
     out.yaw = a.yaw + wrap(b.yaw - a.yaw) * smooth(w);
-    out.pitch = (foot[0] === 'F' ? .9 : .5) * arch * (drop ? .3 : 1);
+    out.pitch = (foot[0] === 'F' ? .9 : .5) * arch * (drop ? .3 : 1) + lerp(a.pitch ?? 0, b.pitch ?? 0, smooth(w));
     return out;
   }
 
@@ -273,7 +288,7 @@ export async function loadFendi(base = '/welcome/') {
     const blendTo = (w, a) => { if (w <= 0) return; yaw = lerp(yaw, T.MathUtils.clamp(a.yaw, -1.3, 1.3), w); pitch = lerp(pitch, T.MathUtils.clamp(a.pitch, -.9, .7), w); };
     if (plan.watch) blendTo(Math.min(1, plan.lookMan(t)), aim(look.setFromMatrixPosition(plan.watch.matrixWorld), lookA));
     // Frotándose: la mejilla contra la canilla, con empujoncitos.
-    const rub = plan.lookLeg(t), nudge = Math.sin((t - RUB) * TAU * 1.3);
+    const rub = plan.lookLeg(t), nudge = Math.sin((t - STOP) * TAU * 1.3);
     // Apunta a la superficie de la canilla del lado de ella, no al centro de la pierna.
     look.set(headPos.x - plan.leg.x, 0, headPos.z - plan.leg.z).setLength(.11).add(plan.leg).setY(.3 + .03 * nudge);
     blendTo(rub, aim(look, lookB));

@@ -307,7 +307,8 @@ export async function createScene(host) {
     return {mesh, top: geo.boundingBox.max.y, twist: twists[i]};
   });
   const dotR = LOGO.dot[2] * K, dotY = (baselinePx - LOGO.dot[1]) * K;
-  const dot = new T.Mesh(new T.CylinderGeometry(dotR, dotR, LOGO_DEPTH, 48), dotMat);
+  // Canto del punto en el mismo gris que las letras; rojo solo en las caras (grupos del cilindro: lado, tapa, tapa).
+  const dot = new T.Mesh(new T.CylinderGeometry(dotR, dotR, LOGO_DEPTH, 48), [sideMat, dotMat, dotMat]);
   dot.rotation.x = Math.PI / 2; dot.position.set((LOGO.dot[0] - centerPx) * K, dotY, 0); dot.castShadow = dot.receiveShadow = true; logo.add(dot);
 
   // ---------- Iluminación ----------
@@ -347,13 +348,16 @@ export async function createScene(host) {
     desk.updateWorldMatrix(true, false);
     const onDesk = (x, z) => desk.localToWorld(new T.Vector3(x, .755, z)); // punta izquierda del escritorio, a la vista (la silla tapa el centro)
     fendi.setStage({bed: onDesk(-1.02, .13), deskWalk: [onDesk(-.9, .135), onDesk(-.82, .18), onDesk(-.8, .24)],
-      landing: desk.localToWorld(new T.Vector3(-.65, 0, .95)), leg: new T.Vector3().setFromMatrixPosition(character.bone.LFoot.matrixWorld).setY(0), watch: character.bone.Head});
+      landing: desk.localToWorld(new T.Vector3(-.65, 0, .95)), leg: new T.Vector3().setFromMatrixPosition(character.bone.LFoot.matrixWorld).setY(0), watch: character.bone.Head,
+      legR: Object.fromEntries([['hip', 'RUpLeg'], ['knee', 'RLeg'], ['ankle', 'RFoot']].map(([k, b]) => [k, new T.Vector3().setFromMatrixPosition(character.bone[b].matrixWorld)]))});
   }
   const HAS_CHARACTER = !!character;
 
   // ---------- Cámara: encuadre calculado según el aspecto, no un canvas achicado ----------
   const tanHalf = Math.tan(T.MathUtils.degToRad(camera.fov / 2));
   const logoHalf = (Math.max(...xs) - Math.min(...xs)) * K / 2;
+  // Zona de los tres protagonistas al final (metros sobre el piso, en el plano del logo).
+  const ZOOM_START = 6.0, CAST = {cx: .46, cy: .88, w: 2.4, h: 1.9};
   function frame(t) {
     const aspect = camera.aspect, portrait = aspect < 1;
     // Cuadro final: logo (y personaje a su izquierda) completo con aire alrededor.
@@ -367,7 +371,12 @@ export async function createScene(host) {
     // El encuadre llega antes de que el logo termine de emerger, así nunca queda cortado.
     const settle = timeline.logoStart + (portrait ? .5 : 1.5);
     const e = smooth(t / settle), drift = Math.max(0, t - settle) * .01;
-    const cx = lerp(start.cx, end.cx, e), cy = lerp(start.cy, end.cy, e), w = lerp(start.w, end.w, e), h = lerp(start.h, end.h, e);
+    let cx = lerp(start.cx, end.cx, e), cy = lerp(start.cy, end.cy, e), w = lerp(start.w, end.w, e), h = lerp(start.h, end.h, e);
+    // Celular vertical: al final se acerca hasta encuadrar justo a los tres (Fendi a mi derecha, yo y el gato arriba del logo).
+    if (portrait && HAS_CHARACTER) {
+      const z = smooth((t - ZOOM_START) / 1.3);
+      cx = lerp(cx, CAST.cx, z); cy = lerp(cy, CAST.cy, z); w = lerp(w, CAST.w, z); h = lerp(h, CAST.h, z);
+    }
     const dist = Math.max(h / (2 * tanHalf), w / (2 * tanHalf * aspect)) * (1 - drift);
     camera.position.set(cx + lerp(-.14, -.05, e) * dist, lerp(start.eye, end.eye, e), dist);
     camera.lookAt(cx, cy, 0);
