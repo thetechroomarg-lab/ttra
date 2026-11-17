@@ -17,7 +17,7 @@ const RUN_SPEED = 3, STRIDE_TIME = .28, BRAKE_TIME = .42; // galope corto: ~3,5 
 const RUN_Y = .215, HEAD_REST_YAW = .85; // la malla trae la cabeza girada hacia su izquierda
 
 // Curva suave por claves [t, valor] (Hermite con tangentes por diferencias; plana en los extremos).
-function curve(keys) {
+export function curve(keys) {
   const n = keys.length;
   const m = keys.map((k, i) => i === 0 || i === n - 1 ? 0 : (keys[i + 1][1] - keys[i - 1][1]) / (keys[i + 1][0] - keys[i - 1][0]));
   return t => {
@@ -29,7 +29,7 @@ function curve(keys) {
   };
 }
 // Trayectoria en planta por claves {t, x, z, yaw}: lineal entre claves y promediada para quitar quiebres.
-function track(keys) {
+export function track(keys) {
   keys.sort((a, b) => a.t - b.t);
   const lin = (t, out) => {
     const last = keys.length - 1;

@@ -4,6 +4,7 @@ import * as T from './vendor/three/three.module.min.js';
 import LOGO from './welcome-logo.js';
 import {loadCharacter} from './welcome-character.js';
 import {loadCat} from './welcome-cat.js';
+import {loadFendi} from './welcome-fendi.js';
 import {drawEditor, drawStore, drawMovie, POSTERS} from './welcome-decor.js';
 
 const clamp01 = v => Math.min(1, Math.max(0, v));
@@ -321,14 +322,16 @@ export async function createScene(host) {
 
   // ---------- Personaje (opcional: si no carga, la bienvenida sigue sin él) ----------
   const logoHalfW = (Math.max(...xs) - Math.min(...xs)) * K / 2;
-  // El gato acompaña al personaje: si su malla no carga, la secuencia corre igual sin él.
-  let character = null, cat = null;
+  // Los gatos acompañan al personaje: si la malla de alguno no carga, la secuencia corre igual sin él.
+  let character = null, cat = null, fendi = null;
   try {
-    const catLoad = loadCat().catch(error => { console.warn('[bienvenida] sin gato:', error.message); return null; });
-    [character, cat] = await Promise.race([Promise.all([loadCharacter(), catLoad]), new Promise((_, no) => setTimeout(() => no(new Error('avatar: tiempo agotado')), 7000))]);
+    const optional = (load, name) => load().catch(error => { console.warn(`[bienvenida] sin ${name}:`, error.message); return null; });
+    [character, cat, fendi] = await Promise.race([Promise.all([loadCharacter(), optional(loadCat, 'gato'), optional(loadFendi, 'Fendi')]),
+      new Promise((_, no) => setTimeout(() => no(new Error('avatar: tiempo agotado')), 7000))]);
     scene.add(character.object);
     character.object.traverse(o => { if (o.material) o.material.envMapIntensity = .6; });
     if (cat) scene.add(cat.object);
+    if (fendi) { scene.add(fendi.object); fendi.maps.forEach(map => renderer.initTexture(map)); } // ojos abiertos y cerrados ya en la GPU
   } catch (error) { console.warn('[bienvenida] sin personaje:', error.message); }
   const timeline = makeTimeline(character);
   logo.updateMatrixWorld(true);
@@ -337,6 +340,15 @@ export async function createScene(host) {
   // El gato corre por el costado del personaje, salta desde la punta izquierda del logo y queda parado arriba.
   cat?.setStage({origin: logo.localToWorld(new T.Vector3(-logoHalfW, 0, 0)), u: new T.Vector3(1, 0, 0).applyQuaternion(logo.quaternion), n: new T.Vector3(0, 0, 1).applyQuaternion(logo.quaternion),
     top: LOGO_HEIGHT, laneZ: corner.z + .06, spawnX: LEFT + .7, arriveAt: timeline.arrive});
+  // Fendi duerme sobre el escritorio, baja de un salto y me sigue hasta frotarse con mi pierna izquierda,
+  // que se mide poniendo al personaje en el instante en que ya está apoyado en el logo.
+  if (fendi) {
+    character.update(timeline.wave, timeline, camera);
+    desk.updateWorldMatrix(true, false);
+    const onDesk = (x, z) => desk.localToWorld(new T.Vector3(x, .755, z)); // punta izquierda del escritorio, a la vista (la silla tapa el centro)
+    fendi.setStage({bed: onDesk(-1.02, .13), deskWalk: [onDesk(-.9, .135), onDesk(-.82, .18), onDesk(-.8, .24)],
+      landing: desk.localToWorld(new T.Vector3(-.65, 0, .95)), leg: new T.Vector3().setFromMatrixPosition(character.bone.LFoot.matrixWorld).setY(0), watch: character.bone.Head});
+  }
   const HAS_CHARACTER = !!character;
 
   // ---------- Cámara: encuadre calculado según el aspecto, no un canvas achicado ----------
@@ -396,7 +408,7 @@ export async function createScene(host) {
 
   return {
     timeline,
-    render(t) { adapt(); frame(t); animateLogo(t); playMovie(t); character?.update(t, timeline, camera); cat?.update(t); renderer.render(scene, camera); },
+    render(t) { adapt(); frame(t); animateLogo(t); playMovie(t); character?.update(t, timeline, camera); cat?.update(t); fendi?.update(t); renderer.render(scene, camera); },
     dispose() {
       observer.disconnect(); removeEventListener('orientationchange', resize);
       const seen = new Set();
