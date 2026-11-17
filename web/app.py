@@ -40,6 +40,7 @@ from web import cotizacion as cotizacion_admin
 from web import precios_recibo
 from web import ganancia_servicio
 from web import remeras
+from web import stock_usados
 from web import zona_envio
 from web.ui_helpers import (
     _html_direccion_entrega,
@@ -1493,6 +1494,11 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             remeras.descontar(remeras.talles_del_detalle(pedido.get("detalle")))
         except Exception:
             logger.exception("No se pudo descontar la remera del pedido %s", pedido_id)
+        try:
+            # Los usados son stock propio y de una sola unidad: salen del catálogo con el recibo.
+            stock_usados.dar_de_baja(pedido.get("detalle"), PRODUCTOS_PATH)
+        except Exception:
+            logger.exception("No se pudo dar de baja el usado del pedido %s", pedido_id)
         # Regla de oro: el descuento usado en esta venta se le resta al
         # cliente recién ahora, con el recibo enviado.
         try:
