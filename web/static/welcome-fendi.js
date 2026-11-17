@@ -18,7 +18,7 @@ const pulse = (t, a, b, fadeIn = .15, fadeOut = .15) => smooth((t - a) / fadeIn)
 const FEET = ['FL', 'FR', 'HL', 'HR'];
 const HEAD_REST_YAW = -1.15; // la malla trae la cabeza girada a su derecha
 // Momentos (segundos de la escena). Paso frente a su punta del escritorio a los 1,45 y me apoyo en el logo a los 4,7.
-const WAKE = .75, RISE = 1.35, DESK_WALK = 1.8, JUMP = 2.2, TROT = 2.5, RUB = 4.85, STOP = 7.55;
+const WAKE = .75, RISE = 1.35, DESK_WALK = 1.8, JUMP = 2.2, TROT = 2.5, RUB = 4.95, STOP = 7.7;
 
 // Recorrido suave por puntos (Catmull-Rom en planta) con la velocidad dada por claves [t, v]:
 // se reescala para llegar justo al final del recorrido en el último instante.
@@ -133,13 +133,23 @@ export async function loadFendi(base = '/welcome/') {
     plant('FL', LAND_F, Infinity, landing, jumpYaw, LANDED.FL, K, LAND_F - LIFT_F); plant('FR', LAND_F + .03, Infinity, landing, jumpYaw, LANDED.FR, K, LAND_F + .03 - LIFT_F - .02);
     plant('HL', LAND_H, Infinity, landing, jumpYaw, LANDED.HL, K, LAND_H - LIFT_H); plant('HR', LAND_H + .03, Infinity, landing, jumpYaw, LANDED.HR, K, LAND_H + .03 - LIFT_H - .02);
 
-    // 5. Me sigue al trote por detrás y entra por mi izquierda, entre la pierna y el logo.
-    //    Pasa rozándome con el flanco, da la vuelta adelante y vuelve a frotarse con la cabeza.
+    // 5. Me sigue al trote rodeándome por mi derecha y pasa caminando por delante de mis pies,
+    //    pegada a las zapatillas, hasta quedar frente a mi pie izquierdo frotando la cabeza hacia mi pierna.
+    //    Entre mi pierna y el logo no entra (es del ancho de ella), por eso pasa por adelante: no atraviesa nada.
     const at = (dx, dz) => V(leg.x + dx, 0, leg.z + dz);
-    const finalYaw = -1.95, bunt = at(.12, .13).addScaledVector(fwdOf(finalYaw), -.2); // la cabeza queda adelante y afuera de la canilla
-    const floorPath = route([landing, landing.clone().addScaledVector(fwdOf(jumpYaw), .35).setY(0), V(-.9, 0, -1.05), V(-.1, 0, -.78), at(.12, -.62), at(.17, -.36), at(.15, 0), at(.16, .26),
-      at(.25, .55), at(.48, .63), at(.68, .53), at(.7, .42), at(.6, .32), bunt], // vuelta amplia adelante del logo y llega derecha
-      [[TROT, 0], [TROT + .25, 1.4], [RUB - .4, 1.35], [RUB, .42], [RUB + 1.3, .38], [RUB + 1.6, .5], [STOP - .6, .45], [STOP, 0]]);
+    // Dos tramos con horario propio: el trote termina delante de mi pie derecho justo en RUB, ya con mis pies quietos.
+    const front = at(-.78, .36);
+    const trotPath = route([landing, landing.clone().addScaledVector(fwdOf(jumpYaw), .35).setY(0), V(-1.05, 0, -.85), V(-.75, 0, -.2), V(-.62, 0, .2), front],
+      [[TROT, 0], [TROT + .25, 1.4], [RUB - .4, 1.3], [RUB, .35]]);
+    const rubPath = route([front, at(-.55, .4), at(-.3, .39), at(-.05, .35)],
+      [[RUB, .35], [RUB + .6, .3], [STOP - .5, .28], [STOP, 0]]);
+    const floorPath = {
+      length: trotPath.length + rubPath.length,
+      s: t => t < RUB ? trotPath.s(t) : trotPath.length + rubPath.s(t),
+      atS: (d, out) => d < trotPath.length ? trotPath.atS(d, out) : rubPath.atS(d - trotPath.length, out),
+      at(t, out) { return this.atS(this.s(t), out); },
+      speed: t => t < RUB ? trotPath.speed(t) : rubPath.speed(t),
+    };
     floorPath.y = 0;
     gaitSteps(floorPath, TROT, RUB - .15, {offset: {HL: .02, FR: .04, HR: .52, FL: .54}, duty: .45, stride: v => .2 + .3 * v});
     const end = gaitSteps(floorPath, RUB - .15, STOP, {offset: {HR: .02, FR: .27, HL: .52, FL: .77}, duty: .62, stride: v => .2 + .25 * v}, false);
@@ -182,7 +192,7 @@ export async function loadFendi(base = '/welcome/') {
       breathe: t => (1 - smooth((t - RISE) / .3)) * .005 * Math.sin(t * TAU * .32),
       trot: t => smooth((t - TROT - .1) / .2) * (1 - smooth((t - RUB + .3) / .3)),
       // Inclinación hacia mi pierna mientras se frota (positivo: hacia su derecha).
-      roll: t => .16 * pulse(t, RUB + .15, RUB + 1.5, .35, .4) + .12 * smooth((t - STOP + .3) / .4),
+      roll: t => -.07 * smooth((t - RUB) / .4), // se recuesta hacia mis pies (a su izquierda)
       awake: t => smooth((t - WAKE) / .45),
       // Pestañeos: abre a los 1,35, parpadea dormida, y al final me mira con un pestañeo lento.
       eyesClosed: t => t < WAKE || (t > WAKE + .28 && t < WAKE + .38) || (t > 8.2 && t < 8.55),
@@ -265,7 +275,7 @@ export async function loadFendi(base = '/welcome/') {
     // Frotándose: la mejilla contra la canilla, con empujoncitos.
     const rub = plan.lookLeg(t), nudge = Math.sin((t - RUB) * TAU * 1.3);
     // Apunta a la superficie de la canilla del lado de ella, no al centro de la pierna.
-    look.set(headPos.x - plan.leg.x, 0, headPos.z - plan.leg.z).setLength(.07).add(plan.leg).setY(.3 + .03 * nudge);
+    look.set(headPos.x - plan.leg.x, 0, headPos.z - plan.leg.z).setLength(.11).add(plan.leg).setY(.3 + .03 * nudge);
     blendTo(rub, aim(look, lookB));
     headRoll += rub * (-Math.sign(lookB.yaw || 1) * .3 + .12 * nudge); // inclina la mejilla del lado de la pierna
     pitch = lerp(pitch, -.85, plan.lookDown(t));
