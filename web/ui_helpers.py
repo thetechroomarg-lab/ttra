@@ -78,10 +78,10 @@ def admin_session_version(password):
 
 
 def _cadete_activo(request: Request):
-    return bool(request.session.get("cadete_ok")) and secrets.compare_digest(
-        str(request.session.get("cadete_version", "")),
-        cadete_session_version(os.environ.get("CADETE_PASSWORD", "")),
-    )
+    # Se delega en web.app para que valgan los mismos criterios (cuenta propia
+    # o contraseña única) y el mismo get_client que parchean los tests.
+    from web import app as appmod
+    return appmod._cadete_activo(request)
 
 
 def _puede_operar_entrega(request: Request, fila: dict):
