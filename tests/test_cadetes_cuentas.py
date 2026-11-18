@@ -8,7 +8,6 @@ from tests.fakes_supabase import FakeSupabaseClient
 
 @pytest.fixture
 def fake(monkeypatch):
-    monkeypatch.setattr(appmod, "_CADETE_EXIGIR_CUENTA", True)
     f = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: f)
     cadetes._cache.clear()
@@ -57,13 +56,6 @@ def test_cambiar_la_clave_invalida_sesiones_viejas(fake):
     assert "Ingresar" in c.get("/admin/cadete").text
 
 
-def test_contrasena_unica_sin_cuenta_obligatoria_es_la_llave_de_emergencia(fake, monkeypatch):
-    monkeypatch.setattr(appmod, "_CADETE_EXIGIR_CUENTA", False)
-    c = _c()
-    assert c.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD}).status_code == 200
-    assert "Ingresar" not in c.get("/admin/cadete").text
-
-
 def test_sesion_de_cuenta_falla_cerrado_si_la_base_cae(fake, monkeypatch):
     c = _c()
     c.post("/admin/cadete/login", json={"email": "alejo@example.com", "password": "clave-larga-123"})
@@ -75,47 +67,14 @@ def test_sesion_de_cuenta_falla_cerrado_si_la_base_cae(fake, monkeypatch):
 
 @pytest.fixture
 def sin_cuentas(monkeypatch):
-    monkeypatch.setattr(appmod, "_CADETE_EXIGIR_CUENTA", True)
     f = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: f)
     cadetes._cache.clear()
     return f
 
 
-def test_primer_ingreso_con_la_clave_unica_obliga_a_crear_cuenta(sin_cuentas):
-    c = _c()
-    r = c.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
-    assert r.json() == {"ok": True, "crear_cuenta": True}
-    pagina = c.get("/admin/cadete").text
-    assert "Creá tu cuenta" in pagina and "Panel de entregas" not in pagina
-    # con solo la clave única no se puede operar el panel
-    assert c.get("/admin/cadete/push/vapid-public-key").status_code == 401
-
-
-def test_crear_cuenta_deja_logueado_y_guarda_hash(sin_cuentas):
-    c = _c()
-    c.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
-    assert c.post("/admin/cadete/cuenta", json={"nombre": "Alejo", "email": "Alejo@Example.com", "password": "clave-larga-123"}).status_code == 200
-    fila = sin_cuentas.table("cadetes").select("*").execute().data[0]
-    assert fila["email"] == "alejo@example.com" and "clave-larga-123" not in fila["password_hash"]
-    assert "Creá tu cuenta" not in c.get("/admin/cadete").text
-    assert c.get("/admin/cadete/push/vapid-public-key").status_code != 401
-
-
-def test_no_se_puede_crear_cuenta_sin_probar_la_clave_unica(sin_cuentas):
-    r = _c().post("/admin/cadete/cuenta", json={"nombre": "X", "email": "x@example.com", "password": "clave-larga-123"})
-    assert r.status_code == 401 and not sin_cuentas.table("cadetes").select("*").execute().data
-
-
-def test_con_cuentas_existentes_la_clave_unica_sigue_llevando_solo_al_alta(fake):
-    c = _c()
-    assert c.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD}).json()["crear_cuenta"] is True
-    assert c.get("/admin/cadete/push/vapid-public-key").status_code == 401
-
-
 def test_cuenta_con_clave_corta_o_email_invalido_se_rechaza(sin_cuentas):
     c = _c()
-    c.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
     assert c.post("/admin/cadete/cuenta", json={"nombre": "X", "email": "x@example.com", "password": "corta"}).status_code == 422
     assert c.post("/admin/cadete/cuenta", json={"nombre": "X", "email": "no-es-mail", "password": "clave-larga-123"}).status_code == 422
 
@@ -184,7 +143,6 @@ def _admin(monkeypatch):
 
 def _alta_maria(fake):
     c = _c()
-    c.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
     r = c.post("/admin/cadete/cuenta", json={"nombre": "María Pérez", "email": "maria@example.com", "password": "clave-maria-123"})
     return c, r
 
@@ -198,17 +156,8 @@ def test_segundo_cadete_queda_pendiente_y_no_puede_entrar(fake):
     assert r.status_code == 403
 
 
-def test_primer_cadete_de_todos_queda_aprobado_con_el_slug_historico(sin_cuentas):
-    c = _c()
-    c.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
-    c.post("/admin/cadete/cuenta", json={"nombre": "Alejandro", "email": "a@example.com", "password": "clave-larga-123"})
-    fila = sin_cuentas.table("cadetes").select("*").execute().data[0]
-    assert fila["aprobado"] is True and fila["slug"] == "alejo"
-
-
 def test_email_repetido_no_crea_otra_cuenta(fake):
     c = _c()
-    c.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
     r = c.post("/admin/cadete/cuenta", json={"nombre": "Otro", "email": "ALEJO@example.com", "password": "clave-larga-123"})
     assert r.status_code == 409
 
@@ -290,3 +239,44 @@ def test_saldo_y_pagos_son_por_cadete(fake, monkeypatch):
     maria = _c()
     maria.post("/admin/cadete/login", json={"email": "maria@example.com", "password": "clave-maria-123"})
     assert maria.get("/admin/cadete/saldo").status_code == 200
+
+
+# ---- alta abierta (sin clave de acceso) ----------------------------------
+
+def test_la_clave_unica_ya_no_sirve_para_entrar_ni_para_registrarse(sin_cuentas):
+    assert _c().post("/admin/cadete/login", json={"password": "Alejo2026"}).status_code == 401
+    assert _c().post("/admin/cadete/login", json={"email": "", "password": "Alejo2026"}).status_code == 401
+    assert "Clave de acceso" not in _c().get("/admin/cadete").text
+    assert not hasattr(appmod, "CADETE_PASSWORD")
+
+
+def test_cualquiera_pide_cuenta_y_queda_pendiente_la_primera_toma_el_slug_de_alejo(sin_cuentas):
+    r = _c().post("/admin/cadete/cuenta", json={"nombre": "Alejandro", "email": "a@example.com", "password": "clave-larga-123"})
+    assert r.json() == {"ok": True, "pendiente": True}
+    fila = sin_cuentas.table("cadetes").select("*").execute().data[0]
+    assert fila["aprobado"] is False and fila["slug"] == "alejo"
+    assert _c().post("/admin/cadete/login", json={"email": "a@example.com", "password": "clave-larga-123"}).status_code == 403
+
+
+def test_al_aprobar_la_cuenta_de_alejo_hereda_lo_que_ya_estaba_a_su_nombre(sin_cuentas, monkeypatch):
+    hoy = appmod.entregas.ahora_argentina().date().isoformat()
+    sin_cuentas.table("tareas_entrega").insert({"id": "t1", "fecha_entrega": hoy, "titulo": "Nota vieja de Alejo", "orden": 1,
+                                                "asignado_a": "alejo"}).execute()
+    sin_cuentas.table("movimientos_cadete").insert({"id": "m1", "tipo": "entrega", "referencia_id": "x", "descripcion": "E",
+                                                    "monto_ars": 6000, "creado_en": "2026-11-18T10:00:00+00:00"}).execute()
+    _c().post("/admin/cadete/cuenta", json={"nombre": "Alejandro", "email": "a@example.com", "password": "clave-larga-123"})
+    admin = _admin(monkeypatch)
+    assert "toma las entregas" in admin.get("/admin/cadetes").text
+    cid = sin_cuentas.table("cadetes").select("*").execute().data[0]["id"]
+    admin.post(f"/admin/cadetes/{cid}/aprobar")
+    alejo = _c()
+    assert alejo.post("/admin/cadete/login", json={"email": "a@example.com", "password": "clave-larga-123"}).status_code == 200
+    assert "Nota vieja de Alejo" in alejo.get("/admin/cadete").text
+    assert "$ 6.000" in alejo.get("/admin/cadete/saldo").text
+
+
+def test_el_alta_tiene_tope_por_hora(sin_cuentas):
+    c = _c()
+    codigos = [c.post("/admin/cadete/cuenta", json={"nombre": "N", "email": f"n{i}@example.com", "password": "clave-larga-123"}).status_code
+               for i in range(12)]
+    assert codigos[:10] == [200] * 10 and codigos[10:] == [429, 429]

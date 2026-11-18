@@ -1,3 +1,4 @@
+from tests.cadete_helper import login_cadete
 from fastapi.testclient import TestClient
 
 import web.app as appmod
@@ -15,13 +16,14 @@ def _admin_logueado(monkeypatch):
 
 def _cadete_logueado():
     c = TestClient(appmod.app, base_url="https://testserver")
-    c.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
+    login_cadete(c)
     return c
 
 
-def test_cadete_no_puede_entrar_con_contrasena_incorrecta():
+def test_cadete_no_puede_entrar_con_contrasena_incorrecta(monkeypatch):
+    monkeypatch.setattr(appmod, "get_client", lambda: FakeSupabaseClient())
     c = TestClient(appmod.app, base_url="https://testserver")
-    r = c.post("/admin/cadete/login", json={"password": "mala"})
+    r = c.post("/admin/cadete/login", json={"email": "alejo@example.com", "password": "mala"})
     assert r.status_code == 401
     assert "Panel de entregas" in c.get("/admin/cadete").text
 
@@ -558,9 +560,8 @@ def test_cadete_puede_agregar_direccion_a_su_propio_pedido(monkeypatch):
 def test_panel_cadete_tiene_link_a_papelera(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
-    monkeypatch.setattr(appmod, "CADETE_PASSWORD", "clave-cadete")
     cliente = TestClient(appmod.app, base_url="https://testserver")
-    cliente.post("/admin/cadete/login", json={"password": "clave-cadete"})
+    login_cadete(cliente)
 
     assert 'href="/admin/cadete/papelera"' in cliente.get("/admin/cadete").text
 
@@ -612,7 +613,7 @@ def test_nota_del_panel_de_alejo_queda_asignada_aunque_haya_sesion_de_admin(monk
     # Mismo navegador con las dos sesiones: la nota creada desde el panel de
     # Alejo sigue la regla del cadete, no la del admin.
     admin, fake = _admin_logueado(monkeypatch)
-    admin.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
+    login_cadete(admin)
     fecha_hoy = appmod.entregas.ahora_argentina().date().isoformat()
 
     r = admin.post("/admin/tareas-entrega", json={
@@ -652,7 +653,7 @@ def test_tarea_completada_por_vlad_con_ambas_sesiones_no_marca_entregado_por_ale
         "id": "tarea-1", "fecha_entrega": "2026-08-24", "titulo": "Retirar equipo", "orden": 1,
     }).execute()
     # Vlad tiene abierto también el panel de Alejo en el mismo navegador.
-    admin.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
+    login_cadete(admin)
 
     r = admin.post("/admin/tareas-entrega/tarea-1/completar")
 
@@ -709,7 +710,7 @@ def test_visto_funciona_desde_el_panel_de_alejo_aunque_haya_sesion_de_admin(monk
         "id": "tarea-1", "fecha_entrega": "2026-10-05", "titulo": "Llevar pago a Migue",
         "asignado_a": appmod.CADETE_SLUG,
     }).execute()
-    admin.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
+    login_cadete(admin)
 
     assert admin.post("/admin/tareas-entrega/tarea-1/visto").status_code == 200
     assert fake.table("tareas_entrega").select("*").eq("id", "tarea-1").execute().data[0]["visto_en"]

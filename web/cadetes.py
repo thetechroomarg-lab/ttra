@@ -2,8 +2,7 @@
 
 Reemplazan a la contraseña única compartida: cada cuenta se puede dar de baja
 sola (`activo = false`), y la sesión deja de valer en cuanto eso pasa o cambia
-su contraseña. El acceso viejo por contraseña única sigue andando hasta que se
-lo apague con CADETE_LOGIN_CONTRASENA_UNICA=0 (ver app.py).
+su contraseña.
 """
 import base64
 import hashlib
@@ -105,13 +104,14 @@ def _slug_nuevo(nombre, existentes):
 
 
 def crear_cuenta(client, email, password, nombre):
-    """Alta de una cuenta. La primera de todas (Alejo) queda aprobada y con el
-    slug histórico; las siguientes quedan pendientes hasta que Vlad las apruebe."""
+    """Alta de una cuenta: siempre queda pendiente hasta que Vlad la apruebe. La
+    primera de todas toma el slug histórico (el de las entregas y movimientos
+    que ya existen); las siguientes, uno propio."""
     existentes = _cuentas(client)
     primera = not existentes
     cuenta = {"id": str(uuid.uuid4()), "nombre": (nombre or "").strip()[:100] or "Cadete",
               "email": normalizar_email(email), "password_hash": hashear_password(password),
-              "rol": ROL_CADETE, "activo": True, "aprobado": primera,
+              "rol": ROL_CADETE, "activo": True, "aprobado": False,
               "slug": SLUG_PRIMER_CADETE if primera else _slug_nuevo(nombre, {slug_de(c) for c in existentes})}
     client.table("cadetes").insert(cuenta).execute()
     return cuenta
