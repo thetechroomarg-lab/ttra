@@ -21,7 +21,7 @@ export function readRig(buf) {
   geometry.setAttribute('uv', new T.BufferAttribute(view('uv', Float32Array), 2));
   geometry.setAttribute('skinIndex', new T.BufferAttribute(new Uint16Array(view('skinIndex', Uint8Array)), 4));
   geometry.setAttribute('skinWeight', new T.BufferAttribute(view('skinWeight', Uint8Array), 4, true));
-  geometry.setIndex(new T.BufferAttribute(view('index', Uint16Array), 1));
+  geometry.setIndex(new T.BufferAttribute(view('index', head.index32 ? Uint32Array : Uint16Array), 1)); // las mallas HD pasan los 65.535 vértices
   return {geometry, joints: head.joints};
 }
 export function buildRig(geometry, joints, material) {
@@ -62,15 +62,19 @@ export function solve(upper, lower, end, parentQ, target, pole, soft = 0) {
   return q.multiply(lower.quaternion).clone(); // orientación global del hueso inferior
 }
 
-export async function loadCharacter(base = '/welcome/') {
-  const loader = new T.TextureLoader();
+export async function loadCharacter(base = '/welcome/', {hd = false} = {}) {
+  const loader = new T.TextureLoader(), file = hd ? 'avatar-hd.bin' : 'avatar.bin'; // HD: misma malla subdividida y curvada
   const [buf, map, normalMap, roughnessMap] = await Promise.all([
-    fetch(base + 'avatar.bin').then(r => { if (!r.ok) throw new Error('avatar.bin ' + r.status); return r.arrayBuffer(); }),
+    fetch(base + file).then(r => { if (!r.ok) throw new Error(file + ' ' + r.status); return r.arrayBuffer(); }),
     loader.loadAsync(base + 'avatar-color.webp'), loader.loadAsync(base + 'avatar-normal.webp'), loader.loadAsync(base + 'avatar-roughness.webp'),
   ]);
   const {geometry, joints} = readRig(buf);
-  map.colorSpace = T.SRGBColorSpace; map.anisotropy = 8;
-  const material = new T.MeshStandardMaterial({map, normalMap, roughnessMap, roughness: 1, metalness: 0, envMapIntensity: .7});
+  map.colorSpace = T.SRGBColorSpace; map.anisotropy = 16;
+  // HD: piel y ropa con un velo suave a contraluz (sheen) en vez del brillo plástico parejo.
+  const material = hd
+    ? new T.MeshPhysicalMaterial({map, normalMap, roughnessMap, roughness: 1, metalness: 0, envMapIntensity: .7,
+        sheen: .35, sheenRoughness: .6, sheenColor: new T.Color(0x6e5a50), specularIntensity: .55})
+    : new T.MeshStandardMaterial({map, normalMap, roughnessMap, roughness: 1, metalness: 0, envMapIntensity: .7});
 
   // Sonrisa: la malla no trae expresiones, así que se arma un morph que sube y abre las comisuras
   // y levanta apenas las mejillas (la textura de la cara acompaña a los vértices).

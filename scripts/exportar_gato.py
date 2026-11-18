@@ -2,7 +2,10 @@
 con esqueleto y pesos para la bienvenida 3D.
 
     python3 scripts/exportar_gato.py gato  <carpeta con el .fbx y sus .png> web/static/welcome
-    python3 scripts/exportar_gato.py fendi <carpeta con el .fbx y sus .png> web/static/welcome
+    python3 scripts/exportar_gato.py fendi <carpeta con el .fbx y sus .png> web/static/welcome [--hd]
+
+--hd: versión para equipos potentes. ~50.000 triángulos, texturas de 2048 y un normal map horneado desde
+la malla original (el relieve del pelo que se pierde al reducir). Escribe <nombre>-hd.bin y sus texturas.
 
 Pasos: suelda vértices, reduce la malla (scripts/simplificar_malla.mjs), arma UV nuevas y hornea ahí el
 color original, alinea al gato (mira a +Z, parado en y=0) y calcula esqueleto y pesos.
@@ -17,6 +20,8 @@ from PIL import Image
 from scipy.spatial import cKDTree
 from scipy import ndimage
 Image.MAX_IMAGE_PIXELS = None
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from normales_seguras import normales_seguras
 
 # Cada gato: cómo alinearlo y su esqueleto, medidos sobre su malla.
 # Izquierda del gato = +X, mira a +Z. Las patas van de hombro/cadera a codo/rodilla, muñeca/garrón y dedos.
@@ -63,7 +68,9 @@ GATOS = {
 
 nombre, src, out = sys.argv[1], sys.argv[2], sys.argv[3]
 G = GATOS[nombre]
-TRIANGULOS = 12000
+HD = '--hd' in sys.argv
+TRIANGULOS, TEX = (50000, 2048) if HD else (12000, 1024)
+salida = nombre + ('-hd' if HD else '')
 
 # ---- 1. Malla original ----
 d = open(glob.glob(src + '/*.fbx')[0], 'rb').read()
@@ -94,14 +101,15 @@ with tempfile.TemporaryDirectory() as tmp:
 # ---- 3. UV nuevas y color horneado desde la textura original ----
 atlas = xatlas.Atlas(); atlas.add_mesh(low, tri)
 chart = xatlas.ChartOptions(); chart.max_iterations = 2
-pack = xatlas.PackOptions(); pack.resolution = 1024; pack.padding = 4; pack.bilinear = True
+pack = xatlas.PackOptions(); pack.resolution = TEX; pack.padding = 4 if not HD else 6; pack.bilinear = True
 atlas.generate(chart, pack)
 vmap, tri, uv = atlas[0]
 pos = low[vmap].astype(np.float64)
 W, H = atlas.width, atlas.height
 where = np.zeros((H, W, 3), np.float32); mask = np.zeros((H, W), bool)
+tid = np.full((H, W), -1, np.int32); bary = np.zeros((H, W, 3), np.float32)
 X, Y = uv[:, 0] * W, (1 - uv[:, 1]) * H
-for t in tri:                                             # posición 3D de cada texel del atlas
+for k, t in enumerate(tri):                               # posición 3D de cada texel del atlas
     x, y = X[t], Y[t]
     x0, x1 = max(int(x.min()) - 1, 0), min(int(x.max()) + 1, W - 1); y0, y1 = max(int(y.min()) - 1, 0), min(int(y.max()) + 1, H - 1)
     gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + .5, np.arange(y0, y1 + 1) + .5)
@@ -115,6 +123,7 @@ for t in tri:                                             # posición 3D de cada
     if not m.any(): continue
     q = w0[..., None] * pos[t[0]] + w1[..., None] * pos[t[1]] + w2[..., None] * pos[t[2]]
     where[y0:y1 + 1, x0:x1 + 1][m] = q[m]; mask[y0:y1 + 1, x0:x1 + 1][m] = True
+    tid[y0:y1 + 1, x0:x1 + 1][m] = k; bary[y0:y1 + 1, x0:x1 + 1][m] = np.stack([w0, w1, w2], -1)[m]
 tex = np.asarray(Image.open(next(f for f in glob.glob(src + '/*.png') if f.endswith('texture.png'))).convert('RGB'))
 th, tw = tex.shape[:2]
 hi_col = tex[np.clip(((1 - hi_uv[:, 1]) * th).astype(int), 0, th - 1), np.clip((hi_uv[:, 0] * tw).astype(int), 0, tw - 1)].astype(np.float32)
@@ -123,8 +132,40 @@ w = 1 / (dist + 1e-5)
 color = np.zeros((H, W, 3), np.float32); color[mask] = (hi_col[near] * w[..., None]).sum(1) / w.sum(1, keepdims=True)
 _, (iy, ix) = ndimage.distance_transform_edt(~mask, return_indices=True)   # rellena alrededor de cada isla
 color = color[iy, ix]
-save = (lambda img, file: Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).resize((1024, 1024), Image.LANCZOS).save(f'{out}/{file}', quality=86, method=6))
-save(color, f'{nombre}-color.webp')
+save = (lambda img, file, q=86: Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).resize((TEX, TEX), Image.LANCZOS).save(f'{out}/{file}', quality=q, method=6))
+save(color, f'{salida}-color.webp')
+
+# ---- 3b. Normal map (solo HD): el relieve de la malla original en el espacio tangente de la reducida ----
+if HD:
+    tri_hi = winv.reshape(-1)[pidx].reshape(-1, 3); Pw = P[wfirst]
+    fn = np.cross(Pw[tri_hi[:, 1]] - Pw[tri_hi[:, 0]], Pw[tri_hi[:, 2]] - Pw[tri_hi[:, 0]])
+    Nh = np.zeros_like(Pw)
+    for c in range(3): np.add.at(Nh, tri_hi[:, c], fn)
+    Nh /= np.linalg.norm(Nh, axis=1, keepdims=True) + 1e-12
+    del fn
+    # Normales suaves de la reducida (soldadas por posición) y marco tangente por triángulo, como lo arma three.js.
+    fl = np.cross(pos[tri[:, 1]] - pos[tri[:, 0]], pos[tri[:, 2]] - pos[tri[:, 0]])
+    Nl = np.zeros((vmap.max() + 1, 3))
+    for c in range(3): np.add.at(Nl, vmap[tri[:, c]], fl)
+    Nl = Nl[vmap]; Nl /= np.linalg.norm(Nl, axis=1, keepdims=True) + 1e-12
+    e1, e2 = pos[tri[:, 1]] - pos[tri[:, 0]], pos[tri[:, 2]] - pos[tri[:, 0]]
+    d1, d2 = uv[tri[:, 1]] - uv[tri[:, 0]], uv[tri[:, 2]] - uv[tri[:, 0]]
+    r = 1 / np.where(np.abs(d1[:, 0] * d2[:, 1] - d2[:, 0] * d1[:, 1]) < 1e-12, 1e-12, d1[:, 0] * d2[:, 1] - d2[:, 0] * d1[:, 1])
+    Tt = (e1 * d2[:, 1:2] - e2 * d1[:, 1:2]) * r[:, None]; Bt = (e2 * d1[:, 0:1] - e1 * d2[:, 0:1]) * r[:, None]
+    k = tid[mask]; b = bary[mask]
+    N = (b[:, :1] * Nl[tri[k, 0]] + b[:, 1:2] * Nl[tri[k, 1]] + b[:, 2:] * Nl[tri[k, 2]])
+    N /= np.linalg.norm(N, axis=1, keepdims=True) + 1e-12
+    T_ = Tt[k] - N * (N * Tt[k]).sum(1, keepdims=True); T_ /= np.linalg.norm(T_, axis=1, keepdims=True) + 1e-12
+    B_ = np.cross(N, T_) * np.sign((np.cross(N, T_) * Bt[k]).sum(1, keepdims=True) + 1e-12)
+    dist, near = cKDTree(Pw).query(where[mask], k=6, workers=-1)
+    w = 1 / (dist + 1e-6)
+    nh = (Nh[near] * w[..., None]).sum(1); nh /= np.linalg.norm(nh, axis=1, keepdims=True) + 1e-12
+    ts = np.stack([(nh * T_).sum(1), (nh * B_).sum(1), (nh * N).sum(1)], 1)
+    ts[:, 2] = np.maximum(ts[:, 2], .05); ts /= np.linalg.norm(ts, axis=1, keepdims=True)
+    nmap = np.zeros((H, W, 3), np.float32); nmap[..., 2] = 1; nmap[mask] = ts
+    nmap = nmap[iy, ix]
+    save((nmap * .5 + .5) * 255, f'{salida}-normal.webp', 85)
+    print('normal map: desvío medio respecto de la reducida', np.degrees(np.arccos(np.clip(ts[:, 2], -1, 1))).mean().round(1), 'grados')
 
 # ---- 4. Alineación: mira a +Z, izquierda del gato = +X, parado en y=0 ----
 y_min, y_rango = pos[:, 1].min(), np.ptp(pos[:, 1])
@@ -158,13 +199,13 @@ if 'ojos' in G:
         dormida = dormida * (1 - cover) + lid * cover
         line = np.exp(-((b - (-.0016 + .0042 * (a / RX) ** 2)) / .0009) ** 2) * (np.abs(a) < RX * .95) * cover[..., 0]
         dormida = dormida * (1 - .85 * line[..., None]) + np.array([22, 16, 13]) * .85 * line[..., None]
-    save(dormida, f'{nombre}-dormida.webp')
+    save(dormida, f'{salida}-dormida.webp')
 
 tri = tri.astype(np.int64)
 fn = np.cross(A[tri[:, 1]] - A[tri[:, 0]], A[tri[:, 2]] - A[tri[:, 0]])   # normales suaves por posición soldada
 Nw = np.zeros((vmap.max() + 1, 3))
 for c in range(3): np.add.at(Nw, vmap[tri[:, c]], fn)
-N = Nw[vmap]; N /= np.linalg.norm(N, axis=1, keepdims=True) + 1e-12
+N = normales_seguras(A, tri, Nw[vmap])                      # sin normales nulas en los mechones de dos caras
 
 # ---- 6. Esqueleto y pesos: cada hueso influye según la distancia a sus segmentos, en radios del hueso ----
 J = G['joints']
@@ -193,13 +234,13 @@ order = np.argsort(-Wt, axis=1)[:, :4]
 w4 = np.take_along_axis(Wt, order, 1); w4[w4 < .03] = 0; w4 /= w4.sum(1, keepdims=True)
 w8 = np.round(w4 * 255).astype(np.int32); w8[:, 0] += 255 - w8.sum(1)
 
-assert len(A) < 65536
+big = len(A) >= 65536                                     # más de 65.535 vértices: índices de 32 bits
 buffers, layout, off = [], {}, 0
 for name, arr in (('position', A.astype('<f4')), ('normal', np.round(N * 127).astype('i1')), ('uv', uv.astype('<f4')),
-                  ('skinIndex', order.astype('u1')), ('skinWeight', w8.astype('u1')), ('index', tri.reshape(-1).astype('<u2'))):
+                  ('skinIndex', order.astype('u1')), ('skinWeight', w8.astype('u1')), ('index', tri.reshape(-1).astype('<u4' if big else '<u2'))):
     raw = arr.tobytes(); raw += b'\0' * (-len(raw) % 4)
     layout[name] = [off, arr.size]; buffers.append(raw); off += len(raw)
-head = json.dumps({'vertices': len(A), 'layout': layout, 'joints': [{'name': n, 'parent': p, 'pos': list(q)} for n, p, q in J]}).encode()
+head = json.dumps({'vertices': len(A), 'index32': big, 'layout': layout, 'joints': [{'name': n, 'parent': p, 'pos': list(q)} for n, p, q in J]}).encode()
 head += b' ' * (-len(head) % 4)
-open(f'{out}/{nombre}.bin', 'wb').write(struct.pack('<I', len(head)) + head + b''.join(buffers))
-print(nombre, 'vértices', len(A), 'triángulos', len(tri), 'islas de UV', atlas.chart_count)
+open(f'{out}/{salida}.bin', 'wb').write(struct.pack('<I', len(head)) + head + b''.join(buffers))
+print(salida, 'vértices', len(A), 'triángulos', len(tri), 'islas de UV', atlas.chart_count)
