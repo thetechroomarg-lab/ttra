@@ -122,12 +122,14 @@ def _notificar_mail_cadete(client, titulo, cuerpo, slug=None):
     )
 
 
-def enviar_mail_pago_cadete(client, monto, movimientos, saldo_a_favor=0, slug=None):
+def enviar_mail_pago_cadete(client, monto, movimientos, saldo_a_favor=0, slug=None, saldo_restante=0):
     """Mail al cadete cada vez que Vlad le registra un pago."""
     pesos = lambda n: "$ " + f"{int(n):,}".replace(",", ".")
     detalle = f"Te pagamos {pesos(monto)} por {movimientos} movimiento{'s' if movimientos != 1 else ''}."
     if saldo_a_favor:
         detalle += f" Quedaron {pesos(saldo_a_favor)} a tu favor."
+    if saldo_restante:
+        detalle += f" Te quedan {pesos(saldo_restante)} pendientes."
     _enviar_mail_cadete(
         client, "💸 Te hicieron un pago",
         f"<p>{html.escape(detalle)}</p><p><a href='https://thetechroomarg.com/admin/cadete'>Ver en el panel</a></p>",
