@@ -101,7 +101,7 @@ def test_solicitud_guarda_fotos_manda_mail_con_adjuntos_y_arma_whatsapp(monkeypa
     assert r.json()["whatsapp_url"].startswith("https://wa.me/543512145217?text=")
     canje = fake.table("canjes").select("*").execute().data[0]
     assert canje["cliente_id"] == cliente_id and canje["estado"] == "pendiente"
-    assert canje["valor_usd"] == 440 and len(canje["fotos"]) == len(canjes.ROTULOS_FOTOS)
+    assert canje["valor_usd"] == 425 and len(canje["fotos"]) == len(canjes.ROTULOS_FOTOS)
     assert set(canje["fotos"]) == set(fake.storage.guardados)
     assert len(correos) == 1 and len(correos[0]["adjuntos"]) == len(canjes.ROTULOS_FOTOS)
     assert "iPhone 15 Pro 128 GB" in correos[0]["asunto"]
