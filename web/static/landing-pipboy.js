@@ -316,10 +316,15 @@ function esClassicDesktopActivo() {
 }
 
 function productosRecomendados(cantidad, personalizados = false) {
-  const pool = personalizados && RECOMENDADOS_DATA.length
-    ? barajar(RECOMENDADOS_DATA)
-    : productosAlAzar(cantidad);
-  const elegidos = pool.slice(0, cantidad);
+  // Sale del catálogo vigente, al azar, recordando lo ya mostrado en la sesión
+  // (ver recomendados-rotacion.js). Con personalizados, hasta la mitad de los
+  // lugares son recomendaciones para el visitante y el resto sorpresa.
+  const catalogo = Object.values(SECCIONES_DATA).flat().filter((p) => !esProductoUsado(p));
+  const elegidos = TTRARotacion.elegir({
+    catalogo,
+    cantidad,
+    preferidos: personalizados ? RECOMENDADOS_DATA.filter((p) => !esProductoUsado(p)) : [],
+  });
   // Mandatorio: la grilla siempre debe completar `cantidad` cards. Si el pool
   // personalizado/al azar quedó corto (pocas recomendaciones para el
   // visitante, o pocos productos sin repetir), se rellena con productos al
