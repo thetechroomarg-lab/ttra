@@ -3761,27 +3761,51 @@ document.getElementById("pass2").addEventListener("keydown", (e) => {{
     if not _cadete_activo(request):
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Entregas — Ingresar</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
-<div class="tarjeta">
+<div class="tarjeta" id="vista-ingresar">
   <h1>Panel de entregas</h1>
   <p id="err" class="error" style="display:none"></p>
-  <input id="email" type="email" placeholder="Email (vacío si todavía no tenés cuenta)" autocomplete="username" autofocus>
+  <input id="email" type="email" placeholder="Email" autocomplete="username" autofocus>
   <input id="pass" type="password" placeholder="Contraseña" autocomplete="current-password">
   <button id="btn">Ingresar</button>
+  <button id="ir-crear" type="button" style="background:none;border:0;box-shadow:none;margin-top:8px;text-decoration:underline;cursor:pointer;color:inherit">Crear cuenta</button>
+</div>
+<div class="tarjeta" id="vista-crear" hidden>
+  <h1>Crear cuenta</h1>
+  <p>Con tu email vas a recibir un aviso por cada nota o pedido que te asignen y por cada pago.</p>
+  <p id="err2" class="error" style="display:none"></p>
+  <input id="clave" type="password" placeholder="Clave de acceso que te dio Vlad" autocomplete="off">
+  <input id="nombre" type="text" maxlength="100" placeholder="Nombre y apellido" autocomplete="name">
+  <input id="email2" type="email" placeholder="Email" autocomplete="username">
+  <input id="pass2" type="password" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="new-password">
+  <input id="pass3" type="password" placeholder="Repetí la contraseña" autocomplete="new-password">
+  <button id="btn-crear">Crear cuenta</button>
+  <button id="ir-ingresar" type="button" style="background:none;border:0;box-shadow:none;margin-top:8px;text-decoration:underline;cursor:pointer;color:inherit">Ya tengo cuenta</button>
 </div>
 <script>
-document.getElementById("btn").addEventListener("click", async () => {{
-  const r = await fetch("/admin/cadete/login", {{
-    method: "POST", headers: {{"Content-Type": "application/json"}},
-    body: JSON.stringify({{email: document.getElementById("email").value.trim(), password: document.getElementById("pass").value}})
-  }});
+const $ = (id) => document.getElementById(id);
+const post = (url, cuerpo) => fetch(url, {{method: "POST", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify(cuerpo)}});
+const aviso = (id, m) => {{ $(id).textContent = m; $(id).style.display = "block"; }};
+$("ir-crear").addEventListener("click", () => {{ $("vista-ingresar").hidden = true; $("vista-crear").hidden = false; $("clave").focus(); }});
+$("ir-ingresar").addEventListener("click", () => {{ $("vista-crear").hidden = true; $("vista-ingresar").hidden = false; $("email").focus(); }});
+$("btn").addEventListener("click", async () => {{
+  const r = await post("/admin/cadete/login", {{email: $("email").value.trim(), password: $("pass").value}});
   if (r.ok) {{ location.reload(); return; }}
   const datos = await r.json().catch(() => ({{}}));
-  const err = document.getElementById("err");
-  err.textContent = datos.error || "Contraseña incorrecta";
-  err.style.display = "block";
+  aviso("err", datos.error || "Email o contraseña incorrectos");
 }});
-document.getElementById("pass").addEventListener("keydown", (e) => {{
-  if (e.key === "Enter") document.getElementById("btn").click();
+$("pass").addEventListener("keydown", (e) => {{ if (e.key === "Enter") $("btn").click(); }});
+$("btn-crear").addEventListener("click", async () => {{
+  if ($("pass2").value !== $("pass3").value) {{ aviso("err2", "Las contraseñas no coinciden"); return; }}
+  const acceso = await post("/admin/cadete/login", {{password: $("clave").value}});
+  if (!acceso.ok) {{ aviso("err2", "La clave de acceso no es correcta"); return; }}
+  const r = await post("/admin/cadete/cuenta", {{nombre: $("nombre").value.trim(), email: $("email2").value.trim(), password: $("pass2").value}});
+  const datos = await r.json().catch(() => ({{}}));
+  if (r.ok && datos.pendiente) {{
+    $("vista-crear").innerHTML = "<h1>Cuenta creada</h1><p>Vlad tiene que aprobarla. Cuando lo haga, entrá con tu email y tu contraseña.</p>";
+    return;
+  }}
+  if (r.ok) {{ location.reload(); return; }}
+  aviso("err2", datos.error || "No se pudo crear la cuenta");
 }});
 </script>
 {_ADMIN_CLIENTES_PWA_SCRIPT}
