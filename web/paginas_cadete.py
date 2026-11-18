@@ -49,18 +49,19 @@ def admin_cadete(request: Request):
 <div class="tarjeta">
   <h1>Panel de entregas</h1>
   <p id="err" class="error" style="display:none"></p>
-  <input id="pass" type="password" placeholder="Contraseña" autofocus>
+  <input id="email" type="email" placeholder="Email" autocomplete="username" autofocus>
+  <input id="pass" type="password" placeholder="Contraseña" autocomplete="current-password">
   <button id="btn">Ingresar</button>
 </div>
 <script>
 document.getElementById("btn").addEventListener("click", async () => {{
   const r = await fetch("/admin/cadete/login", {{
     method: "POST", headers: {{"Content-Type": "application/json"}},
-    body: JSON.stringify({{password: document.getElementById("pass").value}})
+    body: JSON.stringify({{email: document.getElementById("email").value.trim(), password: document.getElementById("pass").value}})
   }});
   if (r.ok) {{ location.reload(); return; }}
   const err = document.getElementById("err");
-  err.textContent = "Contraseña incorrecta";
+  err.textContent = "Email o contraseña incorrectos";
   err.style.display = "block";
 }});
 document.getElementById("pass").addEventListener("keydown", (e) => {{

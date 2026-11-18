@@ -29,7 +29,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import canjes, paginas_canjes, pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
+from web import cadetes, canjes, paginas_canjes, pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import _clientes_admin_activo, admin_session_version, cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -507,6 +507,11 @@ class ClientesLoginIn(BaseModel):
     password: str
 
 
+class CadeteLoginIn(BaseModel):
+    password: str
+    email: str = ""
+
+
 class ClienteMayoristaIn(BaseModel):
     habilitado: bool
 
@@ -607,8 +612,17 @@ _DESCUENTO_MAILING_USD = 5
 
 
 
+# Con CADETE_LOGIN_CONTRASENA_UNICA=0 el acceso viejo (solo contraseña) se apaga
+# y queda únicamente el login por cuenta (email + contraseña).
+_CADETE_CONTRASENA_UNICA = (os.environ.get("CADETE_LOGIN_CONTRASENA_UNICA") or "1").strip().lower() not in {"0", "false", "no", "off"}
+
+
 def _cadete_activo(request: Request):
-    return bool(request.session.get("cadete_ok")) and secrets.compare_digest(
+    if not request.session.get("cadete_ok"):
+        return False
+    if request.session.get("cadete_id"):
+        return cadetes.sesion_de_cuenta_valida(request.session, get_client)
+    return _CADETE_CONTRASENA_UNICA and secrets.compare_digest(
         str(request.session.get("cadete_version", "")), cadete_session_version(CADETE_PASSWORD)
     )
 
@@ -1106,11 +1120,21 @@ def admin_clientes_logout(request: Request):
 
 
 @app.post("/admin/cadete/login")
-def admin_cadete_login(entrada: ClientesLoginIn, request: Request):
+def admin_cadete_login(entrada: CadeteLoginIn, request: Request):
     if _login_bloqueado(request, "cadete"):
         security_logger.warning("Login de cadete bloqueado por exceso de intentos desde %s", _ip_cliente(request))
         return JSONResponse({"error": "Demasiados intentos. Probá de nuevo en unos minutos."}, status_code=429)
-    if not secrets.compare_digest(entrada.password, CADETE_PASSWORD):
+    if entrada.email:
+        cuenta = cadetes.autenticar(get_client(), entrada.email, entrada.password)
+        if not cuenta:
+            security_logger.warning("Login de cadete fallido desde %s", _ip_cliente(request))
+            return JSONResponse({"error": "Email o contraseña incorrectos"}, status_code=401)
+        _limpiar_login_fallido(request, "cadete")
+        cadetes.cerrar_sesion(request.session)
+        cadetes.iniciar_sesion(request.session, cuenta)
+        security_logger.info("Login de cadete con cuenta %s", cuenta["id"])
+        return {"ok": True}
+    if not _CADETE_CONTRASENA_UNICA or not secrets.compare_digest(entrada.password, CADETE_PASSWORD):
         security_logger.warning("Login de cadete fallido desde %s", _ip_cliente(request))
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
     _limpiar_login_fallido(request, "cadete")
@@ -1121,8 +1145,7 @@ def admin_cadete_login(entrada: ClientesLoginIn, request: Request):
 
 @app.post("/admin/cadete/logout")
 def admin_cadete_logout(request: Request):
-    request.session.pop("cadete_ok", None)
-    request.session.pop("cadete_version", None)
+    cadetes.cerrar_sesion(request.session)
     return {"ok": True}
 
 
