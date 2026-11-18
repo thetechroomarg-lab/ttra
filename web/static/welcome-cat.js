@@ -48,14 +48,17 @@ export function track(keys) {
   };
 }
 
-export async function loadCat(base = '/welcome/') {
+export async function loadCat(base = '/welcome/', {hd = false} = {}) {
+  const mesh = hd ? 'gato-hd.bin' : 'gato.bin'; // HD: misma malla subdividida y curvada
   const [buf, map] = await Promise.all([
-    fetch(base + 'gato.bin').then(r => { if (!r.ok) throw new Error('gato.bin ' + r.status); return r.arrayBuffer(); }),
+    fetch(base + mesh).then(r => { if (!r.ok) throw new Error(mesh + ' ' + r.status); return r.arrayBuffer(); }),
     new T.TextureLoader().loadAsync(base + 'gato-color.webp'),
   ]);
   const {geometry, joints} = readRig(buf);
   map.colorSpace = T.SRGBColorSpace; map.anisotropy = 8;
-  const material = new T.MeshStandardMaterial({map, roughness: .86, metalness: 0, envMapIntensity: .6});
+  // Pelo: sin brillo plástico y con un velo suave a contraluz (sheen) en la versión HD.
+  const material = new T.MeshPhysicalMaterial({map, roughness: .86, metalness: 0, envMapIntensity: .6,
+    sheen: hd ? .35 : 0, sheenRoughness: .75, sheenColor: new T.Color(0xd9cbb8)});
   const {object, bone, rest} = buildRig(geometry, joints, material);
   object.visible = false;
 

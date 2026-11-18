@@ -6,6 +6,7 @@ import {loadCharacter} from './welcome-character.js';
 import {loadCat} from './welcome-cat.js';
 import {loadFendi} from './welcome-fendi.js';
 import {drawEditor, drawStore, drawMovie, POSTERS} from './welcome-decor.js';
+import {RoundedBoxGeometry} from './vendor/three/addons/geometries/RoundedBoxGeometry.js';
 
 const clamp01 = v => Math.min(1, Math.max(0, v));
 const smooth = v => { v = clamp01(v); return v * v * (3 - 2 * v); };
@@ -21,10 +22,14 @@ const makeTimeline = character => character
   : {logoStart: 1.1, stagger: .28, rise: 1.25, dot: 3.1, fadeStart: 4.7, fadeDuration: 1.2, end: 5.9,
      phase: t => t < 1.1 ? 'office' : t < 3.5 ? 'logo' : t < 4.7 ? 'hold' : 'fade'};
 
+// Equipos potentes reciben la versión HD (mallas y texturas de alta resolución, sombras finas y posproceso);
+// celulares y equipos modestos, la liviana. ?hd=1 / ?hd=0 la fuerza para probar.
 function qualityTier() {
   const small = Math.min(innerWidth, innerHeight) < 600;
   const weak = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 8) <= 4;
-  return small || weak ? {dpr: 1.5, shadow: 1024} : {dpr: 2, shadow: 2048};
+  const forced = new URLSearchParams(location.search).get('hd');
+  const hd = forced ? forced === '1' : !(small || weak);
+  return hd ? {hd, dpr: 2, shadow: 4096} : {hd, dpr: 1.5, shadow: small || weak ? 1024 : 2048};
 }
 
 // ---------- Texturas procedurales ----------
@@ -37,9 +42,10 @@ function canvasTexture(w, h, draw, repeat) {
 }
 function rng(seed) { return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
 
-function concreteTexture() {
-  const r = rng(7);
-  return canvasTexture(1024, 1024, (g, w, h) => {
+function concreteTexture(size = 1024) {
+  const r = rng(7), k = size / 1024;
+  return canvasTexture(size, size, (g, w, h) => {
+    g.scale(k, k); w /= k; h /= k;
     g.fillStyle = '#56585b'; g.fillRect(0, 0, w, h); // piso gris oscuro: contraste con el logo blanco
     for (let i = 0; i < 260; i++) { // manchas suaves del alisado
       const x = r() * w, y = r() * h, rad = 30 + r() * 150, c = r() < .5 ? 255 : 120;
@@ -50,6 +56,42 @@ function concreteTexture() {
     for (let i = 0; i < 5000; i++) { g.fillStyle = `rgba(${r() < .5 ? 90 : 240},${r() < .5 ? 90 : 240},${r() < .5 ? 90 : 240},.05)`; g.fillRect(r() * w, r() * h, 1.5, 1.5); }
     g.fillStyle = 'rgba(30,31,33,.6)'; g.fillRect(0, 0, w, 2); g.fillRect(0, 0, 2, h); // juntas de dilatación
   }, [1, 1]);
+}
+
+// HD: relieve y brillo del cemento alisado. Un campo de alturas (ondulaciones del llaneado, grano y poros)
+// del que salen el normal map y un mapa de rugosidad: el reflejo de las luces se quiebra como en un piso real.
+function concreteDetail(size = 2048) {
+  const r = rng(19), c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = '#808080'; g.fillRect(0, 0, size, size);
+  for (let i = 0; i < 420; i++) { // ondulaciones suaves, repetidas en los bordes para que el mosaico no tenga costura
+    const x = r() * size, y = r() * size, rad = size * (.02 + r() * .12), v = r() < .5 ? 255 : 0, a = .02 + r() * .05;
+    for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) {
+      if (x + dx + rad < 0 || x + dx - rad > size || y + dy + rad < 0 || y + dy - rad > size) continue;
+      const grad = g.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, rad);
+      grad.addColorStop(0, `rgba(${v},${v},${v},${a})`); grad.addColorStop(1, `rgba(${v},${v},${v},0)`);
+      g.fillStyle = grad; g.fillRect(x + dx - rad, y + dy - rad, rad * 2, rad * 2);
+    }
+  }
+  const img = g.getImageData(0, 0, size, size), d = img.data, H = new Float32Array(size * size), R = new Float32Array(size * size);
+  for (let i = 0; i < size * size; i++) {
+    const low = d[i * 4] / 255, pore = r() < .0016 ? -.6 : 0;
+    H[i] = low * 2.2 + (r() - .5) * .35 + pore; // grano fino y algún poro
+    R[i] = .2 + (1 - low) * .16 + (r() - .5) * .04; // donde el llaneado dejó la superficie más lisa, refleja más
+  }
+  const at = (x, y) => H[((y + size) % size) * size + (x + size) % size];
+  const nrm = new ImageData(size, size), rough = new ImageData(size, size), n = nrm.data, ro = rough.data;
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const i = y * size + x, gx = at(x + 1, y) - at(x - 1, y), gy = at(x, y + 1) - at(x, y - 1);
+    const nx = -gx * .5, ny = gy * .5, len = Math.hypot(nx, ny, 1); // la imagen va hacia abajo y la v de la textura hacia arriba
+    n[i * 4] = (nx / len * .5 + .5) * 255; n[i * 4 + 1] = (ny / len * .5 + .5) * 255; n[i * 4 + 2] = (1 / len * .5 + .5) * 255; n[i * 4 + 3] = 255;
+    ro[i * 4] = ro[i * 4 + 1] = ro[i * 4 + 2] = Math.min(255, Math.max(0, R[i] * 255)); ro[i * 4 + 3] = 255;
+  }
+  const tex = data => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = size; cv.getContext('2d').putImageData(data, 0, 0);
+    const t = new T.CanvasTexture(cv); t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 8; return t;
+  };
+  return {normalMap: tex(nrm), roughnessMap: tex(rough)};
 }
 
 function screenTexture(kind) {
@@ -99,12 +141,21 @@ export async function createScene(host) {
 
   const scene = new T.Scene();
   scene.background = new T.Color(0x0b0a09);
+  // HD: posproceso cargado aparte (solo lo baja quien lo usa). Si falla, se renderiza directo como siempre.
+  const postModules = tier.hd ? Promise.all(['EffectComposer', 'RenderPass', 'GTAOPass', 'UnrealBloomPass', 'OutputPass']
+    .map(name => import(`./vendor/three/addons/postprocessing/${name}.js`))).catch(error => { console.warn('[bienvenida] sin posproceso:', error.message); return null; }) : null;
   const camera = new T.PerspectiveCamera(32, 1, .1, 60);
   const unitBox = new T.BoxGeometry(1, 1, 1), unitCyl = new T.CylinderGeometry(1, 1, 1, 28), unitPlane = new T.PlaneGeometry(1, 1);
   const std = (color, roughness = .7, metalness = 0, extra = {}) => new T.MeshStandardMaterial({color, roughness, metalness, ...extra});
   const lit = (color, strength) => new T.MeshBasicMaterial({color: new T.Color(color).multiplyScalar(strength), toneMapped: true});
+  // HD: las cajas chicas y medianas (muebles, monitores, libros, marcos) llevan el canto redondeado, que
+  // atrapa la luz como un mueble real; las paredes y los listones finísimos siguen siendo cajas simples.
+  const rounded = new Map();
   function box(parent, m, w, h, d, x, y, z, shadow = true) {
-    const o = new T.Mesh(unitBox, m); o.scale.set(w, h, d); o.position.set(x, y, z);
+    const small = Math.min(w, h, d), bevel = tier.hd && small >= .012 && Math.max(w, h, d) < 3;
+    const key = bevel && [w, h, d].map(v => v.toFixed(4)).join();
+    if (bevel && !rounded.has(key)) rounded.set(key, new RoundedBoxGeometry(w, h, d, 3, Math.min(.009, small * .28)));
+    const o = new T.Mesh(bevel ? rounded.get(key) : unitBox, m); if (!bevel) o.scale.set(w, h, d); o.position.set(x, y, z);
     o.castShadow = shadow; o.receiveShadow = true; parent.add(o); return o;
   }
   function cyl(parent, m, r, h, x, y, z, shadow = true) {
@@ -126,8 +177,10 @@ export async function createScene(host) {
   pmrem.dispose();
 
   // ---------- Materiales ----------
-  const oakMap = concreteTexture();
-  const floorMat = std(0xffffff, .34, 0, {map: oakMap, envMapIntensity: 1.1});
+  const oakMap = concreteTexture(tier.hd ? 2048 : 1024), floorDetail = tier.hd ? concreteDetail() : null;
+  const floorMat = floorDetail
+    ? std(0xffffff, 1, 0, {map: oakMap, normalMap: floorDetail.normalMap, normalScale: new T.Vector2(.35, .35), roughnessMap: floorDetail.roughnessMap, envMapIntensity: 1.15})
+    : std(0xffffff, .34, 0, {map: oakMap, envMapIntensity: 1.1});
   const plaster = std(0x45474a, .9); // paredes gris oscuro
   const accent = std(0x3f4144, .9); // pared de acento detrás del logo: fondo calmo y oscuro para la tipografía blanca
   const ceilingMat = std(0x5a5c5f, .95);
@@ -146,6 +199,7 @@ export async function createScene(host) {
   const BACK = -4.4, LEFT = -6.2, RIGHT = 6.6, TOP = 3.05;
   const floor = new T.Mesh(unitPlane, floorMat); floor.scale.set(RIGHT - LEFT, 18, 1); floor.rotation.x = -Math.PI / 2; floor.position.set((LEFT + RIGHT) / 2, 0, BACK + 9); floor.receiveShadow = true; room.add(floor);
   oakMap.repeat.set((RIGHT - LEFT) / 2.4, 18 / 2.4);
+  if (floorDetail) for (const t of Object.values(floorDetail)) t.repeat.set((RIGHT - LEFT) / 1.6, 18 / 1.6); // otro período: no se repite junto con las manchas
   box(room, plaster, RIGHT - LEFT, TOP, .12, (LEFT + RIGHT) / 2, TOP / 2, BACK - .06, false);
   box(room, ceilingMat, RIGHT - LEFT, .1, 18, (LEFT + RIGHT) / 2, TOP + .05, BACK + 9, false);
   box(room, plaster, .12, TOP, 18, RIGHT + .06, TOP / 2, BACK + 9, false);
@@ -327,7 +381,7 @@ export async function createScene(host) {
   let character = null, cat = null, fendi = null;
   try {
     const optional = (load, name) => load().catch(error => { console.warn(`[bienvenida] sin ${name}:`, error.message); return null; });
-    [character, cat, fendi] = await Promise.race([Promise.all([loadCharacter(), optional(loadCat, 'gato'), optional(loadFendi, 'Fendi')]),
+    [character, cat, fendi] = await Promise.race([Promise.all([loadCharacter('/welcome/', tier), optional(() => loadCat('/welcome/', tier), 'gato'), optional(() => loadFendi('/welcome/', tier), 'Fendi')]),
       new Promise((_, no) => setTimeout(() => no(new Error('avatar: tiempo agotado')), 7000))]);
     scene.add(character.object);
     character.object.traverse(o => { if (o.material) o.material.envMapIntensity = .6; });
@@ -393,9 +447,33 @@ export async function createScene(host) {
     dot.position.y = lerp(-dotR - .02, dotY, d);
   }
 
+  // ---------- Posproceso HD: oclusión ambiental (contacto entre objetos), brillo de las luces y antialias MSAA ----------
+  let post = null;
+  const modules = await postModules;
+  if (modules) {
+    const [{EffectComposer}, {RenderPass}, {GTAOPass}, {UnrealBloomPass}, {OutputPass}] = modules;
+    // Antialias MSAA solo en pantallas comunes: en retina los píxeles ya son finos y cuesta casi la mitad del cuadro.
+    const target = new T.WebGLRenderTarget(1, 1, {type: T.HalfFloatType, samples: dpr >= 1.75 ? 0 : 4});
+    const composer = new EffectComposer(renderer, target);
+    composer.addPass(new RenderPass(scene, camera));
+    const ao = new GTAOPass(scene, camera, 1, 1);
+    // La oclusión es una señal suave: calcularla a media resolución no se nota y cuesta la cuarta parte.
+    const aoSize = ao.setSize.bind(ao); ao.setSize = (w, h) => aoSize(Math.ceil(w / 2), Math.ceil(h / 2));
+    ao.updateGtaoMaterial({radius: .3, distanceExponent: 1.6, thickness: 1, scale: 1.15, samples: 12, distanceFallOff: 1});
+    ao.updatePdMaterial({lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 4, rings: 2, samples: 12});
+    ao.blendIntensity = .9;
+    composer.addPass(ao);
+    const bloom = new UnrealBloomPass(new T.Vector2(1, 1), .35, .45, 2.2); // solo lo muy brillante: tubos, lámparas, pantallas, la tele
+    const bloomSize = bloom.setSize.bind(bloom); bloom.setSize = (w, h) => bloomSize(Math.ceil(w / 2), Math.ceil(h / 2)); // halo difuso: a media resolución alcanza
+    composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+    post = {composer, ao, bloom, target};
+  }
+
   function resize() {
     const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight;
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    if (post) { post.composer.setPixelRatio(dpr); post.composer.setSize(w, h); }
   }
   const observer = new ResizeObserver(resize); observer.observe(host);
   addEventListener('orientationchange', resize);
@@ -404,20 +482,24 @@ export async function createScene(host) {
 
   // DPR adaptativo: si el equipo no sostiene el ritmo, baja resolución antes que perder fluidez.
   let lastNow = 0, slow = 0, frames = 0;
+  const fixed = new URLSearchParams(location.search).has('fijo'); // para medir: resolución fija
   function adapt() {
+    if (fixed) return;
     const now = performance.now();
     if (lastNow) { frames++; if (now - lastNow > 26) slow++; }
     lastNow = now;
     if (frames >= 40) {
-      if (slow > 16 && dpr > 1) { dpr = Math.max(1, dpr - .25); renderer.setPixelRatio(dpr); resize(); }
+      if (slow > 16 && dpr > 1.25) { dpr = Math.max(1.25, dpr - .25); renderer.setPixelRatio(dpr); resize(); }
+      else if (slow > 16 && post?.ao.enabled) post.ao.enabled = false; // después, sin oclusión ambiental
+      else if (slow > 16 && dpr > 1) { dpr = 1; renderer.setPixelRatio(dpr); resize(); }
       else if (slow > 16 && sun.castShadow) sun.castShadow = false; // último recurso: sin sombras dinámicas
       frames = slow = 0;
     }
   }
 
   return {
-    timeline,
-    render(t) { adapt(); frame(t); animateLogo(t); playMovie(t); character?.update(t, timeline, camera); cat?.update(t); fendi?.update(t); renderer.render(scene, camera); },
+    timeline, post, renderer, // post y renderer: para medir rendimiento desde afuera
+    render(t) { adapt(); frame(t); animateLogo(t); playMovie(t); character?.update(t, timeline, camera); cat?.update(t); fendi?.update(t); post ? post.composer.render() : renderer.render(scene, camera); },
     dispose() {
       observer.disconnect(); removeEventListener('orientationchange', resize);
       const seen = new Set();
@@ -426,7 +508,8 @@ export async function createScene(host) {
         for (const m of [].concat(o.material || [])) if (!seen.has(m)) { seen.add(m); m.map?.dispose(); m.normalMap?.dispose(); m.roughnessMap?.dispose(); m.dispose(); }
         o.shadow?.map?.dispose(); o.skeleton?.dispose();
       });
-      screens.forEach(s => s.dispose()); posterMaps.forEach(s => s.dispose()); movie.dispose(); oakMap.dispose(); envTarget.dispose(); pendants.length = 0;
+      screens.forEach(s => s.dispose()); posterMaps.forEach(s => s.dispose()); movie.dispose(); oakMap.dispose(); if (floorDetail) Object.values(floorDetail).forEach(t => t.dispose()); envTarget.dispose(); pendants.length = 0;
+      if (post) { post.composer.passes.forEach(p => p.dispose?.()); post.composer.dispose(); post.target.dispose(); }
       renderer.renderLists.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
     },
   };
