@@ -7253,7 +7253,7 @@ def admin_cadete_saldo(request: Request):
             '<label class="comprobante-label">Comprobante de transferencia (opcional)'
             '<input id="pago-comprobante" type="file" accept="image/*,application/pdf"></label>'
             '<button id="pagar" type="submit">Registrar pago</button>'
-            '<p class="pago-ayuda">Si pagás más de lo pendiente, lo de más queda a favor y se descuenta de lo próximo.</p>'
+            '<p class="pago-ayuda">Podés pagar menos de lo pendiente (lo que falta sigue como deuda) o más (lo de más queda a favor y se descuenta de lo próximo).</p>'
             '</form></div>'
         )
     volver = "/admin/clientes" if es_admin else "/admin/cadete"
@@ -7306,11 +7306,13 @@ formPago?.addEventListener("submit", async (e) => {{
   if (valor === null) return;
   const monto = Math.round(Number(valor.replace(/[^0-9]/g, "")) || 0);
   if (monto <= 0) {{ alert("Ingresá un monto mayor a cero"); return; }}
-  if (monto < saldo) {{ alert("El monto no alcanza para cubrir el saldo pendiente de " + pesos(saldo)); return; }}
   const aFavor = monto - saldo;
   let pregunta = `¿Registrar un pago de ${{pesos(monto)}}?`;
-  if (saldo > 0) pregunta += ` Cubre los ${{pesos(saldo)}} pendientes`;
-  if (aFavor > 0) pregunta += `${{saldo > 0 ? " y" : ""}} tu saldo a favor queda en ${{pesos(aFavor)}}`;
+  if (aFavor < 0) pregunta += ` Es menos de los ${{pesos(saldo)}} pendientes: le seguís debiendo ${{pesos(-aFavor)}}`;
+  else {{
+    if (saldo > 0) pregunta += ` Cubre los ${{pesos(saldo)}} pendientes`;
+    if (aFavor > 0) pregunta += `${{saldo > 0 ? " y" : ""}} tu saldo a favor queda en ${{pesos(aFavor)}}`;
+  }}
   if (!confirm(pregunta + ".")) return;
   const boton = document.getElementById("pagar");
   boton.disabled = true;
@@ -7502,7 +7504,7 @@ async def admin_cadete_registrar_pago(request: Request):
         resultado = saldo_cadete.registrar_pago(client, ruta, monto, cotizacion=_cargar_cotizacion_catalogo(), cadete=cadete)
     except saldo_cadete.PagoInvalido as e:
         return JSONResponse({"error": str(e)}, status_code=400)
-    push_cadete.enviar_mail_pago_cadete(client, resultado["monto"], resultado["pagados"], resultado["saldo_a_favor"], slug=cadete)
+    push_cadete.enviar_mail_pago_cadete(client, resultado["monto"], resultado["pagados"], resultado["saldo_a_favor"], slug=cadete, saldo_restante=resultado["saldo_restante"])
     return {"ok": True, **resultado}
 
 
