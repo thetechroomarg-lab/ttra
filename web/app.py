@@ -133,7 +133,15 @@ if not CADETE_PASSWORD:
 LIMITE_USD = 0.25
 _gasto = {}  # sesion -> USD acumulado
 
-app = FastAPI()
+# /docs, /redoc y /openapi.json listan todas las rutas (admin incluidas): solo se
+# publican si se pide explícitamente con ENABLE_API_DOCS=1 (desarrollo local).
+_API_DOCS = (os.environ.get("ENABLE_API_DOCS") or "").strip().lower() in {"1", "true", "yes", "on"}
+app = FastAPI(
+    docs_url="/docs" if _API_DOCS else None,
+    redoc_url="/redoc" if _API_DOCS else None,
+    openapi_url="/openapi.json" if _API_DOCS else None,
+)
+security_logger = logging.getLogger("web.security")
 
 
 @app.get("/api/configuracion-publica")
@@ -203,6 +211,19 @@ _CSP_REPORT_ONLY = (
 )
 
 
+_MAX_BODY_BYTES = 16 * 1024 * 1024  # holgado: el mayor upload legítimo es de 8 MB
+
+
+@app.middleware("http")
+async def limitar_tamano_cuerpo(request: Request, call_next):
+    """Rechaza cuerpos declarados por encima del tope antes de leerlos."""
+    declarado = request.headers.get("content-length")
+    if declarado and declarado.isdigit() and int(declarado) > _MAX_BODY_BYTES:
+        security_logger.warning("Cuerpo demasiado grande rechazado: %s %s", request.method, request.url.path)
+        return JSONResponse({"error": "El pedido es demasiado grande"}, status_code=413)
+    return await call_next(request)
+
+
 @app.middleware("http")
 async def mismo_origen(request: Request, call_next):
     """Defensa CSRF además de SameSite=Lax: un POST/PUT/PATCH/DELETE que trae
@@ -218,6 +239,7 @@ async def mismo_origen(request: Request, call_next):
             urlparse(os.environ.get("PUBLIC_APP_URL") or "").netloc.lower(),
         } - {""}
         if urlparse(origen).netloc.lower() not in propios:
+            security_logger.warning("Origen no permitido: %s %s", request.method, request.url.path)
             return JSONResponse({"error": "Origen no permitido"}, status_code=403)
     return await call_next(request)
 
@@ -1064,8 +1086,10 @@ def _limpiar_login_fallido(request: Request, ruta: str):
 @app.post("/admin/clientes/login")
 def admin_clientes_login(entrada: ClientesLoginIn, request: Request):
     if _login_bloqueado(request, "clientes"):
+        security_logger.warning("Login de clientes bloqueado por exceso de intentos desde %s", _ip_cliente(request))
         return JSONResponse({"error": "Demasiados intentos. Probá de nuevo en unos minutos."}, status_code=429)
     if not secrets.compare_digest(entrada.password, ADMIN_CLIENTES_PASSWORD):
+        security_logger.warning("Login de clientes fallido desde %s", _ip_cliente(request))
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
     _limpiar_login_fallido(request, "clientes")
     request.session["clientes_admin_ok"] = True
@@ -1084,8 +1108,10 @@ def admin_clientes_logout(request: Request):
 @app.post("/admin/cadete/login")
 def admin_cadete_login(entrada: ClientesLoginIn, request: Request):
     if _login_bloqueado(request, "cadete"):
+        security_logger.warning("Login de cadete bloqueado por exceso de intentos desde %s", _ip_cliente(request))
         return JSONResponse({"error": "Demasiados intentos. Probá de nuevo en unos minutos."}, status_code=429)
     if not secrets.compare_digest(entrada.password, CADETE_PASSWORD):
+        security_logger.warning("Login de cadete fallido desde %s", _ip_cliente(request))
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
     _limpiar_login_fallido(request, "cadete")
     request.session["cadete_ok"] = True
@@ -5080,7 +5106,14 @@ def _mandar_mail_pedido(request, cliente_id, pedido):
 
 
 @app.post("/api/envio/cotizar")
-def api_cotizar_envio(entrada: CotizarEnvioIn):
+def api_cotizar_envio(entrada: CotizarEnvioIn, request: Request):
+    # Cada cotización nueva consulta Google Routes (API con costo): tope por
+    # sesión de cliente. Sin sesión comparten un único balde, más holgado.
+    cliente = request.session.get("cliente_id")
+    clave, limite = (("cliente", str(cliente)), 30) if cliente else (("anonimo",), 120)
+    if not _intentos_login_fallidos.reserve(("envio-cotizar",) + clave, limite, 60):
+        security_logger.warning("Límite de cotizaciones de envío excedido")
+        return JSONResponse({"error": "Demasiadas consultas. Probá de nuevo en un minuto."}, status_code=429)
     return zona_envio.cotizar(entrada.lat, entrada.lng, _cargar_cotizacion_catalogo())
 
 
@@ -6678,7 +6711,14 @@ NOTICIAS_TTL_SEG = 600  # 10 minutos: evita golpear Google News en cada visita
 _noticias_cache = {"titulares": [], "actualizado": 0.0}
 
 
+def _link_noticia_seguro(link):
+    """El link viene de un feed externo y el navegador lo usa como href: solo http(s)."""
+    link = (link or "").strip()
+    return link if urlparse(link).scheme in {"http", "https"} else ""
+
+
 def _separar_titulo_y_fuente(titulo_crudo, link):
+    link = _link_noticia_seguro(link)
     # Google News agrega " - Nombre del medio" al final de cada título.
     m = re.match(r"^(.*)\s+-\s+([^-]+)$", titulo_crudo.strip())
     if not m:
@@ -6694,6 +6734,8 @@ def api_noticias():
     try:
         r = httpx.get(NOTICIAS_RSS_URL, timeout=6, headers={"User-Agent": "Mozilla/5.0"})
         r.raise_for_status()
+        if "<!DOCTYPE" in r.text.upper() or "<!ENTITY" in r.text.upper():
+            raise ValueError("El feed de noticias trae DTD/entidades: se descarta")
         raiz = ET.fromstring(r.text)
         titulares = [
             _separar_titulo_y_fuente(item.findtext("title", ""), item.findtext("link", ""))
