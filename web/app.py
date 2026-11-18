@@ -29,7 +29,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import canjes, paginas_canjes, pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
+from web import cadetes, canjes, paginas_canjes, pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import _clientes_admin_activo, admin_session_version, cadete_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -507,6 +507,16 @@ class ClientesLoginIn(BaseModel):
     password: str
 
 
+class CadeteLoginIn(BaseModel):
+    password: str
+    email: str = ""
+
+
+class CadeteCuentaIn(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=200)
+
+
 class ClienteMayoristaIn(BaseModel):
     habilitado: bool
 
@@ -607,9 +617,26 @@ _DESCUENTO_MAILING_USD = 5
 
 
 
+# La contraseña única de CADETE_PASSWORD ya no da acceso al panel: solo habilita
+# crear la cuenta propia (email + contraseña) y, una vez creada, queda sin uso.
+# CADETE_EXIGIR_CUENTA=0 devuelve el comportamiento viejo (llave de emergencia).
+_CADETE_EXIGIR_CUENTA = (os.environ.get("CADETE_EXIGIR_CUENTA") or "1").strip().lower() not in {"0", "false", "no", "off"}
+
+
 def _cadete_activo(request: Request):
-    return bool(request.session.get("cadete_ok")) and secrets.compare_digest(
+    if not request.session.get("cadete_ok"):
+        return False
+    if request.session.get("cadete_id"):
+        return cadetes.sesion_de_cuenta_valida(request.session, get_client)
+    return not _CADETE_EXIGIR_CUENTA and secrets.compare_digest(
         str(request.session.get("cadete_version", "")), cadete_session_version(CADETE_PASSWORD)
+    )
+
+
+def _cadete_alta_valida(request: Request):
+    """Sesión que probó la contraseña única y puede crear la cuenta del cadete."""
+    return _CADETE_EXIGIR_CUENTA and secrets.compare_digest(
+        str(request.session.get("cadete_alta_version", "")), cadete_session_version(CADETE_PASSWORD)
     )
 
 
@@ -1106,23 +1133,51 @@ def admin_clientes_logout(request: Request):
 
 
 @app.post("/admin/cadete/login")
-def admin_cadete_login(entrada: ClientesLoginIn, request: Request):
+def admin_cadete_login(entrada: CadeteLoginIn, request: Request):
     if _login_bloqueado(request, "cadete"):
         security_logger.warning("Login de cadete bloqueado por exceso de intentos desde %s", _ip_cliente(request))
         return JSONResponse({"error": "Demasiados intentos. Probá de nuevo en unos minutos."}, status_code=429)
+    if entrada.email:
+        cuenta = cadetes.autenticar(get_client(), entrada.email, entrada.password)
+        if not cuenta:
+            security_logger.warning("Login de cadete fallido desde %s", _ip_cliente(request))
+            return JSONResponse({"error": "Email o contraseña incorrectos"}, status_code=401)
+        _limpiar_login_fallido(request, "cadete")
+        cadetes.cerrar_sesion(request.session)
+        cadetes.iniciar_sesion(request.session, cuenta)
+        security_logger.info("Login de cadete con cuenta %s", cuenta["id"])
+        return {"ok": True}
     if not secrets.compare_digest(entrada.password, CADETE_PASSWORD):
         security_logger.warning("Login de cadete fallido desde %s", _ip_cliente(request))
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
     _limpiar_login_fallido(request, "cadete")
+    if _CADETE_EXIGIR_CUENTA:
+        if cadetes.hay_cuentas(get_client()):
+            return JSONResponse({"error": "Ya creaste tu cuenta: ingresá con tu email y tu contraseña."}, status_code=409)
+        request.session["cadete_alta_version"] = cadete_session_version(CADETE_PASSWORD)
+        return {"ok": True, "crear_cuenta": True}
     request.session["cadete_ok"] = True
     request.session["cadete_version"] = cadete_session_version(CADETE_PASSWORD)
     return {"ok": True}
 
 
+@app.post("/admin/cadete/cuenta")
+def admin_cadete_crear_cuenta(entrada: CadeteCuentaIn, request: Request):
+    if not _cadete_alta_valida(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    client = get_client()
+    if cadetes.hay_cuentas(client):
+        return JSONResponse({"error": "Ya hay una cuenta de cadete creada."}, status_code=409)
+    cuenta = cadetes.crear_cuenta(client, entrada.email, entrada.password)
+    cadetes.cerrar_sesion(request.session)
+    cadetes.iniciar_sesion(request.session, cuenta)
+    security_logger.info("Cuenta de cadete creada: %s", cuenta["id"])
+    return {"ok": True}
+
+
 @app.post("/admin/cadete/logout")
 def admin_cadete_logout(request: Request):
-    request.session.pop("cadete_ok", None)
-    request.session.pop("cadete_version", None)
+    cadetes.cerrar_sesion(request.session)
     return {"ok": True}
 
 
@@ -3601,24 +3656,59 @@ _CADETE_ESTILO += """<style>
 
 @app.get("/admin/cadete", response_class=HTMLResponse)
 def admin_cadete(request: Request):
+    if not _cadete_activo(request) and _cadete_alta_valida(request):
+        return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Entregas — Creá tu cuenta</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
+<div class="tarjeta">
+  <h1>Creá tu cuenta</h1>
+  <p>Con tu email vas a recibir un aviso por cada nota o pedido que te asignen y por cada pago.</p>
+  <p id="err" class="error" style="display:none"></p>
+  <input id="email" type="email" placeholder="Email" autocomplete="username" autofocus>
+  <input id="pass" type="password" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="new-password">
+  <input id="pass2" type="password" placeholder="Repetí la contraseña" autocomplete="new-password">
+  <button id="btn">Crear cuenta</button>
+</div>
+<script>
+document.getElementById("btn").addEventListener("click", async () => {{
+  const err = document.getElementById("err");
+  const mostrar = (m) => {{ err.textContent = m; err.style.display = "block"; }};
+  const password = document.getElementById("pass").value;
+  if (password !== document.getElementById("pass2").value) {{ mostrar("Las contraseñas no coinciden"); return; }}
+  const r = await fetch("/admin/cadete/cuenta", {{
+    method: "POST", headers: {{"Content-Type": "application/json"}},
+    body: JSON.stringify({{email: document.getElementById("email").value.trim(), password}})
+  }});
+  if (r.ok) {{ location.reload(); return; }}
+  const datos = await r.json().catch(() => ({{}}));
+  mostrar(datos.error || "No se pudo crear la cuenta");
+}});
+document.getElementById("pass2").addEventListener("keydown", (e) => {{
+  if (e.key === "Enter") document.getElementById("btn").click();
+}});
+</script>
+{_ADMIN_CLIENTES_PWA_SCRIPT}
+</body></html>"""
+
     if not _cadete_activo(request):
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Entregas — Ingresar</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
 <div class="tarjeta">
   <h1>Panel de entregas</h1>
   <p id="err" class="error" style="display:none"></p>
-  <input id="pass" type="password" placeholder="Contraseña" autofocus>
+  <input id="email" type="email" placeholder="Email (vacío si todavía no tenés cuenta)" autocomplete="username" autofocus>
+  <input id="pass" type="password" placeholder="Contraseña" autocomplete="current-password">
   <button id="btn">Ingresar</button>
 </div>
 <script>
 document.getElementById("btn").addEventListener("click", async () => {{
   const r = await fetch("/admin/cadete/login", {{
     method: "POST", headers: {{"Content-Type": "application/json"}},
-    body: JSON.stringify({{password: document.getElementById("pass").value}})
+    body: JSON.stringify({{email: document.getElementById("email").value.trim(), password: document.getElementById("pass").value}})
   }});
   if (r.ok) {{ location.reload(); return; }}
+  const datos = await r.json().catch(() => ({{}}));
   const err = document.getElementById("err");
-  err.textContent = "Contraseña incorrecta";
+  err.textContent = datos.error || "Contraseña incorrecta";
   err.style.display = "block";
 }});
 document.getElementById("pass").addEventListener("keydown", (e) => {{
@@ -7295,9 +7385,11 @@ async def admin_cadete_registrar_pago(request: Request):
     if error:
         return error
     try:
-        return {"ok": True, **saldo_cadete.registrar_pago(client, ruta, monto, cotizacion=_cargar_cotizacion_catalogo())}
+        resultado = saldo_cadete.registrar_pago(client, ruta, monto, cotizacion=_cargar_cotizacion_catalogo())
     except saldo_cadete.PagoInvalido as e:
         return JSONResponse({"error": str(e)}, status_code=400)
+    push_cadete.enviar_mail_pago_cadete(client, resultado["monto"], resultado["pagados"], resultado["saldo_a_favor"])
+    return {"ok": True, **resultado}
 
 
 @app.post("/admin/cadete/pagos/{pago_id}/comprobante")

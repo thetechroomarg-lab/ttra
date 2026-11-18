@@ -19,10 +19,12 @@ Si no están configuradas, el envío queda deshabilitado (no rompe nada del
 resto de la app) — se loguea un warning una sola vez.
 """
 
+import html
 import logging
 import os
 from urllib.parse import urlparse
 
+from web import cadetes
 from web.email_util import EnvioEmailError, enviar_email
 
 logger = logging.getLogger(__name__)
@@ -88,17 +90,40 @@ def eliminar_suscripcion(client, endpoint, tabla=TABLA_CADETE):
     client.table(tabla).delete().eq("endpoint", endpoint).execute()
 
 
-def _notificar_mail_alejo(titulo, cuerpo):
-    """Le manda un mail a alejobiasutto@gmail.com cada vez que se le asigna
-    un pedido o una tarea. Nunca tira excepción hacia arriba, mismo criterio
-    que el push: un fallo de mail no puede voltear la asignación."""
+def _enviar_mail_cadete(client, titulo, html_cuerpo):
+    """Manda el mail al email de la cuenta del cadete (o, mientras no la haya
+    creado, a MAIL_NOTIFICACION_ALEJO). Nunca tira excepción hacia arriba: un
+    fallo de mail no puede voltear la asignación ni el pago que lo dispara."""
     try:
-        html = f"<p>{cuerpo}</p><p><a href='https://thetechroomarg.com/admin/cadete'>Ver en el panel</a></p>"
-        enviar_email(MAIL_NOTIFICACION_ALEJO, titulo, html)
+        destinatario = None
+        try:
+            destinatario = cadetes.email_activo(client)
+        except Exception:
+            logger.exception("No se pudo leer el email de la cuenta del cadete")
+        enviar_email(destinatario or MAIL_NOTIFICACION_ALEJO, titulo, html_cuerpo)
     except EnvioEmailError:
-        logger.warning("Fallo enviando mail de notificación a Alejo")
+        logger.warning("Fallo enviando mail al cadete")
     except Exception:
-        logger.exception("Error inesperado enviando mail de notificación a Alejo")
+        logger.exception("Error inesperado enviando mail al cadete")
+
+
+def _notificar_mail_cadete(client, titulo, cuerpo):
+    _enviar_mail_cadete(
+        client, titulo,
+        f"<p>{html.escape(str(cuerpo))}</p><p><a href='https://thetechroomarg.com/admin/cadete'>Ver en el panel</a></p>",
+    )
+
+
+def enviar_mail_pago_cadete(client, monto, movimientos, saldo_a_favor=0):
+    """Mail al cadete cada vez que Vlad le registra un pago."""
+    pesos = lambda n: "$ " + f"{int(n):,}".replace(",", ".")
+    detalle = f"Te pagamos {pesos(monto)} por {movimientos} movimiento{'s' if movimientos != 1 else ''}."
+    if saldo_a_favor:
+        detalle += f" Quedaron {pesos(saldo_a_favor)} a tu favor."
+    _enviar_mail_cadete(
+        client, "💸 Te hicieron un pago",
+        f"<p>{html.escape(detalle)}</p><p><a href='https://thetechroomarg.com/admin/cadete'>Ver en el panel</a></p>",
+    )
 
 
 def enviar_push_cadete(client, titulo, cuerpo, url="/admin/cadete"):
@@ -110,7 +135,7 @@ def enviar_push_cadete(client, titulo, cuerpo, url="/admin/cadete"):
     email_util.enviar_email() se niega a mandar nada real si corre dentro
     de un test (PYTEST_CURRENT_TEST), así que esto es seguro de dejar sin
     mockear en los tests existentes que ya ejercitan este camino."""
-    _notificar_mail_alejo(titulo, cuerpo)
+    _notificar_mail_cadete(client, titulo, cuerpo)
     _enviar_push(client, TABLA_CADETE, titulo, cuerpo, url)
 
 
