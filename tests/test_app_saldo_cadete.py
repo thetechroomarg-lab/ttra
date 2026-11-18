@@ -1,3 +1,4 @@
+from tests.cadete_helper import login_cadete
 from fastapi.testclient import TestClient
 
 import web.app as appmod
@@ -8,11 +9,10 @@ def _clientes(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
     monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
-    monkeypatch.setattr(appmod, "CADETE_PASSWORD", "clave-cadete")
     admin = TestClient(appmod.app, base_url="https://testserver")
     admin.post("/admin/clientes/login", json={"password": "clave-admin"})
     cadete = TestClient(appmod.app, base_url="https://testserver")
-    cadete.post("/admin/cadete/login", json={"password": "clave-cadete"})
+    login_cadete(cadete)
     return fake, admin, cadete
 
 

@@ -61,6 +61,6 @@ Los `test_app_landing.py` afirman sobre el **texto** de `landing.js`, no lo ejec
 - `app.mount("/", StaticFiles(...))` va **último** en `app.py`: cualquier ruta nueva tiene que quedar antes.
 - Las fechas se guardan en UTC y se muestran en hora Argentina (UTC-3 fijo, sin horario de verano).
 - Usar `_json_para_script()` y no `json.dumps()` para meter datos de cliente dentro de un `<script>`.
-- `ADMIN_CLIENTES_PASSWORD` y `CADETE_PASSWORD` no tienen default: sin ellas el server no arranca, a propósito.
+- `ADMIN_CLIENTES_PASSWORD` no tiene default: sin ella el server no arranca, a propósito. El cadete entra con cuenta propia (email + contraseña, tabla `cadetes`, la aprueba el admin en `/admin/cadetes`); la vieja `CADETE_PASSWORD` ya no existe.
 - Las cards con imagen salen de `web/static/catalog-images/index.json` (por nombre y color). Antes de publicar un catálogo nuevo correr `python scripts/check_catalog_images.py <productos nuevo> <productos anterior>`: lista los productos que pierden la card con imagen.
 - La cotización es una sola para todo el sistema: sale de `/data/cotizacion-admin.json` (o del manifest) vía `_cargar_cotizacion_catalogo()` en `web/app.py`; catálogo, envíos, mails y recibos la usan. Al cambiar el dólar hay que actualizar `web/productos.json` y sus archivos hermanos, los outputs en pesos, y dejar `COTIZACION_DOLAR` (solo fallback) igual a la cotización vigente.

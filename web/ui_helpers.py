@@ -67,11 +67,6 @@ def _password_admin():
     return appmod.ADMIN_CLIENTES_PASSWORD or ""
 
 
-def cadete_session_version(password):
-    return hmac.new(os.environ.get("SESSION_SECRET", "").encode(),
-                    ("cadete:" + password).encode(), hashlib.sha256).hexdigest()
-
-
 def admin_session_version(password):
     return hmac.new(os.environ.get("SESSION_SECRET", "").encode(),
                     ("admin:" + password).encode(), hashlib.sha256).hexdigest()

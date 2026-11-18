@@ -1,3 +1,4 @@
+from tests.cadete_helper import login_cadete
 from fastapi.testclient import TestClient
 
 import web.app as appmod
@@ -52,12 +53,11 @@ def test_login_admin_clientes_se_bloquea_tras_repetidos_intentos_fallidos(monkey
 
 
 def test_login_cadete_exitoso_limpia_el_contador_de_intentos_fallidos(monkeypatch):
-    monkeypatch.setattr(appmod, "get_client", lambda: FakeSupabaseClient())
-    monkeypatch.setattr(appmod, "CADETE_PASSWORD", "clave-cadete")
+    _fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, "get_client", lambda: _fake)
     appmod._intentos_login_fallidos.clear()
     c = TestClient(appmod.app, base_url="https://testserver")
 
-    c.post("/admin/cadete/login", json={"password": "incorrecta"})
-    r = c.post("/admin/cadete/login", json={"password": "clave-cadete"})
+    r = login_cadete(c)
     assert r.status_code == 200
     assert appmod._intentos_login_fallidos.get(("testclient", "cadete"), []) == []
