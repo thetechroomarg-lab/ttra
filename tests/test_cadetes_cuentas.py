@@ -153,3 +153,20 @@ def test_registrar_pago_manda_mail_al_cadete(fake, monkeypatch):
     assert r.status_code == 200, r.text
     dest, asunto, cuerpo = enviados[-1]
     assert dest == "alejo@example.com" and "pago" in asunto.lower() and "6.000" in cuerpo
+
+
+def test_lo_que_el_admin_deriva_le_llega_a_la_cuenta_del_cadete(fake, monkeypatch):
+    """La cuenta propia ocupa el mismo lugar que la clave única: lo derivado a
+    'alejo' aparece en su panel y lo que ve es solo lo derivado."""
+    monkeypatch.setattr(appmod, "ADMIN_CLIENTES_PASSWORD", "clave-admin")
+    hoy = appmod.entregas.ahora_argentina().date().isoformat()
+    fake.table("tareas_entrega").insert({"id": "t1", "fecha_entrega": hoy, "titulo": "Nota derivada", "orden": 1}).execute()
+    fake.table("tareas_entrega").insert({"id": "t2", "fecha_entrega": hoy, "titulo": "Nota de Vlad", "orden": 2}).execute()
+    admin = _c()
+    admin.post("/admin/clientes/login", json={"password": "clave-admin"})
+    assert admin.put("/admin/tareas-entrega/t1/derivar", json={"derivado": True}).status_code == 200
+    cadete = _c()
+    cadete.post("/admin/cadete/login", json={"email": "alejo@example.com", "password": "clave-larga-123"})
+    pagina = cadete.get("/admin/cadete").text
+    assert "Nota derivada" in pagina and "Nota de Vlad" not in pagina
+    assert fake.table("tareas_entrega").select("*").eq("id", "t1").execute().data[0]["asignado_a"] == appmod.CADETE_SLUG
