@@ -63,7 +63,7 @@ def endpoint_push_permitido(endpoint):
     return any(host == h.lstrip(".") or (h.startswith(".") and host.endswith(h)) for h in _HOSTS_PUSH)
 
 
-def guardar_suscripcion(client, suscripcion, tabla=TABLA_CADETE):
+def guardar_suscripcion(client, suscripcion, tabla=TABLA_CADETE, cadete=None):
     """Guarda (o actualiza) una suscripción push del cadete (o del admin).
 
     `suscripcion` es el objeto PushSubscription tal cual lo entrega el
@@ -78,6 +78,8 @@ def guardar_suscripcion(client, suscripcion, tabla=TABLA_CADETE):
     if not endpoint_push_permitido(endpoint):
         raise ValueError("Endpoint de push no permitido")
     fila = {"endpoint": endpoint, "p256dh": p256dh, "auth": auth}
+    if cadete:
+        fila["cadete"] = cadete
     existente = client.table(tabla).select("id").eq("endpoint", endpoint).execute().data
     if existente:
         client.table(tabla).update(fila).eq("endpoint", endpoint).execute()
@@ -90,31 +92,37 @@ def eliminar_suscripcion(client, endpoint, tabla=TABLA_CADETE):
     client.table(tabla).delete().eq("endpoint", endpoint).execute()
 
 
-def _enviar_mail_cadete(client, titulo, html_cuerpo):
+def _enviar_mail_cadete(client, titulo, html_cuerpo, slug=None):
     """Manda el mail al email de la cuenta del cadete (o, mientras no la haya
     creado, a MAIL_NOTIFICACION_ALEJO). Nunca tira excepción hacia arriba: un
     fallo de mail no puede voltear la asignación ni el pago que lo dispara."""
     try:
-        destinatario = None
+        destinatarios = []
         try:
-            destinatario = cadetes.email_activo(client)
+            if slug is None:
+                destinatarios = [c["email"] for c in cadetes.activos(client) if c.get("email")]
+            else:
+                destinatarios = [e for e in [cadetes.email_activo(client, slug)] if e]
         except Exception:
             logger.exception("No se pudo leer el email de la cuenta del cadete")
-        enviar_email(destinatario or MAIL_NOTIFICACION_ALEJO, titulo, html_cuerpo)
+        # Sin cuenta creada todavía, el aviso sigue yendo al mail de siempre de Alejo.
+        for destinatario in destinatarios or ([MAIL_NOTIFICACION_ALEJO] if slug in (None, cadetes.SLUG_PRIMER_CADETE) else []):
+            enviar_email(destinatario, titulo, html_cuerpo)
     except EnvioEmailError:
         logger.warning("Fallo enviando mail al cadete")
     except Exception:
         logger.exception("Error inesperado enviando mail al cadete")
 
 
-def _notificar_mail_cadete(client, titulo, cuerpo):
+def _notificar_mail_cadete(client, titulo, cuerpo, slug=None):
     _enviar_mail_cadete(
         client, titulo,
         f"<p>{html.escape(str(cuerpo))}</p><p><a href='https://thetechroomarg.com/admin/cadete'>Ver en el panel</a></p>",
+        slug,
     )
 
 
-def enviar_mail_pago_cadete(client, monto, movimientos, saldo_a_favor=0):
+def enviar_mail_pago_cadete(client, monto, movimientos, saldo_a_favor=0, slug=None):
     """Mail al cadete cada vez que Vlad le registra un pago."""
     pesos = lambda n: "$ " + f"{int(n):,}".replace(",", ".")
     detalle = f"Te pagamos {pesos(monto)} por {movimientos} movimiento{'s' if movimientos != 1 else ''}."
@@ -123,10 +131,11 @@ def enviar_mail_pago_cadete(client, monto, movimientos, saldo_a_favor=0):
     _enviar_mail_cadete(
         client, "💸 Te hicieron un pago",
         f"<p>{html.escape(detalle)}</p><p><a href='https://thetechroomarg.com/admin/cadete'>Ver en el panel</a></p>",
+        slug,
     )
 
 
-def enviar_push_cadete(client, titulo, cuerpo, url="/admin/cadete"):
+def enviar_push_cadete(client, titulo, cuerpo, url="/admin/cadete", slug=None):
     """Manda una notificación a todos los dispositivos suscriptos del
     cadete, y un mail de aviso a alejobiasutto@gmail.com. Nunca tira
     excepción hacia arriba: un fallo de push/mail no puede voltear la
@@ -135,8 +144,8 @@ def enviar_push_cadete(client, titulo, cuerpo, url="/admin/cadete"):
     email_util.enviar_email() se niega a mandar nada real si corre dentro
     de un test (PYTEST_CURRENT_TEST), así que esto es seguro de dejar sin
     mockear en los tests existentes que ya ejercitan este camino."""
-    _notificar_mail_cadete(client, titulo, cuerpo)
-    _enviar_push(client, TABLA_CADETE, titulo, cuerpo, url)
+    _notificar_mail_cadete(client, titulo, cuerpo, slug)
+    _enviar_push(client, TABLA_CADETE, titulo, cuerpo, url, slug)
 
 
 def enviar_push_admin(client, titulo, cuerpo, url="/admin/clientes"):
@@ -148,7 +157,7 @@ def enviar_push_admin(client, titulo, cuerpo, url="/admin/clientes"):
         logger.exception("Error inesperado enviando push al admin")
 
 
-def _enviar_push(client, tabla, titulo, cuerpo, url):
+def _enviar_push(client, tabla, titulo, cuerpo, url, slug=None):
     global _avisado_sin_configurar
     if not PUSH_CONFIGURADO:
         if not _avisado_sin_configurar:
@@ -163,6 +172,9 @@ def _enviar_push(client, tabla, titulo, cuerpo, url):
     import json as _json
 
     suscripciones = client.table(tabla).select("*").execute().data
+    if slug is not None:
+        # Las suscripciones viejas (sin cadete) son de Alejo.
+        suscripciones = [x for x in suscripciones or [] if (x.get("cadete") or cadetes.SLUG_PRIMER_CADETE) == slug]
     if not suscripciones:
         return
 
