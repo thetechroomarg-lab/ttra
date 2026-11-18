@@ -18,6 +18,12 @@
     "valor_usd": 425
   },
   {
+    "id": "iphone-15-pro-256gb",
+    "modelo": "iPhone 15 Pro",
+    "capacidad": "256 GB",
+    "valor_usd": 500
+  },
+  {
     "id": "iphone-15-pro-512gb",
     "modelo": "iPhone 15 Pro",
     "capacidad": "512 GB",
@@ -53,6 +59,12 @@
     "modelo": "iPhone 16 Pro",
     "capacidad": "128 GB",
     "valor_usd": 500
+  },
+  {
+    "id": "iphone-16-pro-256gb",
+    "modelo": "iPhone 16 Pro",
+    "capacidad": "256 GB",
+    "valor_usd": 530
   },
   {
     "id": "iphone-16-pro-max-256gb",

@@ -119,4 +119,4 @@ Mike usa el identificador interno **`mike`**, confirmado por el usuario el 04/11
 
 ## Plan Canje — agregado el 12/11/2026
 
-En cada corrida, recalcular la tabla de toma (`web/canje_tabla.json` y `web/static/plan-canje.html`) con el costo de los iPhone usados del día: toma = costo del usado más barato de ese modelo y capacidad − US$150 (− US$200 en iPhone 16 Pro, 16 Pro Max, 17 Pro y 17 Pro Max). Solo hasta 512 GB. Si una fila no tiene usado nuevo, conservar su valor. Informar las filas que cambiaron.
+En cada corrida, recalcular la tabla de toma (`web/canje_tabla.json` y `web/static/plan-canje.html`) con el costo de los iPhone usados del día: toma = costo del usado más barato de ese modelo y capacidad − US$150 (− US$200 en iPhone 16 Pro, 16 Pro Max, 17 Pro y 17 Pro Max). Solo hasta 512 GB. Si una fila ya cargada ya no tiene usado en las listas, conservar su valor de la vez anterior. Para completar huecos (iPhone 15 en adelante, sin Plus, Air ni SE/e): si ningún proveedor tiene un 256 GB, su valor es el del mismo modelo en 128 GB + US$30; nunca se calcula a partir de otro modelo o generación. Informar las filas que cambiaron.
