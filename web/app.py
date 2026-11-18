@@ -513,6 +513,7 @@ class CadeteLoginIn(BaseModel):
 
 
 class CadeteCuentaIn(BaseModel):
+    nombre: str = Field(min_length=1, max_length=100)
     email: EmailStr
     password: str = Field(min_length=8, max_length=200)
 
@@ -529,6 +530,8 @@ class PuntoEncuentroIn(BaseModel):
 class DerivarEntregaIn(BaseModel):
     derivado: bool
     observaciones: str | None = None
+    # Slug del cadete destino; sin valor, el único cadete activo (o Alejo).
+    cadete: str | None = Field(default=None, max_length=60)
 
 
 class SuscripcionPushIn(BaseModel):
@@ -633,6 +636,11 @@ def _cadete_activo(request: Request):
     )
 
 
+def _slug_cadete(request: Request):
+    """Slug (valor de asignado_a) del cadete con sesión; la clave única vieja es Alejo."""
+    return request.session.get("cadete_slug") or CADETE_SLUG
+
+
 def _cadete_alta_valida(request: Request):
     """Sesión que probó la contraseña única y puede crear la cuenta del cadete."""
     return _CADETE_EXIGIR_CUENTA and secrets.compare_digest(
@@ -640,19 +648,30 @@ def _cadete_alta_valida(request: Request):
     )
 
 
+def _cadete_destino(client, solicitado):
+    """Slug al que se deriva: el pedido, o el único cadete activo, o Alejo.
+    Rechaza a quien no esté aprobado y activo."""
+    activos = cadetes.activos(client)
+    slugs_activos = {cadetes.slug_de(c) for c in activos}
+    slug = solicitado or (cadetes.slug_de(activos[0]) if len(activos) == 1 else CADETE_SLUG)
+    if (slugs_activos and slug not in slugs_activos) or (not slugs_activos and slug != CADETE_SLUG):
+        raise HTTPException(status_code=400, detail="Ese cadete no está disponible")
+    return slug
+
+
 def _monto_viaje(tarea):
-    """" - $ 6.000" al final del título, solo si la tarea es de Alejo."""
-    if tarea.get("asignado_a") != CADETE_SLUG:
+    """" - $ 6.000" al final del título, solo si la tarea es de un cadete."""
+    if not tarea.get("asignado_a"):
         return ""
     return f" - $ {_formatear_entero_ar(saldo_cadete.monto_de(tarea))}"
 
 
 def _leyenda_visto(fila):
     """"✓ Visto" en el panel de Vlad cuando Alejo ya marcó la entrega/nota."""
-    if fila.get("asignado_a") != CADETE_SLUG or not fila.get("visto_en"):
+    if not fila.get("asignado_a") or not fila.get("visto_en"):
         return ""
     fecha, _, hora = _formatear_fecha_ar(fila["visto_en"])
-    return f'<br><span class="leyenda-visto">✓ Visto por Alejo · {html.escape(fecha)} {html.escape(hora)}</span>'
+    return f'<br><span class="leyenda-visto">✓ Visto por {html.escape(cadetes.nombre_de(fila["asignado_a"]))} · {html.escape(fecha)} {html.escape(hora)}</span>'
 
 
 def _boton_visto(fila, tipo):
@@ -663,7 +682,7 @@ def _boton_visto(fila, tipo):
 
 
 def _monto_viaje_pedido(pedido):
-    if pedido.get("asignado_a") != CADETE_SLUG:
+    if not pedido.get("asignado_a"):
         return ""
     monto = saldo_cadete.monto_de(pedido, saldo_cadete.monto_pedido_ars(_cargar_cotizacion_catalogo()))
     return f" - $ {_formatear_entero_ar(monto)}"
@@ -672,7 +691,7 @@ def _monto_viaje_pedido(pedido):
 def _puede_operar_entrega(request: Request, fila: dict):
     if _clientes_admin_activo(request):
         return True
-    return _cadete_activo(request) and fila.get("asignado_a") == CADETE_SLUG
+    return _cadete_activo(request) and fila.get("asignado_a") == _slug_cadete(request)
 
 
 def _json_para_script(valor):
@@ -696,7 +715,7 @@ def _quien_opera(request: Request):
     if _clientes_admin_activo(request):
         return "Vlad"
     if _cadete_activo(request):
-        return CADETE_SLUG
+        return _slug_cadete(request)
     return None
 
 
@@ -766,7 +785,7 @@ def _punto_encuentro_html(punto, fecha, titulo):
     direccion = (punto or {}).get("direccion") or ""
     if direccion:
         link = "https://www.google.com/maps/search/?" + urlencode({"api": 1, "query": direccion})
-        quien = "Vlad" if punto.get("actualizado_por") != CADETE_SLUG else "Alejo"
+        quien = "Vlad" if punto.get("actualizado_por") in (None, "", "Vlad") else cadetes.nombre_de(punto["actualizado_por"])
         contenido = (
             f'<div class="punto-encuentro-fila"><div class="punto-encuentro-direccion">{html.escape(direccion)}'
             f'<small>Cargado por {quien}</small></div>'
@@ -1142,6 +1161,8 @@ def admin_cadete_login(entrada: CadeteLoginIn, request: Request):
         if not cuenta:
             security_logger.warning("Login de cadete fallido desde %s", _ip_cliente(request))
             return JSONResponse({"error": "Email o contraseña incorrectos"}, status_code=401)
+        if not cuenta.get("aprobado"):
+            return JSONResponse({"error": "Tu cuenta todavía está pendiente de aprobación."}, status_code=403)
         _limpiar_login_fallido(request, "cadete")
         cadetes.cerrar_sesion(request.session)
         cadetes.iniciar_sesion(request.session, cuenta)
@@ -1152,8 +1173,6 @@ def admin_cadete_login(entrada: CadeteLoginIn, request: Request):
         return JSONResponse({"error": "Contraseña incorrecta"}, status_code=401)
     _limpiar_login_fallido(request, "cadete")
     if _CADETE_EXIGIR_CUENTA:
-        if cadetes.hay_cuentas(get_client()):
-            return JSONResponse({"error": "Ya creaste tu cuenta: ingresá con tu email y tu contraseña."}, status_code=409)
         request.session["cadete_alta_version"] = cadete_session_version(CADETE_PASSWORD)
         return {"ok": True, "crear_cuenta": True}
     request.session["cadete_ok"] = True
@@ -1166,12 +1185,15 @@ def admin_cadete_crear_cuenta(entrada: CadeteCuentaIn, request: Request):
     if not _cadete_alta_valida(request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
-    if cadetes.hay_cuentas(client):
-        return JSONResponse({"error": "Ya hay una cuenta de cadete creada."}, status_code=409)
-    cuenta = cadetes.crear_cuenta(client, entrada.email, entrada.password)
+    if cadetes.email_registrado(client, entrada.email):
+        return JSONResponse({"error": "Ese email ya tiene una cuenta."}, status_code=409)
+    cuenta = cadetes.crear_cuenta(client, entrada.email, entrada.password, entrada.nombre)
     cadetes.cerrar_sesion(request.session)
+    security_logger.info("Cuenta de cadete creada: %s (aprobada: %s)", cuenta["id"], cuenta["aprobado"])
+    if not cuenta["aprobado"]:
+        push_cadete.enviar_push_admin(client, "🚴 Nuevo cadete por aprobar", cuenta["nombre"], "/admin/cadetes")
+        return {"ok": True, "pendiente": True}
     cadetes.iniciar_sesion(request.session, cuenta)
-    security_logger.info("Cuenta de cadete creada: %s", cuenta["id"])
     return {"ok": True}
 
 
@@ -1195,7 +1217,7 @@ def admin_cadete_push_suscribir(entrada: SuscripcionPushIn, request: Request):
     if not _cadete_activo(request):
         raise HTTPException(status_code=401, detail="Sesión de cadete requerida")
     try:
-        push_cadete.guardar_suscripcion(get_client(), entrada.model_dump())
+        push_cadete.guardar_suscripcion(get_client(), entrada.model_dump(), cadete=_slug_cadete(request))
     except ValueError as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
     return {"ok": True}
@@ -1509,7 +1531,7 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     emitido_en = pedido.get("recibo_emitido_en") or pedido.get("recibo_enviado_en") or ahora_recibo
     # Solo cuenta como de Alejo si no hay sesión de admin: Vlad puede tener
     # las dos abiertas en el mismo navegador.
-    enviado_por_cadete = _quien_opera(request) == CADETE_SLUG
+    enviado_por_cadete = _quien_opera(request) not in (None, "Vlad")
     pedido_para_mail = {
         **pedido, "recibo_id": recibo_id, "recibo_emitido_en": emitido_en,
         "entregado_por_cadete": enviado_por_cadete, "recibo_pago": pago_recibo,
@@ -1598,10 +1620,11 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             referidos.acreditar_por_compra(client, pedido["cliente_id"], pedido_id)
         except Exception:
             logger.exception("No se pudo acreditar el premio de referido del pedido %s", pedido_id)
-    if primer_envio and pedido.get("asignado_a") == CADETE_SLUG:
+    if primer_envio and pedido.get("asignado_a"):
         nombre = f"{cliente.get('nombre') or ''} {cliente.get('apellido') or ''}".strip() or "cliente"
         saldo_cadete.registrar(client, "pedido", pedido, f"Entrega a {nombre}",
-                               saldo_cadete.monto_pedido_ars(_cargar_cotizacion_catalogo()))
+                               saldo_cadete.monto_pedido_ars(_cargar_cotizacion_catalogo()),
+                               cadete=pedido["asignado_a"])
     return {"ok": True, "recibo_id": recibo_id, "reenviado": bool(pedido.get("recibo_enviado_en"))}
 
 
@@ -2531,10 +2554,23 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         return (f'<button class="btn-enviar-recibo" type="button" '
                 f'data-id="{pedido_id}">Enviar recibo</button>')
 
-    def _control_derivar(entidad_id, tipo, derivado):
-        if derivado:
-            return f'<button class="btn-quitar-derivacion" type="button" data-id="{entidad_id}" data-tipo="{tipo}">Derivado a Alejo</button>'
-        return f'<button class="btn-derivar-entrega" type="button" data-id="{entidad_id}" data-tipo="{tipo}">Derivar a Alejo</button>'
+    # Cadetes a los que se puede derivar; sin cuentas todavía, solo Alejo (como siempre).
+    opciones_cadete = [(cadetes.slug_de(c), c.get("nombre") or cadetes.nombre_de(cadetes.slug_de(c)))
+                       for c in cadetes.activos(client)] or [(CADETE_SLUG, "Alejo")]
+
+    def _control_derivar(entidad_id, tipo, asignado_a):
+        entidad_id = html.escape(str(entidad_id))
+        if asignado_a:
+            return (f'<button class="btn-quitar-derivacion" type="button" data-id="{entidad_id}" data-tipo="{tipo}" '
+                    f'data-cadete-nombre="{html.escape(cadetes.nombre_de(asignado_a))}">'
+                    f'Derivado a {html.escape(cadetes.nombre_de(asignado_a))}</button>')
+        if len(opciones_cadete) == 1:
+            slug, nombre = opciones_cadete[0]
+            return (f'<button class="btn-derivar-entrega" type="button" data-id="{entidad_id}" data-tipo="{tipo}" '
+                    f'data-cadete="{html.escape(slug)}" data-cadete-nombre="{html.escape(nombre)}">Derivar a {html.escape(nombre)}</button>')
+        opciones = "".join(f'<option value="{html.escape(slug)}">{html.escape(nombre)}</option>' for slug, nombre in opciones_cadete)
+        return (f'<select class="sel-derivar-entrega" data-id="{entidad_id}" data-tipo="{tipo}" aria-label="Derivar a un cadete">'
+                f'<option value="" selected disabled>Derivar a…</option>{opciones}</select>')
 
     def _controles_entrega(pedido):
         pedido_id = html.escape(pedido.get("id", ""))
@@ -2560,7 +2596,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             '<details class="entrega-mas"><summary>Más opciones</summary><div class="entrega-menu">'
             f'{boton_direcciones}'
             f'<button class="btn-editar-entrega" type="button" data-id="{pedido_id}" data-fecha="{fecha}" data-tipo="pedido">Editar fecha</button>'
-            f'{_control_derivar(pedido_id, "pedido", pedido.get("asignado_a") == CADETE_SLUG)}'
+            f'{_control_derivar(pedido_id, "pedido", pedido.get("asignado_a"))}'
             f'<button class="btn-eliminar-entrega" type="button" data-id="{pedido_id}">Eliminar entrega</button>'
             '</div></details></div>'
         )
@@ -2582,7 +2618,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             f'<button class="btn-editar-tarea" type="button" data-id="{tarea_id}" data-fecha="{fecha}" data-tipo="tarea">Editar fecha</button>'
             f'<button class="btn-editar-texto-tarea" type="button" data-id="{tarea_id}" '
             f'data-titulo="{html.escape(tarea.get("titulo") or "")}" data-nota="{html.escape(tarea.get("nota") or "")}">Editar tarea</button>'
-            f'{_control_derivar(tarea_id, "tarea", tarea.get("asignado_a") == CADETE_SLUG)}'
+            f'{_control_derivar(tarea_id, "tarea", tarea.get("asignado_a"))}'
             f'<button class="btn-eliminar-tarea" type="button" data-id="{tarea_id}">Eliminar tarea</button>'
             '</div>'
         )
@@ -2670,12 +2706,20 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         return (f'<div class="grupo-entregas"><h3>{titulo} ({len(entregas)})</h3>'
                 f'<div class="grupo-entregas-lista">{tarjetas}</div></div>')
 
-    entregas_mias = [e for e in entregas_pendientes if e[1].get("asignado_a") != CADETE_SLUG]
-    entregas_alejo = [e for e in entregas_pendientes if e[1].get("asignado_a") == CADETE_SLUG]
-    pedidos_hoy_html = (
-        _grupo_entregas("Mis entregas", entregas_mias, "No tenés entregas pendientes para hoy.")
-        + _grupo_entregas("Entregas de Alejo", entregas_alejo, "Alejo no tiene entregas pendientes para hoy.")
+    def _slugs_de_cadetes(filas):
+        """Slugs con entregas, en orden alfabético por nombre (hoy casi siempre uno)."""
+        return sorted({f.get("asignado_a") for f in filas if f.get("asignado_a")}, key=lambda x: cadetes.nombre_de(x).lower())
+
+    pedidos_hoy_html = _grupo_entregas(
+        "Mis entregas", [e for e in entregas_pendientes if not e[1].get("asignado_a")],
+        "No tenés entregas pendientes para hoy.",
     )
+    for slug_cadete in dict.fromkeys([slug for slug, _ in opciones_cadete] + _slugs_de_cadetes(e[1] for e in entregas_pendientes)):
+        nombre_cadete = cadetes.nombre_de(slug_cadete)
+        pedidos_hoy_html += _grupo_entregas(
+            f"Entregas de {nombre_cadete}", [e for e in entregas_pendientes if e[1].get("asignado_a") == slug_cadete],
+            f"{nombre_cadete} no tiene entregas pendientes para hoy.",
+        )
     if pedidos_historial or tareas_historial:
         def _pedido_historial_html(pedido):
             cliente_pedido = clientes_por_id.get(pedido.get("cliente_id"), {})
@@ -2747,10 +2791,14 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             return (f'<div class="grupo-entregas" data-responsable="{responsable}"><h3>{titulo} ({len(items)})</h3>'
                     f'<div class="grupo-entregas-lista">{"".join(h for _, h in items)}</div></div>')
 
-        pedidos_historial_html = (
-            _grupo_historial("Mis entregas", "admin", [i for i in items_historial if i[0].get("asignado_a") != CADETE_SLUG])
-            + _grupo_historial("Entregas de Alejo", "alejo", [i for i in items_historial if i[0].get("asignado_a") == CADETE_SLUG])
+        pedidos_historial_html = _grupo_historial(
+            "Mis entregas", "admin", [i for i in items_historial if not i[0].get("asignado_a")]
         )
+        for slug_cadete in _slugs_de_cadetes(i[0] for i in items_historial):
+            pedidos_historial_html += _grupo_historial(
+                f"Entregas de {cadetes.nombre_de(slug_cadete)}", slug_cadete,
+                [i for i in items_historial if i[0].get("asignado_a") == slug_cadete],
+            )
     else:
         pedidos_historial_html = '<p class="vacio">No hay pedidos para esta fecha.</p>'
 
@@ -2769,8 +2817,14 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
         f'<input id="tarea-fecha" type="date" required value="{fecha_hoy}" title="Fecha de la tarea">'
         f'<div class="tarea-direccion-wrap"><input id="tarea-cliente-busqueda" required maxlength="200" placeholder="Cliente" autocomplete="off"><input type="hidden" id="tarea-cliente"><ul id="tarea-cliente-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Clientes" hidden></ul></div>'
         f'<input id="tarea-nota" maxlength="1000" placeholder="Nota opcional"><div class="tarea-direccion-wrap"><input id="tarea-direccion" maxlength="500" placeholder="Agregar dirección" autocomplete="street-address"><ul id="tarea-direccion-sugerencias" class="tarea-direccion-sugerencias" role="listbox" aria-label="Sugerencias de dirección" hidden></ul></div>'
-        f'<label class="tarea-enviar-alejo"><input type="checkbox" id="tarea-enviar-alejo"> Enviar a Alejo</label>'
-        f'<button type="submit">Agregar tarea</button></div></form>'
+        + (
+            f'<label class="tarea-enviar-alejo"><input type="checkbox" id="tarea-enviar-alejo"> Enviar a {html.escape(opciones_cadete[0][1])}</label>'
+            if len(opciones_cadete) == 1 else
+            '<select id="tarea-cadete" aria-label="Asignar la tarea a"><option value="">Para mí</option>'
+            + "".join(f'<option value="{html.escape(slug)}">{html.escape(nombre)}</option>' for slug, nombre in opciones_cadete)
+            + '</select>'
+        )
+        + f'<button type="submit">Agregar tarea</button></div></form>'
     )
     def _grupo_proximas(titulo, items):
         if not items:
@@ -2780,8 +2834,11 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 
     proximas_html = (
         '<section class="pedidos-hoy"><div class="pedidos-hoy-header"><h2>Próximas tareas</h2></div>'
-        + _grupo_proximas("Mías", [t for t in tareas_proximas if t.get("asignado_a") != CADETE_SLUG])
-        + _grupo_proximas("De Alejo", [t for t in tareas_proximas if t.get("asignado_a") == CADETE_SLUG])
+        + _grupo_proximas("Mías", [t for t in tareas_proximas if not t.get("asignado_a")])
+        + "".join(
+            _grupo_proximas(f"De {cadetes.nombre_de(slug_cadete)}", [t for t in tareas_proximas if t.get("asignado_a") == slug_cadete])
+            for slug_cadete in _slugs_de_cadetes(tareas_proximas)
+        )
         + '</section>'
         if tareas_proximas else ""
     )
@@ -2798,14 +2855,16 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
     )
 
     if not mostrar_clientes:
-        resumen_saldo = saldo_cadete.resumen(saldo_cadete.listar(client))
-        saldo_resumen_html = (
-            f'<a class="saldo-cadete-resumen" href="/admin/cadete/saldo"><span>Movimientos de Alejo: '
-            f'<strong>{resumen_saldo["movimientos_pendientes"]}</strong> sin pagar '
-            f'({resumen_saldo["movimientos_total"]} en total)</span><span>'
-            f'{"Saldo a favor" if resumen_saldo["saldo_pendiente"] < 0 else "Saldo a pagar"}: '
-            f'<strong>$ {_formatear_entero_ar(abs(resumen_saldo["saldo_pendiente"]))}</strong></span></a>'
-        )
+        saldo_resumen_html = ""
+        for slug_saldo, nombre_saldo in opciones_cadete:
+            resumen_saldo = saldo_cadete.resumen(saldo_cadete.listar(client, slug_saldo))
+            saldo_resumen_html += (
+                f'<a class="saldo-cadete-resumen" href="/admin/cadete/saldo?cadete={quote(slug_saldo, safe="")}"><span>Movimientos de {html.escape(nombre_saldo)}: '
+                f'<strong>{resumen_saldo["movimientos_pendientes"]}</strong> sin pagar '
+                f'({resumen_saldo["movimientos_total"]} en total)</span><span>'
+                f'{"Saldo a favor" if resumen_saldo["saldo_pendiente"] < 0 else "Saldo a pagar"}: '
+                f'<strong>$ {_formatear_entero_ar(abs(resumen_saldo["saldo_pendiente"]))}</strong></span></a>'
+            )
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Administración — The Tech Room Arg.</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}{_CONFIRMAR_COMPLETADO_ESTILO}{_leer_ui("entregas_pago.css.html")}{_leer_ui("admin_secciones.css.html")}{_leer_ui("admin_canjes.css.html")}</head><body class="admin-entregas">
 <div class="panel">
@@ -2817,7 +2876,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
   <div id="admin-seccion-pedidos">
   <div class="admin-seccion-cabecera"><h2>Pedidos y recibos</h2><button id="btn-notificaciones-admin" class="btn-clientes" type="button" hidden>Activar notificaciones</button></div>
   {saldo_resumen_html}
-  {_punto_encuentro_html(_punto_encuentro(client, fecha_hoy), fecha_hoy, "Punto de encuentro con Alejo")}
+  {_punto_encuentro_html(_punto_encuentro(client, fecha_hoy), fecha_hoy, "Punto de encuentro con " + (opciones_cadete[0][1] if len(opciones_cadete) == 1 else "los cadetes"))}
   <section class="historial-pedidos"><h2>Historial de pedidos</h2><input id="filtro-historial-pedidos" type="search" placeholder="Buscar por cliente o producto"><label for="fecha-historial-pedidos">Fecha de consulta</label><input id="fecha-historial-pedidos" type="date" value="{fecha_historial}">{pedidos_historial_html}</section>
   {pendientes_hoy_seccion_html}
   </div>
@@ -3211,7 +3270,7 @@ document.getElementById("tarea-cerrar")?.addEventListener("click", () => {{
 }});
 document.getElementById("form-tarea-entrega")?.addEventListener("submit", async (e) => {{
   e.preventDefault();
-  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:document.getElementById("tarea-fecha").value, titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, cliente_nombre:document.getElementById("tarea-cliente-busqueda").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value, enviar_a_alejo:document.getElementById("tarea-enviar-alejo").checked}}) }});
+  const r = await fetch("/admin/tareas-entrega", {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body:JSON.stringify({{fecha_entrega:document.getElementById("tarea-fecha").value, titulo:document.getElementById("tarea-titulo").value, cliente_id:document.getElementById("tarea-cliente").value || null, cliente_nombre:document.getElementById("tarea-cliente-busqueda").value, nota:document.getElementById("tarea-nota").value, direccion:document.getElementById("tarea-direccion").value, enviar_a_alejo:Boolean(document.getElementById("tarea-enviar-alejo")?.checked), cadete:document.getElementById("tarea-cadete")?.value || null}}) }});
   if (!r.ok) {{ alert("No se pudo crear la tarea."); return; }}
   borrarBorrador_tarea();
   location.href = `/admin/clientes?fecha_pedidos=${{document.getElementById("tarea-fecha").value}}`;
@@ -3219,7 +3278,7 @@ document.getElementById("form-tarea-entrega")?.addEventListener("submit", async 
 // Borrador del formulario: cambiar el día de consulta recarga la página;
 // si había algo a medio cargar, se guarda y se restaura en el día nuevo.
 const BORRADOR_tarea = "ttra_borrador_tarea";
-const CAMPOS_tarea = ["tarea-titulo", "tarea-fecha", "tarea-cliente-busqueda", "tarea-cliente", "tarea-nota", "tarea-direccion", "tarea-enviar-alejo"];
+const CAMPOS_tarea = ["tarea-titulo", "tarea-fecha", "tarea-cliente-busqueda", "tarea-cliente", "tarea-nota", "tarea-direccion", "tarea-enviar-alejo", "tarea-cadete"];
 function guardarBorrador_tarea() {{
   if (!(document.getElementById("tarea-campos") && !document.getElementById("tarea-campos").hidden)) return;
   const datos = {{}};
@@ -3239,21 +3298,26 @@ function borrarBorrador_tarea() {{ try {{ sessionStorage.removeItem(BORRADOR_tar
 function _rutaDerivar(tipo, id) {{
   return tipo === "pedido" ? `/admin/pedidos/${{id}}/derivar` : `/admin/tareas-entrega/${{id}}/derivar`;
 }}
-document.querySelectorAll(".btn-derivar-entrega").forEach((btn) => {{
-  btn.addEventListener("click", async () => {{
-    const observaciones = prompt("Dejale una observación a Alejo (opcional)", "");
-    if (observaciones === null) return;
-    btn.disabled = true;
-    const r = await fetch(_rutaDerivar(btn.dataset.tipo, btn.dataset.id), {{
-      method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: true, observaciones}}),
-    }});
-    if (!r.ok) {{ alert("No se pudo derivar la entrega."); btn.disabled = false; return; }}
-    location.reload();
+async function _derivarA(el, cadete, nombre) {{
+  const observaciones = prompt("Dejale una observación a " + nombre + " (opcional)", "");
+  if (observaciones === null) {{ if (el.tagName === "SELECT") el.selectedIndex = 0; return; }}
+  el.disabled = true;
+  const r = await fetch(_rutaDerivar(el.dataset.tipo, el.dataset.id), {{
+    method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: true, observaciones, cadete}}),
   }});
+  if (!r.ok) {{ alert("No se pudo derivar la entrega."); el.disabled = false; return; }}
+  location.reload();
+}}
+document.querySelectorAll(".btn-derivar-entrega").forEach((btn) => {{
+  btn.addEventListener("click", () => _derivarA(btn, btn.dataset.cadete, btn.dataset.cadeteNombre));
+}});
+document.querySelectorAll(".sel-derivar-entrega").forEach((sel) => {{
+  sel.addEventListener("change", () => _derivarA(sel, sel.value, sel.options[sel.selectedIndex].text));
 }});
 document.querySelectorAll(".btn-quitar-derivacion").forEach((btn) => {{
   btn.addEventListener("click", async () => {{
-    if (!confirm(btn.dataset.tipo === "pedido" ? "¿Quitar pedido a Alejo?" : "¿Quitar tarea a Alejo?")) return;
+    const nombre = btn.dataset.cadeteNombre || "el cadete";
+    if (!confirm(btn.dataset.tipo === "pedido" ? "¿Quitar pedido a " + nombre + "?" : "¿Quitar tarea a " + nombre + "?")) return;
     btn.disabled = true;
     const r = await fetch(_rutaDerivar(btn.dataset.tipo, btn.dataset.id), {{
       method: "PUT", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify({{derivado: false}}),
@@ -3663,7 +3727,8 @@ def admin_cadete(request: Request):
   <h1>Creá tu cuenta</h1>
   <p>Con tu email vas a recibir un aviso por cada nota o pedido que te asignen y por cada pago.</p>
   <p id="err" class="error" style="display:none"></p>
-  <input id="email" type="email" placeholder="Email" autocomplete="username" autofocus>
+  <input id="nombre" type="text" maxlength="100" placeholder="Nombre y apellido" autocomplete="name" autofocus>
+  <input id="email" type="email" placeholder="Email" autocomplete="username">
   <input id="pass" type="password" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="new-password">
   <input id="pass2" type="password" placeholder="Repetí la contraseña" autocomplete="new-password">
   <button id="btn">Crear cuenta</button>
@@ -3676,10 +3741,14 @@ document.getElementById("btn").addEventListener("click", async () => {{
   if (password !== document.getElementById("pass2").value) {{ mostrar("Las contraseñas no coinciden"); return; }}
   const r = await fetch("/admin/cadete/cuenta", {{
     method: "POST", headers: {{"Content-Type": "application/json"}},
-    body: JSON.stringify({{email: document.getElementById("email").value.trim(), password}})
+    body: JSON.stringify({{nombre: document.getElementById("nombre").value.trim(), email: document.getElementById("email").value.trim(), password}})
   }});
-  if (r.ok) {{ location.reload(); return; }}
   const datos = await r.json().catch(() => ({{}}));
+  if (r.ok && datos.pendiente) {{
+    document.querySelector(".tarjeta").innerHTML = "<h1>Cuenta creada</h1><p>Vlad tiene que aprobarla. Cuando lo haga, entrá con tu email y tu contraseña.</p>";
+    return;
+  }}
+  if (r.ok) {{ location.reload(); return; }}
   mostrar(datos.error || "No se pudo crear la cuenta");
 }});
 document.getElementById("pass2").addEventListener("keydown", (e) => {{
@@ -3692,27 +3761,51 @@ document.getElementById("pass2").addEventListener("keydown", (e) => {{
     if not _cadete_activo(request):
         return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Entregas — Ingresar</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}</head><body>
-<div class="tarjeta">
+<div class="tarjeta" id="vista-ingresar">
   <h1>Panel de entregas</h1>
   <p id="err" class="error" style="display:none"></p>
-  <input id="email" type="email" placeholder="Email (vacío si todavía no tenés cuenta)" autocomplete="username" autofocus>
+  <input id="email" type="email" placeholder="Email" autocomplete="username" autofocus>
   <input id="pass" type="password" placeholder="Contraseña" autocomplete="current-password">
   <button id="btn">Ingresar</button>
+  <button id="ir-crear" type="button" style="background:none;border:0;box-shadow:none;margin-top:8px;text-decoration:underline;cursor:pointer;color:inherit">Crear cuenta</button>
+</div>
+<div class="tarjeta" id="vista-crear" hidden>
+  <h1>Crear cuenta</h1>
+  <p>Con tu email vas a recibir un aviso por cada nota o pedido que te asignen y por cada pago.</p>
+  <p id="err2" class="error" style="display:none"></p>
+  <input id="clave" type="password" placeholder="Clave de acceso que te dio Vlad" autocomplete="off">
+  <input id="nombre" type="text" maxlength="100" placeholder="Nombre y apellido" autocomplete="name">
+  <input id="email2" type="email" placeholder="Email" autocomplete="username">
+  <input id="pass2" type="password" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="new-password">
+  <input id="pass3" type="password" placeholder="Repetí la contraseña" autocomplete="new-password">
+  <button id="btn-crear">Crear cuenta</button>
+  <button id="ir-ingresar" type="button" style="background:none;border:0;box-shadow:none;margin-top:8px;text-decoration:underline;cursor:pointer;color:inherit">Ya tengo cuenta</button>
 </div>
 <script>
-document.getElementById("btn").addEventListener("click", async () => {{
-  const r = await fetch("/admin/cadete/login", {{
-    method: "POST", headers: {{"Content-Type": "application/json"}},
-    body: JSON.stringify({{email: document.getElementById("email").value.trim(), password: document.getElementById("pass").value}})
-  }});
+const $ = (id) => document.getElementById(id);
+const post = (url, cuerpo) => fetch(url, {{method: "POST", headers: {{"Content-Type": "application/json"}}, body: JSON.stringify(cuerpo)}});
+const aviso = (id, m) => {{ $(id).textContent = m; $(id).style.display = "block"; }};
+$("ir-crear").addEventListener("click", () => {{ $("vista-ingresar").hidden = true; $("vista-crear").hidden = false; $("clave").focus(); }});
+$("ir-ingresar").addEventListener("click", () => {{ $("vista-crear").hidden = true; $("vista-ingresar").hidden = false; $("email").focus(); }});
+$("btn").addEventListener("click", async () => {{
+  const r = await post("/admin/cadete/login", {{email: $("email").value.trim(), password: $("pass").value}});
   if (r.ok) {{ location.reload(); return; }}
   const datos = await r.json().catch(() => ({{}}));
-  const err = document.getElementById("err");
-  err.textContent = datos.error || "Contraseña incorrecta";
-  err.style.display = "block";
+  aviso("err", datos.error || "Email o contraseña incorrectos");
 }});
-document.getElementById("pass").addEventListener("keydown", (e) => {{
-  if (e.key === "Enter") document.getElementById("btn").click();
+$("pass").addEventListener("keydown", (e) => {{ if (e.key === "Enter") $("btn").click(); }});
+$("btn-crear").addEventListener("click", async () => {{
+  if ($("pass2").value !== $("pass3").value) {{ aviso("err2", "Las contraseñas no coinciden"); return; }}
+  const acceso = await post("/admin/cadete/login", {{password: $("clave").value}});
+  if (!acceso.ok) {{ aviso("err2", "La clave de acceso no es correcta"); return; }}
+  const r = await post("/admin/cadete/cuenta", {{nombre: $("nombre").value.trim(), email: $("email2").value.trim(), password: $("pass2").value}});
+  const datos = await r.json().catch(() => ({{}}));
+  if (r.ok && datos.pendiente) {{
+    $("vista-crear").innerHTML = "<h1>Cuenta creada</h1><p>Vlad tiene que aprobarla. Cuando lo haga, entrá con tu email y tu contraseña.</p>";
+    return;
+  }}
+  if (r.ok) {{ location.reload(); return; }}
+  aviso("err2", datos.error || "No se pudo crear la cuenta");
 }});
 </script>
 {_ADMIN_CLIENTES_PWA_SCRIPT}
@@ -3736,9 +3829,9 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
 
     filas_clientes = client.table("clientes").select("*").execute().data
     clientes_por_id = {c.get("id"): c for c in filas_clientes}
-    pedidos = client.table("pedidos").select("*").eq("asignado_a", CADETE_SLUG).execute().data
+    pedidos = client.table("pedidos").select("*").eq("asignado_a", _slug_cadete(request)).execute().data
     pedidos = [p for p in pedidos if _activo(p)]
-    tareas = client.table("tareas_entrega").select("*").eq("asignado_a", CADETE_SLUG).execute().data
+    tareas = client.table("tareas_entrega").select("*").eq("asignado_a", _slug_cadete(request)).execute().data
     tareas = [t for t in tareas if _activo(t)]
     tareas_ids = {t.get("id") for t in tareas}
     tareas_con_recibo = {
@@ -3925,7 +4018,7 @@ document.getElementById("pass").addEventListener("keydown", (e) => {{
             )
 
     try:
-        saldo_alejo = saldo_cadete.resumen(saldo_cadete.listar(client))["saldo_pendiente"]
+        saldo_alejo = saldo_cadete.resumen(saldo_cadete.listar(client, _slug_cadete(request)))["saldo_pendiente"]
         saldo_alejo_html = (
             f'<a class="saldo-cadete-titulo" href="/admin/cadete/saldo">'
             f'{"Cobrado por adelantado" if saldo_alejo < 0 else "Te debo"}: '
@@ -5116,6 +5209,8 @@ class TareaEntregaIn(BaseModel):
     nota: str | None = Field(default=None, max_length=1000)
     direccion: str | None = Field(default=None, max_length=500)
     enviar_a_alejo: bool = False
+    # Slug del cadete al que va la nota cuando la crea el admin.
+    cadete: str | None = Field(default=None, max_length=60)
     derivar_a_vlad: bool = False
     # La nota se creó desde el panel de Alejo: rige su regla aunque el
     # navegador también tenga sesión de admin abierta.
@@ -5857,7 +5952,7 @@ def admin_cadete_papelera(request: Request):
     if not _cadete_activo(request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
     client = get_client()
-    pedidos_borrados, tareas_borradas = _purgar_y_listar_papelera(client, asignado_a=CADETE_SLUG)
+    pedidos_borrados, tareas_borradas = _purgar_y_listar_papelera(client, asignado_a=_slug_cadete(request))
     clientes_por_id = {c.get("id"): c for c in client.table("clientes").select("*").execute().data}
     return _pagina_papelera(
         request, "Borrados", pedidos_borrados, tareas_borradas, clientes_por_id, "/admin/cadete",
@@ -5878,7 +5973,7 @@ def admin_papelera_restaurar(tipo: Literal["pedido", "tarea"], item_id: str, req
     if not fila.get("borrado_en"):
         raise HTTPException(status_code=404, detail="No está borrado")
     if not _clientes_admin_activo(request):
-        propio = fila.get("asignado_a") == CADETE_SLUG or fila.get("borrado_por") == CADETE_SLUG
+        propio = fila.get("asignado_a") == _slug_cadete(request) or fila.get("borrado_por") == _slug_cadete(request)
         if not propio:
             raise HTTPException(status_code=403, detail="No podés restaurar este elemento")
     if tipo == "pedido":
@@ -5945,23 +6040,23 @@ def admin_pedido_derivar(pedido_id: str, entrada: DerivarEntregaIn, request: Req
     if not es_admin:
         # El cadete solo puede devolverle a Vlad un pedido que ya es suyo
         # (nunca auto-asignarse uno ajeno ni tocar sus observaciones).
-        if entrada.derivado or filas[0].get("asignado_a") != CADETE_SLUG:
+        if entrada.derivado or filas[0].get("asignado_a") != _slug_cadete(request):
             raise HTTPException(status_code=403, detail="No podés derivar este pedido")
         client.table("pedidos").update({"asignado_a": None}).eq("id", pedido_id).execute()
         return {"ok": True, "pedido_id": pedido_id, "asignado_a": None}
-    asignado_a = CADETE_SLUG if entrada.derivado else None
+    asignado_a = _cadete_destino(client, entrada.cadete) if entrada.derivado else None
     observaciones = ((entrada.observaciones or "").strip() or None) if entrada.derivado else None
     client.table("pedidos").update({
         "asignado_a": asignado_a, "observaciones_cadete": observaciones, "visto_en": None,
     }).eq("id", pedido_id).execute()
-    if asignado_a == CADETE_SLUG:
+    if asignado_a:
         filas_cliente = client.table("clientes").select("nombre,apellido").eq("id", filas[0].get("cliente_id")).execute().data
         nombre_cliente = (
             f"{filas_cliente[0].get('nombre', '')} {filas_cliente[0].get('apellido', '')}".strip()
             if filas_cliente else ""
         ) or "un cliente"
         push_cadete.enviar_push_cadete(
-            client, "📦 Nuevo pedido asignado", f"Te asignaron la entrega de {nombre_cliente}."
+            client, "📦 Nuevo pedido asignado", f"Te asignaron la entrega de {nombre_cliente}.", slug=asignado_a
         )
     return {"ok": True, "pedido_id": pedido_id, "asignado_a": asignado_a}
 
@@ -6006,9 +6101,9 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
     # salvo que tilde "Derivar a Vlad" al crearla (se la manda directo, sin
     # el paso extra de derivarla después).
     if es_admin and not entrada.desde_panel_cadete:
-        asignado_a = CADETE_SLUG if entrada.enviar_a_alejo else None
+        asignado_a = _cadete_destino(client, entrada.cadete) if (entrada.enviar_a_alejo or entrada.cadete) else None
     else:
-        asignado_a = None if entrada.derivar_a_vlad else CADETE_SLUG
+        asignado_a = None if entrada.derivar_a_vlad else _slug_cadete(request)
     tarea = {
         "id": str(uuid.uuid4()),
         "fecha_entrega": entrada.fecha_entrega.isoformat(),
@@ -6027,8 +6122,8 @@ def admin_crear_tarea_entrega(entrada: TareaEntregaIn, request: Request):
             raise HTTPException(status_code=403, detail="Solo el admin define el monto de una tarea")
         tarea["monto_cadete"] = entrada.monto_cadete
     client.table("tareas_entrega").insert(tarea).execute()
-    if es_admin and asignado_a == CADETE_SLUG:
-        push_cadete.enviar_push_cadete(client, "📝 Nueva nota asignada", tarea["titulo"])
+    if es_admin and asignado_a:
+        push_cadete.enviar_push_cadete(client, "📝 Nueva nota asignada", tarea["titulo"], slug=asignado_a)
     return {"ok": True, "tarea": tarea}
 
 
@@ -6044,15 +6139,16 @@ def admin_completar_tarea_entrega(tarea_id: str, request: Request):
         raise HTTPException(status_code=403, detail="Esta tarea no está asignada a tu usuario")
     completada_en = datetime.now(timezone.utc).isoformat()
     actualizacion_tarea = {"completada_en": completada_en}
-    if _quien_opera(request) == CADETE_SLUG:
+    if _quien_opera(request) not in (None, "Vlad"):
         observacion_previa = (filas[0].get("observaciones_cadete") or "").strip()
-        if "Entregado por Alejo" not in observacion_previa:
+        if "Entregado por " not in observacion_previa:
+            entregado = f"Entregado por {cadetes.nombre_de(_slug_cadete(request))}"
             actualizacion_tarea["observaciones_cadete"] = (
-                f"{observacion_previa} · Entregado por Alejo" if observacion_previa else "Entregado por Alejo"
+                f"{observacion_previa} · {entregado}" if observacion_previa else entregado
             )
     client.table("tareas_entrega").update(actualizacion_tarea).eq("id", tarea_id).execute()
-    if filas[0].get("asignado_a") == CADETE_SLUG:
-        saldo_cadete.registrar(client, "tarea", filas[0], filas[0].get("titulo"))
+    if filas[0].get("asignado_a"):
+        saldo_cadete.registrar(client, "tarea", filas[0], filas[0].get("titulo"), cadete=filas[0]["asignado_a"])
     return {"ok": True, "tarea_id": tarea_id, "completada_en": completada_en}
 
 
@@ -6071,7 +6167,7 @@ def admin_restaurar_tarea_entrega(tarea_id: str, request: Request):
     if not filas[0].get("completada_en"):
         raise HTTPException(status_code=409, detail="La tarea no está completada")
     observaciones = (filas[0].get("observaciones_cadete") or "").strip()
-    observaciones = re.sub(r"(?:\s*·\s*)?Entregado por Alejo", "", observaciones).strip(" ·") or None
+    observaciones = re.sub(r"(?:\s*·\s*)?Entregado por [^·]+", "", observaciones).strip(" ·") or None
     client.table("tareas_entrega").update(
         {"completada_en": None, "observaciones_cadete": observaciones}
     ).eq("id", tarea_id).execute()
@@ -6136,7 +6232,7 @@ def admin_punto_encuentro(entrada: PuntoEncuentroIn, request: Request):
         client.table(_TABLA_PUNTO_ENCUENTRO).insert(fila).execute()
     # Su panel no se refresca solo: sin aviso, Alejo no se entera del punto
     # que fijó Vlad hasta que recarga la página.
-    if quien != CADETE_SLUG and fila["direccion"]:
+    if quien == "Vlad" and fila["direccion"]:
         push_cadete.enviar_push_cadete(client, "📍 Punto de encuentro", fila["direccion"])
     return {"ok": True, **fila}
 
@@ -6148,12 +6244,12 @@ def _marcar_visto(request: Request, tabla: str, entidad_id: str):
     aunque en el mismo navegador también esté abierta la de admin.
     """
     if not _cadete_activo(request):
-        raise HTTPException(status_code=403, detail="Solo Alejo puede marcar como visto")
+        raise HTTPException(status_code=403, detail="Solo el cadete puede marcar como visto")
     client = get_client()
     filas = client.table(tabla).select("*").eq("id", entidad_id).execute().data
     if not filas or not _activo(filas[0]):
         raise HTTPException(status_code=404, detail="No encontrado")
-    if filas[0].get("asignado_a") != CADETE_SLUG:
+    if filas[0].get("asignado_a") != _slug_cadete(request):
         raise HTTPException(status_code=403, detail="No está asignado a tu usuario")
     visto_en = filas[0].get("visto_en")
     if not visto_en:
@@ -6185,17 +6281,17 @@ def admin_tarea_derivar(tarea_id: str, entrada: DerivarEntregaIn, request: Reque
     if not es_admin:
         # El cadete solo puede devolverle a Vlad una nota que ya es suya
         # (nunca auto-asignarse una tarea ajena ni tocar sus observaciones).
-        if entrada.derivado or filas[0].get("asignado_a") != CADETE_SLUG:
+        if entrada.derivado or filas[0].get("asignado_a") != _slug_cadete(request):
             raise HTTPException(status_code=403, detail="No podés derivar esta tarea")
         client.table("tareas_entrega").update({"asignado_a": None}).eq("id", tarea_id).execute()
         return {"ok": True, "tarea_id": tarea_id, "asignado_a": None}
-    asignado_a = CADETE_SLUG if entrada.derivado else None
+    asignado_a = _cadete_destino(client, entrada.cadete) if entrada.derivado else None
     observaciones = ((entrada.observaciones or "").strip() or None) if entrada.derivado else None
     client.table("tareas_entrega").update({
         "asignado_a": asignado_a, "observaciones_cadete": observaciones, "visto_en": None,
     }).eq("id", tarea_id).execute()
-    if asignado_a == CADETE_SLUG:
-        push_cadete.enviar_push_cadete(client, "📝 Nueva nota asignada", filas[0].get("titulo") or "")
+    if asignado_a:
+        push_cadete.enviar_push_cadete(client, "📝 Nueva nota asignada", filas[0].get("titulo") or "", slug=asignado_a)
     return {"ok": True, "tarea_id": tarea_id, "asignado_a": asignado_a}
 
 
@@ -7162,9 +7258,16 @@ def admin_cadete_saldo(request: Request):
     es_admin = _clientes_admin_activo(request)
     if not (es_admin or _cadete_activo(request)):
         return RedirectResponse("/admin/cadete", status_code=303)
-    movimientos = saldo_cadete.listar(get_client())
+    client = get_client()
+    activos_cadete = cadetes.activos(client)
+    if es_admin:
+        slug_vista = _cadete_destino(client, request.query_params.get("cadete") or None)
+    else:
+        slug_vista = _slug_cadete(request)
+    movimientos = saldo_cadete.listar(client, slug_vista)
     resumen = saldo_cadete.resumen(movimientos)
     saldo = resumen["saldo_pendiente"]
+    nombre_vista = cadetes.nombre_de(slug_vista)
 
     def _fila(m):
         fecha, dia, hora = _formatear_fecha_ar(m.get("creado_en"))
@@ -7202,8 +7305,8 @@ def admin_cadete_saldo(request: Request):
                 f'<div class="movimiento-monto">$ {_formatear_entero_ar(p.get("monto_ars"))}</div></div>')
 
     if es_admin:
-        saldo_cadete.registrar_pagos_viejos(get_client())
-    pagos = saldo_cadete.listar_pagos(get_client())
+        saldo_cadete.registrar_pagos_viejos(client, slug_vista)
+    pagos = saldo_cadete.listar_pagos(client, slug_vista)
     # El saldo a favor no tiene fila propia: se ve en el total y en lo que va cubriendo.
     cubiertos, _ = saldo_cadete.cobertura(movimientos)
     # Un solo historial por fecha, más nuevo arriba: cada pago queda en el día en
@@ -7229,6 +7332,16 @@ def admin_cadete_saldo(request: Request):
             '</form></div>'
         )
     volver = "/admin/clientes" if es_admin else "/admin/cadete"
+    selector_html = ""
+    if es_admin and len(activos_cadete) > 1:
+        enlaces = []
+        for c in activos_cadete:
+            actual = ' aria-current="page"' if cadetes.slug_de(c) == slug_vista else ""
+            enlaces.append(
+                f'<a class="btn-clientes" href="/admin/cadete/saldo?cadete={quote(cadetes.slug_de(c), safe="")}"{actual}>'
+                f'{html.escape(c.get("nombre") or "")}</a>'
+            )
+        selector_html = '<nav class="saldo-selector">' + "".join(enlaces) + '</nav>'
     if saldo < 0:
         titulo_total = "Saldo a favor tuyo (ya pagado)" if es_admin else "Ya cobrado por adelantado"
         detalle_total = f"Cada movimiento nuevo se descuenta de acá · {resumen['movimientos_total']} en total"
@@ -7239,13 +7352,16 @@ def admin_cadete_saldo(request: Request):
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Saldo</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}{_SALDO_CADETE_ESTILO}</head><body class="op-cadete">
 <div class="panel">
-  <div class="panel-header"><h1>Saldo</h1><a class="volver" href="{volver}">← Volver</a></div>
+  <div class="panel-header"><h1>Saldo{" de " + html.escape(nombre_vista) if es_admin else ""}</h1><a class="volver" href="{volver}">← Volver</a></div>
+  {selector_html}
   <div class="saldo-total{" a-favor" if saldo < 0 else ""}"><p>{titulo_total}</p><strong>$ {_formatear_entero_ar(abs(saldo))}</strong>
     <p>{detalle_total}</p></div>
   {admin_html}
   <section>{lista}</section>
 </div>
 <script>
+const CADETE = {_json_para_script(slug_vista)};
+const _conCadete = (url) => url + (url.includes("?") ? "&" : "?") + "cadete=" + encodeURIComponent(CADETE);
 async function enviar(url, method, body) {{
   const r = await fetch(url, {{method, headers: {{"Content-Type": "application/json"}}, body: body ? JSON.stringify(body) : undefined}});
   if (!r.ok) {{ alert("No se pudo guardar"); return; }}
@@ -7253,7 +7369,7 @@ async function enviar(url, method, body) {{
 }}
 document.getElementById("form-mov")?.addEventListener("submit", (e) => {{
   e.preventDefault();
-  enviar("/admin/cadete/movimientos", "POST", {{descripcion: document.getElementById("mov-desc").value, monto_ars: Number(document.getElementById("mov-monto").value)}});
+  enviar(_conCadete("/admin/cadete/movimientos"), "POST", {{descripcion: document.getElementById("mov-desc").value, monto_ars: Number(document.getElementById("mov-monto").value)}});
 }});
 const formPago = document.getElementById("form-pago");
 const pesos = (n) => "$ " + Math.round(n).toLocaleString("es-AR");
@@ -7277,7 +7393,7 @@ formPago?.addEventListener("submit", async (e) => {{
   datos.append("monto", String(monto));
   const archivo = document.getElementById("pago-comprobante").files[0];
   if (archivo) datos.append("comprobante", archivo);
-  const r = await fetch("/admin/cadete/movimientos/pagar", {{method: "POST", body: datos}});
+  const r = await fetch(_conCadete("/admin/cadete/movimientos/pagar"), {{method: "POST", body: datos}});
   if (!r.ok) {{
     const err = await r.json().catch(() => ({{}}));
     alert(err.error || "No se pudo registrar el pago");
@@ -7316,12 +7432,81 @@ def _exigir_admin(request: Request):
         raise HTTPException(status_code=401, detail="Sesión requerida")
 
 
+@app.get("/admin/cadetes", response_class=HTMLResponse)
+def admin_cadetes(request: Request):
+    if not _clientes_admin_activo(request):
+        return RedirectResponse("/admin/clientes", status_code=303)
+    cuentas = sorted(cadetes._cuentas(get_client()), key=lambda c: (bool(c.get("aprobado")), (c.get("nombre") or "").lower()))
+
+    def _fila(c):
+        cid = html.escape(str(c.get("id")))
+        if not c.get("aprobado"):
+            estado, boton = "Pendiente de aprobación", f'<button type="button" class="btn-accion" data-id="{cid}" data-accion="aprobar">Aprobar</button>'
+        elif c.get("activo"):
+            estado, boton = "Activo", f'<button type="button" class="btn-accion btn-baja" data-id="{cid}" data-accion="desactivar">Dar de baja</button>'
+        else:
+            estado, boton = "De baja", f'<button type="button" class="btn-accion" data-id="{cid}" data-accion="activar">Reactivar</button>'
+        return (f'<div class="movimiento"><div>{html.escape(c.get("nombre") or "")}<small>{html.escape(c.get("email") or "")} · {estado}</small></div>'
+                f'<div class="movimiento-monto">{boton}</div></div>')
+
+    lista = "".join(_fila(c) for c in cuentas) or '<p class="vacio">Todavía no se registró ningún cadete.</p>'
+    return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>Cadetes</title>{_CADETE_PWA_HEAD}{_CADETE_ESTILO}{_SALDO_CADETE_ESTILO}</head><body class="op-cadete">
+<div class="panel">
+  <div class="panel-header"><h1>Cadetes</h1><a class="volver" href="/admin/clientes">← Volver</a></div>
+  <p class="pago-ayuda">Quien se registra con la clave del cadete queda pendiente hasta que lo apruebes. Solo los aprobados aparecen para derivarles entregas y notas.</p>
+  <p id="aviso" role="status" class="pago-ayuda"></p>
+  <section>{lista}</section>
+</div>
+<script>
+document.querySelectorAll(".btn-accion").forEach((b) => b.addEventListener("click", async () => {{
+  if (b.dataset.accion === "desactivar" && !b.dataset.confirmar) {{
+    b.dataset.confirmar = "1"; b.textContent = "¿Seguro? Tocá de nuevo"; setTimeout(() => {{ delete b.dataset.confirmar; b.textContent = "Dar de baja"; }}, 4000); return;
+  }}
+  b.disabled = true;
+  const r = await fetch("/admin/cadetes/" + encodeURIComponent(b.dataset.id) + "/" + b.dataset.accion, {{method: "POST"}});
+  if (!r.ok) {{ document.getElementById("aviso").textContent = "No se pudo guardar el cambio."; b.disabled = false; return; }}
+  location.reload();
+}}));
+</script>
+</body></html>"""
+
+
+def _cambiar_estado_cadete(request: Request, cadete_id: str, cambios: dict):
+    _exigir_admin(request)
+    client = get_client()
+    if not client.table("cadetes").select("id").eq("id", cadete_id).execute().data:
+        raise HTTPException(status_code=404, detail="Cadete no encontrado")
+    client.table("cadetes").update(cambios).eq("id", cadete_id).execute()
+    cadetes._cache.clear()
+    security_logger.info("Cambio de estado de cadete %s: %s", cadete_id, sorted(cambios))
+    return {"ok": True}
+
+
+@app.post("/admin/cadetes/{cadete_id}/aprobar")
+def admin_cadetes_aprobar(cadete_id: str, request: Request):
+    return _cambiar_estado_cadete(request, cadete_id, {"aprobado": True, "activo": True})
+
+
+@app.post("/admin/cadetes/{cadete_id}/desactivar")
+def admin_cadetes_desactivar(cadete_id: str, request: Request):
+    return _cambiar_estado_cadete(request, cadete_id, {"activo": False})
+
+
+@app.post("/admin/cadetes/{cadete_id}/activar")
+def admin_cadetes_activar(cadete_id: str, request: Request):
+    return _cambiar_estado_cadete(request, cadete_id, {"activo": True})
+
+
 @app.post("/admin/cadete/movimientos")
 def admin_cadete_sumar_movimiento(entrada: MovimientoCadeteIn, request: Request):
     _exigir_admin(request)
     fila = {"id": f"manual-{uuid.uuid4()}", "monto_cadete": entrada.monto_ars,
             "fecha_entrega": entregas.ahora_argentina().date().isoformat()}
-    movimiento = saldo_cadete.registrar(get_client(), "ajuste", fila, entrada.descripcion)
+    movimiento = saldo_cadete.registrar(
+        get_client(), "ajuste", fila, entrada.descripcion,
+        cadete=_cadete_destino(get_client(), request.query_params.get("cadete") or None),
+    )
     if not movimiento:
         return JSONResponse({"error": "No se pudo guardar el movimiento"}, status_code=500)
     return {"ok": True, "movimiento": movimiento}
@@ -7369,6 +7554,7 @@ async def _subir_comprobante(request: Request, client):
 async def admin_cadete_registrar_pago(request: Request):
     _exigir_admin(request)
     client = get_client()
+    cadete = _cadete_destino(client, request.query_params.get("cadete") or None)
     monto = None
     if request.headers.get("content-type", "").startswith("multipart/"):
         valor = str((await request.form()).get("monto") or "").strip()
@@ -7378,17 +7564,17 @@ async def admin_cadete_registrar_pago(request: Request):
             except ValueError:
                 return JSONResponse({"error": "El monto no es válido"}, status_code=400)
     try:
-        saldo_cadete.validar_pago(client, monto)
+        saldo_cadete.validar_pago(client, monto, cadete)
     except saldo_cadete.PagoInvalido as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     ruta, error = await _subir_comprobante(request, client)
     if error:
         return error
     try:
-        resultado = saldo_cadete.registrar_pago(client, ruta, monto, cotizacion=_cargar_cotizacion_catalogo())
+        resultado = saldo_cadete.registrar_pago(client, ruta, monto, cotizacion=_cargar_cotizacion_catalogo(), cadete=cadete)
     except saldo_cadete.PagoInvalido as e:
         return JSONResponse({"error": str(e)}, status_code=400)
-    push_cadete.enviar_mail_pago_cadete(client, resultado["monto"], resultado["pagados"], resultado["saldo_a_favor"])
+    push_cadete.enviar_mail_pago_cadete(client, resultado["monto"], resultado["pagados"], resultado["saldo_a_favor"], slug=cadete)
     return {"ok": True, **resultado}
 
 

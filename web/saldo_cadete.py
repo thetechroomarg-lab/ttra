@@ -19,6 +19,11 @@ from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
 MONTO_POR_MOVIMIENTO = 6000
+CADETE_POR_DEFECTO = "alejo"  # las filas viejas, sin cadete, son de Alejo
+
+
+def de_cadete(fila):
+    return fila.get("cadete") or CADETE_POR_DEFECTO
 # Los pedidos se pagan en dólares pero el saldo se lleva en pesos: al registrar
 # el movimiento se pasan a pesos con la cotización de ese día.
 MONTO_PEDIDO_USD = 10
@@ -42,7 +47,7 @@ def monto_de(fila, por_defecto=MONTO_POR_MOVIMIENTO):
         return por_defecto
 
 
-def registrar(client, tipo, fila, descripcion, por_defecto=MONTO_POR_MOVIMIENTO):
+def registrar(client, tipo, fila, descripcion, por_defecto=MONTO_POR_MOVIMIENTO, cadete=None):
     """Suma un movimiento por la entrega `fila`. No duplica si ya existe."""
     referencia_id = fila.get("id")
     try:
@@ -58,6 +63,7 @@ def registrar(client, tipo, fila, descripcion, por_defecto=MONTO_POR_MOVIMIENTO)
             return None
         movimiento = {
             "id": str(uuid.uuid4()),
+            "cadete": cadete or CADETE_POR_DEFECTO,
             "tipo": tipo,
             "referencia_id": referencia_id,
             "descripcion": (descripcion or "").strip()[:300] or tipo.capitalize(),
@@ -105,6 +111,7 @@ def anular(client, tipo, referencia_id):
                 continue
             client.table(TABLA).insert({
                 "id": str(uuid.uuid4()),
+                "cadete": de_cadete(movimiento),
                 "tipo": TIPO_ANULACION,
                 "referencia_id": referencia,
                 "descripcion": f"Restaurada: {movimiento.get('descripcion') or tipo}"[:300],
@@ -119,9 +126,12 @@ def anular(client, tipo, referencia_id):
         return 0
 
 
-def listar(client):
+def listar(client, cadete=None):
+    """Movimientos, de un cadete o (sin `cadete`) de todos."""
     try:
         filas = client.table(TABLA).select("*").execute().data or []
+        if cadete is not None:
+            filas = [m for m in filas if de_cadete(m) == cadete]
     except Exception:
         logger.exception("No se pudieron leer los movimientos del cadete")
         return []
@@ -167,9 +177,9 @@ class PagoInvalido(ValueError):
     pass
 
 
-def validar_pago(client, monto_transferido=None):
+def validar_pago(client, monto_transferido=None, cadete=CADETE_POR_DEFECTO):
     """Devuelve (pendientes, saldo, monto) o levanta PagoInvalido si no se puede pagar."""
-    pendientes = [m for m in listar(client) if not m.get("pagado_en")]
+    pendientes = [m for m in listar(client, cadete) if not m.get("pagado_en")]
     saldo = sum(int(m.get("monto_ars") or 0) for m in pendientes)
     monto = saldo if monto_transferido is None else int(monto_transferido)
     if monto <= 0:
@@ -179,7 +189,7 @@ def validar_pago(client, monto_transferido=None):
     return pendientes, saldo, monto
 
 
-def registrar_pago(client, comprobante=None, monto_transferido=None, cotizacion=None):
+def registrar_pago(client, comprobante=None, monto_transferido=None, cotizacion=None, cadete=CADETE_POR_DEFECTO):
     """Marca los pendientes como pagados y deja un registro del pago.
 
     `comprobante` es la ruta en Storage del archivo de la transferencia, si
@@ -188,10 +198,11 @@ def registrar_pago(client, comprobante=None, monto_transferido=None, cotizacion=
     paga justo lo pendiente. El registro se guarda antes de tocar los movimientos.
     """
     ahora = datetime.now(timezone.utc).isoformat()
-    pendientes, saldo, monto = validar_pago(client, monto_transferido)
+    pendientes, saldo, monto = validar_pago(client, monto_transferido, cadete)
     excedente = monto - saldo
     pago = {
         "id": str(uuid.uuid4()),
+        "cadete": cadete,
         "monto_ars": monto,
         "movimientos": len([m for m in pendientes if not es_saldo_a_favor(m)]),
         "comprobante": comprobante,
@@ -210,6 +221,7 @@ def registrar_pago(client, comprobante=None, monto_transferido=None, cotizacion=
     if excedente:
         client.table(TABLA).insert({
             "id": str(uuid.uuid4()),
+            "cadete": cadete,
             "tipo": TIPO_SALDO_A_FAVOR,
             "referencia_id": pago["id"],
             "descripcion": "Saldo a favor (pago de más)",
@@ -219,20 +231,21 @@ def registrar_pago(client, comprobante=None, monto_transferido=None, cotizacion=
     return {"pagados": len(pendientes), "monto": monto, "saldo_a_favor": excedente, "pago": pago}
 
 
-def registrar_pagos_viejos(client):
+def registrar_pagos_viejos(client, cadete=CADETE_POR_DEFECTO):
     """Crea el registro de los pagos hechos antes de que existiera pagos_cadete.
 
     Un pago viejo es el grupo de movimientos marcados con el mismo pagado_en
     y sin pago_id. Es idempotente: al vincularlos, no se vuelven a agrupar.
     """
     grupos = {}
-    for movimiento in listar(client):
+    for movimiento in listar(client, cadete):
         if movimiento.get("pagado_en") and not movimiento.get("pago_id"):
             grupos.setdefault(movimiento["pagado_en"], []).append(movimiento)
     for pagado_en, movimientos in grupos.items():
         try:
             pago = {
                 "id": str(uuid.uuid4()),
+                "cadete": cadete,
                 "monto_ars": sum(int(m.get("monto_ars") or 0) for m in movimientos),
                 "movimientos": len(movimientos),
                 "comprobante": None,
@@ -245,9 +258,11 @@ def registrar_pagos_viejos(client):
             logger.exception("No se pudo registrar el pago viejo del %s", pagado_en)
 
 
-def listar_pagos(client):
+def listar_pagos(client, cadete=None):
     try:
         filas = client.table(TABLA_PAGOS).select("*").execute().data or []
+        if cadete is not None:
+            filas = [p for p in filas if de_cadete(p) == cadete]
     except Exception:
         logger.exception("No se pudieron leer los pagos del cadete")
         return []
