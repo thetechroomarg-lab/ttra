@@ -1,3 +1,4 @@
+from tests.cadete_helper import login_cadete
 from fastapi.testclient import TestClient
 
 import web.app as appmod
@@ -16,7 +17,7 @@ def _admin_logueado(monkeypatch):
 def _cadete_logueado(fake, monkeypatch):
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
     c = TestClient(appmod.app, base_url="https://testserver")
-    c.post("/admin/cadete/login", json={"password": appmod.CADETE_PASSWORD})
+    login_cadete(c)
     return c
 
 

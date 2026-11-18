@@ -1,5 +1,6 @@
 """Regression checks for the September security audit (fictitious data only)."""
 from fastapi.testclient import TestClient
+from tests.cadete_helper import login_cadete
 import web.app as appmod
 from tests.fakes_supabase import FakeSupabaseClient
 
@@ -78,18 +79,18 @@ def test_login_budget_survives_new_store_and_is_shared(tmp_path):
     assert first.reserve(key, 2, 900)
 
 
-def test_cadete_password_rotation_invalidates_existing_sessions(monkeypatch):
-    monkeypatch.setattr(appmod, 'get_client', lambda: FakeSupabaseClient())
-    monkeypatch.setattr(appmod, 'CADETE_PASSWORD', 'old-fictitious-password')
-    monkeypatch.setenv('CADETE_PASSWORD', 'old-fictitious-password')
+def test_cadete_password_change_invalidates_existing_sessions(monkeypatch):
+    from web import cadetes
+    fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, 'get_client', lambda: fake)
+    cadetes._cache.clear()
     with TestClient(appmod.app, base_url='https://testserver') as c:
-        assert c.post('/admin/cadete/login', json={'password': 'old-fictitious-password'}).status_code == 200
-        monkeypatch.setattr(appmod, 'CADETE_PASSWORD', 'new-fictitious-password')
-        monkeypatch.setenv('CADETE_PASSWORD', 'new-fictitious-password')
+        login_cadete(c)
+        assert 'type="password"' not in c.get('/admin/cadete').text
+        fake.table('cadetes').update({'password_hash': cadetes.hashear_password('new-fictitious-password')}).eq('id', 'cadete-test').execute()
+        cadetes._cache.clear()
         assert 'type="password"' in c.get('/admin/cadete').text
         assert c.post('/admin/tareas-entrega/missing/completar').status_code == 401
-        assert c.post('/admin/cadete/login', json={'password': 'new-fictitious-password'}).status_code == 200
-        assert 'type="password"' not in c.get('/admin/cadete').text
 
 
 def test_https_redirects_without_trusting_forwarded_headers(monkeypatch):
@@ -132,11 +133,11 @@ def test_cabeceras_de_endurecimiento(monkeypatch):
 
 
 def test_monto_cadete_solo_lo_define_el_admin(monkeypatch):
-    monkeypatch.setattr(appmod, 'get_client', lambda: FakeSupabaseClient())
-    monkeypatch.setattr(appmod, 'CADETE_PASSWORD', 'test-cadete-password')
+    _fake = FakeSupabaseClient()
+    monkeypatch.setattr(appmod, 'get_client', lambda: _fake)
     appmod._intentos_login_fallidos.clear()
     with TestClient(appmod.app, base_url='https://testserver') as c:
-        assert c.post('/admin/cadete/login', json={'password': 'test-cadete-password'}).status_code == 200
+        login_cadete(c)
         r = c.post('/admin/tareas-entrega', json={'fecha_entrega': '2026-11-02', 'titulo': 'viaje',
                                                   'monto_cadete': 9000000, 'desde_panel_cadete': True})
         assert r.status_code == 403

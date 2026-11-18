@@ -1,3 +1,4 @@
+from tests.cadete_helper import login_cadete
 import re
 from datetime import datetime, timedelta, timezone
 
@@ -44,9 +45,8 @@ def test_admin_papelera_lista_borrados_recientes_y_purga_vencidos(monkeypatch):
 def test_cadete_papelera_solo_ve_lo_propio(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
-    monkeypatch.setattr(appmod, "CADETE_PASSWORD", "clave-cadete")
     cliente = TestClient(appmod.app, base_url="https://testserver")
-    cliente.post("/admin/cadete/login", json={"password": "clave-cadete"})
+    login_cadete(cliente)
 
     fake.table("pedidos").insert({
         "id": "propio", "cliente_id": "c1", "productos": [], "fecha_entrega": "2026-09-20",
@@ -103,9 +103,8 @@ def test_papelera_muestra_cuenta_regresiva_de_purga(monkeypatch):
 def test_cadete_papelera_usa_manifest_y_estilo_propios(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
-    monkeypatch.setattr(appmod, "CADETE_PASSWORD", "clave-cadete")
     cliente = TestClient(appmod.app, base_url="https://testserver")
-    cliente.post("/admin/cadete/login", json={"password": "clave-cadete"})
+    login_cadete(cliente)
 
     respuesta = cliente.get("/admin/cadete/papelera")
     assert respuesta.status_code == 200
@@ -154,9 +153,8 @@ def test_admin_restaura_pedido_borrado(monkeypatch):
 def test_cadete_no_puede_restaurar_pedido_ajeno(monkeypatch):
     fake = FakeSupabaseClient()
     monkeypatch.setattr(appmod, "get_client", lambda: fake)
-    monkeypatch.setattr(appmod, "CADETE_PASSWORD", "clave-cadete")
     cliente = TestClient(appmod.app, base_url="https://testserver")
-    cliente.post("/admin/cadete/login", json={"password": "clave-cadete"})
+    login_cadete(cliente)
     fake.table("pedidos").insert({
         "id": "ajeno", "cliente_id": "c1", "productos": [], "fecha_entrega": "2026-09-20",
         "asignado_a": None, "borrado_en": _iso_hace(1), "borrado_por": "Vlad",
