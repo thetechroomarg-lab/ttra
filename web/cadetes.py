@@ -9,8 +9,10 @@ import base64
 import hashlib
 import hmac
 import os
+import re
 import secrets
 import time
+import unicodedata
 import uuid
 
 ROL_CADETE = "cadete"
@@ -48,21 +50,69 @@ def version_sesion(cuenta):
                     hashlib.sha256).hexdigest()
 
 
+SLUG_PRIMER_CADETE = "alejo"  # el slug que ya tienen todas las entregas y movimientos existentes
+_NOMBRES = {SLUG_PRIMER_CADETE: "Alejo"}
+
+
+def _cuentas(client):
+    return client.table("cadetes").select("*").execute().data or []
+
+
 def hay_cuentas(client):
-    return bool(client.table("cadetes").select("id").execute().data)
+    return bool(_cuentas(client))
 
 
-def email_activo(client):
-    """Email de la cuenta activa del cadete (hoy hay una sola), o None."""
-    for fila in client.table("cadetes").select("*").execute().data or []:
-        if fila.get("activo") and fila.get("email"):
+def slug_de(cuenta):
+    return cuenta.get("slug") or SLUG_PRIMER_CADETE
+
+
+def nombre_de(slug):
+    """Nombre para mostrar de un slug de cadete; sin dato, el slug capitalizado."""
+    return _NOMBRES.get(slug) or str(slug or "").capitalize()
+
+
+def email_registrado(client, email):
+    email = normalizar_email(email)
+    return any(c.get("email") == email for c in _cuentas(client))
+
+
+def activos(client):
+    """Cuentas aprobadas y activas: a quienes se les puede derivar. Actualiza los nombres."""
+    cuentas = [c for c in _cuentas(client) if c.get("activo") and c.get("aprobado")]
+    for c in cuentas:
+        _NOMBRES[slug_de(c)] = c.get("nombre") or nombre_de(slug_de(c))
+    return sorted(cuentas, key=lambda c: (c.get("nombre") or "").lower())
+
+
+def slug_valido(client, slug):
+    return any(slug_de(c) == slug for c in activos(client))
+
+
+def email_activo(client, slug=None):
+    """Email de la cuenta activa del cadete `slug` (sin slug, la primera), o None."""
+    for fila in activos(client):
+        if fila.get("email") and (slug is None or slug_de(fila) == slug):
             return fila["email"]
     return None
 
 
-def crear_cuenta(client, email, password, nombre="Alejo"):
-    cuenta = {"id": str(uuid.uuid4()), "nombre": nombre, "email": normalizar_email(email),
-              "password_hash": hashear_password(password), "rol": ROL_CADETE, "activo": True}
+def _slug_nuevo(nombre, existentes):
+    base = re.sub(r"[^a-z0-9]+", "-", unicodedata.normalize("NFKD", nombre or "").encode("ascii", "ignore").decode().lower()).strip("-") or "cadete"
+    slug, n = base, 2
+    while slug in existentes:
+        slug, n = f"{base}-{n}", n + 1
+    return slug
+
+
+def crear_cuenta(client, email, password, nombre):
+    """Alta de una cuenta. La primera de todas (Alejo) queda aprobada y con el
+    slug histórico; las siguientes quedan pendientes hasta que Vlad las apruebe."""
+    existentes = _cuentas(client)
+    primera = not existentes
+    cuenta = {"id": str(uuid.uuid4()), "nombre": (nombre or "").strip()[:100] or "Cadete",
+              "email": normalizar_email(email), "password_hash": hashear_password(password),
+              "rol": ROL_CADETE, "activo": True, "aprobado": primera,
+              "slug": SLUG_PRIMER_CADETE if primera else _slug_nuevo(nombre, {slug_de(c) for c in existentes})}
     client.table("cadetes").insert(cuenta).execute()
     return cuenta
 
@@ -82,11 +132,12 @@ def iniciar_sesion(session, cuenta):
     session["cadete_ok"] = True
     session["cadete_id"] = str(cuenta["id"])
     session["cadete_email"] = cuenta["email"]
+    session["cadete_slug"] = slug_de(cuenta)
     session["cadete_version"] = version_sesion(cuenta)
 
 
 def cerrar_sesion(session):
-    for clave in ("cadete_ok", "cadete_version", "cadete_id", "cadete_email", "cadete_alta_version"):
+    for clave in ("cadete_ok", "cadete_version", "cadete_id", "cadete_email", "cadete_slug", "cadete_alta_version"):
         session.pop(clave, None)
 
 
@@ -101,7 +152,7 @@ def sesion_de_cuenta_valida(session, get_client):
     try:
         filas = get_client().table("cadetes").select("*").eq("id", cuenta_id).execute().data
         cuenta = filas[0] if filas else None
-        ok = bool(cuenta and cuenta.get("activo") and cuenta.get("rol") == ROL_CADETE
+        ok = bool(cuenta and cuenta.get("activo") and cuenta.get("aprobado") and cuenta.get("rol") == ROL_CADETE
                   and hmac.compare_digest(version, version_sesion(cuenta)))
     except Exception:
         return False
