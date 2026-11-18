@@ -448,16 +448,41 @@ def test_pago_a_cuenta_sin_movimientos_pendientes(monkeypatch):
     assert "Saldo a favor tuyo (ya pagado)" in html
 
 
-def test_no_se_puede_pagar_menos_que_lo_pendiente(monkeypatch):
+def test_se_puede_pagar_menos_que_lo_pendiente(monkeypatch):
     fake, admin, _ = _clientes(monkeypatch)
     _sumar(fake, 1)
-    _sumar(fake, 2)
+    _sumar(fake, 2)  # $ 12.000 pendientes
 
-    r = _pagar(admin, 5000)
+    r = _pagar(admin, 8000)
 
-    assert r.status_code == 400 and "no alcanza" in r.json()["error"]
-    assert fake.table("pagos_cadete").select("*").execute().data == []
-    assert not any(m.get("pagado_en") for m in _movimientos(fake))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["pagados"] == 1 and body["saldo_restante"] == 4000 and body["saldo_a_favor"] == 0
+    assert [p["monto_ars"] for p in fake.table("pagos_cadete").select("*").execute().data] == [8000]
+    pendientes = [m for m in _movimientos(fake) if not m.get("pagado_en")]
+    assert sum(m["monto_ars"] for m in pendientes) == 4000
+
+
+def test_pago_menor_que_un_movimiento_no_paga_ninguno_pero_baja_la_deuda(monkeypatch):
+    fake, admin, _ = _clientes(monkeypatch)
+    _sumar(fake, 1)
+
+    r = _pagar(admin, 2000)
+
+    assert r.status_code == 200 and r.json()["pagados"] == 0 and r.json()["saldo_restante"] == 4000
+    assert sum(m["monto_ars"] for m in _movimientos(fake) if not m.get("pagado_en")) == 4000
+    # Un segundo pago por lo que falta deja todo saldado.
+    assert _pagar(admin, 4000).status_code == 200
+    assert sum(m["monto_ars"] for m in _movimientos(fake) if not m.get("pagado_en")) == 0
+
+
+def test_pago_sin_comprobante_y_menor_al_saldo_queda_registrado(monkeypatch):
+    fake, admin, _ = _clientes(monkeypatch)
+    _sumar(fake, 1)
+
+    assert _pagar(admin, 1000).status_code == 200
+    pago = fake.table("pagos_cadete").select("*").execute().data[0]
+    assert pago["monto_ars"] == 1000 and not pago.get("comprobante")
 
 
 def test_pagar_de_mas_con_saldo_a_favor_lo_agranda(monkeypatch):

@@ -2,7 +2,8 @@
 
 Un movimiento vale MONTO_POR_MOVIMIENTO pesos salvo que el pedido o la tarea
 traigan su propio `monto_cadete`. El admin puede corregir el monto o borrar un
-movimiento, y "Registrar pago" marca todos los pendientes como pagados.
+movimiento, y "Registrar pago" marca como pagados los pendientes que cubre el monto
+transferido (todos, salvo que Vlad pague menos de lo que debe).
 
 Si Vlad transfiere más de lo pendiente, lo de más queda como saldo a favor: un
 movimiento negativo sin pagar (no se muestra en el historial) que va cubriendo,
@@ -184,8 +185,6 @@ def validar_pago(client, monto_transferido=None, cadete=CADETE_POR_DEFECTO):
     monto = saldo if monto_transferido is None else int(monto_transferido)
     if monto <= 0:
         raise PagoInvalido("No hay saldo para pagar" if monto_transferido is None else "El monto tiene que ser mayor a cero")
-    if monto < saldo:
-        raise PagoInvalido(f"El monto no alcanza para cubrir el saldo pendiente de $ {saldo:,}".replace(",", "."))
     return pendientes, saldo, monto
 
 
@@ -199,12 +198,24 @@ def registrar_pago(client, comprobante=None, monto_transferido=None, cotizacion=
     """
     ahora = datetime.now(timezone.utc).isoformat()
     pendientes, saldo, monto = validar_pago(client, monto_transferido, cadete)
-    excedente = monto - saldo
+    parcial = monto < saldo
+    # Lo transferido más el saldo a favor que ya tenía se aplica a lo más viejo;
+    # lo que no alcance a cubrir un movimiento entero queda a favor, y va
+    # cubriendo (en parte) el siguiente pendiente.
+    disponible = monto - saldo + sum(int(m.get("monto_ars") or 0) for m in pendientes if not es_saldo_a_favor(m))
+    a_pagar = [m for m in pendientes if es_saldo_a_favor(m)]
+    for m in sorted((m for m in pendientes if not es_saldo_a_favor(m)), key=lambda m: m.get("creado_en") or ""):
+        importe = int(m.get("monto_ars") or 0)
+        if importe > disponible:
+            break
+        disponible -= importe
+        a_pagar.append(m)
+    excedente = disponible
     pago = {
         "id": str(uuid.uuid4()),
         "cadete": cadete,
         "monto_ars": monto,
-        "movimientos": len([m for m in pendientes if not es_saldo_a_favor(m)]),
+        "movimientos": len([m for m in a_pagar if not es_saldo_a_favor(m)]),
         "comprobante": comprobante,
         "creado_en": ahora,
     }
@@ -216,7 +227,7 @@ def registrar_pago(client, comprobante=None, monto_transferido=None, cotizacion=
     client.table(TABLA_PAGOS).insert(pago).execute()
     from web import ganancia_servicio
     ganancia_servicio.intentar(ganancia_servicio.conciliar_pago_cadete, client, pago["id"])
-    for movimiento in pendientes:
+    for movimiento in a_pagar:
         client.table(TABLA).update({"pagado_en": ahora, "pago_id": pago["id"]}).eq("id", movimiento["id"]).execute()
     if excedente:
         client.table(TABLA).insert({
@@ -224,11 +235,16 @@ def registrar_pago(client, comprobante=None, monto_transferido=None, cotizacion=
             "cadete": cadete,
             "tipo": TIPO_SALDO_A_FAVOR,
             "referencia_id": pago["id"],
-            "descripcion": "Saldo a favor (pago de más)",
+            "descripcion": "Saldo a favor (pago parcial)" if parcial else "Saldo a favor (pago de más)",
             "monto_ars": -excedente,
             "creado_en": ahora,
         }).execute()
-    return {"pagados": len(pendientes), "monto": monto, "saldo_a_favor": excedente, "pago": pago}
+    return {
+        "pagados": pago["movimientos"], "monto": monto,
+        "saldo_a_favor": 0 if parcial else excedente,
+        "saldo_restante": saldo - monto if parcial else 0,
+        "pago": pago,
+    }
 
 
 def registrar_pagos_viejos(client, cadete=CADETE_POR_DEFECTO):
