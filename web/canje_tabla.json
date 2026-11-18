@@ -43,6 +43,12 @@
     "valor_usd": 450
   },
   {
+    "id": "iphone-16-256gb",
+    "modelo": "iPhone 16",
+    "capacidad": "256 GB",
+    "valor_usd": 480
+  },
+  {
     "id": "iphone-16-pro-128gb",
     "modelo": "iPhone 16 Pro",
     "capacidad": "128 GB",
