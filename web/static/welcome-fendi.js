@@ -50,15 +50,18 @@ function route(points, speedKeys) {
   return {t0, t1, length: L, s: distAt, atS, at: (t, out = {}) => atS(distAt(t), out), speed: t => speed(t) * scale};
 }
 
-export async function loadFendi(base = '/welcome/') {
-  const loader = new T.TextureLoader();
-  const [buf, awake, asleep] = await Promise.all([
-    fetch(base + 'fendi.bin').then(r => { if (!r.ok) throw new Error('fendi.bin ' + r.status); return r.arrayBuffer(); }),
-    loader.loadAsync(base + 'fendi-color.webp'), loader.loadAsync(base + 'fendi-dormida.webp'),
+export async function loadFendi(base = '/welcome/', {hd = false} = {}) {
+  const loader = new T.TextureLoader(), name = hd ? 'fendi-hd' : 'fendi';
+  const [buf, awake, asleep, normalMap] = await Promise.all([
+    fetch(base + name + '.bin').then(r => { if (!r.ok) throw new Error(name + '.bin ' + r.status); return r.arrayBuffer(); }),
+    loader.loadAsync(base + name + '-color.webp'), loader.loadAsync(base + name + '-dormida.webp'),
+    hd ? loader.loadAsync(base + name + '-normal.webp') : null,
   ]);
   for (const map of [awake, asleep]) { map.colorSpace = T.SRGBColorSpace; map.anisotropy = 8; }
   const {geometry, joints} = readRig(buf);
-  const material = new T.MeshStandardMaterial({map: asleep, roughness: .9, metalness: 0, envMapIntensity: .6});
+  // Pelo: sin brillo especular duro y con un velo suave a contraluz (sheen), así no parece plástico.
+  const material = new T.MeshPhysicalMaterial({map: asleep, normalMap, normalScale: new T.Vector2(.85, .85), roughness: .88, metalness: 0, envMapIntensity: .6,
+    sheen: hd ? .3 : 0, sheenRoughness: .75, sheenColor: new T.Color(0x7a5a3c)});
   const {object, bone, rest} = buildRig(geometry, joints, material);
 
   // Medidas del esqueleto en reposo.
@@ -325,5 +328,5 @@ export async function loadFendi(base = '/welcome/') {
     });
   }
 
-  return {object, bone, setStage, update, maps: [awake, asleep]};
+  return {object, bone, setStage, update, maps: [awake, asleep, normalMap].filter(Boolean)};
 }
