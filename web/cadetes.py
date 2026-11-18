@@ -11,6 +11,7 @@ import hmac
 import os
 import secrets
 import time
+import uuid
 
 ROL_CADETE = "cadete"
 _SCRYPT = {"n": 2**14, "r": 8, "p": 1}
@@ -47,6 +48,25 @@ def version_sesion(cuenta):
                     hashlib.sha256).hexdigest()
 
 
+def hay_cuentas(client):
+    return bool(client.table("cadetes").select("id").execute().data)
+
+
+def email_activo(client):
+    """Email de la cuenta activa del cadete (hoy hay una sola), o None."""
+    for fila in client.table("cadetes").select("*").execute().data or []:
+        if fila.get("activo") and fila.get("email"):
+            return fila["email"]
+    return None
+
+
+def crear_cuenta(client, email, password, nombre="Alejo"):
+    cuenta = {"id": str(uuid.uuid4()), "nombre": nombre, "email": normalizar_email(email),
+              "password_hash": hashear_password(password), "rol": ROL_CADETE, "activo": True}
+    client.table("cadetes").insert(cuenta).execute()
+    return cuenta
+
+
 def autenticar(client, email, password):
     """Devuelve la cuenta si email+contraseña son válidos y está activa; si no, None.
     Siempre gasta un scrypt, exista o no el email, para no revelar cuentas."""
@@ -66,7 +86,7 @@ def iniciar_sesion(session, cuenta):
 
 
 def cerrar_sesion(session):
-    for clave in ("cadete_ok", "cadete_version", "cadete_id", "cadete_email"):
+    for clave in ("cadete_ok", "cadete_version", "cadete_id", "cadete_email", "cadete_alta_version"):
         session.pop(clave, None)
 
 
