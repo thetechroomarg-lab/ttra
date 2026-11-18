@@ -95,20 +95,20 @@
     "id": "iphone-17-pro-max-512gb",
     "modelo": "iPhone 17 Pro Max",
     "capacidad": "512 GB",
-    "valor_usd": 1100
+    "valor_usd": 1000
   },
   {
     "id": "iphone-17-pro-max-1tb",
     "modelo": "iPhone 17 Pro Max",
     "capacidad": "1 TB",
-    "valor_usd": 1100,
+    "valor_usd": 1000,
     "toma_como": "512 GB"
   },
   {
     "id": "iphone-17-pro-max-2tb",
     "modelo": "iPhone 17 Pro Max",
     "capacidad": "2 TB",
-    "valor_usd": 1100,
+    "valor_usd": 1000,
     "toma_como": "512 GB"
   }
 ]
