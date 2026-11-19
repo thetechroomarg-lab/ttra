@@ -10,8 +10,8 @@
   const slot = key => board.querySelector(`[data-pz="${key}"]`);
   const PRICE_KEYS = ['dolares', 'bancoUsa', 'usdt', 'pesos', 'pesosTransf'];
   const CYCLE_MS = 6000;
-  // Usados y equipos sin caja no se muestran salvo que el cliente los pida.
-  const EXCLUIR = /usad|cpo|swap|sin caja|caja abierta|abollad/i;
+  const Seleccion = window.TTRAPizarraSeleccion;
+  const MANUAL_MS = 10000; // tras tocar una flecha, la pizarra espera más antes de avanzar sola
   const DIGITS = '0123456789';
   const fmt = n => Number(n).toLocaleString('es-AR');
 
@@ -90,6 +90,7 @@
   }
 
   function showProduct({ seccion, producto: p }) {
+    try { Seleccion.marcarVisto(window.localStorage, p.nombre); } catch {}
     const precios = window.preciosDe ? window.preciosDe(p) : { dolares: p.usd, pesos: p.pesos };
     swapName(p.nombre);
     swapFoto(p);
@@ -98,14 +99,17 @@
     for (const key of PRICE_KEYS) flapTo(slot(key), precios[key] == null ? '—' : fmt(precios[key]));
   }
 
-  // One product per section, in catalog order, so the board walks the store.
-  function pickProducts(secciones) {
-    const picks = [];
-    for (const [seccion, lista] of Object.entries(secciones)) {
-      const producto = (lista || []).find(x => x.usd != null && x.pesos != null && !EXCLUIR.test(x.nombre));
-      if (producto) picks.push({ seccion, producto });
+  // Mazo al azar en cada visita (ver pizarra-seleccion.js): solo productos con
+  // foto, sin usados, mezclando familias y sin repetir lo visto en visitas previas.
+  async function armarMazo(secciones) {
+    const todos = Object.values(secciones).flat();
+    const conFoto = new Set();
+    if (window.ttraImagenProducto) {
+      await Promise.all(todos.map(p => window.ttraImagenProducto(p).then(v => { if (v && v.src && !/placeholder/.test(v.src)) conFoto.add(p.nombre); }).catch(() => {})));
     }
-    return picks;
+    let vistos;
+    try { vistos = Seleccion.leerVistos(window.localStorage); } catch { vistos = new Set(); }
+    return Seleccion.armarMazo({ secciones, tieneImagen: p => conFoto.has(p.nombre), vistos });
   }
 
   function countCategories(secciones) {
@@ -160,19 +164,41 @@
   let index = 0;
   let timer = 0;
   let paused = false;
-  function schedule() {
+  let ultimoDatos = null;
+  function schedule(espera = CYCLE_MS) {
     clearTimeout(timer);
     // With reduced motion the board still walks the store: flapTo and
     // swapName already land on the new value without animating.
     if (products.length < 2) return;
     timer = setTimeout(() => {
-      if (!paused && visible && !document.hidden) {
-        index = (index + 1) % products.length;
-        showProduct(products[index]);
-      }
-      schedule();
-    }, CYCLE_MS);
+      if (!paused && visible && !document.hidden) avanzar(1, false);
+      else schedule();
+    }, espera);
   }
+  // Anterior / siguiente. Pasado el final del mazo se arma otro (nunca el mismo
+  // recorrido); hacia atrás da la vuelta dentro del mazo actual.
+  async function avanzar(paso, manual) {
+    if (products.length < 2) return;
+    if (paso > 0 && index >= products.length - 1 && ultimoDatos) {
+      const actual = products[index];
+      const nuevo = (await armarMazo(ultimoDatos.secciones)).filter(x => x.producto.nombre !== actual.producto.nombre);
+      if (nuevo.length) { products = nuevo; index = 0; }
+      else index = 0;
+    } else {
+      index = (index + paso + products.length) % products.length;
+    }
+    showProduct(products[index]);
+    schedule(manual ? MANUAL_MS : CYCLE_MS);
+  }
+  board.querySelectorAll('[data-pz-paso]').forEach(boton => {
+    boton.addEventListener('click', () => avanzar(Number(boton.dataset.pzPaso), true));
+  });
+  // Con el foco en una flecha, ← y → también navegan.
+  board.addEventListener('keydown', e => {
+    if (!e.target.closest('.ttra-pz-nav') || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+    e.preventDefault();
+    avanzar(e.key === 'ArrowRight' ? 1 : -1, true);
+  });
   // Off screen the board holds too: no flipping nobody is looking at.
   // On phones the board is display: contents and has no box of its own, so
   // observing it always reported "not intersecting" and the board never
@@ -189,12 +215,14 @@
   board.addEventListener('focusin', e => { if (e.target.matches(':focus-visible')) paused = true; });
   board.addEventListener('focusout', () => { paused = false; });
 
-  function load(datos) {
+  async function load(datos) {
     const secciones = datos && datos.secciones;
     if (!secciones) return;
+    ultimoDatos = datos;
     countCategories(secciones);
-    products = pickProducts(secciones);
+    products = await armarMazo(secciones);
     index = 0;
+    board.classList.toggle('con-nav', products.length > 1);
     if (!products.length) {
       slot('name').textContent = datos.mensaje || 'Ver el catálogo';
       return;
