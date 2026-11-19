@@ -236,7 +236,7 @@ html[data-modo="classic"] .ttra-grid-hover-title { font-family: var(--pz-font); 
   html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal-intro:not(.ttra-sticker-peel > *)) {
     grid-area: sticker; justify-self: center; width: 300px; margin: 10px 0 12px; zoom: .7;
   }
-  html[data-modo="classic"] .ttra-pz-destacado { grid-area: destacado; }
+  html[data-modo="classic"] .ttra-pz-wrap { grid-area: destacado; }
   html[data-modo="classic"] .ttra-pz-product { min-height: 58px; font-size: 24px; }
   html[data-modo="classic"] .ttra-pz-rows > div { min-height: 50px; padding-block: 5px; }
   html[data-modo="classic"] .ttra-pz-rows .ttra-pz-plate { font-size: 16px; }
@@ -301,7 +301,6 @@ html.ttra-motion-ready:not(.ttra-motion-played) .ttra-hero-copy { transform: non
    derecha, cada placa sobre su número; angosto (celular), la foto es una
    miniatura en el encabezado y las filas siguen igual que siempre. Siempre se
    ven los cinco precios completos. */
-html[data-modo="classic"] .ttra-pz-destacado { container: pz / inline-size; }
 html[data-modo="classic"] .ttra-pz-tablero {
   display: grid;
   grid-template-columns: 84px minmax(0, 1fr);
@@ -338,4 +337,67 @@ html[data-modo="classic"] .ttra-pizarra.sin-foto .ttra-pz-tablero { grid-templat
 }
 @container pz (max-width: 300px) {
   html[data-modo="classic"] .ttra-pz-product { font-size: 19px; gap: 8px; padding-inline: 12px; }
+}
+
+/* ---- Pizarra: foto protagonista + flechas anterior/siguiente ----
+   El wrapper es el contenedor de medidas (antes lo era el enlace): las flechas
+   no pueden vivir dentro del <a>, así que son hermanas y se apoyan sobre la
+   foto con la misma grilla que el tablero. El encabezado tiene alto fijo
+   (2 líneas como máximo) para que la foto y las flechas no salten al cambiar
+   de producto. Celular: foto a todo el ancho, de 4:3, entre el nombre y las
+   cinco cifras. Con lugar (desktop): foto a la izquierda, cifras a la derecha. */
+html[data-modo="classic"] .ttra-pz-wrap {
+  container: pz / inline-size;
+  --pz-prod-h: 76px;
+  --pz-flecha: 44px;
+  position: relative; display: grid; grid-template-rows: 1fr; min-height: 0;
+}
+html[data-modo="classic"] .ttra-pz-product { height: var(--pz-prod-h); min-height: 0; box-sizing: border-box; }
+html[data-modo="classic"] .ttra-pz-product > span {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+}
+html[data-modo="classic"] .ttra-pz-tablero {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--pz-prod-h) 72cqw auto;
+  grid-template-areas: "prod" "foto" "rows";
+}
+html[data-modo="classic"] .ttra-pz-foto img { inset: 5%; width: 90%; height: 90%; }
+html[data-modo="classic"] .ttra-pz-rows > div { flex-direction: row; align-items: center; justify-content: space-between; padding-inline: 16px; }
+
+html[data-modo="classic"] .ttra-pz-nav {
+  display: none; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--pz-prod-h) 72cqw;
+}
+html[data-modo="classic"] .ttra-pizarra.con-nav:not(.sin-foto) .ttra-pz-nav { display: grid; }
+html[data-modo="classic"] .ttra-pz-flecha {
+  grid-area: 2 / 1; align-self: end; pointer-events: auto;
+  display: grid; place-items: center; width: var(--pz-flecha); height: var(--pz-flecha); margin: 0 10px 10px; padding: 0;
+  border: 2px solid #ecebe466; border-radius: 3px;
+  background: #0d0d0cb8; color: var(--pz-plate);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: border-color .15s ease, color .15s ease, background-color .15s ease, scale .16s var(--pz-ease);
+}
+html[data-modo="classic"] .ttra-pz-flecha[data-pz-paso="-1"] { justify-self: start; }
+html[data-modo="classic"] .ttra-pz-flecha[data-pz-paso="1"] { justify-self: end; }
+html[data-modo="classic"] .ttra-pz-flecha svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+html[data-modo="classic"] .ttra-pz-flecha:active { scale: .92; }
+html[data-modo="classic"] .ttra-pz-flecha:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .ttra-pz-flecha:hover { border-color: var(--pz-amber); color: var(--pz-amber); background: #0d0d0ce6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .ttra-pz-flecha { transition: none; }
+}
+@container pz (min-width: 520px) {
+  html[data-modo="classic"] .ttra-pz-wrap { --pz-prod-h: 92px; }
+  html[data-modo="classic"] .ttra-pz-tablero {
+    grid-template-columns: 50% minmax(0, 1fr);
+    grid-template-rows: var(--pz-prod-h) 1fr;
+    grid-template-areas: "prod prod" "foto rows";
+  }
+  html[data-modo="classic"] .ttra-pz-foto img { inset: 6%; width: 88%; height: 88%; }
+  html[data-modo="classic"] .ttra-pz-rows > div { flex-direction: column; align-items: stretch; justify-content: center; padding-inline: 18px; }
+  html[data-modo="classic"] .ttra-pz-nav { grid-template-columns: 50% minmax(0, 1fr); column-gap: 2px; grid-template-rows: var(--pz-prod-h) 1fr; }
+  html[data-modo="classic"] .ttra-pz-flecha { margin: 0 14px 14px; }
 }

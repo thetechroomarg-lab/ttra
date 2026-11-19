@@ -277,6 +277,7 @@
       <p class="ttra-hero-description ttra-personal-intro"><span class="ttra-intro-hello">Hola</span> <span class="ttra-intro-name"><span class="ttra-intro-soy">soy</span> <strong>Vlad</strong></span> <span class="ttra-intro-detail">vendo tecnología desde el año <strong>2009.</strong></span></p>
     </div>
     <div class="ttra-pizarra" aria-label="Pizarra de precios">
+     <div class="ttra-pz-wrap">
       <a class="ttra-pz-destacado" href="/catalogo" data-pz="link">
         <div class="ttra-pz-tablero">
           <span class="ttra-pz-product"><span data-pz="name">Cargando precios</span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
@@ -290,6 +291,11 @@
           </dl>
         </div>
       </a>
+      <div class="ttra-pz-nav" role="group" aria-label="Cambiar producto">
+        <button type="button" class="ttra-pz-flecha" data-pz-paso="-1" aria-label="Producto anterior"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button type="button" class="ttra-pz-flecha" data-pz-paso="1" aria-label="Producto siguiente"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+     </div>
     </div>
   </section>
   <section id="ttra-explorar" class="ttra-collection ttra-editorial ttra-home-only" aria-labelledby="ttra-collection-title">
@@ -701,6 +707,7 @@
   <script src="garantias.js"></script>
   <script src="sticker-peel.js"></script>
   <script src="ttra-blackhole.js" defer></script>
+  <script src="pizarra-seleccion.js"></script>
   <script src="pizarra.js"></script>
   <script src="ttra-grid-hover.js" defer></script>
   <script src="scroll-lock.js"></script>
