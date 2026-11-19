@@ -41,6 +41,7 @@ Mike usa el identificador interno **`mike`**, confirmado por el usuario el 04/11
 - Pestaña autorizada: `TELEFONOS` (`gid=1096248826`).
 - Leer **únicamente las columnas A, B y C**. No leer otras columnas ni modificar la planilla.
 - Aunque el título interno del archivo sea `Lista de precios - Mike`, el usuario asignó explícitamente esta fuente a AZ; conservar esa asignación y no fusionarla con `mike`.
+- **Pestaña `Notebook Windows` — agregada el 18/11/2026 (autorizado por Vladimir).** Es un IMPORTRANGE de la lista de notebooks de AZ (incluye la sección "CON PLACA DE VIDEO DEDICADA", o sea las gamers) y no es lo mismo que `NOTEBOOKS GAMERS` de MV: mismos modelos en parte, con precios distintos (gana el más barato) y modelos que MV no tiene. Se copia con Cmd+A, Cmd+A, Cmd+C + `pbpaste` a `crudo/az_notebook_windows.tsv` y se parsea con `preparar_az_notebooks.py` (corre después de `preparar_candidato.py`). Precios en USD costo; se excluyen `sin stock` e `ingresando (N)`.
 
 ### EM
 
