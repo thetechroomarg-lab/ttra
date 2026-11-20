@@ -67,8 +67,12 @@ _ARCHIVOS_CATALOGO = ("productos.json", "costos.json", "proveedores.json", "cata
 _SCRIPT_PROD = (
     "import json,os\nfrom pathlib import Path\n"
     "p=Path(os.environ.get('PRODUCTOS_PATH','/data/productos.json'))\n"
-    "print(json.dumps({n:json.loads(p.with_name(n).read_text()) for n in %r}))\n" % (_ARCHIVOS_CATALOGO,)
+    "d={n:json.loads(p.with_name(n).read_text()) for n in %r}\n"
+    "a=p.with_name('cotizacion-admin.json')\n"
+    "d['cotizacion-admin.json']=json.loads(a.read_text()) if a.exists() else None\n"
+    "print(json.dumps(d))\n" % (_ARCHIVOS_CATALOGO,)
 )
+COTIZACION_ADMIN_JSON = PROJECT_DIR / "web" / "cotizacion-admin.json"
 
 
 def sincronizar_desde_prod():
@@ -88,13 +92,26 @@ def sincronizar_desde_prod():
         return False
     for nombre in _ARCHIVOS_CATALOGO:
         (PROJECT_DIR / "web" / nombre).write_text(json.dumps(datos[nombre], ensure_ascii=False, indent=2) + "\n")
+    admin = datos.get("cotizacion-admin.json")
+    if admin:
+        COTIZACION_ADMIN_JSON.write_text(json.dumps(admin) + "\n")
+    else:
+        COTIZACION_ADMIN_JSON.unlink(missing_ok=True)
     m = datos["catalogo-manifest.json"]
-    print(f"✓ Catálogo de prod: generación {m.get('generacion')} · dólar {m.get('cotizacion')}", file=sys.stderr)
+    dolar = admin["valor"] if admin else m.get("cotizacion")
+    print(f"✓ Catálogo de prod: generación {m.get('generacion')} · dólar {dolar}"
+          + (" (panel admin)" if admin else ""), file=sys.stderr)
     return True
 
 
 def cotizacion_actual():
-    """Cotización del catálogo publicado (catalogo-manifest.json). Respaldo: web/app.py."""
+    """Cotización vigente: la del panel admin (cotizacion-admin.json, la que usa la web)
+    si existe; si no, la del catálogo publicado (manifest). Respaldo: web/app.py."""
+    if COTIZACION_ADMIN_JSON.exists():
+        try:
+            return int(json.loads(COTIZACION_ADMIN_JSON.read_text())["valor"])
+        except (ValueError, KeyError, TypeError):
+            pass
     if MANIFEST_JSON.exists():
         valor = json.loads(MANIFEST_JSON.read_text()).get("cotizacion")
         if valor:
