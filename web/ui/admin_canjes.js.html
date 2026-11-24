@@ -4,6 +4,7 @@
  const listado = porId('canjes-listado');
  const modalAprobar = porId('canje-modal-aprobar');
  const modalRechazar = porId('canje-modal-rechazar');
+ const modalCancelar = porId('canje-modal-cancelar');
  const modalFoto = porId('canje-modal-foto');
  let activo = null;
  async function cargar() {
@@ -39,21 +40,28 @@
    return;
   }
   const rechazar = e.target.closest('.canje-rechazar');
-  if (rechazar) { activo = rechazar.closest('.canje'); porId('canje-motivo').value = ''; porId('canje-rechazar-error').textContent = ''; modalRechazar.hidden = false; }
+  if (rechazar) { activo = rechazar.closest('.canje'); porId('canje-motivo').value = ''; porId('canje-rechazar-error').textContent = ''; modalRechazar.hidden = false; return; }
+  const cancelar = e.target.closest('.canje-cancelar');
+  if (cancelar) { activo = cancelar.closest('.canje'); porId('canje-motivo-cancelar').value = ''; porId('canje-cancelar-error').textContent = ''; modalCancelar.hidden = false; }
  });
  porId('canje-foto-cerrar').addEventListener('click', () => { modalFoto.hidden = true; });
- document.querySelectorAll('.canje-modal-cancelar').forEach((b) => b.addEventListener('click', () => { modalAprobar.hidden = true; modalRechazar.hidden = true; }));
+ document.querySelectorAll('.canje-modal-cancelar').forEach((b) => b.addEventListener('click', () => { modalAprobar.hidden = true; modalRechazar.hidden = true; modalCancelar.hidden = true; }));
  async function resolver(accion, cuerpo, errorId, boton) {
   boton.disabled = true;
   try {
    const r = await fetch(`/admin/canjes/${activo.dataset.id}/${accion}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
-   if (r.ok) { modalAprobar.hidden = true; modalRechazar.hidden = true; await cargar(); return; }
+   if (r.ok) { modalAprobar.hidden = true; modalRechazar.hidden = true; modalCancelar.hidden = true; await cargar(); return; }
    const datos = await r.json().catch(() => ({}));
    porId(errorId).textContent = datos.error || datos.detail || 'No pude resolver la solicitud';
   } catch { porId(errorId).textContent = 'No pude conectar, probá de nuevo.'; }
   finally { boton.disabled = false; }
  }
  porId('canje-aprobar-ok').addEventListener('click', (e) => resolver('aprobar', {}, 'canje-aprobar-error', e.currentTarget));
- porId('canje-rechazar-ok').addEventListener('click', (e) => resolver('rechazar', { motivo: porId('canje-motivo').value }, 'canje-rechazar-error', e.currentTarget));
+ porId('canje-rechazar-ok').addEventListener('click', (e) => {
+  const motivo = porId('canje-motivo').value.trim();
+  if (!motivo) { porId('canje-rechazar-error').textContent = 'Escribí el motivo del rechazo.'; porId('canje-motivo').focus(); return; }
+  resolver('rechazar', { motivo }, 'canje-rechazar-error', e.currentTarget);
+ });
+ porId('canje-cancelar-ok').addEventListener('click', (e) => resolver('cancelar', { motivo: porId('canje-motivo-cancelar').value }, 'canje-cancelar-error', e.currentTarget));
 })();
 </script>
