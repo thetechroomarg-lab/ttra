@@ -6573,7 +6573,18 @@ def admin_canje_rechazar(canje_id: str, entrada: CanjeRechazoIn, request: Reques
         canje = canjes.rechazar(client, canje_id, entrada.motivo)
     except canjes.CanjeError as exc:
         return JSONResponse({"error": str(exc)}, status_code=409)
-    canje["motivo_rechazo"] = (entrada.motivo or "").strip()[:500]
+    avisado = _avisar_resultado_canje(client, canje, request)
+    return {"ok": True, "avisado": avisado}
+
+
+@app.post("/admin/canjes/{canje_id}/cancelar")
+def admin_canje_cancelar(canje_id: str, entrada: CanjeRechazoIn, request: Request):
+    _canje_admin_o_401(request)
+    client = get_client()
+    try:
+        canje = canjes.cancelar(client, canje_id, entrada.motivo)
+    except canjes.CanjeError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=409)
     avisado = _avisar_resultado_canje(client, canje, request)
     return {"ok": True, "avisado": avisado}
 

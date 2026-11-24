@@ -210,6 +210,52 @@ def test_rechazar_avisa_con_motivo_y_no_crea_codigo(monkeypatch):
     assert _admin().post(f"/admin/canjes/{canje['id']}/aprobar").status_code == 409
 
 
+def test_rechazar_sin_motivo_es_error_y_deja_pendiente(monkeypatch):
+    fake, correos = _entorno(monkeypatch)
+    c, _ = _cliente_logueado(fake)
+    _enviar(c)
+    canje = fake.table("canjes").select("*").execute().data[0]
+    for cuerpo in ({}, {"motivo": "   "}):
+        r = _admin().post(f"/admin/canjes/{canje['id']}/rechazar", json=cuerpo)
+        assert r.status_code == 409
+    assert fake.table("canjes").select("*").execute().data[0]["estado"] == "pendiente"
+    assert all("Sobre tu iPhone" not in (m.get("subject") or "") for m in correos)
+
+
+def test_cancelar_avisa_al_cliente_y_no_crea_codigo(monkeypatch):
+    fake, correos = _entorno(monkeypatch)
+    c, _ = _cliente_logueado(fake)
+    _enviar(c)
+    canje = fake.table("canjes").select("*").execute().data[0]
+    n = len(correos)
+    r = _admin().post(f"/admin/canjes/{canje['id']}/cancelar", json={"motivo": "Se agotó la promo"})
+    assert r.status_code == 200 and r.json()["avisado"] is True
+    fila = fake.table("canjes").select("*").execute().data[0]
+    assert fila["estado"] == "cancelado" and fila["resuelto_en"]
+    assert fake.table("codigos_descuento").select("*").execute().data == []
+    assert len(correos) == n + 1
+    assert "Cancelé tu solicitud" in correos[-1]["html"] and "Se agotó la promo" in correos[-1]["html"]
+    assert _admin().post(f"/admin/canjes/{canje['id']}/aprobar").status_code == 409
+    assert _admin().post(f"/admin/canjes/{canje['id']}/cancelar", json={}).status_code == 409
+
+
+def test_cancelar_sin_motivo_manda_mail_igual(monkeypatch):
+    fake, correos = _entorno(monkeypatch)
+    c, _ = _cliente_logueado(fake)
+    _enviar(c)
+    canje = fake.table("canjes").select("*").execute().data[0]
+    assert _admin().post(f"/admin/canjes/{canje['id']}/cancelar", json={}).status_code == 200
+    assert "Cancelé tu solicitud" in correos[-1]["html"] and "Motivo" not in correos[-1]["html"]
+
+
+def test_la_tarjeta_pendiente_tiene_el_boton_cancelar(monkeypatch):
+    fake, _ = _entorno(monkeypatch)
+    c, _ = _cliente_logueado(fake)
+    _enviar(c)
+    fragmento = _admin().get("/admin/canjes?fragmento=1").text
+    assert 'class="canje-cancelar"' in fragmento and 'data-estado="cancelado"' in fragmento
+
+
 def test_el_panel_de_admin_tiene_la_pestana_canjes(monkeypatch):
     _entorno(monkeypatch)
     pagina = _admin().get("/admin/clientes").text

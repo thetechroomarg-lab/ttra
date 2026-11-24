@@ -29,14 +29,16 @@ def _tarjeta(canje, cliente):
         for i in range(len(canje.get("fotos") or []))
     )
     if estado == "pendiente":
-        pie = ('<div class="canje-acciones"><button type="button" class="canje-rechazar">Rechazar</button>'
+        pie = ('<div class="canje-acciones"><button type="button" class="canje-cancelar">Cancelar</button>'
+               '<button type="button" class="canje-rechazar">Rechazar</button>'
                '<button type="button" class="canje-aprobar">Aprobar</button></div>')
     elif estado == "aprobado":
         pie = f'<p class="canje-codigo">{html.escape(canje.get("codigo") or "")}</p>'
     else:
         motivo = html.escape(canje.get("motivo_rechazo") or "")
         pie = f'<p class="canje-datos">Motivo: {motivo}</p>' if motivo else ""
-    etiqueta = {"pendiente": "Pendiente", "aprobado": "Aprobado", "rechazado": "Rechazado"}.get(estado, estado)
+    etiqueta = {"pendiente": "Pendiente", "aprobado": "Aprobado", "rechazado": "Rechazado",
+                "cancelado": "Cancelado"}.get(estado, estado)
     return (
         f'<article class="canje" data-id="{ident}" data-estado="{html.escape(estado)}" '
         f'data-cliente="{html.escape(nombre)}" data-valor="{int(canje["valor_usd"])}" '
@@ -58,7 +60,8 @@ def html_fragmento(solicitudes, clientes):
         '<div class="canjes-filtros">'
         f'<button type="button" data-estado="pendiente" aria-pressed="true">Pendientes ({pendientes})</button>'
         '<button type="button" data-estado="aprobado" aria-pressed="false">Aprobados</button>'
-        '<button type="button" data-estado="rechazado" aria-pressed="false">Rechazados</button></div>'
+        '<button type="button" data-estado="rechazado" aria-pressed="false">Rechazados</button>'
+        '<button type="button" data-estado="cancelado" aria-pressed="false">Cancelados</button></div>'
         f'{tarjetas}'
         f'<p class="canjes-vacio" id="canjes-vacio"{" hidden" if pendientes else ""}>No hay solicitudes en esta lista.</p>'
     )

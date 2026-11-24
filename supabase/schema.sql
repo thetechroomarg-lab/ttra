@@ -822,7 +822,7 @@ create table if not exists canjes (
   capacidad text not null,
   valor_usd integer not null,
   fotos jsonb not null default '[]'::jsonb,
-  estado text not null default 'pendiente' check (estado in ('pendiente', 'aprobado', 'rechazado')),
+  estado text not null default 'pendiente' check (estado in ('pendiente', 'aprobado', 'rechazado', 'cancelado')),
   codigo text,
   motivo_rechazo text,
   creado_en timestamptz not null default now(),
