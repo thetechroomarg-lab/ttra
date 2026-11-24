@@ -121,19 +121,33 @@ def aprobar(client, canje_id):
     return {**canje, "estado": "aprobado", "codigo": codigo}, codigo
 
 
-def rechazar(client, canje_id, motivo=""):
+def _cerrar(client, canje_id, estado, motivo):
+    """Pendiente -> rechazado/cancelado, con el motivo en `motivo_rechazo`
+    (la misma columna para los dos estados). Condicional: no pisa una
+    solicitud ya resuelta."""
     canje = obtener(client, canje_id)
     if canje is None:
         raise CanjeError("No encontré la solicitud")
     ganado = (
         client.table("canjes")
-        .update({"estado": "rechazado", "motivo_rechazo": (motivo or "").strip()[:500] or None,
-                 "resuelto_en": _ahora()})
+        .update({"estado": estado, "motivo_rechazo": motivo or None, "resuelto_en": _ahora()})
         .eq("id", canje_id).eq("estado", "pendiente").execute().data
     )
     if not ganado:
         raise CanjeError("Esta solicitud ya está resuelta")
-    return {**canje, "estado": "rechazado"}
+    return {**canje, "estado": estado, "motivo_rechazo": motivo}
+
+
+def rechazar(client, canje_id, motivo=""):
+    motivo = (motivo or "").strip()[:500]
+    if not motivo:
+        raise CanjeError("Contale al cliente el motivo del rechazo")
+    return _cerrar(client, canje_id, "rechazado", motivo)
+
+
+def cancelar(client, canje_id, motivo=""):
+    """El motivo es opcional: si no hay, el mail avisa igual la cancelación."""
+    return _cerrar(client, canje_id, "cancelado", (motivo or "").strip()[:500])
 
 
 def equipo_por_codigo(client, codigo):
@@ -209,6 +223,8 @@ def html_aviso_vlad(canje, cliente, url_sitio=URL_SITIO):
 def asunto_resultado(canje):
     if canje["estado"] == "aprobado":
         return "Aprobé tu iPhone del Plan Canje: ya tenés tu descuento"
+    if canje["estado"] == "cancelado":
+        return "Cancelé tu solicitud del Plan Canje"
     return "Sobre tu iPhone del Plan Canje"
 
 
@@ -263,6 +279,19 @@ def html_resultado_cliente(canje, cliente, url_sitio=URL_SITIO):
         ))
         return _documento("Plan Canje aprobado", f"Tenés {_usd(canje['valor_usd'])} de descuento con tu código", cuerpo)
     motivo = (canje.get("motivo_rechazo") or "").strip()
+    if canje["estado"] == "cancelado":
+        cuerpo = "".join((
+            _encabezado("Plan Canje", "Cancelado"),
+            _titulo("Plan Canje", "Cancelé tu solicitud"),
+            _bloque(f'<p style="margin:0;font:400 16px/1.6 {_SANS};color:{_TENUE}">{saludo} Cancelé tu solicitud del '
+                    f'Plan Canje por tu <strong style="color:{_BLANCO}">{equipo}</strong>. No se generó ningún '
+                    f'código de descuento.</p>', padding_top=28),
+            _bloque_motivo(motivo) if motivo else "",
+            _boton(f"{url_sitio}/plan-canje", "Ver el Plan Canje"),
+            _sticker("Si querés, escribime y lo charlamos."),
+            _pie(url_sitio, "cancelé tu solicitud del Plan Canje", ""),
+        ))
+        return _documento("Plan Canje", "Cancelé tu solicitud del Plan Canje", cuerpo)
     cuerpo = "".join((
         _encabezado("Plan Canje", "Resuelto"),
         _titulo("Plan Canje", "No lo puedo tomar"),
