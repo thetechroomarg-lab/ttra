@@ -21,10 +21,28 @@ def reservado(client, fila):
     return _pedido_vigente(client, (fila or {}).get("reservado_pedido_id"))
 
 
+def vencido(fila, ahora=None):
+    """True si el código tiene vencimiento y ya pasó (sin vence_en nunca vence)."""
+    vence = (fila or {}).get("vence_en")
+    if not vence:
+        return False
+    try:
+        limite = datetime.fromisoformat(str(vence).replace("Z", "+00:00"))
+    except ValueError:
+        return True  # fecha ilegible: ante la duda, no se aplica
+    if limite.tzinfo is None:
+        limite = limite.replace(tzinfo=timezone.utc)
+    return limite <= (ahora or datetime.now(timezone.utc))
+
+
 def disponible(client, fila):
     """True si el código se puede aplicar a un pedido nuevo."""
     return bool(
-        fila and fila.get("activo") and not fila.get("usado_en") and not reservado(client, fila)
+        fila
+        and fila.get("activo")
+        and not fila.get("usado_en")
+        and not vencido(fila)
+        and not reservado(client, fila)
     )
 
 

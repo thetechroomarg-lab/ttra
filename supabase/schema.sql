@@ -329,6 +329,9 @@ alter table codigos_descuento add column if not exists aplicado_usd numeric;
 -- Código público (sin cliente): lo puede aplicar cualquier cliente y es de un
 -- solo uso, porque el primer pedido que lo reserva lo deja tomado.
 alter table codigos_descuento alter column cliente_id drop not null;
+-- Vencimiento opcional (null = no vence): pasada esa hora el código ya no se
+-- puede aplicar ni reservar. Lo usan los códigos de promo por mail.
+alter table codigos_descuento add column if not exists vence_en timestamptz;
 
 -- Cada ganancia que una compra le generó a alguien de la cadena de padrinos.
 -- Alimenta el árbol "Mi red" del perfil y evita pagar dos veces un pedido.
@@ -426,6 +429,7 @@ begin
       and code = p_codigo
       and activo = true
       and usado_en is null
+      and (vence_en is null or vence_en > now())
       and (
         reservado_pedido_id is null
         or not exists (
