@@ -29,7 +29,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import cadetes, canjes, paginas_canjes, pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
+from web import listado_whatsapp, cadetes, canjes, paginas_canjes, pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import _clientes_admin_activo, admin_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -6708,6 +6708,35 @@ def pagina_catalogo(request: Request):
     if _sesion_activa(request) and _debe_cambiar_password(request):
         return RedirectResponse("/login.html")
     return FileResponse(str(BASE / "static" / "catalogo.html"))
+
+
+@app.get("/listado-whatsapp")
+def pagina_listado_whatsapp(request: Request):
+    """Sección exclusiva para mayoristas: los demás vuelven al inicio."""
+    if not _sesion_activa(request):
+        return RedirectResponse("/login.html")
+    if _debe_cambiar_password(request):
+        return RedirectResponse("/login.html")
+    if _tipo_cliente_sesion(request) != "mayorista":
+        return RedirectResponse("/")
+    return FileResponse(str(BASE / "static" / "listado-whatsapp.html"),
+                        headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/listado-whatsapp")
+def api_listado_whatsapp(request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    productos, tipo_cliente = _catalogo_autorizado(request)
+    if tipo_cliente != "mayorista":
+        raise HTTPException(status_code=403, detail="Solo para cuentas mayoristas")
+    return JSONResponse(
+        {
+            "cotizacion": _cargar_cotizacion_catalogo(),
+            "secciones": listado_whatsapp.secciones_listado(productos),
+        },
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 
