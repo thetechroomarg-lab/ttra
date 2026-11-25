@@ -127,13 +127,13 @@
       const prices=text('div','ai-prices',''), amounts=preciosDe(p), filasMay=filasMayoristaDe(p);
       if(filasMay){
         prices.classList.add('ai-prices-mayorista');
-        const head=text('div','ai-price ai-price-head','');head.append(text('span','','Pago'),text('span','','Descuento'),text('span','','Tu precio'));prices.append(head);
+        const head=text('div','ai-price ai-price-head','');head.append(text('span','','Pago'),text('span','','Normal'),text('span','','Descuento'),text('span','','Tu precio'));prices.append(head);
       }
       const cuotas=cuotasDe(amounts);
       [amounts.dolares,amounts.bancoUsa,amounts.usdt,amounts.pesos,amounts.pesosTransf,...cuotas.map(c=>c.total)].forEach((v,j)=>{
         const label=j>=5?cuotas[j-5].etiqueta:labels[j];
         const row=text('div','ai-price',''), value=text('strong','',(v==null?'Consultar':(j<2?'USD ':j===2?'USDT ':'$ ')+Number(v).toLocaleString('es-AR')));
-        if(filasMay)row.append(text('span','',label),text('span','ai-desc',filasMay[j].descuento?'-'+filasMay[j].descuento:'-'),value);
+        if(filasMay)row.append(text('span','',label),text('span','ai-orig',filasMay[j].original||'-'),text('span','ai-desc',filasMay[j].descuento?'-'+filasMay[j].descuento:'-'),value);
         else row.append(text('span','',label),value);
         prices.append(row);
       });
@@ -148,7 +148,7 @@
       }
       const marker=document.createComment('original product actions');links.before(marker);
       face.append(logo,name,color,picture,prices,links); card.prepend(face);
-      title.hidden=true; oldPrices.hidden=true; card.classList.add('ai-card');grid?.classList.add('has-ai-cards');
+      title.hidden=true; oldPrices.hidden=true; card.classList.add('ai-card');grid?.classList.add('has-ai-cards');if(filasMay)grid?.classList.add('has-mayorista');
       let alive=true, serial=0;
       function fallback(){
         if(!alive)return;alive=false;marker.replaceWith(links);face.remove();title.hidden=false;oldPrices.hidden=false;card.classList.remove('ai-card');

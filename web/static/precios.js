@@ -81,6 +81,7 @@ function filasMayoristaDe(p) {
   const pr = preciosDe(p);
   const fila = (tipo, signo, clave) => ({
     tipo,
+    original: pub[clave] == null ? null : `${signo} ${Number(pub[clave]).toLocaleString("es-AR")}`,
     descuento: pr[clave] == null || pub[clave] == null ? null : `${signo} ${Number(pub[clave] - pr[clave]).toLocaleString("es-AR")}`,
     precio: pr[clave] == null ? "Consultar" : `${signo} ${Number(pr[clave]).toLocaleString("es-AR")}`,
   });
