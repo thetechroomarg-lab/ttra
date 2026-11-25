@@ -22,7 +22,7 @@
     },
     {
       id: 'ganancia', campo: 'c', titulo: 'Un poco más caro que yo',
-      detalle: 'Mi precio de venta más US$ 10 (productos de hasta US$ 499) o US$ 15 (desde US$ 500). Para vender por encima de mi precio con una ganancia ya incluida.',
+      detalle: 'Mi precio de venta más US$ 10 (productos de hasta US$ 499) o US$ 15 (desde US$ 500). Para vender por encima de mi precio con una ganancia ya incluida. Ideal para revender en el interior.',
     },
   ];
 
@@ -208,8 +208,8 @@
   // ---------- Página ----------
 
   var CLAVE_NOMBRE = 'ttra_listado_nombre';
-  var CLAVE_GANANCIAS = 'ttra_listado_ganancias';
   var estado = { secciones: [], dolarPagina: 0, nombre: '', dolarPropio: null, ganancias: {} };
+  var guardado = { temporizador: 0, pendiente: false, elTexto: null };
   var temporizadores = new WeakMap();
 
   var $ = function (id) { return document.getElementById(id); };
@@ -255,23 +255,43 @@
     return el;
   }
 
-  function leerGananciasGuardadas() {
-    try {
-      var guardado = JSON.parse(leerAlmacen(CLAVE_GANANCIAS) || '{}');
-      var limpio = {};
-      Object.keys(guardado).forEach(function (k) {
-        var v = leerGanancia(guardado[k]);
-        if (v > 0) limpio[k] = v;
-      });
-      return limpio;
-    } catch (e) { return {}; }
+  // Las ganancias viven en la cuenta del mayorista: se guardan en el servidor poco
+  // después del último cambio y vuelven a cargarse en cualquier visita o dispositivo.
+  function mostrarGuardado(texto, error) {
+    if (!guardado.elTexto) return;
+    guardado.elTexto.textContent = texto;
+    guardado.elTexto.classList.toggle('lw-error', Boolean(error));
+  }
+
+  function guardarGanancias() {
+    window.clearTimeout(guardado.temporizador);
+    guardado.pendiente = false;
+    mostrarGuardado('Guardando…');
+    return fetch('/api/listado-whatsapp/ganancias', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ganancias: estado.ganancias }),
+      keepalive: true,
+    }).then(function (r) {
+      if (!r.ok) throw new Error('guardar');
+      if (!guardado.pendiente) mostrarGuardado('Guardado en tu cuenta');
+    }).catch(function () {
+      mostrarGuardado('No se pudo guardar. Tus montos siguen acá, probá cambiar uno para reintentar.', true);
+    });
   }
 
   function fijarGanancia(indice, valor) {
     if (valor > 0) estado.ganancias[indice] = valor;
     else delete estado.ganancias[indice];
-    guardarAlmacen(CLAVE_GANANCIAS, JSON.stringify(estado.ganancias));
+    guardado.pendiente = true;
+    mostrarGuardado('Guardando…');
+    window.clearTimeout(guardado.temporizador);
+    guardado.temporizador = window.setTimeout(guardarGanancias, 700);
   }
+
+  window.addEventListener('pagehide', function () {
+    if (guardado.pendiente) guardarGanancias();
+  });
 
   function campoGanancia(etiquetaAccesible, valorInicial, alCambiar) {
     var envoltorio = crear('label', 'lw-ganancia');
@@ -299,7 +319,10 @@
     tituloRangos.id = 'lw-rangos-titulo';
     cont.setAttribute('role', 'group');
     cont.setAttribute('aria-labelledby', 'lw-rangos-titulo');
-    cont.append(tituloRangos);
+    var textoGuardado = crear('p', 'lw-guardado', 'Se guardan en tu cuenta para la próxima vez.');
+    textoGuardado.setAttribute('role', 'status');
+    guardado.elTexto = textoGuardado;
+    cont.append(tituloRangos, textoGuardado);
 
     var todos = crear('div', 'lw-rango lw-rango-todos');
     var textoTodos = crear('div', 'lw-rango-texto');
@@ -478,18 +501,22 @@
     var datos = await respuesta.json();
     estado.secciones = datos.secciones || [];
     estado.dolarPagina = Number(datos.cotizacion) || 0;
+    estado.ganancias = {};
+    Object.keys(datos.ganancias || {}).forEach(function (k) {
+      var v = leerGanancia(datos.ganancias[k]);
+      if (v > 0) estado.ganancias[k] = v;
+    });
     if (!estado.secciones.length || !estado.dolarPagina) {
       mostrarEstado('Estoy actualizando los precios. Volvé en unos minutos.', true);
       return;
     }
     ocultarEstado();
     elColumnas.hidden = false;
-    if (!elColumnas.children.length) construirColumnas();
+    construirColumnas();
     actualizarAyudaDolar();
     pintar();
   }
 
-  estado.ganancias = leerGananciasGuardadas();
   elNombre.value = leerAlmacen(CLAVE_NOMBRE);
   estado.nombre = elNombre.value;
   elNombre.addEventListener('input', alCambiarNombre);

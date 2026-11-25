@@ -71,3 +71,26 @@ def secciones_listado(productos_mayorista: list[dict]) -> list[dict]:
                 ],
             })
     return resultado
+
+
+GANANCIA_MAXIMA_USD = 5000
+_MAX_RANGOS = 200
+
+
+def limpiar_ganancias(crudo) -> dict[str, int]:
+    """Valida las ganancias por rango que guarda el mayorista.
+
+    Cada clave es el número de rango (0 = US$ 0 a 300, 1 = 301 a 600...) y cada
+    valor, los dólares que quiere ganar ahí. Descarta lo inválido y los ceros.
+    """
+    if not isinstance(crudo, dict):
+        return {}
+    limpio = {}
+    for clave, valor in crudo.items():
+        if isinstance(valor, bool) or not isinstance(valor, int):
+            continue
+        if not isinstance(clave, str) or not clave.isdigit() or int(clave) >= _MAX_RANGOS:
+            continue
+        if 0 < valor <= GANANCIA_MAXIMA_USD:
+            limpio[str(int(clave))] = valor
+    return limpio
