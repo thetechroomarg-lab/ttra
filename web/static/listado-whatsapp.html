@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es" data-modo="classic">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZPQR91G145"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-ZPQR91G145');
+  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Listado WhatsApp · The Tech Room Arg</title>
+  <script>try { if (localStorage.getItem('ttra_classic_theme') === 'light') document.documentElement.dataset.classicTheme = 'light'; } catch {}</script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="preload" href="/fonts/geist-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/classic.css">
+  <link rel="stylesheet" href="/classic-editorial.css">
+  <link rel="stylesheet" href="/site-pages.css">
+  <link rel="stylesheet" href="/pizarra.css">
+  <link rel="stylesheet" href="/classic-interaction.css">
+  <link rel="stylesheet" href="/listado-whatsapp.css">
+</head>
+<body class="ttra-page lw-page">
+  <header class="ttra-page-header">
+    <a class="ttra-page-brand" href="/" aria-label="The Tech Room Arg, volver al inicio">THE<br>TECH<br>ROOM<br>ARG<span>.</span></a>
+    <div class="ttra-page-actions"><a class="ttra-page-link" href="/">Volver al inicio</a></div>
+  </header>
+
+  <main class="lw-main">
+    <h1 class="lw-titulo">Listado WhatsApp<span>.</span></h1>
+    <p class="lw-intro">Mi listado completo, listo para pegar en tu WhatsApp. Elegí la columna que te sirve, poné el nombre de tu emprendimiento y copialo.</p>
+
+    <section class="lw-config" aria-label="Datos de tu listado">
+      <div class="lw-campo">
+        <label for="lw-nombre">Nombre de tu emprendimiento</label>
+        <input id="lw-nombre" type="text" maxlength="60" autocomplete="organization" placeholder="Ej. Tecno Sur">
+        <p class="lw-ayuda">Aparece arriba de cada listado.</p>
+      </div>
+      <div class="lw-campo">
+        <label for="lw-dolar">Tu dólar (opcional)</label>
+        <input id="lw-dolar" type="text" inputmode="decimal" autocomplete="off" placeholder="Dólar de la página" aria-describedby="lw-dolar-ayuda">
+        <p class="lw-ayuda" id="lw-dolar-ayuda"></p>
+      </div>
+    </section>
+
+    <div class="lw-estado" id="lw-estado" role="status">
+      <p>Armando tu listado…</p>
+    </div>
+    <p class="lw-anuncio" id="lw-anuncio" role="status" aria-live="polite"></p>
+
+    <div class="lw-columnas" id="lw-columnas" hidden></div>
+  </main>
+
+  <footer class="ttra-page-footer"><p>© The Tech Room Arg · Córdoba</p></footer>
+
+  <script src="/listado-whatsapp.js"></script>
+</body>
+</html>

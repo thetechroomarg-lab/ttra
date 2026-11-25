@@ -1,0 +1,270 @@
+/* web/static/listado-whatsapp.css — Sección LISTADO WHATSAPP (solo mayoristas).
+   Mismo lenguaje que el resto de la tienda (ver pizarra.css): tableros negros en
+   marco pesado, placas esmaltadas para los títulos, cifras en ámbar y un solo
+   rojo, el de la acción (copiar). */
+
+html[data-modo="classic"] .lw-main {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: clamp(28px, 4vw, 56px) var(--ed-gutter) clamp(72px, 9vw, 120px);
+}
+html[data-modo="classic"] .lw-titulo {
+  margin: 0;
+  color: var(--rc-green-bright);
+  font: 700 clamp(44px, 7vw, 84px)/.92 var(--pz-font);
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+html[data-modo="classic"] .lw-titulo span { color: var(--pz-red); }
+html[data-modo="classic"] .lw-intro {
+  max-width: 62ch;
+  margin: 18px 0 0;
+  color: var(--rc-green-dim);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ---- Datos del listado ---- */
+html[data-modo="classic"] .lw-config {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(20px, 3vw, 40px);
+  margin: clamp(28px, 4vw, 44px) 0 clamp(36px, 5vw, 56px);
+  padding: clamp(18px, 2.4vw, 28px);
+  border-radius: 4px;
+  background: var(--pz-board);
+  box-shadow: 0 0 0 6px var(--pz-frame), 0 16px 34px #00000080;
+}
+html[data-modo="classic"] .lw-campo { display: grid; align-content: start; gap: 8px; min-width: 0; }
+html[data-modo="classic"] .lw-campo label {
+  color: var(--pz-dim);
+  font: 700 14px/1.2 var(--pz-font);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+html[data-modo="classic"] .lw-campo input {
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  padding: 10px 14px;
+  border: 2px solid var(--pz-frame);
+  border-radius: 3px;
+  background: var(--pz-board);
+  color: var(--pz-plate);
+  font: 600 20px/1.2 var(--pz-font);
+  letter-spacing: .03em;
+  caret-color: var(--pz-amber);
+  transition: border-color .15s ease;
+}
+html[data-modo="classic"] .lw-campo input::placeholder { color: var(--pz-dim); opacity: .8; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .lw-campo input:hover { border-color: #45433e; }
+}
+html[data-modo="classic"] .lw-campo input:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 2px; border-color: var(--pz-amber); }
+html[data-modo="classic"] .lw-ayuda {
+  margin: 0;
+  color: var(--pz-dim);
+  font-size: 14px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+html[data-modo="classic"] .lw-ayuda.lw-error { color: #ff8a7e; }
+
+/* ---- Estados ---- */
+html[data-modo="classic"] .lw-estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  padding: 22px 0;
+  color: var(--pz-plate);
+  font: 700 22px/1.2 var(--pz-font);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+html[data-modo="classic"] .lw-estado[hidden] { display: none; }
+html[data-modo="classic"] .lw-estado p { margin: 0; }
+html[data-modo="classic"] .lw-anuncio { margin: 0; min-height: 0; color: var(--pz-amber); font: 700 16px/1.2 var(--pz-font); letter-spacing: .05em; text-transform: uppercase; }
+html[data-modo="classic"] .lw-anuncio:empty { display: none; }
+
+/* ---- Los tres listados ---- */
+html[data-modo="classic"] .lw-columnas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(28px, 3vw, 48px);
+  align-items: start;
+}
+html[data-modo="classic"] .lw-columnas[hidden] { display: none; }
+html[data-modo="classic"] .lw-panel {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: clamp(18px, 2vw, 24px);
+  border-radius: 4px;
+  background: var(--pz-board);
+  box-shadow: 0 0 0 6px var(--pz-frame), 0 16px 34px #00000080;
+}
+html[data-modo="classic"] .lw-panel-cabecera { display: grid; gap: 10px; justify-items: start; }
+html[data-modo="classic"] .lw-placa {
+  display: inline-block;
+  margin: 0;
+  padding: 5px 9px 4px;
+  border-radius: 2px;
+  background: var(--pz-plate);
+  color: var(--pz-ink);
+  padding: 8px 14px 6px;
+  font: 700 clamp(26px, 2.6vw, 36px)/1 var(--pz-font);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+html[data-modo="classic"] .lw-panel-detalle {
+  max-width: 64ch;
+  margin: 0;
+  color: #cfcdc4;
+  font-size: 16px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+html[data-modo="classic"] .lw-acciones { display: grid; gap: 8px; }
+html[data-modo="classic"] .lw-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--pz-red);
+  color: #fff;
+  font: 700 19px/1 var(--pz-font);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, scale .2s var(--pz-ease);
+}
+html[data-modo="classic"] .lw-boton:active { scale: .98; }
+html[data-modo="classic"] .lw-boton:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .lw-boton:hover { background: var(--pz-red-hover); }
+}
+html[data-modo="classic"] .lw-boton.lw-copiado { background: var(--pz-plate); color: var(--pz-ink); }
+html[data-modo="classic"] .lw-boton-claro { width: auto; background: var(--pz-plate); color: var(--pz-ink); }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .lw-boton-claro:hover { background: #fff; }
+}
+html[data-modo="classic"] .lw-panel-meta {
+  margin: 0;
+  color: var(--pz-amber);
+  font: 700 16px/1 var(--pz-font);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+html[data-modo="classic"] .lw-vista {
+  max-height: 440px;
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: 3px;
+  background: var(--pz-cell);
+  color: var(--pz-plate);
+  font: 500 14px/1.55 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 2;
+  scrollbar-color: #45433e var(--pz-cell);
+  scrollbar-width: thin;
+}
+html[data-modo="classic"] .lw-vista:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 2px; }
+html[data-modo="classic"] .lw-vista::selection { background: var(--pz-amber); color: var(--pz-ink); }
+
+/* ---- Opción 1: rangos de precio con ganancia a elección ---- */
+html[data-modo="classic"] .lw-panel-principal { grid-column: 1 / -1; gap: clamp(20px, 2.4vw, 32px); }
+html[data-modo="classic"] .lw-principal-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: clamp(24px, 3vw, 48px);
+  align-items: start;
+}
+html[data-modo="classic"] .lw-salida { display: grid; gap: 16px; min-width: 0; }
+html[data-modo="classic"] .lw-rangos { display: grid; gap: 2px; min-width: 0; padding: 2px; border-radius: 3px; background: var(--pz-gap); }
+html[data-modo="classic"] .lw-rangos-titulo {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--pz-board);
+  color: var(--pz-dim);
+  font: 700 15px/1.2 var(--pz-font);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+html[data-modo="classic"] .lw-rango {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--pz-cell);
+}
+html[data-modo="classic"] .lw-rango-todos { background: var(--pz-board); }
+html[data-modo="classic"] .lw-rango-texto { display: grid; gap: 3px; min-width: 0; }
+html[data-modo="classic"] .lw-rango-texto strong {
+  color: var(--pz-plate);
+  font: 700 22px/1.05 var(--pz-font);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+html[data-modo="classic"] .lw-rango-texto span { color: var(--pz-dim); font-size: 14px; line-height: 1.3; }
+html[data-modo="classic"] .lw-ganancia {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--pz-dim);
+  font: 700 15px/1 var(--pz-font);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+html[data-modo="classic"] .lw-ganancia input {
+  width: 96px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid var(--pz-frame);
+  border-radius: 3px;
+  background: var(--pz-board);
+  color: var(--pz-amber);
+  font: 700 24px/1 var(--pz-font);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  caret-color: var(--pz-amber);
+  transition: border-color .15s ease;
+}
+html[data-modo="classic"] .lw-ganancia input::placeholder { color: #5f5d56; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .lw-ganancia input:hover { border-color: #45433e; }
+}
+html[data-modo="classic"] .lw-ganancia input:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: 2px; border-color: var(--pz-amber); }
+
+@media (max-width: 1100px) {
+  html[data-modo="classic"] .lw-columnas { grid-template-columns: minmax(0, 1fr); }
+  html[data-modo="classic"] .lw-principal-cuerpo { grid-template-columns: minmax(0, 1fr); }
+  html[data-modo="classic"] .lw-vista { max-height: 340px; }
+}
+@media (max-width: 700px) {
+  html[data-modo="classic"] .lw-rango { flex-wrap: wrap; }
+  html[data-modo="classic"] .lw-config { grid-template-columns: minmax(0, 1fr); }
+  html[data-modo="classic"] .lw-columnas { gap: 28px; }
+  html[data-modo="classic"] .lw-campo input { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-modo="classic"] .lw-boton { transition: none; }
+}
+
+/* Con muchos rangos, el botón de copiar y la vista previa acompañan al scroll. */
+@media (min-width: 1101px) {
+  html[data-modo="classic"] .lw-salida { position: sticky; top: 24px; }
+}

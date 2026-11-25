@@ -168,6 +168,21 @@ html[data-modo="classic"] .ttra-collection-grid .ttra-category-brands:focus-visi
   html[data-modo="classic"] .ttra-collection-grid .ttra-category-brands { grid-column: 1 / -1; }
   html[data-modo="classic"] .ttra-collection-grid .ttra-brands-lista { font-size: 17px; }
 }
+/* LISTADO WHATSAPP: fila solo para mayoristas, esmalte como la búsqueda por marca. */
+html[data-modo="classic"] .ttra-collection-grid .ttra-category-listado[hidden] { display: none; }
+html[data-modo="classic"] .ttra-collection-grid .ttra-category-listado { background: var(--pz-plate); color: var(--pz-ink); }
+html[data-modo="classic"] .ttra-collection-grid .ttra-category-listado h3 { color: var(--pz-ink); }
+html[data-modo="classic"] .ttra-collection-grid .ttra-listado-icono { background: var(--pz-ink); }
+html[data-modo="classic"] .ttra-listado-icono rect { fill: var(--pz-ink); }
+html[data-modo="classic"] .ttra-listado-icono path { fill: none; stroke: var(--pz-amber); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+html[data-modo="classic"] .ttra-listado-icono path:first-of-type { fill: #1c1c1a; stroke: var(--pz-plate); stroke-width: 3; }
+html[data-modo="classic"] .ttra-collection-grid .ttra-category-listado:focus-visible { outline-color: var(--pz-ink); }
+@media (hover: hover) and (pointer: fine) {
+  html[data-modo="classic"] .ttra-collection-grid .ttra-category-listado:hover { background: #f7f6f0; }
+}
+@media (min-width: 701px) {
+  html[data-modo="classic"] .ttra-collection-grid .ttra-category-listado { grid-column: 1 / -1; }
+}
 /* Rows arrive with a short rise instead of the old card zoom and blur. */
 html[data-modo="classic"] .ttra-collection-grid .ttra-category[data-reveal].ttra-reveal-ready { transform: translateY(12px); filter: none; }
 html[data-modo="classic"] .ttra-collection-grid .ttra-category[data-reveal].ttra-reveal-ready:is(.is-visible, :focus-within) { transform: none; }
