@@ -32,11 +32,14 @@ html body .grilla .card.ai-card:focus-within{border-color:rgba(255,80,60,.52)!im
 @media(hover:hover){html body .grilla .card.ai-card:hover{border-color:rgba(255,80,60,.52)!important;box-shadow:0 0 22px rgba(255,80,60,.20),0 0 50px rgba(255,80,60,.10)!important}}
 @media(prefers-reduced-motion:reduce){html body .grilla .card.ai-card{transition:none}}
 .ai-prices.ai-prices-mayorista{grid-template-rows:repeat(6,1fr)}
-.ai-prices-mayorista .ai-price{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center}
-.ai-prices-mayorista .ai-price>:nth-child(2){text-align:center;font:600 3.2cqw var(--ed-font-sans,Arial),sans-serif;color:#6fd08c;white-space:nowrap}
-.ai-prices-mayorista .ai-price>:nth-child(3){text-align:right}
+.ai-prices-mayorista .ai-price{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.64fr) minmax(0,.72fr) minmax(0,1.1fr);column-gap:2px;align-items:center}
+.ai-prices-mayorista .ai-price>:nth-child(n+2){text-align:right;white-space:nowrap}
+.ai-prices-mayorista .ai-price>:nth-child(2){font:500 3cqw var(--ed-font-sans,Arial),sans-serif;color:#8a8a84}
+.ai-prices-mayorista .ai-price>:nth-child(3){font:600 3.2cqw var(--ed-font-sans,Arial),sans-serif;color:#6fd08c}
 .ai-prices-mayorista .ai-price-head{color:#8a8a84!important;font-size:2.3cqw;text-transform:uppercase;letter-spacing:.05em}
-.ai-prices-mayorista .ai-price-head>:nth-child(2){font:inherit;color:inherit}
+.ai-prices-mayorista .ai-price-head>:nth-child(n+2){font:inherit;color:inherit}
+/* Card mayorista más ancha: 4 columnas por fila (pago, normal, descuento, tu precio) necesitan aire. */
+html body .grilla.has-ai-cards.has-mayorista{grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr))!important}
 .ai-prices-mayorista .ai-price:nth-child(2){color:#ff503c}.ai-prices-mayorista .ai-price:first-child strong{color:inherit}
 .ai-price:not(.ai-price-head)>:first-child:not(:only-child){font:600 3.4cqw var(--ed-font-sans,Arial),sans-serif}
 
