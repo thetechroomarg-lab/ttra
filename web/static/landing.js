@@ -1285,6 +1285,13 @@ document.addEventListener("click", (e) => {
   });
 });
 
+// "Black 94%" -> "Color: Black  Batería: 94%" (el color de un usado lleva la batería al final).
+function colorYBateriaHtml(valor) {
+  const partes = String(valor || "").match(/^(.*?)\s*(\d{1,3}\s*%)\s*$/);
+  if (!partes) return `<strong>Color:</strong> <span class="color-usado">${escapeHtml(valor)}</span>`;
+  return `<strong>Color:</strong> <span class="color-usado">${escapeHtml(partes[1])}</span> <strong>Batería:</strong> <span class="color-usado">${escapeHtml(partes[2].replace(/\s+/g, ""))}</span>`;
+}
+
 function tarjetaProducto(p) {
   const tieneColores = true;
   // Sin color informado se ofrece igual el selector, con la opción "Color único".
@@ -1297,8 +1304,7 @@ function tarjetaProducto(p) {
   const usadoUnico = /usad/i.test(String(p.categoria || "")) && listaColores.length === 1 && Array.isArray(p.colores);
   const colores = usadoUnico ? `
     <div class="selector-colores selector-usado">
-      <strong>Color y % de batería:</strong>
-      <span class="color-usado">${escapeHtml(listaColores[0])}</span>
+      ${colorYBateriaHtml(listaColores[0])}
     </div>
   ` : tieneColores ? `
     <div class="selector-colores">
