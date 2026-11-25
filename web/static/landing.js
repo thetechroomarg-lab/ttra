@@ -1782,6 +1782,8 @@ function actualizarModoPrecio() {
   const panelCodigo = document.getElementById("modal-codigo");
 
   if (indicador) indicador.hidden = !esMayorista;
+  const categoriaListado = document.getElementById("categoria-listado-whatsapp");
+  if (categoriaListado) categoriaListado.hidden = !esMayorista;
   if (botonCodigo) botonCodigo.hidden = esMayorista;
   if (panelCodigo) {
     panelCodigo.hidden = esMayorista;
