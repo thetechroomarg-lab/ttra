@@ -2,21 +2,26 @@ import math
 
 import pytest
 
-from web.mayoristas import catalogo_mayorista, descuento_por_margen
+from web.mayoristas import catalogo_mayorista, descuento_mayorista
 
 
-@pytest.mark.parametrize(("margen", "esperado"), [
-    (34, None), (40, None), (44, None), (45, 5), (50, 10), (55, 15), (60, 20),
-    (65, 25), (70, 30), (75, 35), (80, 40), (85, 45), (90, 50), (200, 50),
+@pytest.mark.parametrize(("ganancia", "esperado"), [
+    (0, None), (30, None), (39, None), (40, 20), (41, 20), (42, 21), (70, 35),
+    (71, 35), (100, 50), (200, 100),
 ])
-def test_descuento_por_banda_de_margen(margen, esperado):
-    assert descuento_por_margen(500 + margen, 500) == esperado
+def test_descuento_es_la_mitad_de_la_ganancia_y_piso_de_20(ganancia, esperado):
+    """Catches a discount that isn't 50% of profit, or products under the 20 floor."""
+    assert descuento_mayorista(500 + ganancia, 500) == esperado
 
 
-def test_descuento_iphone_deja_25_limpios_con_entrega_20():
-    assert descuento_por_margen(500 + 45, 500, 20) is None
-    assert descuento_por_margen(500 + 50, 500, 20) == 5
-    assert descuento_por_margen(500 + 90, 500, 20) == 45
+def test_mayorista_nunca_muestra_descuento_menor_a_20_ni_ganancia_menor_a_20():
+    """Catches showing a wholesale product that leaves less than 20 profit or discount."""
+    for ganancia in range(0, 300):
+        d = descuento_mayorista(500 + ganancia, 500)
+        if d is None:
+            continue
+        assert d >= 20
+        assert ganancia - d >= 20
 
 
 def test_catalogo_mayorista_filtra_sin_costo_y_recalcula_monedas():
@@ -30,7 +35,7 @@ def test_catalogo_mayorista_filtra_sin_costo_y_recalcula_monedas():
     assert resultado[0]["usd"] == 140
     assert resultado[0]["pesos"] == round(140 * (280800 / 180))
     assert resultado[0]["transferencia"] == round(140 * (289485 / 180))
-    assert resultado[0]["usd"] >= 100 + 40
+    assert resultado[0]["usd"] == 100 + 40
 
 
 def test_catalogo_mayorista_omite_campos_privados():
@@ -65,3 +70,15 @@ def test_catalogo_mayorista_excluye_costos_invalidos(costo):
     producto = {"nombre": "Producto", "usd": 180, "pesos": 280800}
 
     assert catalogo_mayorista([producto], {"Producto": costo}) == []
+
+
+def test_catalogo_mayorista_oculta_productos_que_no_dejan_20_de_ganancia():
+    productos = [
+        {"nombre": "Justo", "usd": 140},
+        {"nombre": "Corto", "usd": 139},
+    ]
+    resultado = catalogo_mayorista(productos, {"Justo": 100, "Corto": 100})
+
+    assert [p["nombre"] for p in resultado] == ["Justo"]
+    assert resultado[0]["usd"] == 120
+    assert resultado[0]["usd_publico"] == 140
