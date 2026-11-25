@@ -1875,3 +1875,5 @@ html[data-modo="classic"] #panel-carrito #modal-codigo #btn-cerrar-codigo {
   border: 2px solid var(--pz-frame); border-radius: 3px; background: var(--pz-cell); color: var(--pz-plate); font-size: 16px;
 }
 #btn-cancelar-selector-domicilio { align-self: stretch; }
+
+.selector-usado .color-usado { font-weight: 700; color: var(--rc-green); }

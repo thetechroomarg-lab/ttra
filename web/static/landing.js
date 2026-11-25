@@ -1292,7 +1292,15 @@ function tarjetaProducto(p) {
   // Siempre arranca en "Elegir color" sin nada preseleccionado, tenga el
   // producto uno o varios colores: Agregar al carrito queda inactivo hasta
   // que el usuario elija explícitamente una opción de la lista.
-  const colores = tieneColores ? `
+  // Cada usado es su propia card (una sola variante): se muestra su color y
+  // batería en vez del selector, y se puede agregar directo.
+  const usadoUnico = /usad/i.test(String(p.categoria || "")) && listaColores.length === 1 && Array.isArray(p.colores);
+  const colores = usadoUnico ? `
+    <div class="selector-colores selector-usado">
+      <strong>Color y % de batería:</strong>
+      <span class="color-usado">${escapeHtml(listaColores[0])}</span>
+    </div>
+  ` : tieneColores ? `
     <div class="selector-colores">
       <strong>${/\busad[oa]s?\b/i.test(p.nombre) || listaColores.some(c => /\d+\s*%/.test(c)) ? "Color y % de batería:" : "Colores disponibles:"}</strong>
       <div class="dropdown-color">
@@ -1315,7 +1323,7 @@ function tarjetaProducto(p) {
       ${colores}
       <div class="card-acciones">
         <span class="tarjeta-recomendado-iconos">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}${typeof TTRAComparar !== "undefined" ? TTRAComparar.buttonHtml() : ""}</span>
-        <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="" type="button" ${tieneColores ? "disabled" : ""}>Agregar al carrito</button>
+        <button class="btn-agregar" data-nombre="${escapeHtml(p.nombre)}" data-color="${usadoUnico ? escapeHtml(listaColores[0]) : ""}" type="button" ${tieneColores && !usadoUnico ? "disabled" : ""}>Agregar al carrito</button>
       </div>
     </div>
   `;

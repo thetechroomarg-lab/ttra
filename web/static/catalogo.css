@@ -389,3 +389,6 @@ html[data-modo="classic"] body.ttra-page .catalog-price-reset:focus-visible { bo
   cursor: pointer;
 }
 #compartir-busqueda:focus-visible { outline: 2px solid var(--ed-accent); outline-offset: 2px; }
+
+.catalog-color-usado { margin: 0; line-height: 1.4; }
+.catalog-color-usado span { font-weight: 700; }
