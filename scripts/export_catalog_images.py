@@ -18,7 +18,10 @@ for row in m['asignaciones']:
   with Image.open(source/a['archivo']) as img:
    img.thumbnail((640,640));img.save(target/name,'WEBP',quality=82,method=0)
  done.add(name)
- index.setdefault(row['nombre'],[]).append({'color':row['color_original'],'src':'/catalog-images/'+name})
+ # Si la imagen tenía fondo blanco, existe su versión recortada al contorno (<id>-cut.webp): usar esa.
+ cut=Path(a['archivo']).stem+'-cut.webp'
+ shown=cut if (target/cut).exists() else name
+ index.setdefault(row['nombre'],[]).append({'color':row['color_original'],'src':'/catalog-images/'+shown})
 # Las fotos reales de usados se administran fuera del manifest generado. Conservarlas
 # y priorizarlas para que una exportación de imágenes reutilizables no las reemplace.
 for product, variants in existing_index.items():
