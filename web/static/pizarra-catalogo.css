@@ -85,7 +85,8 @@ html[data-modo="classic"] .ai-face .ai-price:first-child { color: var(--pz-plate
 html[data-modo="classic"] .ai-face .ai-price:first-child > span:first-child { padding: .5cqw 1.4cqw .4cqw; border-radius: .5cqw; background: var(--pz-plate); color: var(--pz-ink); font-weight: 700; }
 html[data-modo="classic"] .ai-face .ai-price:first-child strong { color: var(--pz-amber); }
 html[data-modo="classic"] .ai-prices-mayorista .ai-price:nth-child(2) { color: var(--pz-plate); }
-html[data-modo="classic"] .ai-prices-mayorista .ai-price > :nth-child(2) { color: var(--pz-amber); font-family: var(--pz-font); }
+html[data-modo="classic"] .ai-prices-mayorista .ai-price > :nth-child(2) { color: var(--pz-dim); font-family: var(--pz-font); }
+html[data-modo="classic"] .ai-prices-mayorista .ai-price > :nth-child(3) { color: var(--pz-amber); font-family: var(--pz-font); }
 html[data-modo="classic"] .ai-prices-mayorista .ai-price-head { color: var(--pz-dim) !important; }
 html[data-modo="classic"] body .ai-face .btn-foto { color: var(--pz-plate) !important; }
 @media (hover: hover) and (pointer: fine) {
