@@ -258,3 +258,75 @@ def test_el_texto_lleva_la_fecha_de_hoy_y_el_dolar_que_puso_el_usuario():
     assert "📅 " + r["esperada"] in r["t"]
     assert "💵 Dólar: $1.850" in r["t"]
     assert "🇦🇷 $1.480.000" in r["t"]  # 800 USD x 1850
+
+
+# ---------- Ganancias guardadas en la cuenta ----------
+
+def test_limpiar_ganancias_descarta_lo_invalido_y_los_ceros():
+    """Catches junk or out-of-range values reaching the clientes table."""
+    crudo = {"0": 50, "1": 0, "2": -5, "3": 9999, "x": 10, "4": "20", "5": True, "6": 12.5, "300": 10, 7: 10, "08": 40}
+    assert listado_whatsapp.limpiar_ganancias(crudo) == {"0": 50, "8": 40}
+    assert listado_whatsapp.limpiar_ganancias("no es un dict") == {}
+    assert listado_whatsapp.limpiar_ganancias(None) == {}
+
+
+def _fila_cliente(monkeypatch):
+    return appmod.get_client().table("clientes").select("*").execute().data[0]
+
+
+def test_ganancias_se_guardan_en_la_cuenta_y_vuelven_en_la_proxima_visita(monkeypatch):
+    c = _cliente(monkeypatch, mayorista=True)
+
+    r = c.put("/api/listado-whatsapp/ganancias", json={"ganancias": {"0": 50, "2": 120, "1": 0, "9": -4}})
+
+    assert r.status_code == 200
+    assert r.json()["ganancias"] == {"0": 50, "2": 120}
+    assert _fila_cliente(monkeypatch)["listado_ganancias"] == {"0": 50, "2": 120}
+    assert c.get("/api/listado-whatsapp").json()["ganancias"] == {"0": 50, "2": 120}
+
+
+def test_cada_cuenta_guarda_sus_propias_ganancias(monkeypatch):
+    c = _cliente(monkeypatch, mayorista=True)
+    c.put("/api/listado-whatsapp/ganancias", json={"ganancias": {"0": 50}})
+    otra = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    otra.post("/registro", json={
+        "nombre": "Ana", "apellido": "Gómez", "celular": "3519999999",
+        "email": "ana@x.com", "password": "clave123",
+        "provincia": "Córdoba", "direccion": "Av. Colón 456, Córdoba",
+    })
+    fake = appmod.get_client()
+    ana = [f for f in fake.table("clientes").select("*").execute().data if f["email"] == "ana@x.com"][0]
+    fake.table("clientes").update({"tipo_cliente": "mayorista"}).eq("id", ana["id"]).execute()
+
+    assert otra.get("/api/listado-whatsapp").json()["ganancias"] == {}
+
+
+def test_guardar_ganancias_exige_sesion_y_ser_mayorista(monkeypatch):
+    anonimo = TestClient(appmod.app, base_url="https://testserver", follow_redirects=False)
+    assert anonimo.put("/api/listado-whatsapp/ganancias", json={"ganancias": {"0": 5}}).status_code == 401
+
+    minorista = _cliente(monkeypatch, mayorista=False)
+    assert minorista.put("/api/listado-whatsapp/ganancias", json={"ganancias": {"0": 5}}).status_code == 403
+    assert "listado_ganancias" not in _fila_cliente(monkeypatch) or _fila_cliente(monkeypatch)["listado_ganancias"] in (None, {})
+
+
+def test_si_falla_la_base_guardar_responde_503_y_leer_devuelve_vacio(monkeypatch):
+    c = _cliente(monkeypatch, mayorista=True)
+    real = appmod.get_client()
+
+    class Roto:
+        def table(self, nombre):
+            if nombre == "clientes":
+                raise RuntimeError("base caída")
+            return real.table(nombre)
+
+    # Primero resuelve el tipo de cliente con la base buena, después se cae.
+    monkeypatch.setattr(appmod, "_tipo_cliente_sesion", lambda request: "mayorista")
+    monkeypatch.setattr(appmod, "get_client", lambda: Roto())
+
+    assert c.put("/api/listado-whatsapp/ganancias", json={"ganancias": {"0": 5}}).status_code == 503
+    assert appmod._ganancias_listado_guardadas("cualquiera") == {}
+
+
+def test_la_opcion_3_aclara_que_sirve_para_revender_en_el_interior():
+    assert "Ideal para revender en el interior" in RUTA_JS.read_text(encoding="utf-8")
