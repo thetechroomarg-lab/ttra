@@ -6839,7 +6839,7 @@ def api_recomendados(request: Request, limit: int = 16):
 
 # Fallback para instalaciones antiguas o una actualización incompleta. La fuente
 # normal es la cotización publicada atómicamente con el catálogo.
-COTIZACION_DOLAR = 1650
+COTIZACION_DOLAR = 1720
 
 
 def _cargar_cotizacion_catalogo():
