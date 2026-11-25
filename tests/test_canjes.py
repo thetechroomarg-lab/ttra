@@ -283,3 +283,109 @@ def test_solicitud_de_2tb_aprueba_con_el_valor_de_512gb(monkeypatch):
     assert canje["capacidad"] == "2 TB" and canje["valor_usd"] == 1050
     assert "precio de 512 GB" in _admin().get("/admin/canjes?fragmento=1").text
     assert _admin().post(f"/admin/canjes/{canje['id']}/aprobar").json()["valor_usd"] == 1050
+
+
+# ---- Publicar un canje aprobado como usado en la tienda ----
+
+def _tienda(monkeypatch, tmp_path):
+    import json
+    ruta = tmp_path / "productos.json"
+    ruta.write_text(json.dumps([{"nombre": "iPhone 14 128GB (Usado)", "categoria": "Apple - iPhone Usado",
+                                 "usd": 400, "pesos": 600000, "transferencia": 618557,
+                                 "colores": ["Black 86%"]}]), encoding="utf-8")
+    monkeypatch.setattr(appmod, "PRODUCTOS_PATH", ruta)
+    monkeypatch.setattr(appmod, "_cargar_cotizacion_catalogo", lambda: 1500)
+    return ruta
+
+
+def _aprobado(monkeypatch, tmp_path, equipo="iphone-15-pro-128gb"):
+    fake, _ = _entorno(monkeypatch)
+    ruta = _tienda(monkeypatch, tmp_path)
+    c, _ = _cliente_logueado(fake)
+    _enviar(c, equipo)
+    admin = _admin()
+    canje_id = fake.table("canjes").select("*").execute().data[0]["id"]
+    assert admin.post(f"/admin/canjes/{canje_id}/aprobar").status_code == 200
+    return fake, admin, canje_id, ruta
+
+
+def _catalogo(ruta):
+    import json
+    return json.loads(ruta.read_text(encoding="utf-8"))
+
+
+DATOS = {"usd": 450, "color": "Black", "bateria": 87}
+
+
+def test_publicar_suma_la_card_con_las_fotos_del_cliente_y_respeta_lo_existente(monkeypatch, tmp_path):
+    _, admin, canje_id, ruta = _aprobado(monkeypatch, tmp_path)
+    assert admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS).status_code == 200
+    productos = {p["nombre"]: p for p in _catalogo(ruta)}
+    assert "iPhone 14 128GB (Usado)" in productos
+    nuevo = productos["iPhone 15 Pro 128GB (Usado)"]
+    assert nuevo["categoria"] == "Apple - iPhone Usado" and nuevo["colores"] == ["Black 87%"]
+    assert (nuevo["usd"], nuevo["pesos"], nuevo["transferencia"]) == (450, 675000, round(675000 / 0.97))
+    indice = TestClient(appmod.app).get("/catalog-images/index.json").json()
+    variante = indice["iPhone 15 Pro 128GB (Usado)"][0]
+    assert len(variante["fotos"]) == 6 and "iPhone 15 Pro 128GB (Usado)" in indice and "IPHONE 15 128GB" in indice
+    publico = TestClient(appmod.app)
+    assert publico.get(variante["fotos"][0]).content == _jpeg()
+
+
+def test_publicar_exige_admin_canje_aprobado_y_datos_validos(monkeypatch, tmp_path):
+    fake, admin, canje_id, ruta = _aprobado(monkeypatch, tmp_path)
+    assert TestClient(appmod.app).post(f"/admin/canjes/{canje_id}/publicar", json=DATOS).status_code == 401
+    assert admin.post(f"/admin/canjes/{canje_id}/publicar", json={**DATOS, "usd": 0}).status_code == 422
+    assert admin.post(f"/admin/canjes/{canje_id}/publicar", json={**DATOS, "bateria": 150}).status_code == 422
+    fake.table("canjes").update({"estado": "cancelado"}).eq("id", canje_id).execute()
+    assert admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS).status_code == 409
+    assert len(_catalogo(ruta)) == 1
+
+
+def test_quitar_de_la_tienda_y_volver_a_publicar(monkeypatch, tmp_path):
+    _, admin, canje_id, ruta = _aprobado(monkeypatch, tmp_path)
+    admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS)
+    assert admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS).status_code == 409
+    assert admin.post(f"/admin/canjes/{canje_id}/quitar-de-tienda").status_code == 200
+    assert [p["nombre"] for p in _catalogo(ruta)] == ["iPhone 14 128GB (Usado)"]
+    foto = f"/catalog-images/usados/{canje_id}/1.jpg"
+    assert TestClient(appmod.app).get(foto).status_code == 404
+    assert admin.post(f"/admin/canjes/{canje_id}/quitar-de-tienda").status_code == 409
+    assert admin.post(f"/admin/canjes/{canje_id}/publicar", json={**DATOS, "usd": 460}).status_code == 200
+    assert TestClient(appmod.app).get(foto).status_code == 200
+    assert next(p for p in _catalogo(ruta) if "15 Pro" in p["nombre"])["usd"] == 460
+
+
+def test_el_recibo_lo_marca_vendido_y_no_se_puede_republicar_pero_sigue_en_el_historial(monkeypatch, tmp_path):
+    from web import stock_usados
+    fake, admin, canje_id, ruta = _aprobado(monkeypatch, tmp_path)
+    admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS)
+    detalle = [{"nombre": "iPhone 15 Pro 128GB (Usado)", "color": "Black 87%", "cantidad": 1}]
+    assert stock_usados.marcar_vendidos(detalle, ruta) == [canje_id]
+    stock_usados.dar_de_baja(detalle, ruta)
+    assert [p["nombre"] for p in _catalogo(ruta)] == ["iPhone 14 128GB (Usado)"]
+    assert admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS).status_code == 409
+    assert admin.post(f"/admin/canjes/{canje_id}/quitar-de-tienda").status_code == 409
+    assert fake.table("canjes").select("*").eq("id", canje_id).execute().data[0]["estado"] == "aprobado"
+    html = admin.get("/admin/canjes?fragmento=1").text
+    assert 'class="canje-vendido" disabled' in html and "canje-publicar" not in html
+
+
+def test_el_panel_muestra_publicar_o_quitar_segun_el_estado(monkeypatch, tmp_path):
+    _, admin, canje_id, _ = _aprobado(monkeypatch, tmp_path)
+    assert "canje-publicar" in admin.get("/admin/canjes?fragmento=1").text
+    admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS)
+    html = admin.get("/admin/canjes?fragmento=1").text
+    assert "Quitar de la tienda" in html and "canje-publicar" not in html
+
+
+def test_dos_unidades_del_mismo_modelo_comparten_card_con_el_mismo_precio(monkeypatch, tmp_path):
+    from web import stock_usados
+    _, admin, canje_id, ruta = _aprobado(monkeypatch, tmp_path)
+    admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS)
+    otro = {"id": "11111111-1111-1111-1111-111111111111", "modelo": "iPhone 15 Pro", "capacidad": "128 GB"}
+    with __import__("pytest").raises(stock_usados.UsadoError):
+        stock_usados.publicar(ruta, otro, [_jpeg()], 500, "Blue", 90, 1500)
+    stock_usados.publicar(ruta, otro, [_jpeg()], 450, "Blue", 90, 1500)
+    card = next(p for p in _catalogo(ruta) if "15 Pro" in p["nombre"])
+    assert card["colores"] == ["Black 87%", "Blue 90%"]

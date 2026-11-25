@@ -209,6 +209,9 @@ def test_cotizacion_del_header_sale_del_manifiesto_del_catalogo(tmp_path, monkey
     manifiesto = tmp_path / "catalogo-manifest.json"
     manifiesto.write_text('{"cotizacion": 1532}', encoding="utf-8")
     monkeypatch.setattr(appmod, "CATALOGO_MANIFEST_PATH", manifiesto)
+    # Aislado de la cotización manual real del admin (cotizacion-admin.json junto a productos.json).
+    monkeypatch.setattr(appmod, "PRODUCTOS_PATH", tmp_path / "productos.json")
+    monkeypatch.delenv("COTIZACION_PATH", raising=False)
     cliente = TestClient(appmod.app, base_url="https://testserver")
 
     respuesta = cliente.get("/api/cotizacion")
