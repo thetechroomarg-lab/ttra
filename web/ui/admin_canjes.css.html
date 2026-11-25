@@ -20,6 +20,13 @@
   .canje-foto span { display:block; padding:6px 8px; color:var(--op-text-dim); font-size:var(--op-fs-micro); line-height:1.3; text-align:left; }
   .canje-acciones { display:flex; gap:8px; margin-top:14px; }
   .canje-acciones button, .canje-modal-acciones button { border:0; border-radius:var(--op-r-sm); color:#fff; cursor:pointer; font:inherit; font-weight:700; min-height:42px; padding:0 14px; transition:background-color var(--op-dur) var(--op-ease); }
+  .canje-publicar { background:var(--op-accent); margin-left:auto; }
+  .canje-publicar:hover { background:var(--op-accent-hover); }
+  .canje-quitar { background:var(--op-surface-3); border:1px solid var(--op-border-strong) !important; color:var(--op-text) !important; margin-left:auto; }
+  .canje-acciones .canje-vendido { background:var(--op-success-bg); border:1px solid var(--op-success-border) !important; color:var(--op-success); cursor:default; margin-left:auto; pointer-events:none; }
+  .canje-campos { display:grid; grid-template-columns:1fr; gap:10px; }
+  .canje-campos label { display:grid; gap:4px; color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .canje-campos input { box-sizing:border-box; width:100%; min-height:44px; border:1px solid var(--op-border-strong); border-radius:var(--op-r-sm); padding:0 10px; background:var(--op-input-bg); color:var(--op-text); font:inherit; }
   .canje-aprobar { background:var(--op-accent); margin-left:auto; }
   .canje-aprobar:hover { background:var(--op-accent-hover); }
   .canje-rechazar, .canje-cancelar, .canje-modal-cancelar { background:var(--op-surface-3); border:1px solid var(--op-border-strong) !important; color:var(--op-text) !important; }
