@@ -6734,9 +6734,42 @@ def api_listado_whatsapp(request: Request):
         {
             "cotizacion": _cargar_cotizacion_catalogo(),
             "secciones": listado_whatsapp.secciones_listado(productos),
+            "ganancias": _ganancias_listado_guardadas(request.session["cliente_id"]),
         },
         headers={"Cache-Control": "no-store"},
     )
+
+
+def _ganancias_listado_guardadas(cliente_id):
+    """Ganancias por rango que el mayorista dejó guardadas; vacío si no hay o no se pueden leer."""
+    try:
+        filas = (get_client().table("clientes").select("listado_ganancias")
+                 .eq("id", cliente_id).execute().data)
+    except Exception:
+        logger.exception("No se pudieron leer las ganancias del listado")
+        return {}
+    return listado_whatsapp.limpiar_ganancias(filas[0].get("listado_ganancias")) if filas else {}
+
+
+class GananciasListadoIn(BaseModel):
+    ganancias: dict
+
+
+@app.put("/api/listado-whatsapp/ganancias")
+def api_guardar_ganancias_listado(entrada: GananciasListadoIn, request: Request):
+    if not _sesion_activa(request):
+        raise HTTPException(status_code=401, detail="Sesión requerida")
+    if _tipo_cliente_sesion(request) != "mayorista":
+        raise HTTPException(status_code=403, detail="Solo para cuentas mayoristas")
+    ganancias = listado_whatsapp.limpiar_ganancias(entrada.ganancias)
+    try:
+        get_client().table("clientes").update(
+            {"listado_ganancias": ganancias}
+        ).eq("id", request.session["cliente_id"]).execute()
+    except Exception:
+        logger.exception("No se pudieron guardar las ganancias del listado")
+        return JSONResponse({"error": "No pude guardar, probá de nuevo en un momento"}, status_code=503)
+    return {"ok": True, "ganancias": ganancias}
 
 
 

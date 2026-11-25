@@ -31,6 +31,8 @@ alter table clientes add column if not exists direccion text;
 -- Fecha en que una cuenta mayorista aceptó las condiciones comerciales
 -- para revendedores (popup obligatorio en la landing). Null = no aceptadas.
 alter table clientes add column if not exists condiciones_mayorista_aceptadas_en timestamptz;
+-- Listado WhatsApp: ganancia en USD elegida por franja de US$ 300 (ver migración 20261125).
+alter table clientes add column if not exists listado_ganancias jsonb not null default '{}'::jsonb;
 -- Programa de fidelización: sube de a 1 por cada entrega completada de un
 -- pedido con cuenta. Llega a 5 y se congela ahí hasta que el cliente use el
 -- código de fidelidad_ultimo_codigo; recién entonces vuelve a 0.
