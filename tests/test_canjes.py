@@ -322,12 +322,12 @@ def test_publicar_suma_la_card_con_las_fotos_del_cliente_y_respeta_lo_existente(
     assert admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS).status_code == 200
     productos = {p["nombre"]: p for p in _catalogo(ruta)}
     assert "iPhone 14 128GB (Usado)" in productos
-    nuevo = productos["iPhone 15 Pro 128GB (Usado)"]
+    nuevo = productos["iPhone 15 Pro 128GB (Usado) Black 87%"]
     assert nuevo["categoria"] == "Apple - iPhone Usado" and nuevo["colores"] == ["Black 87%"]
     assert (nuevo["usd"], nuevo["pesos"], nuevo["transferencia"]) == (450, 675000, round(675000 / 0.97))
     indice = TestClient(appmod.app).get("/catalog-images/index.json").json()
-    variante = indice["iPhone 15 Pro 128GB (Usado)"][0]
-    assert len(variante["fotos"]) == 6 and "iPhone 15 Pro 128GB (Usado)" in indice and "IPHONE 15 128GB" in indice
+    variante = indice["iPhone 15 Pro 128GB (Usado) Black 87%"][0]
+    assert len(variante["fotos"]) == 6 and variante["color"] == "Black 87%" and "IPHONE 15 128GB" in indice
     publico = TestClient(appmod.app)
     assert publico.get(variante["fotos"][0]).content == _jpeg()
 
@@ -360,7 +360,7 @@ def test_el_recibo_lo_marca_vendido_y_no_se_puede_republicar_pero_sigue_en_el_hi
     from web import stock_usados
     fake, admin, canje_id, ruta = _aprobado(monkeypatch, tmp_path)
     admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS)
-    detalle = [{"nombre": "iPhone 15 Pro 128GB (Usado)", "color": "Black 87%", "cantidad": 1}]
+    detalle = [{"nombre": "iPhone 15 Pro 128GB (Usado) Black 87%", "color": "Black 87%", "cantidad": 1}]
     assert stock_usados.marcar_vendidos(detalle, ruta) == [canje_id]
     stock_usados.dar_de_baja(detalle, ruta)
     assert [p["nombre"] for p in _catalogo(ruta)] == ["iPhone 14 128GB (Usado)"]
@@ -379,13 +379,22 @@ def test_el_panel_muestra_publicar_o_quitar_segun_el_estado(monkeypatch, tmp_pat
     assert "Quitar de la tienda" in html and "canje-publicar" not in html
 
 
-def test_dos_unidades_del_mismo_modelo_comparten_card_con_el_mismo_precio(monkeypatch, tmp_path):
+def test_cada_unidad_del_mismo_modelo_es_su_propia_card_con_su_precio(monkeypatch, tmp_path):
     from web import stock_usados
     _, admin, canje_id, ruta = _aprobado(monkeypatch, tmp_path)
     admin.post(f"/admin/canjes/{canje_id}/publicar", json=DATOS)
     otro = {"id": "11111111-1111-1111-1111-111111111111", "modelo": "iPhone 15 Pro", "capacidad": "128 GB"}
-    with __import__("pytest").raises(stock_usados.UsadoError):
-        stock_usados.publicar(ruta, otro, [_jpeg()], 500, "Blue", 90, 1500)
-    stock_usados.publicar(ruta, otro, [_jpeg()], 450, "Blue", 90, 1500)
-    card = next(p for p in _catalogo(ruta) if "15 Pro" in p["nombre"])
-    assert card["colores"] == ["Black 87%", "Blue 90%"]
+    stock_usados.publicar(ruta, otro, [_jpeg()], 500, "Blue", 90, 1500)
+    tarjetas = {p["nombre"]: p for p in _catalogo(ruta) if "15 Pro" in p["nombre"]}
+    assert {n: (t["colores"], t["usd"]) for n, t in tarjetas.items()} == {
+        "iPhone 15 Pro 128GB (Usado) Black 87%": (["Black 87%"], 450),
+        "iPhone 15 Pro 128GB (Usado) Blue 90%": (["Blue 90%"], 500)}
+    # Vender una no toca la otra.
+    detalle = [{"nombre": "iPhone 15 Pro 128GB (Usado) Black 87%", "color": "Black 87%"}]
+    stock_usados.marcar_vendidos(detalle, ruta)
+    stock_usados.dar_de_baja(detalle, ruta)
+    assert [p["nombre"] for p in _catalogo(ruta) if "15 Pro" in p["nombre"]] == ["iPhone 15 Pro 128GB (Usado) Blue 90%"]
+    # Mismo modelo, color y batería: no se pisan.
+    import pytest
+    with pytest.raises(stock_usados.UsadoError):
+        stock_usados.publicar(ruta, {**otro, "id": "22222222-2222-2222-2222-222222222222"}, [_jpeg()], 500, "Blue", 90, 1500)
