@@ -8,6 +8,10 @@
  const modalFoto = porId('canje-modal-foto');
  const modalPublicar = porId('canje-modal-publicar');
  let activo = null;
+ // Con un panel abierto el fondo no scrollea.
+ const bloquearFondo = () => document.documentElement.classList.toggle('canje-modal-abierto', [...document.querySelectorAll('.canje-modal')].some((m) => !m.hidden));
+ const vigia = new MutationObserver(bloquearFondo);
+ document.querySelectorAll('.canje-modal').forEach((m) => vigia.observe(m, { attributes: true, attributeFilter: ['hidden'] }));
  async function cargar() {
   porId('canjes-estado').textContent = 'Cargando…';
   try {
