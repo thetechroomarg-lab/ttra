@@ -574,6 +574,13 @@ function abrirCompartirCatalogo(producto = null) {
   panel.showModal();
 }
 
+// "Black 94%" -> "Color: Black  Batería: 94%" (el color de un usado lleva la batería al final).
+function colorYBateriaHtml(valor) {
+  const partes = String(valor || "").match(/^(.*?)\s*(\d{1,3}\s*%)\s*$/);
+  if (!partes) return `<strong>Color:</strong> <span>${escapeHtml(valor)}</span>`;
+  return `<strong>Color:</strong> <span>${escapeHtml(partes[1])}</span> <strong>Batería:</strong> <span>${escapeHtml(partes[2].replace(/\s+/g, ""))}</span>`;
+}
+
 function tarjetaProducto(p, indice = 0) {
   const precios = preciosDe(p);
   const monto = (valor) => valor == null ? "-" : Number(valor).toLocaleString("es-AR");
@@ -585,7 +592,7 @@ function tarjetaProducto(p, indice = 0) {
   const etiqueta = condicionProducto(p) === "usado" ? "variante" : "color";
   // Cada usado es su propia card (una sola variante): color y batería a la vista, sin selector.
   const usadoUnico = etiqueta === "variante" && !sinColores && opciones.length === 1;
-  const colores = usadoUnico ? `<p class="catalog-color-usado"><strong>Color y % de batería:</strong> <span>${escapeHtml(opciones[0])}</span></p>` : `<label for="catalog-color-${indice}">${etiqueta === "variante" ? "Color y % de batería:" : "Colores disponibles:"}</label>
+  const colores = usadoUnico ? `<p class="catalog-color-usado">${colorYBateriaHtml(opciones[0])}</p>` : `<label for="catalog-color-${indice}">${etiqueta === "variante" ? "Color y % de batería:" : "Colores disponibles:"}</label>
        <select id="catalog-color-${indice}" required>
          <option value="" disabled selected hidden>Elegí una opción de color</option>
          ${opciones.map((color) => `<option value="${escapeHtml(color).replaceAll('"', '&quot;')}">${escapeHtml(color)}</option>`).join('')}
