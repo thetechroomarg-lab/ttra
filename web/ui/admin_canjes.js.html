@@ -6,6 +6,7 @@
  const modalRechazar = porId('canje-modal-rechazar');
  const modalCancelar = porId('canje-modal-cancelar');
  const modalFoto = porId('canje-modal-foto');
+ const modalPublicar = porId('canje-modal-publicar');
  let activo = null;
  async function cargar() {
   porId('canjes-estado').textContent = 'Cargando…';
@@ -41,11 +42,25 @@
   }
   const rechazar = e.target.closest('.canje-rechazar');
   if (rechazar) { activo = rechazar.closest('.canje'); porId('canje-motivo').value = ''; porId('canje-rechazar-error').textContent = ''; modalRechazar.hidden = false; return; }
+  const publicar = e.target.closest('.canje-publicar');
+  if (publicar) {
+   activo = publicar.closest('.canje');
+   porId('canje-publicar-texto').textContent = `${activo.dataset.equipo} usado. Va a la tienda con las fotos que mandó ${activo.dataset.cliente}. Los otros precios los calculo con el dólar del sistema.`;
+   porId('canje-publicar-usd').value = publicar.dataset.usd || '';
+   porId('canje-publicar-color').value = publicar.dataset.color || '';
+   porId('canje-publicar-bateria').value = publicar.dataset.bateria || '';
+   porId('canje-publicar-error').textContent = '';
+   precios();
+   modalPublicar.hidden = false;
+   return;
+  }
+  const quitar = e.target.closest('.canje-quitar');
+  if (quitar) { activo = quitar.closest('.canje'); accionTienda('quitar-de-tienda', {}, quitar); return; }
   const cancelar = e.target.closest('.canje-cancelar');
   if (cancelar) { activo = cancelar.closest('.canje'); porId('canje-motivo-cancelar').value = ''; porId('canje-cancelar-error').textContent = ''; modalCancelar.hidden = false; }
  });
  porId('canje-foto-cerrar').addEventListener('click', () => { modalFoto.hidden = true; });
- document.querySelectorAll('.canje-modal-cancelar').forEach((b) => b.addEventListener('click', () => { modalAprobar.hidden = true; modalRechazar.hidden = true; modalCancelar.hidden = true; }));
+ document.querySelectorAll('.canje-modal-cancelar').forEach((b) => b.addEventListener('click', () => { modalAprobar.hidden = true; modalRechazar.hidden = true; modalCancelar.hidden = true; modalPublicar.hidden = true; }));
  async function resolver(accion, cuerpo, errorId, boton) {
   boton.disabled = true;
   try {
@@ -56,6 +71,31 @@
   } catch { porId(errorId).textContent = 'No pude conectar, probá de nuevo.'; }
   finally { boton.disabled = false; }
  }
+ const fmt = (n) => '$ ' + Math.round(n).toLocaleString('es-AR');
+ function precios() {
+  const usd = parseInt(porId('canje-publicar-usd').value, 10);
+  const cot = parseInt(listado.querySelector('.canjes-filtros')?.dataset.cotizacion, 10);
+  porId('canje-publicar-precios').textContent = usd > 0 && cot > 0 ? `Dólar a ${fmt(cot)} · contado ${fmt(usd * cot)} · transferencia ${fmt(usd * cot / 0.97)}` : '';
+ }
+ porId('canje-publicar-usd').addEventListener('input', precios);
+ async function accionTienda(accion, cuerpo, boton, errorId) {
+  boton.disabled = true;
+  try {
+   const r = await fetch(`/admin/canjes/${activo.dataset.id}/${accion}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+   if (r.ok) { modalPublicar.hidden = true; await cargar(); return; }
+   const datos = await r.json().catch(() => ({}));
+   const msg = datos.error || 'No pude completar la acción';
+   if (errorId) porId(errorId).textContent = msg; else porId('canjes-estado').textContent = msg;
+  } catch { const msg = 'No pude conectar, probá de nuevo.'; if (errorId) porId(errorId).textContent = msg; else porId('canjes-estado').textContent = msg; }
+  finally { boton.disabled = false; }
+ }
+ porId('canje-publicar-ok').addEventListener('click', (e) => {
+  const usd = porId('canje-publicar-usd').value.trim(), bateria = porId('canje-publicar-bateria').value.trim(), color = porId('canje-publicar-color').value.trim();
+  if (!/^[0-9]{1,6}$/.test(usd) || +usd <= 0) { porId('canje-publicar-error').textContent = 'Poné el precio en dólares, solo números.'; return; }
+  if (!color) { porId('canje-publicar-error').textContent = 'Poné el color del equipo.'; return; }
+  if (!/^[0-9]{1,3}$/.test(bateria) || +bateria < 1 || +bateria > 100) { porId('canje-publicar-error').textContent = 'Poné la batería, de 1 a 100.'; return; }
+  accionTienda('publicar', { usd: +usd, color, bateria: +bateria }, e.currentTarget, 'canje-publicar-error');
+ });
  porId('canje-aprobar-ok').addEventListener('click', (e) => resolver('aprobar', {}, 'canje-aprobar-error', e.currentTarget));
  porId('canje-rechazar-ok').addEventListener('click', (e) => {
   const motivo = porId('canje-motivo').value.trim();

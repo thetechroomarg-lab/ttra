@@ -1566,6 +1566,7 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             logger.exception("No se pudo descontar la remera del pedido %s", pedido_id)
         try:
             # Los usados son stock propio y de una sola unidad: salen del catálogo con el recibo.
+            stock_usados.marcar_vendidos(pedido.get("detalle"), PRODUCTOS_PATH)
             stock_usados.dar_de_baja(pedido.get("detalle"), PRODUCTOS_PATH)
         except Exception:
             logger.exception("No se pudo dar de baja el usado del pedido %s", pedido_id)
@@ -6518,7 +6519,9 @@ def admin_canjes(request: Request):
         return RedirectResponse("/admin/clientes#canjes", status_code=303)
     client = get_client()
     clientes = {c["id"]: c for c in client.table("clientes").select("*").execute().data if c.get("id")}
-    return paginas_canjes.html_fragmento(canjes.listar(client), clientes)
+    return paginas_canjes.html_fragmento(
+        canjes.listar(client), clientes,
+        stock_usados.leer_registro(PRODUCTOS_PATH), _cargar_cotizacion_catalogo())
 
 
 @app.get("/admin/canjes/{canje_id}/foto/{indice}")
@@ -6587,6 +6590,69 @@ def admin_canje_cancelar(canje_id: str, entrada: CanjeRechazoIn, request: Reques
         return JSONResponse({"error": str(exc)}, status_code=409)
     avisado = _avisar_resultado_canje(client, canje, request)
     return {"ok": True, "avisado": avisado}
+
+
+class CanjePublicarIn(BaseModel):
+    usd: int = Field(gt=0, le=100000)
+    color: str = Field(min_length=1, max_length=40)
+    bateria: int = Field(ge=1, le=100)
+
+
+@app.post("/admin/canjes/{canje_id}/publicar")
+def admin_canje_publicar(canje_id: str, entrada: CanjePublicarIn, request: Request):
+    _canje_admin_o_401(request)
+    client = get_client()
+    canje = canjes.obtener(client, canje_id)
+    if canje is None:
+        return JSONResponse({"error": "No encontré la solicitud"}, status_code=404)
+    if canje.get("estado") != "aprobado":
+        return JSONResponse({"error": "Solo se publican equipos de canjes aprobados"}, status_code=409)
+    fotos = []
+    try:
+        for ruta in (canje.get("fotos") or [])[:stock_usados.FOTOS_PUBLICAS]:
+            fotos.append(client.storage.from_(canjes.BUCKET).download(ruta))
+    except Exception:
+        logger.exception("No se pudieron leer las fotos del canje %s", canje_id)
+        return JSONResponse({"error": "No pude leer las fotos del cliente"}, status_code=502)
+    if not fotos:
+        return JSONResponse({"error": "Este canje no tiene fotos para publicar"}, status_code=409)
+    try:
+        publicado = stock_usados.publicar(
+            PRODUCTOS_PATH, canje, fotos, entrada.usd, entrada.color.strip(), entrada.bateria,
+            _cargar_cotizacion_catalogo())
+    except stock_usados.UsadoError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=409)
+    return {"ok": True, "nombre": publicado["nombre"], "color": publicado["color"], "usd": publicado["usd"]}
+
+
+@app.post("/admin/canjes/{canje_id}/quitar-de-tienda")
+def admin_canje_quitar_de_tienda(canje_id: str, request: Request):
+    _canje_admin_o_401(request)
+    try:
+        stock_usados.quitar(PRODUCTOS_PATH, canje_id)
+    except stock_usados.UsadoError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=409)
+    return {"ok": True}
+
+
+@app.get("/catalog-images/index.json")
+def indice_imagenes_catalogo():
+    """El índice estático más las fotos de los usados publicados desde Plan Canje."""
+    indice = json.loads((BASE / "static" / "catalog-images" / "index.json").read_text(encoding="utf-8"))
+    for nombre, variantes in stock_usados.entradas_de_imagenes(PRODUCTOS_PATH).items():
+        # Primero las publicadas: el front toma la primera variante que coincide por color.
+        indice[nombre] = [*variantes, *indice.get(nombre, [])]
+    return JSONResponse(indice, headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/catalog-images/usados/{canje_id}/{archivo}")
+def foto_usado_publicado(canje_id: str, archivo: str):
+    if not re.fullmatch(r"[0-9a-f-]{36}", canje_id) or not re.fullmatch(r"[1-9][0-9]?\.jpg", archivo):
+        raise HTTPException(status_code=404)
+    ruta = stock_usados.ruta_foto(PRODUCTOS_PATH, canje_id, archivo)
+    if ruta is None:
+        raise HTTPException(status_code=404)
+    return FileResponse(str(ruta), media_type="image/jpeg", headers={"Cache-Control": "public, max-age=3600"})
 
 
 @app.get("/blackhole")
