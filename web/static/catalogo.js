@@ -583,7 +583,9 @@ function tarjetaProducto(p, indice = 0) {
   const opciones = sinColores ? ["Color único"] : p.colores;
   const elegirColor = true;
   const etiqueta = condicionProducto(p) === "usado" ? "variante" : "color";
-  const colores = `<label for="catalog-color-${indice}">${etiqueta === "variante" ? "Color y % de batería:" : "Colores disponibles:"}</label>
+  // Cada usado es su propia card (una sola variante): color y batería a la vista, sin selector.
+  const usadoUnico = etiqueta === "variante" && !sinColores && opciones.length === 1;
+  const colores = usadoUnico ? `<p class="catalog-color-usado"><strong>Color y % de batería:</strong> <span>${escapeHtml(opciones[0])}</span></p>` : `<label for="catalog-color-${indice}">${etiqueta === "variante" ? "Color y % de batería:" : "Colores disponibles:"}</label>
        <select id="catalog-color-${indice}" required>
          <option value="" disabled selected hidden>Elegí una opción de color</option>
          ${opciones.map((color) => `<option value="${escapeHtml(color).replaceAll('"', '&quot;')}">${escapeHtml(color)}</option>`).join('')}
@@ -602,8 +604,8 @@ function tarjetaProducto(p, indice = 0) {
       <div class="catalog-card-actions">
         ${colores}
         <div class="catalog-product-links">${botonFotoHtml(p)}${botonEspecificacionesHtml(p)}${botonCompartirHtml()}${typeof TTRAComparar !== "undefined" ? TTRAComparar.buttonHtml() : ""}</div>
-        <button class="btn-agregar" type="button" ${elegirColor ? 'disabled' : ''}>Agregar al carrito</button>
-        <p class="catalog-card-status" role="status">${elegirColor ? (etiqueta === 'variante' ? 'Elegí una variante para agregar.' : 'Elegí un color para agregar.') : ''}</p>
+        <button class="btn-agregar" type="button" ${elegirColor && !usadoUnico ? 'disabled' : ''}>Agregar al carrito</button>
+        <p class="catalog-card-status" role="status">${elegirColor && !usadoUnico ? (etiqueta === 'variante' ? 'Elegí una variante para agregar.' : 'Elegí un color para agregar.') : ''}</p>
       </div>
     </div>
   `;

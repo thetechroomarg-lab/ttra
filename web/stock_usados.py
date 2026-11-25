@@ -117,10 +117,12 @@ def leer_registro(productos_path):
     return datos if isinstance(datos, dict) else {}
 
 
-def nombre_producto(canje):
-    """"iPhone 15 Pro" + "128 GB" -> "iPhone 15 Pro 128GB (Usado)"."""
+def nombre_producto(canje, color_con_bateria):
+    """Cada unidad usada es su propia card, y el servidor busca precios por
+    nombre: el nombre lleva color y batería para que sea único.
+    "iPhone 15 Pro" + "128 GB" + "Black 87%" -> "iPhone 15 Pro 128GB (Usado) Black 87%"."""
     capacidad = (canje.get("capacidad") or "").replace(" ", "")
-    return f"{canje['modelo']} {capacidad} (Usado)"
+    return f"{canje['modelo']} {capacidad} (Usado) {color_con_bateria}"
 
 
 def color_publicado(color, bateria):
@@ -129,11 +131,11 @@ def color_publicado(color, bateria):
 
 def publicar(productos_path, canje, fotos, usd, color, bateria, cotizacion):
     """Pone el equipo de un canje aprobado en la tienda, con las fotos que mandó
-    el cliente. Una card por modelo: si ya hay otra unidad del mismo modelo, esta
-    se suma como otro color (mismo precio, porque la card tiene uno solo)."""
+    el cliente. Cada unidad es su propia card, con su precio."""
     productos_path = Path(productos_path)
     usd = int(usd)
-    nombre, colores = nombre_producto(canje), color_publicado(color, bateria)
+    colores = color_publicado(color, bateria)
+    nombre = nombre_producto(canje, colores)
     with _TRABA:
         registro = leer_registro(productos_path)
         previo = registro.get(canje["id"]) or {}
@@ -144,12 +146,8 @@ def publicar(productos_path, canje, fotos, usd, color, bateria, cotizacion):
         productos = _leer(productos_path, None)
         if not isinstance(productos, list):
             raise UsadoError("El catálogo no está disponible")
-        existente = next((p for p in productos if p.get("nombre") == nombre), None)
-        if existente is not None:
-            if colores in (existente.get("colores") or []):
-                raise UsadoError(f"Ya hay un {nombre} {colores} en la tienda")
-            if existente.get("usd") != usd:
-                raise UsadoError(f"Ya hay un {nombre} en la tienda a US$ {existente.get('usd')}: usá ese precio")
+        if any(p.get("nombre") == nombre for p in productos):
+            raise UsadoError(f"Ya hay un {nombre} en la tienda: cambiá el color o la batería para distinguirlo")
         carpeta = _fotos_dir(productos_path) / canje["id"]
         carpeta.mkdir(parents=True, exist_ok=True)
         rutas = []
@@ -157,15 +155,12 @@ def publicar(productos_path, canje, fotos, usd, color, bateria, cotizacion):
             (carpeta / f"{i}.jpg").write_bytes(contenido)
             rutas.append(f"/catalog-images/usados/{canje['id']}/{i}.jpg")
         pesos = round(usd * cotizacion)
-        if existente is not None:
-            existente["colores"] = [*(existente.get("colores") or []), colores]
-        else:
-            productos.append({
-                "nombre": nombre, "categoria": CATEGORIA, "usd": usd, "pesos": pesos,
-                "transferencia": round(pesos / 0.97),
-                "link_imagen": f"https://www.google.com/search?tbm=isch&q={nombre.replace(' ', '+')}",
-                "colores": [colores],
-            })
+        productos.append({
+            "nombre": nombre, "categoria": CATEGORIA, "usd": usd, "pesos": pesos,
+            "transferencia": round(pesos / 0.97),
+            "link_imagen": f"https://www.google.com/search?tbm=isch&q={nombre.replace(' ', '+')}",
+            "colores": [colores],
+        })
         productos_hash = _escribir_json_atomico(productos_path, productos)
         manifiesto_path = productos_path.with_name(CATALOGO_MANIFEST_NOMBRE)
         manifiesto = _leer(manifiesto_path, None)
