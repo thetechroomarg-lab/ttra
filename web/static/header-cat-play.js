@@ -84,7 +84,7 @@ export function createPlay({motion,summon}) {
   // Sale corriendo hasta dejar la pata sobre px; tarda según la distancia.
   function run(c,px,now,g) {
     const dir=px>c.x+c.size/2?1:-1,left=px-(dir>0?.8:.2)*c.size;
-    setPhase(c.s,'chase',now,Math.max(450,Math.abs(left-c.x)/RUN*1000),toNorm(left,g));
+    setPhase(c.s,'chase',now,Math.max(450,Math.abs(left-c.x)/(RUN*(g.scale||1))*1000),toNorm(left,g));
     c.s.phase.direction=dir;
   }
 
