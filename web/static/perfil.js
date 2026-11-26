@@ -211,6 +211,16 @@ function asegurarDibujoSello() {
   document.body.append(defs);
 }
 
+// Lo que el cliente pagó de más queda a su favor hasta su próxima compra.
+function mostrarSaldoFavor(datos) {
+  const seccion = document.getElementById("seccion-saldo-favor");
+  const monto = document.getElementById("saldo-favor-monto");
+  if (!seccion || !monto) return;
+  const saldo = Number(datos.saldo_favor_usd) || 0;
+  seccion.classList.toggle("oculto", saldo <= 0);
+  if (saldo > 0) monto.textContent = formatoUsd(saldo);
+}
+
 function mostrarTarjetaFidelidad(datos) {
   const contenedorSellos = document.getElementById("fidelidad-sellos");
   const mensajePremio = document.getElementById("fidelidad-premio");
@@ -525,6 +535,7 @@ async function cargarPerfil() {
     document.getElementById("perfil-celular").value = datos.celular || "";
     modoEdicionPerfil(false);
     mostrarSeccionCondicionesMayorista(datos);
+    mostrarSaldoFavor(datos);
     mostrarTarjetaFidelidad(datos);
     mostrarReferidos(datos);
   } catch {
