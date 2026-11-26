@@ -65,8 +65,13 @@ def _admin():
     return a
 
 
-def _enviar(c, equipo="iphone-15-128gb", cantidad=len(canjes.ROTULOS_FOTOS)):
-    return c.post("/api/canje/solicitudes", data={"equipo": equipo},
+def _enviar(c, equipo="iphone-15-128gb", cantidad=len(canjes.ROTULOS_FOTOS), caja="1", cable="1"):
+    datos = {"equipo": equipo}
+    if caja is not None:
+        datos["con_caja"] = caja
+    if cable is not None:
+        datos["con_cable"] = cable
+    return c.post("/api/canje/solicitudes", data=datos,
                   files=[("fotos", (f"{i}.jpg", _jpeg(), "image/jpeg")) for i in range(cantidad)])
 
 
@@ -400,3 +405,25 @@ def test_cada_unidad_del_mismo_modelo_es_su_propia_card_con_su_precio(monkeypatc
     import pytest
     with pytest.raises(stock_usados.UsadoError):
         stock_usados.publicar(ruta, {**otro, "id": "22222222-2222-2222-2222-222222222222"}, [_jpeg()], 500, "Blue", 90, 1500)
+
+
+def test_sin_caja_o_sin_cable_se_toma_15_dolares_menos_por_cada_faltante(monkeypatch):
+    fake, correos = _entorno(monkeypatch)
+    c, _ = _cliente_logueado(fake)
+    for caja, cable, esperado in (("1", "1", 360), ("0", "1", 345), ("1", "0", 345), ("0", "0", 330)):
+        assert _enviar(c, "iphone-15-128gb", caja=caja, cable=cable).status_code == 201
+        assert fake.table("canjes").select("*").execute().data[-1]["valor_usd"] == esperado
+        # Las solicitudes abiertas tienen tope: se liberan para la próxima vuelta.
+        for fila in fake.table("canjes").select("*").execute().data:
+            fila["estado"] = "cancelado"
+    ultimo = fake.table("canjes").select("*").execute().data[-1]
+    assert ultimo["con_caja"] is False and ultimo["con_cable"] is False
+    assert "Sin caja (−US$ 15) · Sin cable (−US$ 15)" in correos[-1]["html"]
+
+
+def test_caja_y_cable_son_obligatorios_en_la_solicitud(monkeypatch):
+    fake, correos = _entorno(monkeypatch)
+    c, _ = _cliente_logueado(fake)
+    assert _enviar(c, caja=None).status_code == 400
+    assert _enviar(c, cable="quizás").status_code == 400
+    assert fake.table("canjes").select("*").execute().data == [] and correos == []

@@ -60,8 +60,11 @@ function pintar() {
     boton.setAttribute('aria-label', foto ? `Cambiar la foto: ${ROTULOS[i]}` : `Agregar la foto: ${ROTULOS[i]}`);
   });
   const equipo = tabla.find((fila) => fila.id === selector.value);
+  // Cada faltante (caja, cable) baja el valor US$ 15. El servidor recalcula con lo mismo.
+  const faltan = [!$('canje-caja').checked && 'sin caja', !$('canje-cable').checked && 'sin cable'].filter(Boolean);
+  const valor = equipo ? Math.max(equipo.valor_usd - 15 * faltan.length, 0) : 0;
   $('canje-valor').textContent = !equipo ? ''
-    : `Te lo tomo a US$ ${equipo.valor_usd.toLocaleString('es-AR')}${equipo.toma_como ? `, el precio de ${equipo.toma_como}` : ''}`;
+    : `Te lo tomo a US$ ${valor.toLocaleString('es-AR')}${equipo.toma_como ? `, el precio de ${equipo.toma_como}` : ''}${faltan.length ? ` (${faltan.join(' y ')}: −US$ ${15 * faltan.length})` : ''}`;
   botonEnviar.disabled = enviando || !equipo || fotos.some((f) => !f);
 }
 
@@ -109,6 +112,8 @@ $('canje-archivo-uno').addEventListener('change', async (evento) => {
   pintar();
 });
 selector.addEventListener('change', pintar);
+$('canje-caja').addEventListener('change', pintar);
+$('canje-cable').addEventListener('change', pintar);
 
 function cerrarPanel() {
   dialogo.close();
@@ -117,6 +122,8 @@ $('canje-cancelar').addEventListener('click', cerrarPanel);
 $('canje-cerrar').addEventListener('click', () => {
   fotos.forEach((f, i) => { if (f) URL.revokeObjectURL(f.vista); fotos[i] = null; });
   selector.value = '';
+  $('canje-caja').checked = false;
+  $('canje-cable').checked = false;
   cerrarPanel();
 });
 
@@ -139,6 +146,8 @@ async function enviar() {
   pintar();
   const datos = new FormData();
   datos.append('equipo', selector.value);
+  datos.append('con_caja', $('canje-caja').checked ? '1' : '0');
+  datos.append('con_cable', $('canje-cable').checked ? '1' : '0');
   fotos.forEach((f, i) => datos.append('fotos', f.archivo, `${i + 1}.jpg`));
   try {
     const r = await fetch('/api/canje/solicitudes', { method: 'POST', body: datos });
