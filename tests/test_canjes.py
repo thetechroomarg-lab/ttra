@@ -268,8 +268,10 @@ def test_1tb_y_2tb_se_toman_al_precio_de_512gb_del_mismo_modelo():
     precio_512 = {f["modelo"]: f["valor_usd"] for f in tabla if f["capacidad"] == "512 GB"}
     grandes = [f for f in tabla if f["capacidad"] in {"1 TB", "2 TB"}]
     assert {(f["modelo"], f["capacidad"]) for f in grandes} == {
-        ("iPhone 15 Pro", "1 TB"), ("iPhone 16 Pro Max", "1 TB"),
-        ("iPhone 17 Pro Max", "1 TB"), ("iPhone 17 Pro Max", "2 TB")}
+        ("iPhone 15 Pro", "1 TB"), ("iPhone 15 Pro Max", "1 TB"), ("iPhone 16 Pro", "1 TB"),
+        ("iPhone 16 Pro Max", "1 TB"), ("iPhone 17 Pro", "1 TB"), ("iPhone 17 Pro Max", "1 TB"),
+        ("iPhone 17 Pro Max", "2 TB"), ("iPhone 18 Pro", "1 TB"), ("iPhone 18 Pro Max", "1 TB"),
+        ("iPhone 18 Pro Max", "2 TB")}
     for f in grandes:
         assert f["toma_como"] == "512 GB" and f["valor_usd"] == precio_512[f["modelo"]]
 
