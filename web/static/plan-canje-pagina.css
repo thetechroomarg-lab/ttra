@@ -263,3 +263,15 @@ html[data-modo="classic"] .canje-ayuda-nota { color: var(--pz-dim); }
 html[data-modo="classic"] .canje-info { color: var(--pz-amber); }
 .canje-ayuda-nota strong { font-weight: 700; color: var(--rc-green); }
 html[data-modo="classic"] .canje-ayuda-nota strong { color: var(--pz-plate); }
+
+/* Caja y cable: dos casillas grandes, con lo que cuesta no traerlos a la vista. */
+.canje-accesorios { margin: 0 0 16px; padding: 0; border: 0; display: grid; gap: 10px; }
+.canje-accesorios legend { padding: 0; margin: 0 0 8px; font-size: 13px; color: var(--rc-green-dim); }
+.canje-check { display: flex; align-items: flex-start; gap: 14px; min-height: 56px; padding: 12px 14px; border: 2px solid var(--pz-frame, #444); cursor: pointer; }
+.canje-check input { flex: 0 0 24px; width: 24px; height: 24px; margin: 1px 0 0; accent-color: var(--pz-amber, #ffb21a); cursor: pointer; }
+.canje-check span { display: grid; gap: 4px; }
+.canje-check strong { font: 700 17px/1.2 var(--pz-font, inherit); letter-spacing: .04em; text-transform: uppercase; color: var(--pz-plate, inherit); }
+.canje-check small { font-size: 13px; line-height: 1.4; color: var(--pz-dim, inherit); }
+.canje-check:has(input:checked) { border-color: var(--pz-amber, #ffb21a); }
+.canje-check:has(input:focus-visible) { outline: 2px solid var(--pz-amber, #ffb21a); outline-offset: 2px; }
+html[data-modo="classic"] .canje-accesorios legend { font: 700 14px/1 var(--pz-font); letter-spacing: .08em; text-transform: uppercase; color: var(--pz-dim); }

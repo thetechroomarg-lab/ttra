@@ -66,7 +66,7 @@
         <li><svg class="ttra-canje-icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><div><strong>Nada de equipos negados ni bloqueados</strong><span>Tampoco los que “olvidaron el PIN”. Sin excepción, no insista.</span></div></li>
         <li><svg class="ttra-canje-icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><div><strong>Solo iPhone 15 en adelante</strong><span>Sin excepción.</span></div></li>
         <li><svg class="ttra-canje-icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><div><strong>Hasta 512 GB de capacidad</strong><span>Los de 1 TB o más los tomaré a precio de 512GB.</span></div></li>
-        <li><svg class="ttra-canje-icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><div><strong>Con su caja original</strong><span>El iPhone tiene que venir con la caja.</span></div></li>
+        <li><svg class="ttra-canje-icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><div><strong>Con su caja original y su cable</strong><span>Si no tiene la caja, lo tomo US$ 15 menos. Si no entrega el cable, otros US$ 15 menos.</span></div></li>
         <li><svg class="ttra-canje-icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><div><strong>Liberado cuando llego</strong><span>Si necesitás que te pase los datos de un equipo al otro, avisame antes: tiene un costo de US$ 30 por el tiempo que lleva.</span></div></li>
         <li><svg class="ttra-canje-icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><div><strong>Solo iPhone</strong><span>No tomo otras marcas ni otras categorías, como notebooks.</span></div></li>
       </ol>
@@ -124,6 +124,11 @@
       <select id="canje-equipo"><option value="">Elegí tu iPhone</option></select>
       <p class="canje-valor" id="canje-valor" aria-live="polite"></p>
       <ul class="canje-slots" id="canje-slots" aria-label="Fotos del iPhone"></ul>
+      <fieldset class="canje-accesorios">
+        <legend>Qué me entregás con el iPhone</legend>
+        <label class="canje-check"><input type="checkbox" id="canje-caja"><span><strong>Tengo la caja original</strong><small>Sin caja, lo tomo US$ 15 menos.</small></span></label>
+        <label class="canje-check"><input type="checkbox" id="canje-cable"><span><strong>Entrego el cable</strong><small>Sin cable, lo tomo US$ 15 menos.</small></span></label>
+      </fieldset>
       <input type="file" id="canje-archivo-uno" accept="image/*" hidden>
       <p class="canje-error" id="canje-error" role="alert"></p>
       <div class="canje-acciones">

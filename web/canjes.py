@@ -8,6 +8,7 @@ cupones.py) y no vuelve a existir después de usarse.
 """
 import html
 import json
+import logging
 import math
 import secrets
 import string
@@ -20,6 +21,7 @@ from .mail_pedido import (
     _TINTA, _TINTA_TENUE, _bloque, _boton, _documento, _etiqueta, _logo, _pie, _sticker, _tabla,
 )
 
+logger = logging.getLogger(__name__)
 TABLA_PATH = Path(__file__).parent / "canje_tabla.json"
 BUCKET = "recibos-series"
 # Las ocho fotos que pide la página, en el orden en que se muestran.
@@ -27,6 +29,11 @@ ROTULOS_FOTOS = (
     "Frente", "Reverso", "Lado izquierdo", "Lado derecho",
     "Borde superior", "Borde inferior", "Captura de batería", "Captura de piezas y servicio",
 )
+
+
+# Un iPhone sin caja o sin cable se toma US$ 15 menos por cada faltante.
+DESCUENTO_SIN_CAJA_USD = 15
+DESCUENTO_SIN_CABLE_USD = 15
 
 
 class CanjeError(Exception):
@@ -47,18 +54,38 @@ def toma_como(canje):
     return equipo.get("toma_como") or ""
 
 
+def valor_con_accesorios(valor_tabla, con_caja=True, con_cable=True):
+    """Valor de tabla menos lo que se descuenta por la caja y el cable que faltan."""
+    valor = int(valor_tabla)
+    if not con_caja:
+        valor -= DESCUENTO_SIN_CAJA_USD
+    if not con_cable:
+        valor -= DESCUENTO_SIN_CABLE_USD
+    return max(valor, 0)
+
+
+def texto_accesorios(canje):
+    """'Sin caja (−US$ 15) · Sin cable (−US$ 15)' o '' si trae todo (o no se sabe)."""
+    partes = []
+    if canje.get("con_caja") is False:
+        partes.append(f"Sin caja (−US$ {DESCUENTO_SIN_CAJA_USD})")
+    if canje.get("con_cable") is False:
+        partes.append(f"Sin cable (−US$ {DESCUENTO_SIN_CABLE_USD})")
+    return " · ".join(partes)
+
+
 def _ahora():
     return datetime.now(timezone.utc).isoformat()
 
 
-def crear_solicitud(client, cliente_id, equipo, rutas_fotos, canje_id=None):
+def crear_solicitud(client, cliente_id, equipo, rutas_fotos, canje_id=None, con_caja=True, con_cable=True):
     fila = {
         "id": canje_id or str(uuid.uuid4()),
         "cliente_id": cliente_id,
         "equipo_id": equipo["id"],
         "modelo": equipo["modelo"],
         "capacidad": equipo["capacidad"],
-        "valor_usd": int(equipo["valor_usd"]),
+        "valor_usd": valor_con_accesorios(equipo["valor_usd"], con_caja, con_cable),
         "fotos": list(rutas_fotos),
         "estado": "pendiente",
         "codigo": None,
@@ -67,7 +94,13 @@ def crear_solicitud(client, cliente_id, equipo, rutas_fotos, canje_id=None):
         "resuelto_en": None,
     }
     client.table("canjes").insert(fila).execute()
-    return fila
+    # Qué trae el cliente queda anotado aparte: si las columnas todavía no
+    # existen la solicitud igual vale lo correcto (valor_usd ya lo descuenta).
+    try:
+        client.table("canjes").update({"con_caja": con_caja, "con_cable": con_cable}).eq("id", fila["id"]).execute()
+    except Exception:
+        logger.exception("No se pudo anotar caja y cable del canje %s", fila["id"])
+    return {**fila, "con_caja": con_caja, "con_cable": con_cable}
 
 
 def obtener(client, canje_id):
@@ -213,6 +246,7 @@ def html_aviso_vlad(canje, cliente, url_sitio=URL_SITIO):
             ("Email", cliente.get("email") or "—"),
             ("Valor de tabla", f"US$ {int(canje['valor_usd']):,}".replace(",", ".")
              + (f" (precio de {toma_como(canje)})" if toma_como(canje) else "")),
+            ("Caja y cable", texto_accesorios(canje) or "Trae la caja y el cable"),
             ("Fotos adjuntas", " · ".join(ROTULOS_FOTOS)),
         ]),
         _boton(f"{url_sitio}/admin/canjes", "Aprobar o rechazar"),

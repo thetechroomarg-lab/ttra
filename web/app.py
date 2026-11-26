@@ -6460,6 +6460,12 @@ async def api_canje_solicitar(request: Request):
     equipo = canjes.buscar_equipo(str(formulario.get("equipo") or ""))
     if equipo is None:
         return JSONResponse({"error": "Elegí el modelo y la capacidad de tu iPhone"}, status_code=400)
+    # Caja y cable se declaran siempre (cada faltante baja el valor US$ 15): sin
+    # el dato no se calcula nada, así un formulario viejo no pasa de largo.
+    caja, cable = str(formulario.get("con_caja") or ""), str(formulario.get("con_cable") or "")
+    if caja not in ("0", "1") or cable not in ("0", "1"):
+        return JSONResponse({"error": "Indicá si tenés la caja original y si entregás el cable"}, status_code=400)
+    con_caja, con_cable = caja == "1", cable == "1"
     fotos = [f for f in formulario.getlist("fotos") if getattr(f, "filename", None)]
     if len(fotos) != _CANJE_FOTOS:
         return JSONResponse({"error": f"Necesito las {_CANJE_FOTOS} fotos: frente, reverso, lados, bordes y las capturas de batería y de piezas y servicio"},
@@ -6491,7 +6497,7 @@ async def api_canje_solicitar(request: Request):
         client.storage.from_(canjes.BUCKET).upload(ruta, contenido, {"content-type": "image/jpeg"})
         rutas.append(ruta)
         adjuntos.append({"filename": nombre, "content": contenido})
-    canje = canjes.crear_solicitud(client, cliente_id, equipo, rutas, canje_id=canje_id)
+    canje = canjes.crear_solicitud(client, cliente_id, equipo, rutas, canje_id=canje_id, con_caja=con_caja, con_cable=con_cable)
     try:
         enviar_email(
             _CANJE_AVISO_EMAIL, canjes.asunto_aviso(canje, cliente),
@@ -6503,7 +6509,8 @@ async def api_canje_solicitar(request: Request):
         logger.exception("No se pudo enviar el aviso del canje %s", canje_id)
     mensaje = (f"Hola Vlad, soy {cliente.get('nombre') or ''} {cliente.get('apellido') or ''}. "
                f"Te mandé las fotos de mi {equipo['modelo']} {equipo['capacidad']} para el Plan Canje "
-               f"(US$ {equipo['valor_usd']}). ¿Lo podés revisar?").replace("  ", " ")
+               f"(US$ {canje['valor_usd']}"
+               f"{', ' + canjes.texto_accesorios(canje) if canjes.texto_accesorios(canje) else ''}). ¿Lo podés revisar?").replace("  ", " ")
     return {"ok": True, "id": canje_id, "whatsapp_url": f"{WHATSAPP}?text={quote(mensaje)}"}
 
 
