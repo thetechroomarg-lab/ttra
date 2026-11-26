@@ -135,7 +135,9 @@ function measure() {
   const left=b.right+10;
   const mobile=doc.defaultView.innerWidth<=700;
   // Los gatos son 3D y se ven chicos dentro del cuadro: el cuadro mide 3 veces lo que medía el dibujo viejo (2,2 en celular).
-  const size=Math.min((mobile?72:92)*(mobile?2.2:3),Math.max(28,right-left));
+  // En celular el hueco entre el logo y los controles es angosto: el gato ocupa
+  // la mitad como mucho, así le queda recorrido para caminar.
+  const size=mobile?Math.min(72*2.2,Math.max(40,(right-left)*.5)):Math.min(92*3,Math.max(28,right-left));
   // Sin el margen que había antes (h.height-6): las dos deben pisar
   // justo el borde inferior del header, no flotar unos px arriba.
   geometry={top:h.top,height:h.height,left,right,size,travel:Math.max(0,right-left-size),floor:h.height,scale:size/92,doorX:b.right-size/2-14,mobile,headerLeft:h.left,headerWidth:h.width};

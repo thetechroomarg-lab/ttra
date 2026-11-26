@@ -65,9 +65,16 @@
   // descarga antes de entrar, así el cuadro nunca queda vacío ni salta de tamaño.
   // Sin foto mapeada el cuadro se esconde y las cifras ocupan todo el ancho.
   let fotoSerie = 0;
+  let ladoGesto = 0; // +1 / -1 si el cambio vino de un arrastre
+  let arrastreX = 0; // cuánto había seguido la foto al dedo
   async function swapFoto(p) {
+    try { await swapFotoInterno(p); } finally { slot('foto').style.translate = ''; }
+  }
+  async function swapFotoInterno(p) {
     const foto = slot('foto');
     const serie = ++fotoSerie;
+    const lado = ladoGesto, desde = arrastreX;
+    ladoGesto = 0; arrastreX = 0;
     const v = window.ttraImagenProducto ? await window.ttraImagenProducto(p).catch(() => null) : null;
     if (serie !== fotoSerie) return;
     const caja = foto.parentElement;
@@ -81,11 +88,15 @@
     board.classList.remove('sin-foto');
     const poner = () => { foto.src = v.src; };
     if (reducedMotion.matches || !foto.animate || !foto.getAttribute('src')) { poner(); return; }
-    const sale = foto.animate([{ opacity: 1, scale: 1 }, { opacity: 0, scale: .96 }], { duration: 120, easing: 'ease' });
+    // Si vino de un arrastre, la foto sale hacia el lado del gesto y la nueva
+    // entra desde el lado contrario; con las flechas o solo, el cruce de siempre.
+    const sale = foto.animate(
+      [{ opacity: 1, scale: 1, translate: `${desde}px 0` }, { opacity: 0, scale: .96, translate: `${-lado * 48}px 0` }],
+      { duration: 120, easing: 'ease' });
     sale.onfinish = () => {
       if (serie !== fotoSerie) return;
       poner();
-      foto.animate([{ opacity: 0, scale: .96 }, { opacity: 1, scale: 1 }], { duration: 240, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+      foto.animate([{ opacity: 0, scale: .96, translate: `${lado * 48}px 0` }, { opacity: 1, scale: 1, translate: '0 0' }], { duration: 240, easing: 'cubic-bezier(.23, 1, .32, 1)' });
     };
   }
 
@@ -193,6 +204,54 @@
   board.querySelectorAll('[data-pz-paso]').forEach(boton => {
     boton.addEventListener('click', () => avanzar(Number(boton.dataset.pzPaso), true));
   });
+  // Mantener y deslizar (celular): la foto sigue al dedo y, al soltar, pasa al
+  // producto siguiente (izquierda) o anterior (derecha). El scroll vertical de
+  // la página sigue funcionando (touch-action: pan-y en el CSS).
+  const destacado = slot('link');
+  let toque = null, ignorarClick = false;
+  destacado.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' || toque) return;
+    toque = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), dx: 0, activo: false };
+  });
+  destacado.addEventListener('pointermove', e => {
+    if (!toque || e.pointerId !== toque.id) return;
+    const dx = e.clientX - toque.x, dy = e.clientY - toque.y;
+    if (!toque.activo) {
+      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) return;
+      toque.activo = true;
+      paused = true;
+      try { destacado.setPointerCapture(e.pointerId); } catch {}
+    }
+    toque.dx = dx;
+    // Fricción: sigue al dedo pero nunca se va de la pantalla.
+    arrastreX = Math.sign(dx) * Math.min(Math.abs(dx) * .9, 140);
+    slot('foto').style.translate = `${arrastreX}px 0`;
+  });
+  function soltarToque(e) {
+    if (!toque || e.pointerId !== toque.id) return;
+    const { dx, activo, t } = toque;
+    toque = null;
+    if (!activo) return;
+    paused = false;
+    ignorarClick = true;
+    setTimeout(() => { ignorarClick = false; }, 60);
+    const rapido = Math.abs(dx) / Math.max(1, performance.now() - t) > .4;
+    if (e.type === 'pointerup' && Math.abs(dx) > 24 && (Math.abs(dx) > 60 || rapido)) {
+      ladoGesto = dx < 0 ? 1 : -1;
+      avanzar(dx < 0 ? 1 : -1, true);
+    } else {
+      // No alcanzó: vuelve a su lugar.
+      const foto = slot('foto');
+      if (!reducedMotion.matches && foto.animate) foto.animate([{ translate: `${arrastreX}px 0` }, { translate: '0 0' }], { duration: 200, easing: 'cubic-bezier(.23, 1, .32, 1)' });
+      foto.style.translate = '';
+      arrastreX = 0;
+    }
+  }
+  destacado.addEventListener('pointerup', soltarToque);
+  destacado.addEventListener('pointercancel', soltarToque);
+  // El toque que cierra un arrastre no debe abrir el catálogo.
+  destacado.addEventListener('click', e => { if (ignorarClick) { e.preventDefault(); e.stopPropagation(); } }, true);
+
   // Con el foco en una flecha, ← y → también navegan.
   board.addEventListener('keydown', e => {
     if (!e.target.closest('.ttra-pz-nav') || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
