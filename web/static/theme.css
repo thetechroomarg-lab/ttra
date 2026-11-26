@@ -249,3 +249,23 @@ a { color: var(--rc-green-bright); }
     15px 0 0 rgba(51, 255, 102, 0.06),
     20px 0 0 rgba(51, 255, 102, 0.03);
 }
+
+/* Celular: la tienda se usa solo en vertical. En horizontal se tapa todo con
+   un aviso (el navegador no deja bloquear la rotación en una página común;
+   en la app instalada la fija el manifest). */
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  html::before {
+    content: "Girá el celular para ver la tienda";
+    position: fixed; inset: 0; z-index: 2147483000;
+    display: grid; place-items: center; padding: 24px; text-align: center;
+    background: var(--rc-bg, #000); color: var(--rc-green, #fff);
+    font: 700 18px/1.3 var(--rc-font, Arial, sans-serif);
+  }
+  html { overflow: hidden; }
+  body { visibility: hidden; }
+}
+
+/* Con zoom en el celular, nada de la página puede quedar más ancho que la
+   pantalla: si algo se pasa, se recorta en vez de dejar mover la web hacia
+   los costados. clip (no hidden) para no romper position: sticky. */
+html, body { max-width: 100%; overflow-x: clip; }

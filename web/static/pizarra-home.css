@@ -50,7 +50,7 @@ html[data-modo="classic"] .ttra-hero-copy :is(.ttra-sticker-peel, .ttra-personal
 
 html[data-modo="classic"] .ttra-pizarra { grid-area: board; display: grid; gap: 0; padding: 10px 0 0; }
 /* The featured product is one link: name and the five prices, tap anywhere. */
-html[data-modo="classic"] .ttra-pz-destacado { display: grid; color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; transition: scale .16s var(--pz-ease); }
+html[data-modo="classic"] .ttra-pz-destacado { touch-action: pan-y; -webkit-user-select: none; user-select: none; display: grid; color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; transition: scale .16s var(--pz-ease); }
 html[data-modo="classic"] .ttra-pz-destacado:active { scale: .99; }
 html[data-modo="classic"] .ttra-pz-destacado:focus-visible { outline: 2px solid var(--pz-amber); outline-offset: -4px; }
 html[data-modo="classic"] .ttra-pz-product {
