@@ -112,6 +112,7 @@ export function createCat3D(kind) {
       sheen: .3, sheenRoughness: .75, sheenColor: new T.Color(cfg.sheen)});
     const built = buildRig(geometry, joints, material);
     built.mesh.castShadow = built.mesh.receiveShadow = false;
+    built.object.position.y = -.006; // la suela del modelo queda apenas hundida en el piso: se ve apoyado, no flotando
     scene.add(built.object);
     rig = prepare(built, material, awake, asleep);
     api.ready = true;
@@ -279,7 +280,7 @@ export function createCat3D(kind) {
     }
   }
 
-  let lastTime = 0, yawCur = null, closedNow = false, speedSm = 0, blinkAt = 0, blinkUntil = 0, posed = false;
+  let lastTime = 0, yawCur = null, closedNow = false, speedSm = 0, floatErr = 0, blinkAt = 0, blinkUntil = 0, posed = false;
   const P = {feet: Object.fromEntries(FEET.map(f => [f, {x: 0, y: 0, z: 0, pitch: 0}]))}; // pose ya suavizada
   // Acerca la pose pedida a la mostrada con un filtro de primer orden: sin saltos entre una fase y la siguiente.
   function smoothPose(dt, tauBody, tauFeet) {
@@ -323,8 +324,8 @@ export function createCat3D(kind) {
     const targetYaw = ctx.facing * (Math.PI / 2 - .3);
     yawCur = yawCur === null ? targetYaw : yawCur + Math.max(-dt * 7, Math.min(dt * 7, wrap(targetYaw - yawCur)));
     const yaw = yawCur + P.yawAdd * ctx.facing;
-    pelvis.set(0, 0, 0).addScaledVector(fwdOf(yaw, tmpA), PZ + P.pelvisZ); pelvis.y = P.pelvisY;
-    chest.set(0, 0, 0).addScaledVector(fwdOf(yaw, tmpA), CZ + P.chestZ); chest.y = P.chestY;
+    pelvis.set(0, 0, 0).addScaledVector(fwdOf(yaw, tmpA), PZ + P.pelvisZ); pelvis.y = P.pelvisY - floatErr;
+    chest.set(0, 0, 0).addScaledVector(fwdOf(yaw, tmpA), CZ + P.chestZ); chest.y = P.chestY - floatErr;
     delta.subVectors(chest, pelvis);
     const flat = Math.hypot(delta.x, delta.z), yawBody = flat > 1e-4 ? Math.atan2(delta.x, delta.z) : yaw;
     const dist = T.MathUtils.clamp(delta.length(), (LA + LB) * .55, (LA + LB) * .999), rise = Math.atan2(delta.y, flat);
@@ -359,6 +360,18 @@ export function createCat3D(kind) {
       q.a.setFromAxisAngle(UP, yawBody).multiply(q.b.setFromAxisAngle(X, f.pitch));
       bone[foot + 'Paw'].quaternion.copy(lower.invert()).multiply(q.a);
     });
+
+    // Contacto con el piso: si una pata apoyada quedó en el aire (la pierna no llegó), se baja el cuerpo
+    // en el cuadro siguiente. Nunca debe verse un gato flotando sobre la línea.
+    rig.object.updateMatrixWorld(true);
+    let worst = 0;
+    for (const foot of FEET) {
+      if (P.feet[foot].y > .004) continue;
+      const gap = tmpA.setFromMatrixPosition(bone[foot + 'Paw'].matrixWorld).y - PAW_Y[foot];
+      worst = Math.max(worst, gap);
+    }
+    floatErr = Math.max(0, Math.min(.08, floatErr + (worst - .001) * (dt ? Math.min(1, dt * 18) : 1)));
+    if (worst < .001 && floatErr < .0005) floatErr = 0;
 
     // Ojos cerrados (Fendi trae textura dormida; Vaiven no tiene).
     const shut = P.closed || c.blink;
