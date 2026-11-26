@@ -12,35 +12,10 @@ html.ttra-scroll-locked #ttra-header-cat-portal { z-index: 9992; filter: blur(3p
 #ttra-header-cat-portal *, #ttra-header-cat { pointer-events: none; user-select: none; }
 #ttra-header-cat { position: absolute; top: 0; left: 0; width: 92px; height: 77px; will-change: transform; }
 #ttra-header-cat[hidden],#ttra-header-cat-portal[hidden] { display: none; }
-#ttra-header-cat svg { display: block; width: 100%; height: 100%; overflow: visible; transform: scaleX(var(--cat-facing,1)); }
-#ttra-header-cat .cat-shadow,#ttra-header-cat .cat-back,#ttra-header-cat .cat-scratch-paw,#ttra-header-cat .cat-strain-face,#ttra-header-cat .cat-tongue,#ttra-header-cat .cat-happy-eyes { display: none; }
-#ttra-header-cat .cat-pose { transform-box: view-box; transform-origin: 62px 91px; }
-#ttra-header-cat :is(.cat-head,.cat-leg-front,.cat-leg-rear) { transform-box: fill-box; transform-origin: center bottom; }
-#ttra-header-cat:is([data-state="idle"],[data-state="walk"]) .cat-head { transform: rotate(var(--cat-look,0deg)); }
-#ttra-header-cat .cat-tail { transform-box: view-box; transform-origin: 39px 75px; animation: header-cat-tail 4.4s ease-in-out infinite; animation-delay: var(--cat-clock,0s); }
-#ttra-header-cat .cat-eyes { transform-box: fill-box; transform-origin: center; animation: header-cat-blink 5.8s infinite; animation-delay: var(--cat-clock,0s); }
-#ttra-header-cat[data-state="walk"] .cat-leg-front { animation: header-cat-step .52s ease-in-out infinite; animation-delay: var(--cat-phase,0s); }
-#ttra-header-cat[data-state="walk"] .cat-leg-rear { animation: header-cat-step .52s ease-in-out infinite reverse; animation-delay: var(--cat-phase,0s); }
-@media(prefers-reduced-motion:no-preference) {
- #ttra-header-cat[data-running="true"] :is(.cat-leg-front,.cat-leg-rear) { animation-duration: .3s; }
-}
-#ttra-header-cat[data-state="scratch"] .cat-scratch-paw { display: block; transform-box: fill-box; transform-origin: left bottom; animation: header-cat-scratch .17s ease-in-out infinite alternate; }
-#ttra-header-cat[data-state="scratch"] .cat-head { transform: rotate(-12deg); }
-#ttra-header-cat:is([data-state="scratch"],[data-state="lick"],[data-state="sleep"],[data-state="joy"]) .cat-eyes { display: none; }
-#ttra-header-cat:is([data-state="scratch"],[data-state="lick"],[data-state="sleep"],[data-state="joy"]) .cat-happy-eyes { display: block; }
+/* Vaiven y Fendi son modelos 3D (header-cat-3d.js): el canvas llena su caja. */
+.ttra-cat-3d { display: block; width: 100%; height: 100%; }
 /* La lengua flickeaba justo al lado de la nariz -de lejos se leía como si
    la nariz misma temblara-. Se deja quieta, la pose de asearse sigue. */
-#ttra-header-cat[data-state="lick"] .cat-tongue { display: block; }
-#ttra-header-cat[data-state="lick"] .cat-leg-front { transform: translate(3px,-15px) rotate(-26deg); }
-#ttra-header-cat[data-state="lick"] .cat-head { transform: rotate(10deg) translateY(3px); }
-#ttra-header-cat[data-state="poop"] .cat-eyes,#ttra-header-cat[data-state="poop"] .cat-mouth { visibility: hidden; }
-#ttra-header-cat[data-state="poop"] .cat-strain-face { display: block; }
-#ttra-header-cat[data-state="poop"] .cat-pose { transform: scale(1.06,.82); }
-#ttra-header-cat[data-state="pee"] .cat-leg-rear { transform: rotate(-38deg) translateY(-4px); }
-#ttra-header-cat[data-state="pee"] .cat-tail { transform: rotate(28deg); animation: none; }
-#ttra-header-cat[data-state="sleep"] .cat-pose { transform: scale(1.05,.68); }
-#ttra-header-cat[data-state="sleep"] .cat-head { transform: rotate(-12deg) translate(-7px,5px); }
-#ttra-header-cat[data-state="sleep"] .cat-tail { animation-duration: 12s; }
 .ttra-cat-zzz { display: none; position: absolute; top: 12%; left: 60%; color: var(--rc-green); font: 700 13px var(--ed-font-sans, Arial), sans-serif; }
 #ttra-header-cat[data-state="sleep"] .ttra-cat-zzz { display: block; }
 .ttra-cat-zzz span { display: inline-block; animation: header-cat-zzz 2.8s ease-out infinite; }
@@ -65,47 +40,17 @@ html[data-modo="classic"] .ttra-cat-door { opacity: 0; }
 #ttra-storefront-frame { position: fixed; inset: 0; z-index: 100; width: 100%; height: 100dvh; border: 0; background: var(--rc-bg); }
 html.ttra-cat-shell,html.ttra-cat-shell body { height: 100%; overflow: hidden !important; }
 html.ttra-cat-shell body > :not(#ttra-storefront-frame):not(#ttra-header-cat-portal):not(.ttra-cat-introduction):not(header.ttra-site-header):not(script):not(style):not(link) { display: none !important; }
-@keyframes header-cat-step { 0%,100% { transform: translateX(-3px); } 50% { transform: translate(3px,-4px) rotate(-8deg); } }
-@keyframes header-cat-scratch { from { transform: rotate(-9deg); } to { transform: rotate(12deg); } }
-@keyframes header-cat-lick { 0%,100% { transform: scaleY(.2); } 50% { transform: scaleY(1); } }
-@keyframes header-cat-tail { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(8deg); } }
-@keyframes header-cat-blink { 0%,43%,47%,100% { transform: scaleY(1); } 45% { transform: scaleY(.08); } }
 @keyframes header-cat-zzz { 0% { opacity:0; transform:translateY(4px); } 25% { opacity:.9; } 100% { opacity:0; transform:translateY(-12px); } }
 @media(prefers-reduced-motion:reduce) { #ttra-header-cat-portal * { animation: none !important; transition: none !important; } }
 
 #ttra-header-cat { pointer-events: auto; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; border-radius: 40%; }
 #ttra-header-cat:focus-visible { outline: 2px solid var(--ed-accent,#ef6257); outline-offset: -3px; }
-#ttra-header-cat .cat-belly { display: none; transform-origin: 60px 87px; }
-#ttra-header-cat[data-state="belly"] .cat-pose { display: none; }
-#ttra-header-cat[data-state="belly"] .cat-belly { display: block; animation: header-cat-roll .45s ease-out both; }
-#ttra-header-cat .cat-belly-paw { transform-box: view-box; transform-origin: 52px 80px; animation: header-cat-belly-paws .75s ease-in-out infinite alternate; }
-#ttra-header-cat .cat-belly-paw-b { animation-delay: -.6s; }
-#ttra-header-cat .cat-belly-paw-c { animation-delay: -.25s; }
-#ttra-header-cat .cat-belly-paw-d { animation-delay: -.85s; }
-#ttra-header-cat .cat-belly-tail { transform-origin: 35px 83px; animation: header-cat-tail 2s ease-in-out infinite; }
-@keyframes header-cat-roll { from { transform: translateY(-4px) rotate(-20deg) scaleY(.7); } to { transform: translateY(0) rotate(0) scaleY(1); } }
-@keyframes header-cat-belly-paws { from { transform: rotate(-8deg) translateY(1px); } to { transform: rotate(8deg) translateY(-3px); } }
 
-#ttra-header-cat :is(.cat-angry-face,.cat-attack-paw,.cat-claw-streaks) { display: none; }
-#ttra-header-cat[data-state="attack"] :is(.cat-eyes,.cat-mouth,.cat-leg-front) { visibility: hidden; }
-#ttra-header-cat[data-state="attack"] :is(.cat-angry-face,.cat-attack-paw,.cat-claw-streaks) { display: block; }
-#ttra-header-cat[data-state="attack"] .cat-head { transform: rotate(-8deg); }
-#ttra-header-cat[data-state="attack"] .cat-tail { animation-duration: .35s; }
-#ttra-header-cat[data-state="attack"] .cat-attack-paw { transform-origin: 77px 79px; animation: header-cat-swipe .6s ease-in-out infinite; }
-#ttra-header-cat[data-state="attack"] .cat-claw-streaks { animation: header-cat-claws .6s ease-out infinite; }
-@keyframes header-cat-swipe { 0%,100% { transform: rotate(-20deg); } 40% { transform: rotate(10deg); } 65% { transform: rotate(18deg) translateY(3px); } }
-@keyframes header-cat-claws { 0%,30%,100% { opacity: 0; } 48% { opacity: .9; } 80% { opacity: 0; } }
-
-#ttra-header-cat[data-state="bury"] .cat-leg-rear { transform-origin: 42px 73px; transform-box: view-box; animation: header-cat-bury .46s ease-in-out infinite; }
-#ttra-header-cat[data-state="bury"] .cat-head { transform: rotate(12deg) translateY(3px); }
-#ttra-header-cat[data-state="bury"] .cat-pose { animation: header-cat-dig-body .46s ease-in-out infinite; }
 .cat-earth-mound { position: absolute; z-index: 1; bottom: -1px; left: -5px; width: 31px; height: 23px; border-radius: 52% 60% 18% 16%; background: radial-gradient(circle at 25% 35%,#bf9870 0 2px,transparent 2.5px),radial-gradient(circle at 67% 30%,#705036 0 2px,transparent 2.5px),radial-gradient(circle at 70% 70%,#c3a17b 0 1.5px,transparent 2px),linear-gradient(140deg,#aa8156,#735139); box-shadow: inset 0 -3px 3px #4e39274d; transform-origin: center bottom; transform: scaleY(var(--earth-cover,0)); }
 .cat-earth-particles { position: absolute; inset: 0; z-index: 2; opacity: 0; transform: scaleX(var(--earth-direction,1)); }
 .ttra-header-cat-waste[data-burying="true"] .cat-earth-particles { opacity: 1; }
 .cat-earth-particles i { position: absolute; bottom: 2px; left: 25px; width: 3px; height: 3px; border-radius: 35%; background: #bc9167; animation: header-cat-earth .65s ease-out infinite; animation-delay: calc(var(--grain)*-.13s); }
 .ttra-header-cat-waste[data-covered="true"]::before { display: none; }
-@keyframes header-cat-bury { 0%,100% { transform: rotate(6deg); } 45% { transform: translate(-9px,-3px) rotate(24deg); } 70% { transform: translate(-3px,0) rotate(-5deg); } }
-@keyframes header-cat-dig-body { 0%,100% { transform: translateY(0); } 45% { transform: translateY(1px); } }
 @keyframes header-cat-earth { 0% { opacity: 0; transform: translate(0,0); } 15% { opacity: 1; } 50% { opacity: .9; transform: translate(-14px,-13px); } 100% { opacity: 0; transform: translate(-27px,2px); } }
 
 .ttra-cat-introduction { position: fixed; z-index: 10041; display: flex; align-items: center; gap: 3px; max-width: calc(100vw - 24px); padding: 5px 6px 5px 10px; border: 1px solid #d4c8b5; border-radius: 16px; background: #fff9eb; color: #292820; box-shadow: 0 8px 24px #0003; font: 700 16px/1.3 Arial,sans-serif; }
@@ -125,153 +70,12 @@ html.ttra-cat-shell #ttra-storefront-frame {
 html.ttra-shell-album body > header.ttra-site-header { display: none !important; }
 html.ttra-shell-album #ttra-storefront-frame { top: 0; height: 100dvh; }
 
-/* Fendi: compañera de Vaiven (ver header-cat-fendi.js). Decorativa -no se
-   acaricia, no tiene baño/ataque/panza/introducción-, solo camina, idle,
-   salta y participa del dúo con Vaiven, así que solo necesita el subset de
-   poses de abajo en vez de duplicar TODO el comportamiento de Vaiven. */
+/* Fendi: compañera de Vaiven. Los dos son modelos 3D (header-cat-3d.js); acá
+   solo vive la caja que los contiene y los Z de cuando duermen. */
 #ttra-header-cat-fendi { position: absolute; top: 0; left: 0; width: 83px; height: 69px; will-change: transform; pointer-events: auto; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; border-radius: 40%; user-select: none; }
 #ttra-header-cat-fendi[hidden] { display: none; }
 #ttra-header-cat-fendi:focus-visible { outline: 2px solid var(--ed-accent,#ef6257); outline-offset: -3px; }
-#ttra-header-cat-fendi svg { display: block; width: 100%; height: 100%; overflow: visible; transform: scaleX(var(--cat-facing,1)); }
-#ttra-header-cat-fendi :is(.cat-shadow,.cat-back,.cat-scratch-paw,.cat-strain-face,.cat-tongue,.cat-happy-eyes,.cat-belly,.cat-angry-face,.cat-attack-paw,.cat-claw-streaks) { display: none; }
-#ttra-header-cat-fendi .cat-pose { transform-box: view-box; transform-origin: 62px 91px; }
-#ttra-header-cat-fendi :is(.cat-head,.cat-leg-front,.cat-leg-rear) { transform-box: fill-box; transform-origin: center bottom; }
-#ttra-header-cat-fendi:is([data-state="idle"],[data-state="walk"]) .cat-head { transform: rotate(var(--cat-look,0deg)); }
-#ttra-header-cat-fendi .cat-tail { transform-box: view-box; transform-origin: 39px 75px; animation: header-cat-tail 4.1s ease-in-out infinite; animation-delay: var(--cat-clock,0s); }
-#ttra-header-cat-fendi .cat-eyes { transform-box: fill-box; transform-origin: center; animation: header-cat-blink 6.4s infinite; animation-delay: var(--cat-clock,0s); }
-#ttra-header-cat-fendi[data-state="walk"] .cat-leg-front { animation: header-cat-step .48s ease-in-out infinite; animation-delay: var(--cat-phase,0s); }
-#ttra-header-cat-fendi[data-state="walk"] .cat-leg-rear { animation: header-cat-step .48s ease-in-out infinite reverse; animation-delay: var(--cat-phase,0s); }
-@media(prefers-reduced-motion:no-preference) {
- #ttra-header-cat-fendi[data-running="true"] :is(.cat-leg-front,.cat-leg-rear) { animation-duration: .3s; }
-}
-/* Fendi hace pis/caca con la misma frecuencia que Vaiven (mismo reloj
-   genérico en header-cat-state.mjs), así que necesita las mismas poses. */
-#ttra-header-cat-fendi[data-state="poop"] .cat-eyes,#ttra-header-cat-fendi[data-state="poop"] .cat-mouth { visibility: hidden; }
-#ttra-header-cat-fendi[data-state="poop"] .cat-strain-face { display: block; }
-#ttra-header-cat-fendi[data-state="poop"] .cat-pose { transform: scale(1.06,.82); }
-#ttra-header-cat-fendi[data-state="pee"] .cat-leg-rear { transform: rotate(-38deg) translateY(-4px); }
-#ttra-header-cat-fendi[data-state="pee"] .cat-tail { transform: rotate(28deg); animation: none; }
-#ttra-header-cat-fendi[data-state="bury"] .cat-leg-rear { transform-origin: 42px 73px; transform-box: view-box; animation: header-cat-bury .46s ease-in-out infinite; }
-#ttra-header-cat-fendi[data-state="bury"] .cat-head { transform: rotate(12deg) translateY(3px); }
-#ttra-header-cat-fendi[data-state="bury"] .cat-pose { animation: header-cat-dig-body .46s ease-in-out infinite; }
-/* Fendi se va a dormir a upa rincón cuando Vaiven y Bitu se ponen a jugar
-   (ver stepDuet en header-cat.js) -mismo pose "ovillado" que ya tenía Vaiven-. */
-#ttra-header-cat-fendi[data-state="sleep"] .cat-pose { transform: scale(1.05,.68); }
-#ttra-header-cat-fendi[data-state="sleep"] .cat-head { transform: rotate(-12deg) translate(-7px,5px); }
-#ttra-header-cat-fendi[data-state="sleep"] .cat-eyes { display: none; }
-#ttra-header-cat-fendi[data-state="sleep"] .cat-happy-eyes { display: block; }
 #ttra-header-cat-fendi[data-state="sleep"] .ttra-cat-zzz { display: block; }
-/* Acariciar a Fendi: mismas reacciones que Vaiven (salto de alegría con
-   ojos contentos, o el ataque juguetón a los 3 clicks seguidos). */
-#ttra-header-cat-fendi[data-state="joy"] .cat-eyes { display: none; }
-#ttra-header-cat-fendi[data-state="joy"] .cat-happy-eyes { display: block; }
-#ttra-header-cat-fendi[data-state="attack"] :is(.cat-eyes,.cat-mouth,.cat-leg-front) { visibility: hidden; }
-#ttra-header-cat-fendi[data-state="attack"] :is(.cat-angry-face,.cat-attack-paw,.cat-claw-streaks) { display: block; }
-#ttra-header-cat-fendi[data-state="attack"] .cat-head { transform: rotate(-8deg); }
-#ttra-header-cat-fendi[data-state="attack"] .cat-tail { animation-duration: .35s; }
-#ttra-header-cat-fendi[data-state="attack"] .cat-attack-paw { transform-origin: 77px 79px; animation: header-cat-swipe .6s ease-in-out infinite; }
-#ttra-header-cat-fendi[data-state="attack"] .cat-claw-streaks { animation: header-cat-claws .6s ease-out infinite; }
-
-/* Bitu: negra con manchita blanca en el pecho (ver header-cat-art-bitu.js),
-   mismo tamaño y comportamiento que Fendi -incluido dormir cuando le toca-. */
-#ttra-header-cat-bitu { position: absolute; top: 0; left: 0; width: 83px; height: 69px; will-change: transform; pointer-events: auto; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; border-radius: 40%; user-select: none; }
-#ttra-header-cat-bitu[hidden] { display: none; }
-#ttra-header-cat-bitu:focus-visible { outline: 2px solid var(--ed-accent,#ef6257); outline-offset: -3px; }
-#ttra-header-cat-bitu svg { display: block; width: 100%; height: 100%; overflow: visible; transform: scaleX(var(--cat-facing,1)); }
-#ttra-header-cat-bitu :is(.cat-shadow,.cat-back,.cat-scratch-paw,.cat-strain-face,.cat-tongue,.cat-happy-eyes,.cat-belly,.cat-angry-face,.cat-attack-paw,.cat-claw-streaks) { display: none; }
-#ttra-header-cat-bitu .cat-pose { transform-box: view-box; transform-origin: 62px 91px; }
-#ttra-header-cat-bitu :is(.cat-head,.cat-leg-front,.cat-leg-rear) { transform-box: fill-box; transform-origin: center bottom; }
-#ttra-header-cat-bitu:is([data-state="idle"],[data-state="walk"]) .cat-head { transform: rotate(var(--cat-look,0deg)); }
-#ttra-header-cat-bitu .cat-tail { transform-box: view-box; transform-origin: 39px 75px; animation: header-cat-tail 4.3s ease-in-out infinite; animation-delay: var(--cat-clock,0s); }
-#ttra-header-cat-bitu .cat-eyes { transform-box: fill-box; transform-origin: center; animation: header-cat-blink 6.1s infinite; animation-delay: var(--cat-clock,0s); }
-#ttra-header-cat-bitu[data-state="walk"] .cat-leg-front { animation: header-cat-step .46s ease-in-out infinite; animation-delay: var(--cat-phase,0s); }
-#ttra-header-cat-bitu[data-state="walk"] .cat-leg-rear { animation: header-cat-step .46s ease-in-out infinite reverse; animation-delay: var(--cat-phase,0s); }
-@media(prefers-reduced-motion:no-preference) {
- #ttra-header-cat-bitu[data-running="true"] :is(.cat-leg-front,.cat-leg-rear) { animation-duration: .3s; }
-}
-#ttra-header-cat-bitu[data-state="poop"] .cat-eyes,#ttra-header-cat-bitu[data-state="poop"] .cat-mouth { visibility: hidden; }
-#ttra-header-cat-bitu[data-state="poop"] .cat-strain-face { display: block; }
-#ttra-header-cat-bitu[data-state="poop"] .cat-pose { transform: scale(1.06,.82); }
-#ttra-header-cat-bitu[data-state="pee"] .cat-leg-rear { transform: rotate(-38deg) translateY(-4px); }
-#ttra-header-cat-bitu[data-state="pee"] .cat-tail { transform: rotate(28deg); animation: none; }
-#ttra-header-cat-bitu[data-state="bury"] .cat-leg-rear { transform-origin: 42px 73px; transform-box: view-box; animation: header-cat-bury .46s ease-in-out infinite; }
-#ttra-header-cat-bitu[data-state="bury"] .cat-head { transform: rotate(12deg) translateY(3px); }
-#ttra-header-cat-bitu[data-state="bury"] .cat-pose { animation: header-cat-dig-body .46s ease-in-out infinite; }
-#ttra-header-cat-bitu[data-state="sleep"] .cat-pose { transform: scale(1.05,.68); }
-#ttra-header-cat-bitu[data-state="sleep"] .cat-head { transform: rotate(-12deg) translate(-7px,5px); }
-#ttra-header-cat-bitu[data-state="sleep"] .cat-eyes { display: none; }
-#ttra-header-cat-bitu[data-state="sleep"] .cat-happy-eyes { display: block; }
-#ttra-header-cat-bitu[data-state="sleep"] .ttra-cat-zzz { display: block; }
-/* Acariciar a Bitu: mismas reacciones que Vaiven/Fendi. */
-#ttra-header-cat-bitu[data-state="joy"] .cat-eyes { display: none; }
-#ttra-header-cat-bitu[data-state="joy"] .cat-happy-eyes { display: block; }
-#ttra-header-cat-bitu[data-state="attack"] :is(.cat-eyes,.cat-mouth,.cat-leg-front) { visibility: hidden; }
-#ttra-header-cat-bitu[data-state="attack"] :is(.cat-angry-face,.cat-attack-paw,.cat-claw-streaks) { display: block; }
-#ttra-header-cat-bitu[data-state="attack"] .cat-head { transform: rotate(-8deg); }
-#ttra-header-cat-bitu[data-state="attack"] .cat-tail { animation-duration: .35s; }
-#ttra-header-cat-bitu[data-state="attack"] .cat-attack-paw { transform-origin: 77px 79px; animation: header-cat-swipe .6s ease-in-out infinite; }
-#ttra-header-cat-bitu[data-state="attack"] .cat-claw-streaks { animation: header-cat-claws .6s ease-out infinite; }
-
-/* "Oler la cola" -Vaiven se acerca, baja la cabeza hacia atrás- y la cara
-   de asco/gracioso que sigue (broma: la cola de Fendi no huele bien). Solo
-   las usa Vaiven (#ttra-header-cat); reutiliza el vocabulario visual que ya
-   existe (ojos felices, lengua) en vez de dibujar caras nuevas. */
-#ttra-header-cat[data-state="sniff"] .cat-head { transform: rotate(20deg) translate(7px,7px); }
-#ttra-header-cat[data-state="sniff"] .cat-pose { transform: translateX(3px); }
-#ttra-header-cat[data-state="sniff"] .cat-tail { animation-duration: 1.6s; }
-#ttra-header-cat[data-state="funny"] .cat-eyes { display: none; }
-#ttra-header-cat[data-state="funny"] .cat-happy-eyes { display: block; }
-#ttra-header-cat[data-state="funny"] .cat-tongue { display: block; }
-#ttra-header-cat[data-state="funny"] .cat-head { transform: rotate(-16deg) translate(-5px,-5px); }
-#ttra-header-cat[data-state="funny"] .cat-pose { transform: translateX(-6px); animation: header-cat-funny-shake .32s ease-in-out 2; }
-@keyframes header-cat-funny-shake { 0%,100% { transform: translateX(-6px) rotate(0); } 50% { transform: translateX(-9px) rotate(-4deg); } }
-
-/* --- Travesuras (ver header-cat-state.mjs y header-cat-play.js) ---------
-   Las tres comparten el mismo dibujo (Fendi y Bitu son recolores), así que
-   cada pose se escribe una sola vez para las tres. Todo es transform sobre
-   partes que ya existen: nada de dibujos nuevos ni de tocar el layout. */
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="stretch"] .cat-pose { animation: header-cat-stretch 2.3s ease-in-out both; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="stretch"] .cat-leg-front { animation: header-cat-stretch-leg 2.3s ease-in-out both; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="stretch"] .cat-tail { animation: none; transform: rotate(-22deg); transition: transform .5s ease; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu):is([data-state="stretch"],[data-state="yawn"]) .cat-eyes { display: none; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu):is([data-state="stretch"],[data-state="yawn"]) .cat-happy-eyes { display: block; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="yawn"] .cat-head { animation: header-cat-yawn-head 1.7s ease-in-out both; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="yawn"] .cat-mouth { visibility: hidden; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="yawn"] .cat-tongue { display: block; transform-box: fill-box; transform-origin: center top; animation: header-cat-yawn-mouth 1.7s ease-in-out both; }
-/* Pancito: patas escondidas, cuerpo bajito, ojos entrecerrados. */
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="loaf"] .cat-pose { transform: translateY(3px) scale(1.06,.8); }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="loaf"] :is(.cat-leg-front,.cat-leg-rear) { visibility: hidden; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="loaf"] .cat-eyes { animation: none; transform: scaleY(.38); }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="loaf"] .cat-tail { animation-duration: 9s; }
-/* Perseguirse la cola: se da vuelta de un lado a otro con saltitos. */
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="spin"] .cat-pose { animation: header-cat-spin 1.7s steps(1,end) both; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="spin"] .cat-tail { animation-duration: .3s; }
-/* Agazapada antes de saltar: bien baja y moviendo la colita. */
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="crouch"] .cat-pose { animation: header-cat-wiggle .18s ease-in-out infinite alternate; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="crouch"] .cat-head { transform: translateY(6px); }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="crouch"] .cat-tail { animation-duration: .5s; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="pounce"] .cat-pose { transform: rotate(-10deg) scale(1.1,.9); }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="pounce"] .cat-leg-front { transform: translateX(7px) rotate(-38deg); }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="pounce"] .cat-leg-rear { transform: translateX(-5px) rotate(34deg); }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="pounce"] .cat-tail { animation: none; transform: rotate(-24deg); }
-/* Susto: se infla, cola de plumero. */
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="startle"] .cat-pose { transform: scale(1.06,1.12); }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="startle"] .cat-tail { animation: none; transform: rotate(-30deg); stroke-width: 19; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="startle"] .cat-eyes { animation: none; transform: scale(1.18); }
-/* Zarpazo juguetón: la misma pata del ataque, pero una sola vez y sin enojo. */
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="swat"] .cat-attack-paw { display: block; transform-origin: 77px 79px; animation: header-cat-swipe .55s ease-in-out 1 both; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="swat"] .cat-leg-front { visibility: hidden; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="swat"] .cat-head { transform: rotate(-6deg); }
-/* Mirando el punto rojo: cabeza gacha, cola nerviosa. */
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="watch"] .cat-head { transform: rotate(10deg) translate(3px,4px); }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="watch"] .cat-tail { animation-duration: .9s; }
-:is(#ttra-header-cat,#ttra-header-cat-fendi,#ttra-header-cat-bitu)[data-state="watch"] .cat-eyes { animation: none; transform: scale(1.1); }
-@keyframes header-cat-stretch { 0%,100% { transform: none; } 25%,72% { transform: translateX(4px) rotate(9deg) scaleX(1.08); } }
-@keyframes header-cat-stretch-leg { 0%,100% { transform: none; } 25%,72% { transform: translate(10px,1px) rotate(-30deg); } }
-@keyframes header-cat-yawn-head { 0%,100% { transform: none; } 30%,70% { transform: rotate(-16deg) translateY(-2px); } }
-@keyframes header-cat-yawn-mouth { 0%,100% { transform: scale(.6,.3); } 30%,70% { transform: scale(1.5,1.4); } }
-@keyframes header-cat-spin { 0%,24%,48%,72%,100% { transform: scaleX(1); } 12%,36%,60%,84% { transform: scaleX(-1); } }
-@keyframes header-cat-wiggle { from { transform: translateY(5px) scale(1.08,.8) rotate(-1.5deg); } to { transform: translateY(5px) scale(1.08,.8) rotate(1.5deg); } }
 
 /* El punto rojo suelto: copia del "." del título que juega en el piso. */
 #ttra-cat-dot { position: fixed; top: 0; left: 0; z-index: 10039; border-radius: 50%; pointer-events: none; will-change: transform; }
