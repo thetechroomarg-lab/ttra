@@ -142,11 +142,11 @@ def test_aprobar_crea_un_codigo_de_una_sola_vez_por_el_valor_de_la_tabla(monkeyp
     _enviar(c, "iphone-15-128gb")
     canje = fake.table("canjes").select("*").execute().data[0]
     r = _admin().post(f"/admin/canjes/{canje['id']}/aprobar")
-    assert r.status_code == 200 and r.json()["valor_usd"] == 370
+    assert r.status_code == 200 and r.json()["valor_usd"] == 360
     codigo = r.json()["codigo"]
     fila = fake.table("codigos_descuento").select("*").eq("code", codigo).execute().data[0]
     assert fila["cliente_id"] == cliente_id and fila["activo"] and not fila.get("usado_en")
-    assert fila["tope_total_usd"] == 370 and fila["productos"] == []
+    assert fila["tope_total_usd"] == 360 and fila["productos"] == []
     assert correos[-1]["para"] == "juan@x.com" and codigo in correos[-1]["html"]
     # Una segunda aprobación no emite otro código.
     assert _admin().post(f"/admin/canjes/{canje['id']}/aprobar").status_code == 409
@@ -163,7 +163,7 @@ def test_el_codigo_de_canje_descuenta_el_valor_de_la_tabla_en_el_carrito(monkeyp
     codigo = _admin().post(f"/admin/canjes/{canje['id']}/aprobar").json()["codigo"]
     assert c.get("/api/me").json()["codigo_descuento_disponible"] == codigo
     r = c.post("/api/descuentos/validar", json={"codigo": codigo, "items": [{"nombre": "iPhone 17", "cantidad": 1}]})
-    assert r.status_code == 200 and r.json()["descuento"]["usd"] == 370
+    assert r.status_code == 200 and r.json()["descuento"]["usd"] == 360
     # El carrito explica de dónde sale el descuento: el iPhone en parte de pago.
     assert r.json()["canje_equipo"] == "iPhone 15 128 GB"
 

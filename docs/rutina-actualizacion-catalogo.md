@@ -74,6 +74,11 @@ Mike usa el identificador interno **`mike`**, confirmado por el usuario el 04/11
 - Desde el 13/11/2026 (autorizado por Vladimir) también entran `DRONE`, `Hogar y Deco` (Cecotec, Aiper, Pinnacle, Cookut; la columna "PRECIO VENTA USD" se toma como costo) y `Cafeteras`. Los repuestos (baterías, cargadores de batería) siguen excluidos; la regla de baterías/pantalla no aplica a nombres que contienen "drone" (`web/productos.py::_excluido`).
 - Pestañas que no entran: `Accesorios Premium` (es una copia de la lista de OH en pesos) y `RELOGES G SHOCK` (notas sueltas).
 
+### Mike — proveedor manual, agregado el 26/11/2026
+
+- Siglas: **Mike** (identificador interno `mike`; es el de la correspondencia "Lista mayorista"). Vladimir no lo pasa todos los días: cuando lo pega en el chat, se guarda sin modificar como `outputs/catalogo_AAAAMMDD/fuentes/mike.txt`, se parsea con `tmp/catalogo_AAAAMMDD/incorporar_mike.py` (adaptado del de 26/11/2026) a `entrada_mike.json` y entra en la consolidación junto con los demás (gana el más barato). Si ese día no lo pasa, no se busca en otro lado ni se lo da por vencido: se omite.
+- Catálogo Apple en USD (costo). Se excluyen iPhone CPO y cajas abolladas/abiertas; "Activado" entra como `... Activado`.
+
 ### FR — notebooks solamente
 
 - URL: https://docs.google.com/spreadsheets/d/1-D4tjaHht4rfXzboRekz5tq_CK4731e5kAVauuglof4/edit?gid=0#gid=0

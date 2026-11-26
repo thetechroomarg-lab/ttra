@@ -3,7 +3,7 @@
     "id": "iphone-15-128gb",
     "modelo": "iPhone 15",
     "capacidad": "128 GB",
-    "valor_usd": 370
+    "valor_usd": 360
   },
   {
     "id": "iphone-15-256gb",
@@ -70,7 +70,7 @@
     "id": "iphone-16-pro-max-256gb",
     "modelo": "iPhone 16 Pro Max",
     "capacidad": "256 GB",
-    "valor_usd": 700
+    "valor_usd": 690
   },
   {
     "id": "iphone-16-pro-max-512gb",
