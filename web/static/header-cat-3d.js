@@ -152,15 +152,20 @@ export function createCat3D(kind) {
 
   // Zancada en el lugar: la fase avanza con la distancia recorrida, así las patas pisan sin patinar.
   const gaitState = {phase: 0};
+  // Longitud de zancada (m) por velocidad. Al correr el barrido de cada pata se limita a lo que la pierna alcanza.
+  const strideFor = (speed, running) => running ? (.2 + .04 * speed) / .55 : .2 + .25 * speed;
   const OFFSET_WALK = {HR: .02, FR: .27, HL: .52, FL: .77}, OFFSET_RUN = {HL: .02, FR: .04, HR: .52, FL: .54};
   function gait(speed, running, mv) {
-    const g = cfg.gait, duty = running ? .45 : .62, stride = running ? .3 + .25 * speed : .2 + .25 * speed;
+    const g = cfg.gait, duty = running ? .55 : .62, stride = strideFor(speed, running);
     const offset = running ? OFFSET_RUN : OFFSET_WALK;
+    const sweep = stride * duty;
     for (const f of FEET) {
       const u = ((gaitState.phase + offset[f]) % 1 + 1) % 1;
       let z, y;
-      if (u < duty) { z = g[f].z + stride * (.5 - u / duty); y = 0; }
-      else { const w = (u - duty) / (1 - duty); z = g[f].z - stride * .5 + stride * smooth(w); y = (.025 + .1 * Math.min(stride, .4)) * Math.sin(Math.PI * w); }
+      // Mientras la pata está apoyada el cuerpo avanza duty*zancada: ese es el barrido real de la pata
+      // (más que eso la pierna no llega al piso y el gato "camina en el aire").
+      if (u < duty) { z = g[f].z + sweep * (.5 - u / duty); y = 0; }
+      else { const w = (u - duty) / (1 - duty); z = g[f].z - sweep * .5 + sweep * smooth(w); y = (.025 + .1 * Math.min(sweep, .4)) * Math.sin(Math.PI * w); }
       const s = S.feet[f];
       s.x = lerp(s.x, g[f].x, mv); s.z = lerp(s.z, z, mv); s.y = lerp(s.y, y, mv);
       const arch = u < duty ? 0 : Math.sin(Math.PI * (u - duty) / (1 - duty));
@@ -168,8 +173,9 @@ export function createCat3D(kind) {
     }
     const stridePhase = gaitState.phase * TAU;
     S.bounce = (running ? .016 : .007) * mv;
-    S.pelvisY += S.bounce * Math.sin(stridePhase * 2 + 2.2) - (running ? .02 : .006) * mv;
-    S.chestY += S.bounce * Math.sin(stridePhase * 2 - .6) - (running ? .035 : .008) * mv;
+    // Con las patas abiertas la pierna no llega al piso a menos que el cuerpo baje: se agacha en proporción al barrido.
+    S.pelvisY += S.bounce * Math.sin(stridePhase * 2 + 2.2) - .2 * sweep * mv;
+    S.chestY += S.bounce * Math.sin(stridePhase * 2 - .6) - .2 * sweep * mv;
     S.tail = lerp(S.tail, running ? 1 : .35, mv);
     // Balanceo: el cuerpo se inclina al apoyar cada lado y la cabeza compensa, como un andar de gato.
     S.roll += (running ? .03 : .045) * Math.sin(stridePhase) * mv;
@@ -245,8 +251,8 @@ export function createCat3D(kind) {
       case 'stretch': {
         // Reverencia: pecho abajo, cola al cielo, manos hacia adelante.
         const a = smooth(Math.min(p / .25, (1 - p) / .25));
-        S.chestY = lerp(CY, CY * .45, a); S.pelvisY = lerp(HY, HY * 1.08, a);
-        setFoot('FL', .045, 0, g.FL.z + .13 * a); setFoot('FR', -.045, 0, g.FR.z + .13 * a);
+        S.chestY = lerp(CY, CY * .62, a); S.pelvisY = lerp(HY, HY * 1.05, a);
+        setFoot('FL', .045, 0, g.FL.z + .09 * a); setFoot('FR', -.045, 0, g.FR.z + .09 * a);
         S.headPitch = .2 * a; S.tail = lerp(0, 0, a); S.closed = a > .6; break;
       }
       case 'yawn': {
@@ -255,7 +261,7 @@ export function createCat3D(kind) {
       }
       case 'crouch': {
         const a = smooth(t / .45);
-        S.chestY = lerp(CY, CY * .56, a); S.pelvisY = lerp(HY, HY * .8, a); setHome(cfg.crouch);
+        S.chestY = lerp(CY, CY * .64, a); S.pelvisY = lerp(HY, HY * .82, a); setHome(cfg.crouch);
         S.tail = .8; S.tailSpeed = 2.5; S.headPitch = -.1; S.roll = .012 * Math.sin(t * TAU * 6) * a; break;
       }
       case 'jump': case 'pounce': case 'startle': case 'joy': {
@@ -279,7 +285,7 @@ export function createCat3D(kind) {
     }
   }
 
-  let lastTime = 0, yawCur = null, closedNow = false, speedSm = 0, blinkAt = 0, blinkUntil = 0, posed = false;
+  let lastTime = 0, yawCur = null, closedNow = false, speedSm = 0, floatErr = 0, calibrated = false, blinkAt = 0, blinkUntil = 0, posed = false;
   const P = {feet: Object.fromEntries(FEET.map(f => [f, {x: 0, y: 0, z: 0, pitch: 0}]))}; // pose ya suavizada
   // Acerca la pose pedida a la mostrada con un filtro de primer orden: sin saltos entre una fase y la siguiente.
   function smoothPose(dt, tauBody, tauFeet) {
@@ -290,11 +296,13 @@ export function createCat3D(kind) {
   }
   function update(ctx) {
     if (!rig) return false;
-    const time = ctx.still ? 0 : ctx.now / 1000, dt = lastTime ? Math.min(.1, Math.max(0, time - lastTime)) : 0;
+    if (!calibrated && size.w) { calibrated = true; calibrate(); }
+    const time = ctx.still ? 0 : ctx.now / 1000, rawDt = lastTime ? Math.max(0, time - lastTime) : 0, dt = Math.min(.1, rawDt);
     lastTime = time;
     const {kind: k, visual} = ctx;
     resetPose();
-    const c = {time, serial: ctx.serial || 0, look: ctx.look, air: ctx.air, speed: Math.min(2.6, ctx.dx * mpp / Math.max(dt, 1 / 120)), walkFeet: false};
+    // Velocidad = lo que se movió en pantalla / tiempo real transcurrido (si el cuadro tardó mucho, no es confiable: se mantiene la anterior).
+    const c = {time, serial: ctx.serial || 0, look: ctx.look, air: ctx.air, speed: rawDt > .25 ? speedSm : Math.min(2.6, ctx.dx * mpp / Math.max(rawDt, 1 / 120)), walkFeet: false};
     if (!dt) c.speed = 0;
     layout(k, ctx.t, ctx.p, c);
     const walks = visual === 'walk' || c.walkFeet;
@@ -304,10 +312,10 @@ export function createCat3D(kind) {
     const moving = walks && mvTarget > 0;
     if (moving) {
       const running = ctx.running || speedSm > 1.1;
-      gaitState.phase += speedSm / (running ? .3 + .25 * speedSm : .2 + .25 * speedSm) * dt;
+      gaitState.phase += speedSm / strideFor(speedSm, running) * dt;
       gait(speedSm, running, mvTarget);
     }
-    smoothPose(dt, .1, moving ? .03 : .09);
+    smoothPose(dt, .1, moving ? .012 : .09);
     // Parpadeo: cada 2,5-6 s los ojos se cierran ~0,14 s (solo si hay animación).
     if (!ctx.still) {
       if (!blinkAt) blinkAt = time + 1 + Math.random() * 3;
@@ -318,13 +326,35 @@ export function createCat3D(kind) {
     return true;
   }
 
+  // El piso se mide en pantalla, no en el esqueleto: se dibuja el gato parado, se busca la fila más baja
+  // con pelo o patas y se sube o baja el modelo hasta que esa fila quede justo en la línea del piso.
+  // Así ningún modelo (ni su pelaje) queda flotando ni hundido, sea cual sea la malla.
+  function calibrate() {
+    try {
+      const gl = renderer.getContext(), W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
+      shadow.visible = false; rig.object.position.y = 0;
+      resetPose(); posed = false; yawCur = null; floatErr = 0;
+      const ctx = {facing: 1, running: false}, c = {time: 0, blink: false};
+      smoothPose(0, .1, .09); drive(ctx, c, 0);
+      renderer.render(scene, camera);
+      const px = new Uint8Array(W * H * 4); gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      let low = -1;
+      for (let y = 0; y < H && low < 0; y++) for (let x = 0; x < W; x++) if (px[(y * W + x) * 4 + 3] > 60) { low = y; break; }
+      if (low >= 0) {
+        const metersPerRow = VIEW_H / H, shift = (low - FLOOR_FRAC * H) * metersPerRow; // > 0: el modelo quedó por encima del piso
+        rig.baseY = Math.max(-.08, Math.min(.08, -shift)); rig.object.position.y = rig.baseY;
+      }
+    } catch {}
+    shadow.visible = true; posed = false; yawCur = null; floatErr = 0;
+  }
+
   function drive(ctx, c, dt) {
     const {bone, rest, HY, CY, PZ, CZ, LA, LB, REST1, REST2, PAW_Y} = rig;
     const targetYaw = ctx.facing * (Math.PI / 2 - .3);
     yawCur = yawCur === null ? targetYaw : yawCur + Math.max(-dt * 7, Math.min(dt * 7, wrap(targetYaw - yawCur)));
     const yaw = yawCur + P.yawAdd * ctx.facing;
-    pelvis.set(0, 0, 0).addScaledVector(fwdOf(yaw, tmpA), PZ + P.pelvisZ); pelvis.y = P.pelvisY;
-    chest.set(0, 0, 0).addScaledVector(fwdOf(yaw, tmpA), CZ + P.chestZ); chest.y = P.chestY;
+    pelvis.set(0, 0, 0).addScaledVector(fwdOf(yaw, tmpA), PZ + P.pelvisZ); pelvis.y = P.pelvisY - floatErr;
+    chest.set(0, 0, 0).addScaledVector(fwdOf(yaw, tmpA), CZ + P.chestZ); chest.y = P.chestY - floatErr;
     delta.subVectors(chest, pelvis);
     const flat = Math.hypot(delta.x, delta.z), yawBody = flat > 1e-4 ? Math.atan2(delta.x, delta.z) : yaw;
     const dist = T.MathUtils.clamp(delta.length(), (LA + LB) * .55, (LA + LB) * .999), rise = Math.atan2(delta.y, flat);
@@ -359,6 +389,18 @@ export function createCat3D(kind) {
       q.a.setFromAxisAngle(UP, yawBody).multiply(q.b.setFromAxisAngle(X, f.pitch));
       bone[foot + 'Paw'].quaternion.copy(lower.invert()).multiply(q.a);
     });
+
+    // Contacto con el piso: si una pata apoyada quedó en el aire (la pierna no llegó), se baja el cuerpo
+    // en el cuadro siguiente. Nunca debe verse un gato flotando sobre la línea.
+    rig.object.updateMatrixWorld(true);
+    let worst = 0, lowest = Infinity;
+    for (const foot of FEET) {
+      if (P.feet[foot].y > .014) continue;
+      const gap = tmpA.setFromMatrixPosition(bone[foot + 'Paw'].matrixWorld).y - rig.object.position.y - PAW_Y[foot];
+      worst = Math.max(worst, gap); lowest = Math.min(lowest, gap);
+    }
+    // Garantía final: la pata apoyada más baja toca el piso en este mismo cuadro (se sube o baja todo el modelo).
+    rig.object.position.y = (rig.baseY || 0) - (lowest === Infinity ? 0 : Math.max(-.05, Math.min(.05, lowest)));
 
     // Ojos cerrados (Fendi trae textura dormida; Vaiven no tiene).
     const shut = P.closed || c.blink;
@@ -396,6 +438,8 @@ export function createCat3D(kind) {
   // El que llama maneja el reloj; draw() solo pinta.
   function draw() { if (rig && size.w) renderer.render(scene, camera); }
   // Para centrar al gato en el cuadro: la cola cuelga hacia atrás.
+  api.debug = () => ({floatErr, speedSm, feet: Object.fromEntries(FEET.map(f => [f, P.feet[f].y.toFixed(3)]))});
+  api.groundShift = () => rig ? rig.baseY : null; // metros que se corrigió el modelo para apoyar en el piso
   api.setFacing = f => { camera.position.x = -f * .06; };
   return api;
 }
