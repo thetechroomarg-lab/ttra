@@ -454,7 +454,7 @@ function updateLanes(g,now) {
 function applyLane(el,lane,x,y,g) {
   const k=1-.1*lane;
   el.style.transformOrigin='50% 92%';
-  el.style.transform=`translate3d(${x.toFixed(2)}px,${(y-lane*6*g.scale).toFixed(2)}px,0) scale(${k.toFixed(3)})`;
+  el.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) scale(${k.toFixed(3)})`;
   el.style.zIndex=lane>.5?'1':'2';
   el.firstElementChild.style.filter=lane>.02?`brightness(${(1-.18*lane).toFixed(2)})`:'';
 }

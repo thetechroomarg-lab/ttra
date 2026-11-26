@@ -37,6 +37,7 @@ function registrarConsultaProducto(producto) {
 }
 
 let SECCIONES_DATA = {};
+let catalogoListo = false; // hasta que baja /api/catalogo no hay nada que filtrar
 let categoriaActiva = "Todos";
 let marcaActiva = "";
 let condicionActiva = "";
@@ -634,6 +635,7 @@ async function cargarCatalogo() {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const datos = await r.json();
     SECCIONES_DATA = datos.secciones || {};
+    catalogoListo = true;
     if (datos.mensaje) {
       document.getElementById("secciones").innerHTML =
         `<p class="mensaje-vacio">${escapeHtml(datos.mensaje)}</p>`;
@@ -650,7 +652,9 @@ async function cargarCatalogo() {
     marcaActiva = (regreso ? regreso.marca : parametros.get("marca")) || "";
     const tipoSolicitado = regreso ? regreso.tipo : parametros.get('tipo');
     tipoActivo = tipoSolicitado || '';
-    document.getElementById("catalog-search").value = regreso ? regreso.query : parametros.get("q") || "";
+    // Si ya se puso a escribir mientras bajaba el catálogo, no se le borra lo tipeado.
+    const buscador = document.getElementById("catalog-search");
+    buscador.value = regreso ? regreso.query : parametros.get("q") || buscador.value;
     const estado = regreso || {
       condicion: parametros.get('condicion'), orden: parametros.get('orden'),
       precioMin: leerPrecioParametro(parametros.get('min')),
@@ -676,7 +680,7 @@ async function cargarCatalogo() {
     pintarSeccion(SECCIONES.includes(categoriaSolicitada) ? categoriaSolicitada : "Todos");
     if (regreso ? regreso.searchVisible : (parametros.get("buscar") === "1" || parametros.has("q"))) {
       document.querySelector('.catalog-search-wrap').hidden = false;
-      document.getElementById("catalog-search").focus();
+      if (document.activeElement !== buscador) buscador.focus();
     }
     window.TTRAComparar?.restorePosition();
   } catch {
@@ -730,7 +734,7 @@ document.getElementById("condition-filter").addEventListener("change", (event) =
 
 document.getElementById('compartir-busqueda').addEventListener('click', () => abrirCompartirCatalogo());
 
-document.getElementById('catalog-search').addEventListener('input', () => pintarSeccion(categoriaActiva));
+document.getElementById('catalog-search').addEventListener('input', () => { if (catalogoListo) pintarSeccion(categoriaActiva); });
 
 document.getElementById("cuotas-filter").addEventListener("change", (event) => {
   soloCuotas = event.target.checked;
