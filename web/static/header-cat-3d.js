@@ -25,8 +25,8 @@ const RIGS = {
     crouch: {FL: V(.04, 0, .1), FR: V(-.04, 0, .1), HL: V(.065, 0, -.1), HR: V(-.065, 0, -.1)},
     lie: {FL: V(.04, 0, .17), FR: V(-.04, 0, .17), HL: V(.07, 0, -.05), HR: V(-.07, 0, -.05)},
     tail: 'relative',
-    // Vaiven no trae textura con ojos cerrados: se tapan con dos párpados del color del pelo.
-    lids: {color: 0xf1ece4, radius: .011, at: [[.063, .018, .055], [.101, .017, .014]]},
+    // Vaiven no trae textura con ojos cerrados: se arma pintando el color del pelo sobre los ojos (texels medidos en el atlas).
+    eyes: {r: 15, at: [[430, 161], [172, 282], [189, 751], [568, 305], [194, 956], [853, 122], [897, 928]]},
   },
   fendi: {
     mesh: 'fendi.bin', color: 'fendi-color.webp', closed: 'fendi-dormida.webp', headRest: -1.15, sheen: 0x7a5a3c, rough: .88,
@@ -41,13 +41,29 @@ function loadAssets(kind) {
   const cfg = RIGS[kind];
   return loads[kind] ||= (async () => {
     const loader = new T.TextureLoader();
-    const [buf, awake, asleep] = await Promise.all([
+    let [buf, awake, asleep] = await Promise.all([
       fetch(BASE + cfg.mesh).then(r => { if (!r.ok) throw new Error(cfg.mesh + ' ' + r.status); return r.arrayBuffer(); }),
       loader.loadAsync(BASE + cfg.color), cfg.closed ? loader.loadAsync(BASE + cfg.closed) : null,
     ]);
+    if (!asleep && cfg.eyes) asleep = new T.CanvasTexture(paintEyesShut(awake.image, cfg.eyes));
     for (const map of [awake, asleep]) if (map) { map.colorSpace = T.SRGBColorSpace; map.anisotropy = 4; }
     return {buf, awake, asleep};
   })();
+}
+
+// Copia de la textura con los ojos tapados: sobre cada marca de ojo se pinta el color medio del pelo de alrededor.
+function paintEyesShut(image, {r, at}) {
+  const c = document.createElement('canvas'); c.width = image.width; c.height = image.height;
+  const g = c.getContext('2d', {willReadFrequently: true}); g.drawImage(image, 0, 0);
+  for (const [x, y] of at) {
+    const ring = g.getImageData(Math.max(0, x - r * 2), Math.max(0, y - r * 2), r * 4, r * 4).data;
+    let R = 0, G = 0, B = 0, n = 0;
+    for (let i = 0; i < ring.length; i += 4) { if (ring[i] + ring[i + 1] + ring[i + 2] > 560) { R += ring[i]; G += ring[i + 1]; B += ring[i + 2]; n++; } }
+    n ||= 1;
+    g.fillStyle = `rgb(${R / n | 0},${G / n | 0},${B / n | 0})`;
+    g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+  }
+  return c;
 }
 
 // Sombra blanda bajo el gato (el svg original traía una elipse).
@@ -111,16 +127,7 @@ export function createCat3D(kind) {
       REST1: Math.atan2(linkA.y, linkA.z), REST2: Math.atan2(linkB.y, linkB.z),
       PAW_Y: Object.fromEntries(FEET.map(f => [f, rest[f + 'Paw'].y])),
       STAND: Object.fromEntries(FEET.map(f => [f, V(rest[f + 'Paw'].x, 0, rest[f + 'Paw'].z)])),
-      lids: [],
     };
-    if (cfg.lids) {
-      const lidMat = new T.MeshStandardMaterial({color: cfg.lids.color, roughness: .95});
-      for (const [x, y, z] of cfg.lids.at) {
-        const lid = new T.Mesh(new T.SphereGeometry(cfg.lids.radius, 12, 8), lidMat);
-        lid.position.set(x, y, z); lid.scale.setScalar(.0001); lid.frustumCulled = false;
-        bone.Head.add(lid); r.lids.push(lid);
-      }
-    }
     return r;
   }
 
@@ -220,10 +227,13 @@ export function createCat3D(kind) {
         S.headRoll = -Math.PI * down * .4; S.closed = down > .6; S.tail = .5; S.sway = 0; break;
       }
       case 'attack': case 'swat': {
+        // Zarpazo con una manito (alterna izquierda y derecha según la fase); el cuerpo se queda en el piso.
+        const left = c.serial % 2 === 0, f = left ? 'FL' : 'FR', side = left ? .045 : -.045;
         S.headPitch = -.15; S.tail = .15; S.tailSpeed = 3; S.chestY = CY * .9;
-        const sw = Math.sin(t * TAU * (k === 'attack' ? 1.7 : 2.2));
-        setFoot('FR', -.04, .14 + .09 * Math.max(0, sw), rig.CZ + .1 + .1 * Math.max(0, sw), -.5 * Math.max(0, sw));
-        S.headYaw = .15 * sw; break;
+        const hit = k === 'swat' ? Math.sin(clamp01(p) * Math.PI) : Math.max(0, Math.sin(t * TAU * 1.7));
+        S.chestZ = .03 * hit;
+        setFoot(f, side, .13 + .1 * hit, rig.CZ + .08 + .13 * hit, -.5 * hit);
+        S.headYaw = .12 * hit * (left ? 1 : -1); break;
       }
       case 'bury': {
         S.headPitch = -.4; S.chestY = CY * .92;
@@ -269,7 +279,7 @@ export function createCat3D(kind) {
     }
   }
 
-  let lastTime = 0, yawCur = null, closedNow = false, speedSm = 0, lidAmt = 0, blinkAt = 0, blinkUntil = 0, posed = false;
+  let lastTime = 0, yawCur = null, closedNow = false, speedSm = 0, blinkAt = 0, blinkUntil = 0, posed = false;
   const P = {feet: Object.fromEntries(FEET.map(f => [f, {x: 0, y: 0, z: 0, pitch: 0}]))}; // pose ya suavizada
   // Acerca la pose pedida a la mostrada con un filtro de primer orden: sin saltos entre una fase y la siguiente.
   function smoothPose(dt, tauBody, tauFeet) {
@@ -284,7 +294,7 @@ export function createCat3D(kind) {
     lastTime = time;
     const {kind: k, visual} = ctx;
     resetPose();
-    const c = {time, look: ctx.look, air: ctx.air, speed: Math.min(2.6, ctx.dx * mpp / Math.max(dt, 1 / 120)), walkFeet: false};
+    const c = {time, serial: ctx.serial || 0, look: ctx.look, air: ctx.air, speed: Math.min(2.6, ctx.dx * mpp / Math.max(dt, 1 / 120)), walkFeet: false};
     if (!dt) c.speed = 0;
     layout(k, ctx.t, ctx.p, c);
     const walks = visual === 'walk' || c.walkFeet;
@@ -354,9 +364,6 @@ export function createCat3D(kind) {
     const shut = P.closed || c.blink;
     if (rig.asleep) {
       if (shut !== closedNow) { closedNow = shut; rig.material.map = shut ? rig.asleep : rig.awake; rig.material.needsUpdate = true; }
-    } else if (rig.lids.length) {
-      lidAmt += ((shut ? 1 : 0) - lidAmt) * (dt ? Math.min(1, dt * 40) : 1);
-      for (const lid of rig.lids) lid.scale.setScalar(Math.max(.0001, lidAmt));
     }
 
     shadow.scale.set(.62, .26, 1);

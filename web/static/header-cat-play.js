@@ -180,8 +180,8 @@ export function createPlay({motion,summon}) {
       if(now<game.until)return;
       const dir=game.x>chaser.x+chaser.size/2?1:-1;
       if(game.dashes<game.total) {
-        // Salta... y el punto se escapa justo antes de que caiga.
-        setPhase(chaser.s,'pounce',now,600,toNorm(game.x-(dir>0?.8:.2)*chaser.size,g));
+        // Le pega con la patita delantera... y el punto se escapa justo antes de que la apoye.
+        setPhase(chaser.s,'swat',now,600,chaser.s.x);
         chaser.s.phase.direction=dir;game.dashAt=now+330;
         return;
       }

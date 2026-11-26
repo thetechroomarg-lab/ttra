@@ -341,6 +341,8 @@ function stepDuet(now,g) {
         setPhase(state,'idle',now,1400,state.x);
         duet=null;
       }
+    } else if(duet.kind==='pass') {
+      if(now>=duet.until)duet=null;
     } else if(duet.kind==='chase') {
       // Se persiguen a las corridas: Fendi sale disparada hacia un punto del
       // piso y Vaiven la sigue (a veces caminando rápido, a veces de saltos).
@@ -356,7 +358,7 @@ function stepDuet(now,g) {
           // menos de un segundo y se veían deslizándose.
           const dur=Math.max(700,Math.abs(target-fendiState.x)*g.travel/(160*g.scale)*1000);
           setPhase(fendiState,'walk',now,dur,target);
-          const gapFrac=g.travel?(g.size*.9*.55)/g.travel:0;
+          const gapFrac=g.travel?(g.size*.72)/g.travel:0;
           setPhase(state,duet.leg%2===0?'jump':'walk',now,dur,clamp(target+(target<state.x?gapFrac:-gapFrac)));
           duet.until=now+dur;
         }
@@ -374,9 +376,23 @@ function stepDuet(now,g) {
   } else if(r<.55) {
     // Oler la cola: Vaiven camina hasta quedar justo detrás de Fendi.
     const facingFendi=fendiState.phase.to<fendiState.phase.from?-1:1;
-    const gapFrac=g.travel?(g.size*.9*.32)/g.travel:0;
+    const gapFrac=g.travel?(g.size*.66)/g.travel:0;
     setPhase(state,'walk',now,1100,clamp(fendiState.x-facingFendi*gapFrac));
     duet={kind:'sniff',stage:'approach',until:now+1100};
+  } else if(r<.8) {
+    // Uno cruza por detrás del otro: el que camina se mete al fondo, pasa
+    // y recién del otro lado vuelve al frente (ver updateLanes).
+    const vaivenMoves=Math.random()<.5;
+    const mover=vaivenMoves?state:fendiState,other=vaivenMoves?fendiState:state;
+    let dir=mover.x<other.x?1:-1;
+    const beyond=g.travel?(g.size*.95)/g.travel:0;
+    if(other.x+dir*beyond<0||other.x+dir*beyond>1)dir=-dir;
+    const to=clamp(other.x+dir*beyond);
+    if(!g.travel||Math.abs(to-mover.x)<.05)return;
+    const dur=Math.max(1400,Math.abs(to-mover.x)*g.travel/(42*g.scale)*1000);
+    setPhase(mover,'walk',now,dur,to);
+    setPhase(other,'idle',now,dur+700,other.x);
+    duet={kind:'pass',mover:vaivenMoves?'vaiven':'fendi',until:now+dur+250};
   }
 }
 // Compartido por Vaiven y Fendi -misma frecuencia de pis/caca, mapa de
@@ -417,14 +433,40 @@ function renderWaste(s,nodes,pose,g,now) {
 }
 // Lo que el gato 3D necesita saber de este cuadro: qué hace, hace cuánto,
 // hacia dónde mira y cuánto se movió en pantalla (de ahí salen los pasos).
+// Profundidad: cada gato tiene un carril (0 = adelante, 1 = al fondo). Al
+// fondo se ve un poco más chico, más arriba y más oscuro, y queda detrás del
+// otro. Cuando se acercan sin estar jugando, Fendi se va al fondo antes de
+// cruzarse, así pasan uno detrás del otro sin pisarse ni empujarse. El carril
+// se mueve de a poco: nada salta de golpe.
+let laneVaiven=0,laneFendi=0,laneAt=0;
+function updateLanes(g,now) {
+  const dt=laneAt?Math.min(.1,(now-laneAt)/1000):0;laneAt=now;
+  let tv=0,tf=0;
+  if(duet?.kind==='pass'){if(duet.mover==='vaiven')tv=1;else tf=1;}
+  else if(!duet&&state.active&&fendiState.active&&!['enter','return'].includes(state.phase.kind)&&!['enter','return'].includes(fendiState.phase.kind)) {
+    const close=Math.abs(lastVaivenX-lastFendiX)<(g.size+g.size*.9)*.34*(laneFendi>.5?1.25:1);
+    if(close)tf=1;
+  }
+  const step=dt*2.6;
+  laneVaiven+=Math.max(-step,Math.min(step,tv-laneVaiven));
+  laneFendi+=Math.max(-step,Math.min(step,tf-laneFendi));
+}
+function applyLane(el,lane,x,y,g) {
+  const k=1-.1*lane;
+  el.style.transformOrigin='50% 92%';
+  el.style.transform=`translate3d(${x.toFixed(2)}px,${(y-lane*6*g.scale).toFixed(2)}px,0) scale(${k.toFixed(3)})`;
+  el.style.zIndex=lane>.5?'1':'2';
+  el.firstElementChild.style.filter=lane>.02?`brightness(${(1-.18*lane).toFixed(2)})`:'';
+}
 function pose3d(pose,s,now,dx,facing,look,visual,running) {
   const p=pose.progress,kind=pose.kind;
   const air=kind==='joy'?pose.joyProgress:kind==='startle'?clamp(p*1.7):p;
-  return {now,kind,visual,t:(now-s.phase.start)/1000,p,facing,dx:Math.abs(dx),running:running||RUNNING.includes(kind),air,look:-look*Math.PI/180*1.2,still:motion.matches};
+  return {now,kind,visual,serial:s.phase.serial,t:(now-s.phase.start)/1000,p,facing,dx:Math.abs(dx),running:running||RUNNING.includes(kind),air,look:-look*Math.PI/180*1.2,still:motion.matches};
 }
 function render() {
   if(!geometry||!current)return;
   const now=Date.now();const g=geometry;
+  updateLanes(g,now);
   // El juego del punto rojo manda mientras dura; el dúo espera su turno.
   if(play.step(now,g,[{s:state,x:lastVaivenX,size:g.size},{s:fendiState,x:lastFendiX,size:g.size*.9}]))duet=null;
   else stepDuet(now,g);
@@ -463,7 +505,7 @@ function render() {
   }
   if(visible&&!cat.hidden)cat3d.update(pose3d(pose,state,now,x-lastVaivenX,facing,look,visual,cat.dataset.running==='true'));
   lastVaivenX=x;
-  cat.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
+  applyLane(cat,laneVaiven,x,y,g);
   cat.dataset.sequence=String(state.serial);
   if(!bubble.hidden){
     const width=bubble.getBoundingClientRect().width;
@@ -499,19 +541,6 @@ function renderFendi() {
   }
   y-=hop(pose.kind,p,10*g.scale);
   if(motion.matches && !['enter','return'].includes(kind))x=g.left;
-  // Separación mínima para que no se apilen los sprites (glitch visual)
-  // -salvo durante el gag armado a propósito, donde el acercamiento es la gracia-.
-  if(!duet && kind!=='enter' && kind!=='return') {
-    for(const otherX of [lastVaivenX]) {
-      const minGap=(g.size+size)*.34;
-      const dx=otherX-x;
-      if(Math.abs(dx)<minGap)x-=(minGap-Math.abs(dx))/2*(dx>=0?1:-1);
-    }
-    // El empujón de separación no puede mandarla más allá de la puerta -sin
-    // esto, con otro gato pegado al borde izquierdo, el empujón la podía
-    // dejar caminando encima del logo-.
-    x=Math.max(g.left,Math.min(g.left+g.travel,x));
-  }
   const facing=kind==='return'?-1:fendiState.phase.direction||(kind==='poop'&&fendiState.x>.5?-1:(fendiState.phase.to<fendiState.phase.from?-1:1));
   catFendi.style.setProperty('--cat-facing',String(facing));
   const look=applyScrollLook(catFendi,x,kind,facing,g);
@@ -523,7 +552,7 @@ function renderFendi() {
   }
   if(!catFendi.hidden)fendi3d.update(pose3d(pose,fendiState,now,x-lastFendiX,facing,look,visual,catFendi.dataset.running==='true'));
   lastFendiX=x;
-  catFendi.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
+  applyLane(catFendi,laneFendi,x,y,g);
   if(!bubbleFendi.hidden){
     const width=bubbleFendi.getBoundingClientRect().width;
     const left=clamp(x+size/2-width/2,12,innerWidth-width-12);
