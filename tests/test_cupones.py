@@ -31,3 +31,21 @@ def test_consumir_reservados_marca_usado_una_sola_vez():
     assert [f["code"] for f in cupones.consumir_reservados(fake, "p1")] == ["TTRA-X"]
     assert cupones.consumir_reservados(fake, "p1") == []
     assert fake.table("codigos_descuento").select("*").execute().data[0]["usado_en"]
+
+
+def test_codigo_vencido_no_esta_disponible():
+    fake = FakeSupabaseClient()
+    fila = _codigo(fake, vence_en="2026-11-20T12:00:00+00:00")
+    assert cupones.vencido(fila)
+    assert not cupones.disponible(fake, fila)
+
+
+def test_codigo_con_vencimiento_futuro_o_sin_vencimiento_esta_disponible():
+    fake = FakeSupabaseClient()
+    assert cupones.disponible(fake, _codigo(fake, vence_en="2099-01-01T00:00:00Z"))
+    fake2 = FakeSupabaseClient()
+    assert cupones.disponible(fake2, _codigo(fake2))
+
+
+def test_vencimiento_ilegible_no_se_aplica():
+    assert cupones.vencido({"vence_en": "no-es-una-fecha"})
