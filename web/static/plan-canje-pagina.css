@@ -148,6 +148,14 @@ html[data-modo="classic"] .canje-page .ttra-canje-tabla tbody th { font: 700 cla
 html[data-modo="classic"] .canje-page .ttra-canje-tabla tbody td:last-child { font: 700 clamp(30px, 3.2vw, 44px)/1 var(--pz-font); letter-spacing: .01em; color: var(--pz-amber); }
 html[data-modo="classic"] .canje-page .ttra-canje-aviso strong { color: var(--pz-amber); }
 html[data-modo="classic"] .canje-page .ttra-canje-icono { stroke: var(--pz-amber); }
+/* Las dos condiciones que más se preguntan (no compro equipos / no doy vuelto): barra ámbar, fondo apenas teñido y texto a pleno. */
+html[data-modo="classic"] .canje-page .ttra-canje-reglas li.canje-regla-clave {
+  padding: 20px 16px; margin: 0;
+  background: color-mix(in srgb, var(--pz-amber) 10%, transparent);
+  box-shadow: inset 4px 0 0 var(--pz-amber);
+}
+html[data-modo="classic"] .canje-page .ttra-canje-reglas li.canje-regla-clave strong { color: var(--pz-amber); }
+html[data-modo="classic"] .canje-page .ttra-canje-reglas li.canje-regla-clave span { color: var(--pz-plate); }
 @media (max-width: 700px) {
   html[data-modo="classic"] .canje-page .ttra-canje-reglas strong { font-size: 19px; }
   html[data-modo="classic"] .canje-page .ttra-canje-tabla tbody th { font-size: 19px; }
