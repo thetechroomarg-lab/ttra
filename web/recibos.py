@@ -10,7 +10,9 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import CondPageBreak, Image, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from . import garantias, pagos_entrega
+from decimal import Decimal, InvalidOperation
+
+from . import garantias, pagos_entrega, saldo_favor
 
 _ZONA_ARGENTINA = timezone(timedelta(hours=-3))
 
@@ -150,6 +152,27 @@ def _beneficios_html(beneficios):
   </section>"""
 
 
+def lineas_saldo_favor(pedido):
+    """Saldo a favor usado en esta compra y el que le queda al cliente.
+
+    El cobro (`recibo_pago`) ya viene calculado sobre el total menos el saldo,
+    así que acá solo se muestra: lo aplicado, lo que se paga y lo que sobra.
+    """
+    pago = pedido.get("recibo_pago") or {}
+    lineas = []
+    try:
+        aplicado = Decimal(str(pago.get("saldo_favor_usd") or 0))
+        restante = Decimal(str(pedido.get("saldo_favor_restante_usd") or 0))
+    except InvalidOperation:
+        return []
+    if aplicado > 0:
+        lineas.append(f"Saldo a favor aplicado: -{saldo_favor.formatear(aplicado)}")
+        lineas.append(f"Total a pagar: {saldo_favor.formatear(pago.get('total_usd') or 0)}")
+    if restante > 0:
+        lineas.append(f"Te quedan {saldo_favor.formatear(restante)} a favor para tu próxima compra")
+    return lineas
+
+
 def html_recibo(cliente, pedido, logo_url="", beneficios=None):
     # El logo del mail se dibuja con HTML (sin imágenes externas): muchos
     # clientes de correo bloquean imágenes y quedaría un recuadro roto.
@@ -195,7 +218,7 @@ def html_recibo(cliente, pedido, logo_url="", beneficios=None):
   </table>
   {descuento_html}
   <p style='font-size:20px;font-weight:700;text-align:right'>{'Total base' if pedido.get('recibo_pago') else 'Total'}: {_formatear_usd(pedido.get('total_usd'))}</p>
-  {''.join('<p style="margin:8px 0">' + html.escape(linea) + '</p>' for linea in pagos_entrega.lineas_recibo(pedido))}
+  {''.join('<p style="margin:8px 0">' + html.escape(linea) + '</p>' for linea in lineas_saldo_favor(pedido) + pagos_entrega.lineas_recibo(pedido))}
   <section style='border-top:1px solid #ddd;margin-top:24px;padding-top:18px'><h2 style='font-size:17px;margin:0'>Garantía de tu compra</h2>
     <p style='font-size:13px;color:#555;margin:6px 0 0'>Estas son las condiciones de garantía de los productos que compraste.</p>
     {garantias_html}
@@ -426,7 +449,7 @@ def pdf_recibo(cliente, pedido, fotos=None):
     if descuento:
         elementos.append(Paragraph(f"Descuentos aplicados: -{_formatear_usd(descuento)}", normal))
     elementos.append(Paragraph(f"<b>{'Total base' if pedido.get('recibo_pago') else 'Total'}: {_formatear_usd(pedido.get('total_usd'))}</b>", normal))
-    elementos.extend(Paragraph(html.escape(linea), normal) for linea in pagos_entrega.lineas_recibo(pedido))
+    elementos.extend(Paragraph(html.escape(linea), normal) for linea in lineas_saldo_favor(pedido) + pagos_entrega.lineas_recibo(pedido))
     elementos.extend(_garantias_pdf(pedido.get("detalle"), normal))
     elementos.extend([Spacer(1, 22), _cierre_pdf(normal), Spacer(1, 10),
         Paragraph("Documento no válido como factura.", ParagraphStyle("Leyenda", parent=normal, fontSize=8, textColor=colors.HexColor("#888888"))),
