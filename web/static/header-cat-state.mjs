@@ -39,13 +39,13 @@ export function interact(s,now,pointer='mouse',detail=1,allowIntroduce=true) {
 export function dismissIntroduction(s,now) {
   if(s.phase.kind==='introduce')setPhase(s,'idle',now,1600,s.x);
 }
-function next(s,now,mobile,travel) {
+function next(s,now,mobile,travel,sc=1) {
   if(!s.active){setPhase(s,'off',now,0);return;}
   if(s.phase.kind==='poop') {
     const waste=s.waste.find(w=>w.id===s.phase.serial);
     if(waste){
       const direction=s.x<=.5?1:-1;
-      const to=clamp(s.x+direction*Math.min(1,(mobile?24:40)/Math.max(1,travel)));
+      const to=clamp(s.x+direction*Math.min(1,(mobile?24:40)*sc/Math.max(1,travel)));
       setPhase(s,'bury-walk',now,1000,travel>0?to:s.x);
       s.phase.wasteId=waste.id;s.phase.direction=direction;return;
     }
@@ -60,19 +60,19 @@ function next(s,now,mobile,travel) {
   // Agazaparse siempre termina en el salto hacia donde estaba mirando.
   if(s.phase.kind==='crouch') {
     const direction=s.phase.direction||1;
-    const to=clamp(s.x+direction*Math.min(.2,(mobile?20:64)/Math.max(1,travel)));
+    const to=clamp(s.x+direction*Math.min(.2,(mobile?20:64)*sc/Math.max(1,travel)));
     setPhase(s,'pounce',now,650,travel>2?to:s.x);s.phase.direction=direction;return;
   }
   if(mobile && now>=s.sleepAt){setPhase(s,'sleep',now,3600000);return;}
   if(now>=s.nextBathroom){const kind=s.bathroom;s.bathroom=kind==='pee'?'poop':'pee';s.nextBathroom=now+28000;setPhase(s,kind,now,2800);return;}
   const r=random(s);
   if(r<.5 && travel>2) {
-    const step=Math.min(1,(mobile?24:130)/travel);
+    const step=Math.min(1,(mobile?24:130)*sc/travel);
     let to=clamp(s.x+(random(s)>.5?1:-1)*step*(.4+random(s)*.6));
     if(Math.abs(to-s.x)<.02)to=clamp(s.x+(s.x<.5?step:-step));
-    setPhase(s,'walk',now,Math.max(900,Math.abs(to-s.x)*travel/(mobile?20:42)*1000),to);
+    setPhase(s,'walk',now,Math.max(900,Math.abs(to-s.x)*travel/((mobile?20:42)*sc)*1000),to);
   } else if(!mobile && r>.90) {
-    setPhase(s,'jump',now,850,clamp(s.x+(s.x<.5?1:-1)*Math.min(.12,28/Math.max(1,travel))));
+    setPhase(s,'jump',now,850,clamp(s.x+(s.x<.5?1:-1)*Math.min(.12,28*sc/Math.max(1,travel))));
   } else if(r<.60) setPhase(s,'idle',now,2400+random(s)*2200);
   else if(r<.68) setPhase(s,'scratch',now,2400+random(s)*2200);
   else if(r<.74) setPhase(s,'lick',now,2400+random(s)*2200);
@@ -87,7 +87,7 @@ function next(s,now,mobile,travel) {
   else if(r<.88) {setPhase(s,'crouch',now,1400);s.phase.direction=s.x<.5?1:-1;}
   else {
     const to=s.x<.5?1:0;
-    setPhase(s,'zoom',now,Math.max(700,Math.abs(to-s.x)*travel/160*1000),to);
+    setPhase(s,'zoom',now,Math.max(700,Math.abs(to-s.x)*travel/(160*sc)*1000),to);
   }
 }
 // Fases que agregan las travesuras (solas o del juego del punto rojo, ver
@@ -102,13 +102,13 @@ function deposit(s,p) {
     offset:p.kind==='poop'&&p.to>.5?.82:.18,
     expires:p.kind==='poop'?p.start+p.duration+4800:created+5000});
 }
-export function advance(s,now,{mobile=false,travel=500}={}) {
+export function advance(s,now,{mobile=false,travel=500,scale=1}={}) {
   let p=s.phase;
   // Catch up the same seeded sequence after background tabs and ordinary reloads.
   for(let i=0;p.kind!=='off' && now>=p.start+p.duration && i<256;i++) {
     deposit(s,p);s.x=p.to;
     if((p.kind==='introduce'||p.kind==='sleep'&&mobile) && s.active){p.start=now;p.duration=3600000;break;}
-    next(s,p.start+p.duration,mobile,travel);p=s.phase;
+    next(s,p.start+p.duration,mobile,travel,scale);p=s.phase;
   }
   const progress=p.duration?clamp((now-p.start)/p.duration):0;
   s.x=mix(p.from,p.to,progress);
