@@ -22,6 +22,7 @@ resto de la app) — se loguea un warning una sola vez.
 import html
 import logging
 import os
+import re
 from urllib.parse import urlparse
 
 from web import cadetes
@@ -114,12 +115,35 @@ def _enviar_mail_cadete(client, titulo, html_cuerpo, slug=None):
         logger.exception("Error inesperado enviando mail al cadete")
 
 
-def _notificar_mail_cadete(client, titulo, cuerpo, slug=None):
-    _enviar_mail_cadete(
-        client, titulo,
-        f"<p>{html.escape(str(cuerpo))}</p><p><a href='https://thetechroomarg.com/admin/cadete'>Ver en el panel</a></p>",
-        slug,
+URL_PANEL_CADETE = "https://thetechroomarg.com/admin/cadete"
+
+
+def _html_mail_panel(etiqueta, texto, boton="Abrir panel", url=URL_PANEL_CADETE):
+    """Mail con el mismo lenguaje visual del panel (oscuro, tarjeta, acento rojo).
+    Solo lo esencial: de qué se trata, el dato y un botón. Estilos inline y
+    tablas porque los clientes de mail no respetan CSS externo."""
+    etiqueta = html.escape(re.sub(r"^[^\w]+", "", str(etiqueta)).strip())
+    texto = html.escape(str(texto))
+    return (
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#111318" '
+        'style="background:#111318;padding:24px 12px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Arial,sans-serif;">'
+        '<tr><td align="center">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#1b1e24" '
+        'style="max-width:420px;background:#1b1e24;border:1px solid #2a2e37;border-radius:16px;">'
+        '<tr><td style="padding:24px 24px 8px;">'
+        '<span style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#6f7683;">THE TECH ROOM ARG<span style="color:#c8102e;">.</span></span>'
+        '</td></tr>'
+        f'<tr><td style="padding:12px 24px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#aab0bd;">{etiqueta}</td></tr>'
+        f'<tr><td style="padding:6px 24px 0;font-size:22px;line-height:1.3;font-weight:700;color:#f2f4f8;">{texto}</td></tr>'
+        '<tr><td style="padding:24px;">'
+        f'<a href="{html.escape(url)}" style="display:inline-block;background:#c8102e;color:#ffffff;text-decoration:none;'
+        f'font-size:14px;font-weight:700;padding:12px 20px;border-radius:12px;">{html.escape(boton)}</a>'
+        '</td></tr></table></td></tr></table>'
     )
+
+
+def _notificar_mail_cadete(client, titulo, cuerpo, slug=None):
+    _enviar_mail_cadete(client, titulo, _html_mail_panel(titulo, cuerpo), slug)
 
 
 def enviar_mail_pago_cadete(client, monto, movimientos, saldo_a_favor=0, slug=None, saldo_restante=0):
@@ -132,7 +156,7 @@ def enviar_mail_pago_cadete(client, monto, movimientos, saldo_a_favor=0, slug=No
         detalle += f" Te quedan {pesos(saldo_restante)} pendientes."
     _enviar_mail_cadete(
         client, "💸 Te hicieron un pago",
-        f"<p>{html.escape(detalle)}</p><p><a href='https://thetechroomarg.com/admin/cadete'>Ver en el panel</a></p>",
+        _html_mail_panel("Pago", detalle),
         slug,
     )
 
