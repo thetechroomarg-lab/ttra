@@ -70,6 +70,14 @@
 
   <div class="catalog-filter-header"><span id="contador-productos" aria-live="polite">Cargando productos…</span></div>
   <div class="catalog-search-wrap" hidden><label for="catalog-search">Buscar productos</label><input id="catalog-search" type="search" placeholder="Buscá por producto o marca" autocomplete="off"><button type="button" id="compartir-busqueda">Compartir búsqueda</button></div>
+  <script>
+    // Llegar con ?buscar=1 (botón Buscar del dock) o ?q=: la barra aparece y toma el foco ya en el primer
+    // render, sin esperar a que baje el catálogo.
+    if (/[?&](buscar=1|q=)/.test(location.search)) {
+      document.querySelector('.catalog-search-wrap').hidden = false;
+      document.getElementById('catalog-search').focus({preventScroll: true});
+    }
+  </script>
   <div class="catalog-brand-filter" id="catalog-filters">
     <div class="catalog-filter-field" id="tipo-filter-field" hidden><label for="tipo-filter">Tipo</label><select id="tipo-filter"><option value="">Todos</option><option value="Notebook">Notebooks</option><option value="Mac">Macbooks</option></select></div>
     <div class="catalog-filter-field" id="marca-filter-field"><label for="marca-filter">Filtrar por marca</label><select id="marca-filter"><option value="">Todas las marcas</option></select></div>
