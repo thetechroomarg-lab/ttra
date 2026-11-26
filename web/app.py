@@ -13,7 +13,7 @@ import unicodedata
 import uuid
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Literal
@@ -29,7 +29,7 @@ from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from web.historial_importado import tarjeta_importada
-from web import listado_whatsapp, cadetes, canjes, paginas_canjes, pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, slugs
+from web import listado_whatsapp, cadetes, canjes, paginas_canjes, pagos_entrega, buscador, catalogo, cuentas, cupones, domicilios, entregas, fidelidad, interacciones, mail_cuenta, mail_pedido, mayoristas, pedidos, promo_cargador, push_cadete, recibos, recibos_manuales, referidos, saldo_cadete, saldo_favor, slugs
 from web.login_rate_limit import LoginAttemptStore
 from web.ui_helpers import _clientes_admin_activo, admin_session_version
 from web.email_util import EnvioEmailError, enviar_email
@@ -1376,6 +1376,33 @@ def admin_clientes_actualizar_mayorista(
     return {"ok": True, "tipo_cliente": tipo_cliente}
 
 
+def _saldo_favor_del_pedido(client, pedido):
+    """Saldo a favor (USD, Decimal) que se descuenta en este pedido.
+
+    Una vez registrado el cobro queda fijo en `recibo_pago`; antes se calcula
+    con lo que tenga el cliente, hasta cubrir el total. Si la tabla de saldos
+    falla, la entrega sigue sin saldo en vez de frenarse.
+    """
+    guardado = pedido.get("recibo_pago")
+    if isinstance(guardado, dict):
+        try:
+            return Decimal(str(guardado.get("saldo_favor_usd") or 0))
+        except InvalidOperation:
+            return Decimal(0)
+    if pedido.get("recibo_enviado_en") or not pedido.get("cliente_id"):
+        return Decimal(0)
+    try:
+        return saldo_favor.aplicable(client, pedido["cliente_id"], pedido["total_usd"])
+    except Exception:
+        logger.exception("No se pudo leer el saldo a favor del cliente %s", pedido.get("cliente_id"))
+        return Decimal(0)
+
+
+def _numero_json(valor):
+    valor = Decimal(str(valor))
+    return int(valor) if valor == valor.to_integral_value() else float(valor)
+
+
 def _beneficios_para_recibo(client, cliente, request, primer_envio):
     """Sellos (contando esta compra) y link de referido para el mail del recibo.
 
@@ -1419,15 +1446,18 @@ def admin_pedido_opciones_pago(pedido_id: str, request: Request):
     clientes = client.table("clientes").select("*").eq("id", pedido.get("cliente_id")).execute().data
     cliente = clientes[0] if clientes else {}
     guardado = pedido.get("recibo_pago")
-    if guardado and pagos_entrega.numero(guardado["total_usd"]) != pagos_entrega.numero(pedido["total_usd"]):
+    aplicado = _saldo_favor_del_pedido(client, pedido)
+    a_cobrar = Decimal(str(pedido["total_usd"])) - aplicado
+    if guardado and pagos_entrega.numero(guardado["total_usd"]) != pagos_entrega.numero(a_cobrar):
         raise HTTPException(status_code=409, detail="El pedido cambió después de registrar el cobro. Revisá el pedido antes de enviar.")
     cotizacion = float(guardado["cotizacion"]) if guardado else _cargar_cotizacion_catalogo()
-    return JSONResponse({"total_usd": pedido["total_usd"], "cotizacion": cotizacion,
+    return JSONResponse({"total_usd": _numero_json(a_cobrar), "cotizacion": cotizacion,
+            "total_pedido_usd": pedido["total_usd"], "saldo_favor_usd": _numero_json(aplicado),
             "detalle": [{k: item.get(k) for k in ("nombre", "color", "cantidad", "usd_unitario")} for item in pedido["detalle"]],
             "version_precio": precios_recibo.version(pedido),
             "precio_editable": precios_recibo.editable(pedido),
             "cliente": " ".join(filter(None, [cliente.get("nombre"), cliente.get("apellido")])),
-            "opciones": pagos_entrega.opciones(pedido["total_usd"], cotizacion),
+            "opciones": pagos_entrega.opciones(a_cobrar, cotizacion),
             "pago_guardado": pedido.get("recibo_pago")}, headers={"Cache-Control": "no-store"})
 
 
@@ -1479,18 +1509,25 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     cliente = filas_cliente[0]
     formulario = await request.form() if request.headers.get("content-type", "").startswith("multipart/") else {}
     pago_recibo = pedido.get("recibo_pago")
+    # El saldo a favor del cliente se descuenta del total; recién se gasta
+    # (consumir) cuando el recibo sale, más abajo.
+    saldo_aplicado = _saldo_favor_del_pedido(client, pedido)
+    a_cobrar = Decimal(str(pedido["total_usd"])) - saldo_aplicado
     if "pagos" in formulario and not pedido.get("recibo_enviado_en"):
         try:
             entrada_pago = json.loads(formulario["pagos"])
             cotizacion = pago_recibo["cotizacion"] if pago_recibo else _cargar_cotizacion_catalogo()
             if not isinstance(entrada_pago, dict):
                 raise ValueError("Seleccioná una forma de pago.")
-            total_esperado = pago_recibo["total_usd"] if pago_recibo else entrada_pago.get("total_usd", pedido["total_usd"])
-            if pagos_entrega.numero(total_esperado) != pagos_entrega.numero(pedido["total_usd"]):
+            total_esperado = pago_recibo["total_usd"] if pago_recibo else entrada_pago.get("total_usd", a_cobrar)
+            if pagos_entrega.numero(total_esperado) != pagos_entrega.numero(a_cobrar):
                 return JSONResponse({"error": "Cambió el total del pedido. Cerrá la ventana y revisá los importes antes de enviar."}, status_code=409)
             if pagos_entrega.numero(entrada_pago.get("cotizacion")) != pagos_entrega.numero(cotizacion):
                 return JSONResponse({"error": "Cambió la cotización. Cerrá la ventana y volvé a abrirla para revisar los importes."}, status_code=409)
-            pago_recibo = pagos_entrega.validar(pedido["total_usd"], cotizacion, entrada_pago)
+            pago_recibo = pagos_entrega.validar(a_cobrar, cotizacion, entrada_pago)
+            if saldo_aplicado > 0:
+                pago_recibo = {**pago_recibo, "saldo_favor_usd": pagos_entrega.texto(saldo_aplicado),
+                               "total_pedido_usd": pagos_entrega.texto(pagos_entrega.numero(pedido["total_usd"]))}
         except (ValueError, TypeError):
             return JSONResponse({"error": "Revisá las formas de pago y sus importes: deben cubrir exactamente el total."}, status_code=400)
     recibo_id = pedido.get("recibo_id") or _nuevo_recibo_id(client)
@@ -1499,9 +1536,18 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
     # Solo cuenta como de Alejo si no hay sesión de admin: Vlad puede tener
     # las dos abiertas en el mismo navegador.
     enviado_por_cadete = _quien_opera(request) not in (None, "Vlad")
+    primer_envio_recibo = not pedido.get("recibo_enviado_en")
+    saldo_usado = Decimal(str((pago_recibo or {}).get("saldo_favor_usd") or 0))
+    saldo_restante = Decimal(0)
+    if pedido.get("cliente_id"):
+        try:
+            saldo_restante = saldo_favor.saldo(client, pedido["cliente_id"]) - (saldo_usado if primer_envio_recibo else 0)
+        except Exception:
+            logger.exception("No se pudo leer el saldo a favor del cliente %s", pedido.get("cliente_id"))
     pedido_para_mail = {
         **pedido, "recibo_id": recibo_id, "recibo_emitido_en": emitido_en,
         "entregado_por_cadete": enviado_por_cadete, "recibo_pago": pago_recibo,
+        "saldo_favor_restante_usd": str(max(saldo_restante, Decimal(0))),
     }
     try:
         # Guardar antes del correo: si el proveedor falla, el cobro sigue disponible.
@@ -1570,6 +1616,11 @@ async def admin_pedido_enviar_recibo(pedido_id: str, request: Request):
             stock_usados.dar_de_baja(pedido.get("detalle"), PRODUCTOS_PATH)
         except Exception:
             logger.exception("No se pudo dar de baja el usado del pedido %s", pedido_id)
+        try:
+            # Igual que los descuentos: el saldo a favor se gasta con el recibo enviado.
+            saldo_favor.consumir(client, pedido.get("cliente_id"), pedido_id, saldo_usado)
+        except Exception:
+            logger.exception("No se pudo descontar el saldo a favor del pedido %s", pedido_id)
         # Regla de oro: el descuento usado en esta venta se le resta al
         # cliente recién ahora, con el recibo enviado.
         try:
@@ -2020,6 +2071,11 @@ _ADMIN_CLIENTES_ESTILO = """
   .subseccion { margin-top:22px; }
   .subseccion h2 { color:var(--op-text); font-size:var(--op-fs-title); margin:0 0 10px; }
   .subseccion p { margin:0 0 12px; color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .form-saldo-favor { display:flex; flex-wrap:wrap; gap:10px 12px; align-items:flex-end; margin:0 0 14px; }
+  .form-saldo-favor label { display:grid; gap:4px; color:var(--op-text-dim); font-size:var(--op-fs-small); }
+  .form-saldo-favor input { min-height:44px; }
+  .form-saldo-favor #saldo-favor-motivo { min-width:min(360px, 100%); }
+  .form-saldo-favor button { min-height:44px; }
   .acciones-mailing { display:flex; align-items:center; gap:10px; margin-top:16px; flex-wrap:wrap; }
   .acciones-mailing button { border:none; background:var(--op-accent); color:#fff; border-radius:var(--op-r-sm);
                              padding:10px 14px; cursor:pointer; font-weight:700;
@@ -4521,6 +4577,34 @@ def admin_clientes_historial(cliente_id: str, request: Request):
         filas_consultados_html = "".join(_fila_consultado(fila) for fila in ranking_consultados)
 
     email_cliente = html.escape(cliente.get("email", "") or "")
+    try:
+        saldo_actual = saldo_favor.saldo(client, cliente_id)
+        filas_saldo = saldo_favor.movimientos(client, cliente_id)[:10]
+    except Exception:
+        logger.exception("No se pudo leer el saldo a favor del cliente %s", cliente_id)
+        saldo_actual, filas_saldo = None, []
+    movimientos_saldo_html = "".join(
+        f'<tr><td>{html.escape(" ".join(_formatear_fecha_ar(m.get("creado_en"))[::2]))}</td>'
+        f'<td>{"+" if float(m.get("monto_usd") or 0) > 0 else "−"} {saldo_favor.formatear(abs(float(m.get("monto_usd") or 0)))}</td>'
+        f'<td>{html.escape(m.get("motivo") or "")}</td></tr>'
+        for m in filas_saldo
+    )
+    saldo_html = (
+        f'''<section class="subseccion" id="saldo-favor">
+    <h2>Saldo a favor</h2>
+    <p>Si el cliente pagó de más, anotalo acá: queda a su favor hasta su próxima compra y se descuenta solo cuando le enviás el recibo.</p>
+    <p><strong id="saldo-favor-actual">{saldo_favor.formatear(saldo_actual)}</strong></p>
+    <form id="form-saldo-favor" class="form-saldo-favor">
+      <label>Monto en USD <input type="number" id="saldo-favor-monto" step="0.01" required></label>
+      <label>Motivo <input type="text" id="saldo-favor-motivo" maxlength="200" required placeholder="Ej: pagó de más en la compra del 12/12"></label>
+      <button type="submit">Anotar saldo</button>
+      <p id="saldo-favor-estado" role="status"></p>
+    </form>
+    <div class="tabla-scroll"><table><thead><tr><th>Fecha</th><th>Monto</th><th>Motivo</th></tr></thead><tbody>{movimientos_saldo_html}</tbody></table></div>
+    <p class="scroll-hint">Un monto negativo corrige un saldo cargado de más.</p>
+  </section>'''
+        if saldo_actual is not None else ""
+    )
 
     return f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 <title>Historial — {html.escape(nombre_cliente)}</title>{_ADMIN_CLIENTES_PWA_HEAD}{_ADMIN_CLIENTES_ESTILO}</head><body>
@@ -4529,6 +4613,7 @@ def admin_clientes_historial(cliente_id: str, request: Request):
     <h1>Historial de {html.escape(nombre_cliente) or "cliente"}</h1>
     <a class="volver" href="/admin/clientes/lista">← Volver</a>
   </div>
+  {saldo_html}
   <section class="subseccion">
     <h2>Pedidos confirmados</h2>
     <p>Acá ves todo lo que el cliente cargó al carrito y confirmó.</p>
@@ -4567,6 +4652,27 @@ const checksMailing = [...document.querySelectorAll(".chk-mailing")];
 const emailCliente = {_json_para_script(cliente.get("email", "") or "")};
 const nombreCliente = {_json_para_script(nombre_cliente or "cliente")};
 const clienteId = {_json_para_script(cliente.get("id", ""))};
+
+const formSaldo = document.getElementById("form-saldo-favor");
+if (formSaldo) {{
+  formSaldo.addEventListener("submit", async (e) => {{
+    e.preventDefault();
+    const estado = document.getElementById("saldo-favor-estado");
+    estado.textContent = "Guardando…";
+    try {{
+      const r = await fetch(`/admin/clientes/${{encodeURIComponent(clienteId)}}/saldo-favor`, {{
+        method: "POST", headers: {{"Content-Type": "application/json"}},
+        body: JSON.stringify({{monto_usd: Number(document.getElementById("saldo-favor-monto").value),
+                              motivo: document.getElementById("saldo-favor-motivo").value}})
+      }});
+      const d = await r.json().catch(() => ({{}}));
+      if (!r.ok) throw new Error(d.detail || "No se pudo guardar el saldo.");
+      location.reload();
+    }} catch (err) {{
+      estado.textContent = err.message;
+    }}
+  }});
+}}
 
 function filasSeleccionadas() {{
   return checksMailing
@@ -4902,9 +5008,45 @@ def api_me(request: Request):
                 descuento_reservado_usd += float(fila.get("tope_total_usd") or fila.get("descuento_usd") or 0)
     except Exception:
         logger.exception("No se pudo resolver el descuento disponible")
+    saldo_a_favor = 0
+    try:
+        saldo_a_favor = _numero_json(saldo_favor.saldo(get_client(), cliente["id"]))
+    except Exception:
+        logger.exception("No se pudo leer el saldo a favor")
     return {**cliente, "tipo_cliente": tipo_cliente, "modo_precio": tipo_cliente,
+            "saldo_favor_usd": saldo_a_favor,
             "referidos": resumen_referidos, "codigo_descuento_disponible": codigo_disponible,
             "descuento_reservado_usd": round(descuento_reservado_usd, 2)}
+
+
+class SaldoFavorIn(BaseModel):
+    monto_usd: float
+    motivo: str
+
+
+@app.get("/admin/clientes/{cliente_id}/saldo-favor")
+def admin_saldo_favor(cliente_id: str, request: Request):
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    return {"saldo_usd": _numero_json(saldo_favor.saldo(client, cliente_id)),
+            "movimientos": [{"monto_usd": float(m.get("monto_usd") or 0), "motivo": m.get("motivo"),
+                             "creado_en": m.get("creado_en")} for m in saldo_favor.movimientos(client, cliente_id)[:20]]}
+
+
+@app.post("/admin/clientes/{cliente_id}/saldo-favor")
+def admin_cargar_saldo_favor(cliente_id: str, entrada: SaldoFavorIn, request: Request):
+    """Vlad anota que el cliente pagó de más (o corrige un saldo): queda a favor hasta su próxima compra."""
+    if not _clientes_admin_activo(request):
+        raise HTTPException(status_code=401, detail="Sesión de admin requerida")
+    client = get_client()
+    if not client.table("clientes").select("id").eq("id", cliente_id).execute().data:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    try:
+        nuevo = saldo_favor.acreditar(client, cliente_id, entrada.monto_usd, entrada.motivo, por="Vlad")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True, "saldo_usd": _numero_json(nuevo)}
 
 
 @app.post("/api/me/referido")
@@ -6460,6 +6602,12 @@ async def api_canje_solicitar(request: Request):
     equipo = canjes.buscar_equipo(str(formulario.get("equipo") or ""))
     if equipo is None:
         return JSONResponse({"error": "Elegí el modelo y la capacidad de tu iPhone"}, status_code=400)
+    # Caja y cable se declaran siempre (cada faltante baja el valor US$ 15): sin
+    # el dato no se calcula nada, así un formulario viejo no pasa de largo.
+    caja, cable = str(formulario.get("con_caja") or ""), str(formulario.get("con_cable") or "")
+    if caja not in ("0", "1") or cable not in ("0", "1"):
+        return JSONResponse({"error": "Indicá si tenés la caja original y si entregás el cable"}, status_code=400)
+    con_caja, con_cable = caja == "1", cable == "1"
     fotos = [f for f in formulario.getlist("fotos") if getattr(f, "filename", None)]
     if len(fotos) != _CANJE_FOTOS:
         return JSONResponse({"error": f"Necesito las {_CANJE_FOTOS} fotos: frente, reverso, lados, bordes y las capturas de batería y de piezas y servicio"},
@@ -6491,7 +6639,7 @@ async def api_canje_solicitar(request: Request):
         client.storage.from_(canjes.BUCKET).upload(ruta, contenido, {"content-type": "image/jpeg"})
         rutas.append(ruta)
         adjuntos.append({"filename": nombre, "content": contenido})
-    canje = canjes.crear_solicitud(client, cliente_id, equipo, rutas, canje_id=canje_id)
+    canje = canjes.crear_solicitud(client, cliente_id, equipo, rutas, canje_id=canje_id, con_caja=con_caja, con_cable=con_cable)
     try:
         enviar_email(
             _CANJE_AVISO_EMAIL, canjes.asunto_aviso(canje, cliente),
@@ -6503,7 +6651,8 @@ async def api_canje_solicitar(request: Request):
         logger.exception("No se pudo enviar el aviso del canje %s", canje_id)
     mensaje = (f"Hola Vlad, soy {cliente.get('nombre') or ''} {cliente.get('apellido') or ''}. "
                f"Te mandé las fotos de mi {equipo['modelo']} {equipo['capacidad']} para el Plan Canje "
-               f"(US$ {equipo['valor_usd']}). ¿Lo podés revisar?").replace("  ", " ")
+               f"(US$ {canje['valor_usd']}"
+               f"{', ' + canjes.texto_accesorios(canje) if canjes.texto_accesorios(canje) else ''}). ¿Lo podés revisar?").replace("  ", " ")
     return {"ok": True, "id": canje_id, "whatsapp_url": f"{WHATSAPP}?text={quote(mensaje)}"}
 
 

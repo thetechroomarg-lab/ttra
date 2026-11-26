@@ -14,6 +14,13 @@
   const estadoPrecios = document.getElementById('pago-precios-estado');
   let preciosPendientes = false, guardandoPrecios = false, camaraAbierta = false, stream = null, solicitudCamara = 0, timerPrecio = null;
   let datos = null, origen = null, ocupado = false, cargandoFotos = false, fotos = [], consulta = 0, saldoAutomatico = null;
+  function mostrarSaldoFavor(datos) {
+    const nota = document.getElementById('pago-saldo-favor');
+    const saldo = Number(datos.saldo_favor_usd) || 0;
+    nota.hidden = saldo <= 0;
+    if (saldo > 0) nota.textContent = `El cliente tiene saldo a favor: se descuentan ${formato(saldo)} del pedido (${formato(datos.total_pedido_usd)}). El total a cobrar es el de arriba.`;
+  }
+
   const formato = (n, moneda = 'USD') => `${({USD:'U$D', ARS:'$', USDT:'USDT'})[moneda]} ${Number(n).toLocaleString('es-AR', {maximumFractionDigits:2})}`;
   const mostrarError = (mensaje) => { error.textContent = mensaje; error.hidden = !mensaje; };
   const elegidos = () => [...metodos.querySelectorAll('input[type=checkbox]:checked')].map(c => ({
@@ -136,6 +143,7 @@
       if (!r.ok) throw new Error(respuesta.detail || 'No se pudieron guardar los precios.');
       datos = respuesta;
       document.getElementById('pago-total').textContent = formato(datos.total_usd);
+      mostrarSaldoFavor(datos);
       document.getElementById('pago-cotizacion').textContent = `Cotización: ${formato(datos.cotizacion,'ARS')} por USD. Los importes incluyen el ajuste de cada método.`;
       preciosPendientes = false;
       renderMetodos();
@@ -230,6 +238,7 @@
       if (!r.ok) throw new Error(respuesta.detail || respuesta.error || 'No se pudieron cargar los importes.');
       datos = respuesta; document.getElementById('pago-cliente').textContent = datos.cliente;
       document.getElementById('pago-total').textContent = formato(datos.total_usd);
+      mostrarSaldoFavor(datos);
       document.getElementById('pago-cotizacion').textContent = `Cotización: ${formato(datos.cotizacion,'ARS')} por USD. Los importes incluyen el ajuste de cada método.`;
       renderPrecios(); renderMetodos(); contenido.hidden = false;
       metodos.querySelector('input')?.focus();

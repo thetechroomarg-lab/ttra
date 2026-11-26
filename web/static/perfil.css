@@ -211,3 +211,7 @@ html #panel-perfil #btn-ver-mi-red { margin-top: 8px; }
 .red-nodo-ganancia {
   color: var(--cl-verde-ok, #34d399); font: 700 13px/1 var(--pz-font, inherit); letter-spacing: .04em; text-transform: none;
 }
+
+#seccion-saldo-favor > h2 { margin-top: 16px; }
+.saldo-favor-monto { margin: 0 0 6px; font: 700 28px/1.1 var(--rc-font); color: var(--rc-green-bright); }
+.saldo-favor-ayuda { margin: 0; font-size: 13px; line-height: 1.5; color: var(--rc-green-dim); }
