@@ -106,7 +106,7 @@ def test_solicitud_guarda_fotos_manda_mail_con_adjuntos_y_arma_whatsapp(monkeypa
     assert r.json()["whatsapp_url"].startswith("https://wa.me/543512145217?text=")
     canje = fake.table("canjes").select("*").execute().data[0]
     assert canje["cliente_id"] == cliente_id and canje["estado"] == "pendiente"
-    assert canje["valor_usd"] == 475 and len(canje["fotos"]) == len(canjes.ROTULOS_FOTOS)
+    assert canje["valor_usd"] == 430 and len(canje["fotos"]) == len(canjes.ROTULOS_FOTOS)
     assert set(canje["fotos"]) == set(fake.storage.guardados)
     assert len(correos) == 1 and len(correos[0]["adjuntos"]) == len(canjes.ROTULOS_FOTOS)
     assert "iPhone 15 Pro 128 GB" in correos[0]["asunto"]
@@ -147,11 +147,11 @@ def test_aprobar_crea_un_codigo_de_una_sola_vez_por_el_valor_de_la_tabla(monkeyp
     _enviar(c, "iphone-15-128gb")
     canje = fake.table("canjes").select("*").execute().data[0]
     r = _admin().post(f"/admin/canjes/{canje['id']}/aprobar")
-    assert r.status_code == 200 and r.json()["valor_usd"] == 360
+    assert r.status_code == 200 and r.json()["valor_usd"] == 340
     codigo = r.json()["codigo"]
     fila = fake.table("codigos_descuento").select("*").eq("code", codigo).execute().data[0]
     assert fila["cliente_id"] == cliente_id and fila["activo"] and not fila.get("usado_en")
-    assert fila["tope_total_usd"] == 360 and fila["productos"] == []
+    assert fila["tope_total_usd"] == 340 and fila["productos"] == []
     assert correos[-1]["para"] == "juan@x.com" and codigo in correos[-1]["html"]
     # Una segunda aprobación no emite otro código.
     assert _admin().post(f"/admin/canjes/{canje['id']}/aprobar").status_code == 409
@@ -168,7 +168,7 @@ def test_el_codigo_de_canje_descuenta_el_valor_de_la_tabla_en_el_carrito(monkeyp
     codigo = _admin().post(f"/admin/canjes/{canje['id']}/aprobar").json()["codigo"]
     assert c.get("/api/me").json()["codigo_descuento_disponible"] == codigo
     r = c.post("/api/descuentos/validar", json={"codigo": codigo, "items": [{"nombre": "iPhone 17", "cantidad": 1}]})
-    assert r.status_code == 200 and r.json()["descuento"]["usd"] == 360
+    assert r.status_code == 200 and r.json()["descuento"]["usd"] == 340
     # El carrito explica de dónde sale el descuento: el iPhone en parte de pago.
     assert r.json()["canje_equipo"] == "iPhone 15 128 GB"
 
@@ -287,9 +287,9 @@ def test_solicitud_de_2tb_aprueba_con_el_valor_de_512gb(monkeypatch):
     assert _enviar(c, "iphone-17-pro-max-2tb").status_code == 201
     assert "precio de 512 GB" in correos[0]["html"]
     canje = fake.table("canjes").select("*").execute().data[0]
-    assert canje["capacidad"] == "2 TB" and canje["valor_usd"] == 1050
+    assert canje["capacidad"] == "2 TB" and canje["valor_usd"] == 910
     assert "precio de 512 GB" in _admin().get("/admin/canjes?fragmento=1").text
-    assert _admin().post(f"/admin/canjes/{canje['id']}/aprobar").json()["valor_usd"] == 1050
+    assert _admin().post(f"/admin/canjes/{canje['id']}/aprobar").json()["valor_usd"] == 910
 
 
 # ---- Publicar un canje aprobado como usado en la tienda ----
@@ -410,7 +410,7 @@ def test_cada_unidad_del_mismo_modelo_es_su_propia_card_con_su_precio(monkeypatc
 def test_sin_caja_o_sin_cable_se_toma_15_dolares_menos_por_cada_faltante(monkeypatch):
     fake, correos = _entorno(monkeypatch)
     c, _ = _cliente_logueado(fake)
-    for caja, cable, esperado in (("1", "1", 360), ("0", "1", 345), ("1", "0", 345), ("0", "0", 330)):
+    for caja, cable, esperado in (("1", "1", 340), ("0", "1", 325), ("1", "0", 325), ("0", "0", 310)):
         assert _enviar(c, "iphone-15-128gb", caja=caja, cable=cable).status_code == 201
         assert fake.table("canjes").select("*").execute().data[-1]["valor_usd"] == esperado
         # Las solicitudes abiertas tienen tope: se liberan para la próxima vuelta.
