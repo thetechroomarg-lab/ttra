@@ -3,7 +3,7 @@
     "id": "iphone-15-128gb",
     "modelo": "iPhone 15",
     "capacidad": "128 GB",
-    "valor_usd": 360
+    "valor_usd": 340
   },
   {
     "id": "iphone-15-256gb",
@@ -21,7 +21,7 @@
     "id": "iphone-15-pro-128gb",
     "modelo": "iPhone 15 Pro",
     "capacidad": "128 GB",
-    "valor_usd": 475
+    "valor_usd": 430
   },
   {
     "id": "iphone-15-pro-256gb",
@@ -46,38 +46,38 @@
     "id": "iphone-15-pro-max-256gb",
     "modelo": "iPhone 15 Pro Max",
     "capacidad": "256 GB",
-    "valor_usd": 610
+    "valor_usd": 550
   },
   {
     "id": "iphone-15-pro-max-512gb",
     "modelo": "iPhone 15 Pro Max",
     "capacidad": "512 GB",
-    "valor_usd": 680
+    "valor_usd": 620
   },
   {
     "id": "iphone-15-pro-max-1tb",
     "modelo": "iPhone 15 Pro Max",
     "capacidad": "1 TB",
-    "valor_usd": 680,
+    "valor_usd": 620,
     "toma_como": "512 GB"
   },
   {
     "id": "iphone-16-128gb",
     "modelo": "iPhone 16",
     "capacidad": "128 GB",
-    "valor_usd": 500
+    "valor_usd": 490
   },
   {
     "id": "iphone-16-256gb",
     "modelo": "iPhone 16",
     "capacidad": "256 GB",
-    "valor_usd": 530
+    "valor_usd": 520
   },
   {
     "id": "iphone-16-512gb",
     "modelo": "iPhone 16",
     "capacidad": "512 GB",
-    "valor_usd": 600
+    "valor_usd": 590
   },
   {
     "id": "iphone-16e-128gb",
@@ -101,32 +101,32 @@
     "id": "iphone-16-pro-128gb",
     "modelo": "iPhone 16 Pro",
     "capacidad": "128 GB",
-    "valor_usd": 550
+    "valor_usd": 510
   },
   {
     "id": "iphone-16-pro-256gb",
     "modelo": "iPhone 16 Pro",
     "capacidad": "256 GB",
-    "valor_usd": 600
+    "valor_usd": 565
   },
   {
     "id": "iphone-16-pro-512gb",
     "modelo": "iPhone 16 Pro",
     "capacidad": "512 GB",
-    "valor_usd": 670
+    "valor_usd": 635
   },
   {
     "id": "iphone-16-pro-1tb",
     "modelo": "iPhone 16 Pro",
     "capacidad": "1 TB",
-    "valor_usd": 670,
+    "valor_usd": 635,
     "toma_como": "512 GB"
   },
   {
     "id": "iphone-16-pro-max-256gb",
     "modelo": "iPhone 16 Pro Max",
     "capacidad": "256 GB",
-    "valor_usd": 690
+    "valor_usd": 620
   },
   {
     "id": "iphone-16-pro-max-512gb",
@@ -145,13 +145,13 @@
     "id": "iphone-17-256gb",
     "modelo": "iPhone 17",
     "capacidad": "256 GB",
-    "valor_usd": 660
+    "valor_usd": 705
   },
   {
     "id": "iphone-17-512gb",
     "modelo": "iPhone 17",
     "capacidad": "512 GB",
-    "valor_usd": 730
+    "valor_usd": 775
   },
   {
     "id": "iphone-17e-256gb",
@@ -188,26 +188,26 @@
     "id": "iphone-17-pro-max-256gb",
     "modelo": "iPhone 17 Pro Max",
     "capacidad": "256 GB",
-    "valor_usd": 920
+    "valor_usd": 930
   },
   {
     "id": "iphone-17-pro-max-512gb",
     "modelo": "iPhone 17 Pro Max",
     "capacidad": "512 GB",
-    "valor_usd": 1050
+    "valor_usd": 910
   },
   {
     "id": "iphone-17-pro-max-1tb",
     "modelo": "iPhone 17 Pro Max",
     "capacidad": "1 TB",
-    "valor_usd": 1050,
+    "valor_usd": 910,
     "toma_como": "512 GB"
   },
   {
     "id": "iphone-17-pro-max-2tb",
     "modelo": "iPhone 17 Pro Max",
     "capacidad": "2 TB",
-    "valor_usd": 1050,
+    "valor_usd": 910,
     "toma_como": "512 GB"
   },
   {
